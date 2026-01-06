@@ -13,7 +13,7 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useLocation, useParams } from 'react-router-dom'
+import { useLocation, useParams, useSearchParams } from 'react-router-dom'
 import { trpc } from '@/lib/trpc'
 
 // =============================================================================
@@ -69,7 +69,6 @@ const ROUTE_LABELS: Record<string, string> = {
   users: 'Users',
   create: 'Create',
   invites: 'Invites',
-  workspaces: 'Workspaces',
   new: 'New',
   backup: 'Backup',
   groups: 'Groups',
@@ -83,11 +82,22 @@ const ROUTE_LABELS: Record<string, string> = {
 export function useBreadcrumbs(): BreadcrumbItem[] {
   const location = useLocation()
   const params = useParams<{ projectId?: string; sprintId?: string; userId?: string; id?: string; groupId?: string; slug?: string }>()
+  const [searchParams] = useSearchParams()
+
+  // Get workspace ID from query param (for /workspaces?workspace=3)
+  const workspaceIdParam = searchParams.get('workspace')
+  const workspaceId = workspaceIdParam ? parseInt(workspaceIdParam, 10) : null
 
   // Fetch workspace by slug if we have a slug param
-  const workspaceQuery = trpc.workspace.getBySlug.useQuery(
+  const workspaceBySlugQuery = trpc.workspace.getBySlug.useQuery(
     { slug: params.slug! },
     { enabled: !!params.slug }
+  )
+
+  // Fetch workspace by ID if we have a workspace query param
+  const workspaceByIdQuery = trpc.workspace.get.useQuery(
+    { workspaceId: workspaceId! },
+    { enabled: !!workspaceId && !isNaN(workspaceId) }
   )
 
   // Fetch project name if we have a projectId
@@ -113,16 +123,34 @@ export function useBreadcrumbs(): BreadcrumbItem[] {
 
     currentPath += `/${segment}`
     const prevSegment = i > 0 ? pathSegments[i - 1] : undefined
+    const isLast = i === pathSegments.length - 1
 
     // Handle workspace slug (SEO-friendly URL: /workspace/:slug)
     // Add the workspace name as a separate breadcrumb after "Workspace"
     if (prevSegment === 'workspace' && segment === params.slug) {
       // Add the workspace name as a new breadcrumb item
-      const workspaceName = workspaceQuery.data?.name ?? segment
+      const workspaceName = workspaceBySlugQuery.data?.name ?? segment
       breadcrumbs.push({
         label: workspaceName,
         href: undefined, // Current page, no link needed
       })
+      continue
+    }
+
+    // Handle /workspaces route with ?workspace= query param
+    if (segment === 'workspaces') {
+      breadcrumbs.push({
+        label: 'My Workspaces',
+        href: workspaceId ? '/workspaces' : undefined,
+      })
+
+      // If workspace is selected via query param, add workspace name breadcrumb
+      if (workspaceId && workspaceByIdQuery.data) {
+        breadcrumbs.push({
+          label: workspaceByIdQuery.data.name,
+          href: undefined, // Current page
+        })
+      }
       continue
     }
 
@@ -135,15 +163,15 @@ export function useBreadcrumbs(): BreadcrumbItem[] {
         if (lastCrumb && lastCrumb.label === 'Project') {
           // Insert workspace breadcrumbs before the project name
           if (projectQuery.data.workspace) {
-            // Replace 'Project' with 'Workspace'
+            // Replace 'Project' with 'My Workspaces'
             breadcrumbs[breadcrumbs.length - 1] = {
-              label: 'Workspace',
-              href: `/workspace/${projectQuery.data.workspace.slug}`,
+              label: 'My Workspaces',
+              href: '/workspaces',
             }
             // Add workspace name
             breadcrumbs.push({
               label: projectQuery.data.workspace.name,
-              href: `/workspace/${projectQuery.data.workspace.slug}`,
+              href: `/workspaces?workspace=${projectQuery.data.workspace.id}`,
             })
             // Add project name
             breadcrumbs.push({
@@ -177,7 +205,6 @@ export function useBreadcrumbs(): BreadcrumbItem[] {
     const label = ROUTE_LABELS[segment] ?? (segment.charAt(0).toUpperCase() + segment.slice(1))
 
     // Determine if this should be a link (not the last segment)
-    const isLast = i === pathSegments.length - 1
     const href = isLast ? undefined : currentPath
 
     breadcrumbs.push({ label, href })
