@@ -12,7 +12,7 @@ export default defineConfig({
   server: {
     port: 5173,
     host: true, // Listen on all interfaces (0.0.0.0) for Tailscale access
-    allowedHosts: ['linux-dev', 'localhost', 'max', 'max.tail1b9995.ts.net'],
+    allowedHosts: true, // Allow all hosts (dev server accessible via any hostname)
     proxy: {
       '/api': {
         target: 'http://localhost:3001',
