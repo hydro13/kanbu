@@ -1,8 +1,9 @@
 /*
  * ProfileLayout Component
- * Version: 1.0.0
+ * Version: 2.0.0
  *
  * Layout wrapper for profile pages with sidebar navigation.
+ * Now uses DashboardLayout for consistent top-bar navigation with breadcrumbs.
  *
  * Task: USER-01 (Task 247)
  *
@@ -13,10 +14,14 @@
  * Host: linux-dev
  * Signed: 2025-12-29T18:05 CET
  * Change: Fixed double scrollbars with -my-6 overflow-hidden + height calc(100vh-3.5rem)
+ *
+ * Modified by:
+ * Session: MAX-2026-01-06
+ * Change: Migrated to DashboardLayout for consistent navigation
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { Layout } from '../layout/Layout'
+import { DashboardLayout } from '../dashboard/DashboardLayout'
 import { ProfileSidebar } from './ProfileSidebar'
 
 interface ProfileLayoutProps {
@@ -27,30 +32,17 @@ interface ProfileLayoutProps {
 
 export function ProfileLayout({ children, title, description }: ProfileLayoutProps) {
   return (
-    <Layout>
-      {/*
-       * Height: 100vh - header (3.5rem/56px) = calc(100vh - 3.5rem)
-       * -my-6 cancels Layout's py-6 padding to prevent double scrollbars
-       * overflow-hidden ensures only inner content scrolls
-       */}
-      <div className="flex h-[calc(100vh-3.5rem)] -my-6 overflow-hidden">
-        {/* Sidebar */}
-        <ProfileSidebar />
-
-        {/* Main Content */}
-        <main className="flex-1 overflow-y-auto p-6">
-          <div className="max-w-4xl">
-            <div className="mb-6">
-              <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
-              {description && (
-                <p className="text-muted-foreground mt-1">{description}</p>
-              )}
-            </div>
-            {children}
-          </div>
-        </main>
+    <DashboardLayout sidebar={<ProfileSidebar />}>
+      <div className="max-w-4xl">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
+          {description && (
+            <p className="text-muted-foreground mt-1">{description}</p>
+          )}
+        </div>
+        {children}
       </div>
-    </Layout>
+    </DashboardLayout>
   )
 }
 

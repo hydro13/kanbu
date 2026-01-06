@@ -91,13 +91,15 @@ function ShieldIcon({ className }: { className?: string }) {
 
 export interface DashboardLayoutProps {
   children?: ReactNode
+  /** Custom sidebar component. Defaults to DashboardSidebar if not provided. */
+  sidebar?: ReactNode
 }
 
 // =============================================================================
 // Component
 // =============================================================================
 
-export function DashboardLayout({ children }: DashboardLayoutProps) {
+export function DashboardLayout({ children, sidebar }: DashboardLayoutProps) {
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
@@ -283,14 +285,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar - hidden on mobile when collapsed */}
         <div className={`hidden md:block ${sidebarCollapsed ? 'md:hidden' : ''}`}>
-          <DashboardSidebar collapsed={false} />
+          {sidebar ?? <DashboardSidebar collapsed={false} />}
         </div>
 
         {/* Mobile Sidebar Overlay */}
         {!sidebarCollapsed && (
           <div className="md:hidden fixed inset-0 z-40 bg-black/50" onClick={() => setSidebarCollapsed(true)}>
             <div className="w-56 h-full" onClick={(e) => e.stopPropagation()}>
-              <DashboardSidebar collapsed={false} />
+              {sidebar ?? <DashboardSidebar collapsed={false} />}
             </div>
           </div>
         )}
