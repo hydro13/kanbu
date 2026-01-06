@@ -421,7 +421,7 @@ export function ListViewPage() {
   if (!projectIdNum || isNaN(projectIdNum)) {
     return (
       <ProjectLayout>
-        <ListError message="Invalid project ID" onRetry={() => navigate('/projects')} />
+        <ListError message="Invalid project ID" onRetry={() => navigate('/workspaces')} />
       </ProjectLayout>
     )
   }
@@ -447,7 +447,7 @@ export function ListViewPage() {
   if (!projectQuery.data) {
     return (
       <ProjectLayout>
-        <ListError message="Project not found" onRetry={() => navigate('/projects')} />
+        <ListError message="Project not found" onRetry={() => navigate('/workspaces')} />
       </ProjectLayout>
     )
   }

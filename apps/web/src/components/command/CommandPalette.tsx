@@ -204,7 +204,7 @@ export function CommandPalette({ projectId: propProjectId, onOpenTaskDetail }: C
       description: 'View all projects',
       shortcut: 'G P',
       onSelect: () => {
-        navigate('/projects')
+        navigate('/workspaces')
         close()
       },
     })

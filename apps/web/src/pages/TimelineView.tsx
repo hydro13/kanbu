@@ -863,7 +863,7 @@ export function TimelineViewPage() {
   if (!projectIdNum || isNaN(projectIdNum)) {
     return (
       <ProjectLayout>
-        <TimelineError message="Invalid project ID" onRetry={() => navigate('/projects')} />
+        <TimelineError message="Invalid project ID" onRetry={() => navigate('/workspaces')} />
       </ProjectLayout>
     )
   }
@@ -889,7 +889,7 @@ export function TimelineViewPage() {
   if (!projectQuery.data) {
     return (
       <ProjectLayout>
-        <TimelineError message="Project not found" onRetry={() => navigate('/projects')} />
+        <TimelineError message="Project not found" onRetry={() => navigate('/workspaces')} />
       </ProjectLayout>
     )
   }

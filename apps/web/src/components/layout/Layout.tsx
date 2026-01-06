@@ -159,7 +159,7 @@ export function Layout({ children }: LayoutProps) {
                 Dashboard
               </Link>
               <Link
-                to="/projects"
+                to="/workspaces"
                 className="transition-colors hover:text-foreground/80 text-foreground/60"
               >
                 Projects

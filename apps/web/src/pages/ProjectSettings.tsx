@@ -130,13 +130,13 @@ export function ProjectSettingsPage() {
 
   const archiveMutation = trpc.project.archive.useMutation({
     onSuccess: () => {
-      navigate('/projects')
+      navigate('/workspaces')
     },
   })
 
   const deleteMutation = trpc.project.delete.useMutation({
     onSuccess: () => {
-      navigate('/projects')
+      navigate('/workspaces')
     },
   })
 

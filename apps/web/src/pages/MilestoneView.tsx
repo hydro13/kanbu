@@ -403,7 +403,7 @@ export function MilestoneViewPage() {
           <AlertIcon />
           <p className="text-gray-600">Failed to load project</p>
           <button
-            onClick={() => navigate('/projects')}
+            onClick={() => navigate('/workspaces')}
             className="text-blue-500 hover:underline"
           >
             Back to projects

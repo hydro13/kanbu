@@ -334,7 +334,7 @@ export function ImportExportPage() {
         {/* Header */}
         <div className="mb-8">
           <Link
-            to={`/projects/${projectId}/settings`}
+            to={`/project/${projectId}/settings`}
             className="inline-flex items-center text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 mb-4"
           >
             <ArrowLeftIcon className="h-4 w-4 mr-1" />
@@ -392,7 +392,7 @@ export function ImportExportPage() {
                     <Button variant="outline" onClick={handleReset}>
                       Import More
                     </Button>
-                    <Link to={`/projects/${projectId}/board`}>
+                    <Link to={`/project/${projectId}/board`}>
                       <Button>View Board</Button>
                     </Link>
                   </div>

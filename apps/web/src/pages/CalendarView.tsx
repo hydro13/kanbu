@@ -960,7 +960,7 @@ export function CalendarViewPage() {
   if (!projectIdNum || isNaN(projectIdNum)) {
     return (
       <ProjectLayout>
-        <CalendarError message="Invalid project ID" onRetry={() => navigate('/projects')} />
+        <CalendarError message="Invalid project ID" onRetry={() => navigate('/workspaces')} />
       </ProjectLayout>
     )
   }
@@ -986,7 +986,7 @@ export function CalendarViewPage() {
   if (!projectQuery.data) {
     return (
       <ProjectLayout>
-        <CalendarError message="Project not found" onRetry={() => navigate('/projects')} />
+        <CalendarError message="Project not found" onRetry={() => navigate('/workspaces')} />
       </ProjectLayout>
     )
   }

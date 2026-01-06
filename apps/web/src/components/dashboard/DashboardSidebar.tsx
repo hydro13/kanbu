@@ -77,7 +77,7 @@ const navItems: NavItem[] = [
   { label: 'Overview', path: '/dashboard', icon: HomeIcon, exact: true },
   { label: 'My Tasks', path: '/dashboard/tasks', icon: TaskIcon },
   { label: 'My Subtasks', path: '/dashboard/subtasks', icon: SubtaskIcon },
-  { label: 'My Workspaces', path: '/projects', icon: BuildingIcon },
+  { label: 'My Workspaces', path: '/workspaces', icon: BuildingIcon },
 ]
 
 // =============================================================================

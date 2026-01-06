@@ -154,7 +154,7 @@ export function AnalyticsDashboard() {
             Project not found
           </h2>
           <Link
-            to="/projects"
+            to="/workspaces"
             className="text-blue-500 hover:text-blue-600 dark:text-blue-400"
           >
             Return to projects

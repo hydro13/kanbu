@@ -184,7 +184,7 @@ export function ProfileSummary() {
               {profile.recentProjects.slice(0, 3).map((project) => (
                 <div key={project.id} className="flex items-center justify-between">
                   <Link
-                    to={`/projects/${project.id}/board`}
+                    to={`/project/${project.id}/board`}
                     className="text-sm text-blue-600 dark:text-blue-400 hover:underline truncate"
                   >
                     {project.name}
@@ -193,7 +193,7 @@ export function ProfileSummary() {
                 </div>
               ))}
               {profile.recentProjects.length > 3 && (
-                <Link to="/projects" className="text-xs text-blue-600 dark:text-blue-400 hover:underline">
+                <Link to="/workspaces" className="text-xs text-blue-600 dark:text-blue-400 hover:underline">
                   View all projects →
                 </Link>
               )}

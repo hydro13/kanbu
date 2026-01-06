@@ -471,7 +471,7 @@ export function BoardViewPage() {
       <ProjectLayout>
         <BoardError
           message="Invalid project ID"
-          onRetry={() => navigate('/projects')}
+          onRetry={() => navigate('/workspaces')}
         />
       </ProjectLayout>
     )
@@ -515,7 +515,7 @@ export function BoardViewPage() {
       <ProjectLayout>
         <BoardError
           message="Project not found"
-          onRetry={() => navigate('/projects')}
+          onRetry={() => navigate('/workspaces')}
         />
       </ProjectLayout>
     )

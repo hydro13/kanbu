@@ -19,7 +19,7 @@
  *
  * Session: 73a280f4-f735-47a2-9803-e570fa6a86f7
  * Signed: 2025-12-28T18:25 CET
- * Change: Added /projects route for ProjectListPage
+ * Change: Added /workspaces route for workspace overview
  *
  * Session: de75c403-118c-4293-8d05-c2e3147fd7c8
  * Signed: 2025-12-28T22:35 CET
@@ -170,7 +170,7 @@ function App() {
           }
         />
         <Route
-          path="/projects"
+          path="/workspaces"
           element={
             <ProtectedRoute>
               <ProjectListPage />

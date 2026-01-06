@@ -246,7 +246,7 @@ export function HomePage() {
               </CardDescription>
             </div>
             <Link
-              to="/projects"
+              to="/workspaces"
               className="text-sm text-primary hover:underline flex items-center gap-1"
             >
               View all
@@ -271,7 +271,7 @@ export function HomePage() {
                 <ProjectIcon className="h-12 w-12 mx-auto mb-3 opacity-50" />
                 <p>No projects yet</p>
                 <Link
-                  to="/projects"
+                  to="/workspaces"
                   className="text-sm text-primary hover:underline mt-2 inline-block"
                 >
                   Create your first project
