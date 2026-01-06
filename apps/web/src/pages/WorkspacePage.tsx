@@ -138,10 +138,12 @@ export function WorkspacePage() {
               </p>
             </div>
           </div>
-          <Button onClick={() => setShowCreateModal(true)}>
-            <PlusIcon className="h-4 w-4 mr-2" />
-            New Project
-          </Button>
+          {workspace.role === 'ADMIN' && (
+            <Button onClick={() => setShowCreateModal(true)}>
+              <PlusIcon className="h-4 w-4 mr-2" />
+              New Project
+            </Button>
+          )}
         </div>
 
         {/* Stats */}

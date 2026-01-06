@@ -148,8 +148,17 @@ export const projectRouter = router({
             OR: [
               // Public projects
               { isPublic: true },
-              // Projects user is member of
+              // Projects user is direct member of (via ProjectMember)
               { members: { some: { userId: ctx.user.id } } },
+              // Projects user is member of via PROJECT groups
+              {
+                groups: {
+                  some: {
+                    type: 'PROJECT',
+                    members: { some: { userId: ctx.user.id } },
+                  },
+                },
+              },
             ],
           }),
         },
@@ -176,6 +185,17 @@ export const projectRouter = router({
             where: { userId: ctx.user.id },
             select: { role: true },
           },
+          // Check if user is member via PROJECT groups
+          groups: {
+            where: {
+              type: 'PROJECT',
+              members: { some: { userId: ctx.user.id } },
+            },
+            select: {
+              id: true,
+              name: true,
+            },
+          },
         },
         orderBy: [
           { lastActivityAt: { sort: 'desc', nulls: 'last' } },
@@ -186,6 +206,11 @@ export const projectRouter = router({
       return projects.map((p) => {
         const activeTaskCount = p.tasks.filter((t) => t.isActive).length
         const completedTaskCount = p.tasks.filter((t) => !t.isActive).length
+        // Get user role from direct membership
+        // For group-based membership, default to MEMBER role
+        const directRole = p.members[0]?.role
+        const isGroupMember = p.groups.length > 0
+        const userRole = directRole ?? (isGroupMember ? 'MEMBER' : null)
         return {
           id: p.id,
           name: p.name,
@@ -201,7 +226,7 @@ export const projectRouter = router({
           activeTaskCount,
           completedTaskCount,
           memberCount: p._count.members,
-          userRole: p.members[0]?.role ?? null,
+          userRole,
         }
       })
     }),

@@ -13,7 +13,7 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useRef, useState, useMemo } from 'react';
 import { useCursors, type CursorData } from '@/hooks/useCursors';
 
 // =============================================================================
@@ -25,6 +25,15 @@ interface LiveCursorsProps {
   currentUserId: number;
   enabled?: boolean;
   containerRef: React.RefObject<HTMLElement | null>;
+}
+
+interface ContainerInfo {
+  // Container position on screen
+  left: number;
+  top: number;
+  // Current scroll position
+  scrollLeft: number;
+  scrollTop: number;
 }
 
 // =============================================================================
@@ -71,17 +80,54 @@ function CursorPointer({ color }: { color: string }) {
 // Single Cursor Component
 // =============================================================================
 
-function Cursor({ cursor }: { cursor: CursorData }) {
+interface CursorProps {
+  cursor: CursorData;
+  containerInfo: ContainerInfo | null;
+}
+
+function Cursor({ cursor, containerInfo }: CursorProps) {
   const colorIndex = cursor.user.id % CURSOR_COLORS.length;
   const color = CURSOR_COLORS[colorIndex];
   const displayName = cursor.user.name ?? cursor.user.username;
+
+  // Convert world coordinates to screen coordinates
+  // This is the inverse of what we do when sending:
+  // Screen position = container position + (world position - scroll offset)
+  const screenPosition = useMemo(() => {
+    if (!containerInfo) {
+      // Can't render without container info
+      return null;
+    }
+
+    // World to screen: worldPos - scrollOffset + containerOffset
+    const screenX = containerInfo.left + (cursor.worldX - containerInfo.scrollLeft);
+    const screenY = containerInfo.top + (cursor.worldY - containerInfo.scrollTop);
+
+    return { x: screenX, y: screenY };
+  }, [cursor.worldX, cursor.worldY, containerInfo]);
+
+  // Don't render if we don't have position or if cursor is outside visible area
+  if (!screenPosition) {
+    return null;
+  }
+
+  // Check if cursor is within visible bounds (with some padding)
+  const isVisible =
+    screenPosition.x >= -50 &&
+    screenPosition.y >= -50 &&
+    screenPosition.x <= window.innerWidth + 50 &&
+    screenPosition.y <= window.innerHeight + 50;
+
+  if (!isVisible) {
+    return null;
+  }
 
   return (
     <div
       className="pointer-events-none fixed z-[9999] transition-all duration-75 ease-out"
       style={{
-        left: cursor.x,
-        top: cursor.y,
+        left: screenPosition.x,
+        top: screenPosition.y,
         transform: 'translate(-2px, -2px)',
       }}
     >
@@ -110,7 +156,11 @@ export function LiveCursors({
     projectId,
     currentUserId,
     enabled,
+    containerRef,
   });
+
+  // Track container info for converting world coordinates to screen coordinates
+  const [containerInfo, setContainerInfo] = useState<ContainerInfo | null>(null);
 
   // Track mouse movement
   const lastPositionRef = useRef({ x: 0, y: 0 });
@@ -131,17 +181,44 @@ export function LiveCursors({
     [enabled, sendCursorPosition]
   );
 
-  // Attach mouse move listener to container
+  // Update container info (position + scroll) for world-to-screen conversion
+  const updateContainerInfo = useCallback(() => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    setContainerInfo({
+      left: rect.left,
+      top: rect.top,
+      scrollLeft: containerRef.current.scrollLeft,
+      scrollTop: containerRef.current.scrollTop,
+    });
+  }, [containerRef]);
+
+  // Attach mouse move listener and track container info
   useEffect(() => {
     if (!enabled || !containerRef.current) return;
 
     const container = containerRef.current;
     container.addEventListener('mousemove', handleMouseMove);
 
+    // Initial measurement
+    updateContainerInfo();
+
+    // Update on resize, scroll (window), and container scroll
+    window.addEventListener('resize', updateContainerInfo);
+    window.addEventListener('scroll', updateContainerInfo, true);
+    container.addEventListener('scroll', updateContainerInfo);
+
+    // Also update periodically to catch any missed scroll events
+    const interval = setInterval(updateContainerInfo, 100);
+
     return () => {
       container.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('resize', updateContainerInfo);
+      window.removeEventListener('scroll', updateContainerInfo, true);
+      container.removeEventListener('scroll', updateContainerInfo);
+      clearInterval(interval);
     };
-  }, [enabled, containerRef, handleMouseMove]);
+  }, [enabled, containerRef, handleMouseMove, updateContainerInfo]);
 
   if (!enabled || cursors.size === 0) {
     return null;
@@ -150,7 +227,7 @@ export function LiveCursors({
   return (
     <>
       {Array.from(cursors.values()).map((cursor) => (
-        <Cursor key={cursor.user.id} cursor={cursor} />
+        <Cursor key={cursor.user.id} cursor={cursor} containerInfo={containerInfo} />
       ))}
     </>
   );

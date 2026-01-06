@@ -231,10 +231,10 @@ export interface PresenceUser {
 }
 
 export interface CursorPosition {
-  x: number;
-  y: number;
-  viewportWidth: number;
-  viewportHeight: number;
+  // World coordinates - position within the scrollable board content
+  // Like game world coordinates - independent of viewport/resolution
+  worldX: number;
+  worldY: number;
 }
 
 export interface CursorMovePayload {

@@ -23,8 +23,10 @@ import type { CursorMovePayload, PresenceUser } from '@/lib/socket';
 
 export interface CursorData {
   user: PresenceUser;
-  x: number;
-  y: number;
+  // World coordinates (position within the scrollable content, in pixels)
+  // This is like game world coordinates - independent of viewport
+  worldX: number;
+  worldY: number;
   lastUpdate: number;
 }
 
@@ -33,6 +35,7 @@ export interface UseCursorsOptions {
   currentUserId: number;
   enabled?: boolean;
   cursorTimeout?: number; // ms before cursor disappears
+  containerRef?: React.RefObject<HTMLElement | null>;
 }
 
 export interface UseCursorsReturn {
@@ -68,6 +71,7 @@ export function useCursors({
   currentUserId,
   enabled = true,
   cursorTimeout = DEFAULT_CURSOR_TIMEOUT,
+  containerRef,
 }: UseCursorsOptions): UseCursorsReturn {
   const { socket, isConnected } = useSocketContext();
   const [cursors, setCursors] = useState<Map<number, CursorData>>(new Map());
@@ -79,6 +83,8 @@ export function useCursors({
   const roomName = `project:${projectId}`;
 
   // Send cursor position (throttled)
+  // Uses "world coordinates" - position within the scrollable content
+  // This is how games handle multi-resolution sync
   const sendCursorPosition = useCallback(
     (x: number, y: number) => {
       if (!socket || !isConnected || !enabled) return;
@@ -88,17 +94,32 @@ export function useCursors({
 
       lastSentRef.current = now;
 
+      // Calculate world coordinates (position within scrollable content)
+      // Like games: mouse position + scroll offset = world position
+      let worldX = x;
+      let worldY = y;
+
+      if (containerRef?.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        const scrollLeft = containerRef.current.scrollLeft;
+        const scrollTop = containerRef.current.scrollTop;
+
+        // World X/Y = position relative to container + scroll offset
+        // This gives us the position in the "world" (scrollable content)
+        worldX = (x - rect.left) + scrollLeft;
+        worldY = (y - rect.top) + scrollTop;
+      }
+
       socket.emit('cursor:move', {
         roomName,
         position: {
-          x,
-          y,
-          viewportWidth: window.innerWidth,
-          viewportHeight: window.innerHeight,
+          // World coordinates (absolute position in scrollable content)
+          worldX,
+          worldY,
         },
       });
     },
-    [socket, isConnected, enabled, roomName]
+    [socket, isConnected, enabled, roomName, containerRef]
   );
 
   // Listen for cursor updates
@@ -109,12 +130,18 @@ export function useCursors({
       // Ignore own cursor
       if (payload.user.id === currentUserId) return;
 
+      // Get world coordinates from payload
+      const position = payload.position as {
+        worldX: number;
+        worldY: number;
+      };
+
       setCursors((prev) => {
         const newCursors = new Map(prev);
         newCursors.set(payload.user.id, {
           user: payload.user,
-          x: payload.position.x,
-          y: payload.position.y,
+          worldX: position.worldX,
+          worldY: position.worldY,
           lastUpdate: Date.now(),
         });
         return newCursors;

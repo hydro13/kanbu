@@ -80,13 +80,15 @@ export async function authenticateSocket(
           select: { workspaceId: true },
         },
         groupMemberships: {
-          where: {
+          select: {
             group: {
-              name: 'Domain Admins',
-              isActive: true,
+              select: {
+                name: true,
+                isActive: true,
+                workspaceId: true,
+              },
             },
           },
-          select: { id: true },
         },
       },
     });
@@ -96,7 +98,18 @@ export async function authenticateSocket(
     }
 
     // Check if user is a Domain Admin
-    const isDomainAdmin = user.groupMemberships.length > 0;
+    const isDomainAdmin = user.groupMemberships.some(
+      (gm) => gm.group.name === 'Domain Admins' && gm.group.isActive
+    );
+
+    // Collect workspace IDs from both direct membership and GROUP-based membership
+    const directWorkspaceIds = user.workspaces.map((ws) => ws.workspaceId);
+    const groupWorkspaceIds = user.groupMemberships
+      .filter((gm) => gm.group.isActive && gm.group.workspaceId !== null)
+      .map((gm) => gm.group.workspaceId as number);
+
+    // Combine and deduplicate workspace IDs
+    const allWorkspaceIds = [...new Set([...directWorkspaceIds, ...groupWorkspaceIds])];
 
     // Attach user data to socket
     const authenticatedSocket = socket as AuthenticatedSocket;
@@ -107,9 +120,7 @@ export async function authenticateSocket(
       name: user.name,
       avatarUrl: user.avatarUrl,
     };
-    authenticatedSocket.data.workspaceIds = user.workspaces.map(
-      (ws) => ws.workspaceId
-    );
+    authenticatedSocket.data.workspaceIds = allWorkspaceIds;
     authenticatedSocket.data.isDomainAdmin = isDomainAdmin;
 
     next();
@@ -135,17 +146,54 @@ export function canAccessWorkspace(
 
 /**
  * Check if user can access a project
- * (Must be member of the workspace that owns the project)
+ * Checks:
+ * 1. Direct workspace membership (via socket.data.workspaceIds which includes GROUP-based)
+ * 2. Direct project membership (via ProjectMember)
+ * 3. GROUP-based project membership (via PROJECT groups)
  */
 export async function canAccessProject(
   socket: AuthenticatedSocket,
   projectId: number
 ): Promise<boolean> {
+  const userId = socket.data.user.id;
+
   const project = await prisma.project.findUnique({
     where: { id: projectId },
-    select: { workspaceId: true },
+    select: {
+      workspaceId: true,
+      // Check direct project membership
+      members: {
+        where: { userId },
+        select: { id: true },
+      },
+      // Check GROUP-based project membership
+      groups: {
+        where: {
+          type: 'PROJECT',
+          members: { some: { userId } },
+        },
+        select: { id: true },
+      },
+    },
   });
 
   if (!project) return false;
-  return socket.data.workspaceIds.includes(project.workspaceId);
+
+  // Access granted if:
+  // 1. User is a workspace member (direct or via GROUP)
+  if (socket.data.workspaceIds.includes(project.workspaceId)) {
+    return true;
+  }
+
+  // 2. User is a direct project member
+  if (project.members.length > 0) {
+    return true;
+  }
+
+  // 3. User is a member via PROJECT groups
+  if (project.groups.length > 0) {
+    return true;
+  }
+
+  return false;
 }

@@ -172,10 +172,12 @@ export function ProjectListPage() {
               Manage projects in {currentWorkspace.name}
             </p>
           </div>
-          <Button onClick={() => setShowCreateModal(true)}>
-            <PlusIcon className="h-4 w-4 mr-2" />
-            New Project
-          </Button>
+          {currentWorkspace.role === 'ADMIN' && (
+            <Button onClick={() => setShowCreateModal(true)}>
+              <PlusIcon className="h-4 w-4 mr-2" />
+              New Project
+            </Button>
+          )}
         </div>
 
         {/* Filters & Controls */}

@@ -460,7 +460,8 @@ export class PermissionService {
   /**
    * Get a user's role in a project.
    * Returns the highest role between:
-   * - Direct project membership
+   * - Direct project membership (ProjectMember)
+   * - GROUP-based membership (PROJECT groups)
    * - Derived from workspace role (workspace OWNER/ADMIN = project MANAGER)
    */
   async getProjectRole(
@@ -494,6 +495,18 @@ export class PermissionService {
       select: { role: true },
     })
 
+    // Check GROUP-based membership (PROJECT groups linked to this project)
+    const groupMembership = await prisma.group.findFirst({
+      where: {
+        projectId,
+        type: 'PROJECT',
+        members: {
+          some: { userId },
+        },
+      },
+      select: { id: true },
+    })
+
     // Derive project role from workspace role
     let derivedRole: ProjectRole | null = null
     if (workspaceRole === 'OWNER') {
@@ -506,19 +519,33 @@ export class PermissionService {
       derivedRole = 'VIEWER'
     }
 
+    // Collect all applicable roles
+    const roles: ProjectRole[] = []
+
+    if (projectMember) {
+      roles.push(projectMember.role)
+    }
+
+    // GROUP-based membership grants MEMBER role
+    if (groupMembership) {
+      roles.push('MEMBER')
+    }
+
+    if (derivedRole) {
+      roles.push(derivedRole)
+    }
+
     // Return the highest role
-    if (!projectMember) {
-      return derivedRole
+    if (roles.length === 0) {
+      return null
     }
 
-    if (!derivedRole) {
-      return projectMember.role
-    }
-
-    // Compare and return highest
-    const memberLevel = PROJECT_ROLE_HIERARCHY[projectMember.role]
-    const derivedLevel = PROJECT_ROLE_HIERARCHY[derivedRole]
-    return memberLevel >= derivedLevel ? projectMember.role : derivedRole
+    // Find the highest role
+    return roles.reduce((highest, current) => {
+      const currentLevel = PROJECT_ROLE_HIERARCHY[current]
+      const highestLevel = PROJECT_ROLE_HIERARCHY[highest]
+      return currentLevel >= highestLevel ? current : highest
+    })
   }
 
   /**
