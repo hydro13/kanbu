@@ -1,0 +1,146 @@
+/**
+ * Fastify Server Setup
+ *
+ * Main server configuration with tRPC integration and public API routes.
+ *
+ * ═══════════════════════════════════════════════════════════════════
+ * Modified by:
+ * Session: 2fb1aa57-4c11-411a-bfda-c7de543d538f
+ * Signed: 2025-12-29T00:15 CET
+ * Change: Added public API routes (EXT-14)
+ *
+ * Modified by:
+ * Session: 9a49de0d-74ae-4a76-a6f6-53c7e3f2218b
+ * Signed: 2025-12-29T16:53 CET
+ * Change: Added bodyLimit 10MB for avatar uploads, registered avatar routes
+ *
+ * Modified by:
+ * Session: websocket-collaboration
+ * Signed: 2025-01-03T00:00 CET
+ * Change: Added Socket.io real-time collaboration with Redis adapter
+ * ═══════════════════════════════════════════════════════════════════
+ */
+
+import Fastify from 'fastify';
+import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
+import { appRouter, createContext } from './trpc';
+import { registerPublicApiRoutes } from './routes/publicApi';
+import { registerAvatarRoutes } from './routes/avatar';
+import { registerWorkspaceLogoRoutes } from './routes/workspaceLogo';
+import { initializeSocketServer } from './socket';
+import { isRedisHealthy } from './lib/redis';
+
+/**
+ * Create and configure Fastify server
+ */
+export async function createServer() {
+  const server = Fastify({
+    logger: {
+      level: process.env.LOG_LEVEL ?? 'info',
+      transport:
+        process.env.NODE_ENV === 'development'
+          ? {
+              target: 'pino-pretty',
+              options: {
+                translateTime: 'HH:MM:ss Z',
+                ignore: 'pid,hostname',
+              },
+            }
+          : undefined,
+    },
+    // Increase body limit to 10MB for avatar uploads (base64 encoded images)
+    bodyLimit: 10 * 1024 * 1024,
+  });
+
+  // Handle CORS manually for preflight requests (before tRPC can intercept them)
+  server.addHook('onRequest', async (request, reply) => {
+    const origin = request.headers.origin as string | undefined;
+
+    // In development, allow all origins; in production, check against CORS_ORIGIN
+    let allowedOrigin: string | null = null;
+    if (origin) {
+      if (process.env.CORS_ORIGIN) {
+        const allowedOrigins = process.env.CORS_ORIGIN.split(',');
+        if (allowedOrigins.includes(origin)) {
+          allowedOrigin = origin;
+        }
+      } else {
+        // Allow all origins in development
+        allowedOrigin = origin;
+      }
+    }
+
+    // Handle preflight OPTIONS requests first
+    if (request.method === 'OPTIONS') {
+      // Must use specific origin with credentials, not '*'
+      if (allowedOrigin) {
+        reply
+          .header('Access-Control-Allow-Origin', allowedOrigin)
+          .header('Access-Control-Allow-Credentials', 'true')
+          .header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH')
+          .header('Access-Control-Allow-Headers', 'Content-Type, Authorization, trpc-accept')
+          .header('Access-Control-Max-Age', '86400')
+          .status(204)
+          .send();
+      } else {
+        // No valid origin - reject preflight
+        reply.status(403).send();
+      }
+      return;
+    }
+
+    // Set CORS headers for all other requests with valid origin
+    if (allowedOrigin) {
+      reply
+        .header('Access-Control-Allow-Origin', allowedOrigin)
+        .header('Access-Control-Allow-Credentials', 'true');
+    }
+  });
+
+  // Register tRPC
+  await server.register(fastifyTRPCPlugin, {
+    prefix: '/trpc',
+    trpcOptions: {
+      router: appRouter,
+      createContext,
+    },
+  });
+
+  // Initialize Socket.io for real-time collaboration
+  const io = await initializeSocketServer(server);
+  server.decorate('io', io);
+
+  // Health check endpoint (non-tRPC for load balancers)
+  server.get('/health', async () => {
+    const redisStatus = await isRedisHealthy();
+    return {
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      services: {
+        redis: redisStatus,
+        websocket: 'active',
+      },
+    };
+  });
+
+  // Root endpoint
+  server.get('/', async () => {
+    return {
+      name: 'Kanbu API',
+      version: '0.1.0',
+      docs: '/trpc',
+      publicApi: '/api/v1',
+    };
+  });
+
+  // Register public API routes (REST endpoints with API key auth)
+  await registerPublicApiRoutes(server);
+
+  // Register avatar serving routes
+  await registerAvatarRoutes(server);
+
+  // Register workspace logo serving routes
+  await registerWorkspaceLogoRoutes(server);
+
+  return server;
+}

@@ -1,0 +1,31 @@
+# Kanbu Development Database
+#
+# Usage:
+#   cd docker
+#   docker compose up -d
+#
+# This creates a persistent PostgreSQL database for local development.
+# Data is stored in a named volume that survives container restarts.
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: kanbu-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: kanbu
+      POSTGRES_PASSWORD: kanbu_2025
+      POSTGRES_DB: kanbu
+    ports:
+      - "5432:5432"
+    volumes:
+      - kanbu-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kanbu -d kanbu"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  kanbu-postgres-data:
+    name: kanbu-postgres-data

@@ -1,0 +1,349 @@
+/*
+ * WorkspaceListPage Component
+ * Version: 1.0.0
+ *
+ * Admin page for listing and managing workspaces.
+ * Features search, filtering, and pagination.
+ *
+ * Task: 253 - Multi-Workspace / Organisatie Systeem
+ */
+
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import { AdminLayout } from '@/components/admin'
+import { trpc, getApiHost } from '@/lib/trpc'
+
+// =============================================================================
+// Types
+// =============================================================================
+
+type StatusFilter = boolean | undefined
+type SortField = 'id' | 'name' | 'createdAt' | 'updatedAt'
+type SortOrder = 'asc' | 'desc'
+
+// =============================================================================
+// Icons
+// =============================================================================
+
+function SearchIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+    </svg>
+  )
+}
+
+function ChevronUpIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+    </svg>
+  )
+}
+
+function ChevronDownIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+    </svg>
+  )
+}
+
+function PencilIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+    </svg>
+  )
+}
+
+function BuildingIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+    </svg>
+  )
+}
+
+// =============================================================================
+// Component
+// =============================================================================
+
+export function WorkspaceListPage() {
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(undefined)
+  const [sortBy, setSortBy] = useState<SortField>('name')
+  const [sortOrder, setSortOrder] = useState<SortOrder>('asc')
+  const [page, setPage] = useState(0)
+  const limit = 25
+
+  const { data, isLoading, error } = trpc.admin.listAllWorkspaces.useQuery({
+    search: search || undefined,
+    isActive: statusFilter,
+    sortBy,
+    sortOrder,
+    limit,
+    offset: page * limit,
+  })
+
+  const handleSort = (field: SortField) => {
+    if (sortBy === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortBy(field)
+      setSortOrder('asc')
+    }
+    setPage(0)
+  }
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortBy !== field) return null
+    return sortOrder === 'asc' ? (
+      <ChevronUpIcon className="h-4 w-4 inline ml-1" />
+    ) : (
+      <ChevronDownIcon className="h-4 w-4 inline ml-1" />
+    )
+  }
+
+  const formatDate = (date: string | Date | null) => {
+    if (!date) return '-'
+    return new Date(date).toLocaleDateString('nl-NL', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    })
+  }
+
+  return (
+    <AdminLayout
+      title="Workspaces"
+      description="Manage organisation workspaces"
+    >
+      {/* Filters */}
+      <div className="mb-6 flex flex-wrap gap-4">
+        {/* Search */}
+        <div className="relative flex-1 min-w-[200px] max-w-md">
+          <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search by name, slug, or description..."
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value)
+              setPage(0)
+            }}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+
+        {/* Status filter */}
+        <select
+          value={statusFilter === undefined ? '' : statusFilter ? 'active' : 'inactive'}
+          onChange={(e) => {
+            const val = e.target.value
+            setStatusFilter(val === '' ? undefined : val === 'active')
+            setPage(0)
+          }}
+          className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        >
+          <option value="">All statuses</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+
+        {/* Create workspace button */}
+        <Link
+          to="/admin/workspaces/new"
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+        >
+          + Create Workspace
+        </Link>
+      </div>
+
+      {/* Error state */}
+      {error && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg mb-6">
+          Failed to load workspaces: {error.message}
+        </div>
+      )}
+
+      {/* Loading state */}
+      {isLoading && (
+        <div className="text-center py-12 text-gray-500">
+          Loading workspaces...
+        </div>
+      )}
+
+      {/* Workspaces table */}
+      {data && (
+        <>
+          <div className="overflow-x-auto bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+                  <th
+                    className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+                    onClick={() => handleSort('id')}
+                  >
+                    ID <SortIcon field="id" />
+                  </th>
+                  <th
+                    className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+                    onClick={() => handleSort('name')}
+                  >
+                    Workspace <SortIcon field="name" />
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Slug
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Members
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Projects
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Status
+                  </th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Created By
+                  </th>
+                  <th
+                    className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+                    onClick={() => handleSort('createdAt')}
+                  >
+                    Created <SortIcon field="createdAt" />
+                  </th>
+                  <th className="px-4 py-3 text-right text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.workspaces.map((workspace) => (
+                  <tr
+                    key={workspace.id}
+                    className="border-b border-gray-100 dark:border-gray-700 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                  >
+                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                      {workspace.id}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        {/* Logo */}
+                        {workspace.logoUrl ? (
+                          <img
+                            src={`${getApiHost()}${workspace.logoUrl}?t=${new Date(workspace.updatedAt).getTime()}`}
+                            alt=""
+                            className="h-8 w-8 rounded object-cover"
+                          />
+                        ) : (
+                          <div className="h-8 w-8 rounded bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
+                            <BuildingIcon className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                          </div>
+                        )}
+                        <div>
+                          <div className="font-medium text-gray-900 dark:text-white">
+                            {workspace.name}
+                          </div>
+                          {workspace.description && (
+                            <div className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-xs">
+                              {workspace.description}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 font-mono">
+                      {workspace.slug}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                      {workspace.memberCount}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                      {workspace.projectCount}
+                    </td>
+                    <td className="px-4 py-3">
+                      {workspace.isActive ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300">
+                          Active
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300">
+                          Inactive
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                      {workspace.createdBy?.name ?? '-'}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                      {formatDate(workspace.createdAt)}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <Link
+                        to={`/admin/workspaces/${workspace.id}`}
+                        className="inline-flex items-center gap-1 px-3 py-1 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
+                      >
+                        <PencilIcon className="h-4 w-4" />
+                        Manage
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          <div className="mt-4 flex items-center justify-between">
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              Showing {page * limit + 1} to {Math.min((page + 1) * limit, data.total)} of {data.total} workspaces
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setPage(page - 1)}
+                disabled={page === 0}
+                className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                Previous
+              </button>
+              <button
+                onClick={() => setPage(page + 1)}
+                disabled={!data.hasMore}
+                className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Empty state */}
+      {data && data.workspaces.length === 0 && (
+        <div className="text-center py-12">
+          <BuildingIcon className="h-12 w-12 mx-auto text-gray-400 mb-4" />
+          <p className="text-gray-500 dark:text-gray-400 mb-4">No workspaces found</p>
+          {search ? (
+            <button
+              onClick={() => setSearch('')}
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              Clear search
+            </button>
+          ) : (
+            <Link
+              to="/admin/workspaces/new"
+              className="text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              Create your first workspace
+            </Link>
+          )}
+        </div>
+      )}
+    </AdminLayout>
+  )
+}
+
+export default WorkspaceListPage

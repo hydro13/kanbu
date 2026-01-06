@@ -1,0 +1,462 @@
+"use strict";
+/*
+ * Analytics Procedures
+ * Version: 1.0.0
+ *
+ * tRPC procedures for project analytics and reporting.
+ * Provides stats, velocity, cycle time, and team workload data.
+ *
+ * ═══════════════════════════════════════════════════════════════════
+ * AI Architect: Robin Waslander <R.Waslander@gmail.com>
+ * Session: 3d59206c-e50d-43c8-b768-d87acc7d559f
+ * Claude Code: v2.0.70 (Opus 4.5)
+ * Host: linux-dev
+ * Signed: 2025-12-28T23:20 CET
+ *
+ * Modified by:
+ * Session: 0e39bd3c-2fb0-45ca-9dba-d480f3531265
+ * Signed: 2025-12-29T09:50 CET
+ * Change: Fix getTeamWorkload to show ALL project members, not just those with tasks
+ * ═══════════════════════════════════════════════════════════════════
+ */
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.analyticsRouter = void 0;
+const zod_1 = require("zod");
+const router_1 = require("../router");
+const project_1 = require("../../lib/project");
+// =============================================================================
+// Input Schemas
+// =============================================================================
+const projectIdSchema = zod_1.z.object({
+    projectId: zod_1.z.number(),
+});
+const dateRangeSchema = zod_1.z.object({
+    projectId: zod_1.z.number(),
+    dateFrom: zod_1.z.string().optional(), // ISO date string
+    dateTo: zod_1.z.string().optional(), // ISO date string
+});
+const velocitySchema = zod_1.z.object({
+    projectId: zod_1.z.number(),
+    weeks: zod_1.z.number().min(1).max(52).default(8),
+});
+// =============================================================================
+// Helper Functions
+// =============================================================================
+/**
+ * Get start of week (Monday) for a given date
+ */
+function getWeekStart(date) {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Monday
+    d.setDate(diff);
+    d.setHours(0, 0, 0, 0);
+    return d;
+}
+/**
+ * Format date as ISO string (date part only)
+ */
+function formatDateKey(date) {
+    return date.toISOString().split('T')[0];
+}
+// =============================================================================
+// Router
+// =============================================================================
+exports.analyticsRouter = (0, router_1.router)({
+    /**
+     * Get project stats - task counts, completion rate, trends
+     */
+    getProjectStats: router_1.protectedProcedure
+        .input(dateRangeSchema)
+        .query(async ({ ctx, input }) => {
+        await (0, project_1.requireProjectAccess)(ctx.user.id, input.projectId, 'VIEWER');
+        const dateFilter = {
+            ...(input.dateFrom && { gte: new Date(input.dateFrom) }),
+            ...(input.dateTo && { lte: new Date(input.dateTo) }),
+        };
+        const hasDateFilter = input.dateFrom || input.dateTo;
+        // Get total task counts
+        const [totalTasks, openTasks, closedTasks] = await Promise.all([
+            ctx.prisma.task.count({
+                where: {
+                    projectId: input.projectId,
+                    ...(hasDateFilter && { createdAt: dateFilter }),
+                },
+            }),
+            ctx.prisma.task.count({
+                where: {
+                    projectId: input.projectId,
+                    isActive: true,
+                    ...(hasDateFilter && { createdAt: dateFilter }),
+                },
+            }),
+            ctx.prisma.task.count({
+                where: {
+                    projectId: input.projectId,
+                    isActive: false,
+                    ...(hasDateFilter && { createdAt: dateFilter }),
+                },
+            }),
+        ]);
+        // Get tasks by priority
+        const tasksByPriority = await ctx.prisma.task.groupBy({
+            by: ['priority'],
+            where: {
+                projectId: input.projectId,
+                ...(hasDateFilter && { createdAt: dateFilter }),
+            },
+            _count: true,
+        });
+        // Get tasks by column
+        const tasksByColumn = await ctx.prisma.task.groupBy({
+            by: ['columnId'],
+            where: {
+                projectId: input.projectId,
+                isActive: true,
+            },
+            _count: true,
+        });
+        // Get column names
+        const columns = await ctx.prisma.column.findMany({
+            where: { projectId: input.projectId },
+            select: { id: true, title: true, position: true },
+            orderBy: { position: 'asc' },
+        });
+        const columnMap = new Map(columns.map((c) => [c.id, c.title]));
+        // Calculate completion rate
+        const completionRate = totalTasks > 0 ? Math.round((closedTasks / totalTasks) * 100) : 0;
+        // Get recent completions (last 7 days vs previous 7 days for trend)
+        const now = new Date();
+        const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+        const [recentCompletions, previousCompletions] = await Promise.all([
+            ctx.prisma.task.count({
+                where: {
+                    projectId: input.projectId,
+                    isActive: false,
+                    dateCompleted: { gte: sevenDaysAgo },
+                },
+            }),
+            ctx.prisma.task.count({
+                where: {
+                    projectId: input.projectId,
+                    isActive: false,
+                    dateCompleted: { gte: fourteenDaysAgo, lt: sevenDaysAgo },
+                },
+            }),
+        ]);
+        // Trend: positive = improving, negative = declining
+        const trend = recentCompletions - previousCompletions;
+        // Get time tracking totals
+        const timeStats = await ctx.prisma.task.aggregate({
+            where: {
+                projectId: input.projectId,
+                ...(hasDateFilter && { createdAt: dateFilter }),
+            },
+            _sum: {
+                timeEstimated: true,
+                timeSpent: true,
+            },
+        });
+        return {
+            totalTasks,
+            openTasks,
+            closedTasks,
+            completionRate,
+            trend,
+            recentCompletions,
+            tasksByPriority: tasksByPriority.map((p) => ({
+                priority: p.priority,
+                count: p._count,
+            })),
+            tasksByColumn: tasksByColumn
+                .map((c) => ({
+                columnId: c.columnId,
+                columnName: columnMap.get(c.columnId) ?? 'Unknown',
+                count: c._count,
+            }))
+                .sort((a, b) => {
+                const posA = columns.find((c) => c.id === a.columnId)?.position ?? 0;
+                const posB = columns.find((c) => c.id === b.columnId)?.position ?? 0;
+                return posA - posB;
+            }),
+            timeEstimated: timeStats._sum.timeEstimated ?? 0,
+            timeSpent: timeStats._sum.timeSpent ?? 0,
+        };
+    }),
+    /**
+     * Get velocity - tasks completed per week
+     */
+    getVelocity: router_1.protectedProcedure
+        .input(velocitySchema)
+        .query(async ({ ctx, input }) => {
+        await (0, project_1.requireProjectAccess)(ctx.user.id, input.projectId, 'VIEWER');
+        const weeksAgo = new Date();
+        weeksAgo.setDate(weeksAgo.getDate() - input.weeks * 7);
+        // Get all completed tasks in the date range
+        const completedTasks = await ctx.prisma.task.findMany({
+            where: {
+                projectId: input.projectId,
+                isActive: false,
+                dateCompleted: { gte: weeksAgo },
+            },
+            select: {
+                id: true,
+                dateCompleted: true,
+                score: true,
+                timeEstimated: true,
+            },
+        });
+        // Group by week
+        const weeklyData = new Map();
+        // Initialize all weeks
+        for (let i = 0; i < input.weeks; i++) {
+            const weekStart = new Date();
+            weekStart.setDate(weekStart.getDate() - i * 7);
+            const weekKey = formatDateKey(getWeekStart(weekStart));
+            weeklyData.set(weekKey, { count: 0, points: 0 });
+        }
+        // Count tasks per week
+        for (const task of completedTasks) {
+            if (task.dateCompleted) {
+                const weekKey = formatDateKey(getWeekStart(task.dateCompleted));
+                const current = weeklyData.get(weekKey) ?? { count: 0, points: 0 };
+                const points = task.score > 0 ? task.score : task.timeEstimated;
+                weeklyData.set(weekKey, {
+                    count: current.count + 1,
+                    points: current.points + points,
+                });
+            }
+        }
+        // Convert to array sorted by date (oldest first)
+        const dataPoints = Array.from(weeklyData.entries())
+            .map(([weekStart, data]) => ({
+            weekStart,
+            tasksCompleted: data.count,
+            pointsCompleted: Math.round(data.points * 10) / 10,
+        }))
+            .sort((a, b) => a.weekStart.localeCompare(b.weekStart));
+        // Calculate rolling average (last 4 weeks)
+        const recentWeeks = dataPoints.slice(-4);
+        const avgVelocity = recentWeeks.length > 0
+            ? Math.round((recentWeeks.reduce((sum, w) => sum + w.tasksCompleted, 0) / recentWeeks.length) * 10) / 10
+            : 0;
+        return {
+            dataPoints,
+            avgVelocity,
+            totalCompleted: completedTasks.length,
+        };
+    }),
+    /**
+     * Get cycle time - average time tasks spend in each column
+     */
+    getCycleTime: router_1.protectedProcedure
+        .input(projectIdSchema)
+        .query(async ({ ctx, input }) => {
+        await (0, project_1.requireProjectAccess)(ctx.user.id, input.projectId, 'VIEWER');
+        // Get columns for the project
+        const columns = await ctx.prisma.column.findMany({
+            where: { projectId: input.projectId },
+            select: { id: true, title: true, position: true },
+            orderBy: { position: 'asc' },
+        });
+        // Get activity logs for task movements
+        const activities = await ctx.prisma.activity.findMany({
+            where: {
+                projectId: input.projectId,
+                eventType: 'task.move_column',
+            },
+            select: {
+                entityId: true,
+                changes: true,
+                createdAt: true,
+            },
+            orderBy: { createdAt: 'asc' },
+        });
+        // Calculate time spent in each column
+        // This is an approximation based on move events
+        const columnTimes = new Map();
+        // Initialize all columns
+        for (const column of columns) {
+            columnTimes.set(column.id, { totalHours: 0, count: 0 });
+        }
+        // Group activities by task
+        const taskActivities = new Map();
+        for (const activity of activities) {
+            const changes = activity.changes;
+            const toColumnId = changes.column_id;
+            if (toColumnId) {
+                const taskId = activity.entityId;
+                const existing = taskActivities.get(taskId) ?? [];
+                existing.push({ columnId: toColumnId, timestamp: activity.createdAt });
+                taskActivities.set(taskId, existing);
+            }
+        }
+        // Calculate time between moves
+        for (const [_taskId, moves] of taskActivities) {
+            for (let i = 0; i < moves.length - 1; i++) {
+                const current = moves[i];
+                const next = moves[i + 1];
+                const hoursInColumn = (next.timestamp.getTime() - current.timestamp.getTime()) / (1000 * 60 * 60);
+                if (hoursInColumn > 0 && hoursInColumn < 720) { // Cap at 30 days
+                    const existing = columnTimes.get(current.columnId) ?? { totalHours: 0, count: 0 };
+                    columnTimes.set(current.columnId, {
+                        totalHours: existing.totalHours + hoursInColumn,
+                        count: existing.count + 1,
+                    });
+                }
+            }
+        }
+        // Build result
+        const cycleTimeByColumn = columns.map((column) => {
+            const data = columnTimes.get(column.id) ?? { totalHours: 0, count: 0 };
+            const avgHours = data.count > 0 ? data.totalHours / data.count : 0;
+            return {
+                columnId: column.id,
+                columnName: column.title,
+                position: column.position,
+                avgHours: Math.round(avgHours * 10) / 10,
+                avgDays: Math.round((avgHours / 24) * 10) / 10,
+                taskCount: data.count,
+            };
+        });
+        // Identify bottleneck (column with highest avg time)
+        const bottleneck = cycleTimeByColumn.reduce((max, col) => (col.avgHours > max.avgHours ? col : max), cycleTimeByColumn[0] ?? { columnId: 0, columnName: 'None', avgHours: 0, avgDays: 0, position: 0, taskCount: 0 });
+        // Calculate total cycle time (first to last column for completed tasks)
+        const completedTasks = await ctx.prisma.task.findMany({
+            where: {
+                projectId: input.projectId,
+                isActive: false,
+                dateCompleted: { not: null },
+            },
+            select: {
+                createdAt: true,
+                dateCompleted: true,
+            },
+        });
+        let totalCycleTime = 0;
+        for (const task of completedTasks) {
+            if (task.dateCompleted) {
+                const hours = (task.dateCompleted.getTime() - task.createdAt.getTime()) / (1000 * 60 * 60);
+                totalCycleTime += hours;
+            }
+        }
+        const avgTotalCycleTime = completedTasks.length > 0 ? totalCycleTime / completedTasks.length : 0;
+        return {
+            cycleTimeByColumn,
+            bottleneck: bottleneck.avgHours > 0 ? bottleneck : null,
+            avgTotalCycleHours: Math.round(avgTotalCycleTime * 10) / 10,
+            avgTotalCycleDays: Math.round((avgTotalCycleTime / 24) * 10) / 10,
+            completedTasksAnalyzed: completedTasks.length,
+        };
+    }),
+    /**
+     * Get team workload - tasks per assignee
+     * Shows ALL project members, not just those with assigned tasks
+     */
+    getTeamWorkload: router_1.protectedProcedure
+        .input(projectIdSchema)
+        .query(async ({ ctx, input }) => {
+        await (0, project_1.requireProjectAccess)(ctx.user.id, input.projectId, 'VIEWER');
+        // Get ALL project members (not just assignees with tasks)
+        const projectMembers = await ctx.prisma.projectMember.findMany({
+            where: { projectId: input.projectId },
+            include: {
+                user: {
+                    select: { id: true, username: true, name: true, avatarUrl: true },
+                },
+            },
+        });
+        // Get task counts per user (only for users who have tasks)
+        const assigneeData = await ctx.prisma.taskAssignee.groupBy({
+            by: ['userId'],
+            where: {
+                task: {
+                    projectId: input.projectId,
+                    isActive: true,
+                },
+            },
+            _count: true,
+        });
+        // Create a map of userId -> taskCount
+        const taskCountMap = new Map(assigneeData.map((a) => [a.userId, a._count]));
+        // Get detailed task info per PROJECT MEMBER (not just assignees)
+        const workloadDetails = await Promise.all(projectMembers.map(async (member) => {
+            const userId = member.user.id;
+            const taskCount = taskCountMap.get(userId) ?? 0;
+            // Get priority breakdown (if user has tasks)
+            const byPriority = taskCount > 0
+                ? await ctx.prisma.task.groupBy({
+                    by: ['priority'],
+                    where: {
+                        projectId: input.projectId,
+                        isActive: true,
+                        assignees: { some: { userId } },
+                    },
+                    _count: true,
+                })
+                : [];
+            // Get time tracking (if user has tasks)
+            const timeData = taskCount > 0
+                ? await ctx.prisma.task.aggregate({
+                    where: {
+                        projectId: input.projectId,
+                        isActive: true,
+                        assignees: { some: { userId } },
+                    },
+                    _sum: {
+                        timeEstimated: true,
+                        timeSpent: true,
+                    },
+                })
+                : { _sum: { timeEstimated: null, timeSpent: null } };
+            // Get overdue count (if user has tasks)
+            const overdueCount = taskCount > 0
+                ? await ctx.prisma.task.count({
+                    where: {
+                        projectId: input.projectId,
+                        isActive: true,
+                        assignees: { some: { userId } },
+                        dateDue: { lt: new Date() },
+                    },
+                })
+                : 0;
+            return {
+                userId,
+                username: member.user.username ?? 'Unknown',
+                name: member.user.name ?? 'Unknown',
+                avatarUrl: member.user.avatarUrl ?? null,
+                totalTasks: taskCount,
+                overdueCount,
+                byPriority: byPriority.map((p) => ({
+                    priority: p.priority,
+                    count: p._count,
+                })),
+                timeEstimated: timeData._sum.timeEstimated ?? 0,
+                timeSpent: timeData._sum.timeSpent ?? 0,
+            };
+        }));
+        // Sort by total tasks (highest first)
+        workloadDetails.sort((a, b) => b.totalTasks - a.totalTasks);
+        // Get unassigned tasks count
+        const unassignedCount = await ctx.prisma.task.count({
+            where: {
+                projectId: input.projectId,
+                isActive: true,
+                assignees: { none: {} },
+            },
+        });
+        // Calculate capacity indicators
+        const avgTasksPerPerson = workloadDetails.length > 0
+            ? Math.round((workloadDetails.reduce((sum, w) => sum + w.totalTasks, 0) / workloadDetails.length) *
+                10) / 10
+            : 0;
+        return {
+            teamMembers: workloadDetails,
+            unassignedTasks: unassignedCount,
+            avgTasksPerPerson,
+            totalTeamMembers: workloadDetails.length,
+        };
+    }),
+});
+//# sourceMappingURL=analytics.js.map

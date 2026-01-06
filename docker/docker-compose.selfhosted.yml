@@ -1,0 +1,93 @@
+# Kanbu Self-Hosted Deployment
+#
+# Complete stack for self-hosted deployment (free tier).
+# Supports up to ~15 concurrent users on a single instance.
+# No Redis required - single server deployment.
+#
+# Usage:
+#   1. Copy .env.example to .env and configure
+#   2. docker compose -f docker-compose.selfhosted.yml up -d
+#
+# Requirements:
+#   - Docker & Docker Compose
+#   - 1GB RAM minimum (2GB recommended)
+#   - Port 80 (web) and 3001 (api) available
+#
+# ═══════════════════════════════════════════════════════════════════
+# AI Architect: Robin Waslander <R.Waslander@gmail.com>
+# Session: websocket-collaboration
+# Claude Code: v2.0.70 (Opus 4.5)
+# ═══════════════════════════════════════════════════════════════════
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: kanbu-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-kanbu}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-kanbu_secret_change_me}
+      POSTGRES_DB: ${POSTGRES_DB:-kanbu}
+    volumes:
+      - kanbu-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-kanbu} -d ${POSTGRES_DB:-kanbu}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - kanbu-network
+
+  # API Server (Fastify + tRPC + Socket.io)
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.api
+    container_name: kanbu-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DATABASE_URL: postgresql://${POSTGRES_USER:-kanbu}:${POSTGRES_PASSWORD:-kanbu_secret_change_me}@postgres:5432/${POSTGRES_DB:-kanbu}
+      JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-me}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost}
+      # No REDIS_URL for single-instance deployment
+    ports:
+      - "${API_PORT:-3001}:3001"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - kanbu-network
+
+  # Web Frontend (Nginx serving React SPA)
+  web:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.web
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:3001}
+    container_name: kanbu-web
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "${WEB_PORT:-80}:80"
+    networks:
+      - kanbu-network
+
+volumes:
+  kanbu-db-data:
+    name: kanbu-db-data
+
+networks:
+  kanbu-network:
+    name: kanbu-network
+    driver: bridge

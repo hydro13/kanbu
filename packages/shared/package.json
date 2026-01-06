@@ -1,0 +1,25 @@
+{
+  "name": "@kanbu/shared",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Kanbu Shared - Prisma schema and shared types",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .ts",
+    "clean": "rm -rf dist",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate dev"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.7.0"
+  },
+  "dependencies": {
+    "@prisma/client": "6",
+    "prisma": "6"
+  }
+}

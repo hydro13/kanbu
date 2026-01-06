@@ -1,0 +1,1300 @@
+// Kanbu Database Schema
+// Multi-tenant project management platform
+// Based on Kanboard schema analysis (DOC-01 through DOC-05)
+//
+// Modified by Session 88ca040e-8890-4144-8c81-3661c8cdd582 on 2025-12-28
+// Change: Added reminderAt field to Task model (EXT-04)
+//
+// Modified by Session 2fb1aa57-4c11-411a-bfda-c7de543d538f on 2025-12-29
+// Change: Added ApiKey, Webhook, WebhookDelivery models (EXT-14)
+//
+// Modified by Session a99141c4-b96b-462e-9b59-2523b3ef47ce on 2025-12-29
+// Change: Added Invite, SystemSetting models and invitesSent relation (ADMIN-01)
+//
+// Modified on 2026-01-02
+// Change: Task 253 - Extended Workspace model with logoUrl, createdById for multi-workspace support
+//
+// Modified on 2026-01-05
+// Change: Added AD-style Groups system (Group, GroupMember) for LDAP-compatible permissions
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// MULTI-TENANCY: Workspace (Tenant) Isolation
+// ============================================================================
+
+model Workspace {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(255)
+  slug        String   @unique @db.VarChar(100)
+  description String?  @db.Text
+  logoUrl     String?  @map("logo_url") @db.VarChar(500)
+  settings    Json     @default("{}")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdById Int?     @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  createdBy       User?               @relation("WorkspaceCreator", fields: [createdById], references: [id])
+  users           WorkspaceUser[]
+  projects        Project[]
+  projectGroups   ProjectGroup[]
+  invitations     WorkspaceInvitation[]
+  logo            WorkspaceLogo?
+  groups          Group[]             // AD-style groups for this workspace
+  roleAssignments RoleAssignment[]    // Security groups assigned to this workspace
+
+  @@map("workspaces")
+}
+
+model WorkspaceLogo {
+  id          Int      @id @default(autoincrement())
+  workspaceId Int      @unique @map("workspace_id")
+  data        Bytes    // Binary image data
+  mimeType    String   @map("mime_type") @db.VarChar(50)
+  size        Int      // File size in bytes
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@map("workspace_logos")
+}
+
+model WorkspaceUser {
+  id          Int           @id @default(autoincrement())
+  workspaceId Int           @map("workspace_id")
+  userId      Int           @map("user_id")
+  role        WorkspaceRole @default(MEMBER)
+  joinedAt    DateTime      @default(now()) @map("joined_at")
+
+  // Relations
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@map("workspace_users")
+}
+
+model WorkspaceInvitation {
+  id          Int           @id @default(autoincrement())
+  workspaceId Int           @map("workspace_id")
+  email       String        @db.VarChar(255)
+  role        WorkspaceRole @default(MEMBER)
+  token       String        @unique @db.VarChar(64)
+  expiresAt   DateTime      @map("expires_at")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  createdBy   Int           @map("created_by")
+
+  // Relations
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  creator   User      @relation(fields: [createdBy], references: [id])
+
+  @@map("workspace_invitations")
+}
+
+enum WorkspaceRole {
+  OWNER
+  ADMIN
+  MEMBER
+  VIEWER
+}
+
+// App-level role for system administration
+// NOTE: ADMIN role = SYSTEM_ADMIN (can create/manage workspaces, users, system settings)
+enum AppRole {
+  ADMIN    // Full system access - workspace creation, user management, settings (= SYSTEM_ADMIN)
+  MANAGER  // Limited management - can manage projects within assigned workspaces
+  USER     // Standard user (DEFAULT) - normal workspace member
+}
+
+// ============================================================================
+// USERS & AUTHENTICATION
+// ============================================================================
+
+model User {
+  id            Int       @id @default(autoincrement())
+  email         String    @unique @db.VarChar(255)
+  username      String    @unique @db.VarChar(100)
+  name          String    @db.VarChar(255)
+  passwordHash  String?   @map("password_hash") @db.VarChar(255)
+  avatarUrl     String?   @map("avatar_url") @db.VarChar(500)
+  timezone      String    @default("Europe/Amsterdam") @db.VarChar(50)
+  language      String    @default("nl") @db.VarChar(10)
+  settings      Json      @default("{}")
+  isActive      Boolean   @default(true) @map("is_active")
+  emailVerified Boolean   @default(false) @map("email_verified")
+  role          AppRole   @default(USER) // App-level admin role
+  lastLoginAt   DateTime? @map("last_login_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // Security - 2FA
+  twofactorActivated   Boolean   @default(false) @map("twofactor_activated")
+  twofactorSecret      String?   @db.Char(16) @map("twofactor_secret")
+
+  // Security - Brute force protection
+  failedLoginCount     Int       @default(0) @map("failed_login_count")
+  lockedUntil          DateTime? @map("locked_until")
+  lockoutCount         Int       @default(0) @map("lockout_count") // Number of times account was locked (for exponential backoff)
+
+  // OAuth providers
+  googleId             String?   @db.VarChar(255) @map("google_id")
+  githubId             String?   @db.VarChar(30) @map("github_id")
+  gitlabId             Int?      @map("gitlab_id")
+
+  // Preferences
+  theme                String    @default("system") @db.VarChar(20)
+  defaultFilter        String?   @db.Text @map("default_filter")
+
+  // Public access
+  publicToken          String?   @unique @db.VarChar(64) @map("public_token")
+
+  // Budgettering
+  hourlyRate           Decimal?  @db.Decimal(10, 2) @map("hourly_rate")
+
+  // Notification preferences
+  notificationsEnabled Boolean   @default(true) @map("notifications_enabled")
+  notificationFilter   Int       @default(4) @map("notification_filter") // 1=all, 2=assigned, 3=created, 4=both
+
+  // Relations
+  workspaces         WorkspaceUser[]
+  workspacesCreated  Workspace[]           @relation("WorkspaceCreator")
+  invitationsCreated WorkspaceInvitation[]
+  projectMembers     ProjectMember[]
+  tasksCreated       Task[]                @relation("TaskCreator")
+  tasksAssigned      TaskAssignee[]
+  subtasksAssigned   Subtask[]
+  comments           Comment[]
+  attachments        Attachment[]
+  sessions           Session[]
+  rememberTokens     RememberToken[]
+  notifications      Notification[]
+  activities         Activity[]
+  apiKeys            ApiKey[]
+  passwordResets     PasswordReset[]
+  lastLogins         LastLogin[]
+  metadata           UserMetadata[]
+  notificationSettings UserNotificationSetting[]
+  avatar             UserAvatar?
+  invitesSent        Invite[]              @relation("UserInvites")
+  groupMemberships   GroupMember[]         // AD-style group memberships
+  groupMembersAdded  GroupMember[]         @relation("GroupMemberAddedBy")
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @db.VarChar(64)
+  userId    Int      @map("user_id")
+  data      Json     @default("{}")
+  ipAddress String?  @map("ip_address") @db.VarChar(45)
+  userAgent String?  @map("user_agent") @db.Text
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model RememberToken {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  token     String   @unique @db.VarChar(64)
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("remember_tokens")
+}
+
+// System-level invite for new users (different from WorkspaceInvitation)
+model Invite {
+  id          Int       @id @default(autoincrement())
+  email       String    @db.VarChar(255)
+  token       String    @unique @db.VarChar(64)
+  role        AppRole   @default(USER)
+  invitedById Int       @map("invited_by")
+  expiresAt   DateTime  @map("expires_at")
+  acceptedAt  DateTime? @map("accepted_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  invitedBy User @relation("UserInvites", fields: [invitedById], references: [id])
+
+  @@map("invites")
+}
+
+// System settings key-value store
+model SystemSetting {
+  key       String   @id @db.VarChar(100)
+  value     String?  @db.Text
+  changedBy Int?     @map("changed_by")
+  changedAt DateTime @default(now()) @updatedAt @map("changed_at")
+
+  @@map("system_settings")
+}
+
+// ============================================================================
+// PROJECTS
+// ============================================================================
+
+model Project {
+  id             Int       @id @default(autoincrement())
+  workspaceId    Int       @map("workspace_id")
+  name           String    @db.VarChar(255)
+  identifier     String?   @db.VarChar(10) // e.g., "PLAN" for PLAN-123
+  description    String?   @db.Text
+  startDate      DateTime? @map("start_date") @db.Date
+  endDate        DateTime? @map("end_date") @db.Date
+  isActive       Boolean   @default(true) @map("is_active")
+  isPublic       Boolean   @default(false) @map("is_public")
+  settings       Json      @default("{}")
+  lastActivityAt DateTime? @map("last_activity_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  workspace       Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  members         ProjectMember[]
+  columns         Column[]
+  swimlanes       Swimlane[]
+  tasks           Task[]
+  tags            Tag[]
+  categories      Category[]
+  customFields    CustomField[]
+  modules         Module[]
+  milestones      Milestone[]
+  sprints         Sprint[]
+  budgets         Budget[]
+  wikiPages       WikiPage[]
+  activities      Activity[]
+  projectGroups   ProjectGroupMember[]
+  webhooks        Webhook[]
+  groups          Group[]              // AD-style groups for this project
+  roleAssignments RoleAssignment[]     // Security groups assigned to this project
+
+  @@unique([workspaceId, identifier])
+  @@map("projects")
+}
+
+model ProjectMember {
+  id        Int         @id @default(autoincrement())
+  projectId Int         @map("project_id")
+  userId    Int         @map("user_id")
+  role      ProjectRole @default(MEMBER)
+  joinedAt  DateTime    @default(now()) @map("joined_at")
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@map("project_members")
+}
+
+enum ProjectRole {
+  OWNER
+  MANAGER
+  MEMBER
+  VIEWER
+}
+
+// ============================================================================
+// BOARD STRUCTURE: Columns & Swimlanes
+// ============================================================================
+
+model Column {
+  id          Int      @id @default(autoincrement())
+  projectId   Int      @map("project_id")
+  title       String   @db.VarChar(255)
+  description String?  @db.Text
+  position    Int      @default(0)
+  taskLimit   Int      @default(0) @map("task_limit") // WIP limit, 0 = no limit
+  isCollapsed Boolean  @default(false) @map("is_collapsed")
+  showClosed  Boolean  @default(false) @map("show_closed")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks   Task[]
+
+  @@map("columns")
+}
+
+model Swimlane {
+  id          Int      @id @default(autoincrement())
+  projectId   Int      @map("project_id")
+  name        String   @db.VarChar(255)
+  description String?  @db.Text
+  position    Int      @default(0)
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks   Task[]
+
+  @@map("swimlanes")
+}
+
+// ============================================================================
+// TASKS
+// ============================================================================
+
+model Task {
+  id             Int       @id @default(autoincrement())
+  projectId      Int       @map("project_id")
+  columnId       Int       @map("column_id")
+  swimlaneId     Int?      @map("swimlane_id")
+  creatorId      Int       @map("creator_id")
+  title          String    @db.VarChar(500)
+  description    String?   @db.Text
+  reference      String?   @db.VarChar(50) // External reference
+  priority       Int       @default(0) // 0=low, 1=medium, 2=high, 3=urgent
+  score          Int       @default(0) // Story points / complexity
+  progress       Int       @default(0) // 0-100
+  position       Int       @default(0)
+  color          String?   @db.VarChar(20)
+  dateStarted    DateTime? @map("date_started")
+  dateDue        DateTime? @map("date_due")
+  dateCompleted  DateTime? @map("date_completed")
+  reminderAt     DateTime? @map("reminder_at") // When to send reminder notification
+  timeEstimated  Float     @default(0) @map("time_estimated") // Hours
+  timeSpent      Float     @default(0) @map("time_spent") // Hours
+  isActive       Boolean   @default(true) @map("is_active") // false = closed
+  isDraggable    Boolean   @default(true) @map("is_draggable")
+  recurrenceData Json?     @map("recurrence_data")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  // Optional GENX relations
+  milestoneId Int? @map("milestone_id")
+  moduleId    Int? @map("module_id")
+  sprintId    Int? @map("sprint_id")
+  categoryId  Int? @map("category_id")
+
+  // Relations
+  project      Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  column       Column            @relation(fields: [columnId], references: [id])
+  swimlane     Swimlane?         @relation(fields: [swimlaneId], references: [id])
+  creator      User              @relation("TaskCreator", fields: [creatorId], references: [id])
+  milestone    Milestone?        @relation(fields: [milestoneId], references: [id])
+  module       Module?           @relation(fields: [moduleId], references: [id])
+  sprint       Sprint?           @relation(fields: [sprintId], references: [id])
+  category     Category?         @relation(fields: [categoryId], references: [id])
+  assignees    TaskAssignee[]
+  subtasks     Subtask[]
+  comments     Comment[]
+  attachments  Attachment[]
+  tags         TaskTag[]
+  customValues TaskCustomValue[]
+  linksFrom    TaskLink[]        @relation("TaskLinkFrom")
+  linksTo      TaskLink[]        @relation("TaskLinkTo")
+  genxSessions TaskSession[]
+
+  @@index([projectId, isActive])
+  @@index([columnId])
+  @@index([dateDue])
+  @@map("tasks")
+}
+
+model TaskAssignee {
+  id        Int      @id @default(autoincrement())
+  taskId    Int      @map("task_id")
+  userId    Int      @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, userId])
+  @@map("task_assignees")
+}
+
+model Subtask {
+  id            Int           @id @default(autoincrement())
+  taskId        Int           @map("task_id")
+  title         String        @db.VarChar(500)
+  description   String?       @db.Text
+  status        SubtaskStatus @default(TODO)
+  position      Int           @default(0)
+  assigneeId    Int?          @map("assignee_id")
+  timeEstimated Float         @default(0) @map("time_estimated") // Hours
+  timeSpent     Float         @default(0) @map("time_spent") // Hours
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  task     Task  @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  assignee User? @relation(fields: [assigneeId], references: [id])
+
+  @@map("subtasks")
+}
+
+enum SubtaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  taskId    Int      @map("task_id")
+  userId    Int      @map("user_id")
+  content   String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("comments")
+}
+
+// ============================================================================
+// TAGS & CATEGORIES
+// ============================================================================
+
+model Tag {
+  id        Int      @id @default(autoincrement())
+  projectId Int      @map("project_id")
+  name      String   @db.VarChar(100)
+  color     String   @default("grey") @db.VarChar(20)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  project Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks   TaskTag[]
+
+  @@unique([projectId, name])
+  @@map("tags")
+}
+
+model TaskTag {
+  id        Int      @id @default(autoincrement())
+  taskId    Int      @map("task_id")
+  tagId     Int      @map("tag_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, tagId])
+  @@map("task_tags")
+}
+
+model Category {
+  id          Int      @id @default(autoincrement())
+  projectId   Int      @map("project_id")
+  name        String   @db.VarChar(255)
+  description String?  @db.Text
+  color       String   @default("blue") @db.VarChar(20)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks   Task[]
+
+  @@unique([projectId, name])
+  @@map("categories")
+}
+
+// ============================================================================
+// ATTACHMENTS & LINKS
+// ============================================================================
+
+model Attachment {
+  id        Int      @id @default(autoincrement())
+  taskId    Int      @map("task_id")
+  userId    Int      @map("user_id")
+  name      String   @db.VarChar(255)
+  path      String   @db.VarChar(500)
+  mimeType  String?  @map("mime_type") @db.VarChar(100)
+  size      Int      @default(0) // Bytes
+  isImage   Boolean  @default(false) @map("is_image")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("attachments")
+}
+
+model TaskLink {
+  id             Int          @id @default(autoincrement())
+  taskId         Int          @map("task_id")
+  oppositeTaskId Int          @map("opposite_task_id")
+  linkType       TaskLinkType @default(RELATES_TO) @map("link_type")
+  createdAt      DateTime     @default(now()) @map("created_at")
+
+  // Relations
+  task         Task @relation("TaskLinkFrom", fields: [taskId], references: [id], onDelete: Cascade)
+  oppositeTask Task @relation("TaskLinkTo", fields: [oppositeTaskId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, oppositeTaskId, linkType])
+  @@map("task_links")
+}
+
+enum TaskLinkType {
+  RELATES_TO
+  BLOCKS
+  IS_BLOCKED_BY
+  DUPLICATES
+  IS_DUPLICATED_BY
+  IS_CHILD_OF
+  IS_PARENT_OF
+  FOLLOWS
+  IS_FOLLOWED_BY
+  FIXES
+  IS_FIXED_BY
+}
+
+// ============================================================================
+// CUSTOM FIELDS
+// ============================================================================
+
+model CustomField {
+  id         Int             @id @default(autoincrement())
+  projectId  Int             @map("project_id")
+  name       String          @db.VarChar(255)
+  type       CustomFieldType @default(TEXT)
+  options    Json? // For dropdown: ["Option 1", "Option 2"]
+  isRequired Boolean         @default(false) @map("is_required")
+  position   Int             @default(0)
+  createdAt  DateTime        @default(now()) @map("created_at")
+
+  // Relations
+  project Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  values  TaskCustomValue[]
+
+  @@unique([projectId, name])
+  @@map("custom_fields")
+}
+
+model TaskCustomValue {
+  id            Int      @id @default(autoincrement())
+  taskId        Int      @map("task_id")
+  customFieldId Int      @map("custom_field_id")
+  value         String   @db.Text
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  task        Task        @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  customField CustomField @relation(fields: [customFieldId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, customFieldId])
+  @@map("task_custom_values")
+}
+
+enum CustomFieldType {
+  TEXT
+  NUMBER
+  DATE
+  CHECKBOX
+  DROPDOWN
+  URL
+  EMAIL
+}
+
+// ============================================================================
+// GENX ENTITIES: Sprints
+// ============================================================================
+
+model Sprint {
+  id          Int          @id @default(autoincrement())
+  projectId   Int          @map("project_id")
+  name        String       @db.VarChar(255)
+  description String?      @db.Text
+  status      SprintStatus @default(PLANNING)
+  dateStart   DateTime     @map("date_start") @db.Date
+  dateEnd     DateTime     @map("date_end") @db.Date
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks   Task[]
+
+  @@map("sprints")
+}
+
+enum SprintStatus {
+  PLANNING
+  ACTIVE
+  COMPLETED
+}
+
+// ============================================================================
+// GENX ENTITIES: Modules (Phases/Feature Areas)
+// ============================================================================
+
+model Module {
+  id          Int      @id @default(autoincrement())
+  projectId   Int      @map("project_id")
+  name        String   @db.VarChar(255)
+  description String?  @db.Text
+  color       String   @default("blue") @db.VarChar(20)
+  position    Int      @default(0)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks   Task[]
+
+  @@unique([projectId, name])
+  @@map("modules")
+}
+
+// ============================================================================
+// GENX ENTITIES: Milestones
+// ============================================================================
+
+model Milestone {
+  id          Int       @id @default(autoincrement())
+  projectId   Int       @map("project_id")
+  name        String    @db.VarChar(255)
+  description String?   @db.Text
+  dateDue     DateTime? @map("date_due") @db.Date
+  isCompleted Boolean   @default(false) @map("is_completed")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  tasks   Task[]
+
+  @@map("milestones")
+}
+
+// ============================================================================
+// GENX ENTITIES: Sticky Notes
+// ============================================================================
+
+model StickyNote {
+  id         Int              @id @default(autoincrement())
+  userId     Int              @map("user_id")
+  title      String?          @db.VarChar(255)
+  content    String           @db.Text
+  color      StickyNoteColor  @default(YELLOW)
+  isPinned   Boolean          @default(false) @map("is_pinned")
+  visibility StickyVisibility @default(PRIVATE)
+  createdAt  DateTime         @default(now()) @map("created_at")
+  updatedAt  DateTime         @updatedAt @map("updated_at")
+
+  // Relations - polymorphic links
+  links StickyNoteLink[]
+
+  @@map("sticky_notes")
+}
+
+model StickyNoteLink {
+  id           Int            @id @default(autoincrement())
+  stickyNoteId Int            @map("sticky_note_id")
+  entityType   StickyLinkType @map("entity_type")
+  entityId     Int            @map("entity_id")
+  createdAt    DateTime       @default(now()) @map("created_at")
+
+  // Relations
+  stickyNote StickyNote @relation(fields: [stickyNoteId], references: [id], onDelete: Cascade)
+
+  @@unique([stickyNoteId, entityType, entityId])
+  @@map("sticky_note_links")
+}
+
+enum StickyNoteColor {
+  YELLOW
+  PINK
+  BLUE
+  GREEN
+  PURPLE
+  ORANGE
+}
+
+enum StickyVisibility {
+  PRIVATE
+  PUBLIC
+}
+
+enum StickyLinkType {
+  PROJECT
+  TASK
+  SPRINT
+  WIKI_PAGE
+  PROJECT_GROUP
+}
+
+// ============================================================================
+// GENX ENTITIES: Project Groups
+// ============================================================================
+
+model ProjectGroup {
+  id          Int                @id @default(autoincrement())
+  workspaceId Int                @map("workspace_id")
+  name        String             @db.VarChar(255)
+  description String?            @db.Text
+  color       String             @default("blue") @db.VarChar(20)
+  status      ProjectGroupStatus @default(DRAFT)
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+
+  // Relations
+  workspace Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  projects  ProjectGroupMember[]
+
+  @@map("project_groups")
+}
+
+model ProjectGroupMember {
+  id             Int      @id @default(autoincrement())
+  projectGroupId Int      @map("project_group_id")
+  projectId      Int      @map("project_id")
+  position       Int      @default(0)
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  // Relations
+  projectGroup ProjectGroup @relation(fields: [projectGroupId], references: [id], onDelete: Cascade)
+  project      Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectGroupId, projectId])
+  @@map("project_group_members")
+}
+
+enum ProjectGroupStatus {
+  DRAFT
+  PLANNED
+  ACTIVE
+  COMPLETED
+  CLOSED
+}
+
+// ============================================================================
+// GENX ENTITIES: Task-Session Links (Connection to GENX V5)
+// ============================================================================
+
+model TaskSession {
+  id        Int             @id @default(autoincrement())
+  taskId    Int             @map("task_id")
+  sessionId String          @map("session_id") @db.VarChar(36) // UUID from GENX V5
+  linkType  TaskSessionType @default(WORKED_ON) @map("link_type")
+  notes     String?         @db.Text
+  createdAt DateTime        @default(now()) @map("created_at")
+
+  // Relations
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, sessionId, linkType])
+  @@index([sessionId])
+  @@map("task_sessions")
+}
+
+enum TaskSessionType {
+  WORKED_ON
+  CREATED
+  REVIEWED
+  MENTIONED
+}
+
+// ============================================================================
+// BUDGETS
+// ============================================================================
+
+model Budget {
+  id        Int      @id @default(autoincrement())
+  projectId Int      @map("project_id")
+  name      String   @db.VarChar(255)
+  amount    Decimal  @db.Decimal(15, 2)
+  currency  String   @default("EUR") @db.VarChar(3)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  project Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  lines   BudgetLine[]
+
+  @@map("budgets")
+}
+
+model BudgetLine {
+  id          Int            @id @default(autoincrement())
+  budgetId    Int            @map("budget_id")
+  description String         @db.VarChar(500)
+  amount      Decimal        @db.Decimal(15, 2)
+  lineType    BudgetLineType @default(EXPENSE) @map("line_type")
+  taskId      Int?           @map("task_id")
+  createdAt   DateTime       @default(now()) @map("created_at")
+
+  // Relations
+  budget Budget @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+
+  @@map("budget_lines")
+}
+
+enum BudgetLineType {
+  EXPENSE
+  INCOME
+}
+
+// ============================================================================
+// WIKI
+// ============================================================================
+
+model WikiPage {
+  id         Int      @id @default(autoincrement())
+  projectId  Int      @map("project_id")
+  title      String   @db.VarChar(255)
+  content    String   @db.Text
+  creatorId  Int?     @map("creator_id")
+  modifierId Int?     @map("modifier_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("wiki_pages")
+}
+
+// ============================================================================
+// API KEYS & WEBHOOKS
+// ============================================================================
+
+model ApiKey {
+  id          Int       @id @default(autoincrement())
+  userId      Int       @map("user_id")
+  name        String    @db.VarChar(255)
+  keyPrefix   String    @map("key_prefix") @db.VarChar(8) // First 8 chars for identification
+  keyHash     String    @map("key_hash") @db.VarChar(255) // Hashed full key
+  permissions Json      @default("[]") // Array of permission strings
+  rateLimit   Int       @default(100) @map("rate_limit") // Requests per minute
+  lastUsedAt  DateTime? @map("last_used_at")
+  expiresAt   DateTime? @map("expires_at")
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([keyPrefix])
+  @@map("api_keys")
+}
+
+model Webhook {
+  id            Int       @id @default(autoincrement())
+  projectId     Int       @map("project_id")
+  name          String    @db.VarChar(255)
+  url           String    @db.VarChar(500)
+  secret        String    @db.VarChar(64) // For HMAC signature verification
+  events        Json      @default("[]") // Array of event types to trigger on
+  isActive      Boolean   @default(true) @map("is_active")
+  lastSuccess   DateTime? @map("last_success")
+  lastFailure   DateTime? @map("last_failure")
+  failureCount  Int       @default(0) @map("failure_count")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  project    Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  deliveries WebhookDelivery[]
+
+  @@map("webhooks")
+}
+
+model WebhookDelivery {
+  id          Int      @id @default(autoincrement())
+  webhookId   Int      @map("webhook_id")
+  event       String   @db.VarChar(100)
+  payload     Json
+  statusCode  Int?     @map("status_code")
+  response    String?  @db.Text
+  duration    Int?     // Response time in ms
+  success     Boolean  @default(false)
+  attempts    Int      @default(1)
+  deliveredAt DateTime @default(now()) @map("delivered_at")
+
+  // Relations
+  webhook Webhook @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+
+  @@index([webhookId, deliveredAt])
+  @@map("webhook_deliveries")
+}
+
+// ============================================================================
+// NOTIFICATIONS & ACTIVITY
+// ============================================================================
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  type      String   @db.VarChar(100)
+  title     String   @db.VarChar(255)
+  content   String?  @db.Text
+  data      Json     @default("{}")
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+model Activity {
+  id         Int      @id @default(autoincrement())
+  projectId  Int      @map("project_id")
+  userId     Int?     @map("user_id")
+  eventType  String   @db.VarChar(100)
+  entityType String   @db.VarChar(50)
+  entityId   Int      @map("entity_id")
+  changes    Json     @default("{}")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User?   @relation(fields: [userId], references: [id])
+
+  @@index([projectId, createdAt])
+  @@map("activities")
+}
+
+// ============================================================================
+// USER PROFILE EXTENSIONS
+// ============================================================================
+
+model PasswordReset {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  token     String   @unique @db.VarChar(80)
+  expiresAt DateTime @map("expires_at")
+  ip        String   @db.VarChar(45)
+  userAgent String   @map("user_agent") @db.VarChar(255)
+  isUsed    Boolean  @default(false) @map("is_used")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("password_resets")
+}
+
+model LastLogin {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  authType  String   @map("auth_type") @db.VarChar(25) // 'password', 'remember_me', 'oauth'
+  ip        String   @db.VarChar(45)
+  userAgent String   @map("user_agent") @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("last_logins")
+}
+
+model UserMetadata {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  key       String   @db.VarChar(100)
+  value     String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, key])
+  @@map("user_metadata")
+}
+
+model UserNotificationSetting {
+  id               Int     @id @default(autoincrement())
+  userId           Int     @map("user_id")
+  notificationType String  @map("notification_type") @db.VarChar(50) // 'email', 'web'
+  isEnabled        Boolean @default(true) @map("is_enabled")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, notificationType])
+  @@map("user_notification_settings")
+}
+
+model UserAvatar {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique @map("user_id")
+  data      Bytes    // Binary image data
+  mimeType  String   @map("mime_type") @db.VarChar(50)
+  size      Int      // File size in bytes
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_avatars")
+}
+
+// ============================================================================
+// AD-STYLE GROUPS: LDAP-Compatible Permission System
+// ============================================================================
+// Groups follow Active Directory naming conventions for future LDAP integration:
+// - "Domain Admins" (super-admin) - Full system access
+// - "workspace-{slug}" - Workspace membership
+// - "workspace-{slug}-admins" - Workspace admin rights
+// - "project-{identifier}" - Project membership
+// - "project-{identifier}-admins" - Project admin rights
+//
+// Supports:
+// - Nested groups (group in group)
+// - Allow/Deny permissions (Deny always wins)
+// - Membership expiration
+// - LDAP-compatible structure
+
+model Group {
+  id              Int         @id @default(autoincrement())
+
+  // LDAP-compatible identifiers
+  objectGuid      String      @unique @default(uuid()) @map("object_guid") @db.VarChar(36)
+  name            String      @unique @db.VarChar(255)   // sAMAccountName: "Domain Admins", "workspace-develop"
+  displayName     String      @map("display_name") @db.VarChar(255)  // Human readable: "Domain Admins", "Workspace: Develop"
+  distinguishedName String?   @unique @map("distinguished_name") @db.VarChar(500)  // CN=Editors,OU=Kanbu,DC=local
+  description     String?     @db.Text
+
+  // Type and scope
+  type            GroupType
+  scope           GroupScope  @default(DOMAIN_LOCAL)
+
+  // Scope - which entity this group is associated with (null for system groups)
+  workspaceId     Int?        @map("workspace_id")
+  projectId       Int?        @map("project_id")
+
+  // Nested groups - parent group relationship
+  parentGroupId   Int?        @map("parent_group_id")
+  parentGroup     Group?      @relation("GroupHierarchy", fields: [parentGroupId], references: [id])
+  childGroups     Group[]     @relation("GroupHierarchy")
+
+  // LDAP integration
+  externalId      String?     @unique @map("external_id") @db.VarChar(255)  // External system ID
+  source          GroupSource @default(LOCAL)
+
+  // Metadata
+  isSystem        Boolean     @default(false) @map("is_system")  // System groups cannot be deleted
+  isActive        Boolean     @default(true) @map("is_active")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  // Security Group flag - can be assigned to multiple objects via RoleAssignment
+  isSecurityGroup Boolean     @default(false) @map("is_security_group")
+
+  // Relations
+  workspace       Workspace?    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  project         Project?      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  members         GroupMember[]
+  permissions     GroupPermission[]
+  roleAssignments RoleAssignment[]
+
+  @@index([type])
+  @@index([workspaceId])
+  @@index([projectId])
+  @@index([parentGroupId])
+  @@map("groups")
+}
+
+model GroupMember {
+  id           Int       @id @default(autoincrement())
+  groupId      Int       @map("group_id")
+  userId       Int       @map("user_id")
+
+  // Membership type
+  memberType   MemberType @default(DIRECT) @map("member_type")
+
+  // Expiration support (like AD account expiration)
+  expiresAt    DateTime? @map("expires_at")
+
+  // Audit
+  addedAt      DateTime  @default(now()) @map("added_at")
+  addedById    Int?      @map("added_by")
+
+  // LDAP sync metadata
+  externalSync Boolean   @default(false) @map("external_sync")
+
+  // Relations
+  group   Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user    User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  addedBy User? @relation("GroupMemberAddedBy", fields: [addedById], references: [id])
+
+  @@unique([groupId, userId])
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("group_members")
+}
+
+// Permission definition - all available permissions in the system
+model Permission {
+  id          Int      @id @default(autoincrement())
+
+  // Identifier
+  name        String   @unique @db.VarChar(100)  // "tasks.create", "sprints.manage"
+  displayName String   @map("display_name") @db.VarChar(255)  // "Create Tasks"
+  description String?  @db.Text
+
+  // Categorization
+  category    String   @db.VarChar(50)  // "tasks", "sprints", "milestones", "system"
+
+  // Hierarchy (for inheritance, e.g., "tasks.edit" under "tasks")
+  parentId    Int?     @map("parent_id")
+  parent      Permission?   @relation("PermissionHierarchy", fields: [parentId], references: [id])
+  children    Permission[]  @relation("PermissionHierarchy")
+
+  // UI ordering
+  sortOrder   Int      @default(0) @map("sort_order")
+
+  // Metadata
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  groupPermissions GroupPermission[]
+
+  @@index([category])
+  @@index([parentId])
+  @@map("permissions")
+}
+
+// Group-Permission mapping with Allow/Deny (like Windows NTFS)
+model GroupPermission {
+  id           Int        @id @default(autoincrement())
+
+  groupId      Int        @map("group_id")
+  permissionId Int        @map("permission_id")
+
+  // Access type - DENY always overrides ALLOW (like Windows)
+  accessType   AccessType @default(ALLOW) @map("access_type")
+
+  // Scope override - where does this permission apply?
+  // NULL = everywhere the group has scope
+  // Set = only for this specific workspace/project
+  workspaceId  Int?       @map("workspace_id")
+  projectId    Int?       @map("project_id")
+
+  // Inheritance tracking
+  inherited    Boolean    @default(false)  // Was this inherited from parent group?
+
+  // Audit
+  createdAt    DateTime   @default(now()) @map("created_at")
+  createdById  Int?       @map("created_by")
+
+  // Relations
+  group       Group      @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  permission  Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, permissionId, workspaceId, projectId])
+  @@index([groupId])
+  @@index([permissionId])
+  @@index([workspaceId])
+  @@index([projectId])
+  @@map("group_permissions")
+}
+
+// Group types for different permission scopes
+enum GroupType {
+  SYSTEM           // "Domain Admins" - full system access
+  WORKSPACE        // "workspace-{slug}" - workspace member
+  WORKSPACE_ADMIN  // "workspace-{slug}-admins" - workspace admin
+  PROJECT          // "project-{identifier}" - project member
+  PROJECT_ADMIN    // "project-{identifier}-admins" - project admin
+  CUSTOM           // User-created custom groups
+}
+
+// Group scope (AD-compatible)
+enum GroupScope {
+  DOMAIN_LOCAL     // Only within this domain
+  GLOBAL           // Can have members from trusted domains
+  UNIVERSAL        // Can be used anywhere in forest
+}
+
+// Membership type
+enum MemberType {
+  DIRECT           // Directly added to group
+  NESTED           // Member via nested group
+  DYNAMIC          // Dynamically assigned (future: rules-based)
+}
+
+// Access type for permissions (Windows-style)
+enum AccessType {
+  ALLOW
+  DENY             // DENY always overrides ALLOW
+}
+
+// Source of the group (for LDAP sync)
+enum GroupSource {
+  LOCAL            // Created in Kanbu
+  LDAP             // Synced from LDAP/Active Directory
+  AZURE_AD         // Synced from Azure AD
+  SCIM             // Via SCIM provisioning
+}
+
+// ============================================================================
+// ROLE ASSIGNMENTS: AD-Style Security Group Access Control
+// ============================================================================
+// Role assignments allow Security Groups to be assigned to multiple workspaces
+// and projects with specific roles. This enables:
+// - Cross-workspace groups ("All Developers" with access to multiple workspaces)
+// - Inheritance (workspace role flows down to projects)
+// - Flexible security without 1:1 group-to-object binding
+
+model RoleAssignment {
+  id                Int      @id @default(autoincrement())
+
+  // The security group being assigned
+  groupId           Int      @map("group_id")
+  group             Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  // Target scope - exactly one should be set
+  workspaceId       Int?     @map("workspace_id")
+  workspace         Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  projectId         Int?     @map("project_id")
+  project           Project?   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // Role within this scope
+  role              AssignmentRole @default(MEMBER)
+
+  // Should this role inherit to children?
+  // If true: Workspace role flows to all Projects
+  inheritToChildren Boolean  @default(true) @map("inherit_to_children")
+
+  // Audit
+  createdAt         DateTime @default(now()) @map("created_at")
+  createdById       Int?     @map("created_by")
+
+  @@unique([groupId, workspaceId, projectId])
+  @@index([groupId])
+  @@index([workspaceId])
+  @@index([projectId])
+  @@map("role_assignments")
+}
+
+// Role levels for assignments (maps to existing WorkspaceRole/ProjectRole)
+enum AssignmentRole {
+  VIEWER           // Read-only access
+  MEMBER           // Normal member access
+  MANAGER          // Can manage content, limited admin
+  ADMIN            // Full admin within scope
+  OWNER            // Ultimate control (typically only one per scope)
+}
