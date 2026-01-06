@@ -262,7 +262,26 @@ VALUES (<group_id>, <user_id>, 'MEMBER');
 
 ## License
 
-Proprietary - All rights reserved
+This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.
+
+See the [LICENSE](LICENSE) file for the full license text.
+
+### What this means:
+
+- You can use, modify, and distribute this software
+- If you modify and distribute it, you must release your changes under AGPL-3.0
+- **Network use is distribution**: If you run a modified version as a web service, you must provide the source code to users
+- Commercial use is allowed, but copyleft obligations apply
+
+For commercial licensing options without copyleft requirements, contact the author.
+
+---
+
+## Author
+
+**Robin Waslander**
+Mblock BV
+Email: R.Waslander@gmail.com
 
 ---
 
