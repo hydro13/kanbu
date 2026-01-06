@@ -34,7 +34,7 @@ const ROUTE_LABELS: Record<string, string> = {
   tasks: 'My Tasks',
   subtasks: 'My Subtasks',
   workspace: 'Workspace',
-  projects: 'Projects',
+  projects: 'My Workspaces',
   project: 'Project',
   board: 'Board',
   list: 'List',

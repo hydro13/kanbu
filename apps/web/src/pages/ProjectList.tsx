@@ -98,7 +98,7 @@ export function ProjectListPage() {
       <DashboardLayout>
         <div className="space-y-6">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Projects</h1>
+            <h1 className="text-3xl font-bold tracking-tight">My Workspaces</h1>
             <p className="text-muted-foreground">
               Select a workspace to view projects
             </p>

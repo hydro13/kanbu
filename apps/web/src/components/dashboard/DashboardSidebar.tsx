@@ -3,7 +3,7 @@
  * Version: 1.0.0
  *
  * Sidebar navigation for dashboard pages.
- * Shows links to Overview, My Tasks, My Subtasks, and Projects.
+ * Shows links to Overview, My Tasks, My Subtasks, and My Workspaces.
  *
  * ═══════════════════════════════════════════════════════════════════
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
@@ -45,10 +45,10 @@ function SubtaskIcon({ className }: { className?: string }) {
   )
 }
 
-function FolderIcon({ className }: { className?: string }) {
+function BuildingIcon({ className }: { className?: string }) {
   return (
     <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
     </svg>
   )
 }
@@ -77,7 +77,7 @@ const navItems: NavItem[] = [
   { label: 'Overview', path: '/dashboard', icon: HomeIcon, exact: true },
   { label: 'My Tasks', path: '/dashboard/tasks', icon: TaskIcon },
   { label: 'My Subtasks', path: '/dashboard/subtasks', icon: SubtaskIcon },
-  { label: 'My Projects', path: '/projects', icon: FolderIcon },
+  { label: 'My Workspaces', path: '/projects', icon: BuildingIcon },
 ]
 
 // =============================================================================
