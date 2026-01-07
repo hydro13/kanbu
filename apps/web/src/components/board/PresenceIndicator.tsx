@@ -99,32 +99,32 @@ function Tooltip({
   isConnected: boolean;
 }) {
   return (
-    <div className="absolute top-full right-0 mt-2 py-2 px-3 bg-gray-900 dark:bg-gray-700 text-white text-sm rounded-lg shadow-lg z-50 min-w-[150px]">
-      <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-700 dark:border-gray-600">
+    <div className="absolute top-full right-0 mt-2 py-2 px-3 bg-white border border-gray-200 text-gray-900 text-sm rounded-lg shadow-lg z-50 min-w-[150px]">
+      <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-200">
         <span
           className={`w-2 h-2 rounded-full ${
-            isConnected ? 'bg-green-400' : 'bg-red-400'
+            isConnected ? 'bg-green-500' : 'bg-red-500'
           }`}
         />
-        <span className="text-gray-300">
+        <span className="text-gray-600">
           {isConnected ? 'Live' : 'Offline'}
         </span>
       </div>
       {users.length === 0 ? (
-        <div className="text-gray-400 text-xs">No other users online</div>
+        <div className="text-gray-500 text-xs">No other users online</div>
       ) : (
         <div className="space-y-1">
-          <div className="text-gray-400 text-xs mb-1">Also viewing:</div>
+          <div className="text-gray-500 text-xs mb-1">Also viewing:</div>
           {users.map((user) => (
             <div key={user.id} className="flex items-center gap-2">
               <UserAvatar user={user} size="sm" />
-              <span className="truncate">{user.name ?? user.username}</span>
+              <span className="truncate text-gray-700">{user.name ?? user.username}</span>
             </div>
           ))}
         </div>
       )}
       {/* Arrow */}
-      <div className="absolute -top-1 right-4 w-2 h-2 bg-gray-900 dark:bg-gray-700 rotate-45" />
+      <div className="absolute -top-1 right-4 w-2 h-2 bg-white border-l border-t border-gray-200 rotate-45" />
     </div>
   );
 }
