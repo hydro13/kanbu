@@ -188,6 +188,7 @@ model User {
   invitesSent        Invite[]              @relation("UserInvites")
   groupMemberships   GroupMember[]         // AD-style group memberships
   groupMembersAdded  GroupMember[]         @relation("GroupMemberAddedBy")
+  pagePreferences    UserPagePreference[]  // Per-device page width preferences
 
   @@map("users")
 }
@@ -1049,6 +1050,23 @@ model UserAvatar {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_avatars")
+}
+
+// User page width preferences (per device)
+model UserPagePreference {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  deviceId    String   @map("device_id") @db.VarChar(36) // UUID stored in localStorage
+  pagePath    String   @map("page_path") @db.VarChar(255) // e.g., "/project/KANBU/board"
+  isFullWidth Boolean  @default(false) @map("is_full_width")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, deviceId, pagePath])
+  @@index([userId, deviceId])
+  @@map("user_page_preferences")
 }
 
 // ============================================================================

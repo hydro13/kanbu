@@ -20,6 +20,8 @@ import { CommandPalette, useCommandPalette } from '@/components/command'
 import { ShortcutsModal } from '@/components/common'
 import { PresenceIndicator } from '@/components/board/PresenceIndicator'
 import { ProjectSidebar } from './ProjectSidebar'
+import { WidthToggle } from './WidthToggle'
+import { usePageWidth } from '@/hooks/usePageWidth'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useBreadcrumbs } from '@/hooks/useBreadcrumbs'
 import { useAppSelector, useAppDispatch } from '@/store'
@@ -176,11 +178,23 @@ export function ProjectLayout({ children }: ProjectLayoutProps) {
 
   const projectName = projectQuery.data?.name
 
+  // Page width preference (only query when user is authenticated)
+  const { isFullWidth } = usePageWidth({ enabled: !!user })
+
+  // Outer container class for full-width mode toggle
+  // When not full-width: centers the entire app with max-width (like Tweakers.net)
+  // When full-width: uses entire viewport
+  const containerClass = isFullWidth
+    ? ''
+    : 'max-w-[1600px] mx-auto shadow-sm border-x border-border/30';
+
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="flex h-10 items-center px-4">
+    <div className="min-h-screen bg-muted/30">
+      {/* Centered app container (entire UI is constrained when not full-width) */}
+      <div className={`min-h-screen bg-background flex flex-col ${containerClass}`}>
+        {/* Header */}
+        <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="flex h-10 items-center px-4">
           {/* Left: Sidebar Toggle + Logo + Breadcrumbs */}
           <div className="flex items-center gap-2">
             <button
@@ -232,7 +246,7 @@ export function ProjectLayout({ children }: ProjectLayoutProps) {
             )}
           </div>
 
-          {/* Right: Presence + User Menu */}
+          {/* Right: Presence + Width Toggle + User Menu */}
           <div className="flex flex-1 items-center justify-end gap-3">
             {/* Real-time presence indicator */}
             {projectIdNum && user && (
@@ -241,6 +255,9 @@ export function ProjectLayout({ children }: ProjectLayoutProps) {
                 currentUserId={user.id}
               />
             )}
+
+            {/* Page width toggle */}
+            <WidthToggle />
 
             {/* User Menu Dropdown */}
             <div className="relative" ref={userMenuRef}>
@@ -366,6 +383,7 @@ export function ProjectLayout({ children }: ProjectLayoutProps) {
 
       {/* Keyboard Shortcuts Help (?) */}
       <ShortcutsModal isOpen={shortcutsOpen} onClose={() => setShortcutsOpen(false)} />
+    </div>
     </div>
   )
 }

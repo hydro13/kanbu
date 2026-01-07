@@ -1371,4 +1371,101 @@ export const userRouter = router({
       },
     }))
   }),
+
+  // ===========================================================================
+  // PAGE WIDTH PREFERENCES (Per-Device)
+  // ===========================================================================
+
+  /**
+   * Get page width preference for a specific page path
+   */
+  getPageWidthPreference: protectedProcedure
+    .input(z.object({
+      deviceId: z.string().uuid(),
+      pagePath: z.string().max(255),
+    }))
+    .query(async ({ ctx, input }) => {
+      const preference = await ctx.prisma.userPagePreference.findUnique({
+        where: {
+          userId_deviceId_pagePath: {
+            userId: ctx.user.id,
+            deviceId: input.deviceId,
+            pagePath: input.pagePath,
+          },
+        },
+      })
+
+      return {
+        isFullWidth: preference?.isFullWidth ?? false,
+        isPinned: !!preference,
+      }
+    }),
+
+  /**
+   * Get all pinned page width preferences for a device
+   */
+  getAllPageWidthPreferences: protectedProcedure
+    .input(z.object({
+      deviceId: z.string().uuid(),
+    }))
+    .query(async ({ ctx, input }) => {
+      const preferences = await ctx.prisma.userPagePreference.findMany({
+        where: {
+          userId: ctx.user.id,
+          deviceId: input.deviceId,
+        },
+      })
+
+      return preferences.map((p) => ({
+        pagePath: p.pagePath,
+        isFullWidth: p.isFullWidth,
+      }))
+    }),
+
+  /**
+   * Set page width preference (pin/unpin)
+   * If isPinned is true, saves the preference
+   * If isPinned is false, removes the preference (unpins)
+   */
+  setPageWidthPreference: protectedProcedure
+    .input(z.object({
+      deviceId: z.string().uuid(),
+      pagePath: z.string().max(255),
+      isFullWidth: z.boolean(),
+      isPinned: z.boolean(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if (input.isPinned) {
+        // Upsert the preference
+        await ctx.prisma.userPagePreference.upsert({
+          where: {
+            userId_deviceId_pagePath: {
+              userId: ctx.user.id,
+              deviceId: input.deviceId,
+              pagePath: input.pagePath,
+            },
+          },
+          update: {
+            isFullWidth: input.isFullWidth,
+          },
+          create: {
+            userId: ctx.user.id,
+            deviceId: input.deviceId,
+            pagePath: input.pagePath,
+            isFullWidth: input.isFullWidth,
+          },
+        })
+      } else {
+        // Remove the preference (unpin)
+        await ctx.prisma.userPagePreference.deleteMany({
+          where: {
+            userId: ctx.user.id,
+            deviceId: input.deviceId,
+            pagePath: input.pagePath,
+          },
+        })
+      }
+
+      return { success: true }
+    }),
 })
