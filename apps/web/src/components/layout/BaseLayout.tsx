@@ -17,6 +17,7 @@ import { CommandPalette, useCommandPalette } from '@/components/command'
 import { ShortcutsModal } from '@/components/common'
 import { WidthToggle } from './WidthToggle'
 import { usePageWidth } from '@/hooks/usePageWidth'
+import { useResizable } from '@/hooks/useResizable'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useBreadcrumbs } from '@/hooks/useBreadcrumbs'
 import { useAppSelector, useAppDispatch } from '@/store'
@@ -104,6 +105,8 @@ export interface BaseLayoutProps {
   headerExtras?: ReactNode
   /** Whether main content should have padding (default: true) */
   contentPadding?: boolean
+  /** Unique key for sidebar width persistence (default: 'default') */
+  sidebarKey?: string
 }
 
 // =============================================================================
@@ -114,17 +117,33 @@ export function BaseLayout({
   children,
   sidebar,
   headerExtras,
-  contentPadding = true
+  contentPadding = true,
+  sidebarKey = 'default'
 }: BaseLayoutProps) {
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [isHoveringResize, setIsHoveringResize] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
   const { open: openCommandPalette } = useCommandPalette()
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
   const user = useAppSelector(selectUser)
   const breadcrumbs = useBreadcrumbs()
+
+  // Resizable sidebar
+  const {
+    width: sidebarWidth,
+    isDragging,
+    handleProps,
+    resetWidth: resetSidebarWidth,
+  } = useResizable({
+    storageKey: sidebarKey,
+    defaultWidth: 224, // 14rem = 224px (w-56)
+    minWidth: 160,     // 10rem minimum
+    maxWidth: 400,     // 25rem maximum
+    direction: 'right',
+  })
 
   // Check admin access via AD-style permission system
   const { data: adminScope } = trpc.group.myAdminScope.useQuery(undefined, {
@@ -349,8 +368,37 @@ export function BaseLayout({
         <div className="flex flex-1 overflow-hidden">
           {/* Sidebar - hidden on mobile when collapsed */}
           {sidebar && (
-            <div className={`hidden md:block ${sidebarCollapsed ? 'md:hidden' : ''}`}>
-              {sidebar}
+            <div
+              className={`hidden md:flex ${sidebarCollapsed ? 'md:hidden' : ''}`}
+              style={{ width: sidebarWidth }}
+            >
+              {/* Sidebar content */}
+              <div className="flex-1 overflow-hidden">
+                {sidebar}
+              </div>
+
+              {/* Resize handle */}
+              <div
+                {...handleProps}
+                onMouseEnter={() => setIsHoveringResize(true)}
+                onMouseLeave={() => !isDragging && setIsHoveringResize(false)}
+                onDoubleClick={resetSidebarWidth}
+                className={`
+                  w-1 cursor-col-resize flex-shrink-0 relative group
+                  ${isDragging ? 'bg-primary' : 'hover:bg-primary/50'}
+                  transition-colors
+                `}
+                title="Drag to resize, double-click to reset"
+              >
+                {/* Visual indicator on hover/drag */}
+                <div
+                  className={`
+                    absolute inset-y-0 -left-1 -right-1
+                    ${isHoveringResize || isDragging ? 'bg-primary/20' : ''}
+                    transition-colors pointer-events-none
+                  `}
+                />
+              </div>
             </div>
           )}
 
