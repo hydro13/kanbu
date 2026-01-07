@@ -12,4 +12,5 @@
  */
 
 export { CommandPalette, useCommandPalette } from './CommandPalette'
+export { CommandPaletteProvider } from './CommandPaletteContext'
 export type { CommandPaletteProps } from './CommandPalette'

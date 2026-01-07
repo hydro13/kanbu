@@ -14,10 +14,14 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { useEffect, useCallback, useRef, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { trpc } from '@/lib/trpc'
 import { cn } from '@/lib/utils'
+import { useCommandPalette } from './CommandPaletteContext'
+
+// Re-export useCommandPalette from context for backwards compatibility
+export { useCommandPalette } from './CommandPaletteContext'
 
 // =============================================================================
 // Types
@@ -129,33 +133,6 @@ function getTypeIcon(type: CommandItem['type']) {
     default:
       return null
   }
-}
-
-// =============================================================================
-// Hook: useCommandPalette
-// =============================================================================
-
-export function useCommandPalette() {
-  const [isOpen, setIsOpen] = useState(false)
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Cmd+K or Ctrl+K
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault()
-        setIsOpen((prev) => !prev)
-      }
-      // Escape to close
-      if (e.key === 'Escape' && isOpen) {
-        setIsOpen(false)
-      }
-    }
-
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen])
-
-  return { isOpen, setIsOpen, open: () => setIsOpen(true), close: () => setIsOpen(false) }
 }
 
 // =============================================================================

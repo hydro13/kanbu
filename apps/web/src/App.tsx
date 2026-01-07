@@ -69,6 +69,7 @@
  */
 
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { CommandPaletteProvider } from './components/command'
 // HomePage removed - now redirects to /dashboard
 import { LoginPage } from './pages/Login'
 import { RegisterPage } from './pages/Register'
@@ -132,6 +133,7 @@ function AuthRedirect({ children }: { children: React.ReactNode }) {
 function App() {
   return (
     <BrowserRouter>
+      <CommandPaletteProvider>
       <Routes>
         {/* Public routes */}
         <Route
@@ -589,6 +591,7 @@ function App() {
         {/* Catch-all redirect */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </CommandPaletteProvider>
     </BrowserRouter>
   )
 }
