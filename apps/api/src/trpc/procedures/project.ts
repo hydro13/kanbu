@@ -53,6 +53,10 @@ const projectIdSchema = z.object({
   projectId: z.number(),
 })
 
+const projectIdentifierSchema = z.object({
+  identifier: z.string().min(1).max(10),
+})
+
 const workspaceProjectsSchema = z.object({
   workspaceId: z.number(),
   includeArchived: z.boolean().default(false),
@@ -242,6 +246,99 @@ export const projectRouter = router({
 
       const project = await ctx.prisma.project.findUnique({
         where: { id: input.projectId },
+        select: {
+          id: true,
+          workspaceId: true,
+          name: true,
+          identifier: true,
+          description: true,
+          isPublic: true,
+          isActive: true,
+          startDate: true,
+          endDate: true,
+          settings: true,
+          lastActivityAt: true,
+          createdAt: true,
+          updatedAt: true,
+          workspace: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+            },
+          },
+          columns: {
+            orderBy: { position: 'asc' },
+            select: {
+              id: true,
+              title: true,
+              description: true,
+              position: true,
+              taskLimit: true,
+              isCollapsed: true,
+              showClosed: true,
+            },
+          },
+          swimlanes: {
+            where: { isActive: true },
+            orderBy: { position: 'asc' },
+            select: {
+              id: true,
+              name: true,
+              description: true,
+              position: true,
+            },
+          },
+          _count: {
+            select: {
+              tasks: true,
+              members: true,
+            },
+          },
+        },
+      })
+
+      if (!project) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Project not found',
+        })
+      }
+
+      return {
+        ...project,
+        taskCount: project._count.tasks,
+        memberCount: project._count.members,
+        userRole: access.role,
+      }
+    }),
+
+  /**
+   * Get project details by identifier (SEO-friendly URL support)
+   * Requires at least VIEWER access
+   */
+  getByIdentifier: protectedProcedure
+    .input(projectIdentifierSchema)
+    .query(async ({ ctx, input }) => {
+      // First find the project by identifier
+      const projectLookup = await ctx.prisma.project.findFirst({
+        where: { identifier: input.identifier },
+        select: { id: true },
+      })
+
+      if (!projectLookup) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Project not found',
+        })
+      }
+
+      // Check access
+      const access = await permissionService.requireProjectAccess(ctx.user.id, projectLookup.id, 'VIEWER')
+
+      // Get full project details
+      const project = await ctx.prisma.project.findUnique({
+        where: { id: projectLookup.id },
         select: {
           id: true,
           workspaceId: true,

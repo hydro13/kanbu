@@ -23,7 +23,6 @@ import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ProjectLayout } from '@/components/layout/ProjectLayout'
 import { ViewSwitcher } from '@/components/layout/ViewSwitcher'
-import { PresenceIndicator } from '@/components/board/PresenceIndicator'
 import { LiveCursors } from '@/components/board/LiveCursors'
 import { trpc } from '@/lib/trpc'
 import { useRealtimeSync } from '@/hooks/useRealtimeSync'
@@ -695,13 +694,26 @@ const MIN_CELL_WIDTH = 5
 const MAX_CELL_WIDTH = 100
 
 export function TimelineViewPage() {
-  const { projectId } = useParams<{ projectId: string }>()
+  const { projectIdentifier } = useParams<{ projectIdentifier: string }>()
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
-  const projectIdNum = projectId ? parseInt(projectId, 10) : null
   const currentUser = useAppSelector(selectUser)
   const todayRef = useRef<HTMLDivElement>(null)
   const timelineContainerRef = useRef<HTMLDivElement>(null)
+
+  // State
+  const [zoomLevel, setZoomLevel] = useState<ZoomLevel>('day')
+  const [cellWidth, setCellWidth] = useState(ZOOM_PRESETS.day)
+  const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null)
+
+  // Fetch project by identifier (SEO-friendly URL)
+  const projectQuery = trpc.project.getByIdentifier.useQuery(
+    { identifier: projectIdentifier! },
+    { enabled: !!projectIdentifier }
+  )
+
+  // Get project ID from fetched data
+  const projectIdNum = projectQuery.data?.id ?? null
 
   // Real-time collaboration sync
   useRealtimeSync({
@@ -712,13 +724,7 @@ export function TimelineViewPage() {
   // Permissions
   const { canEdit } = useProjectPermissions(projectIdNum ?? 0)
 
-  // State
-  const [zoomLevel, setZoomLevel] = useState<ZoomLevel>('day')
-  const [cellWidth, setCellWidth] = useState(ZOOM_PRESETS.day)
-  const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null)
-
   // Queries
-  const projectQuery = trpc.project.get.useQuery({ projectId: projectIdNum! }, { enabled: !!projectIdNum })
   const tasksQuery = trpc.task.list.useQuery({ projectId: projectIdNum!, limit: 500 }, { enabled: !!projectIdNum })
 
   // Mutations
@@ -859,11 +865,11 @@ export function TimelineViewPage() {
     })
   }, [updateTaskMutation, tasksQuery.data, projectIdNum, dispatch])
 
-  // Handle invalid project ID
-  if (!projectIdNum || isNaN(projectIdNum)) {
+  // Handle invalid project identifier
+  if (!projectIdentifier) {
     return (
       <ProjectLayout>
-        <TimelineError message="Invalid project ID" onRetry={() => navigate('/workspaces')} />
+        <TimelineError message="Invalid project identifier" onRetry={() => navigate('/workspaces')} />
       </ProjectLayout>
     )
   }
@@ -901,17 +907,10 @@ export function TimelineViewPage() {
       <div className="flex flex-col h-full" ref={timelineContainerRef}>
         <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
           <div className="flex items-center">
-            <ViewSwitcher projectId={project.id} className="border-b-0" />
+            <ViewSwitcher projectIdentifier={project.identifier ?? ''} className="border-b-0" />
             <UndoRedoButtons projectId={project.id} className="ml-2" />
           </div>
           <div className="flex items-center gap-4 pr-4">
-            {/* Real-time presence indicator */}
-            {currentUser && (
-              <PresenceIndicator
-                projectId={project.id}
-                currentUserId={currentUser.id}
-              />
-            )}
             <TimelineToolbar
               zoomLevel={zoomLevel}
               onZoomChange={handleZoomLevelChange}

@@ -28,7 +28,6 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { ProjectLayout } from '@/components/layout/ProjectLayout'
 import { ViewSwitcher } from '@/components/layout/ViewSwitcher'
 import { Board } from '@/components/board/Board'
-import { PresenceIndicator } from '@/components/board/PresenceIndicator'
 import { LiveCursors } from '@/components/board/LiveCursors'
 import { trpc } from '@/lib/trpc'
 import { useRealtimeSync } from '@/hooks/useRealtimeSync'
@@ -250,7 +249,7 @@ interface TagItem {
 }
 
 interface BoardToolbarProps {
-  projectId: number
+  projectIdentifier: string
   tags?: TagItem[]
   selectedTagIds: number[]
   onTagToggle: (tagId: number) => void
@@ -258,7 +257,7 @@ interface BoardToolbarProps {
 }
 
 function BoardToolbar({
-  projectId,
+  projectIdentifier,
   tags = [],
   selectedTagIds,
   onTagToggle,
@@ -383,7 +382,7 @@ function BoardToolbar({
       )}
 
       <button
-        onClick={() => navigate(`/project/${projectId}/settings`)}
+        onClick={() => navigate(`/project/${projectIdentifier}/settings`)}
         className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
         title="Board settings"
       >
@@ -398,11 +397,22 @@ function BoardToolbar({
 // =============================================================================
 
 export function BoardViewPage() {
-  const { projectId } = useParams<{ projectId: string }>()
+  const { projectIdentifier } = useParams<{ projectIdentifier: string }>()
   const navigate = useNavigate()
-  const projectIdNum = projectId ? parseInt(projectId, 10) : null
   const currentUser = useAppSelector(selectUser)
   const boardContainerRef = useRef<HTMLDivElement>(null)
+
+  // Fetch project by identifier (SEO-friendly URL)
+  const projectQuery = trpc.project.getByIdentifier.useQuery(
+    { identifier: projectIdentifier! },
+    {
+      enabled: !!projectIdentifier,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    }
+  )
+
+  // Get project ID from fetched data
+  const projectIdNum = projectQuery.data?.id ?? null
 
   // Real-time collaboration sync
   // isConnected can be used to show connection status indicator
@@ -413,15 +423,6 @@ export function BoardViewPage() {
 
   // Tag filter state
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([])
-
-  // Fetch project details (includes columns and swimlanes)
-  const projectQuery = trpc.project.get.useQuery(
-    { projectId: projectIdNum! },
-    {
-      enabled: !!projectIdNum,
-      staleTime: 5 * 60 * 1000, // 5 minutes
-    }
-  )
 
   // Fetch tasks for the project
   const tasksQuery = trpc.task.list.useQuery(
@@ -465,12 +466,12 @@ export function BoardViewPage() {
     )
   }, [tasksQuery.data, selectedTagIds])
 
-  // Handle invalid project ID
-  if (!projectIdNum || isNaN(projectIdNum)) {
+  // Handle invalid project identifier
+  if (!projectIdentifier) {
     return (
       <ProjectLayout>
         <BoardError
-          message="Invalid project ID"
+          message="Invalid project identifier"
           onRetry={() => navigate('/workspaces')}
         />
       </ProjectLayout>
@@ -531,10 +532,10 @@ export function BoardViewPage() {
     return (
       <ProjectLayout>
         <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-          <ViewSwitcher projectId={project.id} className="border-b-0" />
+          <ViewSwitcher projectIdentifier={project.identifier ?? ''} className="border-b-0" />
           <div className="pr-4">
             <BoardToolbar
-              projectId={project.id}
+              projectIdentifier={project.identifier ?? ''}
               tags={tags}
               selectedTagIds={selectedTagIds}
               onTagToggle={handleTagToggle}
@@ -551,17 +552,10 @@ export function BoardViewPage() {
     <ProjectLayout>
       <div className="flex flex-col h-full" ref={boardContainerRef}>
         <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-          <ViewSwitcher projectId={project.id} className="border-b-0" />
+          <ViewSwitcher projectIdentifier={project.identifier ?? ''} className="border-b-0" />
           <div className="flex items-center gap-4 pr-4">
-            {/* Real-time presence indicator */}
-            {currentUser && (
-              <PresenceIndicator
-                projectId={project.id}
-                currentUserId={currentUser.id}
-              />
-            )}
             <BoardToolbar
-              projectId={project.id}
+              projectIdentifier={project.identifier ?? ''}
               tags={tags}
               selectedTagIds={selectedTagIds}
               onTagToggle={handleTagToggle}

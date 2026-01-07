@@ -67,7 +67,7 @@ function getRoleBadgeColor(role: Project['userRole']): string {
 
 export function ProjectCard({ project, className }: ProjectCardProps) {
   return (
-    <Link to={`/project/${project.id}/board`}>
+    <Link to={`/project/${project.identifier}/board`}>
       <Card
         className={cn(
           'cursor-pointer transition-all hover:shadow-md hover:border-primary/50',

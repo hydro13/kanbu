@@ -46,8 +46,7 @@ type ProjectMemberRole = 'MANAGER' | 'MEMBER' | 'VIEWER'
 // =============================================================================
 
 export function ProjectSettingsPage() {
-  const { projectId: projectIdParam } = useParams<{ projectId: string }>()
-  const projectId = parseInt(projectIdParam ?? '0', 10)
+  const { projectIdentifier } = useParams<{ projectIdentifier: string }>()
   const navigate = useNavigate()
   const location = useLocation()
   const currentWorkspace = useAppSelector(selectCurrentWorkspace)
@@ -61,11 +60,14 @@ export function ProjectSettingsPage() {
   const [addMemberId, setAddMemberId] = useState('')
   const [addMemberRole, setAddMemberRole] = useState<ProjectMemberRole>('MEMBER')
 
-  // Queries
-  const projectQuery = trpc.project.get.useQuery(
-    { projectId },
-    { enabled: projectId > 0 }
+  // Fetch project by identifier (SEO-friendly URL)
+  const projectQuery = trpc.project.getByIdentifier.useQuery(
+    { identifier: projectIdentifier! },
+    { enabled: !!projectIdentifier }
   )
+
+  // Get project ID from fetched data
+  const projectId = projectQuery.data?.id ?? 0
 
   const membersQuery = trpc.project.getMembers.useQuery(
     { projectId },

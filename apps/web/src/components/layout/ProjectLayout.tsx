@@ -18,11 +18,12 @@ import { type ReactNode, useState, useCallback, useRef, useEffect } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { CommandPalette, useCommandPalette } from '@/components/command'
 import { ShortcutsModal } from '@/components/common'
+import { PresenceIndicator } from '@/components/board/PresenceIndicator'
 import { ProjectSidebar } from './ProjectSidebar'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useBreadcrumbs } from '@/hooks/useBreadcrumbs'
 import { useAppSelector, useAppDispatch } from '@/store'
-import { selectUser, logout } from '@/store/authSlice'
+import { selectUser, logout, updateUser } from '@/store/authSlice'
 import { queryClient, trpc } from '@/lib/trpc'
 
 // =============================================================================
@@ -98,10 +99,9 @@ export interface ProjectLayoutProps {
 // =============================================================================
 
 export function ProjectLayout({ children }: ProjectLayoutProps) {
-  const { projectId } = useParams<{ projectId: string }>()
+  const { projectIdentifier } = useParams<{ projectIdentifier: string }>()
   const navigate = useNavigate()
   const dispatch = useAppDispatch()
-  const projectIdNum = projectId ? parseInt(projectId, 10) : null
 
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -118,14 +118,30 @@ export function ProjectLayout({ children }: ProjectLayoutProps) {
   })
   const hasAdminAccess = adminScope?.hasAnyAdminAccess ?? false
 
-  // Fetch project name
-  const projectQuery = trpc.project.get.useQuery(
-    { projectId: projectIdNum! },
+  // Fetch user profile to sync avatar (in case it was updated after login)
+  const { data: profile } = trpc.user.getProfile.useQuery(undefined, {
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000,
+  })
+
+  // Sync avatar from profile to Redux store if they differ
+  useEffect(() => {
+    if (profile && user && profile.avatarUrl !== user.avatarUrl) {
+      dispatch(updateUser({ avatarUrl: profile.avatarUrl }))
+    }
+  }, [profile, user, dispatch])
+
+  // Fetch project by identifier (SEO-friendly URL)
+  const projectQuery = trpc.project.getByIdentifier.useQuery(
+    { identifier: projectIdentifier! },
     {
-      enabled: !!projectIdNum,
+      enabled: !!projectIdentifier,
       staleTime: 5 * 60 * 1000,
     }
   )
+
+  // Get project ID from the fetched project data
+  const projectIdNum = projectQuery.data?.id ?? null
 
   // Close user menu when clicking outside
   useEffect(() => {
@@ -174,9 +190,9 @@ export function ProjectLayout({ children }: ProjectLayoutProps) {
             >
               {sidebarCollapsed ? <MenuIcon /> : <CloseIcon />}
             </button>
-            <Link className="flex items-center space-x-1.5" to="/dashboard">
-              <img src="/logo.png" alt="Kanbu" className="h-5 w-5" />
-              <span className="font-semibold text-sm">Kanbu</span>
+            <Link className="flex items-center space-x-2" to="/dashboard">
+              <img src="/logo.png" alt="Kanbu" className="h-8 w-8" />
+              <span className="font-semibold">Kanbu</span>
             </Link>
             {/* Breadcrumb Navigation - SEO optimized */}
             {breadcrumbs.length > 0 && (
@@ -216,23 +232,39 @@ export function ProjectLayout({ children }: ProjectLayoutProps) {
             )}
           </div>
 
-          {/* Right: User Menu */}
-          <div className="flex flex-1 items-center justify-end">
+          {/* Right: Presence + User Menu */}
+          <div className="flex flex-1 items-center justify-end gap-3">
+            {/* Real-time presence indicator */}
+            {projectIdNum && user && (
+              <PresenceIndicator
+                projectId={projectIdNum}
+                currentUserId={user.id}
+              />
+            )}
+
             {/* User Menu Dropdown */}
             <div className="relative" ref={userMenuRef}>
               <button
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
-                className="flex items-center gap-2 px-3 py-1 text-sm rounded-md hover:bg-accent transition-colors"
+                className="flex items-center gap-2 px-2 py-1 text-sm rounded-md hover:bg-accent transition-colors"
               >
-                <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
-                  {user?.username ? (
-                    <span className="text-xs font-medium text-primary">
-                      {user.username.charAt(0).toUpperCase()}
-                    </span>
-                  ) : (
-                    <UserIcon className="h-3 w-3 text-primary" />
-                  )}
-                </div>
+                {user?.avatarUrl ? (
+                  <img
+                    src={user.avatarUrl}
+                    alt={user.name ?? user.username ?? 'User'}
+                    className="h-8 w-8 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                    {user?.username ? (
+                      <span className="text-sm font-medium text-primary">
+                        {user.username.charAt(0).toUpperCase()}
+                      </span>
+                    ) : (
+                      <UserIcon className="h-4 w-4 text-primary" />
+                    )}
+                  </div>
+                )}
                 <span className="hidden md:inline text-foreground/80 text-sm">
                   {user?.username || 'User'}
                 </span>
@@ -297,8 +329,9 @@ export function ProjectLayout({ children }: ProjectLayoutProps) {
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar - hidden on mobile when collapsed */}
         <div className={`hidden md:block ${sidebarCollapsed ? 'md:hidden' : ''}`}>
-          {projectIdNum && (
+          {projectIdNum && projectIdentifier && (
             <ProjectSidebar
+              projectIdentifier={projectIdentifier}
               projectId={projectIdNum}
               projectName={projectName}
               collapsed={false}
@@ -310,8 +343,9 @@ export function ProjectLayout({ children }: ProjectLayoutProps) {
         {!sidebarCollapsed && (
           <div className="md:hidden fixed inset-0 z-40 bg-black/50" onClick={() => setSidebarCollapsed(true)}>
             <div className="w-56 h-full" onClick={(e) => e.stopPropagation()}>
-              {projectIdNum && (
+              {projectIdNum && projectIdentifier && (
                 <ProjectSidebar
+                  projectIdentifier={projectIdentifier}
                   projectId={projectIdNum}
                   projectName={projectName}
                   collapsed={false}

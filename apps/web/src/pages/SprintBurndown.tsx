@@ -49,14 +49,13 @@ function getDaysRemaining(endDate: string): number {
 // =============================================================================
 
 export function SprintBurndown() {
-  const { projectId, sprintId } = useParams<{ projectId: string; sprintId: string }>()
-  const projectIdNum = parseInt(projectId ?? '0', 10)
+  const { projectIdentifier, sprintId } = useParams<{ projectIdentifier: string; sprintId: string }>()
   const sprintIdNum = parseInt(sprintId ?? '0', 10)
 
-  // Queries
-  const { data: project, isLoading: isProjectLoading } = trpc.project.get.useQuery(
-    { projectId: projectIdNum },
-    { enabled: projectIdNum > 0 }
+  // Fetch project by identifier (SEO-friendly URL)
+  const { data: project, isLoading: isProjectLoading } = trpc.project.getByIdentifier.useQuery(
+    { identifier: projectIdentifier! },
+    { enabled: !!projectIdentifier }
   )
 
   const { data: sprint, isLoading: isSprintLoading } = trpc.sprint.get.useQuery(
@@ -92,7 +91,7 @@ export function SprintBurndown() {
             Sprint not found
           </h2>
           <Link
-            to={`/project/${projectIdNum}/sprints`}
+            to={`/project/${projectIdentifier}/sprints`}
             className="text-blue-500 hover:text-blue-600 dark:text-blue-400"
           >
             Return to sprint planning
@@ -111,7 +110,7 @@ export function SprintBurndown() {
         <div className="mb-6">
           <div className="flex items-center gap-4 mb-4">
             <Link
-              to={`/project/${projectIdNum}/sprint/${sprintIdNum}`}
+              to={`/project/${projectIdentifier}/sprint/${sprintIdNum}`}
               className="p-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -203,13 +202,13 @@ export function SprintBurndown() {
         {/* Navigation */}
         <div className="flex gap-3 mt-6">
           <Link
-            to={`/project/${projectIdNum}/sprint/${sprintIdNum}`}
+            to={`/project/${projectIdentifier}/sprint/${sprintIdNum}`}
             className="px-4 py-2 text-sm font-medium text-white bg-blue-500 hover:bg-blue-600 rounded-lg transition-colors"
           >
             View Sprint Board
           </Link>
           <Link
-            to={`/project/${projectIdNum}/sprints`}
+            to={`/project/${projectIdentifier}/sprints`}
             className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
           >
             Sprint Planning

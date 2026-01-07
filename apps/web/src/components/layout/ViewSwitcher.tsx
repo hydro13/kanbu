@@ -67,7 +67,7 @@ interface ViewConfig {
 }
 
 export interface ViewSwitcherProps {
-  projectId: number
+  projectIdentifier: string
   className?: string
 }
 
@@ -75,14 +75,14 @@ export interface ViewSwitcherProps {
 // Component
 // =============================================================================
 
-export function ViewSwitcher({ projectId, className }: ViewSwitcherProps) {
+export function ViewSwitcher({ projectIdentifier, className }: ViewSwitcherProps) {
   const location = useLocation()
 
   const views: ViewConfig[] = [
-    { id: 'board', label: 'Board', path: `/project/${projectId}/board`, icon: BoardIcon },
-    { id: 'list', label: 'List', path: `/project/${projectId}/list`, icon: ListIcon },
-    { id: 'calendar', label: 'Calendar', path: `/project/${projectId}/calendar`, icon: CalendarIcon },
-    { id: 'timeline', label: 'Timeline', path: `/project/${projectId}/timeline`, icon: TimelineIcon },
+    { id: 'board', label: 'Board', path: `/project/${projectIdentifier}/board`, icon: BoardIcon },
+    { id: 'list', label: 'List', path: `/project/${projectIdentifier}/list`, icon: ListIcon },
+    { id: 'calendar', label: 'Calendar', path: `/project/${projectIdentifier}/calendar`, icon: CalendarIcon },
+    { id: 'timeline', label: 'Timeline', path: `/project/${projectIdentifier}/timeline`, icon: TimelineIcon },
   ]
 
   const isActive = (path: string) => location.pathname === path

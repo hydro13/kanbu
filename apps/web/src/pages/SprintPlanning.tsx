@@ -436,17 +436,19 @@ function SprintCard({ sprint, projectId, onRefresh }: SprintCardProps) {
 // =============================================================================
 
 export function SprintPlanning() {
-  const { projectId } = useParams<{ projectId: string }>()
-  const projectIdNum = parseInt(projectId ?? '0', 10)
+  const { projectIdentifier } = useParams<{ projectIdentifier: string }>()
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'active' | 'planning' | 'completed'>('active')
 
-  // Queries
-  const { data: project, isLoading: isProjectLoading } = trpc.project.get.useQuery(
-    { projectId: projectIdNum },
-    { enabled: projectIdNum > 0 }
+  // Fetch project by identifier (SEO-friendly URL)
+  const { data: project, isLoading: isProjectLoading } = trpc.project.getByIdentifier.useQuery(
+    { identifier: projectIdentifier! },
+    { enabled: !!projectIdentifier }
   )
+
+  // Get project ID from fetched data
+  const projectIdNum = project?.id ?? 0
 
   const { data: sprints, isLoading: isSprintsLoading, refetch } = trpc.sprint.list.useQuery(
     { projectId: projectIdNum },

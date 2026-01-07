@@ -53,8 +53,7 @@ interface SwimlaneFormData {
 // =============================================================================
 
 export function BoardSettingsPage() {
-  const { projectId: projectIdParam } = useParams<{ projectId: string }>()
-  const projectId = parseInt(projectIdParam ?? '0', 10)
+  const { projectIdentifier } = useParams<{ projectIdentifier: string }>()
   const utils = trpc.useUtils()
 
   // Form states
@@ -76,11 +75,14 @@ export function BoardSettingsPage() {
     description: '',
   })
 
-  // Queries
-  const projectQuery = trpc.project.get.useQuery(
-    { projectId },
-    { enabled: projectId > 0 }
+  // Fetch project by identifier (SEO-friendly URL)
+  const projectQuery = trpc.project.getByIdentifier.useQuery(
+    { identifier: projectIdentifier! },
+    { enabled: !!projectIdentifier }
   )
+
+  // Get project ID from fetched data
+  const projectId = projectQuery.data?.id ?? 0
 
   const columnsQuery = trpc.column.list.useQuery(
     { projectId },

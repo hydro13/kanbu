@@ -316,9 +316,8 @@ function DeleteModal({ isOpen, onClose, onConfirm, milestoneName, isDeleting }: 
 // =============================================================================
 
 export function MilestoneViewPage() {
-  const { projectId } = useParams<{ projectId: string }>()
+  const { projectIdentifier } = useParams<{ projectIdentifier: string }>()
   const navigate = useNavigate()
-  const projectIdNum = parseInt(projectId ?? '0', 10)
 
   const [showCompleted, setShowCompleted] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
@@ -335,11 +334,14 @@ export function MilestoneViewPage() {
 
   const utils = trpc.useUtils()
 
-  // Fetch project info
-  const { data: project, isLoading: projectLoading, error: projectError } = trpc.project.get.useQuery(
-    { projectId: projectIdNum },
-    { enabled: projectIdNum > 0 }
+  // Fetch project by identifier (SEO-friendly URL)
+  const { data: project, isLoading: projectLoading, error: projectError } = trpc.project.getByIdentifier.useQuery(
+    { identifier: projectIdentifier! },
+    { enabled: !!projectIdentifier }
   )
+
+  // Get project ID from fetched data
+  const projectIdNum = project?.id ?? 0
 
   // Fetch milestones
   const { data: milestones, isLoading: milestonesLoading } = trpc.milestone.list.useQuery(

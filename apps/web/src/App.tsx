@@ -349,9 +349,9 @@ function App() {
           }
         />
 
-        {/* Project routes */}
+        {/* Project routes - uses identifier for SEO-friendly URLs */}
         <Route
-          path="/project/:projectId/board"
+          path="/project/:projectIdentifier/board"
           element={
             <ProtectedRoute>
               <BoardViewPage />
@@ -359,7 +359,7 @@ function App() {
           }
         />
         <Route
-          path="/project/:projectId/list"
+          path="/project/:projectIdentifier/list"
           element={
             <ProtectedRoute>
               <ListViewPage />
@@ -367,7 +367,7 @@ function App() {
           }
         />
         <Route
-          path="/project/:projectId/calendar"
+          path="/project/:projectIdentifier/calendar"
           element={
             <ProtectedRoute>
               <CalendarViewPage />
@@ -375,7 +375,7 @@ function App() {
           }
         />
         <Route
-          path="/project/:projectId/timeline"
+          path="/project/:projectIdentifier/timeline"
           element={
             <ProtectedRoute>
               <TimelineViewPage />
@@ -383,7 +383,7 @@ function App() {
           }
         />
         <Route
-          path="/project/:projectId/milestones"
+          path="/project/:projectIdentifier/milestones"
           element={
             <ProtectedRoute>
               <MilestoneViewPage />
@@ -391,7 +391,7 @@ function App() {
           }
         />
         <Route
-          path="/project/:projectId/analytics"
+          path="/project/:projectIdentifier/analytics"
           element={
             <ProtectedRoute>
               <AnalyticsDashboard />
@@ -399,7 +399,7 @@ function App() {
           }
         />
         <Route
-          path="/project/:projectId/import-export"
+          path="/project/:projectIdentifier/import-export"
           element={
             <ProtectedRoute>
               <ImportExportPage />
@@ -407,7 +407,7 @@ function App() {
           }
         />
         <Route
-          path="/project/:projectId/webhooks"
+          path="/project/:projectIdentifier/webhooks"
           element={
             <ProtectedRoute>
               <WebhookSettings />
@@ -423,7 +423,7 @@ function App() {
           }
         />
         <Route
-          path="/project/:projectId/settings"
+          path="/project/:projectIdentifier/settings"
           element={
             <ProtectedRoute>
               <BoardSettingsPage />
@@ -431,7 +431,7 @@ function App() {
           }
         />
         <Route
-          path="/project/:projectId/members"
+          path="/project/:projectIdentifier/members"
           element={
             <ProtectedRoute>
               <ProjectMembersPage />
@@ -440,7 +440,7 @@ function App() {
         />
         {/* Sprint routes */}
         <Route
-          path="/project/:projectId/sprints"
+          path="/project/:projectIdentifier/sprints"
           element={
             <ProtectedRoute>
               <SprintPlanning />
@@ -448,7 +448,7 @@ function App() {
           }
         />
         <Route
-          path="/project/:projectId/sprint/:sprintId"
+          path="/project/:projectIdentifier/sprint/:sprintId"
           element={
             <ProtectedRoute>
               <SprintBoard />
@@ -456,7 +456,7 @@ function App() {
           }
         />
         <Route
-          path="/project/:projectId/sprint/:sprintId/burndown"
+          path="/project/:projectIdentifier/sprint/:sprintId/burndown"
           element={
             <ProtectedRoute>
               <SprintBurndown />

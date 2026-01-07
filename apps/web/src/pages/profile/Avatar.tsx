@@ -12,6 +12,8 @@ import { useState, useRef } from 'react'
 import { ProfileLayout } from '../../components/profile/ProfileLayout'
 import { Button } from '../../components/ui/button'
 import { trpc } from '../../lib/trpc'
+import { useAppDispatch } from '../../store'
+import { updateUser } from '../../store/authSlice'
 
 // =============================================================================
 // Constants
@@ -29,13 +31,16 @@ export function Avatar() {
   const [error, setError] = useState<string | null>(null)
   const [selectedFile, setSelectedFile] = useState<{ base64: string; mimeType: string } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const dispatch = useAppDispatch()
 
   const utils = trpc.useUtils()
   const { data: profile, isLoading } = trpc.user.getProfile.useQuery()
 
   const uploadAvatar = trpc.user.uploadAvatar.useMutation({
-    onSuccess: () => {
+    onSuccess: (data) => {
       utils.user.getProfile.invalidate()
+      // Update Redux store so header avatar updates immediately
+      dispatch(updateUser({ avatarUrl: data.avatarUrl }))
       setPreview(null)
       setSelectedFile(null)
       setError(null)
@@ -48,6 +53,8 @@ export function Avatar() {
   const removeAvatar = trpc.user.removeAvatar.useMutation({
     onSuccess: () => {
       utils.user.getProfile.invalidate()
+      // Update Redux store to remove avatar
+      dispatch(updateUser({ avatarUrl: null }))
     },
   })
 

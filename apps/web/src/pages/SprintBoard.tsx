@@ -33,7 +33,6 @@ import {
 } from 'lucide-react'
 import { ProjectLayout } from '@/components/layout/ProjectLayout'
 import { Board } from '@/components/board/Board'
-import { PresenceIndicator } from '@/components/board/PresenceIndicator'
 import { LiveCursors } from '@/components/board/LiveCursors'
 import { SprintSelector } from '@/components/sprint/SprintSelector'
 import { trpc } from '@/lib/trpc'
@@ -260,8 +259,8 @@ function SprintHeader({
 // =============================================================================
 
 export function SprintBoard() {
-  const { projectId, sprintId } = useParams<{
-    projectId: string
+  const { projectIdentifier, sprintId } = useParams<{
+    projectIdentifier: string
     sprintId?: string
   }>()
   const navigate = useNavigate()
@@ -269,8 +268,16 @@ export function SprintBoard() {
   const currentUser = useAppSelector(selectUser)
   const sprintContainerRef = useRef<HTMLDivElement>(null)
 
-  const projectIdNum = parseInt(projectId ?? '0', 10)
   const sprintIdNum = sprintId ? parseInt(sprintId, 10) : null
+
+  // Fetch project by identifier (SEO-friendly URL)
+  const { data: project, isLoading: isProjectLoading, error: projectError } = trpc.project.getByIdentifier.useQuery(
+    { identifier: projectIdentifier! },
+    { enabled: !!projectIdentifier }
+  )
+
+  // Get project ID from fetched data
+  const projectIdNum = project?.id ?? 0
 
   // Real-time collaboration sync
   useRealtimeSync({
@@ -280,12 +287,6 @@ export function SprintBoard() {
 
   // State for selected sprint (from URL or selector)
   const [selectedSprintId, setSelectedSprintId] = useState<number | null>(sprintIdNum)
-
-  // Queries - Project (includes columns and swimlanes)
-  const { data: project, isLoading: isProjectLoading, error: projectError } = trpc.project.get.useQuery(
-    { projectId: projectIdNum },
-    { enabled: projectIdNum > 0 }
-  )
 
   // Queries - Sprint details
   const { data: sprint, isLoading: isSprintLoading } = trpc.sprint.get.useQuery(
@@ -406,13 +407,6 @@ export function SprintBoard() {
             </div>
 
             <div className="flex items-center gap-3">
-              {/* Real-time presence indicator */}
-              {currentUser && (
-                <PresenceIndicator
-                  projectId={projectIdNum}
-                  currentUserId={currentUser.id}
-                />
-              )}
               <SprintSelector
                 projectId={projectIdNum}
                 selectedSprintId={selectedSprintId}

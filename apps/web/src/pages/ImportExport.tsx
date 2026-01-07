@@ -126,10 +126,8 @@ const IMPORT_SOURCES: Array<{
 // =============================================================================
 
 export function ImportExportPage() {
-  const { projectId: projectIdParam } = useParams<{ projectId: string }>();
-  const projectId = parseInt(projectIdParam ?? '0', 10);
+  const { projectIdentifier } = useParams<{ projectIdentifier: string }>();
   const inputRef = useRef<HTMLInputElement>(null);
-  const { canManage, isLoading: permissionsLoading } = useProjectPermissions(projectId);
 
   // State
   const [activeTab, setActiveTab] = useState<'import' | 'export'>('import');
@@ -146,11 +144,15 @@ export function ImportExportPage() {
   const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
-  // Queries
-  const projectQuery = trpc.project.get.useQuery(
-    { projectId },
-    { enabled: projectId > 0 }
+  // Fetch project by identifier (SEO-friendly URL)
+  const projectQuery = trpc.project.getByIdentifier.useQuery(
+    { identifier: projectIdentifier! },
+    { enabled: !!projectIdentifier }
   );
+
+  // Get project ID from fetched data
+  const projectId = projectQuery.data?.id ?? 0;
+  const { canManage, isLoading: permissionsLoading } = useProjectPermissions(projectId);
 
   const exportFormatsQuery = trpc.export.formats.useQuery(undefined, {
     enabled: activeTab === 'export',

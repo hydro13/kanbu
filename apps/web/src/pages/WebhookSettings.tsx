@@ -103,8 +103,7 @@ const EVENT_GROUPS = [
 
 export function WebhookSettings() {
   const navigate = useNavigate()
-  const { projectId } = useParams<{ projectId: string }>()
-  const projectIdNum = projectId ? parseInt(projectId, 10) : 0
+  const { projectIdentifier } = useParams<{ projectIdentifier: string }>()
 
   const [showModal, setShowModal] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
@@ -119,8 +118,20 @@ export function WebhookSettings() {
   const [showDeliveries, setShowDeliveries] = useState<number | null>(null)
   const [secrets, setSecrets] = useState<Record<number, string>>({})
 
+  // Fetch project by identifier (SEO-friendly URL)
+  const projectQuery = trpc.project.getByIdentifier.useQuery(
+    { identifier: projectIdentifier! },
+    { enabled: !!projectIdentifier }
+  )
+
+  // Get project ID from fetched data
+  const projectIdNum = projectQuery.data?.id ?? 0
+
   // Queries
-  const { data: webhooks, isLoading, refetch } = trpc.webhook.list.useQuery({ projectId: projectIdNum })
+  const { data: webhooks, isLoading, refetch } = trpc.webhook.list.useQuery(
+    { projectId: projectIdNum },
+    { enabled: projectIdNum > 0 }
+  )
 
   // Mutations
   const createMutation = trpc.webhook.create.useMutation({

@@ -166,9 +166,9 @@ export function registerRoomHandlers(
 export async function getRoomUsers(
   io: Server,
   roomName: string
-): Promise<{ id: number; username: string; name: string | null }[]> {
+): Promise<{ id: number; username: string; name: string | null; avatarUrl: string | null }[]> {
   const sockets = await io.in(roomName).fetchSockets();
-  const users: { id: number; username: string; name: string | null }[] = [];
+  const users: { id: number; username: string; name: string | null; avatarUrl: string | null }[] = [];
   const seen = new Set<number>();
 
   for (const socket of sockets) {
@@ -179,6 +179,7 @@ export async function getRoomUsers(
         id: user.id,
         username: user.username,
         name: user.name,
+        avatarUrl: user.avatarUrl,
       });
     }
   }

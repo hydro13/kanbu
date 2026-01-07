@@ -132,6 +132,7 @@ interface NavSection {
 }
 
 export interface ProjectSidebarProps {
+  projectIdentifier: string
   projectId: number
   projectName?: string
   collapsed?: boolean
@@ -142,32 +143,32 @@ export interface ProjectSidebarProps {
 // Navigation Config
 // =============================================================================
 
-function getNavSections(projectId: number): NavSection[] {
+function getNavSections(projectIdentifier: string): NavSection[] {
   return [
     {
       title: 'Views',
       items: [
-        { label: 'Board', path: `/project/${projectId}/board`, icon: BoardIcon },
-        { label: 'List', path: `/project/${projectId}/list`, icon: ListIcon },
-        { label: 'Calendar', path: `/project/${projectId}/calendar`, icon: CalendarIcon },
-        { label: 'Timeline', path: `/project/${projectId}/timeline`, icon: TimelineIcon },
+        { label: 'Board', path: `/project/${projectIdentifier}/board`, icon: BoardIcon },
+        { label: 'List', path: `/project/${projectIdentifier}/list`, icon: ListIcon },
+        { label: 'Calendar', path: `/project/${projectIdentifier}/calendar`, icon: CalendarIcon },
+        { label: 'Timeline', path: `/project/${projectIdentifier}/timeline`, icon: TimelineIcon },
       ],
     },
     {
       title: 'Planning',
       items: [
-        { label: 'Sprints', path: `/project/${projectId}/sprints`, icon: SprintIcon },
-        { label: 'Milestones', path: `/project/${projectId}/milestones`, icon: MilestoneIcon },
-        { label: 'Analytics', path: `/project/${projectId}/analytics`, icon: AnalyticsIcon },
+        { label: 'Sprints', path: `/project/${projectIdentifier}/sprints`, icon: SprintIcon },
+        { label: 'Milestones', path: `/project/${projectIdentifier}/milestones`, icon: MilestoneIcon },
+        { label: 'Analytics', path: `/project/${projectIdentifier}/analytics`, icon: AnalyticsIcon },
       ],
     },
     {
       title: 'Manage',
       items: [
-        { label: 'Members', path: `/project/${projectId}/members`, icon: MembersIcon },
-        { label: 'Board Settings', path: `/project/${projectId}/settings`, icon: SettingsIcon },
-        { label: 'Import/Export', path: `/project/${projectId}/import-export`, icon: ImportExportIcon },
-        { label: 'Webhooks', path: `/project/${projectId}/webhooks`, icon: WebhookIcon },
+        { label: 'Members', path: `/project/${projectIdentifier}/members`, icon: MembersIcon },
+        { label: 'Board Settings', path: `/project/${projectIdentifier}/settings`, icon: SettingsIcon },
+        { label: 'Import/Export', path: `/project/${projectIdentifier}/import-export`, icon: ImportExportIcon },
+        { label: 'Webhooks', path: `/project/${projectIdentifier}/webhooks`, icon: WebhookIcon },
       ],
     },
   ]
@@ -177,10 +178,10 @@ function getNavSections(projectId: number): NavSection[] {
 // Component
 // =============================================================================
 
-export function ProjectSidebar({ projectId, collapsed = false }: ProjectSidebarProps) {
+export function ProjectSidebar({ projectIdentifier, projectId, collapsed = false }: ProjectSidebarProps) {
   const location = useLocation()
   const { canManage, isLoading } = useProjectPermissions(projectId)
-  const navSections = getNavSections(projectId)
+  const navSections = getNavSections(projectIdentifier)
 
   // Filter out "Manage" section for users without manage permissions
   const filteredSections = navSections.filter(section => {

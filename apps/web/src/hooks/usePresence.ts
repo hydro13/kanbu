@@ -67,7 +67,7 @@ export function usePresence({
     socket.emit(
       'presence:request',
       roomName,
-      (users: { id: number; username: string; name: string | null }[]) => {
+      (users: { id: number; username: string; name: string | null; avatarUrl: string | null }[]) => {
         // Filter out current user
         setOnlineUsers(users.filter((u) => u.id !== currentUserId));
       }

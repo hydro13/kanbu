@@ -60,8 +60,7 @@ const PRESET_COLORS = [
 // =============================================================================
 
 export function TagManagementPage() {
-  const { projectId: projectIdParam } = useParams<{ projectId: string }>()
-  const projectId = parseInt(projectIdParam ?? '0', 10)
+  const { projectIdentifier } = useParams<{ projectIdentifier: string }>()
   const navigate = useNavigate()
   const utils = trpc.useUtils()
 
@@ -73,11 +72,14 @@ export function TagManagementPage() {
   const [editTagName, setEditTagName] = useState('')
   const [editTagColor, setEditTagColor] = useState('')
 
-  // Queries
-  const projectQuery = trpc.project.get.useQuery(
-    { projectId },
-    { enabled: projectId > 0 }
+  // Fetch project by identifier (SEO-friendly URL)
+  const projectQuery = trpc.project.getByIdentifier.useQuery(
+    { identifier: projectIdentifier! },
+    { enabled: !!projectIdentifier }
   )
+
+  // Get project ID from fetched data
+  const projectId = projectQuery.data?.id ?? 0
 
   const tagsQuery = trpc.tag.list.useQuery(
     { projectId },

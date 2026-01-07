@@ -77,17 +77,19 @@ function getDateRange(preset: DateRangePreset): { dateFrom?: string; dateTo?: st
 // =============================================================================
 
 export function AnalyticsDashboard() {
-  const { projectId } = useParams<{ projectId: string }>()
-  const projectIdNum = parseInt(projectId ?? '0', 10)
+  const { projectIdentifier } = useParams<{ projectIdentifier: string }>()
 
   const [dateRange, setDateRange] = useState<DateRangePreset>('all')
   const dateRangeParams = getDateRange(dateRange)
 
-  // Queries
-  const { data: project, isLoading: isProjectLoading } = trpc.project.get.useQuery(
-    { projectId: projectIdNum },
-    { enabled: projectIdNum > 0 }
+  // Fetch project by identifier (SEO-friendly URL)
+  const { data: project, isLoading: isProjectLoading } = trpc.project.getByIdentifier.useQuery(
+    { identifier: projectIdentifier! },
+    { enabled: !!projectIdentifier }
   )
+
+  // Get project ID from fetched data
+  const projectIdNum = project?.id ?? 0
 
   const { data: stats, isLoading: isStatsLoading } = trpc.analytics.getProjectStats.useQuery(
     { projectId: projectIdNum, ...dateRangeParams },
