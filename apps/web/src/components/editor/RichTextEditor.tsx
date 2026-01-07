@@ -37,6 +37,8 @@ import { CodeNode, CodeHighlightNode } from '@lexical/code'
 import { editorTheme } from './theme'
 import { ToolbarPlugin } from './ToolbarPlugin'
 import { MarkdownPastePlugin } from './MarkdownPastePlugin'
+import { MediaPlugin } from './MediaPlugin'
+import { ImageNode, VideoNode, EmbedNode } from './nodes'
 import './editor.css'
 
 // =============================================================================
@@ -138,6 +140,10 @@ export function RichTextEditor({
       AutoLinkNode,
       CodeNode,
       CodeHighlightNode,
+      // Media nodes
+      ImageNode,
+      VideoNode,
+      EmbedNode,
     ],
   }
 
@@ -186,6 +192,7 @@ export function RichTextEditor({
           <TabIndentationPlugin />
           <MarkdownShortcutPlugin transformers={TRANSFORMERS} />
           <MarkdownPastePlugin />
+          <MediaPlugin />
 
           {/* Change handler */}
           {onChange && <OnChangePlugin onChange={handleChange} ignoreSelectionChange />}

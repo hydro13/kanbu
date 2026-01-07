@@ -61,12 +61,78 @@ export function EditorDemoPage() {
             <li>Undo/Redo</li>
             <li className="text-green-600 font-medium">Markdown Paste</li>
             <li className="text-green-600 font-medium">Voice Input (Chrome/Edge/Safari)</li>
+            <li className="text-blue-600 font-medium">Image Upload</li>
+            <li className="text-blue-600 font-medium">Video Upload</li>
+            <li className="text-blue-600 font-medium">YouTube/Vimeo Embed</li>
+            <li className="text-purple-600 font-medium">Media Resizing</li>
+            <li className="text-purple-600 font-medium">Text Wrapping (Float L/R)</li>
           </ul>
         </div>
 
-        {/* New Features */}
+        {/* Media Features */}
+        <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+          <h2 className="font-semibold mb-2 text-blue-700 dark:text-blue-400">Media Support:</h2>
+          <div className="space-y-3 text-sm">
+            <div>
+              <h3 className="font-medium">Image Upload</h3>
+              <p className="text-muted-foreground">
+                Click the image icon in the toolbar to upload images.
+                Supports JPEG, PNG, GIF, WebP, and SVG formats.
+              </p>
+            </div>
+            <div>
+              <h3 className="font-medium">Video Upload</h3>
+              <p className="text-muted-foreground">
+                Click the video icon to upload local video files.
+                Supports MP4, WebM, OGG, and QuickTime formats.
+              </p>
+            </div>
+            <div>
+              <h3 className="font-medium">YouTube/Vimeo Embed</h3>
+              <p className="text-muted-foreground">
+                Click the YouTube icon and paste a YouTube or Vimeo URL.
+                Videos will be embedded directly in the editor.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Media Resizing & Alignment */}
+        <div className="p-4 bg-purple-500/10 border border-purple-500/20 rounded-lg">
+          <h2 className="font-semibold mb-2 text-purple-700 dark:text-purple-400">Media Resizing & Alignment:</h2>
+          <div className="space-y-3 text-sm">
+            <div>
+              <h3 className="font-medium">Resize Media</h3>
+              <p className="text-muted-foreground">
+                Click on any image, video, or embed to select it. Drag the corner or edge
+                handles to resize. The aspect ratio is maintained automatically.
+              </p>
+            </div>
+            <div>
+              <h3 className="font-medium">Text Wrapping</h3>
+              <p className="text-muted-foreground">
+                When media is selected, a toolbar appears above it with alignment options:
+              </p>
+              <ul className="mt-2 space-y-1 text-muted-foreground pl-4">
+                <li><strong>Default:</strong> Full-width, centered block</li>
+                <li><strong>Float Left:</strong> Media floats left, text wraps around right</li>
+                <li><strong>Center:</strong> Centered with no text wrap</li>
+                <li><strong>Float Right:</strong> Media floats right, text wraps around left</li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-medium">Size Indicator</h3>
+              <p className="text-muted-foreground">
+                While resizing, the current dimensions are displayed on the media
+                to help you achieve the exact size you want.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Previous Features */}
         <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
-          <h2 className="font-semibold mb-2 text-green-700 dark:text-green-400">New Features:</h2>
+          <h2 className="font-semibold mb-2 text-green-700 dark:text-green-400">Other Features:</h2>
           <div className="space-y-3 text-sm">
             <div>
               <h3 className="font-medium">Markdown Paste</h3>

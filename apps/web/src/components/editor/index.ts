@@ -19,4 +19,45 @@ export { MarkdownPastePlugin } from './MarkdownPastePlugin'
 export { SpeechToTextPlugin, useSpeechRecognition } from './SpeechToTextPlugin'
 export type { SpeechToTextPluginProps } from './SpeechToTextPlugin'
 
+export { ResizableMediaWrapper } from './ResizableMediaWrapper'
+export type { ResizableMediaWrapperProps, MediaAlignment } from './ResizableMediaWrapper'
+
+export {
+  MediaPlugin,
+  INSERT_IMAGE_COMMAND,
+  INSERT_VIDEO_COMMAND,
+  INSERT_EMBED_COMMAND,
+  fileToDataUrl,
+  isImageFile,
+  isVideoFile,
+  ACCEPTED_IMAGE_TYPES,
+  ACCEPTED_VIDEO_TYPES,
+} from './MediaPlugin'
+export type { MediaPluginProps } from './MediaPlugin'
+
+// Nodes
+export {
+  ImageNode,
+  $createImageNode,
+  $isImageNode,
+  VideoNode,
+  $createVideoNode,
+  $isVideoNode,
+  EmbedNode,
+  $createEmbedNode,
+  $isEmbedNode,
+  $createEmbedNodeFromUrl,
+  parseVideoUrl,
+  getEmbedUrl,
+} from './nodes'
+export type {
+  ImagePayload,
+  SerializedImageNode,
+  VideoPayload,
+  SerializedVideoNode,
+  EmbedPayload,
+  SerializedEmbedNode,
+  EmbedProvider,
+} from './nodes'
+
 export { editorTheme } from './theme'

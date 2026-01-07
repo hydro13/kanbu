@@ -9,7 +9,7 @@
  * ===================================================================
  */
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, useRef } from 'react'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import {
   $getSelection,
@@ -23,6 +23,16 @@ import {
   UNDO_COMMAND,
 } from 'lexical'
 import { useSpeechRecognition } from './SpeechToTextPlugin'
+import {
+  INSERT_IMAGE_COMMAND,
+  INSERT_VIDEO_COMMAND,
+  INSERT_EMBED_COMMAND,
+  fileToDataUrl,
+  isImageFile,
+  isVideoFile,
+  ACCEPTED_IMAGE_TYPES,
+  ACCEPTED_VIDEO_TYPES,
+} from './MediaPlugin'
 import {
   $isHeadingNode,
   $createHeadingNode,
@@ -191,6 +201,40 @@ function MicrophoneOffIcon() {
   )
 }
 
+function ImageIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+      <circle cx="8.5" cy="8.5" r="1.5" />
+      <polyline points="21 15 16 10 5 21" />
+    </svg>
+  )
+}
+
+function VideoIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18" />
+      <line x1="7" y1="2" x2="7" y2="22" />
+      <line x1="17" y1="2" x2="17" y2="22" />
+      <line x1="2" y1="12" x2="22" y2="12" />
+      <line x1="2" y1="7" x2="7" y2="7" />
+      <line x1="2" y1="17" x2="7" y2="17" />
+      <line x1="17" y1="17" x2="22" y2="17" />
+      <line x1="17" y1="7" x2="22" y2="7" />
+    </svg>
+  )
+}
+
+function YouTubeIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z" />
+      <polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02" />
+    </svg>
+  )
+}
+
 // =============================================================================
 // Block Type Options
 // =============================================================================
@@ -212,6 +256,10 @@ type BlockType = typeof blockTypeOptions[number]['value']
 
 export function ToolbarPlugin() {
   const [editor] = useLexicalComposerContext()
+
+  // File input refs
+  const imageInputRef = useRef<HTMLInputElement>(null)
+  const videoInputRef = useRef<HTMLInputElement>(null)
 
   // Speech recognition
   const { isListening, isSupported: speechSupported, toggleListening } = useSpeechRecognition()
@@ -365,6 +413,49 @@ export function ToolbarPlugin() {
   const undo = () => editor.dispatchCommand(UNDO_COMMAND, undefined)
   const redo = () => editor.dispatchCommand(REDO_COMMAND, undefined)
 
+  // Media handlers
+  const handleImageUpload = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0]
+      if (file && isImageFile(file)) {
+        const dataUrl = await fileToDataUrl(file)
+        editor.dispatchCommand(INSERT_IMAGE_COMMAND, {
+          src: dataUrl,
+          altText: file.name,
+        })
+      }
+      // Reset input
+      if (imageInputRef.current) {
+        imageInputRef.current.value = ''
+      }
+    },
+    [editor]
+  )
+
+  const handleVideoUpload = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0]
+      if (file && isVideoFile(file)) {
+        const dataUrl = await fileToDataUrl(file)
+        editor.dispatchCommand(INSERT_VIDEO_COMMAND, {
+          src: dataUrl,
+        })
+      }
+      // Reset input
+      if (videoInputRef.current) {
+        videoInputRef.current.value = ''
+      }
+    },
+    [editor]
+  )
+
+  const insertEmbed = useCallback(() => {
+    const url = prompt('Enter YouTube or Vimeo URL:')
+    if (url) {
+      editor.dispatchCommand(INSERT_EMBED_COMMAND, url)
+    }
+  }, [editor])
+
   return (
     <div className="lexical-toolbar">
       {/* Undo/Redo */}
@@ -514,6 +605,55 @@ export function ToolbarPlugin() {
           aria-label="Link"
         >
           <LinkIcon />
+        </button>
+      </div>
+
+      <div className="lexical-toolbar-divider" />
+
+      {/* Media */}
+      <div className="lexical-toolbar-group">
+        {/* Hidden file inputs */}
+        <input
+          ref={imageInputRef}
+          type="file"
+          accept={ACCEPTED_IMAGE_TYPES.join(',')}
+          onChange={handleImageUpload}
+          style={{ display: 'none' }}
+        />
+        <input
+          ref={videoInputRef}
+          type="file"
+          accept={ACCEPTED_VIDEO_TYPES.join(',')}
+          onChange={handleVideoUpload}
+          style={{ display: 'none' }}
+        />
+
+        <button
+          type="button"
+          className="lexical-toolbar-button"
+          onClick={() => imageInputRef.current?.click()}
+          title="Insert Image"
+          aria-label="Insert Image"
+        >
+          <ImageIcon />
+        </button>
+        <button
+          type="button"
+          className="lexical-toolbar-button"
+          onClick={() => videoInputRef.current?.click()}
+          title="Insert Video"
+          aria-label="Insert Video"
+        >
+          <VideoIcon />
+        </button>
+        <button
+          type="button"
+          className="lexical-toolbar-button"
+          onClick={insertEmbed}
+          title="Embed YouTube/Vimeo"
+          aria-label="Embed YouTube/Vimeo"
+        >
+          <YouTubeIcon />
         </button>
       </div>
 
