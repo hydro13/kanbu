@@ -1,19 +1,25 @@
 /*
  * useBreadcrumbs Hook
- * Version: 1.0.0
+ * Version: 2.0.0
  *
- * Hook for generating breadcrumb navigation based on current route.
+ * Hook for generating hierarchical breadcrumb navigation.
  * Returns array of breadcrumb items with label and optional link.
+ *
+ * Structure: Kanbu > [Section] > [Container] > [Name] > [View]
+ * Example: Kanbu > Workspace > Develop > Project > KANBU > Board
  *
  * ═══════════════════════════════════════════════════════════════════
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
  * Claude Code: Opus 4.5
  * Host: MAX
  * Date: 2026-01-06
+ *
+ * Modified: 2026-01-07
+ * Change: Complete rewrite for hierarchical navigation structure
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useLocation, useParams, useSearchParams } from 'react-router-dom'
+import { useLocation, useParams } from 'react-router-dom'
 import { trpc } from '@/lib/trpc'
 
 // =============================================================================
@@ -26,16 +32,10 @@ export interface BreadcrumbItem {
 }
 
 // =============================================================================
-// Route Configuration
+// View Labels
 // =============================================================================
 
-const ROUTE_LABELS: Record<string, string> = {
-  dashboard: 'Dashboard',
-  tasks: 'My Tasks',
-  subtasks: 'My Subtasks',
-  workspace: 'Workspace',
-  workspaces: 'My Workspaces',
-  project: 'Project',
+const VIEW_LABELS: Record<string, string> = {
   board: 'Board',
   list: 'List',
   calendar: 'Calendar',
@@ -47,32 +47,36 @@ const ROUTE_LABELS: Record<string, string> = {
   settings: 'Settings',
   members: 'Members',
   sprints: 'Sprints',
-  sprint: 'Sprint',
   burndown: 'Burndown',
+}
+
+const ADMIN_LABELS: Record<string, string> = {
+  users: 'Users',
+  groups: 'Groups',
+  permissions: 'Permissions',
+  invites: 'Invites',
+  backup: 'Backup',
+  create: 'Create',
+  edit: 'Edit',
+  new: 'New',
+}
+
+const PROFILE_LABELS: Record<string, string> = {
   profile: 'Profile',
-  timetracking: 'Time Tracking',
-  logins: 'Last Logins',
-  sessions: 'Sessions',
-  'password-history': 'Password History',
-  metadata: 'Metadata',
   edit: 'Edit',
   avatar: 'Avatar',
   '2fa': 'Two-Factor Auth',
-  public: 'Public Access',
+  password: 'Change Password',
+  sessions: 'Sessions',
+  logins: 'Last Logins',
+  'password-history': 'Password History',
   notifications: 'Notifications',
   external: 'External Accounts',
   integrations: 'Integrations',
   api: 'API Tokens',
   'hourly-rate': 'Hourly Rate',
-  password: 'Change Password',
-  admin: 'Administration',
-  users: 'Users',
-  create: 'Create',
-  invites: 'Invites',
-  new: 'New',
-  backup: 'Backup',
-  groups: 'Groups',
-  permissions: 'Permissions',
+  timetracking: 'Time Tracking',
+  metadata: 'Metadata',
 }
 
 // =============================================================================
@@ -81,133 +85,264 @@ const ROUTE_LABELS: Record<string, string> = {
 
 export function useBreadcrumbs(): BreadcrumbItem[] {
   const location = useLocation()
-  const params = useParams<{ projectId?: string; sprintId?: string; userId?: string; id?: string; groupId?: string; slug?: string }>()
-  const [searchParams] = useSearchParams()
+  const params = useParams<{
+    projectId?: string
+    projectIdentifier?: string
+    sprintId?: string
+    userId?: string
+    id?: string
+    groupId?: string
+    slug?: string
+    workspaceSlug?: string
+  }>()
 
-  // Get workspace ID from query param (for /workspaces?workspace=3)
-  const workspaceIdParam = searchParams.get('workspace')
-  const workspaceId = workspaceIdParam ? parseInt(workspaceIdParam, 10) : null
+  // Get workspace slug from URL params
+  const workspaceSlug = params.workspaceSlug || params.slug
 
-  // Fetch workspace by slug if we have a slug param
+  // Fetch workspace by slug if we have one
   const workspaceBySlugQuery = trpc.workspace.getBySlug.useQuery(
-    { slug: params.slug! },
-    { enabled: !!params.slug }
+    { slug: workspaceSlug! },
+    { enabled: !!workspaceSlug }
   )
 
-  // Fetch workspace by ID if we have a workspace query param
-  const workspaceByIdQuery = trpc.workspace.get.useQuery(
-    { workspaceId: workspaceId! },
-    { enabled: !!workspaceId && !isNaN(workspaceId) }
+  // Fetch project by identifier if we have one
+  const projectByIdentifierQuery = trpc.project.getByIdentifier.useQuery(
+    { identifier: params.projectIdentifier! },
+    { enabled: !!params.projectIdentifier }
   )
 
-  // Fetch project name if we have a projectId
-  const projectQuery = trpc.project.get.useQuery(
-    { projectId: Number(params.projectId) },
-    { enabled: !!params.projectId && !isNaN(Number(params.projectId)) }
-  )
-
-  // Fetch sprint name if we have a sprintId
+  // Fetch sprint if we have a sprintId
   const sprintQuery = trpc.sprint.get.useQuery(
     { sprintId: Number(params.sprintId) },
     { enabled: !!params.sprintId && !isNaN(Number(params.sprintId)) }
   )
 
-  const pathSegments = location.pathname.split('/').filter((s): s is string => Boolean(s))
+  // Extract data to avoid deep type inference issues
+  const workspaceName = workspaceBySlugQuery.data?.name
+  const projectName = projectByIdentifierQuery.data?.name
+  const sprintName = sprintQuery.data?.name
+
+  const pathSegments = location.pathname.split('/').filter(Boolean)
   const breadcrumbs: BreadcrumbItem[] = []
 
-  let currentPath = ''
+  // NOTE: We don't add "Kanbu" as first breadcrumb because
+  // the logo + app name is already shown in the header
 
+  // Detect route type and build appropriate hierarchy
+  const firstSegment = pathSegments[0]
+
+  // ==========================================================================
+  // Dashboard routes
+  // ==========================================================================
+  if (firstSegment === 'dashboard') {
+    breadcrumbs.push({
+      label: 'Dashboard',
+      href: undefined, // Current page
+    })
+    return breadcrumbs
+  }
+
+  // ==========================================================================
+  // Tasks routes: /tasks, /subtasks
+  // ==========================================================================
+  if (firstSegment === 'tasks') {
+    breadcrumbs.push({
+      label: 'Dashboard',
+      href: '/dashboard',
+    })
+    breadcrumbs.push({
+      label: 'My Tasks',
+      href: undefined,
+    })
+    return breadcrumbs
+  }
+
+  if (firstSegment === 'subtasks') {
+    breadcrumbs.push({
+      label: 'Dashboard',
+      href: '/dashboard',
+    })
+    breadcrumbs.push({
+      label: 'My Subtasks',
+      href: undefined,
+    })
+    return breadcrumbs
+  }
+
+  // ==========================================================================
+  // Workspaces list: /workspaces
+  // ==========================================================================
+  if (firstSegment === 'workspaces') {
+    breadcrumbs.push({
+      label: 'Dashboard',
+      href: '/dashboard',
+    })
+    breadcrumbs.push({
+      label: 'Workspaces',
+      href: undefined,
+    })
+    return breadcrumbs
+  }
+
+  // ==========================================================================
+  // Workspace routes: /workspace/:slug/...
+  // ==========================================================================
+  if (firstSegment === 'workspace' && workspaceSlug) {
+    const hasProject = pathSegments.includes('project')
+    const projectIdentifier = params.projectIdentifier
+
+    // Always start with Dashboard link
+    breadcrumbs.push({
+      label: 'Dashboard',
+      href: '/dashboard',
+    })
+
+    // Add Workspaces link
+    breadcrumbs.push({
+      label: 'Workspaces',
+      href: '/workspaces',
+    })
+
+    // Add workspace name (e.g., "Develop")
+    breadcrumbs.push({
+      label: workspaceName || workspaceSlug,
+      href: hasProject ? `/workspace/${workspaceSlug}` : undefined,
+    })
+
+    // If we have a project
+    if (hasProject && projectIdentifier) {
+      // Find what comes after the project identifier
+      const projectIndex = pathSegments.indexOf('project')
+      const viewSegment = pathSegments[projectIndex + 2] // Skip 'project' and identifier
+
+      // Add "Projects" container - links back to workspace (which shows projects)
+      breadcrumbs.push({
+        label: 'Projects',
+        href: `/workspace/${workspaceSlug}`,
+      })
+
+      // Add project name (e.g., "KANBU" or "Genx-Vector-Index")
+      breadcrumbs.push({
+        label: projectName || projectIdentifier,
+        href: viewSegment ? `/workspace/${workspaceSlug}/project/${projectIdentifier}/board` : undefined,
+      })
+
+      // Add view if present
+      if (viewSegment) {
+        // Check for sprint sub-routes: /sprints/:id/burndown
+        if (viewSegment === 'sprints' && params.sprintId) {
+          const burndownIndex = pathSegments.indexOf('burndown')
+          const hasBurndown = burndownIndex > -1
+
+          breadcrumbs.push({
+            label: 'Sprints',
+            href: hasBurndown ? `/workspace/${workspaceSlug}/project/${projectIdentifier}/sprints` : undefined,
+          })
+
+          breadcrumbs.push({
+            label: sprintName || `Sprint ${params.sprintId}`,
+            href: hasBurndown ? `/workspace/${workspaceSlug}/project/${projectIdentifier}/sprints/${params.sprintId}` : undefined,
+          })
+
+          if (hasBurndown) {
+            breadcrumbs.push({
+              label: 'Burndown',
+              href: undefined,
+            })
+          }
+        } else {
+          // Regular view (board, list, calendar, etc.)
+          const viewLabel = VIEW_LABELS[viewSegment] || (viewSegment.charAt(0).toUpperCase() + viewSegment.slice(1))
+          breadcrumbs.push({
+            label: viewLabel,
+            href: undefined,
+          })
+        }
+      }
+    }
+
+    return breadcrumbs
+  }
+
+  // ==========================================================================
+  // Administration routes: /admin/...
+  // ==========================================================================
+  if (firstSegment === 'admin') {
+    breadcrumbs.push({
+      label: 'Dashboard',
+      href: '/dashboard',
+    })
+
+    breadcrumbs.push({
+      label: 'Administration',
+      href: pathSegments.length > 1 ? '/admin' : undefined,
+    })
+
+    // Add admin sub-sections
+    for (let i = 1; i < pathSegments.length; i++) {
+      const segment = pathSegments[i]
+      if (!segment) continue
+
+      // Skip numeric IDs
+      if (/^\d+$/.test(segment)) continue
+
+      const label = ADMIN_LABELS[segment] || (segment.charAt(0).toUpperCase() + segment.slice(1))
+      const isLast = i === pathSegments.length - 1
+
+      breadcrumbs.push({
+        label,
+        href: isLast ? undefined : `/admin/${pathSegments.slice(1, i + 1).join('/')}`,
+      })
+    }
+
+    return breadcrumbs
+  }
+
+  // ==========================================================================
+  // Profile routes: /profile/...
+  // ==========================================================================
+  if (firstSegment === 'profile') {
+    breadcrumbs.push({
+      label: 'Dashboard',
+      href: '/dashboard',
+    })
+
+    breadcrumbs.push({
+      label: 'Profile',
+      href: pathSegments.length > 1 ? '/profile' : undefined,
+    })
+
+    // Add profile sub-sections
+    for (let i = 1; i < pathSegments.length; i++) {
+      const segment = pathSegments[i]
+      if (!segment) continue
+
+      const label = PROFILE_LABELS[segment] || (segment.charAt(0).toUpperCase() + segment.slice(1))
+      const isLast = i === pathSegments.length - 1
+
+      breadcrumbs.push({
+        label,
+        href: isLast ? undefined : `/profile/${pathSegments.slice(1, i + 1).join('/')}`,
+      })
+    }
+
+    return breadcrumbs
+  }
+
+  // ==========================================================================
+  // Fallback for unknown routes
+  // ==========================================================================
   for (let i = 0; i < pathSegments.length; i++) {
     const segment = pathSegments[i]
-    if (!segment) continue
+    if (!segment || /^\d+$/.test(segment)) continue
 
-    currentPath += `/${segment}`
-    const prevSegment = i > 0 ? pathSegments[i - 1] : undefined
+    const label = segment.charAt(0).toUpperCase() + segment.slice(1)
     const isLast = i === pathSegments.length - 1
 
-    // Handle workspace slug (SEO-friendly URL: /workspace/:slug)
-    // Add the workspace name as a separate breadcrumb after "Workspace"
-    if (prevSegment === 'workspace' && segment === params.slug) {
-      // Add the workspace name as a new breadcrumb item
-      const workspaceName = workspaceBySlugQuery.data?.name ?? segment
-      breadcrumbs.push({
-        label: workspaceName,
-        href: undefined, // Current page, no link needed
-      })
-      continue
-    }
-
-    // Handle /workspaces route with ?workspace= query param
-    if (segment === 'workspaces') {
-      breadcrumbs.push({
-        label: 'My Workspaces',
-        href: workspaceId ? '/workspaces' : undefined,
-      })
-
-      // If workspace is selected via query param, add workspace name breadcrumb
-      if (workspaceId && workspaceByIdQuery.data) {
-        breadcrumbs.push({
-          label: workspaceByIdQuery.data.name,
-          href: undefined, // Current page
-        })
-      }
-      continue
-    }
-
-    // Skip numeric IDs in the path display, but use them to fetch names
-    if (/^\d+$/.test(segment)) {
-      // Check if previous segment was 'project' and we have project data
-      if (prevSegment === 'project' && projectQuery.data) {
-        // Replace the 'Project' breadcrumb with workspace context + project name
-        const lastCrumb = breadcrumbs[breadcrumbs.length - 1]
-        if (lastCrumb && lastCrumb.label === 'Project') {
-          // Insert workspace breadcrumbs before the project name
-          if (projectQuery.data.workspace) {
-            // Replace 'Project' with 'My Workspaces'
-            breadcrumbs[breadcrumbs.length - 1] = {
-              label: 'My Workspaces',
-              href: '/workspaces',
-            }
-            // Add workspace name
-            breadcrumbs.push({
-              label: projectQuery.data.workspace.name,
-              href: `/workspaces?workspace=${projectQuery.data.workspace.id}`,
-            })
-            // Add project name
-            breadcrumbs.push({
-              label: projectQuery.data.name,
-              href: `/project/${segment}/board`,
-            })
-          } else {
-            // Fallback if no workspace data
-            breadcrumbs[breadcrumbs.length - 1] = {
-              label: projectQuery.data.name,
-              href: `/project/${segment}/board`,
-            }
-          }
-        }
-      }
-      // Check if previous segment was 'sprint' and we have sprint data
-      else if (prevSegment === 'sprint' && sprintQuery.data) {
-        const lastCrumb = breadcrumbs[breadcrumbs.length - 1]
-        if (lastCrumb && lastCrumb.label === 'Sprint') {
-          breadcrumbs[breadcrumbs.length - 1] = {
-            label: sprintQuery.data.name,
-            href: currentPath,
-          }
-        }
-      }
-      // For user/workspace/group IDs in admin routes, just skip them
-      continue
-    }
-
-    // Get label for this segment
-    const label = ROUTE_LABELS[segment] ?? (segment.charAt(0).toUpperCase() + segment.slice(1))
-
-    // Determine if this should be a link (not the last segment)
-    const href = isLast ? undefined : currentPath
-
-    breadcrumbs.push({ label, href })
+    breadcrumbs.push({
+      label,
+      href: isLast ? undefined : `/${pathSegments.slice(0, i + 1).join('/')}`,
+    })
   }
 
   return breadcrumbs

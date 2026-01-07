@@ -76,6 +76,7 @@ import { RegisterPage } from './pages/Register'
 import { WorkspaceSettingsRedirect } from './pages/WorkspaceSettingsRedirect'
 import { ProjectListPage } from './pages/ProjectList'
 import { WorkspacePage } from './pages/WorkspacePage'
+import { ProjectRedirect } from './pages/ProjectRedirect'
 import { BoardViewPage } from './pages/BoardView'
 import { ListViewPage } from './pages/ListView'
 import { CalendarViewPage } from './pages/CalendarView'
@@ -353,9 +354,9 @@ function App() {
           }
         />
 
-        {/* Project routes - uses identifier for SEO-friendly URLs */}
+        {/* Project routes - uses workspace slug + project identifier for SEO-friendly URLs */}
         <Route
-          path="/project/:projectIdentifier/board"
+          path="/workspace/:workspaceSlug/project/:projectIdentifier/board"
           element={
             <ProtectedRoute>
               <BoardViewPage />
@@ -363,7 +364,7 @@ function App() {
           }
         />
         <Route
-          path="/project/:projectIdentifier/list"
+          path="/workspace/:workspaceSlug/project/:projectIdentifier/list"
           element={
             <ProtectedRoute>
               <ListViewPage />
@@ -371,7 +372,7 @@ function App() {
           }
         />
         <Route
-          path="/project/:projectIdentifier/calendar"
+          path="/workspace/:workspaceSlug/project/:projectIdentifier/calendar"
           element={
             <ProtectedRoute>
               <CalendarViewPage />
@@ -379,7 +380,7 @@ function App() {
           }
         />
         <Route
-          path="/project/:projectIdentifier/timeline"
+          path="/workspace/:workspaceSlug/project/:projectIdentifier/timeline"
           element={
             <ProtectedRoute>
               <TimelineViewPage />
@@ -387,7 +388,7 @@ function App() {
           }
         />
         <Route
-          path="/project/:projectIdentifier/milestones"
+          path="/workspace/:workspaceSlug/project/:projectIdentifier/milestones"
           element={
             <ProtectedRoute>
               <MilestoneViewPage />
@@ -395,7 +396,7 @@ function App() {
           }
         />
         <Route
-          path="/project/:projectIdentifier/analytics"
+          path="/workspace/:workspaceSlug/project/:projectIdentifier/analytics"
           element={
             <ProtectedRoute>
               <AnalyticsDashboard />
@@ -403,7 +404,7 @@ function App() {
           }
         />
         <Route
-          path="/project/:projectIdentifier/import-export"
+          path="/workspace/:workspaceSlug/project/:projectIdentifier/import-export"
           element={
             <ProtectedRoute>
               <ImportExportPage />
@@ -411,7 +412,7 @@ function App() {
           }
         />
         <Route
-          path="/project/:projectIdentifier/webhooks"
+          path="/workspace/:workspaceSlug/project/:projectIdentifier/webhooks"
           element={
             <ProtectedRoute>
               <WebhookSettings />
@@ -427,7 +428,7 @@ function App() {
           }
         />
         <Route
-          path="/project/:projectIdentifier/settings"
+          path="/workspace/:workspaceSlug/project/:projectIdentifier/settings"
           element={
             <ProtectedRoute>
               <BoardSettingsPage />
@@ -435,7 +436,7 @@ function App() {
           }
         />
         <Route
-          path="/project/:projectIdentifier/members"
+          path="/workspace/:workspaceSlug/project/:projectIdentifier/members"
           element={
             <ProtectedRoute>
               <ProjectMembersPage />
@@ -444,7 +445,7 @@ function App() {
         />
         {/* Sprint routes */}
         <Route
-          path="/project/:projectIdentifier/sprints"
+          path="/workspace/:workspaceSlug/project/:projectIdentifier/sprints"
           element={
             <ProtectedRoute>
               <SprintPlanning />
@@ -452,7 +453,7 @@ function App() {
           }
         />
         <Route
-          path="/project/:projectIdentifier/sprint/:sprintId"
+          path="/workspace/:workspaceSlug/project/:projectIdentifier/sprint/:sprintId"
           element={
             <ProtectedRoute>
               <SprintBoard />
@@ -460,10 +461,19 @@ function App() {
           }
         />
         <Route
-          path="/project/:projectIdentifier/sprint/:sprintId/burndown"
+          path="/workspace/:workspaceSlug/project/:projectIdentifier/sprint/:sprintId/burndown"
           element={
             <ProtectedRoute>
               <SprintBurndown />
+            </ProtectedRoute>
+          }
+        />
+        {/* Legacy project routes - redirect to workspace-prefixed URLs */}
+        <Route
+          path="/project/:projectIdentifier/*"
+          element={
+            <ProtectedRoute>
+              <ProjectRedirect />
             </ProtectedRoute>
           }
         />

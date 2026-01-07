@@ -1,6 +1,6 @@
 /*
  * ProjectLayout Component
- * Version: 2.0.0
+ * Version: 2.1.0
  *
  * Layout wrapper for project-specific pages.
  * Uses BaseLayout for shared header functionality.
@@ -8,6 +8,9 @@
  * ===================================================================
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
  * Session: MAX-2026-01-07
+ *
+ * Modified: 2026-01-07
+ * Change: Added workspaceSlug to ProjectSidebar for SEO-friendly URLs
  * ===================================================================
  */
 
@@ -33,7 +36,7 @@ export interface ProjectLayoutProps {
 // =============================================================================
 
 export function ProjectLayout({ children }: ProjectLayoutProps) {
-  const { projectIdentifier } = useParams<{ projectIdentifier: string }>()
+  const { projectIdentifier, workspaceSlug } = useParams<{ projectIdentifier: string; workspaceSlug: string }>()
   const user = useAppSelector(selectUser)
 
   // Fetch project by identifier (SEO-friendly URL)
@@ -45,16 +48,19 @@ export function ProjectLayout({ children }: ProjectLayoutProps) {
     }
   )
 
-  // Get project ID from the fetched project data
+  // Get project ID and workspace slug from the fetched project data
   const projectIdNum = projectQuery.data?.id ?? null
   const projectName = projectQuery.data?.name
+  // Use workspaceSlug from URL params, or fall back to project's workspace slug
+  const workspaceSlugValue = workspaceSlug || projectQuery.data?.workspace?.slug || ''
 
   // Sidebar for this project
-  const sidebar = projectIdNum && projectIdentifier ? (
+  const sidebar = projectIdNum && projectIdentifier && workspaceSlugValue ? (
     <ProjectSidebar
       projectIdentifier={projectIdentifier}
       projectId={projectIdNum}
       projectName={projectName}
+      workspaceSlug={workspaceSlugValue}
       collapsed={false}
     />
   ) : undefined

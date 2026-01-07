@@ -1,6 +1,6 @@
 /*
  * ViewSwitcher Component
- * Version: 1.0.0
+ * Version: 1.1.0
  *
  * Horizontal tab bar for switching between project views.
  * Used in all view pages (Board, List, Calendar, Timeline).
@@ -11,6 +11,9 @@
  * Claude Code: Opus 4.5
  * Host: linux-dev
  * Signed: 2026-01-03
+ *
+ * Modified: 2026-01-07
+ * Change: Updated to use workspace-prefixed URLs
  * ═══════════════════════════════════════════════════════════════════
  */
 
@@ -68,6 +71,7 @@ interface ViewConfig {
 
 export interface ViewSwitcherProps {
   projectIdentifier: string
+  workspaceSlug: string
   className?: string
 }
 
@@ -75,14 +79,15 @@ export interface ViewSwitcherProps {
 // Component
 // =============================================================================
 
-export function ViewSwitcher({ projectIdentifier, className }: ViewSwitcherProps) {
+export function ViewSwitcher({ projectIdentifier, workspaceSlug, className }: ViewSwitcherProps) {
   const location = useLocation()
+  const basePath = `/workspace/${workspaceSlug}/project/${projectIdentifier}`
 
   const views: ViewConfig[] = [
-    { id: 'board', label: 'Board', path: `/project/${projectIdentifier}/board`, icon: BoardIcon },
-    { id: 'list', label: 'List', path: `/project/${projectIdentifier}/list`, icon: ListIcon },
-    { id: 'calendar', label: 'Calendar', path: `/project/${projectIdentifier}/calendar`, icon: CalendarIcon },
-    { id: 'timeline', label: 'Timeline', path: `/project/${projectIdentifier}/timeline`, icon: TimelineIcon },
+    { id: 'board', label: 'Board', path: `${basePath}/board`, icon: BoardIcon },
+    { id: 'list', label: 'List', path: `${basePath}/list`, icon: ListIcon },
+    { id: 'calendar', label: 'Calendar', path: `${basePath}/calendar`, icon: CalendarIcon },
+    { id: 'timeline', label: 'Timeline', path: `${basePath}/timeline`, icon: TimelineIcon },
   ]
 
   const isActive = (path: string) => location.pathname === path

@@ -830,7 +830,7 @@ function DayView({ date, tasks, onTaskClick, onNavigate, onZoom }: DayViewProps)
 // =============================================================================
 
 export function CalendarViewPage() {
-  const { projectIdentifier } = useParams<{ projectIdentifier: string }>()
+  const { projectIdentifier, workspaceSlug } = useParams<{ projectIdentifier: string; workspaceSlug: string }>()
   const navigate = useNavigate()
   const currentUser = useAppSelector(selectUser)
   const calendarContainerRef = useRef<HTMLDivElement>(null)
@@ -1006,7 +1006,7 @@ export function CalendarViewPage() {
       <div className="flex flex-col h-full" ref={calendarContainerRef}>
         <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
           <div className="flex items-center">
-            <ViewSwitcher projectIdentifier={project.identifier ?? ''} className="border-b-0" />
+            <ViewSwitcher projectIdentifier={project.identifier ?? ''} workspaceSlug={workspaceSlug || project.workspace?.slug || ''} className="border-b-0" />
             <UndoRedoButtons projectId={project.id} className="ml-2" />
           </div>
           <div className="flex items-center gap-4 pr-4">

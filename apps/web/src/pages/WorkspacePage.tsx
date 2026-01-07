@@ -248,6 +248,7 @@ export function WorkspacePage() {
               <ProjectCard
                 key={project.id}
                 project={project}
+                workspaceSlug={slug!}
                 className={viewMode === 'list' ? 'max-w-none' : ''}
               />
             ))}

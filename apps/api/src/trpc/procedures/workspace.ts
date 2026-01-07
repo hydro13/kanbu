@@ -15,7 +15,7 @@
 
 import { z } from 'zod'
 import { TRPCError } from '@trpc/server'
-import { router, protectedProcedure, adminProcedure } from '../router'
+import { router, protectedProcedure } from '../router'
 import {
   generateUniqueSlug,
   generateInviteToken,
@@ -84,19 +84,26 @@ const addMemberSchema = z.object({
 export const workspaceRouter = router({
   /**
    * Create a new workspace
-   * SYSTEM_ADMIN only - creates workspace and optionally assigns an owner
+   * SYSTEM_ADMIN or Domain Admins can create workspaces
    */
-  create: adminProcedure
+  create: protectedProcedure
     .input(createWorkspaceSchema.extend({
       ownerId: z.number().optional(), // Optional: assign different owner (default: creator)
     }))
     .mutation(async ({ ctx, input }) => {
-      // Only SYSTEM_ADMIN (AppRole.ADMIN) can create workspaces
-      // Note: ctx.user is guaranteed non-null by adminProcedure
-      permissionService.requireSuperAdmin(ctx.user!.role)
+      // Check if user is SYSTEM_ADMIN or Domain Admin
+      const isSuperAdmin = ctx.user.role === 'ADMIN'
+      const isDomainAdmin = await groupPermissionService.isDomainAdmin(ctx.user.id)
+
+      if (!isSuperAdmin && !isDomainAdmin) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Only Domain Admins can create workspaces',
+        })
+      }
 
       const slug = await generateUniqueSlug(input.name)
-      const ownerId = input.ownerId ?? ctx.user!.id
+      const ownerId = input.ownerId ?? ctx.user.id
 
       const workspace = await ctx.prisma.workspace.create({
         data: {
@@ -104,7 +111,7 @@ export const workspaceRouter = router({
           slug,
           description: input.description,
           logoUrl: input.logoUrl,
-          createdById: ctx.user!.id,
+          createdById: ctx.user.id,
           users: {
             create: {
               userId: ownerId,

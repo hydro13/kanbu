@@ -319,7 +319,7 @@ function TaskRow({ task, selected, onSelect, onTaskClick }: TaskRowProps) {
 // =============================================================================
 
 export function ListViewPage() {
-  const { projectIdentifier } = useParams<{ projectIdentifier: string }>()
+  const { projectIdentifier, workspaceSlug } = useParams<{ projectIdentifier: string; workspaceSlug: string }>()
   const navigate = useNavigate()
   const currentUser = useAppSelector(selectUser)
   const listContainerRef = useRef<HTMLDivElement>(null)
@@ -464,7 +464,7 @@ export function ListViewPage() {
     <ProjectLayout>
       <div className="flex flex-col h-full" ref={listContainerRef}>
         <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-          <ViewSwitcher projectIdentifier={project.identifier ?? ''} className="border-b-0" />
+          <ViewSwitcher projectIdentifier={project.identifier ?? ''} workspaceSlug={workspaceSlug || project.workspace?.slug || ''} className="border-b-0" />
           <div className="flex items-center gap-4 pr-4">
             <ListToolbar
               selectedCount={selectedIds.size}

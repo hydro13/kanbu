@@ -1,6 +1,6 @@
 /*
  * ProjectSidebar Component
- * Version: 1.0.0
+ * Version: 1.1.0
  *
  * Sidebar navigation for project-specific pages.
  * Shows links to all project views and features.
@@ -16,6 +16,11 @@
  * Session: 0e39bd3c-2fb0-45ca-9dba-d480f3531265
  * Signed: 2025-12-29T02:07 CET
  * Change: Added SettingsIcon and Board Settings link (ISSUE-001)
+ *
+ * Modified by:
+ * Host: MAX
+ * Date: 2026-01-07
+ * Change: Updated URLs to include workspace slug for SEO-friendly paths
  * ═══════════════════════════════════════════════════════════════════
  */
 
@@ -135,6 +140,7 @@ export interface ProjectSidebarProps {
   projectIdentifier: string
   projectId: number
   projectName?: string
+  workspaceSlug: string
   collapsed?: boolean
   onCollapse?: (collapsed: boolean) => void
 }
@@ -143,32 +149,33 @@ export interface ProjectSidebarProps {
 // Navigation Config
 // =============================================================================
 
-function getNavSections(projectIdentifier: string): NavSection[] {
+function getNavSections(workspaceSlug: string, projectIdentifier: string): NavSection[] {
+  const basePath = `/workspace/${workspaceSlug}/project/${projectIdentifier}`
   return [
     {
       title: 'Views',
       items: [
-        { label: 'Board', path: `/project/${projectIdentifier}/board`, icon: BoardIcon },
-        { label: 'List', path: `/project/${projectIdentifier}/list`, icon: ListIcon },
-        { label: 'Calendar', path: `/project/${projectIdentifier}/calendar`, icon: CalendarIcon },
-        { label: 'Timeline', path: `/project/${projectIdentifier}/timeline`, icon: TimelineIcon },
+        { label: 'Board', path: `${basePath}/board`, icon: BoardIcon },
+        { label: 'List', path: `${basePath}/list`, icon: ListIcon },
+        { label: 'Calendar', path: `${basePath}/calendar`, icon: CalendarIcon },
+        { label: 'Timeline', path: `${basePath}/timeline`, icon: TimelineIcon },
       ],
     },
     {
       title: 'Planning',
       items: [
-        { label: 'Sprints', path: `/project/${projectIdentifier}/sprints`, icon: SprintIcon },
-        { label: 'Milestones', path: `/project/${projectIdentifier}/milestones`, icon: MilestoneIcon },
-        { label: 'Analytics', path: `/project/${projectIdentifier}/analytics`, icon: AnalyticsIcon },
+        { label: 'Sprints', path: `${basePath}/sprints`, icon: SprintIcon },
+        { label: 'Milestones', path: `${basePath}/milestones`, icon: MilestoneIcon },
+        { label: 'Analytics', path: `${basePath}/analytics`, icon: AnalyticsIcon },
       ],
     },
     {
       title: 'Manage',
       items: [
-        { label: 'Members', path: `/project/${projectIdentifier}/members`, icon: MembersIcon },
-        { label: 'Board Settings', path: `/project/${projectIdentifier}/settings`, icon: SettingsIcon },
-        { label: 'Import/Export', path: `/project/${projectIdentifier}/import-export`, icon: ImportExportIcon },
-        { label: 'Webhooks', path: `/project/${projectIdentifier}/webhooks`, icon: WebhookIcon },
+        { label: 'Members', path: `${basePath}/members`, icon: MembersIcon },
+        { label: 'Board Settings', path: `${basePath}/settings`, icon: SettingsIcon },
+        { label: 'Import/Export', path: `${basePath}/import-export`, icon: ImportExportIcon },
+        { label: 'Webhooks', path: `${basePath}/webhooks`, icon: WebhookIcon },
       ],
     },
   ]
@@ -178,10 +185,10 @@ function getNavSections(projectIdentifier: string): NavSection[] {
 // Component
 // =============================================================================
 
-export function ProjectSidebar({ projectIdentifier, projectId, collapsed = false }: ProjectSidebarProps) {
+export function ProjectSidebar({ projectIdentifier, projectId, workspaceSlug, collapsed = false }: ProjectSidebarProps) {
   const location = useLocation()
   const { canManage, isLoading } = useProjectPermissions(projectId)
-  const navSections = getNavSections(projectIdentifier)
+  const navSections = getNavSections(workspaceSlug, projectIdentifier)
 
   // Filter out "Manage" section for users without manage permissions
   const filteredSections = navSections.filter(section => {

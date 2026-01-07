@@ -1,6 +1,6 @@
 /*
  * ProjectCard Component
- * Version: 1.0.0
+ * Version: 1.1.0
  *
  * Card component for displaying project overview in grid/list view.
  *
@@ -15,6 +15,11 @@
  * Session: 73a280f4-f735-47a2-9803-e570fa6a86f7
  * Signed: 2025-12-28T18:25 CET
  * Change: Fixed link to navigate to /project/:id/board instead of /project/:id
+ *
+ * Modified by:
+ * Host: MAX
+ * Date: 2026-01-07
+ * Change: Updated links to include workspace slug for SEO-friendly URLs
  * ═══════════════════════════════════════════════════════════════════
  */
 
@@ -29,6 +34,7 @@ import type { Project } from '@/store/projectSlice'
 
 interface ProjectCardProps {
   project: Project
+  workspaceSlug: string
   className?: string
 }
 
@@ -65,9 +71,9 @@ function getRoleBadgeColor(role: Project['userRole']): string {
 // Component
 // =============================================================================
 
-export function ProjectCard({ project, className }: ProjectCardProps) {
+export function ProjectCard({ project, workspaceSlug, className }: ProjectCardProps) {
   return (
-    <Link to={`/project/${project.identifier}/board`}>
+    <Link to={`/workspace/${workspaceSlug}/project/${project.identifier}/board`}>
       <Card
         className={cn(
           'cursor-pointer transition-all hover:shadow-md hover:border-primary/50',
