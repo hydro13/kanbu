@@ -1,8 +1,9 @@
 /*
  * StickyNoteModal Component
- * Version: 1.0.0
+ * Version: 2.0.0
  *
  * Modal for creating and editing sticky notes.
+ * Now uses RichTextEditor for rich content support.
  *
  * ═══════════════════════════════════════════════════════════════════
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
@@ -10,11 +11,16 @@
  * Claude Code: v2.0.70 (Opus 4.5)
  * Host: linux-dev
  * Signed: 2025-12-30T01:20 CET
+ *
+ * Modified: 2026-01-07
+ * Change: Integrated RichTextEditor for rich content support
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { trpc } from '@/lib/trpc'
+import { RichTextEditor, getDisplayContent, isLexicalContent } from '@/components/editor'
+import type { EditorState, LexicalEditor } from 'lexical'
 import type { StickyNoteData, StickyNoteColor, StickyVisibility } from './StickyNote'
 
 // =============================================================================
@@ -62,6 +68,7 @@ export function StickyNoteModal({ isOpen, onClose, note }: StickyNoteModalProps)
   const [color, setColor] = useState<StickyNoteColor>('YELLOW')
   const [visibility, setVisibility] = useState<StickyVisibility>('PRIVATE')
   const [isPinned, setIsPinned] = useState(false)
+  const [editorKey, setEditorKey] = useState(0) // Force re-mount of editor
 
   const utils = trpc.useUtils()
 
@@ -83,23 +90,59 @@ export function StickyNoteModal({ isOpen, onClose, note }: StickyNoteModalProps)
   useEffect(() => {
     if (isOpen && note) {
       setTitle(note.title || '')
-      setContent(note.content)
+      setContent(getDisplayContent(note.content))
       setColor(note.color)
       setVisibility(note.visibility)
       setIsPinned(note.isPinned)
+      setEditorKey((k) => k + 1) // Force re-mount to load content
     } else if (isOpen) {
       setTitle('')
       setContent('')
       setColor('YELLOW')
       setVisibility('PRIVATE')
       setIsPinned(false)
+      setEditorKey((k) => k + 1) // Force re-mount for clean editor
     }
   }, [isOpen, note])
+
+  // Handle editor content changes
+  const handleEditorChange = useCallback(
+    (_editorState: EditorState, _editor: LexicalEditor, jsonString: string) => {
+      setContent(jsonString)
+    },
+    []
+  )
+
+  // Check if content is empty (for validation)
+  const isContentEmpty = useCallback(() => {
+    if (!content) return true
+    if (!isLexicalContent(content)) return !content.trim()
+
+    try {
+      const parsed = JSON.parse(content)
+      const root = parsed?.root
+      if (!root?.children?.length) return true
+
+      // Check if there's any actual text content
+      const hasContent = root.children.some((child: Record<string, unknown>) => {
+        if (child.type === 'paragraph' || child.type === 'heading') {
+          return (child.children as Array<Record<string, unknown>>)?.some(
+            (c: Record<string, unknown>) => c.type === 'text' && (c.text as string)?.trim()
+          )
+        }
+        // Any other node type (list, quote, image, etc.) counts as content
+        return child.type !== 'paragraph' || (child.children as Array<unknown>)?.length > 0
+      })
+      return !hasContent
+    } catch {
+      return !content.trim()
+    }
+  }, [content])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!content.trim()) return
+    if (isContentEmpty()) return
 
     if (note) {
       updateMutation.mutate({
@@ -134,7 +177,7 @@ export function StickyNoteModal({ isOpen, onClose, note }: StickyNoteModalProps)
       />
 
       {/* Modal */}
-      <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-4 max-h-[90vh] overflow-auto">
+      <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -165,19 +208,19 @@ export function StickyNoteModal({ isOpen, onClose, note }: StickyNoteModalProps)
             />
           </div>
 
-          {/* Content */}
+          {/* Content - Rich Text Editor */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Content *
             </label>
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="Write your note..."
-              rows={5}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-              maxLength={10000}
-              required
+            <RichTextEditor
+              key={editorKey}
+              initialContent={content || undefined}
+              onChange={handleEditorChange}
+              placeholder="Write your note... Use **bold**, *italic*, # headings, and more!"
+              minHeight="200px"
+              maxHeight="400px"
+              namespace={`sticky-note-editor-${editorKey}`}
             />
           </div>
 
@@ -258,7 +301,7 @@ export function StickyNoteModal({ isOpen, onClose, note }: StickyNoteModalProps)
             <button
               type="submit"
               className="px-4 py-2 text-sm font-medium text-white bg-blue-500 rounded-md hover:bg-blue-600 transition-colors disabled:opacity-50"
-              disabled={isLoading || !content.trim()}
+              disabled={isLoading || isContentEmpty()}
             >
               {isLoading ? 'Saving...' : note ? 'Update' : 'Create'}
             </button>

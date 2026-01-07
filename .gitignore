@@ -48,3 +48,6 @@ packages/shared/prisma/*.db-journal
 
 # Claude Code session files
 CLAUDE.md
+
+# SSL/TLS Certificates (generated locally)
+certs/

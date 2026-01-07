@@ -1,8 +1,9 @@
 /*
  * StickyNote Component
- * Version: 1.0.0
+ * Version: 2.0.0
  *
  * Individual sticky note card with color, pin status, and actions.
+ * Now supports rich text content via Lexical.
  *
  * ═══════════════════════════════════════════════════════════════════
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
@@ -10,11 +11,15 @@
  * Claude Code: v2.0.70 (Opus 4.5)
  * Host: linux-dev
  * Signed: 2025-12-30T01:15 CET
+ *
+ * Modified: 2026-01-07
+ * Change: Added RichTextEditor read-only view for rich content display
  * ═══════════════════════════════════════════════════════════════════
  */
 
 import { useState } from 'react'
 import { trpc } from '@/lib/trpc'
+import { RichTextEditor, getDisplayContent, isLexicalContent, lexicalToPlainText } from '@/components/editor'
 
 // =============================================================================
 // Types
@@ -141,6 +146,7 @@ function GlobeIcon({ className }: { className?: string }) {
 
 export function StickyNote({ note, currentUserId, onEdit, onDelete }: StickyNoteProps) {
   const [isHovered, setIsHovered] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false)
   const utils = trpc.useUtils()
 
   const togglePinMutation = trpc.stickyNote.togglePin.useMutation({
@@ -158,6 +164,7 @@ export function StickyNote({ note, currentUserId, onEdit, onDelete }: StickyNote
 
   const isOwner = note.userId === currentUserId
   const colors = colorConfig[note.color]
+  const hasRichContent = isLexicalContent(note.content)
 
   const handleTogglePin = () => {
     togglePinMutation.mutate({ id: note.id })
@@ -168,6 +175,10 @@ export function StickyNote({ note, currentUserId, onEdit, onDelete }: StickyNote
       deleteMutation.mutate({ id: note.id })
     }
   }
+
+  // For plain text preview (truncated)
+  const plainTextPreview = lexicalToPlainText(note.content).slice(0, 300)
+  const isLongContent = lexicalToPlainText(note.content).length > 300
 
   return (
     <div
@@ -223,7 +234,39 @@ export function StickyNote({ note, currentUserId, onEdit, onDelete }: StickyNote
       )}
 
       {/* Content */}
-      <p className="text-sm whitespace-pre-wrap line-clamp-6">{note.content}</p>
+      {isExpanded && hasRichContent ? (
+        // Expanded rich content view
+        <div className="sticky-note-content">
+          <RichTextEditor
+            key={`view-${note.id}`}
+            initialContent={getDisplayContent(note.content)}
+            readOnly
+            showToolbar={false}
+            minHeight="auto"
+            maxHeight="none"
+            namespace={`sticky-note-view-${note.id}`}
+            className="sticky-note-editor-compact"
+          />
+        </div>
+      ) : (
+        // Collapsed plain text preview
+        <div className="text-sm">
+          <p className="whitespace-pre-wrap line-clamp-6">
+            {plainTextPreview}
+            {isLongContent && !isExpanded && '...'}
+          </p>
+        </div>
+      )}
+
+      {/* Expand/Collapse button for rich content */}
+      {(hasRichContent || isLongContent) && (
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="mt-2 text-xs font-medium opacity-70 hover:opacity-100 transition-opacity"
+        >
+          {isExpanded ? '▲ Collapse' : '▼ Expand'}
+        </button>
+      )}
 
       {/* Footer */}
       <div className="mt-3 pt-2 border-t border-current/10 text-xs opacity-60">

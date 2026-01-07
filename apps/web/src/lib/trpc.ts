@@ -25,34 +25,30 @@ export const queryClient = new QueryClient({
 })
 
 /**
- * Get API host - uses same hostname as frontend but on port 3001
- * This allows the app to work from any hostname (localhost, Tailscale, etc.)
- * Use this for direct API calls like image URLs
+ * Get API host - uses Vite proxy in development, direct API URL in production
+ * In dev mode, we use relative URLs so Vite's proxy handles the request
+ * This avoids HTTPS/HTTP mismatch issues when using HTTPS dev server
  */
 export function getApiHost(): string {
   // If explicitly set, use that
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
-  // In development, use same hostname but port 3001
+  // In development, use empty string (relative URL) to use Vite proxy
+  // This ensures HTTPS frontend -> Vite proxy -> HTTP API works correctly
   if (import.meta.env.DEV) {
-    const { protocol, hostname } = window.location;
-    return `${protocol}//${hostname}:3001`;
+    return '';
   }
   // In production, use empty string (same origin or proxy)
   return '';
 }
 
 /**
- * Get API URL - uses same hostname as frontend but on port 3001
- * This allows the app to work from any hostname (localhost, Tailscale, etc.)
+ * Get API URL - uses Vite proxy in development
+ * Relative path lets Vite handle proxying to the API server
  */
 function getApiUrl(): string {
-  const host = getApiHost();
-  if (host) {
-    return `${host}/trpc`;
-  }
-  // In production, use relative path (assumes same origin or proxy)
+  // Always use relative URL - Vite proxy or production reverse proxy handles it
   return '/trpc';
 }
 

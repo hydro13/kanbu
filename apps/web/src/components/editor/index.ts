@@ -63,3 +63,12 @@ export type {
 } from './nodes'
 
 export { editorTheme } from './theme'
+
+// Utilities
+export {
+  isLexicalContent,
+  plainTextToLexical,
+  lexicalToPlainText,
+  normalizeContent,
+  getDisplayContent,
+} from './utils'
