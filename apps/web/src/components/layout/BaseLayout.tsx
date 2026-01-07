@@ -11,7 +11,7 @@
  * ===================================================================
  */
 
-import { type ReactNode, useState, useCallback, useRef, useEffect } from 'react'
+import { type ReactNode, useState, useCallback, useRef, useEffect, cloneElement, isValidElement } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { CommandPalette, useCommandPalette } from '@/components/command'
 import { ShortcutsModal } from '@/components/common'
@@ -92,6 +92,29 @@ function QuestionMarkIcon({ className }: { className?: string }) {
   )
 }
 
+function SidebarCollapseIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+    </svg>
+  )
+}
+
+function SidebarExpandIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+    </svg>
+  )
+}
+
+// =============================================================================
+// Constants
+// =============================================================================
+
+const COLLAPSED_STORAGE_PREFIX = 'kanbu_sidebar_collapsed_'
+const COLLAPSED_WIDTH = 56 // w-14 = 56px for icon-only mode
+
 // =============================================================================
 // Types
 // =============================================================================
@@ -99,13 +122,13 @@ function QuestionMarkIcon({ className }: { className?: string }) {
 export interface BaseLayoutProps {
   /** Page content */
   children: ReactNode
-  /** Sidebar component to render */
+  /** Sidebar component to render (will receive collapsed prop) */
   sidebar?: ReactNode
   /** Extra items to show in header (between presence and help button) */
   headerExtras?: ReactNode
   /** Whether main content should have padding (default: true) */
   contentPadding?: boolean
-  /** Unique key for sidebar width persistence (default: 'default') */
+  /** Unique key for sidebar width/collapsed persistence (default: 'default') */
   sidebarKey?: string
 }
 
@@ -121,7 +144,7 @@ export function BaseLayout({
   sidebarKey = 'default'
 }: BaseLayoutProps) {
   const [shortcutsOpen, setShortcutsOpen] = useState(false)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [isHoveringResize, setIsHoveringResize] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
@@ -131,9 +154,25 @@ export function BaseLayout({
   const user = useAppSelector(selectUser)
   const breadcrumbs = useBreadcrumbs()
 
-  // Resizable sidebar
+  // Collapsed state with localStorage persistence
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    if (typeof window === 'undefined') return false
+    const stored = localStorage.getItem(COLLAPSED_STORAGE_PREFIX + sidebarKey)
+    return stored === 'true'
+  })
+
+  // Toggle collapsed state
+  const toggleCollapsed = useCallback(() => {
+    setIsCollapsed((prev) => {
+      const newValue = !prev
+      localStorage.setItem(COLLAPSED_STORAGE_PREFIX + sidebarKey, String(newValue))
+      return newValue
+    })
+  }, [sidebarKey])
+
+  // Resizable sidebar (disabled when collapsed)
   const {
-    width: sidebarWidth,
+    width: expandedWidth,
     isDragging,
     handleProps,
     resetWidth: resetSidebarWidth,
@@ -144,6 +183,9 @@ export function BaseLayout({
     maxWidth: 400,     // 25rem maximum
     direction: 'right',
   })
+
+  // Use collapsed width or expanded width
+  const sidebarWidth = isCollapsed ? COLLAPSED_WIDTH : expandedWidth
 
   // Check admin access via AD-style permission system
   const { data: adminScope } = trpc.group.myAdminScope.useQuery(undefined, {
@@ -215,11 +257,11 @@ export function BaseLayout({
             <div className="flex items-center gap-2">
               {sidebar && (
                 <button
-                  onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                   className="p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors md:hidden"
-                  title={sidebarCollapsed ? 'Show sidebar' : 'Hide sidebar'}
+                  title={mobileMenuOpen ? 'Hide sidebar' : 'Show sidebar'}
                 >
-                  {sidebarCollapsed ? <MenuIcon /> : <CloseIcon />}
+                  {mobileMenuOpen ? <CloseIcon /> : <MenuIcon />}
                 </button>
               )}
               <Link className="flex items-center space-x-2" to="/dashboard">
@@ -366,50 +408,74 @@ export function BaseLayout({
 
         {/* Main Content with Sidebar */}
         <div className="flex flex-1 overflow-hidden">
-          {/* Sidebar - hidden on mobile when collapsed */}
+          {/* Sidebar - hidden on mobile */}
           {sidebar && (
             <div
-              className={`hidden md:flex ${sidebarCollapsed ? 'md:hidden' : ''}`}
+              className="hidden md:flex flex-col flex-shrink-0 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 transition-all duration-200"
               style={{ width: sidebarWidth }}
             >
-              {/* Sidebar content */}
-              <div className="flex-1 overflow-hidden">
-                {sidebar}
+              {/* Sidebar content with collapsed prop injected */}
+              <div className="flex-1 overflow-hidden flex flex-col">
+                {isValidElement(sidebar)
+                  ? cloneElement(sidebar as React.ReactElement<{ collapsed?: boolean }>, { collapsed: isCollapsed })
+                  : sidebar}
               </div>
 
-              {/* Resize handle */}
-              <div
-                {...handleProps}
-                onMouseEnter={() => setIsHoveringResize(true)}
-                onMouseLeave={() => !isDragging && setIsHoveringResize(false)}
-                onDoubleClick={resetSidebarWidth}
-                className={`
-                  w-1 cursor-col-resize flex-shrink-0 relative group
-                  ${isDragging ? 'bg-primary' : 'hover:bg-primary/50'}
-                  transition-colors
-                `}
-                title="Drag to resize, double-click to reset"
-              >
-                {/* Visual indicator on hover/drag */}
-                <div
-                  className={`
-                    absolute inset-y-0 -left-1 -right-1
-                    ${isHoveringResize || isDragging ? 'bg-primary/20' : ''}
-                    transition-colors pointer-events-none
-                  `}
-                />
+              {/* Collapse toggle button at bottom */}
+              <div className="border-t border-gray-200 dark:border-gray-700 p-2">
+                <button
+                  onClick={toggleCollapsed}
+                  className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
+                  title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                >
+                  {isCollapsed ? (
+                    <SidebarExpandIcon className="h-4 w-4" />
+                  ) : (
+                    <>
+                      <SidebarCollapseIcon className="h-4 w-4" />
+                      <span>Collapse</span>
+                    </>
+                  )}
+                </button>
               </div>
             </div>
           )}
 
+          {/* Resize handle - only when sidebar is expanded */}
+          {sidebar && !isCollapsed && (
+            <div
+              {...handleProps}
+              onMouseEnter={() => setIsHoveringResize(true)}
+              onMouseLeave={() => !isDragging && setIsHoveringResize(false)}
+              onDoubleClick={resetSidebarWidth}
+              className={`
+                hidden md:block w-1 cursor-col-resize flex-shrink-0 relative
+                ${isDragging ? 'bg-primary' : 'hover:bg-primary/50'}
+                transition-colors
+              `}
+              title="Drag to resize, double-click to reset"
+            >
+              {/* Visual indicator on hover/drag */}
+              <div
+                className={`
+                  absolute inset-y-0 -left-1 -right-1
+                  ${isHoveringResize || isDragging ? 'bg-primary/20' : ''}
+                  transition-colors pointer-events-none
+                `}
+              />
+            </div>
+          )}
+
           {/* Mobile Sidebar Overlay */}
-          {sidebar && !sidebarCollapsed && (
+          {sidebar && mobileMenuOpen && (
             <div
               className="md:hidden fixed inset-0 z-40 bg-black/50"
-              onClick={() => setSidebarCollapsed(true)}
+              onClick={() => setMobileMenuOpen(false)}
             >
-              <div className="w-56 h-full" onClick={(e) => e.stopPropagation()}>
-                {sidebar}
+              <div className="w-56 h-full bg-gray-50 dark:bg-gray-900" onClick={(e) => e.stopPropagation()}>
+                {isValidElement(sidebar)
+                  ? cloneElement(sidebar as React.ReactElement<{ collapsed?: boolean }>, { collapsed: false })
+                  : sidebar}
               </div>
             </div>
           )}

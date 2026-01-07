@@ -96,10 +96,7 @@ export function DashboardSidebar({ collapsed = false }: DashboardSidebarProps) {
 
   return (
     <aside
-      className={cn(
-        'flex flex-col h-full border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 transition-all',
-        collapsed ? 'w-16' : 'w-56'
-      )}
+      className="flex flex-col h-full"
     >
       {/* Header */}
       {!collapsed && (

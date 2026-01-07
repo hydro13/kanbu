@@ -195,10 +195,7 @@ export function ProjectSidebar({ projectIdentifier, projectId, collapsed = false
 
   return (
     <aside
-      className={cn(
-        'flex flex-col border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 transition-all',
-        collapsed ? 'w-16' : 'w-56'
-      )}
+      className="flex flex-col h-full"
     >
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-2">
