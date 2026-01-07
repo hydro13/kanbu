@@ -22,7 +22,7 @@ import { DashboardSidebar } from './DashboardSidebar'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useBreadcrumbs } from '@/hooks/useBreadcrumbs'
 import { useAppSelector, useAppDispatch } from '@/store'
-import { selectUser, logout } from '@/store/authSlice'
+import { selectUser, logout, updateUser } from '@/store/authSlice'
 import { queryClient, trpc } from '@/lib/trpc'
 
 // =============================================================================
@@ -117,6 +117,19 @@ export function DashboardLayout({ children, sidebar }: DashboardLayoutProps) {
   })
   const hasAdminAccess = adminScope?.hasAnyAdminAccess ?? false
 
+  // Fetch user profile to sync avatar (in case it was updated after login)
+  const { data: profile } = trpc.user.getProfile.useQuery(undefined, {
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000,
+  })
+
+  // Sync avatar from profile to Redux store if they differ
+  useEffect(() => {
+    if (profile && user && profile.avatarUrl !== user.avatarUrl) {
+      dispatch(updateUser({ avatarUrl: profile.avatarUrl }))
+    }
+  }, [profile, user, dispatch])
+
   // Close user menu when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -162,9 +175,9 @@ export function DashboardLayout({ children, sidebar }: DashboardLayoutProps) {
             >
               {sidebarCollapsed ? <MenuIcon /> : <CloseIcon />}
             </button>
-            <Link className="flex items-center space-x-1.5" to="/dashboard">
-              <img src="/logo.png" alt="Kanbu" className="h-5 w-5" />
-              <span className="font-semibold text-sm">Kanbu</span>
+            <Link className="flex items-center space-x-2" to="/dashboard">
+              <img src="/logo.png" alt="Kanbu" className="h-8 w-8" />
+              <span className="font-semibold">Kanbu</span>
             </Link>
             {/* Breadcrumb Navigation - SEO optimized with semantic nav and schema.org */}
             {breadcrumbs.length > 0 && (
@@ -205,26 +218,34 @@ export function DashboardLayout({ children, sidebar }: DashboardLayoutProps) {
           </div>
 
           {/* Right: User Menu */}
-          <div className="flex flex-1 items-center justify-end">
+          <div className="flex flex-1 items-center justify-end gap-3">
             {/* User Menu Dropdown */}
             <div className="relative" ref={userMenuRef}>
               <button
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
-                className="flex items-center gap-2 px-3 py-2 text-sm rounded-md hover:bg-accent transition-colors"
+                className="flex items-center gap-2 px-2 py-1 text-sm rounded-md hover:bg-accent transition-colors"
               >
-                <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center">
-                  {user?.username ? (
-                    <span className="text-sm font-medium text-primary">
-                      {user.username.charAt(0).toUpperCase()}
-                    </span>
-                  ) : (
-                    <UserIcon className="h-4 w-4 text-primary" />
-                  )}
-                </div>
-                <span className="hidden md:inline text-foreground/80">
+                {user?.avatarUrl ? (
+                  <img
+                    src={user.avatarUrl}
+                    alt={user.name ?? user.username ?? 'User'}
+                    className="h-8 w-8 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                    {user?.username ? (
+                      <span className="text-sm font-medium text-primary">
+                        {user.username.charAt(0).toUpperCase()}
+                      </span>
+                    ) : (
+                      <UserIcon className="h-4 w-4 text-primary" />
+                    )}
+                  </div>
+                )}
+                <span className="hidden md:inline text-foreground/80 text-sm">
                   {user?.username || 'User'}
                 </span>
-                <ChevronDownIcon className="h-4 w-4 text-foreground/60" />
+                <ChevronDownIcon className="h-3 w-3 text-foreground/60" />
               </button>
 
               {/* Dropdown Menu */}
