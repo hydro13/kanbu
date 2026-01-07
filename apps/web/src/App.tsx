@@ -113,6 +113,8 @@ import { UserListPage, UserCreatePage, UserEditPage, InvitesPage, SystemSettings
 // Dashboard pages
 import { DashboardOverview, MyTasks, MySubtasks } from './pages/dashboard'
 import { AcceptInvitePage } from './pages/AcceptInvite'
+// Demo pages
+import { EditorDemoPage } from './pages/EditorDemo'
 import { ProtectedRoute } from './components/auth/ProtectedRoute'
 import { AdminRoute } from './components/auth/AdminRoute'
 import { useAppSelector } from './store'
@@ -587,6 +589,9 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        {/* Demo routes (development) */}
+        <Route path="/demo/editor" element={<EditorDemoPage />} />
 
         {/* Catch-all redirect */}
         <Route path="*" element={<Navigate to="/" replace />} />
