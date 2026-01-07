@@ -570,6 +570,178 @@
 }
 
 /* =============================================================================
+   Embed Metadata Info Panel
+   ============================================================================= */
+
+.lexical-embed-metadata {
+  margin-top: 0.5rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: 0.5rem;
+  background: hsl(var(--card));
+  overflow: hidden;
+}
+
+.lexical-embed-metadata-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  color: hsl(var(--foreground));
+  transition: background 0.15s ease;
+}
+
+.lexical-embed-metadata-toggle:hover {
+  background: hsl(var(--muted) / 0.5);
+}
+
+.lexical-embed-metadata-icon {
+  flex-shrink: 0;
+  color: hsl(var(--primary));
+}
+
+.lexical-embed-metadata-title {
+  flex: 1;
+  font-weight: 500;
+  font-size: 0.875rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lexical-embed-metadata-stats {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.lexical-embed-metadata-content {
+  padding: 1rem;
+  border-top: 1px solid hsl(var(--border));
+  font-size: 0.875rem;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.lexical-embed-metadata-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.lexical-embed-metadata-channel {
+  font-weight: 600;
+  color: hsl(var(--primary));
+}
+
+.lexical-embed-metadata-date,
+.lexical-embed-metadata-likes {
+  color: hsl(var(--muted-foreground));
+  font-size: 0.8125rem;
+}
+
+.lexical-embed-metadata-timestamps {
+  margin-bottom: 1rem;
+}
+
+.lexical-embed-metadata-timestamps h4 {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: hsl(var(--muted-foreground));
+  margin-bottom: 0.5rem;
+}
+
+.lexical-embed-metadata-timestamps ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.lexical-embed-metadata-timestamps li {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.375rem 0.5rem;
+  border-radius: 0.25rem;
+  transition: background 0.1s ease;
+}
+
+.lexical-embed-metadata-timestamps li:hover {
+  background: hsl(var(--muted) / 0.5);
+}
+
+.lexical-embed-metadata-timestamps .timestamp-time {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.8125rem;
+  color: hsl(var(--primary));
+  flex-shrink: 0;
+  min-width: 4rem;
+}
+
+.lexical-embed-metadata-timestamps .timestamp-label {
+  color: hsl(var(--foreground));
+}
+
+.lexical-embed-metadata-timestamps .timestamp-more {
+  color: hsl(var(--muted-foreground));
+  font-style: italic;
+}
+
+.lexical-embed-metadata-description {
+  margin-bottom: 1rem;
+}
+
+.lexical-embed-metadata-description h4 {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: hsl(var(--muted-foreground));
+  margin-bottom: 0.5rem;
+}
+
+.lexical-embed-metadata-description p {
+  color: hsl(var(--foreground));
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.lexical-embed-metadata-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.lexical-embed-tag {
+  display: inline-block;
+  padding: 0.25rem 0.625rem;
+  background: hsl(var(--primary) / 0.1);
+  color: hsl(var(--primary));
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.lexical-embed-tag-more {
+  display: inline-block;
+  padding: 0.25rem 0.625rem;
+  color: hsl(var(--muted-foreground));
+  font-size: 0.75rem;
+  font-style: italic;
+}
+
+/* =============================================================================
    Resizable Media Wrapper
    ============================================================================= */
 

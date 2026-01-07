@@ -23,4 +23,4 @@ export {
   parseVideoUrl,
   getEmbedUrl,
 } from './EmbedNode'
-export type { EmbedPayload, SerializedEmbedNode, EmbedProvider } from './EmbedNode'
+export type { EmbedPayload, SerializedEmbedNode, EmbedProvider, EmbedMetadata } from './EmbedNode'

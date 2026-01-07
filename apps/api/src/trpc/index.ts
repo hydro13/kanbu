@@ -124,6 +124,7 @@ import { adminRouter } from './procedures/admin';
 import { stickyNoteRouter } from './procedures/stickyNote';
 import { groupRouter } from './procedures/group';
 import { roleAssignmentRouter } from './procedures/roleAssignment';
+import { youtubeRouter } from './procedures/youtube';
 
 /**
  * Main app router
@@ -158,6 +159,7 @@ export const appRouter = router({
   stickyNote: stickyNoteRouter,
   group: groupRouter,
   roleAssignment: roleAssignmentRouter,
+  youtube: youtubeRouter,
 });
 
 /**
