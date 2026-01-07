@@ -85,6 +85,24 @@
   color: hsl(var(--primary-foreground));
 }
 
+/* Speech-to-text listening state */
+.lexical-toolbar-button.listening {
+  background: hsl(0 84% 60%);
+  color: white;
+  animation: pulse-recording 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-recording {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 hsl(0 84% 60% / 0.4);
+  }
+  50% {
+    opacity: 0.9;
+    box-shadow: 0 0 0 4px hsl(0 84% 60% / 0);
+  }
+}
+
 .lexical-toolbar-button svg {
   width: 1rem;
   height: 1rem;

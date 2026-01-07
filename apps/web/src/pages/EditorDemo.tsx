@@ -59,7 +59,31 @@ export function EditorDemoPage() {
             <li>Block Quotes</li>
             <li>Links (Ctrl+K)</li>
             <li>Undo/Redo</li>
+            <li className="text-green-600 font-medium">Markdown Paste</li>
+            <li className="text-green-600 font-medium">Voice Input (Chrome/Edge/Safari)</li>
           </ul>
+        </div>
+
+        {/* New Features */}
+        <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-lg">
+          <h2 className="font-semibold mb-2 text-green-700 dark:text-green-400">New Features:</h2>
+          <div className="space-y-3 text-sm">
+            <div>
+              <h3 className="font-medium">Markdown Paste</h3>
+              <p className="text-muted-foreground">
+                Paste markdown text from external documents and it will automatically be converted to rich text.
+                Try copying markdown from GitHub, documentation, or any .md file.
+              </p>
+            </div>
+            <div>
+              <h3 className="font-medium">Voice-to-Text</h3>
+              <p className="text-muted-foreground">
+                Click the microphone button in the toolbar to start voice input.
+                Speak and your words will be transcribed directly into the editor.
+                Works in Chrome, Edge, and Safari.
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Markdown Shortcuts */}

@@ -36,6 +36,7 @@ import { CodeNode, CodeHighlightNode } from '@lexical/code'
 // Local imports
 import { editorTheme } from './theme'
 import { ToolbarPlugin } from './ToolbarPlugin'
+import { MarkdownPastePlugin } from './MarkdownPastePlugin'
 import './editor.css'
 
 // =============================================================================
@@ -184,6 +185,7 @@ export function RichTextEditor({
           <CheckListPlugin />
           <TabIndentationPlugin />
           <MarkdownShortcutPlugin transformers={TRANSFORMERS} />
+          <MarkdownPastePlugin />
 
           {/* Change handler */}
           {onChange && <OnChangePlugin onChange={handleChange} ignoreSelectionChange />}

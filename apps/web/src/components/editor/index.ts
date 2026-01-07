@@ -14,4 +14,9 @@ export type { RichTextEditorProps } from './RichTextEditor'
 
 export { ToolbarPlugin } from './ToolbarPlugin'
 
+export { MarkdownPastePlugin } from './MarkdownPastePlugin'
+
+export { SpeechToTextPlugin, useSpeechRecognition } from './SpeechToTextPlugin'
+export type { SpeechToTextPluginProps } from './SpeechToTextPlugin'
+
 export { editorTheme } from './theme'
