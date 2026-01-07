@@ -98,15 +98,6 @@ export function DashboardSidebar({ collapsed = false }: DashboardSidebarProps) {
     <aside
       className="flex flex-col h-full"
     >
-      {/* Header */}
-      {!collapsed && (
-        <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="font-semibold text-gray-900 dark:text-white">
-            Dashboard
-          </h2>
-        </div>
-      )}
-
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-2">
         <ul className="space-y-0.5 px-2">

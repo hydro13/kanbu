@@ -414,29 +414,31 @@ export function BaseLayout({
               className="hidden md:flex flex-col flex-shrink-0 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 transition-all duration-200"
               style={{ width: sidebarWidth }}
             >
+              {/* Sidebar header with collapse toggle */}
+              <div className="flex items-center justify-between px-3 py-2 border-b border-gray-200 dark:border-gray-700">
+                {!isCollapsed && (
+                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    Menu
+                  </span>
+                )}
+                <button
+                  onClick={toggleCollapsed}
+                  className={`p-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-md transition-colors ${isCollapsed ? 'mx-auto' : ''}`}
+                  title={isCollapsed ? 'Expand sidebar (show labels)' : 'Collapse sidebar (icons only)'}
+                >
+                  {isCollapsed ? (
+                    <SidebarExpandIcon className="h-4 w-4" />
+                  ) : (
+                    <SidebarCollapseIcon className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+
               {/* Sidebar content with collapsed prop injected */}
               <div className="flex-1 overflow-hidden flex flex-col">
                 {isValidElement(sidebar)
                   ? cloneElement(sidebar as React.ReactElement<{ collapsed?: boolean }>, { collapsed: isCollapsed })
                   : sidebar}
-              </div>
-
-              {/* Collapse toggle button at bottom */}
-              <div className="border-t border-gray-200 dark:border-gray-700 p-2">
-                <button
-                  onClick={toggleCollapsed}
-                  className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
-                  title={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-                >
-                  {isCollapsed ? (
-                    <SidebarExpandIcon className="h-4 w-4" />
-                  ) : (
-                    <>
-                      <SidebarCollapseIcon className="h-4 w-4" />
-                      <span>Collapse</span>
-                    </>
-                  )}
-                </button>
               </div>
             </div>
           )}
