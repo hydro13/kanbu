@@ -38,6 +38,7 @@ import { editorTheme } from './theme'
 import { ToolbarPlugin } from './ToolbarPlugin'
 import { MarkdownPastePlugin } from './MarkdownPastePlugin'
 import { MediaPlugin } from './MediaPlugin'
+import { DraggableMediaPlugin } from './DraggableMediaPlugin'
 import { ImageNode, VideoNode, EmbedNode } from './nodes'
 import './editor.css'
 
@@ -193,6 +194,7 @@ export function RichTextEditor({
           <MarkdownShortcutPlugin transformers={TRANSFORMERS} />
           <MarkdownPastePlugin />
           <MediaPlugin />
+          {!readOnly && <DraggableMediaPlugin />}
 
           {/* Change handler */}
           {onChange && <OnChangePlugin onChange={handleChange} ignoreSelectionChange />}

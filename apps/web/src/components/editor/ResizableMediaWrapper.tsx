@@ -88,6 +88,19 @@ function AlignRightIcon() {
   )
 }
 
+function DragHandleIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="9" cy="5" r="1.5" fill="currentColor" />
+      <circle cx="15" cy="5" r="1.5" fill="currentColor" />
+      <circle cx="9" cy="12" r="1.5" fill="currentColor" />
+      <circle cx="15" cy="12" r="1.5" fill="currentColor" />
+      <circle cx="9" cy="19" r="1.5" fill="currentColor" />
+      <circle cx="15" cy="19" r="1.5" fill="currentColor" />
+    </svg>
+  )
+}
+
 // =============================================================================
 // Component
 // =============================================================================
@@ -282,6 +295,17 @@ export function ResizableMediaWrapper({
 
           {/* Alignment toolbar */}
           <div className="lexical-media-toolbar">
+            {/* Drag handle */}
+            <div
+              className="lexical-media-toolbar-btn lexical-media-drag-handle"
+              title="Drag to reposition"
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              <DragHandleIcon />
+            </div>
+
+            <div className="lexical-media-toolbar-divider" />
+
             <button
               type="button"
               className={`lexical-media-toolbar-btn ${alignment === 'default' ? 'active' : ''}`}

@@ -35,6 +35,8 @@ export {
 } from './MediaPlugin'
 export type { MediaPluginProps } from './MediaPlugin'
 
+export { DraggableMediaPlugin } from './DraggableMediaPlugin'
+
 // Nodes
 export {
   ImageNode,

@@ -66,6 +66,7 @@ export function EditorDemoPage() {
             <li className="text-blue-600 font-medium">YouTube/Vimeo Embed</li>
             <li className="text-purple-600 font-medium">Media Resizing</li>
             <li className="text-purple-600 font-medium">Text Wrapping (Float L/R)</li>
+            <li className="text-orange-600 font-medium">Drag & Drop Repositioning</li>
           </ul>
         </div>
 
@@ -125,6 +126,14 @@ export function EditorDemoPage() {
               <p className="text-muted-foreground">
                 While resizing, the current dimensions are displayed on the media
                 to help you achieve the exact size you want.
+              </p>
+            </div>
+            <div>
+              <h3 className="font-medium">Drag & Drop</h3>
+              <p className="text-muted-foreground">
+                Drag any media element to reposition it within your content.
+                Use the drag handle in the toolbar or simply drag the media directly.
+                A blue line indicates where the media will be placed.
               </p>
             </div>
           </div>

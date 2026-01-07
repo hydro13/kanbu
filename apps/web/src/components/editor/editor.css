@@ -760,6 +760,58 @@
 }
 
 /* =============================================================================
+   Drag and Drop
+   ============================================================================= */
+
+/* Drag handle in toolbar */
+.lexical-media-drag-handle {
+  cursor: grab;
+}
+
+.lexical-media-drag-handle:active {
+  cursor: grabbing;
+}
+
+/* Toolbar divider */
+.lexical-media-toolbar-divider {
+  width: 1px;
+  height: 20px;
+  background: hsl(var(--border));
+  margin: 0 0.25rem;
+}
+
+/* Dragging state */
+.lexical-media-wrapper.lexical-media-dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+
+.lexical-media-wrapper[draggable="true"] {
+  cursor: grab;
+}
+
+.lexical-media-wrapper[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+/* Drop line indicator */
+.lexical-media-drop-line {
+  position: fixed;
+  height: 4px;
+  background: hsl(var(--primary));
+  border-radius: 2px;
+  pointer-events: none;
+  z-index: 1000;
+  box-shadow: 0 0 0 2px hsl(var(--primary) / 0.3);
+}
+
+/* Drop target highlight */
+.lexical-media-drop-target {
+  outline: 2px dashed hsl(var(--primary));
+  outline-offset: 4px;
+}
+
+/* =============================================================================
    Dark Mode Adjustments
    ============================================================================= */
 

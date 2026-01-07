@@ -267,17 +267,17 @@ interface RichTextEditorProps {
 ## Implementation Roadmap
 
 ### Sprint 1: Foundation
-- [ ] Lexical package installatie
-- [ ] Basis `RichTextEditor` component
-- [ ] Toolbar met formatting opties
-- [ ] Markdown shortcuts
-- [ ] JSON serialization/deserialization
+- [x] Lexical package installatie
+- [x] Basis `RichTextEditor` component
+- [x] Toolbar met formatting opties
+- [x] Markdown shortcuts
+- [x] JSON serialization/deserialization
 
 ### Sprint 2: Media & Links
-- [ ] Image upload & embed
-- [ ] Video embed (YouTube, Vimeo)
-- [ ] External link support
-- [ ] Link preview cards
+- [x] Image upload & embed
+- [x] Video embed (YouTube, Vimeo)
+- [x] External link support
+- [x] Link preview cards
 
 ### Sprint 3: Integration
 - [ ] Workspace description editor
