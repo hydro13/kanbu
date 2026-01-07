@@ -307,6 +307,10 @@ export class ImageNode extends DecoratorNode<JSX.Element> {
     return false
   }
 
+  isInline(): boolean {
+    return true
+  }
+
   getSrc(): string {
     return this.__src
   }

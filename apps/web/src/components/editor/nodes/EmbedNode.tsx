@@ -227,7 +227,13 @@ function MetadataInfoPanel({
             <span className="lexical-embed-metadata-likes">{metadata.likeCount} likes</span>
           </div>
 
-          {/* Timestamps section */}
+          {/* Description - shown first */}
+          <div className="lexical-embed-metadata-description">
+            <h4>Description</h4>
+            <p>{metadata.description}</p>
+          </div>
+
+          {/* Timestamps/Chapters section - shown after description */}
           {hasTimestamps && (
             <div className="lexical-embed-metadata-timestamps">
               <h4>Chapters</h4>
@@ -246,12 +252,6 @@ function MetadataInfoPanel({
               </ul>
             </div>
           )}
-
-          {/* Description */}
-          <div className="lexical-embed-metadata-description">
-            <h4>Description</h4>
-            <p>{metadata.description.slice(0, 1000)}{metadata.description.length > 1000 ? '...' : ''}</p>
-          </div>
 
           {/* Tags */}
           {metadata.tags.length > 0 && (
@@ -610,6 +610,10 @@ export class EmbedNode extends DecoratorNode<JSX.Element> {
 
   updateDOM(): false {
     return false
+  }
+
+  isInline(): boolean {
+    return true
   }
 
   getUrl(): string {

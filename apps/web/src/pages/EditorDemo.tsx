@@ -187,8 +187,8 @@ export function EditorDemoPage() {
             placeholder="Start typing here... Try # for headings, * for lists, **bold**, etc."
             onChange={handleChange}
             autoFocus
-            minHeight="200px"
-            maxHeight="400px"
+            minHeight="400px"
+            maxHeight="800px"
           />
         </div>
 

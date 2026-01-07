@@ -747,8 +747,7 @@
 
 .lexical-media-wrapper {
   position: relative;
-  display: inline-block;
-  vertical-align: top;
+  display: block;
   margin: 0.5rem 0;
   transition: box-shadow 0.15s ease;
 }
@@ -783,15 +782,15 @@
 }
 
 .lexical-media-float-left {
+  display: block;
   float: left;
   margin: 0.5rem 1.5rem 0.5rem 0;
-  clear: left;
 }
 
 .lexical-media-float-right {
+  display: block;
   float: right;
   margin: 0.5rem 0 0.5rem 1.5rem;
-  clear: right;
 }
 
 /* Resize handles */
@@ -849,29 +848,27 @@
   cursor: w-resize;
 }
 
-/* Media toolbar (appears when selected) */
+/* Media toolbar (always visible, top-right position) */
 .lexical-media-toolbar {
   position: absolute;
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
+  top: 0.5rem;
+  right: 0.5rem;
   display: flex;
   gap: 0.25rem;
   padding: 0.375rem;
-  background: hsl(var(--background));
+  background: hsl(var(--background) / 0.95);
   border: 1px solid hsl(var(--border));
   border-radius: 0.5rem;
-  box-shadow: 0 2px 8px hsl(var(--foreground) / 0.1);
-  margin-bottom: 0.5rem;
+  box-shadow: 0 2px 8px hsl(var(--foreground) / 0.15);
   z-index: 20;
-  opacity: 0;
-  pointer-events: none;
+  opacity: 0.7;
+  pointer-events: auto;
   transition: opacity 0.15s ease;
 }
 
+.lexical-media-wrapper:hover .lexical-media-toolbar,
 .lexical-media-wrapper.lexical-media-selected .lexical-media-toolbar {
   opacity: 1;
-  pointer-events: auto;
 }
 
 .lexical-media-toolbar-btn {

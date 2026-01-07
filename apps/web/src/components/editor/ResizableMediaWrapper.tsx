@@ -262,6 +262,67 @@ export function ResizableMediaWrapper({
         {children}
       </div>
 
+      {/* Alignment toolbar - always visible (not read-only) */}
+      {!readOnly && (
+        <div className="lexical-media-toolbar">
+          {/* Drag handle */}
+          <div
+            className="lexical-media-toolbar-btn lexical-media-drag-handle"
+            title="Drag to reposition"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <DragHandleIcon />
+          </div>
+
+          <div className="lexical-media-toolbar-divider" />
+
+          <button
+            type="button"
+            className={`lexical-media-toolbar-btn ${alignment === 'default' ? 'active' : ''}`}
+            onClick={(e) => {
+              e.stopPropagation()
+              onAlignmentChange('default')
+            }}
+            title="Inline (default)"
+          >
+            <AlignDefaultIcon />
+          </button>
+          <button
+            type="button"
+            className={`lexical-media-toolbar-btn ${alignment === 'left' ? 'active' : ''}`}
+            onClick={(e) => {
+              e.stopPropagation()
+              onAlignmentChange('left')
+            }}
+            title="Float left (text wraps right)"
+          >
+            <AlignLeftIcon />
+          </button>
+          <button
+            type="button"
+            className={`lexical-media-toolbar-btn ${alignment === 'center' ? 'active' : ''}`}
+            onClick={(e) => {
+              e.stopPropagation()
+              onAlignmentChange('center')
+            }}
+            title="Center"
+          >
+            <AlignCenterIcon />
+          </button>
+          <button
+            type="button"
+            className={`lexical-media-toolbar-btn ${alignment === 'right' ? 'active' : ''}`}
+            onClick={(e) => {
+              e.stopPropagation()
+              onAlignmentChange('right')
+            }}
+            title="Float right (text wraps left)"
+          >
+            <AlignRightIcon />
+          </button>
+        </div>
+      )}
+
       {/* Resize handles - only show when selected and not read-only */}
       {isSelected && !readOnly && (
         <>
@@ -292,65 +353,6 @@ export function ResizableMediaWrapper({
             className="lexical-resize-handle lexical-resize-handle-w"
             onMouseDown={(e) => handleResizeStart(e, 'w')}
           />
-
-          {/* Alignment toolbar */}
-          <div className="lexical-media-toolbar">
-            {/* Drag handle */}
-            <div
-              className="lexical-media-toolbar-btn lexical-media-drag-handle"
-              title="Drag to reposition"
-              onMouseDown={(e) => e.stopPropagation()}
-            >
-              <DragHandleIcon />
-            </div>
-
-            <div className="lexical-media-toolbar-divider" />
-
-            <button
-              type="button"
-              className={`lexical-media-toolbar-btn ${alignment === 'default' ? 'active' : ''}`}
-              onClick={(e) => {
-                e.stopPropagation()
-                onAlignmentChange('default')
-              }}
-              title="Inline (default)"
-            >
-              <AlignDefaultIcon />
-            </button>
-            <button
-              type="button"
-              className={`lexical-media-toolbar-btn ${alignment === 'left' ? 'active' : ''}`}
-              onClick={(e) => {
-                e.stopPropagation()
-                onAlignmentChange('left')
-              }}
-              title="Float left (text wraps right)"
-            >
-              <AlignLeftIcon />
-            </button>
-            <button
-              type="button"
-              className={`lexical-media-toolbar-btn ${alignment === 'center' ? 'active' : ''}`}
-              onClick={(e) => {
-                e.stopPropagation()
-                onAlignmentChange('center')
-              }}
-              title="Center"
-            >
-              <AlignCenterIcon />
-            </button>
-            <button
-              type="button"
-              className={`lexical-media-toolbar-btn ${alignment === 'right' ? 'active' : ''}`}
-              onClick={(e) => {
-                e.stopPropagation()
-                onAlignmentChange('right')
-              }}
-              title="Float right (text wraps left)"
-            >
-              <AlignRightIcon />
-            </button>
-          </div>
 
           {/* Size indicator */}
           {isResizing && currentWidth && currentHeight && (
