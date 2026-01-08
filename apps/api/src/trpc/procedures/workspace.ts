@@ -21,7 +21,8 @@ import {
   generateInviteToken,
   getInviteExpiration,
 } from '../../lib/workspace'
-import { permissionService, groupPermissionService } from '../../services'
+import { permissionService, groupPermissionService, aclService } from '../../services'
+import { ACL_PRESETS } from '../../services/aclService'
 
 // =============================================================================
 // Input Schemas
@@ -105,6 +106,7 @@ export const workspaceRouter = router({
       const slug = await generateUniqueSlug(input.name)
       const ownerId = input.ownerId ?? ctx.user.id
 
+      // Create workspace (without legacy WorkspaceUser)
       const workspace = await ctx.prisma.workspace.create({
         data: {
           name: input.name,
@@ -112,6 +114,7 @@ export const workspaceRouter = router({
           description: input.description,
           logoUrl: input.logoUrl,
           createdById: ctx.user.id,
+          // LEGACY: Still create WorkspaceUser for backwards compatibility
           users: {
             create: {
               userId: ownerId,
@@ -127,6 +130,17 @@ export const workspaceRouter = router({
           logoUrl: true,
           createdAt: true,
         },
+      })
+
+      // NEW: Create ACL entry for owner with Full Control
+      await aclService.grantPermission({
+        resourceType: 'workspace',
+        resourceId: workspace.id,
+        principalType: 'user',
+        principalId: ownerId,
+        permissions: ACL_PRESETS.FULL_CONTROL,
+        inheritToChildren: true, // Workspace permissions inherit to projects
+        createdById: ctx.user.id,
       })
 
       return workspace
@@ -505,13 +519,29 @@ export const workspaceRouter = router({
           })
         }
 
-        // Add user directly
+        // LEGACY: Add user directly to WorkspaceUser
         await ctx.prisma.workspaceUser.create({
           data: {
             workspaceId: input.workspaceId,
             userId: existingUser.id,
             role: input.role,
           },
+        })
+
+        // NEW: Create ACL entry for the user
+        const aclPermissions =
+          input.role === 'ADMIN' ? ACL_PRESETS.FULL_CONTROL :
+          input.role === 'MEMBER' ? ACL_PRESETS.CONTRIBUTOR :
+          ACL_PRESETS.READ_ONLY // VIEWER
+
+        await aclService.grantPermission({
+          resourceType: 'workspace',
+          resourceId: input.workspaceId,
+          principalType: 'user',
+          principalId: existingUser.id,
+          permissions: aclPermissions,
+          inheritToChildren: true,
+          createdById: ctx.user.id,
         })
 
         return {
@@ -605,6 +635,7 @@ export const workspaceRouter = router({
         })
       }
 
+      // LEGACY: Delete WorkspaceUser entry
       await ctx.prisma.workspaceUser.delete({
         where: {
           workspaceId_userId: {
@@ -612,6 +643,14 @@ export const workspaceRouter = router({
             userId: input.userId,
           },
         },
+      })
+
+      // NEW: Revoke ACL permissions for this workspace
+      await aclService.revokePermission({
+        resourceType: 'workspace',
+        resourceId: input.workspaceId,
+        principalType: 'user',
+        principalId: input.userId,
       })
 
       return { success: true }
@@ -667,6 +706,7 @@ export const workspaceRouter = router({
         })
       }
 
+      // LEGACY: Update WorkspaceUser entry
       await ctx.prisma.workspaceUser.update({
         where: {
           workspaceId_userId: {
@@ -675,6 +715,30 @@ export const workspaceRouter = router({
           },
         },
         data: { role: input.role },
+      })
+
+      // NEW: Update ACL permissions based on new role
+      // First revoke existing permissions, then grant new ones
+      const aclPermissions =
+        input.role === 'ADMIN' ? ACL_PRESETS.FULL_CONTROL :
+        input.role === 'MEMBER' ? ACL_PRESETS.CONTRIBUTOR :
+        ACL_PRESETS.READ_ONLY // VIEWER
+
+      await aclService.revokePermission({
+        resourceType: 'workspace',
+        resourceId: input.workspaceId,
+        principalType: 'user',
+        principalId: input.userId,
+      })
+
+      await aclService.grantPermission({
+        resourceType: 'workspace',
+        resourceId: input.workspaceId,
+        principalType: 'user',
+        principalId: input.userId,
+        permissions: aclPermissions,
+        inheritToChildren: true,
+        createdById: ctx.user.id,
       })
 
       return { success: true, newRole: input.role }
@@ -938,13 +1002,29 @@ export const workspaceRouter = router({
         })
       }
 
-      // Add the user to the workspace
+      // LEGACY: Add the user to the workspace via WorkspaceUser
       await ctx.prisma.workspaceUser.create({
         data: {
           workspaceId: input.workspaceId,
           userId: input.userId,
           role: input.role,
         },
+      })
+
+      // NEW: Create ACL entry with appropriate permissions
+      // Map workspace role to ACL permissions
+      const aclPermissions = input.role === 'ADMIN' ? ACL_PRESETS.FULL_CONTROL
+        : input.role === 'MEMBER' ? ACL_PRESETS.CONTRIBUTOR
+        : ACL_PRESETS.READ_ONLY
+
+      await aclService.grantPermission({
+        resourceType: 'workspace',
+        resourceId: input.workspaceId,
+        principalType: 'user',
+        principalId: input.userId,
+        permissions: aclPermissions,
+        inheritToChildren: true,
+        createdById: ctx.user.id,
       })
 
       return {

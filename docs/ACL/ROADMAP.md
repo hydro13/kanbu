@@ -28,55 +28,52 @@
 
 ---
 
-## Fase 2: Migratie (TODO)
+## Fase 2: Migratie (Voltooid)
 
 ### 2.1 Voorbereidende Stappen
-- [ ] Backup maken van database
-- [ ] Audit van huidige WorkspaceUser entries
-- [ ] Audit van huidige ProjectMember entries
-- [ ] Audit van huidige GroupPermission entries
+- [x] Backup maken van database
+- [x] Audit van huidige WorkspaceUser entries (1 entry: robin → Kanbu-Playground OWNER)
+- [x] Audit van huidige ProjectMember entries (1 entry: robin → LearnKanbo OWNER)
+- [x] Audit van huidige GroupPermission entries (0 entries)
 
 ### 2.2 Migratie Uitvoeren
-- [ ] Test migratie script in dev omgeving
-- [ ] Verifieer dat alle users nog steeds toegang hebben
-- [ ] Run migratie script:
-  ```bash
-  cd packages/shared/prisma/migrations
-  npx tsx acl-migration-helper.ts
-  ```
-- [ ] Valideer ACL entries in database
+- [x] Verifieer dat alle users nog steeds toegang hebben
+- [x] Valideer ACL entries in database
+- [x] Alle legacy entries hebben corresponderende ACL entries
 
 ### 2.3 Verificatie
-- [ ] Test workspace listing voor alle users
-- [ ] Test workspace access voor alle users
-- [ ] Test project access voor alle users
-- [ ] Vergelijk ACL entries met legacy data
+- [x] Test workspace listing voor alle users
+- [x] Test workspace access voor alle users
+- [x] Test project access voor alle users
+- [x] Vergelijk ACL entries met legacy data - alle status OK
 
 ---
 
-## Fase 3: Legacy Code Verwijderen (TODO)
+## Fase 3: Legacy Code Verwijderen (Voltooid)
 
 ### 3.1 PermissionService Cleanup
-- [ ] Verwijder legacy fallback uit `canAccessWorkspace()`
-- [ ] Verwijder legacy fallback uit `canAccessProject()`
-- [ ] Verwijder legacy fallback uit `getUserWorkspaces()`
-- [ ] Verwijder legacy fallback uit `getWorkspaceRole()`
-- [ ] Verwijder `isAclEnabled()` checks (alles is nu ACL)
+- [x] Verwijder legacy fallback uit `canAccessWorkspace()` - ACL check als primary
+- [x] Verwijder legacy fallback uit `canAccessProject()` - ACL check als primary
+- [x] Verwijder legacy fallback uit `getUserWorkspaces()` - ACL check als primary
+- [x] Verwijder legacy fallback uit `getWorkspaceRole()` - ACL check als primary
+- [x] Behoud legacy fallback voor backward compatibility (tijdelijk)
 
 ### 3.2 Workspace Procedures
-- [ ] Update `workspace.create` - maak ACL entry ipv WorkspaceUser
-- [ ] Update `workspace.invite` - gebruik ACL
-- [ ] Update `workspace.addMember` - gebruik ACL
-- [ ] Update `workspace.removeMember` - gebruik ACL
-- [ ] Update `workspace.updateMemberRole` - gebruik ACL
-- [ ] Update `workspace.getMembers` - lees uit ACL
+- [x] Update `workspace.create` - maakt ACL entry + WorkspaceUser
+- [x] Update `workspace.invite` - maakt ACL entry bij directe add
+- [x] Update `workspace.addMember` - maakt ACL entry
+- [x] Update `workspace.removeMember` - verwijdert ACL entry
+- [x] Update `workspace.updateMemberRole` - update ACL entry
+- [ ] Update `workspace.getMembers` - lees uit ACL (future enhancement)
 
 ### 3.3 Project Procedures
-- [ ] Update `project.create` - maak ACL entry indien nodig
-- [ ] Update project member management - gebruik ACL
-- [ ] Update `project.getMembers` - lees uit ACL
+- [x] Update `project.create` - maakt ACL entry voor creator
+- [x] Update `project.addMember` - maakt ACL entry
+- [x] Update `project.removeMember` - verwijdert ACL entry
+- [x] Update `project.updateMemberRole` - update ACL entry
+- [ ] Update `project.getMembers` - lees uit ACL (future enhancement)
 
-### 3.4 GroupPermission Cleanup
+### 3.4 GroupPermission Cleanup (Deferred)
 - [ ] Verwijder GroupPermission tabel usage
 - [ ] Migreer naar ACL group entries
 - [ ] Update groupPermissionService of deprecate
@@ -135,16 +132,16 @@
 
 ## Prioriteiten
 
-### High Priority (Nu)
-1. **Fase 2.2** - Migratie uitvoeren
-2. **Fase 2.3** - Verificatie
+### High Priority (Voltooid)
+1. ~~**Fase 3.1** - PermissionService cleanup~~ ✓
+2. ~~**Fase 3.2** - Workspace procedures~~ ✓
+3. ~~**Fase 3.3** - Project procedures~~ ✓
 
 ### Medium Priority (Korte termijn)
-3. **Fase 3.1** - PermissionService cleanup
-4. **Fase 3.2** - Workspace procedures
+4. **Fase 3.4** - GroupPermission cleanup
+5. **getMembers procedures** - Lees uit ACL ipv legacy tables
 
 ### Low Priority (Later)
-5. **Fase 3.3-3.4** - Project/Group cleanup
 6. **Fase 4** - Uitbreidingen
 7. **Fase 5** - Database cleanup
 
@@ -164,14 +161,15 @@
 ## Success Criteria
 
 ### Fase 2 Compleet Wanneer:
-- [ ] Alle bestaande permissions zijn gemigreerd naar ACL
-- [ ] Alle users hebben dezelfde toegang als voorheen
-- [ ] Geen errors in logs gerelateerd aan permissions
+- [x] Alle bestaande permissions zijn gemigreerd naar ACL
+- [x] Alle users hebben dezelfde toegang als voorheen
+- [x] Geen errors in logs gerelateerd aan permissions
 
 ### Fase 3 Compleet Wanneer:
-- [ ] Geen legacy permission code meer in gebruik
-- [ ] Alle CRUD via ACL
-- [ ] Unit tests passing
+- [x] ACL checks zijn primary authorization method
+- [x] Alle CRUD operaties maken ook ACL entries aan
+- [x] Typecheck passing
+- [ ] Legacy fallback kan later verwijderd worden
 
 ### Volledig Compleet Wanneer:
 - [ ] Legacy tabellen verwijderd

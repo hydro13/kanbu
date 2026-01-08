@@ -27,6 +27,7 @@ import {
   generateProjectIdentifier,
 } from '../../lib/project'
 import { permissionService } from '../../services'
+import { aclService, ACL_PERMISSIONS, ACL_PRESETS } from '../../services/aclService'
 
 // =============================================================================
 // Input Schemas
@@ -98,7 +99,7 @@ export const projectRouter = router({
       // Generate identifier if not provided
       const identifier = input.identifier || await generateProjectIdentifier(input.name, input.workspaceId)
 
-      // Create project with creator as OWNER
+      // LEGACY: Create project with creator as OWNER in ProjectMember
       const project = await ctx.prisma.project.create({
         data: {
           workspaceId: input.workspaceId,
@@ -123,6 +124,17 @@ export const projectRouter = router({
         },
       })
 
+      // NEW: Create ACL entry for creator with FULL_CONTROL
+      await aclService.grantPermission({
+        resourceType: 'project',
+        resourceId: project.id,
+        principalType: 'user',
+        principalId: ctx.user.id,
+        permissions: ACL_PRESETS.FULL_CONTROL,
+        inheritToChildren: false, // Projects don't inherit to children (tasks use different model)
+        createdById: ctx.user.id,
+      })
+
       // Create default columns and swimlane
       await Promise.all([
         createDefaultColumns(project.id),
@@ -135,6 +147,7 @@ export const projectRouter = router({
   /**
    * List projects in a workspace
    * Requires workspace access (VIEWER sees public projects, members see assigned)
+   * Also includes projects accessible via ACL
    */
   list: protectedProcedure
     .input(workspaceProjectsSchema)
@@ -143,6 +156,31 @@ export const projectRouter = router({
 
       // Workspace OWNER/ADMIN sees all projects
       const isWorkspaceAdmin = access.role === 'OWNER' || access.role === 'ADMIN'
+
+      // Get user's group IDs for ACL check
+      const userGroups = await ctx.prisma.groupMember.findMany({
+        where: { userId: ctx.user.id },
+        select: { groupId: true },
+      })
+      const groupIds = userGroups.map(g => g.groupId)
+
+      // Get project IDs accessible via ACL (user or group entries with READ permission)
+      const aclProjectEntries = await ctx.prisma.aclEntry.findMany({
+        where: {
+          resourceType: 'project',
+          resourceId: { not: null },
+          deny: false,
+          OR: [
+            { principalType: 'user', principalId: ctx.user.id },
+            ...(groupIds.length > 0 ? [{ principalType: 'group', principalId: { in: groupIds } }] : []),
+          ],
+        },
+        select: { resourceId: true, permissions: true },
+      })
+      // Filter to only entries with READ permission
+      const aclProjectIds = aclProjectEntries
+        .filter(e => e.resourceId !== null && (e.permissions & ACL_PERMISSIONS.READ) !== 0)
+        .map(e => e.resourceId as number)
 
       const projects = await ctx.prisma.project.findMany({
         where: {
@@ -163,6 +201,8 @@ export const projectRouter = router({
                   },
                 },
               },
+              // Projects accessible via ACL
+              ...(aclProjectIds.length > 0 ? [{ id: { in: aclProjectIds } }] : []),
             ],
           }),
         },
@@ -207,14 +247,38 @@ export const projectRouter = router({
         ],
       })
 
+      // Create a map of project ID -> ACL permissions for quick lookup
+      const aclPermissionsMap = new Map<number, number>()
+      for (const entry of aclProjectEntries) {
+        if (entry.resourceId !== null) {
+          const existing = aclPermissionsMap.get(entry.resourceId) ?? 0
+          aclPermissionsMap.set(entry.resourceId, existing | entry.permissions)
+        }
+      }
+
       return projects.map((p) => {
         const activeTaskCount = p.tasks.filter((t) => t.isActive).length
         const completedTaskCount = p.tasks.filter((t) => !t.isActive).length
         // Get user role from direct membership
         // For group-based membership, default to MEMBER role
+        // For ACL-based access, map permissions to role
         const directRole = p.members[0]?.role
         const isGroupMember = p.groups.length > 0
-        const userRole = directRole ?? (isGroupMember ? 'MEMBER' : null)
+        const aclPerms = aclPermissionsMap.get(p.id)
+
+        type ProjectRole = 'OWNER' | 'MANAGER' | 'MEMBER' | 'VIEWER'
+        let userRole: ProjectRole | null = directRole as ProjectRole | null
+        if (!userRole && isGroupMember) {
+          userRole = 'MEMBER'
+        }
+        if (!userRole && aclPerms !== undefined) {
+          // Map ACL permissions to role
+          if (aclPerms & ACL_PERMISSIONS.PERMISSIONS) userRole = 'OWNER'
+          else if (aclPerms & ACL_PERMISSIONS.DELETE) userRole = 'MANAGER'
+          else if (aclPerms & ACL_PERMISSIONS.WRITE) userRole = 'MEMBER'
+          else if (aclPerms & ACL_PERMISSIONS.READ) userRole = 'VIEWER'
+        }
+
         return {
           id: p.id,
           name: p.name,
@@ -611,12 +675,30 @@ export const projectRouter = router({
         })
       }
 
+      // LEGACY: Create ProjectMember entry
       await ctx.prisma.projectMember.create({
         data: {
           projectId: input.projectId,
           userId: input.userId,
           role: input.role,
         },
+      })
+
+      // NEW: Create ACL entry for the user
+      // Note: OWNER cannot be assigned via addMember (only creator is OWNER)
+      const aclPermissions =
+        input.role === 'MANAGER' ? ACL_PRESETS.EDITOR :
+        input.role === 'MEMBER' ? ACL_PRESETS.CONTRIBUTOR :
+        ACL_PRESETS.READ_ONLY // VIEWER
+
+      await aclService.grantPermission({
+        resourceType: 'project',
+        resourceId: input.projectId,
+        principalType: 'user',
+        principalId: input.userId,
+        permissions: aclPermissions,
+        inheritToChildren: false,
+        createdById: ctx.user.id,
       })
 
       return { success: true }
@@ -665,6 +747,7 @@ export const projectRouter = router({
         })
       }
 
+      // LEGACY: Delete ProjectMember entry
       await ctx.prisma.projectMember.delete({
         where: {
           projectId_userId: {
@@ -672,6 +755,14 @@ export const projectRouter = router({
             userId: input.userId,
           },
         },
+      })
+
+      // NEW: Revoke ACL permissions for this project
+      await aclService.revokePermission({
+        resourceType: 'project',
+        resourceId: input.projectId,
+        principalType: 'user',
+        principalId: input.userId,
       })
 
       return { success: true }
@@ -723,6 +814,7 @@ export const projectRouter = router({
         })
       }
 
+      // LEGACY: Update ProjectMember entry
       await ctx.prisma.projectMember.update({
         where: {
           projectId_userId: {
@@ -731,6 +823,31 @@ export const projectRouter = router({
           },
         },
         data: { role: input.role },
+      })
+
+      // NEW: Update ACL permissions based on new role
+      // First revoke existing, then grant new
+      // Note: OWNER cannot be set via updateMemberRole (already protected above)
+      const aclPermissions =
+        input.role === 'MANAGER' ? ACL_PRESETS.EDITOR :
+        input.role === 'MEMBER' ? ACL_PRESETS.CONTRIBUTOR :
+        ACL_PRESETS.READ_ONLY // VIEWER
+
+      await aclService.revokePermission({
+        resourceType: 'project',
+        resourceId: input.projectId,
+        principalType: 'user',
+        principalId: input.userId,
+      })
+
+      await aclService.grantPermission({
+        resourceType: 'project',
+        resourceId: input.projectId,
+        principalType: 'user',
+        principalId: input.userId,
+        permissions: aclPermissions,
+        inheritToChildren: false,
+        createdById: ctx.user.id,
       })
 
       return { success: true, newRole: input.role }

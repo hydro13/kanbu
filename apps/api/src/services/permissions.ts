@@ -119,22 +119,24 @@ export class PermissionService {
 
   /**
    * Check if a user can access a workspace.
-   * NEW: First checks ACL system, then falls back to legacy role-based system.
+   * Uses ACL system with legacy fallback for backwards compatibility.
    *
-   * Returns true if user is:
-   * - Has ACL READ permission on workspace (new system)
-   * - A Super Admin (AppRole.ADMIN)
-   * - A Domain Admin (member of "Domain Admins" group)
-   * - A direct workspace member (WorkspaceUser table)
-   * - A group-based workspace member (WORKSPACE or WORKSPACE_ADMIN group)
+   * Returns true if user has access via:
+   * 1. ACL READ permission on workspace
+   * 2. Super Admin (AppRole.ADMIN)
+   * 3. Domain Admin (member of "Domain Admins" group)
+   * 4. Legacy: Direct workspace member (WorkspaceUser table)
+   * 5. Legacy: Group-based workspace member (WORKSPACE or WORKSPACE_ADMIN group)
    */
   async canAccessWorkspace(userId: number, workspaceId: number): Promise<boolean> {
-    // NEW: Check ACL system first (if ACL entries exist for this workspace)
-    if (await aclService.isAclEnabled('workspace', workspaceId)) {
-      return aclService.hasPermission(userId, 'workspace', workspaceId, ACL_PERMISSIONS.READ)
+    // Check workspace is active first
+    const workspace = await prisma.workspace.findUnique({
+      where: { id: workspaceId },
+      select: { isActive: true },
+    })
+    if (!workspace?.isActive) {
+      return false
     }
-
-    // LEGACY: Fall back to role-based system
 
     // Super Admins can access all workspaces
     if (await this.isSuperAdminById(userId)) {
@@ -146,16 +148,13 @@ export class PermissionService {
       return true
     }
 
-    // Check workspace is active
-    const workspace = await prisma.workspace.findUnique({
-      where: { id: workspaceId },
-      select: { isActive: true },
-    })
-    if (!workspace?.isActive) {
-      return false
+    // Check ACL system (primary authorization method)
+    const hasAclAccess = await aclService.hasPermission(userId, 'workspace', workspaceId, ACL_PERMISSIONS.READ)
+    if (hasAclAccess) {
+      return true
     }
 
-    // Check direct membership (WorkspaceUser table)
+    // LEGACY FALLBACK: Check direct membership (WorkspaceUser table)
     const directMembership = await prisma.workspaceUser.findUnique({
       where: {
         workspaceId_userId: { workspaceId, userId },
@@ -165,7 +164,7 @@ export class PermissionService {
       return true
     }
 
-    // Check group-based membership (WORKSPACE or WORKSPACE_ADMIN groups)
+    // LEGACY FALLBACK: Check group-based membership (WORKSPACE or WORKSPACE_ADMIN groups)
     const groupMembership = await prisma.groupMember.findFirst({
       where: {
         userId,
@@ -541,22 +540,14 @@ export class PermissionService {
 
   /**
    * Check if a user can access a project.
-   * NEW: First checks ACL system, then falls back to legacy role-based system.
+   * Uses ACL system with legacy fallback for backwards compatibility.
    *
    * Access is granted if:
-   * - Has ACL READ permission on project (new system, includes inheritance from workspace)
-   * - User is a Super Admin
-   * - User is a workspace member (workspace membership grants project access)
-   * - User is a project member
+   * 1. Project is public
+   * 2. ACL READ permission on project (includes inheritance from workspace)
+   * 3. Legacy: Workspace membership (workspace access grants project access)
    */
   async canAccessProject(userId: number, projectId: number): Promise<boolean> {
-    // NEW: Check ACL system first (if ACL entries exist for this project or its workspace)
-    if (await aclService.isAclEnabled('project', projectId)) {
-      return aclService.hasPermission(userId, 'project', projectId, ACL_PERMISSIONS.READ)
-    }
-
-    // LEGACY: Fall back to role-based system
-
     // Get project with workspace info
     const project = await prisma.project.findUnique({
       where: { id: projectId },
@@ -571,12 +562,18 @@ export class PermissionService {
       return false
     }
 
-    // Public projects are accessible to all
+    // Public projects are accessible to all authenticated users
     if (project.isPublic) {
       return true
     }
 
-    // Check workspace access (this includes Super Admin check)
+    // Check ACL system first (includes inheritance from workspace)
+    const hasAclAccess = await aclService.hasPermission(userId, 'project', projectId, ACL_PERMISSIONS.READ)
+    if (hasAclAccess) {
+      return true
+    }
+
+    // LEGACY FALLBACK: Check workspace access (workspace membership grants project access)
     return this.canAccessWorkspace(userId, project.workspaceId)
   }
 
