@@ -411,14 +411,22 @@ export const analyticsRouter = router({
     .query(async ({ ctx, input }) => {
       await permissionService.requireProjectAccess(ctx.user.id, input.projectId, 'VIEWER')
 
-      // Get ALL project members (not just assignees with tasks)
-      const projectMembers = await ctx.prisma.projectMember.findMany({
-        where: { projectId: input.projectId },
-        include: {
-          user: {
-            select: { id: true, username: true, name: true, avatarUrl: true },
-          },
+      // Get ALL project members from ACL entries
+      const aclEntries = await ctx.prisma.aclEntry.findMany({
+        where: {
+          resourceType: 'project',
+          resourceId: input.projectId,
+          principalType: 'user',
+          deny: false,
         },
+        select: { principalId: true },
+      })
+      const memberUserIds = aclEntries.map(e => e.principalId)
+
+      // Get user details for all members
+      const users = await ctx.prisma.user.findMany({
+        where: { id: { in: memberUserIds } },
+        select: { id: true, username: true, name: true, avatarUrl: true },
       })
 
       // Get task counts per user (only for users who have tasks)
@@ -438,8 +446,8 @@ export const analyticsRouter = router({
 
       // Get detailed task info per PROJECT MEMBER (not just assignees)
       const workloadDetails = await Promise.all(
-        projectMembers.map(async (member) => {
-          const userId = member.user.id
+        users.map(async (user) => {
+          const userId = user.id
           const taskCount = taskCountMap.get(userId) ?? 0
 
           // Get priority breakdown (if user has tasks)
@@ -484,9 +492,9 @@ export const analyticsRouter = router({
 
           return {
             userId,
-            username: member.user.username ?? 'Unknown',
-            name: member.user.name ?? 'Unknown',
-            avatarUrl: member.user.avatarUrl ?? null,
+            username: user.username ?? 'Unknown',
+            name: user.name ?? 'Unknown',
+            avatarUrl: user.avatarUrl ?? null,
             totalTasks: taskCount,
             overdueCount,
             byPriority: byPriority.map((p) => ({

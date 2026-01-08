@@ -27,6 +27,8 @@ import { TRPCError } from '@trpc/server'
 import * as OTPAuth from 'otpauth'
 import { router, protectedProcedure } from '../router'
 import { hashPassword, verifyPassword } from '../../lib/auth'
+import { permissionService } from '../../services'
+import { scopeService } from '../../services/scopeService'
 
 // =============================================================================
 // Input Schemas
@@ -140,26 +142,6 @@ export const userRouter = router({
         // Notification preferences
         notificationsEnabled: true,
         notificationFilter: true,
-        // Workspaces with details
-        workspaces: {
-          select: {
-            role: true,
-            workspace: {
-              select: {
-                id: true,
-                name: true,
-                slug: true,
-                logoUrl: true,
-              },
-            },
-          },
-          orderBy: { workspace: { name: 'asc' } },
-        },
-        _count: {
-          select: {
-            workspaces: true,
-          },
-        },
       },
     })
 
@@ -170,10 +152,33 @@ export const userRouter = router({
       })
     }
 
-    // Get recent projects the user is member of
+    // Get workspaces via ACL-based permission service
+    const userWorkspaces = await permissionService.getUserWorkspaces(ctx.user.id)
+    const workspaceIds = userWorkspaces.map(w => w.id)
+
+    // Get workspace details
+    const workspaces = await ctx.prisma.workspace.findMany({
+      where: { id: { in: workspaceIds }, isActive: true },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        logoUrl: true,
+      },
+      orderBy: { name: 'asc' },
+    })
+
+    const roleMap = new Map(userWorkspaces.map(w => [w.id, w.role]))
+    const workspacesWithRoles = workspaces.map(ws => ({
+      ...ws,
+      role: roleMap.get(ws.id) ?? 'VIEWER',
+    }))
+
+    // Get recent projects via scope service
+    const scope = await scopeService.getUserScope(ctx.user.id)
     const recentProjects = await ctx.prisma.project.findMany({
       where: {
-        members: { some: { userId: ctx.user.id } },
+        id: { in: scope.projectIds },
         isActive: true,
       },
       select: {
@@ -193,14 +198,8 @@ export const userRouter = router({
 
     return {
       ...user,
-      workspaceCount: user._count.workspaces,
-      workspaces: user.workspaces.map((m) => ({
-        id: m.workspace.id,
-        name: m.workspace.name,
-        slug: m.workspace.slug,
-        logoUrl: m.workspace.logoUrl,
-        role: m.role,
-      })),
+      workspaceCount: workspacesWithRoles.length,
+      workspaces: workspacesWithRoles,
       recentProjects,
     }
   }),

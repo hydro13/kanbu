@@ -30,7 +30,7 @@
 import { TRPCError } from '@trpc/server'
 import { ProjectRole } from '@prisma/client'
 import { prisma } from './prisma'
-import { groupPermissionService } from '../services/groupPermissions'
+import { permissionService } from '../services/permissions'
 
 // =============================================================================
 // Types
@@ -80,145 +80,14 @@ export async function requireProjectAccess(
   projectId: number,
   minRole: ProjectRole = 'VIEWER'
 ): Promise<ProjectAccess> {
-  // Domain Admins have full access to all projects
-  const isDomainAdmin = await groupPermissionService.isDomainAdmin(userId)
-  if (isDomainAdmin) {
-    const project = await prisma.project.findUnique({
-      where: { id: projectId },
-      select: { id: true, workspaceId: true, isActive: true },
-    })
-    if (!project) {
-      throw new TRPCError({
-        code: 'NOT_FOUND',
-        message: 'Project not found',
-      })
-    }
-    return {
-      projectId,
-      workspaceId: project.workspaceId,
-      userId,
-      role: 'OWNER', // Domain Admins get OWNER-level access
-    }
+  // Delegate to permissionService (ACL-based)
+  const access = await permissionService.requireProjectAccess(userId, projectId, minRole)
+  return {
+    projectId: access.projectId,
+    workspaceId: access.workspaceId,
+    userId: access.userId,
+    role: access.role,
   }
-
-  const project = await prisma.project.findUnique({
-    where: { id: projectId },
-    select: {
-      id: true,
-      workspaceId: true,
-      isActive: true,
-      isPublic: true,
-    },
-  })
-
-  if (!project) {
-    throw new TRPCError({
-      code: 'NOT_FOUND',
-      message: 'Project not found',
-    })
-  }
-
-  if (!project.isActive) {
-    throw new TRPCError({
-      code: 'FORBIDDEN',
-      message: 'This project has been archived or deleted',
-    })
-  }
-
-  // Check project membership first
-  const projectMember = await prisma.projectMember.findUnique({
-    where: {
-      projectId_userId: {
-        projectId,
-        userId,
-      },
-    },
-  })
-
-  if (projectMember) {
-    // Check role hierarchy
-    const userRoleLevel = PROJECT_ROLE_HIERARCHY[projectMember.role]
-    const requiredRoleLevel = PROJECT_ROLE_HIERARCHY[minRole]
-
-    if (userRoleLevel < requiredRoleLevel) {
-      throw new TRPCError({
-        code: 'FORBIDDEN',
-        message: `This action requires ${minRole} role or higher`,
-      })
-    }
-
-    return {
-      projectId,
-      workspaceId: project.workspaceId,
-      userId,
-      role: projectMember.role,
-    }
-  }
-
-  // If no project membership, check workspace membership for public projects
-  // or for implicit access through workspace OWNER/ADMIN
-  const workspaceMember = await prisma.workspaceUser.findUnique({
-    where: {
-      workspaceId_userId: {
-        workspaceId: project.workspaceId,
-        userId,
-      },
-    },
-  })
-
-  if (!workspaceMember) {
-    throw new TRPCError({
-      code: 'FORBIDDEN',
-      message: 'You do not have access to this project',
-    })
-  }
-
-  // Workspace OWNER/ADMIN have implicit access to all projects
-  if (workspaceMember.role === 'OWNER' || workspaceMember.role === 'ADMIN') {
-    // Map workspace role to project role
-    const implicitRole: ProjectRole = workspaceMember.role === 'OWNER' ? 'OWNER' : 'MANAGER'
-    const implicitRoleLevel = PROJECT_ROLE_HIERARCHY[implicitRole]
-    const requiredRoleLevel = PROJECT_ROLE_HIERARCHY[minRole]
-
-    if (implicitRoleLevel < requiredRoleLevel) {
-      throw new TRPCError({
-        code: 'FORBIDDEN',
-        message: `This action requires ${minRole} role or higher`,
-      })
-    }
-
-    return {
-      projectId,
-      workspaceId: project.workspaceId,
-      userId,
-      role: implicitRole,
-    }
-  }
-
-  // Public projects give VIEWER access to workspace members
-  if (project.isPublic) {
-    const requiredRoleLevel = PROJECT_ROLE_HIERARCHY[minRole]
-    const viewerRoleLevel = PROJECT_ROLE_HIERARCHY['VIEWER']
-
-    if (viewerRoleLevel < requiredRoleLevel) {
-      throw new TRPCError({
-        code: 'FORBIDDEN',
-        message: `This action requires ${minRole} role or higher`,
-      })
-    }
-
-    return {
-      projectId,
-      workspaceId: project.workspaceId,
-      userId,
-      role: 'VIEWER',
-    }
-  }
-
-  throw new TRPCError({
-    code: 'FORBIDDEN',
-    message: 'You do not have access to this project',
-  })
 }
 
 /**
@@ -234,10 +103,14 @@ export async function getProjectAccess(
   userId: number,
   projectId: number
 ): Promise<ProjectAccess | null> {
-  try {
-    return await requireProjectAccess(userId, projectId, 'VIEWER')
-  } catch {
-    return null
+  // Delegate to permissionService (ACL-based)
+  const access = await permissionService.getProjectAccess(userId, projectId)
+  if (!access) return null
+  return {
+    projectId: access.projectId,
+    workspaceId: access.workspaceId,
+    userId: access.userId,
+    role: access.role,
   }
 }
 

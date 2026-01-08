@@ -198,7 +198,7 @@ export const exportRouter = router({
             select: { id: true, name: true, color: true },
           },
           _count: {
-            select: { tasks: true, members: true },
+            select: { tasks: true },
           },
         },
       })
@@ -206,6 +206,16 @@ export const exportRouter = router({
       if (!project) {
         throw new Error('Project not found')
       }
+
+      // Get member count from ACL entries
+      const memberCount = await ctx.prisma.aclEntry.count({
+        where: {
+          resourceType: 'project',
+          resourceId: input.projectId,
+          principalType: 'user',
+          deny: false,
+        },
+      })
 
       // Fetch tasks
       const tasks = await ctx.prisma.task.findMany({
@@ -236,12 +246,12 @@ export const exportRouter = router({
         endDate: project.endDate?.toISOString() ?? null,
         isActive: project.isActive,
         isPublic: project.isPublic,
-        columns: project.columns.map((c) => c.title),
-        swimlanes: project.swimlanes.map((s) => s.name),
-        tags: project.tags.map((t) => t.name),
-        categories: project.categories.map((c) => c.name),
+        columns: project.columns.map((c: { title: string }) => c.title),
+        swimlanes: project.swimlanes.map((s: { name: string }) => s.name),
+        tags: project.tags.map((t: { name: string }) => t.name),
+        categories: project.categories.map((c: { name: string }) => c.name),
         taskCount: project._count.tasks,
-        memberCount: project._count.members,
+        memberCount,
         createdAt: project.createdAt.toISOString(),
         updatedAt: project.updatedAt.toISOString(),
       }

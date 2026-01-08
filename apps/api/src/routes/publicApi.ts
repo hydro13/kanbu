@@ -17,6 +17,8 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { prisma } from '../lib/prisma'
 import { hashApiKey, type ApiPermission } from '../trpc/procedures/apiKey'
+import { permissionService } from '../services/permissions'
+import { scopeService } from '../services/scopeService'
 
 // =============================================================================
 // Types
@@ -223,9 +225,11 @@ export async function registerPublicApiRoutes(
       return { error: 'Forbidden', message: 'Missing projects:read permission' }
     }
 
+    // Get accessible project IDs via ACL/scope system
+    const scope = await scopeService.getUserScope(ctx.userId)
     const projects = await prisma.project.findMany({
       where: {
-        members: { some: { userId: ctx.userId } },
+        id: { in: scope.projectIds },
         isActive: true,
       },
       select: {
@@ -259,11 +263,16 @@ export async function registerPublicApiRoutes(
           })
       }
 
-      const project = await prisma.project.findFirst({
-        where: {
-          id: projectId,
-          members: { some: { userId: ctx.userId } },
-        },
+      // Check access via ACL system
+      const hasAccess = await permissionService.canAccessProject(ctx.userId, projectId)
+      if (!hasAccess) {
+        return reply
+          .status(404)
+          .send({ error: 'Not Found', message: 'Project not found' })
+      }
+
+      const project = await prisma.project.findUnique({
+        where: { id: projectId },
         include: {
           columns: { orderBy: { position: 'asc' } },
           swimlanes: { orderBy: { position: 'asc' } },
@@ -299,11 +308,8 @@ export async function registerPublicApiRoutes(
           .send({ error: 'Forbidden', message: 'Missing tasks:read permission' })
       }
 
-      // Verify project access
-      const hasAccess = await prisma.projectMember.findFirst({
-        where: { projectId, userId: ctx.userId },
-      })
-
+      // Verify project access via ACL system
+      const hasAccess = await permissionService.canAccessProject(ctx.userId, projectId)
       if (!hasAccess) {
         return reply
           .status(404)
@@ -364,11 +370,8 @@ export async function registerPublicApiRoutes(
           .send({ error: 'Not Found', message: 'Task not found' })
       }
 
-      // Verify project access
-      const hasAccess = await prisma.projectMember.findFirst({
-        where: { projectId: task.projectId, userId: ctx.userId },
-      })
-
+      // Verify project access via ACL system
+      const hasAccess = await permissionService.canAccessProject(ctx.userId, task.projectId)
       if (!hasAccess) {
         return reply
           .status(404)
@@ -397,11 +400,8 @@ export async function registerPublicApiRoutes(
         .send({ error: 'Forbidden', message: 'Missing tasks:write permission' })
     }
 
-    // Verify project access
-    const hasAccess = await prisma.projectMember.findFirst({
-      where: { projectId, userId: ctx.userId },
-    })
-
+    // Verify project access via ACL system
+    const hasAccess = await permissionService.canAccessProject(ctx.userId, projectId)
     if (!hasAccess) {
       return reply
         .status(404)
@@ -471,11 +471,8 @@ export async function registerPublicApiRoutes(
         .send({ error: 'Not Found', message: 'Task not found' })
     }
 
-    // Verify project access
-    const hasAccess = await prisma.projectMember.findFirst({
-      where: { projectId: task.projectId, userId: ctx.userId },
-    })
-
+    // Verify project access via ACL system
+    const hasAccess = await permissionService.canAccessProject(ctx.userId, task.projectId)
     if (!hasAccess) {
       return reply
         .status(404)
@@ -527,11 +524,8 @@ export async function registerPublicApiRoutes(
           .send({ error: 'Not Found', message: 'Task not found' })
       }
 
-      // Verify project access
-      const hasAccess = await prisma.projectMember.findFirst({
-        where: { projectId: task.projectId, userId: ctx.userId },
-      })
-
+      // Verify project access via ACL system
+      const hasAccess = await permissionService.canAccessProject(ctx.userId, task.projectId)
       if (!hasAccess) {
         return reply
           .status(404)
@@ -574,11 +568,8 @@ export async function registerPublicApiRoutes(
           .send({ error: 'Not Found', message: 'Task not found' })
       }
 
-      // Verify project access
-      const hasAccess = await prisma.projectMember.findFirst({
-        where: { projectId: task.projectId, userId: ctx.userId },
-      })
-
+      // Verify project access via ACL system
+      const hasAccess = await permissionService.canAccessProject(ctx.userId, task.projectId)
       if (!hasAccess) {
         return reply
           .status(404)
@@ -624,11 +615,8 @@ export async function registerPublicApiRoutes(
           .send({ error: 'Not Found', message: 'Task not found' })
       }
 
-      // Verify project access
-      const hasAccess = await prisma.projectMember.findFirst({
-        where: { projectId: task.projectId, userId: ctx.userId },
-      })
-
+      // Verify project access via ACL system
+      const hasAccess = await permissionService.canAccessProject(ctx.userId, task.projectId)
       if (!hasAccess) {
         return reply
           .status(404)

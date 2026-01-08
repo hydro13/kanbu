@@ -76,9 +76,6 @@ export async function authenticateSocket(
         username: true,
         name: true,
         avatarUrl: true,
-        workspaces: {
-          select: { workspaceId: true },
-        },
         groupMemberships: {
           select: {
             group: {
@@ -97,19 +94,32 @@ export async function authenticateSocket(
       return next(new Error('User not found'));
     }
 
-    // Check if user is a Domain Admin
+    // Check if user is a Domain Admin via group membership
     const isDomainAdmin = user.groupMemberships.some(
       (gm) => gm.group.name === 'Domain Admins' && gm.group.isActive
     );
 
-    // Collect workspace IDs from both direct membership and GROUP-based membership
-    const directWorkspaceIds = user.workspaces.map((ws) => ws.workspaceId);
+    // Get workspace IDs from ACL entries
+    const workspaceAclEntries = await prisma.aclEntry.findMany({
+      where: {
+        principalType: 'user',
+        principalId: userId,
+        resourceType: 'workspace',
+        deny: false,
+      },
+      select: { resourceId: true },
+    });
+    const aclWorkspaceIds = workspaceAclEntries
+      .map((e) => e.resourceId)
+      .filter((id): id is number => id !== null);
+
+    // Also get workspace IDs from group memberships
     const groupWorkspaceIds = user.groupMemberships
       .filter((gm) => gm.group.isActive && gm.group.workspaceId !== null)
       .map((gm) => gm.group.workspaceId as number);
 
     // Combine and deduplicate workspace IDs
-    const allWorkspaceIds = [...new Set([...directWorkspaceIds, ...groupWorkspaceIds])];
+    const allWorkspaceIds = [...new Set([...aclWorkspaceIds, ...groupWorkspaceIds])];
 
     // Attach user data to socket
     const authenticatedSocket = socket as AuthenticatedSocket;
@@ -148,7 +158,7 @@ export function canAccessWorkspace(
  * Check if user can access a project
  * Checks:
  * 1. Direct workspace membership (via socket.data.workspaceIds which includes GROUP-based)
- * 2. Direct project membership (via ProjectMember)
+ * 2. Direct project ACL entry
  * 3. GROUP-based project membership (via PROJECT groups)
  */
 export async function canAccessProject(
@@ -161,11 +171,6 @@ export async function canAccessProject(
     where: { id: projectId },
     select: {
       workspaceId: true,
-      // Check direct project membership
-      members: {
-        where: { userId },
-        select: { id: true },
-      },
       // Check GROUP-based project membership
       groups: {
         where: {
@@ -185,8 +190,17 @@ export async function canAccessProject(
     return true;
   }
 
-  // 2. User is a direct project member
-  if (project.members.length > 0) {
+  // 2. User has direct project ACL entry
+  const projectAcl = await prisma.aclEntry.findFirst({
+    where: {
+      principalType: 'user',
+      principalId: userId,
+      resourceType: 'project',
+      resourceId: projectId,
+      deny: false,
+    },
+  });
+  if (projectAcl) {
     return true;
   }
 

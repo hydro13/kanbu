@@ -176,7 +176,6 @@ export const workspaceRouter = router({
         updatedAt: true,
         _count: {
           select: {
-            users: true,
             projects: true,
           },
         },
@@ -186,6 +185,19 @@ export const workspaceRouter = router({
       },
     })
 
+    // Get member counts from ACL entries for all workspaces
+    const memberCounts = await ctx.prisma.aclEntry.groupBy({
+      by: ['resourceId'],
+      where: {
+        resourceType: 'workspace',
+        resourceId: { in: workspaceIds },
+        principalType: 'user',
+        deny: false,
+      },
+      _count: { principalId: true },
+    })
+    const memberCountMap = new Map(memberCounts.map(m => [m.resourceId, m._count.principalId]))
+
     // Create a role map from userWorkspaces
     const roleMap = new Map(userWorkspaces.map((w) => [w.id, w.role]))
 
@@ -193,7 +205,7 @@ export const workspaceRouter = router({
       ...workspace,
       // Convert OWNER to ADMIN for display (OWNER no longer exists for workspaces)
       role: roleMap.get(workspace.id) === 'OWNER' ? 'ADMIN' : roleMap.get(workspace.id) ?? 'VIEWER',
-      memberCount: workspace._count.users,
+      memberCount: memberCountMap.get(workspace.id) ?? 0,
       projectCount: workspace._count.projects,
     }))
   }),
@@ -221,7 +233,6 @@ export const workspaceRouter = router({
           updatedAt: true,
           _count: {
             select: {
-              users: true,
               projects: true,
             },
           },
@@ -235,9 +246,19 @@ export const workspaceRouter = router({
         })
       }
 
+      // Get member count from ACL entries
+      const memberCount = await ctx.prisma.aclEntry.count({
+        where: {
+          resourceType: 'workspace',
+          resourceId: input.workspaceId,
+          principalType: 'user',
+          deny: false,
+        },
+      })
+
       return {
         ...workspace,
-        memberCount: workspace._count.users,
+        memberCount,
         projectCount: workspace._count.projects,
       }
     }),
@@ -263,7 +284,6 @@ export const workspaceRouter = router({
           updatedAt: true,
           _count: {
             select: {
-              users: true,
               projects: true,
             },
           },
@@ -280,10 +300,20 @@ export const workspaceRouter = router({
       // Check access after finding workspace (needed for workspaceId)
       const access = await permissionService.requireWorkspaceAccess(ctx.user.id, workspace.id, 'VIEWER')
 
+      // Get member count from ACL entries
+      const memberCount = await ctx.prisma.aclEntry.count({
+        where: {
+          resourceType: 'workspace',
+          resourceId: workspace.id,
+          principalType: 'user',
+          deny: false,
+        },
+      })
+
       return {
         ...workspace,
         role: access.role === 'OWNER' ? 'ADMIN' : access.role,
-        memberCount: workspace._count.users,
+        memberCount,
         projectCount: workspace._count.projects,
       }
     }),

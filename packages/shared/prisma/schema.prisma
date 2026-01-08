@@ -44,7 +44,7 @@ model Workspace {
 
   // Relations
   createdBy       User?               @relation("WorkspaceCreator", fields: [createdById], references: [id])
-  users           WorkspaceUser[]
+  // REMOVED: users WorkspaceUser[] (legacy - replaced by ACL)
   projects        Project[]
   projectGroups   ProjectGroup[]
   invitations     WorkspaceInvitation[]
@@ -69,20 +69,8 @@ model WorkspaceLogo {
   @@map("workspace_logos")
 }
 
-model WorkspaceUser {
-  id          Int           @id @default(autoincrement())
-  workspaceId Int           @map("workspace_id")
-  userId      Int           @map("user_id")
-  role        WorkspaceRole @default(MEMBER)
-  joinedAt    DateTime      @default(now()) @map("joined_at")
-
-  // Relations
-  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([workspaceId, userId])
-  @@map("workspace_users")
-}
+// REMOVED: WorkspaceUser model (legacy - replaced by ACL system)
+// Migration: 2026-01-08 - Fase 8 Database Cleanup
 
 model WorkspaceInvitation {
   id          Int           @id @default(autoincrement())
@@ -166,10 +154,10 @@ model User {
   notificationFilter   Int       @default(4) @map("notification_filter") // 1=all, 2=assigned, 3=created, 4=both
 
   // Relations
-  workspaces         WorkspaceUser[]
+  // REMOVED: workspaces WorkspaceUser[] (legacy - replaced by ACL)
   workspacesCreated  Workspace[]           @relation("WorkspaceCreator")
   invitationsCreated WorkspaceInvitation[]
-  projectMembers     ProjectMember[]
+  // REMOVED: projectMembers ProjectMember[] (legacy - replaced by ACL)
   tasksCreated       Task[]                @relation("TaskCreator")
   tasksAssigned      TaskAssignee[]
   subtasksAssigned   Subtask[]
@@ -270,7 +258,7 @@ model Project {
 
   // Relations
   workspace       Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  members         ProjectMember[]
+  // REMOVED: members ProjectMember[] (legacy - replaced by ACL)
   columns         Column[]
   swimlanes       Swimlane[]
   tasks           Task[]
@@ -293,20 +281,8 @@ model Project {
   @@map("projects")
 }
 
-model ProjectMember {
-  id        Int         @id @default(autoincrement())
-  projectId Int         @map("project_id")
-  userId    Int         @map("user_id")
-  role      ProjectRole @default(MEMBER)
-  joinedAt  DateTime    @default(now()) @map("joined_at")
-
-  // Relations
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([projectId, userId])
-  @@map("project_members")
-}
+// REMOVED: ProjectMember model (legacy - replaced by ACL system)
+// Migration: 2026-01-08 - Fase 8 Database Cleanup
 
 enum ProjectRole {
   OWNER

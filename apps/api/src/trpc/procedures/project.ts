@@ -184,8 +184,6 @@ export const projectRouter = router({
             OR: [
               // Public projects
               { isPublic: true },
-              // Projects user is direct member of (via ProjectMember)
-              { members: { some: { userId: ctx.user.id } } },
               // Projects user is member of via PROJECT groups
               {
                 groups: {
@@ -211,17 +209,8 @@ export const projectRouter = router({
           endDate: true,
           lastActivityAt: true,
           createdAt: true,
-          _count: {
-            select: {
-              members: true,
-            },
-          },
           tasks: {
             select: { isActive: true },
-          },
-          members: {
-            where: { userId: ctx.user.id },
-            select: { role: true },
           },
           // Check if user is member via PROJECT groups
           groups: {
@@ -250,19 +239,31 @@ export const projectRouter = router({
         }
       }
 
+      // Get member counts from ACL entries for all projects in this list
+      const projectIds = projects.map(p => p.id)
+      const memberCounts = await ctx.prisma.aclEntry.groupBy({
+        by: ['resourceId'],
+        where: {
+          resourceType: 'project',
+          resourceId: { in: projectIds },
+          principalType: 'user',
+          deny: false,
+        },
+        _count: { principalId: true },
+      })
+      const memberCountMap = new Map(memberCounts.map(m => [m.resourceId, m._count.principalId]))
+
       return projects.map((p) => {
         const activeTaskCount = p.tasks.filter((t) => t.isActive).length
         const completedTaskCount = p.tasks.filter((t) => !t.isActive).length
-        // Get user role from direct membership
         // For group-based membership, default to MEMBER role
         // For ACL-based access, map permissions to role
-        const directRole = p.members[0]?.role
         const isGroupMember = p.groups.length > 0
         const aclPerms = aclPermissionsMap.get(p.id)
 
         type ProjectRole = 'OWNER' | 'MANAGER' | 'MEMBER' | 'VIEWER'
-        let userRole: ProjectRole | null = directRole as ProjectRole | null
-        if (!userRole && isGroupMember) {
+        let userRole: ProjectRole | null = null
+        if (isGroupMember) {
           userRole = 'MEMBER'
         }
         if (!userRole && aclPerms !== undefined) {
@@ -287,7 +288,7 @@ export const projectRouter = router({
           taskCount: p.tasks.length,
           activeTaskCount,
           completedTaskCount,
-          memberCount: p._count.members,
+          memberCount: memberCountMap.get(p.id) ?? 0,
           userRole,
         }
       })
@@ -350,7 +351,6 @@ export const projectRouter = router({
           _count: {
             select: {
               tasks: true,
-              members: true,
             },
           },
         },
@@ -363,10 +363,20 @@ export const projectRouter = router({
         })
       }
 
+      // Get member count from ACL entries
+      const memberCount = await ctx.prisma.aclEntry.count({
+        where: {
+          resourceType: 'project',
+          resourceId: input.projectId,
+          principalType: 'user',
+          deny: false,
+        },
+      })
+
       return {
         ...project,
         taskCount: project._count.tasks,
-        memberCount: project._count.members,
+        memberCount,
         userRole: access.role,
       }
     }),
@@ -443,7 +453,6 @@ export const projectRouter = router({
           _count: {
             select: {
               tasks: true,
-              members: true,
             },
           },
         },
@@ -456,10 +465,20 @@ export const projectRouter = router({
         })
       }
 
+      // Get member count from ACL entries
+      const memberCount = await ctx.prisma.aclEntry.count({
+        where: {
+          resourceType: 'project',
+          resourceId: projectLookup.id,
+          principalType: 'user',
+          deny: false,
+        },
+      })
+
       return {
         ...project,
         taskCount: project._count.tasks,
-        memberCount: project._count.members,
+        memberCount,
         userRole: access.role,
       }
     }),

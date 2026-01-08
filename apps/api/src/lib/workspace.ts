@@ -30,6 +30,8 @@
 import { TRPCError } from '@trpc/server'
 import { WorkspaceRole, AppRole } from '@prisma/client'
 import { prisma } from './prisma'
+import { permissionService } from '../services/permissions'
+import { ACL_PERMISSIONS } from '../services/aclService'
 
 // =============================================================================
 // Types
@@ -69,51 +71,12 @@ export async function requireWorkspaceAccess(
   workspaceId: number,
   minRole: WorkspaceRole = 'VIEWER'
 ): Promise<WorkspaceAccess> {
-  const membership = await prisma.workspaceUser.findUnique({
-    where: {
-      workspaceId_userId: {
-        workspaceId,
-        userId,
-      },
-    },
-    include: {
-      workspace: {
-        select: {
-          isActive: true,
-        },
-      },
-    },
-  })
-
-  if (!membership) {
-    throw new TRPCError({
-      code: 'FORBIDDEN',
-      message: 'You do not have access to this workspace',
-    })
-  }
-
-  if (!membership.workspace.isActive) {
-    throw new TRPCError({
-      code: 'FORBIDDEN',
-      message: 'This workspace has been deactivated',
-    })
-  }
-
-  // Check role hierarchy
-  const userRoleLevel = ROLE_HIERARCHY[membership.role]
-  const requiredRoleLevel = ROLE_HIERARCHY[minRole]
-
-  if (userRoleLevel < requiredRoleLevel) {
-    throw new TRPCError({
-      code: 'FORBIDDEN',
-      message: `This action requires ${minRole} role or higher`,
-    })
-  }
-
+  // Delegate to permissionService (ACL-based)
+  const access = await permissionService.requireWorkspaceAccess(userId, workspaceId, minRole)
   return {
-    workspaceId,
-    userId,
-    role: membership.role,
+    workspaceId: access.workspaceId,
+    userId: access.userId,
+    role: access.role,
   }
 }
 
@@ -130,30 +93,13 @@ export async function getWorkspaceAccess(
   userId: number,
   workspaceId: number
 ): Promise<WorkspaceAccess | null> {
-  const membership = await prisma.workspaceUser.findUnique({
-    where: {
-      workspaceId_userId: {
-        workspaceId,
-        userId,
-      },
-    },
-    include: {
-      workspace: {
-        select: {
-          isActive: true,
-        },
-      },
-    },
-  })
-
-  if (!membership || !membership.workspace.isActive) {
-    return null
-  }
-
+  // Delegate to permissionService (ACL-based)
+  const access = await permissionService.getWorkspaceAccess(userId, workspaceId)
+  if (!access) return null
   return {
-    workspaceId,
-    userId,
-    role: membership.role,
+    workspaceId: access.workspaceId,
+    userId: access.userId,
+    role: access.role,
   }
 }
 
@@ -208,7 +154,7 @@ export function requireSystemAdmin(appRole: AppRole): void {
 
 /**
  * Create a default workspace for a newly registered user.
- * The user becomes the OWNER of this workspace.
+ * The user becomes the OWNER of this workspace via ACL entry.
  *
  * @param userId - The user ID to create workspace for
  * @param userName - The user's name for workspace naming
@@ -228,23 +174,37 @@ export async function createDefaultWorkspace(
   // Ensure uniqueness by appending user ID
   const slug = `${baseSlug}-${userId}`
 
-  const workspace = await prisma.workspace.create({
-    data: {
-      name: `${userName}'s Workspace`,
-      slug,
-      description: 'Default personal workspace',
-      users: {
-        create: {
-          userId,
-          role: 'OWNER',
-        },
+  // Create workspace and ACL entry in a transaction
+  const workspace = await prisma.$transaction(async (tx) => {
+    // Create the workspace
+    const ws = await tx.workspace.create({
+      data: {
+        name: `${userName}'s Workspace`,
+        slug,
+        description: 'Default personal workspace',
       },
-    },
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-    },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+      },
+    })
+
+    // Create ACL entry granting full access (RWXDP = OWNER equivalent)
+    await tx.aclEntry.create({
+      data: {
+        principalType: 'user',
+        principalId: userId,
+        resourceType: 'workspace',
+        resourceId: ws.id,
+        permissions: ACL_PERMISSIONS.READ | ACL_PERMISSIONS.WRITE | ACL_PERMISSIONS.EXECUTE |
+                     ACL_PERMISSIONS.DELETE | ACL_PERMISSIONS.PERMISSIONS,
+        deny: false,
+        createdById: userId,
+      },
+    })
+
+    return ws
   })
 
   return workspace

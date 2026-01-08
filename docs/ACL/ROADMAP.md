@@ -625,42 +625,48 @@ interface UserScope {
 
 ## GEPLAND: Fase 8 - Database Cleanup
 
-> **Doel:** Legacy tabellen en code verwijderen na succesvolle scoped implementatie.
+> **Doel:** Ongebruikte legacy tabellen verwijderen.
 >
-> **LET OP:** `groupPermissionService` is een APART systeem en moet NIET verwijderd worden.
+> **⚠️ CORRECTIE (2026-01-08):** Na analyse blijkt dat veel items van de oorspronkelijke
+> Fase 8 planning NIET verwijderd mogen worden - ze zijn actief in gebruik:
 >
-> **Note:** Bevat ook items van voormalig Fase 4B.3.
+> **BEHOUDEN (actief in gebruik):**
+> - `groupPermissions.ts` - Core AD-style service (1345 regels, 33+ imports)
+> - `roleAssignmentService.ts` - Core service voor role assignments (540 regels)
+> - `Permission` model - Gebruikt voor permission definitions
+> - `RoleAssignment` model - Kern van AD-style role system
+> - `WorkspaceRole` enum - Gebruikt door `WorkspaceInvitation`
+> - `ProjectRole` enum - Type annotations
+>
+> **TE VERWIJDEREN (geen active queries):**
+> - `WorkspaceUser` model - Legacy, vervangen door ACL
+> - `ProjectMember` model - Legacy, vervangen door ACL
 
 ### 8.1 Legacy Tabellen Verwijderen (Database Schema)
 - [ ] Verwijder WorkspaceUser model uit schema.prisma
 - [ ] Verwijder ProjectMember model uit schema.prisma
-- [ ] Verwijder GroupPermission model uit schema.prisma
-- [ ] Verwijder Permission model uit schema.prisma
-- [ ] Verwijder RoleAssignment model uit schema.prisma
-- [ ] Verwijder gerelateerde enums (WorkspaceRole, ProjectRole, AccessType indien unused)
+- [ ] ~~Verwijder GroupPermission model~~ - BEHOUDEN (mogelijk toekomstig gebruik)
+- [ ] ~~Verwijder Permission model~~ - BEHOUDEN (actief in gebruik)
+- [ ] ~~Verwijder RoleAssignment model~~ - BEHOUDEN (actief in gebruik)
+- [ ] ~~Verwijder enums~~ - BEHOUDEN (WorkspaceRole voor invites, ProjectRole voor types)
 
-### 8.2 Legacy Backend Code Opruimen
-- [ ] Verwijder groupPermissions.ts service
-- [ ] Verwijder roleAssignmentService.ts service
-- [ ] Verwijder roleAssignment.ts procedures
-- [ ] Verwijder Permission procedures uit group.ts
-- [ ] Verwijder unused imports in procedures
-- [ ] Cleanup lib/project.ts (deprecated functies)
-- [ ] Cleanup PermissionService comments
+### 8.2 Code Cleanup (Minimaal)
+- [ ] Verwijder relaties naar WorkspaceUser uit Workspace model
+- [ ] Verwijder relaties naar ProjectMember uit Project model
+- [ ] Cleanup comments die verwijzen naar verwijderde modellen
+- [ ] ~~Verwijder groupPermissions.ts~~ - BEHOUDEN (core service)
+- [ ] ~~Verwijder roleAssignmentService.ts~~ - BEHOUDEN (core service)
 
 ### 8.3 Database Migratie
 - [ ] Backup maken (voor zekerheid)
-- [ ] Genereer Prisma migration: `npx prisma migrate dev --name remove_legacy_permission_tables`
+- [ ] Genereer Prisma migration: `npx prisma migrate dev --name remove_workspace_user_project_member`
 - [ ] Test migration op dev database
 - [ ] Verify migration succesvol
-- [ ] Backup productie database voor migratie
-- [ ] Execute migration op productie
 
 ### 8.4 Verificatie
 - [ ] Typecheck passing na schema wijzigingen
-- [ ] Alle tests passing
 - [ ] Applicatie volledig functioneel
-- [ ] Geen 404's of runtime errors
+- [ ] Geen runtime errors
 - [ ] Build succesvol
 
 ---
@@ -876,7 +882,7 @@ root
 4. **4B.2** - ✅ Frontend legacy code verwijderd (GroupListPage, GroupEditPage, routes, sidebar)
 5. **4B.3** - ➡️ Verplaatst naar Fase 8 (Database cleanup)
 
-> **Note:** Backend services (groupPermissions.ts, roleAssignmentService.ts) en permission procedures zijn nog in gebruik door middleware, usePermissions hook, en PermissionTreePage. Deze worden verwijderd in Fase 8.
+> **Note:** Backend services (groupPermissions.ts, roleAssignmentService.ts) zijn ACTIEF IN GEBRUIK als core AD-style permission services. Deze worden NIET verwijderd.
 
 ### VOLTOOID - Fase 4C: Extended Resource Hierarchy ✅
 6. **4C.1** - ✅ Resource types uitbreiden (root, system, dashboard)
@@ -952,10 +958,10 @@ root
 - [x] AclPage is single source of truth voor group + ACL management
 
 **Verplaatst naar Fase 8 (Database Cleanup):**
-- [ ] groupPermissions.ts en roleAssignmentService.ts verwijderd
-- [ ] roleAssignment.ts procedures verwijderd
-- [ ] Permission procedures uit group.ts verwijderd
-- [ ] Database tabellen (GroupPermission, Permission, RoleAssignment) verwijderd
+- [ ] WorkspaceUser model verwijderd
+- [ ] ProjectMember model verwijderd
+- [ ] ~~groupPermissions.ts verwijderd~~ - BEHOUDEN (actief in gebruik)
+- [ ] ~~roleAssignmentService.ts verwijderd~~ - BEHOUDEN (actief in gebruik)
 
 ### Fase 4C Compleet ✅
 - [x] Resource types uitgebreid: root, system, dashboard

@@ -139,11 +139,6 @@ export const adminRouter = router({
             lastLoginAt: true,
             lockedUntil: true,
             createdAt: true,
-            _count: {
-              select: {
-                workspaces: true,
-              },
-            },
           },
           orderBy: { [sortBy]: sortOrder },
           take: limit,
@@ -155,6 +150,19 @@ export const adminRouter = router({
       // Get Domain Admin status for all users in the result
       const userIds = users.map(u => u.id)
       const domainAdminIds = await groupPermissionService.getDomainAdminUserIds(userIds)
+
+      // Get workspace counts from ACL entries for all users
+      const workspaceCounts = await ctx.prisma.aclEntry.groupBy({
+        by: ['principalId'],
+        where: {
+          principalType: 'user',
+          principalId: { in: userIds },
+          resourceType: 'workspace',
+          deny: false,
+        },
+        _count: { resourceId: true },
+      })
+      const workspaceCountMap = new Map(workspaceCounts.map(wc => [wc.principalId, wc._count.resourceId]))
 
       // Get group memberships for all users
       const groupMemberships = await ctx.prisma.groupMember.findMany({
@@ -187,7 +195,7 @@ export const adminRouter = router({
       return {
         users: users.map(user => ({
           ...user,
-          workspaceCount: user._count.workspaces,
+          workspaceCount: workspaceCountMap.get(user.id) ?? 0,
           isLocked: user.lockedUntil ? new Date(user.lockedUntil) > new Date() : false,
           isDomainAdmin: domainAdminIds.has(user.id),
           groups: membershipsByUser.get(user.id) ?? [],
@@ -242,7 +250,6 @@ export const adminRouter = router({
           // Counts
           _count: {
             select: {
-              workspaces: true,
               sessions: true,
               lastLogins: true,
             },
@@ -257,9 +264,19 @@ export const adminRouter = router({
         })
       }
 
+      // Get workspace count from ACL entries
+      const workspaceCount = await ctx.prisma.aclEntry.count({
+        where: {
+          principalType: 'user',
+          principalId: input.userId,
+          resourceType: 'workspace',
+          deny: false,
+        },
+      })
+
       return {
         ...user,
-        workspaceCount: user._count.workspaces,
+        workspaceCount,
         sessionCount: user._count.sessions,
         loginCount: user._count.lastLogins,
         isLocked: user.lockedUntil ? new Date(user.lockedUntil) > new Date() : false,
@@ -1075,7 +1092,6 @@ export const adminRouter = router({
             },
             _count: {
               select: {
-                users: true,
                 projects: true,
               },
             },
@@ -1087,10 +1103,24 @@ export const adminRouter = router({
         ctx.prisma.workspace.count({ where }),
       ])
 
+      // Get member counts from ACL entries for all workspaces
+      const workspaceIds = workspaces.map(w => w.id)
+      const memberCounts = await ctx.prisma.aclEntry.groupBy({
+        by: ['resourceId'],
+        where: {
+          resourceType: 'workspace',
+          resourceId: { in: workspaceIds },
+          principalType: 'user',
+          deny: false,
+        },
+        _count: { principalId: true },
+      })
+      const memberCountMap = new Map(memberCounts.map(mc => [mc.resourceId, mc._count.principalId]))
+
       return {
         workspaces: workspaces.map(ws => ({
           ...ws,
-          memberCount: ws._count.users,
+          memberCount: memberCountMap.get(ws.id) ?? 0,
           projectCount: ws._count.projects,
         })),
         total,
@@ -1144,7 +1174,6 @@ export const adminRouter = router({
           },
           _count: {
             select: {
-              users: true,
               projects: true,
               invitations: true,
             },
@@ -1159,9 +1188,19 @@ export const adminRouter = router({
         })
       }
 
+      // Get member count from ACL entries
+      const memberCount = await ctx.prisma.aclEntry.count({
+        where: {
+          resourceType: 'workspace',
+          resourceId: input.workspaceId,
+          principalType: 'user',
+          deny: false,
+        },
+      })
+
       return {
         ...workspace,
-        memberCount: workspace._count.users,
+        memberCount,
         projectCount: workspace._count.projects,
         pendingInvites: workspace._count.invitations,
       }
