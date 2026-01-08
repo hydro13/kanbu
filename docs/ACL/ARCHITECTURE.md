@@ -298,39 +298,46 @@ Het admin panel toont verschillende secties per scope:
 
 ## 7. Implementatie Fases
 
-### Fase 1: Foundation (VOLTOOID)
+### Fase 1-3B: Foundation & Pure ACL (VOLTOOID)
 - [x] AclEntry model
 - [x] AclService core functies
 - [x] tRPC procedures
 - [x] Basic UI
-
-### Fase 2: Pure ACL (VOLTOOID)
 - [x] Legacy fallback verwijderd
 - [x] Workspace/Project access via ACL
 - [x] Members via ACL
 
-### Fase 3: Resource Tree UI (IN PROGRESS)
+### Fase 4: Resource Tree UI (VOLTOOID)
 - [x] VSCode-style tree component
-- [ ] Volledige hiërarchie tonen
-- [ ] Security Groups sectie toevoegen
+- [x] Volledige hiërarchie tonen
+- [x] Security Groups sectie
+- [x] Real-time WebSocket updates
 
-### Fase 4: Scoped Data Access (PLANNED)
+### Fase 4B: Radicale Simplificatie (PLANNED)
+- [ ] [+] knop voor Create Security Group in ResourceTree
+- [ ] GroupListPage en GroupEditPage verwijderen
+- [ ] groupPermissions.ts en roleAssignmentService.ts verwijderen
+- [ ] Database tabellen (GroupPermission, Permission, RoleAssignment) verwijderen
+- [ ] AclPage wordt single source of truth
+
+### Fase 5: Scoped Data Access (PLANNED)
 - [ ] getUserScope() service method
 - [ ] Scope-filtered queries voor alle data
 - [ ] Contact list scoping
 - [ ] User/Group list scoping
 
-### Fase 5: Scoped Admin Panel (PLANNED)
+### Fase 6: Scoped Admin Panel (PLANNED)
 - [ ] Workspace Admin view
 - [ ] Gefilterde admin functies
 - [ ] Scoped ACL Manager
 
-### Fase 6: Scoped UI Elements (PLANNED)
+### Fase 7: Scoped UI Elements (PLANNED)
 - [ ] Conditionele menu's
 - [ ] Scoped breadcrumbs
 - [ ] Permission-based component rendering
 
-### Fase 7: Advanced Features (FUTURE)
+### Fase 8-9: Advanced Features (FUTURE)
+- [ ] Database cleanup (legacy tabellen verwijderen)
 - [ ] Audit logging
 - [ ] LDAP/AD Sync
 - [ ] Task-level ACL
@@ -463,4 +470,5 @@ Week 9+: Advanced features
 
 | Versie | Datum | Wijziging |
 |--------|-------|-----------|
+| 1.1.0 | 2026-01-08 | Fase 4B: Radicale Simplificatie (AclPage single source of truth) |
 | 1.0.0 | 2026-01-08 | Initiële architectuur document |

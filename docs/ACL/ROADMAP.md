@@ -7,7 +7,8 @@
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
 │ FASE 1-3B: Foundation & Pure ACL                    [██████████] ✓  │
-│ FASE 4: Resource Tree UI                            [████──────] ◐  │
+│ FASE 4: Resource Tree UI                            [██████████] ✓  │
+│ FASE 4B: ACL-Only Groups Workflow                   [──────────] ○  │
 │ FASE 5: Scoped Data Access                          [──────────] ○  │
 │ FASE 6: Scoped Admin Panel                          [──────────] ○  │
 │ FASE 7: Scoped UI Elements                          [──────────] ○  │
@@ -105,40 +106,183 @@ Legenda: ✓ Voltooid | ◐ In Progress | ○ Gepland
 
 #### 3B.4 Verificatie
 - [x] Typecheck passing (code compileert)
-- [ ] UI Verificatie (handmatig testen)
+- [x] UI Verificatie (handmatig testen)
 
 </details>
 
 ---
 
-## IN PROGRESS: Fase 4 - Resource Tree UI
+## VOLTOOID: Fase 4 - Resource Tree UI
 
 > **Doel:** VSCode-style hiërarchische weergave van resources met correcte structuur.
 
-### 4.1 Tree Component (VOLTOOID)
+<details>
+<summary>Klik om voltooide fase te bekijken</summary>
+
+### 4.1 Tree Component
 - [x] `ResourceTree.tsx` component gemaakt
 - [x] VSCode-style expand/collapse gedrag
 - [x] Klikken op folder opent EN selecteert
 - [x] Projects genest onder workspaces
 
-### 4.2 Volledige Hiërarchie (TODO)
-- [ ] Root niveau tonen: "Kanbu" of tenant naam
-- [ ] "System" sectie met admin resources
-- [ ] "Workspaces" als expandable container
-- [ ] Elke workspace toont "Projects" container
-- [ ] Breadcrumb pad in ACL header
+### 4.2 Volledige Hiërarchie
+- [x] Root niveau tonen: "Kanbu" of tenant naam
+- [x] "Workspaces" als expandable container
+- [x] Elke workspace toont "Projects" container
+- [x] Breadcrumb pad in ACL header
 
-### 4.3 Security Groups Sectie (TODO)
-- [ ] Aparte sectie voor Security Groups
-- [ ] Toon bestaande groups uit database
-- [ ] Groups zijn PRINCIPALS (wie rechten krijgt)
-- [ ] Duidelijke visuele scheiding van Resources
+### 4.3 Security Groups Sectie
+- [x] Aparte sectie voor Security Groups
+- [x] Toon bestaande groups uit database
+- [x] Groups zijn PRINCIPALS (wie rechten krijgt)
+- [x] Duidelijke visuele scheiding van Resources
 
-### 4.4 Verificatie
-- [ ] Resource tree toont volledige hiërarchie
-- [ ] Security Groups sectie zichtbaar
-- [ ] Klikken selecteert correct resource type
-- [ ] ACL entries laden voor geselecteerde resource
+### 4.4 Real-time Updates
+- [x] WebSocket events voor ACL changes (grant/deny/delete)
+- [x] WebSocket events voor Group changes (create/update/delete)
+- [x] WebSocket events voor Group member changes (add/remove)
+- [x] Session storage voor tree state persistence
+
+### 4.5 Verificatie
+- [x] Resource tree toont volledige hiërarchie
+- [x] Security Groups sectie zichtbaar
+- [x] Klikken selecteert correct resource type
+- [x] ACL entries laden voor geselecteerde resource
+
+</details>
+
+---
+
+## GEPLAND: Fase 4B - Radicale Simplificatie
+
+> **Doel:** Eén admin panel voor alles: AclPage wordt de single source of truth.
+> Verwijder ALLE legacy permission systemen en aparte Groups pagina's.
+
+### Achtergrond: Waarom Radicale Simplificatie?
+
+**Huidige situatie (onnodig complex):**
+```
+/admin/groups      → GroupListPage (lijst groups, create button)
+/admin/groups/:id  → GroupEditPage (members, permissions, assignments)
+/admin/acl         → AclPage (resources, ACL entries, GroupMembersPanel)
+```
+
+**Probleem:** Dubbele functionaliteit, verwarrend, legacy code.
+
+**Oplossing:** Alles in AclPage, rest weggooien.
+
+```
+/admin/acl         → AclPage (ALLES hier)
+├── Resource Tree
+│   ├── Kanbu (root)
+│   ├── Workspaces → Projects
+│   └── Security Groups [+]  ← Create groups hier
+│
+└── Right Panel
+    ├── Resource selected → ACL entries
+    └── Group selected → Members beheren
+```
+
+---
+
+### 4B.1 Create Security Group in AclPage
+
+> Voeg [+] knop toe aan Security Groups sectie in ResourceTree.
+
+#### UI Wijzigingen
+- [ ] "+" knop naast "Security Groups" header in ResourceTree
+- [ ] Create Security Group dialog (naam, displayName, description)
+- [ ] Na creatie: group verschijnt direct in tree (WebSocket update)
+- [ ] Na creatie: group automatisch geselecteerd
+
+#### Backend
+- [ ] Hergebruik `trpc.group.createSecurityGroup` procedure
+- [ ] WebSocket `group:created` event werkt al
+
+#### Bestanden
+- `apps/web/src/components/admin/ResourceTree.tsx`
+- `apps/web/src/pages/admin/AclPage.tsx`
+
+---
+
+### 4B.2 Legacy Code Verwijderen
+
+> Alle oude permission systemen en Groups pagina's weg.
+
+#### Te Verwijderen - Frontend Pages
+- [ ] `apps/web/src/pages/admin/GroupListPage.tsx` - HELE FILE WEG
+- [ ] `apps/web/src/pages/admin/GroupEditPage.tsx` - HELE FILE WEG
+- [ ] Sidebar link naar `/admin/groups` verwijderen
+
+#### Te Verwijderen - Backend Services
+- [ ] `apps/api/src/services/groupPermissions.ts` - HELE FILE WEG
+- [ ] `apps/api/src/services/roleAssignmentService.ts` - HELE FILE WEG
+
+#### Te Verwijderen - Backend Procedures
+- [ ] `apps/api/src/trpc/procedures/group.ts` - Opschonen:
+  - ❌ `listPermissions` - WEG
+  - ❌ `getGroupPermissions` - WEG
+  - ❌ `grantPermission` - WEG
+  - ❌ `revokePermission` - WEG
+  - ✅ `list` - BEHOUDEN (voor ResourceTree)
+  - ✅ `get` - BEHOUDEN
+  - ✅ `createSecurityGroup` - BEHOUDEN
+  - ✅ `delete` - BEHOUDEN
+  - ✅ `addMember` - BEHOUDEN (voor GroupMembersPanel)
+  - ✅ `removeMember` - BEHOUDEN
+  - ✅ `getMembers` - BEHOUDEN
+  - ✅ `listMembers` - BEHOUDEN
+- [ ] `apps/api/src/trpc/procedures/roleAssignment.ts` - HELE FILE WEG
+
+#### Te Verwijderen - Routes
+- [ ] Route `/admin/groups` uit router config
+- [ ] Route `/admin/groups/:id` uit router config
+
+---
+
+### 4B.3 Database Cleanup
+
+> Legacy tabellen verwijderen (geen data om te migreren).
+
+#### Te Verwijderen - Schema
+- [ ] `GroupPermission` model uit schema.prisma
+- [ ] `Permission` model uit schema.prisma
+- [ ] `RoleAssignment` model uit schema.prisma
+- [ ] Gerelateerde enums (AccessType indien unused)
+
+#### Prisma Migration
+- [ ] Backup maken (voor zekerheid)
+- [ ] `npx prisma migrate dev --name remove_legacy_permission_tables`
+- [ ] Verify migration succesvol
+
+---
+
+### 4B.4 Verificatie
+
+- [ ] AclPage werkt volledig standalone
+- [ ] Security Groups aanmaken via [+] knop
+- [ ] Members beheren via GroupMembersPanel
+- [ ] ACL Grant/Deny werkt voor groups
+- [ ] Real-time updates werken
+- [ ] Geen 404's op oude routes
+- [ ] Geen TypeScript errors
+- [ ] Geen runtime errors
+- [ ] Build succesvol
+
+---
+
+### 4B.5 Wat Blijft Behouden
+
+| Component | Locatie | Functie |
+|-----------|---------|---------|
+| `AclPage` | `/admin/acl` | Single admin panel |
+| `ResourceTree` | Component | Tree navigatie |
+| `GroupMembersPanel` | Component | Members beheren |
+| `aclService` | Backend | ACL CRUD |
+| `group.createSecurityGroup` | Procedure | Groups aanmaken |
+| `group.addMember/removeMember` | Procedure | Members beheren |
+| `group.list/get` | Procedure | Groups ophalen |
+| WebSocket events | Backend | Real-time updates |
 
 ---
 
@@ -326,21 +470,22 @@ interface UserScope {
 
 ## Prioriteiten
 
-### NOW - Fase 4: Resource Tree UI
-1. **4.2** - Volledige hiërarchie implementeren
-2. **4.3** - Security Groups sectie toevoegen
+### NOW - Fase 4B: Radicale Simplificatie
+1. **4B.1** - [+] knop voor Create Security Group in ResourceTree
+2. **4B.2** - Legacy code verwijderen (GroupListPage, GroupEditPage, services)
+3. **4B.3** - Database cleanup (GroupPermission, Permission, RoleAssignment tabellen)
 
 ### NEXT - Fase 5: Scoped Data Access
-3. **5.1** - ScopeService implementeren
-4. **5.2** - Scoped user queries
+4. **5.1** - ScopeService implementeren
+5. **5.2** - Scoped user queries
 
 ### THEN - Fase 6-7: Scoped UI
-5. **6.x** - Admin panel scoping
-6. **7.x** - UI element scoping
+6. **6.x** - Admin panel scoping
+7. **7.x** - UI element scoping
 
 ### LATER - Fase 8-9
-7. **8.x** - Database cleanup
-8. **9.x** - Advanced features
+8. **8.x** - Database cleanup
+9. **9.x** - Advanced features
 
 ---
 
@@ -358,10 +503,20 @@ interface UserScope {
 
 ## Success Criteria
 
-### Fase 4 Compleet Wanneer:
-- [ ] Resource tree toont volledige hiërarchie
-- [ ] Security Groups sectie werkt
-- [ ] VSCode-style navigatie werkt
+### Fase 4 Compleet ✓
+- [x] Resource tree toont volledige hiërarchie
+- [x] Security Groups sectie werkt
+- [x] VSCode-style navigatie werkt
+- [x] Real-time WebSocket updates
+
+### Fase 4B Compleet Wanneer:
+- [ ] [+] knop werkt in ResourceTree voor nieuwe Security Groups
+- [ ] GroupListPage en GroupEditPage verwijderd
+- [ ] groupPermissions.ts en roleAssignmentService.ts verwijderd
+- [ ] roleAssignment.ts procedures verwijderd
+- [ ] Database tabellen (GroupPermission, Permission, RoleAssignment) verwijderd
+- [ ] Sidebar link naar /admin/groups verwijderd
+- [ ] AclPage is single source of truth voor group + ACL management
 
 ### Fase 5 Compleet Wanneer:
 - [ ] ScopeService geïmplementeerd en getest
@@ -400,6 +555,13 @@ interface UserScope {
 
 | Datum | Wijziging |
 |-------|-----------|
+| 2026-01-08 | Fase 4B herschreven: Radicale Simplificatie (alles weg behalve AclPage) |
+| 2026-01-08 | Beslissing: RoleAssignment systeem volledig verwijderen |
+| 2026-01-08 | Beslissing: Groups admin pages volledig verwijderen |
+| 2026-01-08 | Fase 4B toegevoegd: ACL-Only Groups Workflow |
+| 2026-01-08 | Fase 4 gemarkeerd als voltooid |
+| 2026-01-08 | Real-time WebSocket updates toegevoegd aan Fase 4 |
+| 2026-01-08 | GroupPermission systeem gemarkeerd als deprecated |
 | 2026-01-08 | Roadmap herschreven met scoped permission fases |
 | 2026-01-08 | Fase 1-3B gemarkeerd als voltooid |
 | 2026-01-08 | Fase 4-9 toegevoegd voor scoped permissions |

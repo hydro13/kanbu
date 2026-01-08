@@ -230,22 +230,70 @@ Het systeem draait nu in **pure ACL modus** (Fase 3B voltooid):
 - [x] Database model (AclEntry)
 - [x] AclService met alle core functies
 - [x] tRPC procedures voor CRUD
-- [x] ACL Manager UI met VSCode-style tree
+- [x] ACL Manager UI met VSCode-style tree (Fase 4)
+- [x] Security Groups sectie in tree
+- [x] Real-time WebSocket updates
 - [x] Integration in PermissionService
 - [x] Workspace listing/access via ACL
 - [x] Project listing/access via ACL
 - [x] 15 unit tests
 
-### In Development (Fase 4-7)
+### In Development (Fase 4B)
+
+**Radicale Simplificatie** - AclPage wordt de single source of truth:
+- [ ] [+] knop voor Create Security Group in ResourceTree
+- [ ] GroupListPage en GroupEditPage volledig verwijderen
+- [ ] groupPermissions.ts en roleAssignmentService.ts verwijderen
+- [ ] Database tabellen (GroupPermission, Permission, RoleAssignment) verwijderen
+- [ ] Sidebar link naar /admin/groups verwijderen
+
+### Gepland (Fase 5-9)
 
 Het systeem wordt uitgebreid naar een **Scoped Permission Model**:
-- [ ] Volledige resource hiërarchie in UI
-- [ ] Security Groups sectie
 - [ ] ScopeService voor data filtering
 - [ ] Workspace-scoped admin panel
 - [ ] Conditionele menu's en UI elements
+- [ ] Database cleanup (legacy tabellen)
+- [ ] Advanced features (audit, LDAP sync)
 
 Zie [ROADMAP.md](./ROADMAP.md) voor de volledige planning.
+
+## Te Verwijderen in Fase 4B
+
+> ⚠️ **Radicale Simplificatie:** De volgende systemen worden VOLLEDIG verwijderd.
+
+### Tabellen (Database)
+
+| Tabel | Reden voor verwijdering |
+|-------|------------------------|
+| `GroupPermission` | Named permissions niet nodig, ACL bitmask is beter |
+| `Permission` | Alleen gebruikt door GroupPermission |
+| `RoleAssignment` | Niet nodig, ACL presets zijn genoeg |
+| `WorkspaceUser` | ❌ AL VERWIJDERD - vervangen door AclEntry |
+| `ProjectMember` | ❌ AL VERWIJDERD - vervangen door AclEntry |
+
+### Frontend Pages
+
+| Page | Reden voor verwijdering |
+|------|------------------------|
+| `GroupListPage.tsx` | Niet nodig, groups zichtbaar in AclPage ResourceTree |
+| `GroupEditPage.tsx` | Niet nodig, members via GroupMembersPanel in AclPage |
+
+### Backend Services
+
+| Service | Reden voor verwijdering |
+|---------|------------------------|
+| `groupPermissions.ts` | Named permissions niet meer nodig |
+| `roleAssignmentService.ts` | RoleAssignment niet meer nodig |
+| `roleAssignment.ts` (procedures) | RoleAssignment niet meer nodig |
+
+### Wat Blijft
+
+**AclPage is de single source of truth voor:**
+- Security Groups aanmaken ([+] knop)
+- Group members beheren (GroupMembersPanel)
+- ACL permissions toekennen (Grant/Deny dialogs)
+- Resources beheren (ResourceTree)
 
 ## Bestanden
 
