@@ -561,18 +561,20 @@ export const aclRouter = router({
         orderBy: { name: 'asc' },
       })
 
-      // Get features - system-wide features (Fase 8B)
+      // Get features - system-wide features (Fase 8B + 8C)
+      // Now includes scope field to group features by section
       const features = await ctx.prisma.feature.findMany({
         where: { isActive: true, projectId: null }, // System-wide features only
         select: {
           id: true,
+          scope: true, // Fase 8C: dashboard | profile | admin | project
           slug: true,
           name: true,
           description: true,
           icon: true,
           sortOrder: true,
         },
-        orderBy: { sortOrder: 'asc' },
+        orderBy: [{ scope: 'asc' }, { sortOrder: 'asc' }],
       })
 
       // Build resource types based on scope
@@ -610,9 +612,14 @@ export const aclRouter = router({
           workspaceName: p.workspace.name,
           resourceType: 'project' as const,
         })),
-        // System features that can be ACL-controlled per project (Fase 8B)
+        // System features grouped by scope (Fase 8C)
+        // - dashboard: Dashboard menu items
+        // - profile: User profile features
+        // - admin: Administration features
+        // - project: Project-specific features
         features: features.map((f) => ({
           id: f.id,
+          scope: f.scope, // 'dashboard' | 'profile' | 'admin' | 'project'
           slug: f.slug,
           name: f.name,
           description: f.description,

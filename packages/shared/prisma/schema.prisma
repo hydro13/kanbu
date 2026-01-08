@@ -316,14 +316,24 @@ enum ProjectRole {
 }
 
 // ============================================================================
-// FEATURE ACCESS CONTROL (Fase 8B)
+// FEATURE ACCESS CONTROL (Fase 8B + 8C)
 // Menu items and features as ACL resources for fine-grained UI control
 // ============================================================================
+//
+// Scope determines where this feature belongs:
+// - 'dashboard'  : Dashboard menu items (overview, widgets, shortcuts, recent-projects)
+// - 'profile'    : User profile features (settings, notifications, api-keys, sessions)
+// - 'admin'      : System administration (users, groups, acl, invites, system-settings)
+// - 'project'    : Project-specific features (board, list, calendar, analytics, etc.)
+//
+// For 'project' scope, projectId links to specific project.
+// For other scopes, projectId is NULL and feature is system-wide.
 
 model Feature {
   id          Int      @id @default(autoincrement())
-  projectId   Int?     @map("project_id")    // null = system-wide feature
-  slug        String   @db.VarChar(50)       // e.g., 'analytics', 'sprints', 'members'
+  scope       String   @db.VarChar(20)       // 'dashboard' | 'profile' | 'admin' | 'project'
+  projectId   Int?     @map("project_id")    // Only for scope='project', null for system features
+  slug        String   @db.VarChar(50)       // e.g., 'analytics', 'sprints', 'admin.users'
   name        String   @db.VarChar(100)      // Display name
   description String?  @db.Text
   icon        String?  @db.VarChar(50)       // Icon identifier for UI
@@ -335,7 +345,9 @@ model Feature {
   // Relations
   project Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
-  @@unique([projectId, slug])
+  // Unique per scope: system features by scope+slug, project features by project+slug
+  @@unique([scope, projectId, slug])
+  @@index([scope])
   @@map("features")
 }
 

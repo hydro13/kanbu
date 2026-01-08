@@ -68,9 +68,12 @@ interface SecurityGroup {
   memberCount?: number
 }
 
-// Fase 8B: Feature interface for menu items
+// Fase 8C: Feature interface with scope for grouping
+export type FeatureScope = 'dashboard' | 'profile' | 'admin' | 'project'
+
 interface Feature {
   id: number
+  scope: string  // API returns string, we cast to FeatureScope at runtime
   slug: string
   name: string
   description: string | null
@@ -305,6 +308,23 @@ export function ResourceTree({
     return map
   }, [projects])
 
+  // Fase 8C: Group features by scope
+  const featuresByScope = useMemo(() => {
+    const map: Record<string, Feature[]> = {
+      dashboard: [],
+      profile: [],
+      admin: [],
+      project: [],
+    }
+    for (const feature of features) {
+      const scope = feature.scope as FeatureScope
+      if (scope && map[scope]) {
+        map[scope].push(feature)
+      }
+    }
+    return map as Record<FeatureScope, Feature[]>
+  }, [features])
+
   const toggleSection = useCallback((section: string) => {
     updateState((prev) => {
       const next = new Set(prev.expandedSections)
@@ -410,36 +430,174 @@ export function ResourceTree({
               />
 
               {isSectionExpanded('system') && (
-                <TreeItem
-                  label="Administration"
-                  icon={<ShieldIcon className="w-4 h-4 text-purple-500" />}
-                  depth={2}
-                  isSelected={isSelected('admin', null)}
-                  onClick={() => onSelectResource({
-                    type: 'admin',
-                    id: null,
-                    name: 'Administration',
-                    path: 'Kanbu > System > Administration',
-                  })}
-                />
+                <>
+                  {/* Administration section - now expandable for admin features */}
+                  <TreeItem
+                    label="Administration"
+                    icon={featuresByScope.admin.length > 0
+                      ? <FolderIcon className={cn('w-4 h-4', isSectionExpanded('admin') ? 'text-purple-400' : 'text-purple-500')} open={isSectionExpanded('admin')} />
+                      : <ShieldIcon className="w-4 h-4 text-purple-500" />
+                    }
+                    depth={2}
+                    isSelected={isSelected('admin', null)}
+                    isExpandable={featuresByScope.admin.length > 0}
+                    isExpanded={isSectionExpanded('admin')}
+                    onClick={() => {
+                      if (featuresByScope.admin.length > 0) {
+                        toggleSection('admin')
+                      }
+                      onSelectResource({
+                        type: 'admin',
+                        id: null,
+                        name: 'Administration',
+                        path: 'Kanbu > System > Administration',
+                      })
+                    }}
+                  />
+
+                  {/* Fase 8C: Admin features under Administration */}
+                  {isSectionExpanded('admin') && featuresByScope.admin.length > 0 && (
+                    <>
+                      <TreeItem
+                        label="Features"
+                        icon={<FolderIcon className="w-4 h-4 text-yellow-500" open={true} />}
+                        depth={3}
+                        isSelected={false}
+                        isExpandable={false}
+                        onClick={() => {}}
+                      />
+                      {featuresByScope.admin.map((feature) => (
+                        <TreeItem
+                          key={feature.id}
+                          label={feature.name}
+                          icon={<FeatureIcon className="w-4 h-4 text-orange-500" />}
+                          depth={4}
+                          isSelected={isSelected('feature', feature.id)}
+                          onClick={() =>
+                            onSelectResource({
+                              type: 'feature',
+                              id: feature.id,
+                              name: feature.name,
+                              path: `Kanbu > System > Administration > Features > ${feature.name}`,
+                            })
+                          }
+                          suffix={feature.slug}
+                        />
+                      ))}
+                    </>
+                  )}
+                </>
               )}
             </>
           )}
 
           {/* ========== DASHBOARD SECTION ========== */}
-          {/* Dashboard is a separate container under root (Fase 4C) */}
+          {/* Dashboard is a separate container under root (Fase 4C + 8C: now with features) */}
           <TreeItem
             label="Dashboard"
-            icon={<FolderIcon className="w-4 h-4 text-yellow-600" />}
+            icon={<FolderIcon className={cn('w-4 h-4', isSectionExpanded('dashboard') ? 'text-yellow-500' : 'text-yellow-600')} open={isSectionExpanded('dashboard')} />}
             depth={1}
             isSelected={isSelected('dashboard', null)}
-            onClick={() => onSelectResource({
-              type: 'dashboard',
-              id: null,
-              name: 'Dashboard',
-              path: 'Kanbu > Dashboard',
-            })}
+            isExpandable={featuresByScope.dashboard.length > 0}
+            isExpanded={isSectionExpanded('dashboard')}
+            onClick={() => {
+              if (featuresByScope.dashboard.length > 0) {
+                toggleSection('dashboard')
+              }
+              onSelectResource({
+                type: 'dashboard',
+                id: null,
+                name: 'Dashboard',
+                path: 'Kanbu > Dashboard',
+              })
+            }}
           />
+
+          {/* Fase 8C: Dashboard features */}
+          {isSectionExpanded('dashboard') && featuresByScope.dashboard.length > 0 && (
+            <>
+              <TreeItem
+                label="Features"
+                icon={<FolderIcon className="w-4 h-4 text-yellow-500" open={true} />}
+                depth={2}
+                isSelected={false}
+                isExpandable={false}
+                onClick={() => {}}
+              />
+              {featuresByScope.dashboard.map((feature) => (
+                <TreeItem
+                  key={feature.id}
+                  label={feature.name}
+                  icon={<FeatureIcon className="w-4 h-4 text-orange-500" />}
+                  depth={3}
+                  isSelected={isSelected('feature', feature.id)}
+                  onClick={() =>
+                    onSelectResource({
+                      type: 'feature',
+                      id: feature.id,
+                      name: feature.name,
+                      path: `Kanbu > Dashboard > Features > ${feature.name}`,
+                    })
+                  }
+                  suffix={feature.slug}
+                />
+              ))}
+            </>
+          )}
+
+          {/* ========== PROFILE SECTION (Fase 8C) ========== */}
+          {/* Profile features - user profile settings */}
+          <TreeItem
+            label="Profile"
+            icon={<FolderIcon className={cn('w-4 h-4', isSectionExpanded('profile') ? 'text-yellow-500' : 'text-yellow-600')} open={isSectionExpanded('profile')} />}
+            depth={1}
+            isSelected={isSelected('profile', null)}
+            isExpandable={featuresByScope.profile.length > 0}
+            isExpanded={isSectionExpanded('profile')}
+            onClick={() => {
+              if (featuresByScope.profile.length > 0) {
+                toggleSection('profile')
+              }
+              onSelectResource({
+                type: 'profile',
+                id: null,
+                name: 'Profile',
+                path: 'Kanbu > Profile',
+              })
+            }}
+          />
+
+          {/* Fase 8C: Profile features */}
+          {isSectionExpanded('profile') && featuresByScope.profile.length > 0 && (
+            <>
+              <TreeItem
+                label="Features"
+                icon={<FolderIcon className="w-4 h-4 text-yellow-500" open={true} />}
+                depth={2}
+                isSelected={false}
+                isExpandable={false}
+                onClick={() => {}}
+              />
+              {featuresByScope.profile.map((feature) => (
+                <TreeItem
+                  key={feature.id}
+                  label={feature.name}
+                  icon={<FeatureIcon className="w-4 h-4 text-orange-500" />}
+                  depth={3}
+                  isSelected={isSelected('feature', feature.id)}
+                  onClick={() =>
+                    onSelectResource({
+                      type: 'feature',
+                      id: feature.id,
+                      name: feature.name,
+                      path: `Kanbu > Profile > Features > ${feature.name}`,
+                    })
+                  }
+                  suffix={feature.slug}
+                />
+              ))}
+            </>
+          )}
 
           {/* ========== WORKSPACES SECTION ========== */}
           <TreeItem
@@ -503,7 +661,9 @@ export function ResourceTree({
                     />
 
                     {projectsExpanded && workspaceProjects.map((project) => {
-                      const hasFeatures = features.length > 0
+                      // Fase 8C: Only show project-scoped features under projects
+                      const projectFeatures = featuresByScope.project
+                      const hasFeatures = projectFeatures.length > 0
                       const featuresExpanded = isFeaturesExpanded(project.id)
 
                       return (
@@ -533,7 +693,7 @@ export function ResourceTree({
                             suffix={project.identifier}
                           />
 
-                          {/* Fase 8B: Features container under project */}
+                          {/* Fase 8C: Project-scoped features under project */}
                           {featuresExpanded && hasFeatures && (
                             <>
                               <TreeItem
@@ -545,7 +705,7 @@ export function ResourceTree({
                                 onClick={() => {/* Features folder is always expanded when project is */}}
                               />
 
-                              {features.map((feature) => (
+                              {projectFeatures.map((feature) => (
                                 <TreeItem
                                   key={feature.id}
                                   label={feature.name}
