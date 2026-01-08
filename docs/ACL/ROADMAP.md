@@ -8,7 +8,7 @@
 ┌─────────────────────────────────────────────────────────────────────┐
 │ FASE 1-3B: Foundation & Pure ACL                    [██████████] ✓  │
 │ FASE 4: Resource Tree UI                            [██████████] ✓  │
-│ FASE 4B: ACL-Only Groups Workflow                   [██████░░░░] ◐  │
+│ FASE 4B: ACL-Only Groups Workflow                   [████████░░] ◐  │
 │ FASE 4C: Extended Resource Hierarchy                [──────────] ○  │
 │ FASE 5: Scoped Data Access                          [──────────] ○  │
 │ FASE 6: Scoped Admin Panel                          [──────────] ○  │
@@ -186,58 +186,51 @@ Legenda: ✓ Voltooid | ◐ In Progress | ○ Gepland
 
 ---
 
-### 4B.1 Create Security Group in AclPage
+### 4B.1 Create Security Group in AclPage ✅
 
 > Voeg [+] knop toe aan Security Groups sectie in ResourceTree.
 
 #### UI Wijzigingen
-- [ ] "+" knop naast "Security Groups" header in ResourceTree
-- [ ] Create Security Group dialog (naam, displayName, description)
-- [ ] Na creatie: group verschijnt direct in tree (WebSocket update)
-- [ ] Na creatie: group automatisch geselecteerd
+- [x] "+" knop naast "Security Groups" header in ResourceTree
+- [x] Create Security Group form in right panel (niet popup)
+- [x] Na creatie: group verschijnt direct in tree (WebSocket update)
+- [x] Na creatie: group automatisch geselecteerd
+- [x] Delete knop voor Security Groups met confirmatie
 
 #### Backend
-- [ ] Hergebruik `trpc.group.createSecurityGroup` procedure
-- [ ] WebSocket `group:created` event werkt al
-
-#### Bestanden
-- `apps/web/src/components/admin/ResourceTree.tsx`
-- `apps/web/src/pages/admin/AclPage.tsx`
+- [x] Hergebruik `trpc.group.createSecurityGroup` procedure
+- [x] WebSocket `group:created` event werkt al
+- [x] Fix permission check (Super Admins kunnen nu groups maken)
 
 ---
 
-### 4B.2 Legacy Code Verwijderen
+### 4B.2 Legacy Frontend Verwijderen ✅
 
-> Alle oude permission systemen en Groups pagina's weg.
+> Groups admin pagina's verwijderd - AclPage is nu single source of truth.
 
-#### Te Verwijderen - Frontend Pages
-- [ ] `apps/web/src/pages/admin/GroupListPage.tsx` - HELE FILE WEG
-- [ ] `apps/web/src/pages/admin/GroupEditPage.tsx` - HELE FILE WEG
-- [ ] Sidebar link naar `/admin/groups` verwijderen
+#### Verwijderd - Frontend
+- [x] `apps/web/src/pages/admin/GroupListPage.tsx` - VERWIJDERD
+- [x] `apps/web/src/pages/admin/GroupEditPage.tsx` - VERWIJDERD
+- [x] Sidebar link naar `/admin/groups` - VERWIJDERD
+- [x] Routes `/admin/groups` en `/admin/groups/:groupId` - VERWIJDERD
+- [x] Exports uit `pages/admin/index.ts` - VERWIJDERD
 
-#### Te Verwijderen - Backend Services
-- [ ] `apps/api/src/services/groupPermissions.ts` - HELE FILE WEG
-- [ ] `apps/api/src/services/roleAssignmentService.ts` - HELE FILE WEG
+#### Nog NIET Verwijderd - Backend (dependencies nog in gebruik)
 
-#### Te Verwijderen - Backend Procedures
-- [ ] `apps/api/src/trpc/procedures/group.ts` - Opschonen:
-  - ❌ `listPermissions` - WEG
-  - ❌ `getGroupPermissions` - WEG
-  - ❌ `grantPermission` - WEG
-  - ❌ `revokePermission` - WEG
-  - ✅ `list` - BEHOUDEN (voor ResourceTree)
-  - ✅ `get` - BEHOUDEN
-  - ✅ `createSecurityGroup` - BEHOUDEN
-  - ✅ `delete` - BEHOUDEN
-  - ✅ `addMember` - BEHOUDEN (voor GroupMembersPanel)
-  - ✅ `removeMember` - BEHOUDEN
-  - ✅ `getMembers` - BEHOUDEN
-  - ✅ `listMembers` - BEHOUDEN
-- [ ] `apps/api/src/trpc/procedures/roleAssignment.ts` - HELE FILE WEG
+> ⚠️ Deze services/procedures kunnen pas verwijderd worden na volledige ACL migratie.
 
-#### Te Verwijderen - Routes
-- [ ] Route `/admin/groups` uit router config
-- [ ] Route `/admin/groups/:id` uit router config
+| Component | Reden behouden |
+|-----------|----------------|
+| `groupPermissions.ts` | Gebruikt door permission middleware en lib/project.ts |
+| `roleAssignmentService.ts` | Dependency van groupPermissions.ts |
+| `roleAssignment.ts` procedures | Gebruikt door PermissionTreePage |
+| Permission procedures in group.ts | Gebruikt door usePermissions hook en UI componenten |
+
+Deze worden verwijderd in een latere fase wanneer:
+1. Permission middleware volledig naar ACL is gemigreerd
+2. usePermissions hook naar ACL is gemigreerd
+3. PermissionTreePage is verwijderd of gemigreerd
+4. Database tabellen zijn verwijderd
 
 ---
 
@@ -654,8 +647,10 @@ interface UserScope {
 1. **4B.1** - ✅ [+] knop voor Create Security Group in ResourceTree
 2. **4B.1** - ✅ Create form in right panel (niet popup)
 3. **4B.1** - ✅ Delete knop voor Security Groups
-4. **4B.2** - Legacy code verwijderen (GroupListPage, GroupEditPage, services)
-5. **4B.3** - Database cleanup (GroupPermission, Permission, RoleAssignment tabellen)
+4. **4B.2** - ✅ Frontend legacy code verwijderd (GroupListPage, GroupEditPage, routes, sidebar)
+5. **4B.3** - ⏳ Database cleanup (wacht op volledige ACL migratie)
+
+> **Note:** Backend services (groupPermissions.ts, roleAssignmentService.ts) en permission procedures zijn nog in gebruik door middleware, usePermissions hook, en PermissionTreePage. Deze worden verwijderd na volledige ACL migratie.
 
 ### NEXT - Fase 4C: Extended Resource Hierarchy
 6. **4C.1** - Resource types uitbreiden (root, system, dashboard)
@@ -699,12 +694,16 @@ interface UserScope {
 - [x] [+] knop werkt in ResourceTree voor nieuwe Security Groups
 - [x] Create form in right panel (niet popup)
 - [x] Delete knop voor Security Groups
-- [ ] GroupListPage en GroupEditPage verwijderd
+- [x] GroupListPage en GroupEditPage verwijderd
+- [x] Sidebar link naar /admin/groups verwijderd
+- [x] Routes /admin/groups verwijderd
+- [x] AclPage is single source of truth voor group + ACL management
+
+**Uitgesteld naar na ACL migratie:**
 - [ ] groupPermissions.ts en roleAssignmentService.ts verwijderd
 - [ ] roleAssignment.ts procedures verwijderd
+- [ ] Permission procedures uit group.ts verwijderd
 - [ ] Database tabellen (GroupPermission, Permission, RoleAssignment) verwijderd
-- [ ] Sidebar link naar /admin/groups verwijderd
-- [ ] AclPage is single source of truth voor group + ACL management
 
 ### Fase 4C Compleet Wanneer:
 - [ ] Resource types uitgebreid: root, system, dashboard
@@ -753,6 +752,8 @@ interface UserScope {
 
 | Datum | Wijziging |
 |-------|-----------|
+| 2026-01-08 | Fase 4B.2 voltooid: GroupListPage, GroupEditPage, sidebar link en routes verwijderd |
+| 2026-01-08 | Note: Backend services behouden (dependencies in middleware/hooks) - verwijderen na ACL migratie |
 | 2026-01-08 | Fase 4C toegevoegd: Extended Resource Hierarchy (Root, System, Dashboard containers) |
 | 2026-01-08 | Fase 4B.1 voltooid: [+] knop, create form, delete knop voor Security Groups |
 | 2026-01-08 | Fase 4B herschreven: Radicale Simplificatie (alles weg behalve AclPage) |
