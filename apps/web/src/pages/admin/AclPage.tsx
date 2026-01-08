@@ -136,6 +136,11 @@ export function AclPage() {
   }))
   const [showGrantDialog, setShowGrantDialog] = useState(false)
   const [showDenyDialog, setShowDenyDialog] = useState(false)
+  const [showCreateGroupDialog, setShowCreateGroupDialog] = useState(false)
+  const [newGroupName, setNewGroupName] = useState('')
+  const [newGroupDisplayName, setNewGroupDisplayName] = useState('')
+  const [newGroupDescription, setNewGroupDescription] = useState('')
+  const [createGroupError, setCreateGroupError] = useState('')
   const [formData, setFormData] = useState<AclFormData>({
     resourceType: 'workspace',
     resourceId: null,
@@ -208,6 +213,82 @@ export function AclPage() {
       utils.acl.getStats.invalidate()
     },
   })
+
+  const createGroupMutation = trpc.group.createSecurityGroup.useMutation({
+    onSuccess: (group) => {
+      // Invalidate queries to refresh the groups list
+      utils.acl.getPrincipals.invalidate()
+      utils.acl.getResources.invalidate()
+      // Reset form and close dialog
+      setShowCreateGroupDialog(false)
+      setNewGroupName('')
+      setNewGroupDisplayName('')
+      setNewGroupDescription('')
+      setCreateGroupError('')
+      // Select the newly created group
+      setSelectedResource({
+        type: 'group',
+        id: group.id,
+        name: group.displayName,
+        path: `Kanbu > Security Groups > ${group.displayName}`,
+      })
+      // Expand groups section
+      setTreeState(prev => ({
+        ...prev,
+        expandedSections: new Set([...prev.expandedSections, 'groups']),
+      }))
+    },
+    onError: (error) => {
+      setCreateGroupError(error.message)
+    },
+  })
+
+  const handleCreateGroup = () => {
+    if (!newGroupName.trim() || !newGroupDisplayName.trim()) {
+      setCreateGroupError('Name and display name are required')
+      return
+    }
+    createGroupMutation.mutate({
+      name: newGroupName.trim(),
+      displayName: newGroupDisplayName.trim(),
+      description: newGroupDescription.trim() || undefined,
+    })
+  }
+
+  const openCreateGroupDialog = () => {
+    // Select the Security Groups folder and enable create mode
+    setSelectedResource({
+      type: 'group',
+      id: null,
+      name: 'Create Security Group',
+      path: 'Kanbu > Security Groups > New',
+    })
+    setShowCreateGroupDialog(true)
+    setNewGroupName('')
+    setNewGroupDisplayName('')
+    setNewGroupDescription('')
+    setCreateGroupError('')
+    // Expand groups section
+    setTreeState(prev => ({
+      ...prev,
+      expandedSections: new Set([...prev.expandedSections, 'groups']),
+    }))
+  }
+
+  const cancelCreateGroup = () => {
+    setShowCreateGroupDialog(false)
+    setNewGroupName('')
+    setNewGroupDisplayName('')
+    setNewGroupDescription('')
+    setCreateGroupError('')
+    // Go back to Security Groups overview
+    setSelectedResource({
+      type: 'group',
+      id: null,
+      name: 'Security Groups',
+      path: 'Kanbu > Security Groups',
+    })
+  }
 
   const resetForm = () => {
     const resourceType = selectedResource && isAclResourceType(selectedResource.type)
@@ -311,6 +392,7 @@ export function AclPage() {
               onSelectResource={setSelectedResource}
               treeState={treeState}
               onTreeStateChange={handleTreeStateChange}
+              onCreateGroup={openCreateGroupDialog}
             />
           </div>
         </div>
@@ -355,44 +437,160 @@ export function AclPage() {
                 groupId={selectedResource.id}
                 groupName={selectedResource.name}
                 groupPath={selectedResource.path}
+                onGroupDeleted={() => {
+                  // Navigate back to Security Groups overview after deletion
+                  setSelectedResource({
+                    type: 'group',
+                    id: null,
+                    name: 'Security Groups',
+                    path: 'Kanbu > Security Groups',
+                  })
+                }}
               />
             ) : selectedResource.type === 'group' && !selectedResource.id ? (
-              // Security Groups folder selected - show description
-              <div className="py-8">
-                <div className="max-w-2xl mx-auto">
-                  <div className="flex items-start gap-4 mb-6">
-                    <div className="w-16 h-16 rounded-xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center flex-shrink-0">
-                      <svg className="w-8 h-8 text-indigo-600 dark:text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                        <circle cx="9" cy="7" r="4" />
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                      </svg>
+              // Security Groups folder selected - show create form or description
+              showCreateGroupDialog ? (
+                // Create Security Group form
+                <div className="py-6">
+                  <div className="max-w-xl mx-auto">
+                    <div className="flex items-start gap-4 mb-6">
+                      <div className="w-12 h-12 rounded-xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center flex-shrink-0">
+                        <svg className="w-6 h-6 text-indigo-600 dark:text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                          <path d="M12 5v14M5 12h14" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                          Create Security Group
+                        </h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          Security Groups can be assigned ACL permissions on any resource.
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-                        Security Groups
-                      </h3>
-                      <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
-                        Security Groups zijn <strong>principals</strong> - de entiteiten die rechten kunnen krijgen op resources.
-                        Ze werken zoals in Active Directory: je voegt users toe aan groups, en verleent dan rechten aan die groups.
-                      </p>
-                    </div>
-                  </div>
 
-                  <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
-                    <h4 className="font-medium text-blue-800 dark:text-blue-300 mb-2">
-                      Hoe werkt het?
-                    </h4>
-                    <ol className="text-sm text-blue-700 dark:text-blue-400 space-y-2 list-decimal list-inside">
-                      <li>Selecteer een Security Group in de tree om de leden te beheren</li>
-                      <li>Voeg users toe aan de group via "Add Member"</li>
-                      <li>Ga naar een Workspace of Project en verleen rechten aan de group</li>
-                      <li>Alle leden van de group krijgen automatisch die rechten</li>
-                    </ol>
+                    <div className="space-y-4">
+                      {createGroupError && (
+                        <div className="p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400 text-sm">
+                          {createGroupError}
+                        </div>
+                      )}
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Technical Name
+                        </label>
+                        <input
+                          type="text"
+                          value={newGroupName}
+                          onChange={(e) => setNewGroupName(e.target.value.replace(/\s/g, '-').toLowerCase())}
+                          placeholder="e.g., senior-developers"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Unique identifier (no spaces, lowercase)</p>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Display Name
+                        </label>
+                        <input
+                          type="text"
+                          value={newGroupDisplayName}
+                          onChange={(e) => setNewGroupDisplayName(e.target.value)}
+                          placeholder="e.g., Senior Developers"
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          Description (optional)
+                        </label>
+                        <textarea
+                          value={newGroupDescription}
+                          onChange={(e) => setNewGroupDescription(e.target.value)}
+                          placeholder="What is this group for?"
+                          rows={3}
+                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 resize-none"
+                        />
+                      </div>
+
+                      <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+                        <h4 className="font-medium text-blue-800 dark:text-blue-300 mb-2 text-sm">
+                          Next Steps
+                        </h4>
+                        <p className="text-sm text-blue-700 dark:text-blue-400">
+                          After creating the group, you can add members and then assign ACL permissions on workspaces or projects.
+                        </p>
+                      </div>
+
+                      <div className="flex justify-end gap-3 pt-2">
+                        <button
+                          onClick={cancelCreateGroup}
+                          className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          onClick={handleCreateGroup}
+                          disabled={createGroupMutation.isPending || !newGroupName.trim() || !newGroupDisplayName.trim()}
+                          className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-lg font-medium transition-colors"
+                        >
+                          {createGroupMutation.isPending ? 'Creating...' : 'Create Group'}
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                // Security Groups description
+                <div className="py-8">
+                  <div className="max-w-2xl mx-auto">
+                    <div className="flex items-start gap-4 mb-6">
+                      <div className="w-16 h-16 rounded-xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center flex-shrink-0">
+                        <svg className="w-8 h-8 text-indigo-600 dark:text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                          <circle cx="9" cy="7" r="4" />
+                          <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                          Security Groups
+                        </h3>
+                        <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+                          Security Groups zijn <strong>principals</strong> - de entiteiten die rechten kunnen krijgen op resources.
+                          Ze werken zoals in Active Directory: je voegt users toe aan groups, en verleent dan rechten aan die groups.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 mb-4">
+                      <h4 className="font-medium text-blue-800 dark:text-blue-300 mb-2">
+                        Hoe werkt het?
+                      </h4>
+                      <ol className="text-sm text-blue-700 dark:text-blue-400 space-y-2 list-decimal list-inside">
+                        <li>Selecteer een Security Group in de tree om de leden te beheren</li>
+                        <li>Voeg users toe aan de group via "Add Member"</li>
+                        <li>Ga naar een Workspace of Project en verleen rechten aan de group</li>
+                        <li>Alle leden van de group krijgen automatisch die rechten</li>
+                      </ol>
+                    </div>
+
+                    <button
+                      onClick={openCreateGroupDialog}
+                      className="w-full px-4 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors flex items-center justify-center gap-2"
+                    >
+                      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                        <path d="M12 5v14M5 12h14" />
+                      </svg>
+                      Create Security Group
+                    </button>
+                  </div>
+                </div>
+              )
             ) : entriesLoading ? (
               <div className="text-center py-12 text-gray-500">Loading...</div>
             ) : aclEntries && aclEntries.length > 0 ? (
@@ -561,6 +759,7 @@ export function AclPage() {
           isLoading={denyMutation.isPending}
         />
       )}
+
     </AdminLayout>
   )
 }

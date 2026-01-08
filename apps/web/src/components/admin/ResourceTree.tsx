@@ -75,6 +75,8 @@ interface ResourceTreeProps {
   // Optional controlled tree state for persistence
   treeState?: TreeState
   onTreeStateChange?: (state: TreeState) => void
+  // Callback to create a new Security Group
+  onCreateGroup?: () => void
 }
 
 // =============================================================================
@@ -242,6 +244,7 @@ export function ResourceTree({
   onSelectResource,
   treeState: controlledTreeState,
   onTreeStateChange,
+  onCreateGroup,
 }: ResourceTreeProps) {
   // Internal state for uncontrolled mode
   const [internalState, setInternalState] = useState<TreeState>({
@@ -455,28 +458,45 @@ export function ResourceTree({
           )}
 
           {/* ========== SECURITY GROUPS SECTION ========== */}
-          {groups.length > 0 && (
-            <>
-              <TreeItem
-                label="Security Groups"
-                icon={<FolderIcon className={cn('w-4 h-4', isSectionExpanded('groups') ? 'text-yellow-500' : 'text-yellow-600')} open={isSectionExpanded('groups')} />}
-                depth={1}
-                isSelected={isSelected('group', null)}
-                isExpandable={true}
-                isExpanded={isSectionExpanded('groups')}
-                onClick={() => {
+          <>
+            <TreeItem
+              label="Security Groups"
+              icon={<FolderIcon className={cn('w-4 h-4', isSectionExpanded('groups') ? 'text-yellow-500' : 'text-yellow-600')} open={isSectionExpanded('groups')} />}
+              depth={1}
+              isSelected={isSelected('group', null)}
+              isExpandable={groups.length > 0}
+              isExpanded={isSectionExpanded('groups')}
+              onClick={() => {
+                if (groups.length > 0) {
                   toggleSection('groups')
-                  onSelectResource({
-                    type: 'group',
-                    id: null,
-                    name: 'Security Groups',
-                    path: 'Kanbu > Security Groups',
-                  })
-                }}
-              />
+                }
+                onSelectResource({
+                  type: 'group',
+                  id: null,
+                  name: 'Security Groups',
+                  path: 'Kanbu > Security Groups',
+                })
+              }}
+              suffix={
+                onCreateGroup && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      onCreateGroup()
+                    }}
+                    className="p-0.5 rounded hover:bg-blue-100 dark:hover:bg-blue-900/50 text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                    title="Create Security Group"
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                      <path d="M12 5v14M5 12h14" />
+                    </svg>
+                  </button>
+                )
+              }
+            />
 
-              {/* Flat list of all groups - no sub-folders */}
-              {isSectionExpanded('groups') && groups.map((group) => {
+            {/* Flat list of all groups - no sub-folders */}
+            {isSectionExpanded('groups') && groups.map((group) => {
                 const isSystemGroup = !group.workspaceId
                 return (
                   <TreeItem
@@ -519,8 +539,14 @@ export function ResourceTree({
                   />
                 )
               })}
-            </>
-          )}
+
+            {/* Empty state for Security Groups */}
+            {isSectionExpanded('groups') && groups.length === 0 && (
+              <div className="text-sm text-gray-400 italic px-2 py-2" style={{ paddingLeft: '48px' }}>
+                No security groups yet
+              </div>
+            )}
+          </>
         </>
       )}
     </div>

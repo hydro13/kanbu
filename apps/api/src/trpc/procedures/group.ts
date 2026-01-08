@@ -678,9 +678,9 @@ export const groupRouter = router({
     .mutation(async ({ ctx, input }) => {
       const { name, displayName, description } = input
 
-      // Only Domain Admins can create Security Groups
-      const isDomainAdmin = await groupPermissionService.isDomainAdmin(ctx.user!.id)
-      if (!isDomainAdmin) {
+      // Only Domain Admins (or Super Admins) can create Security Groups
+      const scope = await getGroupManagementScope(ctx.user!.id, ctx.prisma)
+      if (!scope.isDomainAdmin) {
         throw new TRPCError({
           code: 'FORBIDDEN',
           message: 'Only Domain Admins can create Security Groups',

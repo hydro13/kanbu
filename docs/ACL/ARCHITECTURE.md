@@ -60,28 +60,28 @@ Het model volgt AD-concepten voor enterprise compatibility:
 
 ## 2. Resource Hiërarchie
 
-### 2.1 Volledige Resource Tree
+### 2.1 Volledige Resource Tree (Fase 4C)
 
 ```
-Kanbu (Root)
+Kanbu (Root)                    ← resourceType: 'root', ACL hier = alles
 │
-├── System
-│   ├── Administration (system-wide admin functies)
-│   ├── User Management (alle users beheren)
-│   └── Group Management (alle groups beheren)
+├── System                      ← resourceType: 'system', systeembeheer
+│   ├── User Management         ← system sub-item (future)
+│   ├── Group Management        ← system sub-item (future)
+│   ├── LDAP Integration        ← system sub-item (future)
+│   └── Settings                ← system sub-item (future)
 │
-└── Workspaces (Root)
+├── Dashboard                   ← resourceType: 'dashboard' (Fase 4C)
+│   └── (dashboard features)    ← dashboard sub-items (future)
+│
+└── Workspaces                  ← resourceType: 'workspace', resourceId: null
     │
-    ├── Workspace: "Kanbu-Playground"
-    │   │
-    │   ├── Settings (workspace instellingen)
-    │   ├── Members (workspace leden)
+    ├── Workspace: "Kanbu-Playground"  ← resourceType: 'workspace', resourceId: {id}
     │   │
     │   └── Projects
-    │       ├── Project: "LearnKanbo"
-    │       │   ├── Tasks
-    │       │   ├── Wiki (future)
-    │       │   └── Settings
+    │       ├── Project: "LearnKanbo"  ← resourceType: 'project', resourceId: {id}
+    │       │   ├── Tasks              ← (future: task-level ACL)
+    │       │   └── Wiki               ← (future)
     │       │
     │       └── Project: "ACL-Test"
     │           └── ...
@@ -92,13 +92,28 @@ Kanbu (Root)
 
 ### 2.2 Resource Types
 
-| Type | resourceType | resourceId | Scope |
-|------|--------------|------------|-------|
-| System Admin | `admin` | `null` | Volledige systeemtoegang |
-| All Workspaces | `workspace` | `null` | Alle workspaces (root) |
-| Specific Workspace | `workspace` | `{id}` | Eén workspace + children |
-| All Projects | `project` | `null` | Alle projects (root) |
-| Specific Project | `project` | `{id}` | Eén project + children |
+| Type | resourceType | resourceId | Scope | Status |
+|------|--------------|------------|-------|--------|
+| **Root (Kanbu)** | `root` | `null` | Alles - top-level container | Fase 4C |
+| **System** | `system` | `null` | Systeembeheer (users, groups, settings) | Bestaand |
+| **Dashboard** | `dashboard` | `null` | Dashboard features | Fase 4C |
+| All Workspaces | `workspace` | `null` | Alle workspaces (container) | Bestaand |
+| Specific Workspace | `workspace` | `{id}` | Eén workspace + children | Bestaand |
+| All Projects | `project` | `null` | Alle projects | Bestaand |
+| Specific Project | `project` | `{id}` | Eén project + children | Bestaand |
+
+### 2.3 Inheritance Hiërarchie
+
+```
+root (Kanbu)                    ← ACL hier erft naar ALLES
+├── system                      ← Erft van root, geeft door aan system sub-items
+├── dashboard                   ← Erft van root, geeft door aan dashboard items
+└── workspace (null = all)      ← Erft van root
+    └── workspace:{id}          ← Erft van workspace:null
+        └── project:{id}        ← Erft van workspace:{id}
+```
+
+**Voorbeeld:** Domain Admins op `root` met `inheritToChildren=true` → volledige toegang overal.
 
 ---
 
@@ -313,12 +328,22 @@ Het admin panel toont verschillende secties per scope:
 - [x] Security Groups sectie
 - [x] Real-time WebSocket updates
 
-### Fase 4B: Radicale Simplificatie (PLANNED)
-- [ ] [+] knop voor Create Security Group in ResourceTree
+### Fase 4B: Radicale Simplificatie (IN PROGRESS)
+- [x] [+] knop voor Create Security Group in ResourceTree
+- [x] Create form in right panel (niet popup)
+- [x] Delete knop voor Security Groups
 - [ ] GroupListPage en GroupEditPage verwijderen
 - [ ] groupPermissions.ts en roleAssignmentService.ts verwijderen
 - [ ] Database tabellen (GroupPermission, Permission, RoleAssignment) verwijderen
 - [ ] AclPage wordt single source of truth
+
+### Fase 4C: Extended Resource Hierarchy (PLANNED)
+- [ ] Resource types: root, system, dashboard
+- [ ] ResourceTree met volledige AD-style hiërarchie
+- [ ] ACL op Root niveau (Domain Admins met inherit)
+- [ ] ACL op System container
+- [ ] ACL op Dashboard container
+- [ ] Inheritance van root naar alle children
 
 ### Fase 5: Scoped Data Access (PLANNED)
 - [ ] getUserScope() service method
@@ -470,5 +495,7 @@ Week 9+: Advanced features
 
 | Versie | Datum | Wijziging |
 |--------|-------|-----------|
+| 1.2.0 | 2026-01-08 | Fase 4C: Extended Resource Hierarchy (Root, System, Dashboard) |
+| 1.1.1 | 2026-01-08 | Fase 4B.1 voltooid: Security Groups CRUD in AclPage |
 | 1.1.0 | 2026-01-08 | Fase 4B: Radicale Simplificatie (AclPage single source of truth) |
 | 1.0.0 | 2026-01-08 | Initiële architectuur document |

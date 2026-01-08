@@ -8,7 +8,8 @@
 ┌─────────────────────────────────────────────────────────────────────┐
 │ FASE 1-3B: Foundation & Pure ACL                    [██████████] ✓  │
 │ FASE 4: Resource Tree UI                            [██████████] ✓  │
-│ FASE 4B: ACL-Only Groups Workflow                   [──────────] ○  │
+│ FASE 4B: ACL-Only Groups Workflow                   [██████░░░░] ◐  │
+│ FASE 4C: Extended Resource Hierarchy                [──────────] ○  │
 │ FASE 5: Scoped Data Access                          [──────────] ○  │
 │ FASE 6: Scoped Admin Panel                          [──────────] ○  │
 │ FASE 7: Scoped UI Elements                          [──────────] ○  │
@@ -286,6 +287,185 @@ Legenda: ✓ Voltooid | ◐ In Progress | ○ Gepland
 
 ---
 
+## GEPLAND: Fase 4C - Extended Resource Hierarchy
+
+> **Doel:** Volledige AD-style resource hiërarchie met Root, System, Dashboard, en Workspaces containers.
+> ACL kan op elk niveau gezet worden met inheritance naar children.
+
+### Achtergrond: Waarom Extended Hierarchy?
+
+**Huidige situatie (te plat):**
+```
+Kanbu (Root) ← Geen ACL mogelijk
+├── System ← Beperkt, alleen "admin" resource type
+└── Workspaces ← ACL werkt, maar geen parent containers
+    └── Projects
+```
+
+**Gewenste situatie (AD-style):**
+```
+Kanbu (Root) ← Domain Admins hier met inherit=true
+│
+├── System ← Container voor systeembeheer
+│   ├── User Management
+│   ├── Group Management
+│   ├── LDAP Integration (future)
+│   └── Database Management (future)
+│
+├── Dashboard ← Container voor dashboard features
+│   ├── Dashboard Widget 1
+│   └── Dashboard Widget 2
+│
+└── Workspaces ← Bestaande container
+    ├── Workspace X
+    │   └── Projects...
+    └── Workspace Y
+        └── Projects...
+```
+
+**Voordelen:**
+- Domain Admins op Root met inherit → volledige systeemtoegang
+- System Admins apart van Workspace Admins
+- Dashboard features los beheerbaar
+- Volledige AD-compatibiliteit
+
+---
+
+### 4C.1 Resource Types Uitbreiden
+
+> Nieuwe resource types toevoegen aan het ACL model.
+
+#### Database Schema Updates
+
+```typescript
+// Huidige resourceTypes: 'admin', 'workspace', 'project', 'profile'
+// Nieuwe resourceTypes toevoegen:
+
+resourceType: 'root'      // Kanbu root - alles erft hiervan
+resourceType: 'system'    // System container (bestaand, hergebruiken)
+resourceType: 'dashboard' // Dashboard container (nieuw)
+```
+
+#### Backend Updates
+- [ ] Update `AclEntry` validatie voor nieuwe resource types
+- [ ] Update `aclService.ts` met nieuwe resource types
+- [ ] Update `acl.ts` procedures voor nieuwe types
+- [ ] Inheritance logica: root → system/dashboard/workspaces
+
+#### Bestanden
+- `packages/shared/prisma/schema.prisma` (indien enum)
+- `apps/api/src/services/aclService.ts`
+- `apps/api/src/trpc/procedures/acl.ts`
+
+---
+
+### 4C.2 ResourceTree UI Uitbreiden
+
+> Tree component aanpassen voor volledige hiërarchie.
+
+#### UI Wijzigingen
+- [ ] Root niveau (Kanbu) klikbaar voor ACL
+- [ ] System als expandable container met sub-items
+- [ ] Dashboard als nieuwe expandable container
+- [ ] Workspaces container behouden zoals nu
+- [ ] Visuele indicators voor containers vs. items
+
+#### Nieuwe Tree Structuur
+```
+📁 Kanbu (Root)              ← Klikbaar, ACL mogelijk
+├── 📁 System                ← Container, ACL mogelijk
+│   ├── 👤 User Management   ← Sub-item
+│   ├── 👥 Group Management  ← Sub-item
+│   └── ⚙️ Settings          ← Sub-item
+├── 📁 Dashboard             ← Container, ACL mogelijk
+│   └── (future items)
+├── 📁 Workspaces            ← Container zoals nu
+│   └── ...
+└── 📁 Security Groups       ← Principals sectie (geen change)
+```
+
+#### Bestanden
+- `apps/web/src/components/admin/ResourceTree.tsx`
+- `apps/web/src/pages/admin/AclPage.tsx`
+
+---
+
+### 4C.3 Inheritance Logic
+
+> ACL inheritance moet van root naar beneden werken.
+
+#### Inheritance Hiërarchie
+```
+root (Kanbu)
+├── system
+│   ├── system:users
+│   ├── system:groups
+│   └── system:settings
+├── dashboard
+│   └── dashboard:* (future)
+└── workspace (null = all)
+    └── workspace:{id}
+        └── project:{id}
+```
+
+#### Backend Logic
+- [ ] `checkPermission` moet parent chain controleren
+- [ ] Root permission met inherit → alles daaronder
+- [ ] System permission → alleen system sub-items
+- [ ] Bestaande workspace/project inheritance behouden
+
+#### Voorbeeld Use Cases
+| ACL Entry | Effect |
+|-----------|--------|
+| Domain Admins op `root` met inherit | Volledige toegang overal |
+| System Admins op `system` met inherit | Alleen User/Group/Settings beheer |
+| Workspace Admins op `workspace:1` | Alleen die workspace + projects |
+
+---
+
+### 4C.4 API Endpoint Updates
+
+> Backend moet nieuwe resource types ondersteunen.
+
+#### `acl.getResources` Uitbreiden
+- [ ] Return root resource
+- [ ] Return system container met sub-resources
+- [ ] Return dashboard container
+- [ ] Bestaande workspaces/projects behouden
+
+#### `acl.list` Updates
+- [ ] Filter op root/system/dashboard resource types
+- [ ] Inheritance info tonen
+
+---
+
+### 4C.5 Verificatie
+
+- [ ] ACL kan gezet worden op Root (Kanbu)
+- [ ] ACL kan gezet worden op System container
+- [ ] ACL kan gezet worden op Dashboard container
+- [ ] Inheritance werkt van root naar beneden
+- [ ] Domain Admins op root → toegang overal
+- [ ] System Admins op system → alleen systeembeheer
+- [ ] Bestaande workspace/project ACL blijft werken
+- [ ] ResourceTree toont volledige hiërarchie
+- [ ] Geen breaking changes voor bestaande ACL entries
+
+---
+
+### 4C.6 Future Extensions (niet in scope)
+
+Deze items zijn voorbereid maar worden later geïmplementeerd:
+
+| Item | Fase | Beschrijving |
+|------|------|--------------|
+| System sub-items | 4C+ | User Management, Group Management, Settings als aparte resources |
+| Dashboard features | 5+ | Dashboard widgets als beveiligbare resources |
+| LDAP Management | 9 | LDAP/AD sync configuratie |
+| Database Management | 9 | Database backup/restore features |
+
+---
+
 ## GEPLAND: Fase 5 - Scoped Data Access
 
 > **Doel:** Alle data queries filteren op basis van user's scope.
@@ -470,22 +650,28 @@ interface UserScope {
 
 ## Prioriteiten
 
-### NOW - Fase 4B: Radicale Simplificatie
-1. **4B.1** - [+] knop voor Create Security Group in ResourceTree
-2. **4B.2** - Legacy code verwijderen (GroupListPage, GroupEditPage, services)
-3. **4B.3** - Database cleanup (GroupPermission, Permission, RoleAssignment tabellen)
+### NOW - Fase 4B: Radicale Simplificatie (◐ In Progress)
+1. **4B.1** - ✅ [+] knop voor Create Security Group in ResourceTree
+2. **4B.1** - ✅ Create form in right panel (niet popup)
+3. **4B.1** - ✅ Delete knop voor Security Groups
+4. **4B.2** - Legacy code verwijderen (GroupListPage, GroupEditPage, services)
+5. **4B.3** - Database cleanup (GroupPermission, Permission, RoleAssignment tabellen)
 
-### NEXT - Fase 5: Scoped Data Access
-4. **5.1** - ScopeService implementeren
-5. **5.2** - Scoped user queries
+### NEXT - Fase 4C: Extended Resource Hierarchy
+6. **4C.1** - Resource types uitbreiden (root, system, dashboard)
+7. **4C.2** - ResourceTree UI uitbreiden
+8. **4C.3** - Inheritance logic implementeren
+9. **4C.4** - API endpoints updaten
 
-### THEN - Fase 6-7: Scoped UI
-6. **6.x** - Admin panel scoping
-7. **7.x** - UI element scoping
+### THEN - Fase 5: Scoped Data Access
+10. **5.1** - ScopeService implementeren
+11. **5.2** - Scoped user queries
 
-### LATER - Fase 8-9
-8. **8.x** - Database cleanup
-9. **9.x** - Advanced features
+### LATER - Fase 6-9
+12. **6.x** - Admin panel scoping
+13. **7.x** - UI element scoping
+14. **8.x** - Database cleanup (legacy tabellen)
+15. **9.x** - Advanced features (LDAP, audit, etc.)
 
 ---
 
@@ -510,13 +696,25 @@ interface UserScope {
 - [x] Real-time WebSocket updates
 
 ### Fase 4B Compleet Wanneer:
-- [ ] [+] knop werkt in ResourceTree voor nieuwe Security Groups
+- [x] [+] knop werkt in ResourceTree voor nieuwe Security Groups
+- [x] Create form in right panel (niet popup)
+- [x] Delete knop voor Security Groups
 - [ ] GroupListPage en GroupEditPage verwijderd
 - [ ] groupPermissions.ts en roleAssignmentService.ts verwijderd
 - [ ] roleAssignment.ts procedures verwijderd
 - [ ] Database tabellen (GroupPermission, Permission, RoleAssignment) verwijderd
 - [ ] Sidebar link naar /admin/groups verwijderd
 - [ ] AclPage is single source of truth voor group + ACL management
+
+### Fase 4C Compleet Wanneer:
+- [ ] Resource types uitgebreid: root, system, dashboard
+- [ ] ResourceTree toont volledige hiërarchie (Root → System/Dashboard/Workspaces)
+- [ ] ACL kan gezet worden op Root niveau
+- [ ] ACL kan gezet worden op System container
+- [ ] ACL kan gezet worden op Dashboard container
+- [ ] Inheritance werkt van root naar beneden
+- [ ] Domain Admins op root → volledige toegang overal
+- [ ] Bestaande workspace/project ACL blijft werken
 
 ### Fase 5 Compleet Wanneer:
 - [ ] ScopeService geïmplementeerd en getest
@@ -555,6 +753,8 @@ interface UserScope {
 
 | Datum | Wijziging |
 |-------|-----------|
+| 2026-01-08 | Fase 4C toegevoegd: Extended Resource Hierarchy (Root, System, Dashboard containers) |
+| 2026-01-08 | Fase 4B.1 voltooid: [+] knop, create form, delete knop voor Security Groups |
 | 2026-01-08 | Fase 4B herschreven: Radicale Simplificatie (alles weg behalve AclPage) |
 | 2026-01-08 | Beslissing: RoleAssignment systeem volledig verwijderen |
 | 2026-01-08 | Beslissing: Groups admin pages volledig verwijderen |
