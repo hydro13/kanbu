@@ -22,21 +22,23 @@ A modern, self-hostable project management tool with Kanban boards, real-time co
 - **Typing indicators** - "X is typing..." in comments
 - **Edit locking** - Prevents conflicts when multiple users edit
 
-### Permission System (AD-Style)
-- **Domain Admins** - Full system access
-- **Security Groups** - Reusable permission sets
-- **Workspace Groups** - Auto-generated per workspace (Members, Admins)
-- **Project Groups** - Fine-grained project access
-- **45+ Granular Permissions** - Control every action
-- **Role Assignments** - Assign groups to workspaces/projects with roles
+### Permission System (NTFS/AD-Style ACL)
+- **ACL-based Authorization** - NTFS-style Access Control Lists with bitmask permissions
+- **RWXDP Permissions** - Read, Write, Execute, Delete, Permissions (manage ACL)
+- **Permission Inheritance** - Workspace permissions inherit to projects
+- **Deny-first Logic** - Explicit deny entries override grants (like NTFS)
+- **Domain Admins** - Full system access via ACL or group membership
+- **Security Groups** - Reusable permission sets with ACL entries
+- **Workspace & Project Roles** - OWNER, ADMIN/MANAGER, MEMBER, VIEWER
 
 ### Admin Panel
 - **User Management** - Create, edit, disable users
 - **Group Management** - Create security groups, manage memberships
+- **ACL Manager** - Grant/revoke permissions with presets (Read-Only, Contributor, Editor, Full Control)
+- **Permission Tree** - Visual permission browser with effective permissions
 - **Workspace Management** - Create and configure workspaces
-- **Backup Management** - Database and source code backups
+- **Backup Management** - Database and source code backups to Google Drive
 - **System Settings** - Global configuration
-- **Permission Tree** - Visual permission browser
 
 ## Quick Start
 
@@ -171,7 +173,33 @@ docker compose -f docker-compose.selfhosted.yml up -d
 
 ## Permission System
 
-Kanbu uses an Active Directory-inspired permission model:
+Kanbu uses an NTFS/Active Directory-inspired ACL (Access Control List) model:
+
+### ACL Permissions (Bitmask)
+
+| Bit | Permission | Value | Description |
+|-----|------------|-------|-------------|
+| R | Read | 1 | View resource |
+| W | Write | 2 | Modify resource |
+| X | Execute | 4 | Perform actions (reserved) |
+| D | Delete | 8 | Remove resource |
+| P | Permissions | 16 | Manage ACL entries |
+
+### Permission Presets
+
+| Preset | Permissions | Bitmask | Use Case |
+|--------|-------------|---------|----------|
+| READ_ONLY | R | 1 | Viewers |
+| CONTRIBUTOR | RWX | 7 | Team members |
+| EDITOR | RWXD | 15 | Managers |
+| FULL_CONTROL | RWXDP | 31 | Owners/Admins |
+
+### ACL Features
+
+- **Deny-first logic** - Explicit deny entries override any grants (like NTFS)
+- **Inheritance** - Workspace permissions inherit to child projects
+- **Principal types** - Users and Groups can have ACL entries
+- **Resource types** - workspace, project, admin, profile
 
 ### Group Types
 
@@ -190,9 +218,25 @@ Kanbu uses an Active Directory-inspired permission model:
 
 ### Role Hierarchy
 
+**Workspace roles:**
 ```
 OWNER > ADMIN > MEMBER > VIEWER
 ```
+
+**Project roles:**
+```
+OWNER > MANAGER > MEMBER > VIEWER
+```
+
+### Role to ACL Mapping
+
+| Role | Workspace ACL | Project ACL |
+|------|---------------|-------------|
+| OWNER | FULL_CONTROL (31) | FULL_CONTROL (31) |
+| ADMIN | FULL_CONTROL (31) | - |
+| MANAGER | - | EDITOR (15) |
+| MEMBER | CONTRIBUTOR (7) | CONTRIBUTOR (7) |
+| VIEWER | READ_ONLY (1) | READ_ONLY (1) |
 
 ## Real-Time Scaling
 
@@ -214,7 +258,8 @@ The API uses tRPC for type-safe client-server communication. Main routers:
 | `column` | Board columns |
 | `comment` | Task comments |
 | `group` | Group management |
-| `admin` | Admin-only operations |
+| `acl` | ACL management (grant, revoke, list permissions) |
+| `admin` | Admin-only operations (backups, system settings) |
 | `user` | User profile and settings |
 
 ## Development
@@ -249,16 +294,26 @@ pnpm dev
 
 ### Creating an Admin User
 
-After first registration, promote a user to Domain Admin:
+After first registration, grant admin access via ACL:
 
 ```sql
--- Find Domain Admins group
-SELECT id FROM "Group" WHERE name = 'Domain Admins';
+-- Option 1: Grant ACL admin access (recommended)
+INSERT INTO "AclEntry" (
+  "resourceType", "resourceId", "principalType", "principalId",
+  "permissions", "deny", "inheritToChildren", "createdById"
+)
+VALUES (
+  'admin', NULL, 'user', <user_id>,
+  31, false, true, <user_id>
+);
 
--- Add user to Domain Admins (replace IDs)
+-- Option 2: Add to Domain Admins group (legacy)
 INSERT INTO "GroupMember" ("groupId", "userId", "role")
-VALUES (<group_id>, <user_id>, 'MEMBER');
+SELECT id, <user_id>, 'MEMBER'
+FROM "Group" WHERE name = 'Domain Admins';
 ```
+
+The ACL entry grants Full Control (31 = RWXDP) on admin resources.
 
 ## License
 
