@@ -15,6 +15,7 @@
 
 import { useState } from 'react'
 import { AdminLayout } from '@/components/admin'
+import { ResourceTree, type SelectedResource, type ResourceType } from '@/components/admin/ResourceTree'
 import { trpc } from '@/lib/trpc'
 import { cn } from '@/lib/utils'
 
@@ -22,7 +23,6 @@ import { cn } from '@/lib/utils'
 // Types
 // =============================================================================
 
-type ResourceType = 'workspace' | 'project' | 'admin' | 'profile'
 type PrincipalType = 'user' | 'group'
 
 interface AclFormData {
@@ -69,11 +69,7 @@ function permissionToArray(permissions: number): string[] {
 // =============================================================================
 
 export function AclPage() {
-  const [selectedResource, setSelectedResource] = useState<{
-    type: ResourceType
-    id: number | null
-    name: string
-  } | null>(null)
+  const [selectedResource, setSelectedResource] = useState<SelectedResource | null>(null)
   const [showGrantDialog, setShowGrantDialog] = useState(false)
   const [showDenyDialog, setShowDenyDialog] = useState(false)
   const [formData, setFormData] = useState<AclFormData>({
@@ -219,97 +215,14 @@ export function AclPage() {
           <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
             <h2 className="font-medium text-gray-900 dark:text-white">Select Resource</h2>
           </div>
-          <div className="p-4 space-y-4 max-h-[500px] overflow-y-auto">
-            {/* Workspaces */}
-            <div>
-              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                Workspaces
-              </h3>
-              <div className="space-y-1">
-                <button
-                  onClick={() => setSelectedResource({ type: 'workspace', id: null, name: 'All Workspaces (Root)' })}
-                  className={cn(
-                    'w-full text-left px-3 py-2 rounded-lg text-sm transition-colors',
-                    selectedResource?.type === 'workspace' && selectedResource?.id === null
-                      ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
-                      : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
-                  )}
-                >
-                  All Workspaces (Root)
-                </button>
-                {resources?.workspaces.map((ws) => (
-                  <button
-                    key={ws.id}
-                    onClick={() => setSelectedResource({ type: 'workspace', id: ws.id, name: ws.name })}
-                    className={cn(
-                      'w-full text-left px-3 py-2 rounded-lg text-sm transition-colors pl-6',
-                      selectedResource?.type === 'workspace' && selectedResource?.id === ws.id
-                        ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
-                        : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
-                    )}
-                  >
-                    {ws.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Projects */}
-            <div>
-              <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                Projects
-              </h3>
-              <div className="space-y-1">
-                <button
-                  onClick={() => setSelectedResource({ type: 'project', id: null, name: 'All Projects (Root)' })}
-                  className={cn(
-                    'w-full text-left px-3 py-2 rounded-lg text-sm transition-colors',
-                    selectedResource?.type === 'project' && selectedResource?.id === null
-                      ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                      : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
-                  )}
-                >
-                  All Projects (Root)
-                </button>
-                {resources?.projects.map((proj) => (
-                  <button
-                    key={proj.id}
-                    onClick={() => setSelectedResource({ type: 'project', id: proj.id, name: proj.name })}
-                    className={cn(
-                      'w-full text-left px-3 py-2 rounded-lg text-sm transition-colors pl-6',
-                      selectedResource?.type === 'project' && selectedResource?.id === proj.id
-                        ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                        : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
-                    )}
-                  >
-                    <span className="font-mono text-xs text-gray-400 mr-2">{proj.identifier}</span>
-                    {proj.name}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Admin Resources */}
-            {resources?.resourceTypes.some(r => r.type === 'admin') && (
-              <div>
-                <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
-                  Administration
-                </h3>
-                <div className="space-y-1">
-                  <button
-                    onClick={() => setSelectedResource({ type: 'admin', id: null, name: 'Administration' })}
-                    className={cn(
-                      'w-full text-left px-3 py-2 rounded-lg text-sm transition-colors',
-                      selectedResource?.type === 'admin'
-                        ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400'
-                        : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
-                    )}
-                  >
-                    Administration
-                  </button>
-                </div>
-              </div>
-            )}
+          <div className="p-2 max-h-[500px] overflow-y-auto">
+            <ResourceTree
+              workspaces={resources?.workspaces ?? []}
+              projects={resources?.projects ?? []}
+              isAdmin={resources?.resourceTypes.some(r => r.type === 'admin') ?? false}
+              selectedResource={selectedResource}
+              onSelectResource={setSelectedResource}
+            />
           </div>
         </div>
 
@@ -317,7 +230,9 @@ export function AclPage() {
         <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex items-center justify-between">
             <h2 className="font-medium text-gray-900 dark:text-white">
-              {selectedResource ? `ACL for: ${selectedResource.name}` : 'Select a resource'}
+              {selectedResource
+                ? `ACL for: ${selectedResource.path ?? selectedResource.name}`
+                : 'Select a resource'}
             </h2>
             {selectedResource && (
               <div className="flex gap-2">

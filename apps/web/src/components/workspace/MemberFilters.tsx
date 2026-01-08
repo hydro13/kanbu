@@ -205,7 +205,7 @@ interface Member {
   email: string
   role: string
   joinedAt?: string | Date
-  source?: 'workspace_user' | 'group' | 'both'
+  source?: 'workspace_user' | 'group' | 'both' | 'acl'
 }
 
 export function filterMembers(

@@ -1,0 +1,466 @@
+# ACL Architectuur - Scoped Permission Model
+
+## Overzicht
+
+Dit document beschrijft de architectuur voor het **Scoped Permission Model** van Kanbu.
+Het systeem is geïnspireerd op Active Directory en biedt enterprise-grade toegangscontrole
+met workspace-level isolatie en gedelegeerde administratie.
+
+**Document versie:** 1.0.0
+**Datum:** 2026-01-08
+**Status:** Goedgekeurd voor implementatie
+
+---
+
+## 1. Kernconcepten
+
+### 1.1 Scheiding van Concerns
+
+Het systeem maakt een duidelijke scheiding tussen:
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                         ACL SYSTEEM                                  │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│   RESOURCES (WAT)              PRINCIPALS (WIE)                     │
+│   ─────────────────           ──────────────────                    │
+│   De objecten die je          De entiteiten die                     │
+│   wilt beveiligen:            rechten krijgen:                      │
+│                                                                      │
+│   • System (admin functies)   • Users (individuele gebruikers)      │
+│   • Workspaces                • Security Groups (groepen users)     │
+│   • Projects                                                         │
+│   • (Future: Tasks, Wiki)                                           │
+│                                                                      │
+│                    ACL ENTRIES (HOE)                                │
+│                    ─────────────────                                │
+│                    De koppeling tussen                              │
+│                    resources en principals                          │
+│                    met specifieke permissies                        │
+│                    (RWXDP bitmask)                                  │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### 1.2 Active Directory Compatibiliteit
+
+Het model volgt AD-concepten voor enterprise compatibility:
+
+| AD Concept | Kanbu Equivalent | Beschrijving |
+|------------|------------------|--------------|
+| Domain | Kanbu Instance | De root van het systeem |
+| Organizational Unit (OU) | Workspace | Container voor projecten en users |
+| Security Group | Group | Groep users die samen rechten krijgen |
+| User Account | User | Individuele gebruiker |
+| ACL | AclEntry | Permissie koppeling |
+| Inheritance | inheritToChildren | Rechten erven naar children |
+
+---
+
+## 2. Resource Hiërarchie
+
+### 2.1 Volledige Resource Tree
+
+```
+Kanbu (Root)
+│
+├── System
+│   ├── Administration (system-wide admin functies)
+│   ├── User Management (alle users beheren)
+│   └── Group Management (alle groups beheren)
+│
+└── Workspaces (Root)
+    │
+    ├── Workspace: "Kanbu-Playground"
+    │   │
+    │   ├── Settings (workspace instellingen)
+    │   ├── Members (workspace leden)
+    │   │
+    │   └── Projects
+    │       ├── Project: "LearnKanbo"
+    │       │   ├── Tasks
+    │       │   ├── Wiki (future)
+    │       │   └── Settings
+    │       │
+    │       └── Project: "ACL-Test"
+    │           └── ...
+    │
+    └── Workspace: "Production"
+        └── ...
+```
+
+### 2.2 Resource Types
+
+| Type | resourceType | resourceId | Scope |
+|------|--------------|------------|-------|
+| System Admin | `admin` | `null` | Volledige systeemtoegang |
+| All Workspaces | `workspace` | `null` | Alle workspaces (root) |
+| Specific Workspace | `workspace` | `{id}` | Eén workspace + children |
+| All Projects | `project` | `null` | Alle projects (root) |
+| Specific Project | `project` | `{id}` | Eén project + children |
+
+---
+
+## 3. Scope Levels
+
+### 3.1 Permission Scopes
+
+Het systeem heeft drie primaire scope levels:
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│ LEVEL 1: GLOBAL/SYSTEM SCOPE                                        │
+│ ─────────────────────────────                                       │
+│ • Super Admins (AppRole.ADMIN of admin ACL)                        │
+│ • Zien ALLES in het systeem                                        │
+│ • Kunnen ALLES beheren                                             │
+│ • Volledige user/group management                                  │
+│ • System settings toegang                                          │
+├─────────────────────────────────────────────────────────────────────┤
+│ LEVEL 2: WORKSPACE SCOPE                                            │
+│ ─────────────────────────                                           │
+│ • Workspace Admins (P permission op workspace)                     │
+│ • Zien ALLEEN hun workspace(s)                                     │
+│ • Beheren workspace settings, members, projects                    │
+│ • Contact list gefilterd op workspace members                      │
+│ • Admin panel toont alleen workspace-scoped functies               │
+├─────────────────────────────────────────────────────────────────────┤
+│ LEVEL 3: PROJECT SCOPE                                              │
+│ ─────────────────────────                                           │
+│ • Project Managers/Members                                         │
+│ • Werken binnen één of meer projects                               │
+│ • Rechten bepaald door project ACL of workspace inheritance        │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+### 3.2 Scope Cascading
+
+Rechten werken van boven naar beneden:
+
+```
+System Admin (P op admin)
+    │
+    ├── Ziet alle workspaces
+    ├── Ziet alle users
+    ├── Ziet alle groups
+    └── Volledige admin panel
+
+Workspace Admin (P op workspace:1)
+    │
+    ├── Ziet ALLEEN workspace:1
+    ├── Ziet ALLEEN users in workspace:1
+    ├── Beheert ALLEEN projects in workspace:1
+    └── Admin panel: alleen workspace:1 functies
+
+Project Member (RWX op project:5)
+    │
+    ├── Werkt in project:5
+    └── Geen admin toegang
+```
+
+---
+
+## 4. Security Groups
+
+### 4.1 Voorgestelde Standaard Groups
+
+| Group Name | Beschrijving | Typische ACL |
+|------------|--------------|--------------|
+| `domain-admins` | Systeem beheerders | P op `admin:null` |
+| `system-admins` | Technisch beheer | RWX op `admin:null` |
+| `workspace-admins` | Workspace beheerders | P op specifieke workspaces |
+| `project-managers` | Project leiders | RWXD op specifieke projects |
+| `members` | Standaard gebruikers | RWX op hun projects |
+| `viewers` | Alleen-lezen | R op specifieke resources |
+| `external-contractors` | Externe partijen | Beperkte R/RW op specifieke projects |
+| `guests` | Gasten | Minimale R toegang |
+
+### 4.2 Group Hiërarchie
+
+```
+Groups
+├── System Groups (global scope)
+│   ├── domain-admins
+│   └── system-admins
+│
+├── Workspace Groups (per workspace)
+│   ├── ws-{slug}-admins
+│   ├── ws-{slug}-members
+│   └── ws-{slug}-viewers
+│
+└── Project Groups (per project)
+    ├── proj-{identifier}-managers
+    └── proj-{identifier}-members
+```
+
+---
+
+## 5. Scoped Data Access
+
+### 5.1 Principe: "Zie alleen wat je mag zien"
+
+**KRITISCH:** Alle data queries moeten gefilterd worden op basis van de user's scope.
+
+```typescript
+// FOUT - Toont alle users
+const users = await prisma.user.findMany()
+
+// GOED - Toont alleen users in scope
+const users = await getUsersInScope(currentUserId)
+```
+
+### 5.2 Scope Filter Implementatie
+
+Voor elke data query moet het systeem:
+
+1. **Bepaal user's scope** - System, Workspace, of Project level
+2. **Filter resources** - Alleen resources binnen scope
+3. **Filter principals** - Alleen users/groups binnen scope
+
+```typescript
+// Voorbeeld: Contact List
+async function getContactList(userId: number) {
+  const scope = await getUserScope(userId)
+
+  if (scope.level === 'system') {
+    // System admin: alle users
+    return prisma.user.findMany()
+  }
+
+  if (scope.level === 'workspace') {
+    // Workspace admin: alleen workspace members
+    return getUsersInWorkspaces(scope.workspaceIds)
+  }
+
+  // Project member: alleen project team members
+  return getUsersInProjects(scope.projectIds)
+}
+```
+
+### 5.3 Scope-Affected Queries
+
+| Query | System Scope | Workspace Scope | Project Scope |
+|-------|--------------|-----------------|---------------|
+| Users list | Alle users | Workspace members | Project team |
+| Groups list | Alle groups | Workspace groups | Project groups |
+| Workspaces | Alle | Eigen workspace(s) | - |
+| Projects | Alle | Workspace projects | Eigen project(s) |
+| Tasks | Alle | Workspace tasks | Project tasks |
+| Admin panel | Volledig | Workspace admin | - |
+| Menu items | Alle | Gefilterd | Gefilterd |
+
+---
+
+## 6. UI Scoping
+
+### 6.1 Conditionele Menu's
+
+Menu items worden getoond op basis van effectieve permissies:
+
+```typescript
+// Sidebar menu items
+const menuItems = [
+  // Altijd zichtbaar voor ingelogde users
+  { label: 'Dashboard', visible: true },
+  { label: 'My Tasks', visible: true },
+
+  // Workspace-level items
+  { label: 'Projects', visible: hasWorkspaceAccess },
+  { label: 'Members', visible: hasWorkspaceAdmin },
+
+  // System-level items
+  { label: 'Administration', visible: hasAdminAccess },
+  { label: 'All Users', visible: hasSystemScope },
+  { label: 'All Groups', visible: hasSystemScope },
+]
+```
+
+### 6.2 Admin Panel Scoping
+
+Het admin panel toont verschillende secties per scope:
+
+**System Admin ziet:**
+- All Workspaces
+- All Users
+- All Groups
+- System Settings
+- ACL Manager (volledig)
+- Audit Logs
+
+**Workspace Admin ziet:**
+- Workspace Settings (eigen)
+- Workspace Members (eigen)
+- Workspace Projects (eigen)
+- ACL Manager (workspace scope)
+
+---
+
+## 7. Implementatie Fases
+
+### Fase 1: Foundation (VOLTOOID)
+- [x] AclEntry model
+- [x] AclService core functies
+- [x] tRPC procedures
+- [x] Basic UI
+
+### Fase 2: Pure ACL (VOLTOOID)
+- [x] Legacy fallback verwijderd
+- [x] Workspace/Project access via ACL
+- [x] Members via ACL
+
+### Fase 3: Resource Tree UI (IN PROGRESS)
+- [x] VSCode-style tree component
+- [ ] Volledige hiërarchie tonen
+- [ ] Security Groups sectie toevoegen
+
+### Fase 4: Scoped Data Access (PLANNED)
+- [ ] getUserScope() service method
+- [ ] Scope-filtered queries voor alle data
+- [ ] Contact list scoping
+- [ ] User/Group list scoping
+
+### Fase 5: Scoped Admin Panel (PLANNED)
+- [ ] Workspace Admin view
+- [ ] Gefilterde admin functies
+- [ ] Scoped ACL Manager
+
+### Fase 6: Scoped UI Elements (PLANNED)
+- [ ] Conditionele menu's
+- [ ] Scoped breadcrumbs
+- [ ] Permission-based component rendering
+
+### Fase 7: Advanced Features (FUTURE)
+- [ ] Audit logging
+- [ ] LDAP/AD Sync
+- [ ] Task-level ACL
+- [ ] API Keys met scoped access
+
+---
+
+## 8. Technische Specificaties
+
+### 8.1 Core Services
+
+| Service | Verantwoordelijkheid |
+|---------|---------------------|
+| `AclService` | ACL CRUD, permission checks |
+| `PermissionService` | High-level access checks, role mapping |
+| `ScopeService` (nieuw) | Bepaal user scope, filter queries |
+
+### 8.2 ScopeService API (te implementeren)
+
+```typescript
+interface UserScope {
+  level: 'system' | 'workspace' | 'project'
+  workspaceIds: number[]  // Workspaces waar user toegang heeft
+  projectIds: number[]    // Projects waar user toegang heeft
+  permissions: {
+    canManageUsers: boolean
+    canManageGroups: boolean
+    canManageWorkspaces: boolean
+    canAccessAdminPanel: boolean
+  }
+}
+
+class ScopeService {
+  // Bepaal user's effectieve scope
+  async getUserScope(userId: number): Promise<UserScope>
+
+  // Gefilterde queries
+  async getUsersInScope(userId: number): Promise<User[]>
+  async getGroupsInScope(userId: number): Promise<Group[]>
+  async getWorkspacesInScope(userId: number): Promise<Workspace[]>
+  async getProjectsInScope(userId: number, workspaceId?: number): Promise<Project[]>
+
+  // Scope checks
+  async canSeeUser(viewerId: number, targetUserId: number): Promise<boolean>
+  async canManageResource(userId: number, resourceType: string, resourceId: number): Promise<boolean>
+}
+```
+
+### 8.3 Database Queries Pattern
+
+Alle queries die data ophalen moeten dit pattern volgen:
+
+```typescript
+// 1. Haal user scope op (cached)
+const scope = await scopeService.getUserScope(ctx.user.id)
+
+// 2. Bouw query filter op basis van scope
+const whereClause = buildScopeFilter(scope, 'workspace')
+
+// 3. Execute query met filter
+const data = await prisma.workspace.findMany({
+  where: whereClause,
+  ...otherOptions
+})
+```
+
+---
+
+## 9. Migratie Strategie
+
+### 9.1 Backward Compatibility
+
+Tijdens de migratie moet het systeem blijven werken:
+
+1. **Bestaande users behouden toegang** via huidige ACL entries
+2. **Nieuwe scope checks** worden geleidelijk toegevoegd
+3. **Feature flags** voor nieuwe scoped functies
+4. **Fallback naar onscoped** als scope niet bepaald kan worden
+
+### 9.2 Stapsgewijze Rollout
+
+```
+Week 1-2: ScopeService implementeren
+    └── Unit tests voor scope determination
+
+Week 3-4: Contact list scoping
+    └── Eerste zichtbare scoped feature
+
+Week 5-6: Admin panel scoping
+    └── Workspace admin view
+
+Week 7-8: Menu scoping
+    └── Conditionele UI elements
+
+Week 9+: Advanced features
+    └── Audit, LDAP sync, etc.
+```
+
+---
+
+## 10. Success Criteria
+
+### 10.1 Functionele Eisen
+
+- [ ] Workspace Admin kan ALLEEN eigen workspace beheren
+- [ ] Contact list toont ALLEEN users in scope
+- [ ] Admin panel gefilterd per scope
+- [ ] Menu items verborgen als geen toegang
+- [ ] Geen data leakage tussen workspaces
+
+### 10.2 Niet-Functionele Eisen
+
+- [ ] Scope check < 50ms per request
+- [ ] Geen breaking changes voor bestaande users
+- [ ] Audit trail voor alle scope-gerelateerde acties
+- [ ] AD-compatible group structuur
+
+---
+
+## 11. Referenties
+
+- [README.md](./README.md) - ACL systeem basis documentatie
+- [ROADMAP.md](./ROADMAP.md) - Implementatie roadmap
+- [MIGRATION.md](./MIGRATION.md) - Migratie handleiding
+- Active Directory Security Model: https://docs.microsoft.com/en-us/windows-server/identity/ad-ds/
+
+---
+
+## Changelog
+
+| Versie | Datum | Wijziging |
+|--------|-------|-----------|
+| 1.0.0 | 2026-01-08 | Initiële architectuur document |

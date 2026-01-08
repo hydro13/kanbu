@@ -21,8 +21,8 @@ import {
   generateInviteToken,
   getInviteExpiration,
 } from '../../lib/workspace'
-import { permissionService, groupPermissionService, aclService } from '../../services'
-import { ACL_PRESETS } from '../../services/aclService'
+import { permissionService, aclService } from '../../services'
+import { ACL_PERMISSIONS, ACL_PRESETS } from '../../services/aclService'
 
 // =============================================================================
 // Input Schemas
@@ -92,21 +92,25 @@ export const workspaceRouter = router({
       ownerId: z.number().optional(), // Optional: assign different owner (default: creator)
     }))
     .mutation(async ({ ctx, input }) => {
-      // Check if user is SYSTEM_ADMIN or Domain Admin
-      const isSuperAdmin = ctx.user.role === 'ADMIN'
-      const isDomainAdmin = await groupPermissionService.isDomainAdmin(ctx.user.id)
+      // Check if user is Super Admin (has admin ACL with P bit)
+      const isSuperAdmin = await aclService.hasPermission(
+        ctx.user.id,
+        'admin',
+        null,
+        ACL_PERMISSIONS.PERMISSIONS
+      )
 
-      if (!isSuperAdmin && !isDomainAdmin) {
+      if (!isSuperAdmin) {
         throw new TRPCError({
           code: 'FORBIDDEN',
-          message: 'Only Domain Admins can create workspaces',
+          message: 'Only Super Admins can create workspaces',
         })
       }
 
       const slug = await generateUniqueSlug(input.name)
       const ownerId = input.ownerId ?? ctx.user.id
 
-      // Create workspace (without legacy WorkspaceUser)
+      // Create workspace (ACL-only, no legacy WorkspaceUser)
       const workspace = await ctx.prisma.workspace.create({
         data: {
           name: input.name,
@@ -114,13 +118,6 @@ export const workspaceRouter = router({
           description: input.description,
           logoUrl: input.logoUrl,
           createdById: ctx.user.id,
-          // LEGACY: Still create WorkspaceUser for backwards compatibility
-          users: {
-            create: {
-              userId: ownerId,
-              role: 'OWNER',
-            },
-          },
         },
         select: {
           id: true,
@@ -132,7 +129,7 @@ export const workspaceRouter = router({
         },
       })
 
-      // NEW: Create ACL entry for owner with Full Control
+      // Create ACL entry for owner with Full Control
       await aclService.grantPermission({
         resourceType: 'workspace',
         resourceId: workspace.id,
@@ -363,50 +360,31 @@ export const workspaceRouter = router({
     .query(async ({ ctx, input }) => {
       await permissionService.requireWorkspaceAccess(ctx.user.id, input.workspaceId, 'VIEWER')
 
-      // 1. Get members from WorkspaceUser table
-      const workspaceUsers = await ctx.prisma.workspaceUser.findMany({
-        where: { workspaceId: input.workspaceId },
-        include: {
-          user: {
-            select: {
-              id: true,
-              email: true,
-              username: true,
-              name: true,
-              avatarUrl: true,
-            },
-          },
-        },
-      })
-
-      // 2. Get members from workspace groups (WORKSPACE and WORKSPACE_ADMIN types)
-      const groupMembers = await ctx.prisma.groupMember.findMany({
+      // Get members from ACL entries for this workspace
+      const aclEntries = await ctx.prisma.aclEntry.findMany({
         where: {
-          group: {
-            workspaceId: input.workspaceId,
-            type: { in: ['WORKSPACE', 'WORKSPACE_ADMIN'] },
-            isActive: true,
-          },
-        },
-        include: {
-          user: {
-            select: {
-              id: true,
-              email: true,
-              username: true,
-              name: true,
-              avatarUrl: true,
-            },
-          },
-          group: {
-            select: {
-              type: true,
-            },
-          },
+          resourceType: 'workspace',
+          resourceId: input.workspaceId,
+          principalType: 'user',
+          deny: false,
         },
       })
 
-      // 3. Combine into a map (userId -> member data)
+      // Get user details for all principals
+      const userIds = aclEntries.map(e => e.principalId)
+      const users = await ctx.prisma.user.findMany({
+        where: { id: { in: userIds } },
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          name: true,
+          avatarUrl: true,
+        },
+      })
+      const userMap = new Map(users.map(u => [u.id, u]))
+
+      // Map ACL permissions to roles
       const memberMap = new Map<number, {
         id: number
         email: string
@@ -415,56 +393,57 @@ export const workspaceRouter = router({
         avatarUrl: string | null
         role: string
         joinedAt: Date
-        source: 'workspace_user' | 'group' | 'both'
+        source: 'acl'
       }>()
 
-      // Add WorkspaceUser members first
-      for (const wu of workspaceUsers) {
-        // Convert OWNER to ADMIN (OWNER no longer exists for workspaces)
-        const role = wu.role === 'OWNER' ? 'ADMIN' : wu.role
-        memberMap.set(wu.user.id, {
-          ...wu.user,
+      for (const entry of aclEntries) {
+        const user = userMap.get(entry.principalId)
+        if (!user) continue
+
+        // Determine role based on permissions
+        let role: string
+        if (entry.permissions & ACL_PERMISSIONS.PERMISSIONS) {
+          role = 'ADMIN' // Has P bit = can manage permissions = admin
+        } else if (entry.permissions & ACL_PERMISSIONS.WRITE) {
+          role = 'MEMBER' // Has W bit = can modify = member
+        } else if (entry.permissions & ACL_PERMISSIONS.READ) {
+          role = 'VIEWER' // Has R bit only = viewer
+        } else {
+          continue // No relevant permissions
+        }
+
+        memberMap.set(user.id, {
+          ...user,
           role,
-          joinedAt: wu.joinedAt,
-          source: 'workspace_user',
+          joinedAt: entry.createdAt,
+          source: 'acl',
         })
       }
 
-      // Add/update with group members
-      for (const gm of groupMembers) {
-        const existing = memberMap.get(gm.user.id)
-        const isGroupAdmin = gm.group.type === 'WORKSPACE_ADMIN'
-
-        if (existing) {
-          // User exists from WorkspaceUser, upgrade role if group gives higher access
-          if (isGroupAdmin && existing.role !== 'ADMIN') {
-            existing.role = 'ADMIN'
-          }
-          existing.source = 'both'
-        } else {
-          // New member from group only
-          memberMap.set(gm.user.id, {
-            ...gm.user,
-            role: isGroupAdmin ? 'ADMIN' : 'MEMBER',
-            joinedAt: gm.addedAt,
-            source: 'group',
-          })
-        }
-      }
-
-      // 4. Get Domain Admin status for all members
+      // Check for Super Admins (users with admin:root ACL)
       const memberIds = Array.from(memberMap.keys())
-      const domainAdminIds = await groupPermissionService.getDomainAdminUserIds(memberIds)
+      const superAdminEntries = await ctx.prisma.aclEntry.findMany({
+        where: {
+          resourceType: 'admin',
+          resourceId: null,
+          principalType: 'user',
+          principalId: { in: memberIds },
+          deny: false,
+          permissions: { gte: ACL_PERMISSIONS.PERMISSIONS },
+        },
+        select: { principalId: true },
+      })
+      const superAdminIds = new Set(superAdminEntries.map(e => e.principalId))
 
-      // 5. Convert to array and apply Domain Admin override
+      // Convert to array and apply Super Admin override
       const members = Array.from(memberMap.values()).map((member) => ({
         ...member,
-        // Domain Admins get SYSTEM role, overriding any other role
-        role: domainAdminIds.has(member.id) ? 'SYSTEM' : member.role,
-        isDomainAdmin: domainAdminIds.has(member.id),
+        // Super Admins get SYSTEM role, overriding any other role
+        role: superAdminIds.has(member.id) ? 'SYSTEM' : member.role,
+        isDomainAdmin: superAdminIds.has(member.id),
       }))
 
-      // 6. Sort: SYSTEM first, then ADMIN, then by name
+      // Sort: SYSTEM first, then ADMIN, then by name
       const roleOrder: Record<string, number> = { SYSTEM: 0, ADMIN: 1, MEMBER: 2, VIEWER: 3 }
       members.sort((a, b) => {
         const roleCompare = (roleOrder[a.role] ?? 99) - (roleOrder[b.role] ?? 99)
@@ -485,15 +464,21 @@ export const workspaceRouter = router({
     .mutation(async ({ ctx, input }) => {
       await permissionService.requireWorkspaceAccess(ctx.user.id, input.workspaceId, 'ADMIN')
 
-      // Check if user is a Domain Admin
-      const isDomainAdmin = await groupPermissionService.isDomainAdmin(ctx.user.id)
+      // Only Super Admins can invite users as ADMIN
+      if (input.role === 'ADMIN') {
+        const isSuperAdmin = await aclService.hasPermission(
+          ctx.user.id,
+          'admin',
+          null,
+          ACL_PERMISSIONS.PERMISSIONS
+        )
 
-      // Only Domain Admins can invite users as ADMIN
-      if (input.role === 'ADMIN' && !isDomainAdmin) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Only Domain Admins can invite users as administrators',
-        })
+        if (!isSuperAdmin) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Only Super Admins can invite users as administrators',
+          })
+        }
       }
 
       // Check if user already exists
@@ -502,33 +487,25 @@ export const workspaceRouter = router({
       })
 
       if (existingUser) {
-        // Check if already a member
-        const existingMember = await ctx.prisma.workspaceUser.findUnique({
+        // Check if already a member via ACL
+        const existingAcl = await ctx.prisma.aclEntry.findFirst({
           where: {
-            workspaceId_userId: {
-              workspaceId: input.workspaceId,
-              userId: existingUser.id,
-            },
+            resourceType: 'workspace',
+            resourceId: input.workspaceId,
+            principalType: 'user',
+            principalId: existingUser.id,
+            deny: false,
           },
         })
 
-        if (existingMember) {
+        if (existingAcl) {
           throw new TRPCError({
             code: 'CONFLICT',
             message: 'User is already a member of this workspace',
           })
         }
 
-        // LEGACY: Add user directly to WorkspaceUser
-        await ctx.prisma.workspaceUser.create({
-          data: {
-            workspaceId: input.workspaceId,
-            userId: existingUser.id,
-            role: input.role,
-          },
-        })
-
-        // NEW: Create ACL entry for the user
+        // Create ACL entry for the user (ACL-only, no legacy WorkspaceUser)
         const aclPermissions =
           input.role === 'ADMIN' ? ACL_PRESETS.FULL_CONTROL :
           input.role === 'MEMBER' ? ACL_PRESETS.CONTRIBUTOR :
@@ -598,54 +575,47 @@ export const workspaceRouter = router({
     .mutation(async ({ ctx, input }) => {
       await permissionService.requireWorkspaceAccess(ctx.user.id, input.workspaceId, 'ADMIN')
 
-      // Check if user is a Domain Admin
-      const isDomainAdmin = await groupPermissionService.isDomainAdmin(ctx.user.id)
-
-      // Get target member
-      const targetMember = await ctx.prisma.workspaceUser.findUnique({
+      // Get target member from ACL
+      const targetAcl = await ctx.prisma.aclEntry.findFirst({
         where: {
-          workspaceId_userId: {
-            workspaceId: input.workspaceId,
-            userId: input.userId,
-          },
+          resourceType: 'workspace',
+          resourceId: input.workspaceId,
+          principalType: 'user',
+          principalId: input.userId,
+          deny: false,
         },
       })
 
-      if (!targetMember) {
+      if (!targetAcl) {
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: 'Member not found',
         })
       }
 
-      // Cannot remove OWNER
-      if (targetMember.role === 'OWNER') {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Cannot remove the workspace owner',
-        })
+      // Check if target is an admin (has FULL_CONTROL / P bit)
+      const isTargetAdmin = (targetAcl.permissions & ACL_PERMISSIONS.PERMISSIONS) !== 0
+
+      // Cannot remove owner (users with P bit on workspace who created it)
+      // For now, we protect all admins the same way
+      if (isTargetAdmin) {
+        // Check if current user has admin ACL on 'admin' resource (super admin)
+        const isSuperAdmin = await aclService.hasPermission(
+          ctx.user.id,
+          'admin',
+          null,
+          ACL_PERMISSIONS.PERMISSIONS
+        )
+
+        if (!isSuperAdmin) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Only Super Admins can remove workspace administrators',
+          })
+        }
       }
 
-      // Only Domain Admins can remove ADMINs (including themselves)
-      // Workspace admins cannot remove other admins or demote themselves
-      if (targetMember.role === 'ADMIN' && !isDomainAdmin) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Only Domain Admins can remove workspace administrators',
-        })
-      }
-
-      // LEGACY: Delete WorkspaceUser entry
-      await ctx.prisma.workspaceUser.delete({
-        where: {
-          workspaceId_userId: {
-            workspaceId: input.workspaceId,
-            userId: input.userId,
-          },
-        },
-      })
-
-      // NEW: Revoke ACL permissions for this workspace
+      // Revoke ACL permissions for this workspace (ACL-only, no legacy)
       await aclService.revokePermission({
         resourceType: 'workspace',
         resourceId: input.workspaceId,
@@ -666,59 +636,45 @@ export const workspaceRouter = router({
     .mutation(async ({ ctx, input }) => {
       await permissionService.requireWorkspaceAccess(ctx.user.id, input.workspaceId, 'ADMIN')
 
-      // Check if user is a Domain Admin
-      const isDomainAdmin = await groupPermissionService.isDomainAdmin(ctx.user.id)
-
-      // Get target member
-      const targetMember = await ctx.prisma.workspaceUser.findUnique({
+      // Get target member from ACL
+      const targetAcl = await ctx.prisma.aclEntry.findFirst({
         where: {
-          workspaceId_userId: {
-            workspaceId: input.workspaceId,
-            userId: input.userId,
-          },
+          resourceType: 'workspace',
+          resourceId: input.workspaceId,
+          principalType: 'user',
+          principalId: input.userId,
+          deny: false,
         },
       })
 
-      if (!targetMember) {
+      if (!targetAcl) {
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: 'Member not found',
         })
       }
 
-      // Cannot change OWNER role
-      if (targetMember.role === 'OWNER') {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Cannot change the owner role',
-        })
+      // Check if target is currently an admin (has P bit)
+      const isTargetAdmin = (targetAcl.permissions & ACL_PERMISSIONS.PERMISSIONS) !== 0
+
+      // Only Super Admins can promote to/demote from ADMIN
+      if (input.role === 'ADMIN' || isTargetAdmin) {
+        const isSuperAdmin = await aclService.hasPermission(
+          ctx.user.id,
+          'admin',
+          null,
+          ACL_PERMISSIONS.PERMISSIONS
+        )
+
+        if (!isSuperAdmin) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Only Super Admins can manage administrator roles',
+          })
+        }
       }
 
-      // Only Domain Admins can promote to/demote from ADMIN
-      // This prevents workspace admins from granting or revoking admin rights
-      if (
-        (input.role === 'ADMIN' || targetMember.role === 'ADMIN') &&
-        !isDomainAdmin
-      ) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Only Domain Admins can manage administrator roles',
-        })
-      }
-
-      // LEGACY: Update WorkspaceUser entry
-      await ctx.prisma.workspaceUser.update({
-        where: {
-          workspaceId_userId: {
-            workspaceId: input.workspaceId,
-            userId: input.userId,
-          },
-        },
-        data: { role: input.role },
-      })
-
-      // NEW: Update ACL permissions based on new role
-      // First revoke existing permissions, then grant new ones
+      // Update ACL permissions based on new role (ACL-only, no legacy)
       const aclPermissions =
         input.role === 'ADMIN' ? ACL_PRESETS.FULL_CONTROL :
         input.role === 'MEMBER' ? ACL_PRESETS.CONTRIBUTOR :
@@ -899,26 +855,36 @@ export const workspaceRouter = router({
       // Check workspace ADMIN access
       await permissionService.requireWorkspaceAccess(ctx.user.id, input.workspaceId, 'ADMIN')
 
-      // Check if user is a Domain Admin
-      const isDomainAdmin = await groupPermissionService.isDomainAdmin(ctx.user.id)
+      // Check if user is a Super Admin (has admin ACL)
+      const isSuperAdmin = await aclService.hasPermission(
+        ctx.user.id,
+        'admin',
+        null,
+        ACL_PERMISSIONS.PERMISSIONS
+      )
 
-      // Only Domain Admins can search for users outside the workspace
+      // Only Super Admins can search for users outside the workspace
       // Workspace Admins should use email invite instead
-      if (!isDomainAdmin) {
+      if (!isSuperAdmin) {
         throw new TRPCError({
           code: 'FORBIDDEN',
           message: 'Use email invite to add users. You cannot search users outside your workspace.',
         })
       }
 
-      // Get existing workspace member user IDs
-      const existingMembers = await ctx.prisma.workspaceUser.findMany({
-        where: { workspaceId: input.workspaceId },
-        select: { userId: true },
+      // Get existing workspace member user IDs from ACL
+      const existingAclEntries = await ctx.prisma.aclEntry.findMany({
+        where: {
+          resourceType: 'workspace',
+          resourceId: input.workspaceId,
+          principalType: 'user',
+          deny: false,
+        },
+        select: { principalId: true },
       })
-      const existingMemberIds = existingMembers.map((m) => m.userId)
+      const existingMemberIds = existingAclEntries.map((e) => e.principalId)
 
-      // Search for users not in the workspace (Domain Admins only)
+      // Search for users not in the workspace (Super Admins only)
       const users = await ctx.prisma.user.findMany({
         where: {
           id: { notIn: existingMemberIds },
@@ -954,15 +920,21 @@ export const workspaceRouter = router({
       // Check workspace ADMIN access
       await permissionService.requireWorkspaceAccess(ctx.user.id, input.workspaceId, 'ADMIN')
 
-      // Check if user is a Domain Admin
-      const isDomainAdmin = await groupPermissionService.isDomainAdmin(ctx.user.id)
+      // Only Super Admins can add users as ADMIN
+      if (input.role === 'ADMIN') {
+        const isSuperAdmin = await aclService.hasPermission(
+          ctx.user.id,
+          'admin',
+          null,
+          ACL_PERMISSIONS.PERMISSIONS
+        )
 
-      // Only Domain Admins can add users as ADMIN
-      if (input.role === 'ADMIN' && !isDomainAdmin) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Only Domain Admins can add users as administrators',
-        })
+        if (!isSuperAdmin) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Only Super Admins can add users as administrators',
+          })
+        }
       }
 
       // Check if target user exists and is active
@@ -985,34 +957,25 @@ export const workspaceRouter = router({
         })
       }
 
-      // Check if already a member
-      const existingMember = await ctx.prisma.workspaceUser.findUnique({
+      // Check if already a member via ACL
+      const existingAcl = await ctx.prisma.aclEntry.findFirst({
         where: {
-          workspaceId_userId: {
-            workspaceId: input.workspaceId,
-            userId: input.userId,
-          },
+          resourceType: 'workspace',
+          resourceId: input.workspaceId,
+          principalType: 'user',
+          principalId: input.userId,
+          deny: false,
         },
       })
 
-      if (existingMember) {
+      if (existingAcl) {
         throw new TRPCError({
           code: 'CONFLICT',
           message: 'User is already a member of this workspace',
         })
       }
 
-      // LEGACY: Add the user to the workspace via WorkspaceUser
-      await ctx.prisma.workspaceUser.create({
-        data: {
-          workspaceId: input.workspaceId,
-          userId: input.userId,
-          role: input.role,
-        },
-      })
-
-      // NEW: Create ACL entry with appropriate permissions
-      // Map workspace role to ACL permissions
+      // Create ACL entry with appropriate permissions (ACL-only, no legacy)
       const aclPermissions = input.role === 'ADMIN' ? ACL_PRESETS.FULL_CONTROL
         : input.role === 'MEMBER' ? ACL_PRESETS.CONTRIBUTOR
         : ACL_PRESETS.READ_ONLY

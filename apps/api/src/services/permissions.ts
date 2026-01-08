@@ -30,7 +30,6 @@
 import { TRPCError } from '@trpc/server'
 import { AppRole, WorkspaceRole, ProjectRole } from '@prisma/client'
 import { prisma } from '../lib/prisma'
-import { groupPermissionService } from './groupPermissions'
 import { aclService, ACL_PERMISSIONS } from './aclService'
 
 // =============================================================================
@@ -119,14 +118,11 @@ export class PermissionService {
 
   /**
    * Check if a user can access a workspace.
-   * Uses ACL system with legacy fallback for backwards compatibility.
+   * Uses ACL system exclusively (no legacy fallback).
    *
    * Returns true if user has access via:
-   * 1. ACL READ permission on workspace
-   * 2. Super Admin (AppRole.ADMIN)
-   * 3. Domain Admin (member of "Domain Admins" group)
-   * 4. Legacy: Direct workspace member (WorkspaceUser table)
-   * 5. Legacy: Group-based workspace member (WORKSPACE or WORKSPACE_ADMIN group)
+   * 1. Super Admin (AppRole.ADMIN or admin ACL)
+   * 2. ACL READ permission on workspace (user or group-based)
    */
   async canAccessWorkspace(userId: number, workspaceId: number): Promise<boolean> {
     // Check workspace is active first
@@ -138,56 +134,30 @@ export class PermissionService {
       return false
     }
 
-    // Super Admins can access all workspaces
+    // Super Admins (AppRole.ADMIN) can access all workspaces
     if (await this.isSuperAdminById(userId)) {
       return true
     }
 
-    // Domain Admins can access all workspaces
-    if (await groupPermissionService.isDomainAdmin(userId)) {
+    // Check if user has admin ACL (Super Admin via ACL)
+    const hasAdminAcl = await aclService.hasPermission(userId, 'admin', null, ACL_PERMISSIONS.PERMISSIONS)
+    if (hasAdminAcl) {
       return true
     }
 
-    // Check ACL system (primary authorization method)
-    const hasAclAccess = await aclService.hasPermission(userId, 'workspace', workspaceId, ACL_PERMISSIONS.READ)
-    if (hasAclAccess) {
-      return true
-    }
-
-    // LEGACY FALLBACK: Check direct membership (WorkspaceUser table)
-    const directMembership = await prisma.workspaceUser.findUnique({
-      where: {
-        workspaceId_userId: { workspaceId, userId },
-      },
-    })
-    if (directMembership) {
-      return true
-    }
-
-    // LEGACY FALLBACK: Check group-based membership (WORKSPACE or WORKSPACE_ADMIN groups)
-    const groupMembership = await prisma.groupMember.findFirst({
-      where: {
-        userId,
-        group: {
-          workspaceId,
-          type: { in: ['WORKSPACE', 'WORKSPACE_ADMIN'] },
-          isActive: true,
-        },
-      },
-    })
-
-    return groupMembership !== null
+    // Check ACL system for workspace access
+    return aclService.hasPermission(userId, 'workspace', workspaceId, ACL_PERMISSIONS.READ)
   }
 
   /**
    * Get a user's role in a workspace.
+   * Uses ACL system exclusively (no legacy fallback).
    * Returns null if no access.
-   * Role priority: OWNER (Super Admin/Domain Admin) > direct role > group role > ACL role
-   * - Super Admins: OWNER
-   * - Domain Admins: ADMIN (they have admin access to all workspaces)
-   * - Direct membership: role from WorkspaceUser table (OWNER converted to ADMIN)
-   * - Group membership: ADMIN (WORKSPACE_ADMIN) or MEMBER (WORKSPACE)
-   * - ACL: P=ADMIN, W=MEMBER, R=VIEWER
+   *
+   * Role priority:
+   * - Super Admins (AppRole.ADMIN): OWNER
+   * - Admin ACL holders: ADMIN
+   * - ACL permissions: P=ADMIN, W=MEMBER, R=VIEWER
    */
   async getWorkspaceRole(
     userId: number,
@@ -198,8 +168,9 @@ export class PermissionService {
       return 'OWNER'
     }
 
-    // Domain Admins have ADMIN access to all workspaces
-    if (await groupPermissionService.isDomainAdmin(userId)) {
+    // Check if user has admin ACL (Super Admin via ACL)
+    const hasAdminAcl = await aclService.hasPermission(userId, 'admin', null, ACL_PERMISSIONS.PERMISSIONS)
+    if (hasAdminAcl) {
       return 'ADMIN'
     }
 
@@ -212,41 +183,7 @@ export class PermissionService {
       return null
     }
 
-    // Collect all possible roles and return the highest
-    const roles: WorkspaceRole[] = []
-
-    // Check direct membership
-    const directMembership = await prisma.workspaceUser.findUnique({
-      where: {
-        workspaceId_userId: { workspaceId, userId },
-      },
-    })
-
-    if (directMembership) {
-      // Convert OWNER to ADMIN (OWNER no longer exists for workspaces)
-      roles.push(directMembership.role === 'OWNER' ? 'ADMIN' : directMembership.role)
-    }
-
-    // Check group-based membership
-    const groupMembership = await prisma.groupMember.findFirst({
-      where: {
-        userId,
-        group: {
-          workspaceId,
-          type: { in: ['WORKSPACE', 'WORKSPACE_ADMIN'] },
-          isActive: true,
-        },
-      },
-      include: {
-        group: { select: { type: true } },
-      },
-    })
-
-    if (groupMembership) {
-      roles.push(groupMembership.group.type === 'WORKSPACE_ADMIN' ? 'ADMIN' : 'MEMBER')
-    }
-
-    // NEW: Check ACL-based access
+    // Check ACL-based access (user and group-based)
     const userGroups = await prisma.groupMember.findMany({
       where: { userId },
       select: { groupId: true },
@@ -266,26 +203,18 @@ export class PermissionService {
       select: { permissions: true },
     })
 
-    if (aclEntry && (aclEntry.permissions & ACL_PERMISSIONS.READ) !== 0) {
-      // Convert ACL permissions to workspace role
-      if (aclEntry.permissions & ACL_PERMISSIONS.PERMISSIONS) {
-        roles.push('ADMIN')
-      } else if (aclEntry.permissions & ACL_PERMISSIONS.WRITE) {
-        roles.push('MEMBER')
-      } else {
-        roles.push('VIEWER')
-      }
-    }
-
-    // Return highest role or null if no access
-    if (roles.length === 0) {
+    if (!aclEntry || (aclEntry.permissions & ACL_PERMISSIONS.READ) === 0) {
       return null
     }
 
-    // Find and return the highest role
-    return roles.reduce((highest, current) =>
-      WORKSPACE_ROLE_HIERARCHY[current] > WORKSPACE_ROLE_HIERARCHY[highest] ? current : highest
-    )
+    // Convert ACL permissions to workspace role
+    if (aclEntry.permissions & ACL_PERMISSIONS.PERMISSIONS) {
+      return 'ADMIN'
+    } else if (aclEntry.permissions & ACL_PERMISSIONS.WRITE) {
+      return 'MEMBER'
+    } else {
+      return 'VIEWER'
+    }
   }
 
   /**
@@ -345,12 +274,12 @@ export class PermissionService {
 
   /**
    * Get all workspaces a user has access to.
+   * Uses ACL system exclusively (no legacy fallback).
+   *
    * Includes:
-   * - All workspaces for Super Admins
-   * - All workspaces for Domain Admins
-   * - ACL-based access (new system - checked first)
-   * - Direct memberships (WorkspaceUser table)
-   * - Group-based memberships (WORKSPACE and WORKSPACE_ADMIN groups)
+   * - All workspaces for Super Admins (OWNER role)
+   * - All workspaces for Admin ACL holders (ADMIN role)
+   * - ACL-based access (user and group-based)
    */
   async getUserWorkspaces(userId: number): Promise<
     Array<{
@@ -369,7 +298,7 @@ export class PermissionService {
       return []
     }
 
-    // Super Admins see all workspaces with OWNER role
+    // Super Admins (AppRole.ADMIN) see all workspaces with OWNER role
     if (user.role === 'ADMIN') {
       const workspaces = await prisma.workspace.findMany({
         where: { isActive: true },
@@ -379,9 +308,9 @@ export class PermissionService {
       return workspaces.map((ws) => ({ ...ws, role: 'OWNER' as WorkspaceRole }))
     }
 
-    // Domain Admins see all workspaces with ADMIN role
-    const isDomainAdmin = await groupPermissionService.isDomainAdmin(userId)
-    if (isDomainAdmin) {
+    // Check if user has admin ACL (Super Admin via ACL)
+    const hasAdminAcl = await aclService.hasPermission(userId, 'admin', null, ACL_PERMISSIONS.PERMISSIONS)
+    if (hasAdminAcl) {
       const workspaces = await prisma.workspace.findMany({
         where: { isActive: true },
         select: { id: true, name: true, slug: true },
@@ -390,15 +319,7 @@ export class PermissionService {
       return workspaces.map((ws) => ({ ...ws, role: 'ADMIN' as WorkspaceRole }))
     }
 
-    // Build a map of workspace -> role (to combine all access sources)
-    const workspaceMap = new Map<number, {
-      id: number
-      name: string
-      slug: string
-      role: WorkspaceRole
-    }>()
-
-    // NEW: Get ACL-based workspace access (user and group-based)
+    // Get ACL-based workspace access (user and group-based)
     const userGroups = await prisma.groupMember.findMany({
       where: { userId },
       select: { groupId: true },
@@ -421,117 +342,42 @@ export class PermissionService {
       },
     })
 
-    // Convert ACL entries to workspace access
-    if (aclEntries.length > 0) {
-      const aclWorkspaceIds = aclEntries
-        .filter((e) => e.resourceId !== null && (e.permissions & ACL_PERMISSIONS.READ) !== 0)
-        .map((e) => e.resourceId as number)
+    // Filter to entries with READ permission
+    const aclWorkspaceIds = aclEntries
+      .filter((e) => e.resourceId !== null && (e.permissions & ACL_PERMISSIONS.READ) !== 0)
+      .map((e) => e.resourceId as number)
 
-      if (aclWorkspaceIds.length > 0) {
-        const aclWorkspaces = await prisma.workspace.findMany({
-          where: {
-            id: { in: aclWorkspaceIds },
-            isActive: true,
-          },
-          select: { id: true, name: true, slug: true },
-        })
-
-        for (const ws of aclWorkspaces) {
-          // Determine role from ACL permissions
-          const entry = aclEntries.find((e) => e.resourceId === ws.id)
-          const perms = entry?.permissions ?? 0
-          let role: WorkspaceRole = 'VIEWER'
-          if (perms & ACL_PERMISSIONS.PERMISSIONS) {
-            role = 'ADMIN' // Has P permission = admin level
-          } else if (perms & ACL_PERMISSIONS.WRITE) {
-            role = 'MEMBER' // Has W permission = member level
-          }
-
-          workspaceMap.set(ws.id, {
-            id: ws.id,
-            name: ws.name,
-            slug: ws.slug,
-            role,
-          })
-        }
-      }
+    if (aclWorkspaceIds.length === 0) {
+      return []
     }
 
-    // Get direct memberships
-    const directMemberships = await prisma.workspaceUser.findMany({
+    const workspaces = await prisma.workspace.findMany({
       where: {
-        userId,
-        workspace: { isActive: true },
+        id: { in: aclWorkspaceIds },
+        isActive: true,
       },
-      include: {
-        workspace: {
-          select: { id: true, name: true, slug: true },
-        },
-      },
+      select: { id: true, name: true, slug: true },
+      orderBy: { name: 'asc' },
     })
 
-    for (const m of directMemberships) {
-      // Convert OWNER to ADMIN (OWNER no longer exists for workspaces)
-      const role = m.role === 'OWNER' ? 'ADMIN' : m.role
-      const existing = workspaceMap.get(m.workspace.id)
-
-      if (!existing) {
-        workspaceMap.set(m.workspace.id, {
-          id: m.workspace.id,
-          name: m.workspace.name,
-          slug: m.workspace.slug,
-          role,
-        })
-      } else if (WORKSPACE_ROLE_HIERARCHY[role] > WORKSPACE_ROLE_HIERARCHY[existing.role]) {
-        // Upgrade role if direct membership gives higher access
-        existing.role = role
+    return workspaces.map((ws) => {
+      // Determine role from ACL permissions
+      const entry = aclEntries.find((e) => e.resourceId === ws.id)
+      const perms = entry?.permissions ?? 0
+      let role: WorkspaceRole = 'VIEWER'
+      if (perms & ACL_PERMISSIONS.PERMISSIONS) {
+        role = 'ADMIN' // Has P permission = admin level
+      } else if (perms & ACL_PERMISSIONS.WRITE) {
+        role = 'MEMBER' // Has W permission = member level
       }
-    }
 
-    // Get group-based memberships
-    const groupMemberships = await prisma.groupMember.findMany({
-      where: {
-        userId,
-        group: {
-          type: { in: ['WORKSPACE', 'WORKSPACE_ADMIN'] },
-          isActive: true,
-          workspace: { isActive: true },
-        },
-      },
-      include: {
-        group: {
-          select: {
-            type: true,
-            workspace: {
-              select: { id: true, name: true, slug: true },
-            },
-          },
-        },
-      },
+      return {
+        id: ws.id,
+        name: ws.name,
+        slug: ws.slug,
+        role,
+      }
     })
-
-    for (const gm of groupMemberships) {
-      if (!gm.group.workspace) continue
-
-      const ws = gm.group.workspace
-      const groupRole: WorkspaceRole = gm.group.type === 'WORKSPACE_ADMIN' ? 'ADMIN' : 'MEMBER'
-      const existing = workspaceMap.get(ws.id)
-
-      if (!existing) {
-        workspaceMap.set(ws.id, {
-          id: ws.id,
-          name: ws.name,
-          slug: ws.slug,
-          role: groupRole,
-        })
-      } else if (WORKSPACE_ROLE_HIERARCHY[groupRole] > WORKSPACE_ROLE_HIERARCHY[existing.role]) {
-        // Upgrade role if group role is higher
-        existing.role = groupRole
-      }
-    }
-
-    // Convert to array and sort by name
-    return Array.from(workspaceMap.values()).sort((a, b) => a.name.localeCompare(b.name))
   }
 
   // ===========================================================================
@@ -540,12 +386,12 @@ export class PermissionService {
 
   /**
    * Check if a user can access a project.
-   * Uses ACL system with legacy fallback for backwards compatibility.
+   * Uses ACL system exclusively (no legacy fallback).
    *
    * Access is granted if:
    * 1. Project is public
-   * 2. ACL READ permission on project (includes inheritance from workspace)
-   * 3. Legacy: Workspace membership (workspace access grants project access)
+   * 2. ACL READ permission on project
+   * 3. Workspace access (workspace ACL grants project access via inheritance)
    */
   async canAccessProject(userId: number, projectId: number): Promise<boolean> {
     // Get project with workspace info
@@ -567,21 +413,22 @@ export class PermissionService {
       return true
     }
 
-    // Check ACL system first (includes inheritance from workspace)
+    // Check ACL system (includes inheritance from workspace)
     const hasAclAccess = await aclService.hasPermission(userId, 'project', projectId, ACL_PERMISSIONS.READ)
     if (hasAclAccess) {
       return true
     }
 
-    // LEGACY FALLBACK: Check workspace access (workspace membership grants project access)
+    // Workspace access grants project access (ACL-based)
     return this.canAccessWorkspace(userId, project.workspaceId)
   }
 
   /**
    * Get a user's role in a project.
+   * Uses ACL system exclusively (no legacy fallback).
+   *
    * Returns the highest role between:
-   * - Direct project membership (ProjectMember)
-   * - GROUP-based membership (PROJECT groups)
+   * - Project ACL entry (direct or via group)
    * - Derived from workspace role (workspace OWNER/ADMIN = project MANAGER)
    */
   async getProjectRole(
@@ -601,66 +448,62 @@ export class PermissionService {
       return null
     }
 
-    // Check workspace role first
+    // Check workspace role first (ACL-based)
     const workspaceRole = await this.getWorkspaceRole(userId, project.workspaceId)
     if (!workspaceRole) {
       return null
     }
 
-    // Check direct project membership
-    const projectMember = await prisma.projectMember.findUnique({
+    // Check ACL entry for the project (user and group-based)
+    const userGroups = await prisma.groupMember.findMany({
+      where: { userId },
+      select: { groupId: true },
+    })
+    const groupIds = userGroups.map((g) => g.groupId)
+
+    const aclEntry = await prisma.aclEntry.findFirst({
       where: {
-        projectId_userId: { projectId, userId },
+        resourceType: 'project',
+        resourceId: projectId,
+        deny: false,
+        OR: [
+          { principalType: 'user', principalId: userId },
+          ...(groupIds.length > 0 ? [{ principalType: 'group', principalId: { in: groupIds } }] : []),
+        ],
       },
-      select: { role: true },
+      select: { permissions: true },
     })
 
-    // Check GROUP-based membership (PROJECT groups linked to this project)
-    const groupMembership = await prisma.group.findFirst({
-      where: {
-        projectId,
-        type: 'PROJECT',
-        members: {
-          some: { userId },
-        },
-      },
-      select: { id: true },
-    })
+    // Collect all applicable roles
+    const roles: ProjectRole[] = []
+
+    // Add role from project ACL if exists
+    if (aclEntry && (aclEntry.permissions & ACL_PERMISSIONS.READ) !== 0) {
+      if (aclEntry.permissions & ACL_PERMISSIONS.PERMISSIONS) {
+        roles.push('OWNER') // Has P = owner
+      } else if (aclEntry.permissions & ACL_PERMISSIONS.DELETE) {
+        roles.push('MANAGER') // Has D = manager
+      } else if (aclEntry.permissions & ACL_PERMISSIONS.WRITE) {
+        roles.push('MEMBER') // Has W = member
+      } else {
+        roles.push('VIEWER') // Has R = viewer
+      }
+    }
 
     // Derive project role from workspace role
-    let derivedRole: ProjectRole | null = null
+    let derivedRole: ProjectRole
     if (workspaceRole === 'OWNER') {
       derivedRole = 'OWNER'
     } else if (workspaceRole === 'ADMIN') {
       derivedRole = 'MANAGER'
     } else if (workspaceRole === 'MEMBER') {
       derivedRole = 'MEMBER'
-    } else if (workspaceRole === 'VIEWER') {
+    } else {
       derivedRole = 'VIEWER'
     }
-
-    // Collect all applicable roles
-    const roles: ProjectRole[] = []
-
-    if (projectMember) {
-      roles.push(projectMember.role)
-    }
-
-    // GROUP-based membership grants MEMBER role
-    if (groupMembership) {
-      roles.push('MEMBER')
-    }
-
-    if (derivedRole) {
-      roles.push(derivedRole)
-    }
+    roles.push(derivedRole)
 
     // Return the highest role
-    if (roles.length === 0) {
-      return null
-    }
-
-    // Find the highest role
     return roles.reduce((highest, current) => {
       const currentLevel = PROJECT_ROLE_HIERARCHY[current]
       const highestLevel = PROJECT_ROLE_HIERARCHY[highest]
@@ -743,6 +586,7 @@ export class PermissionService {
 
   /**
    * Get all projects a user has access to within a workspace.
+   * Uses ACL system exclusively (no legacy fallback).
    */
   async getUserProjects(
     userId: number,
@@ -755,7 +599,7 @@ export class PermissionService {
       role: ProjectRole
     }>
   > {
-    // First check workspace access
+    // First check workspace access (ACL-based)
     const workspaceRole = await this.getWorkspaceRole(userId, workspaceId)
     if (!workspaceRole) {
       return []
@@ -775,19 +619,36 @@ export class PermissionService {
       orderBy: { name: 'asc' },
     })
 
-    // Get user's project memberships
-    const memberships = await prisma.projectMember.findMany({
+    if (projects.length === 0) {
+      return []
+    }
+
+    // Get user's groups for ACL checks
+    const userGroups = await prisma.groupMember.findMany({
+      where: { userId },
+      select: { groupId: true },
+    })
+    const groupIds = userGroups.map((g) => g.groupId)
+
+    // Get ACL entries for all projects
+    const projectIds = projects.map((p) => p.id)
+    const aclEntries = await prisma.aclEntry.findMany({
       where: {
-        userId,
-        projectId: { in: projects.map((p) => p.id) },
+        resourceType: 'project',
+        resourceId: { in: projectIds },
+        deny: false,
+        OR: [
+          { principalType: 'user', principalId: userId },
+          ...(groupIds.length > 0 ? [{ principalType: 'group', principalId: { in: groupIds } }] : []),
+        ],
       },
       select: {
-        projectId: true,
-        role: true,
+        resourceId: true,
+        permissions: true,
       },
     })
 
-    const membershipMap = new Map(memberships.map((m) => [m.projectId, m.role]))
+    const aclMap = new Map(aclEntries.map((e) => [e.resourceId, e.permissions]))
 
     // Derive project role from workspace role
     let derivedRole: ProjectRole
@@ -802,13 +663,27 @@ export class PermissionService {
     }
 
     return projects.map((p) => {
-      const memberRole = membershipMap.get(p.id)
-      let effectiveRole = derivedRole
+      const perms = aclMap.get(p.id)
+      let aclRole: ProjectRole | null = null
 
-      if (memberRole) {
-        const memberLevel = PROJECT_ROLE_HIERARCHY[memberRole]
+      if (perms !== undefined && (perms & ACL_PERMISSIONS.READ) !== 0) {
+        if (perms & ACL_PERMISSIONS.PERMISSIONS) {
+          aclRole = 'OWNER'
+        } else if (perms & ACL_PERMISSIONS.DELETE) {
+          aclRole = 'MANAGER'
+        } else if (perms & ACL_PERMISSIONS.WRITE) {
+          aclRole = 'MEMBER'
+        } else {
+          aclRole = 'VIEWER'
+        }
+      }
+
+      // Return highest role between ACL and derived
+      let effectiveRole = derivedRole
+      if (aclRole) {
+        const aclLevel = PROJECT_ROLE_HIERARCHY[aclRole]
         const derivedLevel = PROJECT_ROLE_HIERARCHY[derivedRole]
-        effectiveRole = memberLevel >= derivedLevel ? memberRole : derivedRole
+        effectiveRole = aclLevel >= derivedLevel ? aclRole : derivedRole
       }
 
       return {

@@ -99,7 +99,7 @@ export const projectRouter = router({
       // Generate identifier if not provided
       const identifier = input.identifier || await generateProjectIdentifier(input.name, input.workspaceId)
 
-      // LEGACY: Create project with creator as OWNER in ProjectMember
+      // Create project (ACL-only, no legacy ProjectMember)
       const project = await ctx.prisma.project.create({
         data: {
           workspaceId: input.workspaceId,
@@ -107,12 +107,6 @@ export const projectRouter = router({
           identifier,
           description: input.description,
           isPublic: input.isPublic,
-          members: {
-            create: {
-              userId: ctx.user.id,
-              role: 'OWNER',
-            },
-          },
         },
         select: {
           id: true,
@@ -124,7 +118,7 @@ export const projectRouter = router({
         },
       })
 
-      // NEW: Create ACL entry for creator with FULL_CONTROL
+      // Create ACL entry for creator with FULL_CONTROL
       await aclService.grantPermission({
         resourceType: 'project',
         resourceId: project.id,
@@ -576,7 +570,7 @@ export const projectRouter = router({
     }),
 
   /**
-   * Get project members
+   * Get project members from ACL
    * Requires VIEWER access
    */
   getMembers: protectedProcedure
@@ -584,30 +578,75 @@ export const projectRouter = router({
     .query(async ({ ctx, input }) => {
       await permissionService.requireProjectAccess(ctx.user.id, input.projectId, 'VIEWER')
 
-      const members = await ctx.prisma.projectMember.findMany({
-        where: { projectId: input.projectId },
-        include: {
-          user: {
-            select: {
-              id: true,
-              email: true,
-              username: true,
-              name: true,
-              avatarUrl: true,
-            },
-          },
+      // Get members from ACL entries for this project
+      const aclEntries = await ctx.prisma.aclEntry.findMany({
+        where: {
+          resourceType: 'project',
+          resourceId: input.projectId,
+          principalType: 'user',
+          deny: false,
         },
-        orderBy: [
-          { role: 'asc' }, // OWNER, MANAGER, MEMBER, VIEWER (alphabetically works here)
-          { joinedAt: 'asc' },
-        ],
       })
 
-      return members.map((m) => ({
-        ...m.user,
-        role: m.role,
-        joinedAt: m.joinedAt,
-      }))
+      // Get user details for all principals
+      const userIds = aclEntries.map(e => e.principalId)
+      const users = await ctx.prisma.user.findMany({
+        where: { id: { in: userIds } },
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          name: true,
+          avatarUrl: true,
+        },
+      })
+      const userMap = new Map(users.map(u => [u.id, u]))
+
+      // Map ACL permissions to project roles
+      const members: Array<{
+        id: number
+        email: string
+        username: string
+        name: string | null
+        avatarUrl: string | null
+        role: string
+        joinedAt: Date
+      }> = []
+
+      for (const entry of aclEntries) {
+        const user = userMap.get(entry.principalId)
+        if (!user) continue
+
+        // Determine role based on permissions
+        let role: string
+        if (entry.permissions & ACL_PERMISSIONS.PERMISSIONS) {
+          role = 'OWNER' // Has P bit = can manage permissions = owner
+        } else if (entry.permissions & ACL_PERMISSIONS.DELETE) {
+          role = 'MANAGER' // Has D bit = can delete = manager
+        } else if (entry.permissions & ACL_PERMISSIONS.WRITE) {
+          role = 'MEMBER' // Has W bit = can modify = member
+        } else if (entry.permissions & ACL_PERMISSIONS.READ) {
+          role = 'VIEWER' // R bit only = viewer
+        } else {
+          continue // No relevant permissions
+        }
+
+        members.push({
+          ...user,
+          role,
+          joinedAt: entry.createdAt,
+        })
+      }
+
+      // Sort: OWNER first, then MANAGER, MEMBER, VIEWER
+      const roleOrder: Record<string, number> = { OWNER: 0, MANAGER: 1, MEMBER: 2, VIEWER: 3 }
+      members.sort((a, b) => {
+        const roleCompare = (roleOrder[a.role] ?? 99) - (roleOrder[b.role] ?? 99)
+        if (roleCompare !== 0) return roleCompare
+        return a.joinedAt.getTime() - b.joinedAt.getTime()
+      })
+
+      return members
     }),
 
   /**
@@ -633,34 +672,36 @@ export const projectRouter = router({
         })
       }
 
-      // Check if target user is a workspace member
-      const workspaceMember = await ctx.prisma.workspaceUser.findUnique({
+      // Check if target user is a workspace member (via ACL)
+      const workspaceAcl = await ctx.prisma.aclEntry.findFirst({
         where: {
-          workspaceId_userId: {
-            workspaceId: project.workspaceId,
-            userId: input.userId,
-          },
+          resourceType: 'workspace',
+          resourceId: project.workspaceId,
+          principalType: 'user',
+          principalId: input.userId,
+          deny: false,
         },
       })
 
-      if (!workspaceMember) {
+      if (!workspaceAcl) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
           message: 'User must be a workspace member first',
         })
       }
 
-      // Check if already a member
-      const existingMember = await ctx.prisma.projectMember.findUnique({
+      // Check if already a project member (via ACL)
+      const existingAcl = await ctx.prisma.aclEntry.findFirst({
         where: {
-          projectId_userId: {
-            projectId: input.projectId,
-            userId: input.userId,
-          },
+          resourceType: 'project',
+          resourceId: input.projectId,
+          principalType: 'user',
+          principalId: input.userId,
+          deny: false,
         },
       })
 
-      if (existingMember) {
+      if (existingAcl) {
         throw new TRPCError({
           code: 'CONFLICT',
           message: 'User is already a project member',
@@ -675,17 +716,7 @@ export const projectRouter = router({
         })
       }
 
-      // LEGACY: Create ProjectMember entry
-      await ctx.prisma.projectMember.create({
-        data: {
-          projectId: input.projectId,
-          userId: input.userId,
-          role: input.role,
-        },
-      })
-
-      // NEW: Create ACL entry for the user
-      // Note: OWNER cannot be assigned via addMember (only creator is OWNER)
+      // Create ACL entry for the user (ACL-only, no legacy ProjectMember)
       const aclPermissions =
         input.role === 'MANAGER' ? ACL_PRESETS.EDITOR :
         input.role === 'MEMBER' ? ACL_PRESETS.CONTRIBUTOR :
@@ -714,50 +745,45 @@ export const projectRouter = router({
     .mutation(async ({ ctx, input }) => {
       const access = await permissionService.requireProjectAccess(ctx.user.id, input.projectId, 'MANAGER')
 
-      // Get target member
-      const targetMember = await ctx.prisma.projectMember.findUnique({
+      // Get target member from ACL
+      const targetAcl = await ctx.prisma.aclEntry.findFirst({
         where: {
-          projectId_userId: {
-            projectId: input.projectId,
-            userId: input.userId,
-          },
+          resourceType: 'project',
+          resourceId: input.projectId,
+          principalType: 'user',
+          principalId: input.userId,
+          deny: false,
         },
       })
 
-      if (!targetMember) {
+      if (!targetAcl) {
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: 'Member not found',
         })
       }
 
-      // Cannot remove OWNER
-      if (targetMember.role === 'OWNER') {
+      // Check if target is owner (has P bit = FULL_CONTROL)
+      const isTargetOwner = (targetAcl.permissions & ACL_PERMISSIONS.PERMISSIONS) !== 0
+      if (isTargetOwner) {
         throw new TRPCError({
           code: 'FORBIDDEN',
           message: 'Cannot remove the project owner',
         })
       }
 
+      // Check if target is manager (has D bit = EDITOR)
+      const isTargetManager = (targetAcl.permissions & ACL_PERMISSIONS.DELETE) !== 0
+
       // MANAGER cannot remove other MANAGERs (only OWNER can)
-      if (targetMember.role === 'MANAGER' && !permissionService.hasMinProjectRole(access.role, 'OWNER')) {
+      if (isTargetManager && !permissionService.hasMinProjectRole(access.role, 'OWNER')) {
         throw new TRPCError({
           code: 'FORBIDDEN',
           message: 'Only the owner can remove managers',
         })
       }
 
-      // LEGACY: Delete ProjectMember entry
-      await ctx.prisma.projectMember.delete({
-        where: {
-          projectId_userId: {
-            projectId: input.projectId,
-            userId: input.userId,
-          },
-        },
-      })
-
-      // NEW: Revoke ACL permissions for this project
+      // Revoke ACL permissions for this project (ACL-only, no legacy)
       await aclService.revokePermission({
         resourceType: 'project',
         resourceId: input.projectId,
@@ -778,34 +804,39 @@ export const projectRouter = router({
     .mutation(async ({ ctx, input }) => {
       const access = await permissionService.requireProjectAccess(ctx.user.id, input.projectId, 'MANAGER')
 
-      // Get target member
-      const targetMember = await ctx.prisma.projectMember.findUnique({
+      // Get target member from ACL
+      const targetAcl = await ctx.prisma.aclEntry.findFirst({
         where: {
-          projectId_userId: {
-            projectId: input.projectId,
-            userId: input.userId,
-          },
+          resourceType: 'project',
+          resourceId: input.projectId,
+          principalType: 'user',
+          principalId: input.userId,
+          deny: false,
         },
       })
 
-      if (!targetMember) {
+      if (!targetAcl) {
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: 'Member not found',
         })
       }
 
-      // Cannot change OWNER role
-      if (targetMember.role === 'OWNER') {
+      // Check if target is owner (has P bit)
+      const isTargetOwner = (targetAcl.permissions & ACL_PERMISSIONS.PERMISSIONS) !== 0
+      if (isTargetOwner) {
         throw new TRPCError({
           code: 'FORBIDDEN',
           message: 'Cannot change the owner role',
         })
       }
 
+      // Check if target is currently manager (has D bit)
+      const isTargetManager = (targetAcl.permissions & ACL_PERMISSIONS.DELETE) !== 0
+
       // Only OWNER can promote to/demote from MANAGER
       if (
-        (input.role === 'MANAGER' || targetMember.role === 'MANAGER') &&
+        (input.role === 'MANAGER' || isTargetManager) &&
         !permissionService.hasMinProjectRole(access.role, 'OWNER')
       ) {
         throw new TRPCError({
@@ -814,20 +845,7 @@ export const projectRouter = router({
         })
       }
 
-      // LEGACY: Update ProjectMember entry
-      await ctx.prisma.projectMember.update({
-        where: {
-          projectId_userId: {
-            projectId: input.projectId,
-            userId: input.userId,
-          },
-        },
-        data: { role: input.role },
-      })
-
-      // NEW: Update ACL permissions based on new role
-      // First revoke existing, then grant new
-      // Note: OWNER cannot be set via updateMemberRole (already protected above)
+      // Update ACL permissions based on new role (ACL-only, no legacy)
       const aclPermissions =
         input.role === 'MANAGER' ? ACL_PRESETS.EDITOR :
         input.role === 'MEMBER' ? ACL_PRESETS.CONTRIBUTOR :

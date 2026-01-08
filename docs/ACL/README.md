@@ -1,8 +1,17 @@
 # Access Control Lists (ACL) Systeem
 
+> **Visie & Architectuur:** Zie [ARCHITECTURE.md](./ARCHITECTURE.md) voor de volledige visie van het scoped permission model.
+> **Implementatie Status:** Zie [ROADMAP.md](./ROADMAP.md) voor de huidige status en planning.
+
 ## Overzicht
 
 Kanbu gebruikt een **filesystem-style ACL systeem** geïnspireerd op NTFS/Active Directory permissies. Dit biedt een flexibel en krachtig autorisatiemodel dat zowel eenvoudige als complexe toegangsscenario's ondersteunt.
+
+Het systeem evolueert naar een **Scoped Permission Model** met:
+- **Resource hiërarchie**: System > Workspaces > Projects
+- **Security Groups**: AD-compatible groepen voor role-based access
+- **Workspace isolation**: Gedelegeerde administratie per workspace
+- **Scoped data access**: Users zien alleen data binnen hun scope
 
 ## Waarom ACL?
 
@@ -208,23 +217,35 @@ Features:
 
 ## Huidige Status
 
+### Pure ACL Modus ✓
+
+Het systeem draait nu in **pure ACL modus** (Fase 3B voltooid):
+- [x] Alle workspace/project access via ACL
+- [x] Legacy fallback verwijderd
+- [x] Members worden uit ACL gelezen
+- [x] Procedures schrijven alleen naar ACL
+
 ### Geïmplementeerd ✓
 
 - [x] Database model (AclEntry)
 - [x] AclService met alle core functies
 - [x] tRPC procedures voor CRUD
-- [x] ACL Manager UI
+- [x] ACL Manager UI met VSCode-style tree
 - [x] Integration in PermissionService
-- [x] Workspace listing via ACL
-- [x] Workspace access via ACL
+- [x] Workspace listing/access via ACL
+- [x] Project listing/access via ACL
 - [x] 15 unit tests
 
-### Hybride Modus (Huidige Situatie)
+### In Development (Fase 4-7)
 
-Het systeem draait nu in **hybride modus**:
-- ACL wordt gecheckt voor workspace/project toegang
-- Legacy tabellen (WorkspaceUser, ProjectMember) worden nog steeds gebruikt als fallback
-- Nieuwe permissies kunnen via ACL Manager worden toegevoegd
+Het systeem wordt uitgebreid naar een **Scoped Permission Model**:
+- [ ] Volledige resource hiërarchie in UI
+- [ ] Security Groups sectie
+- [ ] ScopeService voor data filtering
+- [ ] Workspace-scoped admin panel
+- [ ] Conditionele menu's en UI elements
+
+Zie [ROADMAP.md](./ROADMAP.md) voor de volledige planning.
 
 ## Bestanden
 
@@ -234,10 +255,11 @@ Het systeem draait nu in **hybride modus**:
 | `apps/api/src/services/permissions.ts` | PermissionService met ACL integratie |
 | `apps/api/src/trpc/procedures/acl.ts` | tRPC endpoints |
 | `apps/web/src/pages/admin/AclPage.tsx` | ACL Manager UI |
+| `apps/web/src/components/admin/ResourceTree.tsx` | VSCode-style resource tree component |
 | `packages/shared/prisma/schema.prisma` | AclEntry model |
-| `packages/shared/prisma/migrations/acl-migration-helper.ts` | Migratie script |
 
 ## Zie Ook
 
-- [ROADMAP.md](./ROADMAP.md) - Implementatie roadmap
-- [MIGRATION.md](./MIGRATION.md) - Migratie handleiding (TODO)
+- [ARCHITECTURE.md](./ARCHITECTURE.md) - Volledige visie en technische specificaties
+- [ROADMAP.md](./ROADMAP.md) - Implementatie roadmap met status
+- [MIGRATION.md](./MIGRATION.md) - Migratie handleiding
