@@ -23,7 +23,8 @@ import { emitAclGranted, emitAclDenied, emitAclDeleted } from '../../socket/emit
 // Schemas
 // =============================================================================
 
-const resourceTypeSchema = z.enum(['workspace', 'project', 'admin', 'profile'])
+// Extended resource types (Fase 4C: added root, system, dashboard)
+const resourceTypeSchema = z.enum(['root', 'system', 'dashboard', 'workspace', 'project', 'admin', 'profile'])
 const principalTypeSchema = z.enum(['user', 'group'])
 
 const aclEntrySchema = z.object({
@@ -59,7 +60,7 @@ async function canManageAcl(
   }
 
   // Check if user has PERMISSIONS permission on this resource
-  return aclService.hasPermission(userId, resourceType as 'workspace' | 'project' | 'admin' | 'profile', resourceId, ACL_PERMISSIONS.PERMISSIONS)
+  return aclService.hasPermission(userId, resourceType as 'root' | 'system' | 'dashboard' | 'workspace' | 'project' | 'admin' | 'profile', resourceId, ACL_PERMISSIONS.PERMISSIONS)
 }
 
 /**
@@ -517,7 +518,11 @@ export const aclRouter = router({
       })
 
       return {
+        // Extended resource types hierarchy (Fase 4C)
         resourceTypes: [
+          { type: 'root', label: 'Root (Kanbu)', supportsRoot: true },
+          { type: 'system', label: 'System', supportsRoot: true },
+          { type: 'dashboard', label: 'Dashboard', supportsRoot: true },
           { type: 'workspace', label: 'Workspace', supportsRoot: true },
           { type: 'project', label: 'Project', supportsRoot: true },
           ...(isAdmin ? [

@@ -64,11 +64,13 @@ function saveSessionState(state: AclPageSessionState): void {
 
 type PrincipalType = 'user' | 'group'
 
-// ACL API only accepts these resource types (not 'group')
-type AclResourceType = 'workspace' | 'project' | 'admin' | 'profile'
+// ACL API accepts these resource types (Fase 4C: added root, system, dashboard)
+// 'group' is NOT an ACL resource - it's a principal
+type AclResourceType = 'root' | 'system' | 'dashboard' | 'workspace' | 'project' | 'admin' | 'profile'
 
 function isAclResourceType(type: ResourceType): type is AclResourceType {
-  return type === 'workspace' || type === 'project' || type === 'admin' || type === 'profile'
+  return type === 'root' || type === 'system' || type === 'dashboard' ||
+         type === 'workspace' || type === 'project' || type === 'admin' || type === 'profile'
 }
 
 interface AclFormData {

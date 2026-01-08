@@ -9,7 +9,7 @@
 │ FASE 1-3B: Foundation & Pure ACL                    [██████████] ✓  │
 │ FASE 4: Resource Tree UI                            [██████████] ✓  │
 │ FASE 4B: ACL-Only Groups Workflow                   [████████░░] ◐  │
-│ FASE 4C: Extended Resource Hierarchy                [──────────] ○  │
+│ FASE 4C: Extended Resource Hierarchy                [██████████] ✓  │
 │ FASE 5: Scoped Data Access                          [──────────] ○  │
 │ FASE 6: Scoped Admin Panel                          [──────────] ○  │
 │ FASE 7: Scoped UI Elements                          [──────────] ○  │
@@ -280,10 +280,11 @@ Deze worden verwijderd in een latere fase wanneer:
 
 ---
 
-## GEPLAND: Fase 4C - Extended Resource Hierarchy
+## VOLTOOID: Fase 4C - Extended Resource Hierarchy
 
 > **Doel:** Volledige AD-style resource hiërarchie met Root, System, Dashboard, en Workspaces containers.
 > ACL kan op elk niveau gezet worden met inheritance naar children.
+> **Status:** ✅ Voltooid op 2026-01-08
 
 ### Achtergrond: Waarom Extended Hierarchy?
 
@@ -340,10 +341,10 @@ resourceType: 'dashboard' // Dashboard container (nieuw)
 ```
 
 #### Backend Updates
-- [ ] Update `AclEntry` validatie voor nieuwe resource types
-- [ ] Update `aclService.ts` met nieuwe resource types
-- [ ] Update `acl.ts` procedures voor nieuwe types
-- [ ] Inheritance logica: root → system/dashboard/workspaces
+- [x] Update `AclEntry` validatie voor nieuwe resource types
+- [x] Update `aclService.ts` met nieuwe resource types
+- [x] Update `acl.ts` procedures voor nieuwe types
+- [x] Inheritance logica: root → system/dashboard/workspaces
 
 #### Bestanden
 - `packages/shared/prisma/schema.prisma` (indien enum)
@@ -357,11 +358,11 @@ resourceType: 'dashboard' // Dashboard container (nieuw)
 > Tree component aanpassen voor volledige hiërarchie.
 
 #### UI Wijzigingen
-- [ ] Root niveau (Kanbu) klikbaar voor ACL
-- [ ] System als expandable container met sub-items
-- [ ] Dashboard als nieuwe expandable container
-- [ ] Workspaces container behouden zoals nu
-- [ ] Visuele indicators voor containers vs. items
+- [x] Root niveau (Kanbu) klikbaar voor ACL
+- [x] System als expandable container met sub-items
+- [x] Dashboard als nieuwe expandable container
+- [x] Workspaces container behouden zoals nu
+- [x] Visuele indicators voor containers vs. items
 
 #### Nieuwe Tree Structuur
 ```
@@ -402,10 +403,10 @@ root (Kanbu)
 ```
 
 #### Backend Logic
-- [ ] `checkPermission` moet parent chain controleren
-- [ ] Root permission met inherit → alles daaronder
-- [ ] System permission → alleen system sub-items
-- [ ] Bestaande workspace/project inheritance behouden
+- [x] `checkPermission` moet parent chain controleren
+- [x] Root permission met inherit → alles daaronder
+- [x] System permission → alleen system sub-items
+- [x] Bestaande workspace/project inheritance behouden
 
 #### Voorbeeld Use Cases
 | ACL Entry | Effect |
@@ -421,28 +422,29 @@ root (Kanbu)
 > Backend moet nieuwe resource types ondersteunen.
 
 #### `acl.getResources` Uitbreiden
-- [ ] Return root resource
-- [ ] Return system container met sub-resources
-- [ ] Return dashboard container
-- [ ] Bestaande workspaces/projects behouden
+- [x] Return root resource
+- [x] Return system container met sub-resources
+- [x] Return dashboard container
+- [x] Bestaande workspaces/projects behouden
 
 #### `acl.list` Updates
-- [ ] Filter op root/system/dashboard resource types
-- [ ] Inheritance info tonen
+- [x] Filter op root/system/dashboard resource types
+- [x] Inheritance info tonen
 
 ---
 
 ### 4C.5 Verificatie
 
-- [ ] ACL kan gezet worden op Root (Kanbu)
-- [ ] ACL kan gezet worden op System container
-- [ ] ACL kan gezet worden op Dashboard container
-- [ ] Inheritance werkt van root naar beneden
-- [ ] Domain Admins op root → toegang overal
-- [ ] System Admins op system → alleen systeembeheer
-- [ ] Bestaande workspace/project ACL blijft werken
-- [ ] ResourceTree toont volledige hiërarchie
-- [ ] Geen breaking changes voor bestaande ACL entries
+- [x] ACL kan gezet worden op Root (Kanbu)
+- [x] ACL kan gezet worden op System container
+- [x] ACL kan gezet worden op Dashboard container
+- [x] Inheritance werkt van root naar beneden
+- [x] Domain Admins op root → toegang overal
+- [x] System Admins op system → alleen systeembeheer
+- [x] Bestaande workspace/project ACL blijft werken
+- [x] ResourceTree toont volledige hiërarchie
+- [x] Geen breaking changes voor bestaande ACL entries
+- [x] TypeCheck passed
 
 ---
 
@@ -652,13 +654,13 @@ interface UserScope {
 
 > **Note:** Backend services (groupPermissions.ts, roleAssignmentService.ts) en permission procedures zijn nog in gebruik door middleware, usePermissions hook, en PermissionTreePage. Deze worden verwijderd na volledige ACL migratie.
 
-### NEXT - Fase 4C: Extended Resource Hierarchy
-6. **4C.1** - Resource types uitbreiden (root, system, dashboard)
-7. **4C.2** - ResourceTree UI uitbreiden
-8. **4C.3** - Inheritance logic implementeren
-9. **4C.4** - API endpoints updaten
+### VOLTOOID - Fase 4C: Extended Resource Hierarchy ✅
+6. **4C.1** - ✅ Resource types uitbreiden (root, system, dashboard)
+7. **4C.2** - ✅ ResourceTree UI uitbreiden
+8. **4C.3** - ✅ Inheritance logic implementeren
+9. **4C.4** - ✅ API endpoints updaten
 
-### THEN - Fase 5: Scoped Data Access
+### NEXT - Fase 5: Scoped Data Access
 10. **5.1** - ScopeService implementeren
 11. **5.2** - Scoped user queries
 
@@ -705,15 +707,15 @@ interface UserScope {
 - [ ] Permission procedures uit group.ts verwijderd
 - [ ] Database tabellen (GroupPermission, Permission, RoleAssignment) verwijderd
 
-### Fase 4C Compleet Wanneer:
-- [ ] Resource types uitgebreid: root, system, dashboard
-- [ ] ResourceTree toont volledige hiërarchie (Root → System/Dashboard/Workspaces)
-- [ ] ACL kan gezet worden op Root niveau
-- [ ] ACL kan gezet worden op System container
-- [ ] ACL kan gezet worden op Dashboard container
-- [ ] Inheritance werkt van root naar beneden
-- [ ] Domain Admins op root → volledige toegang overal
-- [ ] Bestaande workspace/project ACL blijft werken
+### Fase 4C Compleet ✅
+- [x] Resource types uitgebreid: root, system, dashboard
+- [x] ResourceTree toont volledige hiërarchie (Root → System/Dashboard/Workspaces)
+- [x] ACL kan gezet worden op Root niveau
+- [x] ACL kan gezet worden op System container
+- [x] ACL kan gezet worden op Dashboard container
+- [x] Inheritance werkt van root naar beneden
+- [x] Domain Admins op root → volledige toegang overal
+- [x] Bestaande workspace/project ACL blijft werken
 
 ### Fase 5 Compleet Wanneer:
 - [ ] ScopeService geïmplementeerd en getest
@@ -752,6 +754,7 @@ interface UserScope {
 
 | Datum | Wijziging |
 |-------|-----------|
+| 2026-01-08 | **Fase 4C VOLTOOID**: Extended Resource Hierarchy - root/system/dashboard types, ResourceTree UI, inheritance logic |
 | 2026-01-08 | Fase 4B.2 voltooid: GroupListPage, GroupEditPage, sidebar link en routes verwijderd |
 | 2026-01-08 | Note: Backend services behouden (dependencies in middleware/hooks) - verwijderen na ACL migratie |
 | 2026-01-08 | Fase 4C toegevoegd: Extended Resource Hierarchy (Root, System, Dashboard containers) |

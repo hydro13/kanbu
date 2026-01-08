@@ -61,8 +61,9 @@ export const ACL_PRESETS = {
   FULL_CONTROL: ACL_PERMISSIONS.READ | ACL_PERMISSIONS.WRITE | ACL_PERMISSIONS.EXECUTE | ACL_PERMISSIONS.DELETE | ACL_PERMISSIONS.PERMISSIONS, // 31
 } as const
 
-// Resource types
-export type AclResourceType = 'workspace' | 'project' | 'admin' | 'profile'
+// Resource types - Extended hierarchy (Fase 4C)
+// root → system/dashboard/workspaces → workspace:{id} → project:{id}
+export type AclResourceType = 'root' | 'system' | 'dashboard' | 'workspace' | 'project' | 'admin' | 'profile'
 
 // Principal types
 export type AclPrincipalType = 'user' | 'group'
@@ -220,6 +221,16 @@ export class AclService {
   /**
    * Build resource hierarchy for inheritance resolution.
    * Returns resources from most specific to most general.
+   *
+   * Hierarchy (Fase 4C):
+   *   root (null)
+   *     ├── system (null) → admin (null)
+   *     ├── dashboard (null)
+   *     └── workspace (null)
+   *           └── workspace:{id}
+   *                 └── project:{id}
+   *
+   * Inheritance flows from root down to children.
    */
   private async buildResourceHierarchy(
     resourceType: AclResourceType,
@@ -235,17 +246,53 @@ export class AclService {
       hierarchy.push({ type: resourceType, id: null })
     }
 
-    // Handle cross-resource inheritance
-    if (resourceType === 'project' && resourceId !== null) {
-      // Projects inherit from their workspace
-      const project = await prisma.project.findUnique({
-        where: { id: resourceId },
-        select: { workspaceId: true }
-      })
-      if (project) {
-        hierarchy.push({ type: 'workspace', id: project.workspaceId })
-        hierarchy.push({ type: 'workspace', id: null }) // Root workspace level
-      }
+    // Handle cross-resource inheritance based on type
+    switch (resourceType) {
+      case 'project':
+        // Projects inherit from their workspace
+        if (resourceId !== null) {
+          const project = await prisma.project.findUnique({
+            where: { id: resourceId },
+            select: { workspaceId: true }
+          })
+          if (project) {
+            hierarchy.push({ type: 'workspace', id: project.workspaceId })
+            hierarchy.push({ type: 'workspace', id: null }) // All workspaces level
+          }
+        }
+        // Workspaces inherit from root
+        hierarchy.push({ type: 'root', id: null })
+        break
+
+      case 'workspace':
+        // Workspaces inherit from root
+        hierarchy.push({ type: 'root', id: null })
+        break
+
+      case 'admin':
+        // Admin inherits from system, which inherits from root
+        hierarchy.push({ type: 'system', id: null })
+        hierarchy.push({ type: 'root', id: null })
+        break
+
+      case 'system':
+        // System inherits from root
+        hierarchy.push({ type: 'root', id: null })
+        break
+
+      case 'dashboard':
+        // Dashboard inherits from root
+        hierarchy.push({ type: 'root', id: null })
+        break
+
+      case 'profile':
+        // Profile inherits from root
+        hierarchy.push({ type: 'root', id: null })
+        break
+
+      case 'root':
+        // Root is the top level, no further inheritance
+        break
     }
 
     return hierarchy

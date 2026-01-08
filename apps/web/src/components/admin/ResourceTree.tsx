@@ -24,7 +24,9 @@ import { cn } from '@/lib/utils'
 // Types
 // =============================================================================
 
-export type ResourceType = 'workspace' | 'project' | 'admin' | 'profile' | 'group'
+// Extended resource types (Fase 4C)
+// root → system/dashboard/workspaces → workspace:{id} → project:{id}
+export type ResourceType = 'root' | 'system' | 'dashboard' | 'workspace' | 'project' | 'admin' | 'profile' | 'group'
 
 export interface SelectedResource {
   type: ResourceType
@@ -324,29 +326,47 @@ export function ResourceTree({
   return (
     <div className="space-y-0.5">
       {/* ========== KANBU ROOT ========== */}
+      {/* Root is now selectable for ACL - permissions here inherit to ALL children (Fase 4C) */}
       <TreeItem
         label="Kanbu"
         icon={<ServerIcon className="w-4 h-4 text-blue-600" />}
         depth={0}
-        isSelected={false}
+        isSelected={isSelected('root', null)}
         isExpandable={true}
         isExpanded={isSectionExpanded('root')}
-        onClick={() => toggleSection('root')}
+        onClick={() => {
+          toggleSection('root')
+          onSelectResource({
+            type: 'root',
+            id: null,
+            name: 'Kanbu (Root)',
+            path: 'Kanbu',
+          })
+        }}
       />
 
       {isSectionExpanded('root') && (
         <>
           {/* ========== SYSTEM SECTION ========== */}
+          {/* System is selectable for ACL - permissions inherit to admin (Fase 4C) */}
           {isAdmin && (
             <>
               <TreeItem
                 label="System"
                 icon={<FolderIcon className={cn('w-4 h-4', isSectionExpanded('system') ? 'text-yellow-500' : 'text-yellow-600')} open={isSectionExpanded('system')} />}
                 depth={1}
-                isSelected={false}
+                isSelected={isSelected('system', null)}
                 isExpandable={true}
                 isExpanded={isSectionExpanded('system')}
-                onClick={() => toggleSection('system')}
+                onClick={() => {
+                  toggleSection('system')
+                  onSelectResource({
+                    type: 'system',
+                    id: null,
+                    name: 'System',
+                    path: 'Kanbu > System',
+                  })
+                }}
               />
 
               {isSectionExpanded('system') && (
@@ -365,6 +385,21 @@ export function ResourceTree({
               )}
             </>
           )}
+
+          {/* ========== DASHBOARD SECTION ========== */}
+          {/* Dashboard is a separate container under root (Fase 4C) */}
+          <TreeItem
+            label="Dashboard"
+            icon={<FolderIcon className="w-4 h-4 text-yellow-600" />}
+            depth={1}
+            isSelected={isSelected('dashboard', null)}
+            onClick={() => onSelectResource({
+              type: 'dashboard',
+              id: null,
+              name: 'Dashboard',
+              path: 'Kanbu > Dashboard',
+            })}
+          />
 
           {/* ========== WORKSPACES SECTION ========== */}
           <TreeItem
