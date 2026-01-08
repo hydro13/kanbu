@@ -15,11 +15,16 @@
  *
  * Session: 2026-01-08
  * Change: Updated adminProcedure to also check ACL (admin:root with P permission)
+ *
+ * Session: 2026-01-09
+ * Fase: 9.6 - API Keys & Service Accounts
+ * Change: Added apiKeyProcedure and hybridProcedure for API key authentication
  * ═══════════════════════════════════════════════════════════════════
  */
 
 import { initTRPC, TRPCError } from '@trpc/server';
-import type { Context, AuthUser } from './context';
+import type { Context, AuthUser, AuthSource } from './context';
+import type { ApiKeyContext } from '../services/apiKeyService';
 import { aclService, ACL_PERMISSIONS } from '../services/aclService';
 
 /**
@@ -160,6 +165,63 @@ export const adminProcedure = protectedProcedure.use(
     throw new TRPCError({
       code: 'FORBIDDEN',
       message: 'Admin access required',
+    });
+  })
+);
+
+/**
+ * API Key only procedure - requires API key authentication
+ * Rejects JWT tokens, only accepts kb_ prefixed API keys.
+ * Use for external API endpoints that should not allow session auth.
+ */
+export const apiKeyProcedure = publicProcedure.use(
+  middleware(async ({ ctx, next }) => {
+    if (ctx.authSource !== 'apiKey' || !ctx.apiKeyContext) {
+      throw new TRPCError({
+        code: 'UNAUTHORIZED',
+        message: 'API key required. Use Authorization: Bearer kb_xxx or ApiKey kb_xxx',
+      });
+    }
+
+    if (!ctx.user) {
+      throw new TRPCError({
+        code: 'UNAUTHORIZED',
+        message: 'API key is invalid or associated user is inactive',
+      });
+    }
+
+    return next({
+      ctx: {
+        ...ctx,
+        user: ctx.user as AuthUser,
+        apiKeyContext: ctx.apiKeyContext as ApiKeyContext,
+        authSource: 'apiKey' as AuthSource,
+      },
+    });
+  })
+);
+
+/**
+ * Hybrid procedure - accepts both JWT and API key authentication
+ * Use for endpoints that should work with both session and API access.
+ * The procedure context will include authSource to distinguish.
+ */
+export const hybridProcedure = publicProcedure.use(
+  middleware(async ({ ctx, next }) => {
+    if (!ctx.user) {
+      throw new TRPCError({
+        code: 'UNAUTHORIZED',
+        message: 'Authentication required. Use JWT or API key.',
+      });
+    }
+
+    return next({
+      ctx: {
+        ...ctx,
+        user: ctx.user as AuthUser,
+        apiKeyContext: ctx.apiKeyContext ?? null,
+        authSource: ctx.authSource as AuthSource,
+      },
     });
   })
 );

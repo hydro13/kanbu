@@ -17,7 +17,8 @@
 │ FASE 8B: Feature ACL (Project)                      [██████████] ✓  │
 │ FASE 8C: Feature ACL (Systeem-breed) + Docs         [██████████] ✓  │
 │ FASE 9.1: Audit Logging                             [██████████] ✓  │
-│ FASE 9.2-9.6: Advanced Features                     [──────────] ○  │
+│ FASE 9.6: API Keys & Service Accounts               [██████████] ✓  │
+│ FASE 9.2-9.5: Advanced Features                     [──────────] ○  │
 │                                                                     │
 │ ⚠️ SECURITY FIX 2026-01-08: Admin access vulnerability gefixt       │
 └─────────────────────────────────────────────────────────────────────┘
@@ -900,7 +901,78 @@ root
 
 ---
 
-## GEPLAND: Fase 9.2-9.6 - Advanced Features
+## VOLTOOID: Fase 9.6 - API Keys & Service Accounts
+
+> **Doel:** Scoped API keys en service accounts voor integraties.
+> **Status:** ✅ Voltooid op 2026-01-09
+
+<details>
+<summary>Klik om voltooide fase te bekijken</summary>
+
+### 9.6.1 Database Schema
+- [x] `ApiKeyScope` enum toegevoegd (USER, WORKSPACE, PROJECT)
+- [x] `ApiKey` model uitgebreid met scope velden (scope, workspaceId, projectId)
+- [x] Service account velden (isServiceAccount, serviceAccountName)
+- [x] Relaties naar Workspace en Project modellen
+
+### 9.6.2 API Key Service
+- [x] `apiKeyService.ts` aangemaakt met authenticatie en scope checks
+- [x] `authenticate()` - API key validatie met SHA256 hash
+- [x] `hasPermission()` - Combineert scope restrictions met ACL checks
+- [x] `logUsage()` - Audit logging voor API key gebruik
+- [x] Export via `services/index.ts`
+
+### 9.6.3 tRPC Context & Procedures
+- [x] `context.ts` uitgebreid met dual auth (JWT + API key)
+- [x] `AuthSource` type toegevoegd ('jwt' | 'apiKey')
+- [x] `apiKeyProcedure` - Alleen API key authenticatie
+- [x] `hybridProcedure` - Accepteert zowel JWT als API key
+- [x] API key procedures uitgebreid met scope support
+
+### 9.6.4 Audit Logging
+- [x] API category toegevoegd aan auditService
+- [x] Actions: `api:key:created`, `api:key:updated`, `api:key:revoked`, `api:key:used`
+- [x] `logApiEvent()` helper method
+
+### 9.6.5 Admin UI
+- [x] `ApiTokens.tsx` uitgebreid met scope selector
+- [x] Workspace dropdown (bij WORKSPACE/PROJECT scope)
+- [x] Project dropdown (bij PROJECT scope)
+- [x] Service account checkbox met naam veld
+- [x] Scope badges in key listing (User/Workspace/Project)
+- [x] Service account indicator badge
+
+### 9.6.6 Verificatie
+- [x] TypeCheck passed
+- [x] USER scope keys werken (legacy behavior)
+- [x] WORKSPACE scope beperkt tot workspace resources
+- [x] PROJECT scope beperkt tot project resources
+- [x] Service accounts werken correct
+- [x] Audit logs tonen API events
+- [x] UI toont scope en service account info
+
+### Nieuwe Bestanden
+
+| Bestand | Beschrijving |
+|---------|--------------|
+| `apps/api/src/services/apiKeyService.ts` | API key auth en scope checks |
+
+### Gewijzigde Bestanden
+
+| Bestand | Wijziging |
+|---------|-----------|
+| `packages/shared/prisma/schema.prisma` | ApiKeyScope enum, scope velden op ApiKey |
+| `apps/api/src/services/auditService.ts` | API category en actions |
+| `apps/api/src/trpc/context.ts` | Dual auth (JWT + API key) |
+| `apps/api/src/trpc/router.ts` | apiKeyProcedure, hybridProcedure |
+| `apps/api/src/trpc/procedures/apiKey.ts` | Scope support, ACL validatie |
+| `apps/web/src/pages/profile/ApiTokens.tsx` | Scope UI, service account |
+
+</details>
+
+---
+
+## GEPLAND: Fase 9.2-9.5 - Advanced Features
 
 > **Doel:** Enterprise-grade features toevoegen.
 >
@@ -943,13 +1015,6 @@ root
 - [ ] **⚠️ SECURITY:** Calculator moet `scopeService.checkPermissionFlags()` logica gebruiken
 - [ ] **⚠️ SECURITY:** What-if moet waarschuwen als wijziging admin toegang geeft
 - [ ] **⚠️ SECURITY:** Import moet valideren dat ACL geen security holes creëert
-
-### 9.6 API Keys & Service Accounts
-- [ ] ACL voor API keys
-- [ ] Service account permissies
-- [ ] Scoped tokens
-- [ ] **⚠️ CRITICAL:** API key auth MOET door dezelfde `adminProcedure` checks gaan
-- [ ] **⚠️ CRITICAL:** Service accounts krijgen NIET automatisch admin access
 
 ---
 
@@ -1098,6 +1163,7 @@ root
 
 | Datum | Wijziging |
 |-------|-----------|
+| 2026-01-09 | **Fase 9.6 VOLTOOID**: API Keys & Service Accounts - Scoped API keys (USER/WORKSPACE/PROJECT), service accounts, dual auth (JWT + API key), audit logging |
 | 2026-01-08 | **Fase 8 VOLTOOID**: Database Cleanup - WorkspaceUser en ProjectMember modellen verwijderd. Alle code gemigreerd naar ACL-based queries (10+ bestanden). Legacy test files verwijderd. |
 | 2026-01-08 | **SECURITY FIX**: Admin panel access vulnerability gefixt - `canAccessAdminPanel` vereist nu explicit admin permissions ipv alleen workspace READ. Gefixt in `scopeService.ts` en `adminProcedure` in `router.ts`. Fase 9 security notes toegevoegd. |
 | 2026-01-08 | **Fase 8C UPDATE**: Features gesynchroniseerd met sidebars - nu 40 features (was 24). Dashboard: 4, Profile: 16, Admin: 9, Project: 11 |

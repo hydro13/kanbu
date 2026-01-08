@@ -6,7 +6,7 @@ Dit document beschrijft de architectuur voor het **Scoped Permission Model** van
 Het systeem is geïnspireerd op Active Directory en biedt enterprise-grade toegangscontrole
 met workspace-level isolatie en gedelegeerde administratie.
 
-**Document versie:** 2.1.0
+**Document versie:** 2.2.0
 **Datum:** 2026-01-09
 **Status:** Goedgekeurd voor implementatie
 
@@ -379,11 +379,19 @@ Het admin panel toont verschillende secties per scope:
 - [x] AuditLogsPage UI met filtering, export (CSV/JSON)
 - [x] Workspace-scoped access (admins zien alleen eigen workspace logs)
 
+### Fase 9.6: API Keys & Service Accounts (VOLTOOID)
+- [x] Database schema uitgebreid met ApiKeyScope enum (USER, WORKSPACE, PROJECT)
+- [x] ApiKey model met scope velden en service account support
+- [x] apiKeyService voor authenticatie en scoped permission checks
+- [x] tRPC context met dual auth (JWT + API key)
+- [x] apiKeyProcedure en hybridProcedure in router.ts
+- [x] UI met scope selector, workspace/project dropdowns, service account optie
+- [x] Audit logging voor API key events (created, updated, revoked, used)
+
 ### Fase 9.2+: Advanced Features (PLANNED)
 - [ ] Database cleanup (legacy tabellen verwijderen)
 - [ ] LDAP/AD Sync
 - [ ] Task-level ACL
-- [ ] API Keys met scoped access
 - [ ] Bulk Operations
 - [ ] Advanced UI (Permission matrix, What-if simulator)
 
@@ -514,6 +522,7 @@ Week 9+: Advanced features
 
 | Versie | Datum | Wijziging |
 |--------|-------|-----------|
+| 2.2.0 | 2026-01-09 | Fase 9.6 VOLTOOID: API Keys & Service Accounts met scoped access |
 | 2.1.0 | 2026-01-09 | Fase 9.1 VOLTOOID: Security Audit Logging met scope-based access |
 | 2.0.0 | 2026-01-08 | Fase 4B-8C VOLTOOID: Systeem-breed Feature ACL (40 features) |
 | 1.2.0 | 2026-01-08 | Fase 4C: Extended Resource Hierarchy (Root, System, Dashboard) |

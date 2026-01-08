@@ -1,8 +1,9 @@
 /*
  * API Key Procedures
- * Version: 1.0.0
+ * Version: 2.0.0
  *
  * tRPC procedures for API key management.
+ * Supports scoped access (USER, WORKSPACE, PROJECT) and service accounts.
  *
  * ═══════════════════════════════════════════════════════════════════
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
@@ -10,12 +11,19 @@
  * Claude Code: v2.0.70 (Opus 4.5)
  * Host: linux-dev
  * Signed: 2025-12-29T00:07 CET
+ *
+ * Modified: 2026-01-09
+ * Fase: 9.6 - API Keys & Service Accounts
+ * Change: Added scoped access (USER/WORKSPACE/PROJECT) and service accounts
  * ═══════════════════════════════════════════════════════════════════
  */
 
 import { z } from 'zod'
+import { TRPCError } from '@trpc/server'
 import { randomBytes, createHash } from 'crypto'
 import { router, protectedProcedure } from '../router'
+import { auditService, AUDIT_ACTIONS } from '../../services/auditService'
+import { aclService, ACL_PERMISSIONS } from '../../services/aclService'
 
 // =============================================================================
 // Constants
@@ -71,6 +79,13 @@ const createApiKeySchema = z.object({
   permissions: z.array(z.enum(API_PERMISSIONS)).default([]),
   rateLimit: z.number().min(10).max(10000).default(100),
   expiresAt: z.string().datetime().optional(),
+  // Scope fields (Fase 9.6)
+  scope: z.enum(['USER', 'WORKSPACE', 'PROJECT']).default('USER'),
+  workspaceId: z.number().optional(),
+  projectId: z.number().optional(),
+  // Service account fields (Fase 9.6)
+  isServiceAccount: z.boolean().default(false),
+  serviceAccountName: z.string().max(100).optional(),
 })
 
 const revokeApiKeySchema = z.object({
@@ -108,6 +123,15 @@ export const apiKeyRouter = router({
         expiresAt: true,
         isActive: true,
         createdAt: true,
+        // Scope fields (Fase 9.6)
+        scope: true,
+        workspaceId: true,
+        projectId: true,
+        isServiceAccount: true,
+        serviceAccountName: true,
+        // Include related workspace/project names
+        workspace: { select: { id: true, name: true, slug: true } },
+        project: { select: { id: true, name: true, identifier: true } },
       },
     })
 
@@ -125,6 +149,56 @@ export const apiKeyRouter = router({
   create: protectedProcedure
     .input(createApiKeySchema)
     .mutation(async ({ ctx, input }) => {
+      // Validate scope requirements
+      if (input.scope === 'WORKSPACE' && !input.workspaceId) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Workspace ID is required for WORKSPACE scope',
+        })
+      }
+      if (input.scope === 'PROJECT' && !input.projectId) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Project ID is required for PROJECT scope',
+        })
+      }
+      if (input.isServiceAccount && !input.serviceAccountName) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Service account name is required for service accounts',
+        })
+      }
+
+      // Validate user has access to workspace/project using ACL
+      if (input.workspaceId) {
+        const hasWorkspaceAccess = await aclService.hasPermission(
+          ctx.user.id,
+          'workspace',
+          input.workspaceId,
+          ACL_PERMISSIONS.READ
+        )
+        if (!hasWorkspaceAccess) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'You do not have access to this workspace',
+          })
+        }
+      }
+      if (input.projectId) {
+        const hasProjectAccess = await aclService.hasPermission(
+          ctx.user.id,
+          'project',
+          input.projectId,
+          ACL_PERMISSIONS.READ
+        )
+        if (!hasProjectAccess) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'You do not have access to this project',
+          })
+        }
+      }
+
       const { key, prefix, hash } = generateApiKey()
 
       const apiKey = await ctx.prisma.apiKey.create({
@@ -136,6 +210,12 @@ export const apiKeyRouter = router({
           permissions: input.permissions,
           rateLimit: input.rateLimit,
           expiresAt: input.expiresAt ? new Date(input.expiresAt) : null,
+          // Scope fields (Fase 9.6)
+          scope: input.scope,
+          workspaceId: input.scope === 'WORKSPACE' || input.scope === 'PROJECT' ? input.workspaceId : null,
+          projectId: input.scope === 'PROJECT' ? input.projectId : null,
+          isServiceAccount: input.isServiceAccount,
+          serviceAccountName: input.isServiceAccount ? input.serviceAccountName : null,
         },
         select: {
           id: true,
@@ -145,7 +225,29 @@ export const apiKeyRouter = router({
           rateLimit: true,
           expiresAt: true,
           createdAt: true,
+          scope: true,
+          workspaceId: true,
+          projectId: true,
+          isServiceAccount: true,
+          serviceAccountName: true,
         },
+      })
+
+      // Audit log: API key created
+      await auditService.logApiEvent({
+        action: AUDIT_ACTIONS.API_KEY_CREATED,
+        resourceType: 'api_key',
+        resourceId: apiKey.id,
+        resourceName: apiKey.name,
+        userId: ctx.user.id,
+        workspaceId: apiKey.workspaceId ?? undefined,
+        metadata: {
+          scope: apiKey.scope,
+          isServiceAccount: apiKey.isServiceAccount,
+          projectId: apiKey.projectId,
+        },
+        ipAddress: ctx.req.ip,
+        userAgent: ctx.req.headers['user-agent'],
       })
 
       return {
@@ -190,7 +292,38 @@ export const apiKeyRouter = router({
           rateLimit: true,
           isActive: true,
           updatedAt: true,
+          scope: true,
+          workspaceId: true,
+          projectId: true,
+          isServiceAccount: true,
+          serviceAccountName: true,
         },
+      })
+
+      // Audit log: API key updated
+      await auditService.logApiEvent({
+        action: AUDIT_ACTIONS.API_KEY_UPDATED,
+        resourceType: 'api_key',
+        resourceId: updated.id,
+        resourceName: updated.name,
+        userId: ctx.user.id,
+        workspaceId: updated.workspaceId ?? undefined,
+        changes: {
+          before: {
+            name: existing.name,
+            permissions: existing.permissions,
+            rateLimit: existing.rateLimit,
+            isActive: existing.isActive,
+          },
+          after: {
+            name: updated.name,
+            permissions: updated.permissions,
+            rateLimit: updated.rateLimit,
+            isActive: updated.isActive,
+          },
+        },
+        ipAddress: ctx.req.ip,
+        userAgent: ctx.req.headers['user-agent'],
       })
 
       return {
@@ -222,6 +355,22 @@ export const apiKeyRouter = router({
 
       await ctx.prisma.apiKey.delete({
         where: { id: input.keyId },
+      })
+
+      // Audit log: API key revoked
+      await auditService.logApiEvent({
+        action: AUDIT_ACTIONS.API_KEY_REVOKED,
+        resourceType: 'api_key',
+        resourceId: existing.id,
+        resourceName: existing.name,
+        userId: ctx.user.id,
+        workspaceId: existing.workspaceId ?? undefined,
+        metadata: {
+          scope: existing.scope,
+          isServiceAccount: existing.isServiceAccount,
+        },
+        ipAddress: ctx.req.ip,
+        userAgent: ctx.req.headers['user-agent'],
       })
 
       return { success: true }

@@ -52,6 +52,7 @@ model Workspace {
   groups          Group[]             // AD-style groups for this workspace
   roleAssignments RoleAssignment[]    // Security groups assigned to this workspace
   auditLogs       AuditLog[]          // Audit logs scoped to this workspace
+  apiKeys         ApiKey[]            // API keys scoped to this workspace (Fase 9.6)
 
   @@map("workspaces")
 }
@@ -278,6 +279,7 @@ model Project {
   groups          Group[]              // AD-style groups for this project
   roleAssignments RoleAssignment[]     // Security groups assigned to this project
   features        Feature[]            // ACL-controlled menu items/features (Fase 8B)
+  apiKeys         ApiKey[]             // API keys scoped to this project (Fase 9.6)
 
   @@unique([workspaceId, identifier])
   @@map("projects")
@@ -896,13 +898,30 @@ model WikiPage {
 // API KEYS & WEBHOOKS
 // ============================================================================
 
+// API Key scope levels (Fase 9.6)
+enum ApiKeyScope {
+  USER      // Full user access (legacy behavior)
+  WORKSPACE // Scoped to specific workspace
+  PROJECT   // Scoped to specific project
+}
+
 model ApiKey {
   id          Int       @id @default(autoincrement())
   userId      Int       @map("user_id")
   name        String    @db.VarChar(255)
   keyPrefix   String    @map("key_prefix") @db.VarChar(8) // First 8 chars for identification
   keyHash     String    @map("key_hash") @db.VarChar(255) // Hashed full key
-  permissions Json      @default("[]") // Array of permission strings
+  permissions Json      @default("[]") // Array of permission strings (deprecated - use ACL)
+
+  // Scope fields (Fase 9.6)
+  scope              ApiKeyScope @default(USER)
+  workspaceId        Int?        @map("workspace_id")
+  projectId          Int?        @map("project_id")
+
+  // Service account (Fase 9.6)
+  isServiceAccount   Boolean     @default(false) @map("is_service_account")
+  serviceAccountName String?     @map("service_account_name") @db.VarChar(100)
+
   rateLimit   Int       @default(100) @map("rate_limit") // Requests per minute
   lastUsedAt  DateTime? @map("last_used_at")
   expiresAt   DateTime? @map("expires_at")
@@ -911,9 +930,13 @@ model ApiKey {
   updatedAt   DateTime  @updatedAt @map("updated_at")
 
   // Relations
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace? @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  project   Project?   @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@index([keyPrefix])
+  @@index([workspaceId])
+  @@index([projectId])
   @@map("api_keys")
 }
 

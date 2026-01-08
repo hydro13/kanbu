@@ -41,6 +41,12 @@ A modern, self-hostable project management tool with Kanban boards, real-time co
 - **Backup Management** - Database and source code backups to Google Drive
 - **System Settings** - Global configuration
 
+### API & Integrations
+- **Scoped API Keys** - Create tokens with USER, WORKSPACE, or PROJECT scope
+- **Service Accounts** - Standalone identities for CI/CD and integrations
+- **Dual Authentication** - Both JWT sessions and API keys supported
+- **Audit Logging** - All API key events logged (create, use, revoke)
+
 ## Quick Start
 
 ```bash
@@ -261,6 +267,7 @@ The API uses tRPC for type-safe client-server communication. Main routers:
 | `group` | Group management |
 | `acl` | ACL management (grant, revoke, list permissions) |
 | `auditLog` | Audit log queries (list, stats, export) |
+| `apiKey` | API key management (create, revoke, list with scopes) |
 | `admin` | Admin-only operations (backups, system settings) |
 | `user` | User profile and settings |
 

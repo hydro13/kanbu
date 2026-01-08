@@ -67,3 +67,10 @@ export {
   type AuditLogParams,
   type AuditLogEntry,
 } from './auditService'
+
+// API Key Service - Authentication & Scoped Access Control (Fase 9.6)
+export {
+  apiKeyService,
+  type ApiKeyContext,
+  type ApiKeyUsageParams,
+} from './apiKeyService'

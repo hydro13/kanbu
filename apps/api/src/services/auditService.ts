@@ -39,6 +39,7 @@ export const AUDIT_CATEGORIES = {
   USER: 'USER',
   WORKSPACE: 'WORKSPACE',
   SETTINGS: 'SETTINGS',
+  API: 'API',
 } as const
 
 export type AuditCategory = keyof typeof AUDIT_CATEGORIES
@@ -78,6 +79,13 @@ export const AUDIT_ACTIONS = {
   // SETTINGS
   SETTING_CHANGED: 'setting:changed',
   BACKUP_CREATED: 'backup:created',
+
+  // API (Fase 9.6)
+  API_KEY_CREATED: 'api:key:created',
+  API_KEY_UPDATED: 'api:key:updated',
+  API_KEY_REVOKED: 'api:key:revoked',
+  API_KEY_USED: 'api:key:used',
+  API_REQUEST_DENIED: 'api:request:denied',
 } as const
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS]
@@ -224,6 +232,15 @@ export class AuditService {
     params: Omit<AuditLogParams, 'category'>
   ): Promise<{ id: number }> {
     return this.log({ ...params, category: 'SETTINGS' })
+  }
+
+  /**
+   * Log an API key event.
+   */
+  async logApiEvent(
+    params: Omit<AuditLogParams, 'category'>
+  ): Promise<{ id: number }> {
+    return this.log({ ...params, category: 'API' })
   }
 
   /**
