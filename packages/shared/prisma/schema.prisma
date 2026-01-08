@@ -51,6 +51,7 @@ model Workspace {
   logo            WorkspaceLogo?
   groups          Group[]             // AD-style groups for this workspace
   roleAssignments RoleAssignment[]    // Security groups assigned to this workspace
+  auditLogs       AuditLog[]          // Audit logs scoped to this workspace
 
   @@map("workspaces")
 }
@@ -178,6 +179,7 @@ model User {
   groupMembersAdded  GroupMember[]         @relation("GroupMemberAddedBy")
   pagePreferences    UserPagePreference[]  // Per-device page width preferences
   aclEntriesCreated  AclEntry[]            @relation("AclCreator") // ACL entries created by this user
+  auditLogs          AuditLog[]            @relation("AuditLogActor") // Audit logs created by this user
 
   @@map("users")
 }
@@ -1389,4 +1391,62 @@ model AclEntry {
   @@index([principalType, principalId])
   @@index([inherited])
   @@map("acl_entries")
+}
+
+// ============================================================================
+// AUDIT LOGGING - Security Event Tracking
+// ============================================================================
+//
+// Fase 9.1: Comprehensive audit trail for all security-critical events.
+// Categories: ACL, GROUP, USER, WORKSPACE, SETTINGS
+// Access: Workspace admins see their workspace logs, Domain Admins see all.
+//
+// Added: 2026-01-08
+// ============================================================================
+
+model AuditLog {
+  id            Int       @id @default(autoincrement())
+
+  // Event classification
+  category      String    @db.VarChar(30)     // 'ACL', 'GROUP', 'USER', 'WORKSPACE', 'SETTINGS'
+  action        String    @db.VarChar(50)     // 'acl:granted', 'user:created', etc.
+
+  // Target resource (what was affected)
+  resourceType  String    @map("resource_type") @db.VarChar(50)  // 'workspace', 'project', 'user', 'group', 'setting'
+  resourceId    Int?      @map("resource_id")                     // ID of the affected resource
+  resourceName  String?   @map("resource_name") @db.VarChar(255)  // Human-readable name for display
+
+  // Secondary target (e.g., user added to group, member added to workspace)
+  targetType    String?   @map("target_type") @db.VarChar(50)    // 'user', 'group'
+  targetId      Int?      @map("target_id")
+  targetName    String?   @map("target_name") @db.VarChar(255)
+
+  // Change tracking
+  changes       Json      @default("{}")      // { before: {...}, after: {...} }
+  metadata      Json      @default("{}")      // Additional context
+
+  // Actor (who performed the action)
+  userId        Int       @map("user_id")
+
+  // Scope for filtering (workspaceId enables workspace admins to see their logs)
+  workspaceId   Int?      @map("workspace_id")
+
+  // Request context (for security analysis)
+  ipAddress     String?   @map("ip_address") @db.VarChar(45)
+  userAgent     String?   @map("user_agent") @db.Text
+
+  // Timestamp
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  user          User      @relation("AuditLogActor", fields: [userId], references: [id])
+  workspace     Workspace? @relation(fields: [workspaceId], references: [id], onDelete: SetNull)
+
+  @@index([category, createdAt])
+  @@index([action])
+  @@index([resourceType, resourceId])
+  @@index([userId, createdAt])
+  @@index([workspaceId, createdAt])
+  @@index([createdAt])
+  @@map("audit_logs")
 }

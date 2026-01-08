@@ -110,7 +110,7 @@ import { ApiTokens } from './pages/profile/ApiTokens'
 import { HourlyRate } from './pages/profile/HourlyRate'
 import { ChangePassword } from './pages/profile/ChangePassword'
 // Admin pages
-import { UserListPage, UserCreatePage, UserEditPage, InvitesPage, SystemSettingsPage, WorkspaceListPage, WorkspaceCreatePage, WorkspaceEditPage, BackupPage, PermissionTreePage, AclPage } from './pages/admin'
+import { UserListPage, UserCreatePage, UserEditPage, InvitesPage, SystemSettingsPage, WorkspaceListPage, WorkspaceCreatePage, WorkspaceEditPage, BackupPage, PermissionTreePage, AclPage, AuditLogsPage } from './pages/admin'
 // Dashboard pages
 import { DashboardOverview, MyTasks, MySubtasks } from './pages/dashboard'
 import { AcceptInvitePage } from './pages/AcceptInvite'
@@ -585,6 +585,16 @@ function App() {
             <ProtectedRoute>
               <AdminRoute>
                 <AclPage />
+              </AdminRoute>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/audit-logs"
+          element={
+            <ProtectedRoute>
+              <AdminRoute>
+                <AuditLogsPage />
               </AdminRoute>
             </ProtectedRoute>
           }

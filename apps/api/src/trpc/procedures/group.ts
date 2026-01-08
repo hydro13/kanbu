@@ -16,7 +16,7 @@
 import { z } from 'zod'
 import { TRPCError } from '@trpc/server'
 import { router, protectedProcedure } from '../router'
-import { groupPermissionService, scopeService } from '../../services'
+import { groupPermissionService, scopeService, auditService, AUDIT_ACTIONS } from '../../services'
 import {
   emitGroupCreated,
   emitGroupUpdated,
@@ -80,10 +80,10 @@ async function canManageGroup(
   userId: number,
   groupId: number,
   prisma: typeof import('@prisma/client').PrismaClient extends new () => infer R ? R : never
-): Promise<{ canManage: boolean; group: { type: string; workspaceId: number | null; isSystem: boolean; name: string } | null }> {
+): Promise<{ canManage: boolean; group: { id: number; type: string; workspaceId: number | null; isSystem: boolean; name: string; displayName: string; description: string | null; isActive: boolean } | null }> {
   const group = await prisma.group.findUnique({
     where: { id: groupId },
-    select: { id: true, type: true, workspaceId: true, isSystem: true, name: true },
+    select: { id: true, type: true, workspaceId: true, isSystem: true, name: true, displayName: true, description: true, isActive: true },
   })
 
   if (!group) {
@@ -667,6 +667,18 @@ export const groupRouter = router({
         timestamp: new Date().toISOString(),
       })
 
+      // Audit logging
+      await auditService.logGroupEvent({
+        action: AUDIT_ACTIONS.GROUP_CREATED,
+        resourceType: 'group',
+        resourceId: group.id,
+        resourceName: group.displayName || group.name,
+        changes: { after: { name, displayName, description, type, workspaceId, projectId } },
+        userId: ctx.user!.id,
+        workspaceId: workspaceId || null,
+        ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
+      })
+
       return group
     }),
 
@@ -736,6 +748,19 @@ export const groupRouter = router({
         timestamp: new Date().toISOString(),
       })
 
+      // Audit logging
+      await auditService.logGroupEvent({
+        action: AUDIT_ACTIONS.GROUP_CREATED,
+        resourceType: 'group',
+        resourceId: group.id,
+        resourceName: group.displayName || group.name,
+        changes: { after: { name, displayName, description, type: 'CUSTOM', isSecurityGroup: true } },
+        metadata: { isSecurityGroup: true },
+        userId: ctx.user!.id,
+        workspaceId: null,
+        ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
+      })
+
       return group
     }),
 
@@ -797,6 +822,21 @@ export const groupRouter = router({
         timestamp: new Date().toISOString(),
       })
 
+      // Audit logging
+      await auditService.logGroupEvent({
+        action: AUDIT_ACTIONS.GROUP_UPDATED,
+        resourceType: 'group',
+        resourceId: group.id,
+        resourceName: updated.displayName || updated.name,
+        changes: {
+          before: { displayName: group.displayName, description: group.description, isActive: group.isActive },
+          after: { displayName: updated.displayName, description: updated.description, isActive: updated.isActive },
+        },
+        userId: ctx.user!.id,
+        workspaceId: group.workspaceId,
+        ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
+      })
+
       return updated
     }),
 
@@ -848,6 +888,18 @@ export const groupRouter = router({
           username: ctx.user!.username,
         },
         timestamp: new Date().toISOString(),
+      })
+
+      // Audit logging
+      await auditService.logGroupEvent({
+        action: AUDIT_ACTIONS.GROUP_DELETED,
+        resourceType: 'group',
+        resourceId: group.id,
+        resourceName: group.displayName || group.name,
+        changes: { before: { name: group.name, displayName: group.displayName, type: group.type } },
+        userId: ctx.user!.id,
+        workspaceId: group.workspaceId,
+        ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
       })
 
       return { success: true }
@@ -948,6 +1000,20 @@ export const groupRouter = router({
         timestamp: new Date().toISOString(),
       })
 
+      // Audit logging
+      await auditService.logGroupEvent({
+        action: AUDIT_ACTIONS.GROUP_MEMBER_ADDED,
+        resourceType: 'group',
+        resourceId: group.id,
+        resourceName: group.displayName || group.name,
+        targetType: 'user',
+        targetId: membership.user.id,
+        targetName: membership.user.name || membership.user.username,
+        userId: ctx.user!.id,
+        workspaceId: group.workspaceId,
+        ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
+      })
+
       return membership
     }),
 
@@ -1041,6 +1107,20 @@ export const groupRouter = router({
           username: ctx.user!.username,
         },
         timestamp: new Date().toISOString(),
+      })
+
+      // Audit logging
+      await auditService.logGroupEvent({
+        action: AUDIT_ACTIONS.GROUP_MEMBER_REMOVED,
+        resourceType: 'group',
+        resourceId: groupId,
+        resourceName: group.name,
+        targetType: 'user',
+        targetId: membership.user.id,
+        targetName: membership.user.username,
+        userId: ctx.user!.id,
+        workspaceId: group.workspaceId,
+        ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
       })
 
       return { success: true }

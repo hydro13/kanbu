@@ -55,3 +55,15 @@ export {
   type ScopeLevel,
   type UserScope,
 } from './scopeService'
+
+// Audit Service - Security event logging for compliance and troubleshooting
+export {
+  AuditService,
+  auditService,
+  AUDIT_CATEGORIES,
+  AUDIT_ACTIONS,
+  type AuditCategory,
+  type AuditAction,
+  type AuditLogParams,
+  type AuditLogEntry,
+} from './auditService'

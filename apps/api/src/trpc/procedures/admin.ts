@@ -21,7 +21,7 @@ import { TRPCError } from '@trpc/server'
 import { randomBytes } from 'crypto'
 import { router, adminProcedure } from '../router'
 import { hashPassword } from '../../lib/auth'
-import { groupPermissionService, scopeService } from '../../services'
+import { groupPermissionService, scopeService, auditService, AUDIT_ACTIONS } from '../../services'
 
 // =============================================================================
 // Input Schemas
@@ -341,6 +341,17 @@ export const adminRouter = router({
         },
       })
 
+      // Audit logging
+      await auditService.logUserEvent({
+        action: AUDIT_ACTIONS.USER_CREATED,
+        resourceType: 'user',
+        resourceId: user.id,
+        resourceName: user.name || user.username,
+        changes: { after: { email, username, name, role } },
+        userId: ctx.user!.id,
+        ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
+      })
+
       return user
     }),
 
@@ -423,6 +434,20 @@ export const adminRouter = router({
         },
       })
 
+      // Audit logging
+      await auditService.logUserEvent({
+        action: AUDIT_ACTIONS.USER_UPDATED,
+        resourceType: 'user',
+        resourceId: user.id,
+        resourceName: user.name || user.username,
+        changes: {
+          before: { email: existing.email, username: existing.username, name: existing.name, role: existing.role, isActive: existing.isActive },
+          after: data,
+        },
+        userId: ctx.user!.id,
+        ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
+      })
+
       return user
     }),
 
@@ -458,6 +483,17 @@ export const adminRouter = router({
         data: { isActive: false },
       })
 
+      // Audit logging
+      await auditService.logUserEvent({
+        action: AUDIT_ACTIONS.USER_DELETED,
+        resourceType: 'user',
+        resourceId: user.id,
+        resourceName: user.name || user.username,
+        changes: { before: { isActive: true }, after: { isActive: false } },
+        userId: ctx.user!.id,
+        ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
+      })
+
       return { success: true, message: 'User deactivated' }
     }),
 
@@ -480,6 +516,17 @@ export const adminRouter = router({
       await ctx.prisma.user.update({
         where: { id: input.userId },
         data: { isActive: true },
+      })
+
+      // Audit logging
+      await auditService.logUserEvent({
+        action: AUDIT_ACTIONS.USER_REACTIVATED,
+        resourceType: 'user',
+        resourceId: user.id,
+        resourceName: user.name || user.username,
+        changes: { before: { isActive: false }, after: { isActive: true } },
+        userId: ctx.user!.id,
+        ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
       })
 
       return { success: true, message: 'User reactivated' }
@@ -510,6 +557,17 @@ export const adminRouter = router({
         data: { passwordHash },
       })
 
+      // Audit logging (no password in changes for security)
+      await auditService.logUserEvent({
+        action: AUDIT_ACTIONS.USER_PASSWORD_RESET,
+        resourceType: 'user',
+        resourceId: user.id,
+        resourceName: user.name || user.username,
+        metadata: { resetByAdmin: true },
+        userId: ctx.user!.id,
+        ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
+      })
+
       return { success: true, message: 'Password reset successfully' }
     }),
 
@@ -536,6 +594,20 @@ export const adminRouter = router({
           failedLoginCount: 0,
           lockoutCount: 0, // Reset exponential backoff counter
         },
+      })
+
+      // Audit logging
+      await auditService.logUserEvent({
+        action: AUDIT_ACTIONS.USER_UNLOCKED,
+        resourceType: 'user',
+        resourceId: user.id,
+        resourceName: user.name || user.username,
+        changes: {
+          before: { lockedUntil: user.lockedUntil, failedLoginCount: user.failedLoginCount },
+          after: { lockedUntil: null, failedLoginCount: 0 },
+        },
+        userId: ctx.user!.id,
+        ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
       })
 
       return { success: true, message: 'User unlocked' }
@@ -579,6 +651,17 @@ export const adminRouter = router({
         },
       })
 
+      // Audit logging
+      await auditService.logUserEvent({
+        action: AUDIT_ACTIONS.USER_2FA_DISABLED,
+        resourceType: 'user',
+        resourceId: input.userId,
+        resourceName: `User #${input.userId}`,
+        changes: { before: { twofactorActivated: true }, after: { twofactorActivated: false } },
+        userId: ctx.user!.id,
+        ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
+      })
+
       return { success: true, message: '2FA disabled' }
     }),
 
@@ -590,6 +673,17 @@ export const adminRouter = router({
     .mutation(async ({ ctx, input }) => {
       const result = await ctx.prisma.session.deleteMany({
         where: { userId: input.userId },
+      })
+
+      // Audit logging
+      await auditService.logUserEvent({
+        action: AUDIT_ACTIONS.USER_SESSIONS_REVOKED,
+        resourceType: 'user',
+        resourceId: input.userId,
+        resourceName: `User #${input.userId}`,
+        metadata: { sessionsRevoked: result.count },
+        userId: ctx.user!.id,
+        ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
       })
 
       return { success: true, count: result.count }
@@ -930,6 +1024,11 @@ export const adminRouter = router({
       value: z.string().nullable(),
     }))
     .mutation(async ({ ctx, input }) => {
+      // Get existing value for audit log
+      const existing = await ctx.prisma.systemSetting.findUnique({
+        where: { key: input.key },
+      })
+
       const setting = await ctx.prisma.systemSetting.upsert({
         where: { key: input.key },
         update: {
@@ -942,6 +1041,19 @@ export const adminRouter = router({
           value: input.value,
           changedBy: ctx.user!.id,
         },
+      })
+
+      // Audit logging
+      await auditService.logSettingsEvent({
+        action: AUDIT_ACTIONS.SETTING_CHANGED,
+        resourceType: 'setting',
+        resourceName: input.key,
+        changes: {
+          before: existing ? { value: existing.value } : null,
+          after: { value: input.value },
+        },
+        userId: ctx.user!.id,
+        ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
       })
 
       return setting
@@ -1347,7 +1459,7 @@ export const adminRouter = router({
    * Updated: 2026-01-06 - Changed from git to Google Drive storage
    */
   createBackup: adminProcedure
-    .mutation(async () => {
+    .mutation(async ({ ctx }) => {
       const { exec } = await import('child_process')
       const { promisify } = await import('util')
       const execAsync = promisify(exec)
@@ -1404,6 +1516,16 @@ export const adminRouter = router({
           await fs.unlink(path.join(GDRIVE_BACKUP_DIR, oldFile))
         }
 
+        // Audit logging
+        await auditService.logSettingsEvent({
+          action: AUDIT_ACTIONS.BACKUP_CREATED,
+          resourceType: 'backup',
+          resourceName: backupFileName,
+          metadata: { type: 'database', fileSizeKB, backupsKept: Math.min(backupFiles.length, 10) },
+          userId: ctx.user!.id,
+          ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
+        })
+
         return {
           success: true,
           fileName: backupFileName,
@@ -1427,7 +1549,7 @@ export const adminRouter = router({
    * Added: 2026-01-06
    */
   createSourceBackup: adminProcedure
-    .mutation(async () => {
+    .mutation(async ({ ctx }) => {
       const { exec } = await import('child_process')
       const { promisify } = await import('util')
       const execAsync = promisify(exec)
@@ -1495,6 +1617,16 @@ export const adminRouter = router({
         for (const oldFile of sourceBackups.slice(5)) {
           await fs.unlink(path.join(GDRIVE_BACKUP_DIR, oldFile))
         }
+
+        // Audit logging
+        await auditService.logSettingsEvent({
+          action: AUDIT_ACTIONS.BACKUP_CREATED,
+          resourceType: 'backup',
+          resourceName: archiveName,
+          metadata: { type: 'source', fileSizeMB, backupsKept: Math.min(sourceBackups.length, 5) },
+          userId: ctx.user!.id,
+          ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
+        })
 
         return {
           success: true,

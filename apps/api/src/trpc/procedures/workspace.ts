@@ -21,7 +21,7 @@ import {
   generateInviteToken,
   getInviteExpiration,
 } from '../../lib/workspace'
-import { permissionService, aclService } from '../../services'
+import { permissionService, aclService, auditService, AUDIT_ACTIONS } from '../../services'
 import { ACL_PERMISSIONS, ACL_PRESETS } from '../../services/aclService'
 
 // =============================================================================
@@ -138,6 +138,18 @@ export const workspaceRouter = router({
         permissions: ACL_PRESETS.FULL_CONTROL,
         inheritToChildren: true, // Workspace permissions inherit to projects
         createdById: ctx.user.id,
+      })
+
+      // Audit logging
+      await auditService.logWorkspaceEvent({
+        action: AUDIT_ACTIONS.WORKSPACE_CREATED,
+        resourceType: 'workspace',
+        resourceId: workspace.id,
+        resourceName: workspace.name,
+        changes: { after: { name: input.name, description: input.description, slug } },
+        userId: ctx.user.id,
+        workspaceId: workspace.id,
+        ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
       })
 
       return workspace
@@ -329,6 +341,12 @@ export const workspaceRouter = router({
 
       const { workspaceId, ...updateData } = input
 
+      // Get current workspace for audit log
+      const existing = await ctx.prisma.workspace.findUnique({
+        where: { id: workspaceId },
+        select: { name: true, description: true, isActive: true },
+      })
+
       // If name is changing, generate new slug
       let slug: string | undefined
       if (updateData.name) {
@@ -351,6 +369,18 @@ export const workspaceRouter = router({
         },
       })
 
+      // Audit logging
+      await auditService.logWorkspaceEvent({
+        action: AUDIT_ACTIONS.WORKSPACE_UPDATED,
+        resourceType: 'workspace',
+        resourceId: workspace.id,
+        resourceName: workspace.name,
+        changes: { before: existing, after: updateData },
+        userId: ctx.user.id,
+        workspaceId: workspace.id,
+        ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
+      })
+
       return workspace
     }),
 
@@ -370,10 +400,28 @@ export const workspaceRouter = router({
         })
       }
 
+      // Get workspace name for audit log
+      const workspace = await ctx.prisma.workspace.findUnique({
+        where: { id: input.workspaceId },
+        select: { name: true },
+      })
+
       // Soft delete by deactivating
       await ctx.prisma.workspace.update({
         where: { id: input.workspaceId },
         data: { isActive: false },
+      })
+
+      // Audit logging
+      await auditService.logWorkspaceEvent({
+        action: AUDIT_ACTIONS.WORKSPACE_DELETED,
+        resourceType: 'workspace',
+        resourceId: input.workspaceId,
+        resourceName: workspace?.name || `Workspace #${input.workspaceId}`,
+        changes: { before: { isActive: true }, after: { isActive: false } },
+        userId: ctx.user.id,
+        workspaceId: input.workspaceId,
+        ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
       })
 
       return { success: true }
@@ -551,6 +599,27 @@ export const workspaceRouter = router({
           createdById: ctx.user.id,
         })
 
+        // Get workspace name for audit log
+        const workspace = await ctx.prisma.workspace.findUnique({
+          where: { id: input.workspaceId },
+          select: { name: true },
+        })
+
+        // Audit logging
+        await auditService.logWorkspaceEvent({
+          action: AUDIT_ACTIONS.WORKSPACE_MEMBER_ADDED,
+          resourceType: 'workspace',
+          resourceId: input.workspaceId,
+          resourceName: workspace?.name || `Workspace #${input.workspaceId}`,
+          targetType: 'user',
+          targetId: existingUser.id,
+          targetName: existingUser.name || existingUser.email,
+          metadata: { role: input.role },
+          userId: ctx.user.id,
+          workspaceId: input.workspaceId,
+          ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
+        })
+
         return {
           type: 'added' as const,
           message: 'User added to workspace',
@@ -645,12 +714,38 @@ export const workspaceRouter = router({
         }
       }
 
+      // Get user and workspace info for audit log
+      const [targetUser, workspace] = await Promise.all([
+        ctx.prisma.user.findUnique({
+          where: { id: input.userId },
+          select: { name: true, username: true },
+        }),
+        ctx.prisma.workspace.findUnique({
+          where: { id: input.workspaceId },
+          select: { name: true },
+        }),
+      ])
+
       // Revoke ACL permissions for this workspace (ACL-only, no legacy)
       await aclService.revokePermission({
         resourceType: 'workspace',
         resourceId: input.workspaceId,
         principalType: 'user',
         principalId: input.userId,
+      })
+
+      // Audit logging
+      await auditService.logWorkspaceEvent({
+        action: AUDIT_ACTIONS.WORKSPACE_MEMBER_REMOVED,
+        resourceType: 'workspace',
+        resourceId: input.workspaceId,
+        resourceName: workspace?.name || `Workspace #${input.workspaceId}`,
+        targetType: 'user',
+        targetId: input.userId,
+        targetName: targetUser?.name || targetUser?.username || `User #${input.userId}`,
+        userId: ctx.user.id,
+        workspaceId: input.workspaceId,
+        ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
       })
 
       return { success: true }
@@ -725,6 +820,37 @@ export const workspaceRouter = router({
         permissions: aclPermissions,
         inheritToChildren: true,
         createdById: ctx.user.id,
+      })
+
+      // Get user and workspace info for audit log
+      const [targetUser, workspace] = await Promise.all([
+        ctx.prisma.user.findUnique({
+          where: { id: input.userId },
+          select: { name: true, username: true },
+        }),
+        ctx.prisma.workspace.findUnique({
+          where: { id: input.workspaceId },
+          select: { name: true },
+        }),
+      ])
+
+      // Determine old role from permissions
+      const oldRole = isTargetAdmin ? 'ADMIN' :
+        (targetAcl.permissions & ACL_PERMISSIONS.WRITE) ? 'MEMBER' : 'VIEWER'
+
+      // Audit logging
+      await auditService.logWorkspaceEvent({
+        action: AUDIT_ACTIONS.WORKSPACE_MEMBER_ROLE_CHANGED,
+        resourceType: 'workspace',
+        resourceId: input.workspaceId,
+        resourceName: workspace?.name || `Workspace #${input.workspaceId}`,
+        targetType: 'user',
+        targetId: input.userId,
+        targetName: targetUser?.name || targetUser?.username || `User #${input.userId}`,
+        changes: { before: { role: oldRole }, after: { role: input.role } },
+        userId: ctx.user.id,
+        workspaceId: input.workspaceId,
+        ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
       })
 
       return { success: true, newRole: input.role }
@@ -1018,6 +1144,27 @@ export const workspaceRouter = router({
         permissions: aclPermissions,
         inheritToChildren: true,
         createdById: ctx.user.id,
+      })
+
+      // Get workspace name for audit log
+      const workspace = await ctx.prisma.workspace.findUnique({
+        where: { id: input.workspaceId },
+        select: { name: true },
+      })
+
+      // Audit logging
+      await auditService.logWorkspaceEvent({
+        action: AUDIT_ACTIONS.WORKSPACE_MEMBER_ADDED,
+        resourceType: 'workspace',
+        resourceId: input.workspaceId,
+        resourceName: workspace?.name || `Workspace #${input.workspaceId}`,
+        targetType: 'user',
+        targetId: targetUser.id,
+        targetName: targetUser.name || targetUser.email,
+        metadata: { role: input.role },
+        userId: ctx.user.id,
+        workspaceId: input.workspaceId,
+        ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
       })
 
       return {

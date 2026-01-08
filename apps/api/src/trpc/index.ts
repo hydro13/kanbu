@@ -126,6 +126,7 @@ import { groupRouter } from './procedures/group';
 import { roleAssignmentRouter } from './procedures/roleAssignment';
 import { youtubeRouter } from './procedures/youtube';
 import { aclRouter } from './procedures/acl';
+import { auditLogRouter } from './procedures/auditLog';
 
 /**
  * Main app router
@@ -162,6 +163,7 @@ export const appRouter = router({
   roleAssignment: roleAssignmentRouter,
   youtube: youtubeRouter,
   acl: aclRouter,
+  auditLog: auditLogRouter,
 });
 
 /**

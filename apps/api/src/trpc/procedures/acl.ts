@@ -18,6 +18,7 @@ import { TRPCError } from '@trpc/server'
 import { router, protectedProcedure } from '../router'
 import { aclService, ACL_PERMISSIONS, ACL_PRESETS } from '../../services/aclService'
 import { scopeService } from '../../services/scopeService'
+import { auditService, AUDIT_ACTIONS } from '../../services/auditService'
 import { emitAclGranted, emitAclDenied, emitAclDeleted } from '../../socket/emitter'
 
 // =============================================================================
@@ -79,6 +80,71 @@ async function requireAclManagement(
       code: 'FORBIDDEN',
       message: 'Je hebt geen rechten om ACLs te beheren voor deze resource',
     })
+  }
+}
+
+/**
+ * Get principal name for audit logging.
+ */
+async function getPrincipalName(
+  principalType: 'user' | 'group',
+  principalId: number,
+  prisma: typeof import('@prisma/client').PrismaClient extends new () => infer R ? R : never
+): Promise<string> {
+  if (principalType === 'user') {
+    const user = await prisma.user.findUnique({
+      where: { id: principalId },
+      select: { name: true, username: true },
+    })
+    return user?.name || user?.username || `User #${principalId}`
+  } else {
+    const group = await prisma.group.findUnique({
+      where: { id: principalId },
+      select: { displayName: true, name: true },
+    })
+    return group?.displayName || group?.name || `Group #${principalId}`
+  }
+}
+
+/**
+ * Get resource name and workspaceId for audit logging.
+ */
+async function getResourceInfo(
+  resourceType: string,
+  resourceId: number | null,
+  prisma: typeof import('@prisma/client').PrismaClient extends new () => infer R ? R : never
+): Promise<{ name: string; workspaceId: number | null }> {
+  if (resourceId === null) {
+    return { name: resourceType, workspaceId: null }
+  }
+
+  switch (resourceType) {
+    case 'workspace': {
+      const ws = await prisma.workspace.findUnique({
+        where: { id: resourceId },
+        select: { name: true },
+      })
+      return { name: ws?.name || `Workspace #${resourceId}`, workspaceId: resourceId }
+    }
+    case 'project': {
+      const proj = await prisma.project.findUnique({
+        where: { id: resourceId },
+        select: { name: true, workspaceId: true },
+      })
+      return { name: proj?.name || `Project #${resourceId}`, workspaceId: proj?.workspaceId || null }
+    }
+    case 'feature': {
+      const feat = await prisma.feature.findUnique({
+        where: { id: resourceId },
+        select: { name: true, projectId: true, project: { select: { workspaceId: true } } },
+      })
+      return {
+        name: feat?.name || `Feature #${resourceId}`,
+        workspaceId: feat?.project?.workspaceId || null,
+      }
+    }
+    default:
+      return { name: `${resourceType} #${resourceId}`, workspaceId: null }
   }
 }
 
@@ -275,6 +341,25 @@ export const aclRouter = router({
         timestamp: new Date().toISOString(),
       })
 
+      // Audit logging
+      const [principalName, resourceInfo] = await Promise.all([
+        getPrincipalName(input.principalType, input.principalId, ctx.prisma),
+        getResourceInfo(input.resourceType, input.resourceId, ctx.prisma),
+      ])
+      await auditService.logAclEvent({
+        action: AUDIT_ACTIONS.ACL_GRANTED,
+        resourceType: input.resourceType,
+        resourceId: input.resourceId,
+        resourceName: resourceInfo.name,
+        targetType: input.principalType,
+        targetId: input.principalId,
+        targetName: principalName,
+        changes: { after: { permissions: input.permissions, inheritToChildren: input.inheritToChildren } },
+        userId: ctx.user!.id,
+        workspaceId: resourceInfo.workspaceId,
+        ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
+      })
+
       return { success: true }
     }),
 
@@ -312,6 +397,25 @@ export const aclRouter = router({
         timestamp: new Date().toISOString(),
       })
 
+      // Audit logging
+      const [principalName, resourceInfo] = await Promise.all([
+        getPrincipalName(input.principalType, input.principalId, ctx.prisma),
+        getResourceInfo(input.resourceType, input.resourceId, ctx.prisma),
+      ])
+      await auditService.logAclEvent({
+        action: AUDIT_ACTIONS.ACL_DENIED,
+        resourceType: input.resourceType,
+        resourceId: input.resourceId,
+        resourceName: resourceInfo.name,
+        targetType: input.principalType,
+        targetId: input.principalId,
+        targetName: principalName,
+        changes: { after: { permissions: input.permissions, inheritToChildren: input.inheritToChildren, deny: true } },
+        userId: ctx.user!.id,
+        workspaceId: resourceInfo.workspaceId,
+        ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
+      })
+
       return { success: true }
     }),
 
@@ -328,11 +432,41 @@ export const aclRouter = router({
     .mutation(async ({ ctx, input }) => {
       await requireAclManagement(ctx.user!.id, input.resourceType, input.resourceId, ctx.prisma)
 
+      // Get current permissions before revoking for audit log
+      const existingEntries = await ctx.prisma.aclEntry.findMany({
+        where: {
+          resourceType: input.resourceType,
+          resourceId: input.resourceId,
+          principalType: input.principalType,
+          principalId: input.principalId,
+        },
+        select: { permissions: true, deny: true },
+      })
+
       await aclService.revokePermission({
         resourceType: input.resourceType,
         resourceId: input.resourceId,
         principalType: input.principalType,
         principalId: input.principalId,
+      })
+
+      // Audit logging
+      const [principalName, resourceInfo] = await Promise.all([
+        getPrincipalName(input.principalType, input.principalId, ctx.prisma),
+        getResourceInfo(input.resourceType, input.resourceId, ctx.prisma),
+      ])
+      await auditService.logAclEvent({
+        action: AUDIT_ACTIONS.ACL_REVOKED,
+        resourceType: input.resourceType,
+        resourceId: input.resourceId,
+        resourceName: resourceInfo.name,
+        targetType: input.principalType,
+        targetId: input.principalId,
+        targetName: principalName,
+        changes: { before: { entries: existingEntries } },
+        userId: ctx.user!.id,
+        workspaceId: resourceInfo.workspaceId,
+        ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
       })
 
       return { success: true }
@@ -411,6 +545,25 @@ export const aclRouter = router({
           username: ctx.user!.username,
         },
         timestamp: new Date().toISOString(),
+      })
+
+      // Audit logging
+      const [principalName, resourceInfo] = await Promise.all([
+        getPrincipalName(entry.principalType as 'user' | 'group', entry.principalId, ctx.prisma),
+        getResourceInfo(entry.resourceType, entry.resourceId, ctx.prisma),
+      ])
+      await auditService.logAclEvent({
+        action: AUDIT_ACTIONS.ACL_DELETED,
+        resourceType: entry.resourceType,
+        resourceId: entry.resourceId,
+        resourceName: resourceInfo.name,
+        targetType: entry.principalType,
+        targetId: entry.principalId,
+        targetName: principalName,
+        changes: { before: { permissions: entry.permissions, deny: entry.deny, inheritToChildren: entry.inheritToChildren } },
+        userId: ctx.user!.id,
+        workspaceId: resourceInfo.workspaceId,
+        ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
       })
 
       return { success: true }
