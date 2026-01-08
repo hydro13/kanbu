@@ -17,6 +17,7 @@ import { z } from 'zod'
 import { TRPCError } from '@trpc/server'
 import { router, protectedProcedure } from '../router'
 import { aclService, ACL_PERMISSIONS, ACL_PRESETS } from '../../services/aclService'
+import { scopeService } from '../../services/scopeService'
 import { emitAclGranted, emitAclDenied, emitAclDeleted } from '../../socket/emitter'
 
 // =============================================================================
@@ -488,25 +489,35 @@ export const aclRouter = router({
   /**
    * Get all resources that can have ACLs.
    * Used by the UI for resource selection.
+   * Filtered based on user's scope (Fase 6).
    */
   getResources: protectedProcedure
     .query(async ({ ctx }) => {
+      const userId = ctx.user!.id
+
+      // Get user's scope to filter resources
+      const userScope = await scopeService.getUserScope(userId)
+
+      // Super Admin check (role-based)
       const user = await ctx.prisma.user.findUnique({
-        where: { id: ctx.user!.id },
+        where: { id: userId },
         select: { role: true },
       })
-      const isAdmin = user?.role === 'ADMIN'
+      const isSuperAdmin = user?.role === 'ADMIN'
+      const isDomainAdmin = userScope.isDomainAdmin
 
-      // Get workspaces
+      // Get workspaces - filtered by scope
+      const workspaceWhereClause = await scopeService.getWorkspaceWhereClause(userId)
       const workspaces = await ctx.prisma.workspace.findMany({
-        where: { isActive: true },
+        where: { isActive: true, ...workspaceWhereClause },
         select: { id: true, name: true, slug: true },
         orderBy: { name: 'asc' },
       })
 
-      // Get projects
+      // Get projects - filtered by scope
+      const projectWhereClause = await scopeService.getProjectWhereClause(userId)
       const projects = await ctx.prisma.project.findMany({
-        where: { isActive: true },
+        where: { isActive: true, ...projectWhereClause },
         select: {
           id: true,
           name: true,
@@ -517,19 +528,26 @@ export const aclRouter = router({
         orderBy: { name: 'asc' },
       })
 
-      return {
-        // Extended resource types hierarchy (Fase 4C)
-        resourceTypes: [
+      // Build resource types based on scope
+      // Domain Admins can see root, system, dashboard
+      // Workspace Admins can only see workspace/project
+      const resourceTypes = [
+        ...(isDomainAdmin ? [
           { type: 'root', label: 'Root (Kanbu)', supportsRoot: true },
           { type: 'system', label: 'System', supportsRoot: true },
           { type: 'dashboard', label: 'Dashboard', supportsRoot: true },
-          { type: 'workspace', label: 'Workspace', supportsRoot: true },
-          { type: 'project', label: 'Project', supportsRoot: true },
-          ...(isAdmin ? [
-            { type: 'admin', label: 'Administration', supportsRoot: true },
-            { type: 'profile', label: 'Profile', supportsRoot: true },
-          ] : []),
-        ],
+        ] : []),
+        { type: 'workspace', label: 'Workspace', supportsRoot: true },
+        { type: 'project', label: 'Project', supportsRoot: true },
+        ...(isSuperAdmin ? [
+          { type: 'admin', label: 'Administration', supportsRoot: true },
+          { type: 'profile', label: 'Profile', supportsRoot: true },
+        ] : []),
+      ]
+
+      return {
+        // Extended resource types hierarchy (Fase 4C, filtered by scope in Fase 6)
+        resourceTypes,
         workspaces: workspaces.map((w) => ({
           id: w.id,
           name: w.name,

@@ -109,17 +109,21 @@ function KeyIcon({ className }: { className?: string }) {
 // Types
 // =============================================================================
 
+type RequiredScope = 'domainAdmin' | 'workspaceAdmin' | 'any'
+
 interface NavItem {
   label: string
   path: string
   icon: React.ComponentType<{ className?: string }>
-  requiresDomainAdmin?: boolean
+  /** Which scope level is required to see this item */
+  requiredScope?: RequiredScope
 }
 
 interface NavSection {
   title: string
   items: NavItem[]
-  requiresDomainAdmin?: boolean
+  /** Which scope level is required to see this section */
+  requiredScope?: RequiredScope
 }
 
 export interface AdminSidebarProps {
@@ -130,16 +134,23 @@ export interface AdminSidebarProps {
 // Navigation Config
 // =============================================================================
 
+/**
+ * Navigation sections for admin sidebar.
+ * Items are filtered based on user's scope level:
+ * - 'domainAdmin': Only visible to Domain Admins (full system access)
+ * - 'workspaceAdmin': Visible to Workspace Admins and Domain Admins
+ * - 'any' or undefined: Visible to anyone with admin access
+ */
 const navSections: NavSection[] = [
   {
     title: 'User Management',
-    requiresDomainAdmin: true,
+    requiredScope: 'workspaceAdmin', // Visible to workspace admins (they see filtered view)
     items: [
-      { label: 'All Users', path: '/admin/users', icon: UsersIcon, requiresDomainAdmin: true },
-      { label: 'Create User', path: '/admin/users/create', icon: UserPlusIcon, requiresDomainAdmin: true },
-      { label: 'ACL Manager', path: '/admin/acl', icon: KeyIcon, requiresDomainAdmin: true },
-      { label: 'Permission Tree', path: '/admin/permissions', icon: TreeIcon, requiresDomainAdmin: true },
-      { label: 'Invites', path: '/admin/invites', icon: MailIcon, requiresDomainAdmin: true },
+      { label: 'All Users', path: '/admin/users', icon: UsersIcon, requiredScope: 'workspaceAdmin' },
+      { label: 'Create User', path: '/admin/users/create', icon: UserPlusIcon, requiredScope: 'domainAdmin' },
+      { label: 'ACL Manager', path: '/admin/acl', icon: KeyIcon, requiredScope: 'workspaceAdmin' },
+      { label: 'Permission Tree', path: '/admin/permissions', icon: TreeIcon, requiredScope: 'domainAdmin' },
+      { label: 'Invites', path: '/admin/invites', icon: MailIcon, requiredScope: 'domainAdmin' },
     ],
   },
   {
@@ -149,12 +160,12 @@ const navSections: NavSection[] = [
     ],
   },
   {
-    title: 'Settings',
-    requiresDomainAdmin: true,
+    title: 'System Settings',
+    requiredScope: 'domainAdmin',
     items: [
-      { label: 'General', path: '/admin/settings', icon: CogIcon, requiresDomainAdmin: true },
-      { label: 'Security', path: '/admin/settings/security', icon: ShieldIcon, requiresDomainAdmin: true },
-      { label: 'Backup', path: '/admin/backup', icon: DatabaseIcon, requiresDomainAdmin: true },
+      { label: 'General', path: '/admin/settings', icon: CogIcon, requiredScope: 'domainAdmin' },
+      { label: 'Security', path: '/admin/settings/security', icon: ShieldIcon, requiredScope: 'domainAdmin' },
+      { label: 'Backup', path: '/admin/backup', icon: DatabaseIcon, requiredScope: 'domainAdmin' },
     ],
   },
 ]
@@ -166,9 +177,23 @@ const navSections: NavSection[] = [
 export function AdminSidebar({ collapsed = false }: AdminSidebarProps) {
   const location = useLocation()
 
-  // Check if user is a Domain Admin
+  // Get user's admin scope
   const { data: adminScope, isLoading } = trpc.group.myAdminScope.useQuery()
   const isDomainAdmin = adminScope?.isDomainAdmin ?? false
+  const isWorkspaceAdmin = (adminScope?.workspaceIds?.length ?? 0) > 0
+
+  /**
+   * Check if user has required scope for an item/section.
+   * - 'domainAdmin': Only Domain Admins
+   * - 'workspaceAdmin': Domain Admins OR users with workspace access
+   * - 'any' / undefined: Anyone with admin panel access
+   */
+  const hasRequiredScope = (required?: RequiredScope): boolean => {
+    if (!required || required === 'any') return true
+    if (required === 'domainAdmin') return isDomainAdmin
+    if (required === 'workspaceAdmin') return isDomainAdmin || isWorkspaceAdmin
+    return false
+  }
 
   const isActive = (path: string) => {
     // Exact match for main pages, prefix match for sub-pages
@@ -178,12 +203,12 @@ export function AdminSidebar({ collapsed = false }: AdminSidebarProps) {
     return location.pathname.startsWith(path)
   }
 
-  // Filter sections and items based on Domain Admin status
+  // Filter sections and items based on user's scope
   const filteredSections = navSections
-    .filter(section => !section.requiresDomainAdmin || isDomainAdmin)
+    .filter(section => hasRequiredScope(section.requiredScope))
     .map(section => ({
       ...section,
-      items: section.items.filter(item => !item.requiresDomainAdmin || isDomainAdmin),
+      items: section.items.filter(item => hasRequiredScope(item.requiredScope)),
     }))
     .filter(section => section.items.length > 0)
 
@@ -198,10 +223,14 @@ export function AdminSidebar({ collapsed = false }: AdminSidebarProps) {
       {!collapsed && (
         <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
           <h2 className="font-semibold text-gray-900 dark:text-white">
-            {isDomainAdmin ? 'Super Admin' : 'Admin'}
+            {isDomainAdmin ? 'Domain Admin' : isWorkspaceAdmin ? 'Workspace Admin' : 'Admin'}
           </h2>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-            {isDomainAdmin ? 'Platform management' : 'Workspace management'}
+            {isDomainAdmin
+              ? 'Full system access'
+              : isWorkspaceAdmin
+                ? `${adminScope?.workspaceIds?.length ?? 0} workspace(s)`
+                : 'Limited access'}
           </p>
         </div>
       )}

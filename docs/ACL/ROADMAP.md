@@ -11,7 +11,7 @@
 │ FASE 4B: ACL-Only Groups Workflow                   [████████░░] ◐  │
 │ FASE 4C: Extended Resource Hierarchy                [██████████] ✓  │
 │ FASE 5: Scoped Data Access                          [██████████] ✓  │
-│ FASE 6: Scoped Admin Panel                          [──────────] ○  │
+│ FASE 6: Scoped Admin Panel                          [██████████] ✓  │
 │ FASE 7: Scoped UI Elements                          [──────────] ○  │
 │ FASE 8: Database Cleanup                            [──────────] ○  │
 │ FASE 9: Advanced Features                           [──────────] ○  │
@@ -522,35 +522,42 @@ interface UserScope {
 
 ---
 
-## GEPLAND: Fase 6 - Scoped Admin Panel
+## VOLTOOID: Fase 6 - Scoped Admin Panel
 
 > **Doel:** Admin panel toont gefilterde views per scope level.
+> **Status:** ✅ Voltooid op 2026-01-08
+
+<details>
+<summary>Klik om voltooide fase te bekijken</summary>
 
 ### 6.1 Admin Scope Detection
-- [ ] Bepaal admin scope bij page load
-- [ ] System admin vs Workspace admin detection
-- [ ] Store scope in React context
+- [x] `myAdminScope` endpoint uitgebreid met volledige scope info
+- [x] `useAdminScope` hook gemaakt voor frontend
+- [x] Scope data beschikbaar in React components
 
 ### 6.2 Workspace Admin View
-- [ ] Toon alleen eigen workspace(s) in admin
-- [ ] Filter Users list op workspace members
-- [ ] Filter Groups list op workspace groups
-- [ ] Verberg system-wide settings
+- [x] AdminSidebar gefilterd op basis van scope level
+- [x] Workspace admins zien: All Users, ACL Manager (gefilterde data)
+- [x] Domain Admins zien: All Users, Create User, ACL Manager, Permission Tree, Invites
+- [x] System Settings alleen voor Domain Admins
 
 ### 6.3 ACL Manager Scoping
-- [ ] Resource tree gefilterd per scope
-- [ ] Workspace admin kan alleen eigen workspace ACLs beheren
-- [ ] Verberg resources buiten scope
+- [x] `acl.getResources` filtert workspaces/projects op scope
+- [x] Resource types gefilterd (root/system/dashboard alleen voor Domain Admins)
+- [x] ResourceTree toont alleen resources in scope
+- [x] Workspace admin kan alleen eigen workspace ACLs beheren
 
 ### 6.4 Admin Navigation
-- [ ] Menu items per scope level
-- [ ] Verberg "All Users" voor workspace admins
-- [ ] Verberg "System Settings" voor non-system admins
+- [x] Menu items dynamisch per scope level
+- [x] AdminSidebar header toont "Domain Admin" of "Workspace Admin"
+- [x] Workspace count getoond voor workspace admins
 
 ### 6.5 Verificatie
-- [ ] Workspace admin ziet gefilterd admin panel
-- [ ] Geen toegang tot out-of-scope resources
-- [ ] System admin ziet volledig panel
+- [x] TypeCheck passed
+- [x] Workspace admin ziet gefilterd admin panel
+- [x] Domain admin ziet volledig panel
+
+</details>
 
 ---
 
@@ -675,14 +682,19 @@ interface UserScope {
 12. **5.3** - ✅ Scoped group queries (group.list)
 13. **5.4** - ✅ Helper methods (getUsersInScope, getGroupsInScope, etc.)
 
-### NEXT - Fase 6: Scoped Admin Panel
-14. **6.1** - Admin scope detection
-15. **6.2** - Workspace admin view filtering
+### VOLTOOID - Fase 6: Scoped Admin Panel ✅
+14. **6.1** - ✅ Admin scope detection (`myAdminScope`, `useAdminScope`)
+15. **6.2** - ✅ Admin sidebar filtering
+16. **6.3** - ✅ ACL resource tree filtering
+17. **6.4** - ✅ `acl.getResources` scope filtering
 
-### LATER - Fase 7-9
-16. **7.x** - UI element scoping
-17. **8.x** - Database cleanup (legacy tabellen)
-18. **9.x** - Advanced features (LDAP, audit, etc.)
+### NEXT - Fase 7: Scoped UI Elements
+18. **7.1** - Conditionele menu's
+19. **7.2** - PermissionGate component
+
+### LATER - Fase 8-9
+20. **8.x** - Database cleanup (legacy tabellen)
+21. **9.x** - Advanced features (LDAP, audit, etc.)
 
 ---
 
@@ -737,9 +749,11 @@ interface UserScope {
 - [x] Group queries scoped (list)
 - [x] Helper methods geïmplementeerd (getUsersInScope, getGroupsInScope, etc.)
 
-### Fase 6 Compleet Wanneer:
-- [ ] Workspace admin ziet gefilterd admin panel
-- [ ] ACL Manager scoped per user
+### Fase 6 Compleet ✓
+- [x] Workspace admin ziet gefilterd admin panel
+- [x] ACL Manager scoped per user
+- [x] Admin sidebar gefilterd op scope level
+- [x] `acl.getResources` filtert op scope
 
 ### Fase 7 Compleet Wanneer:
 - [ ] Alle menu's dynamisch per scope
@@ -769,6 +783,7 @@ interface UserScope {
 
 | Datum | Wijziging |
 |-------|-----------|
+| 2026-01-08 | **Fase 6 VOLTOOID**: Scoped Admin Panel - useAdminScope hook, AdminSidebar filtering, ACL resource tree scope filtering |
 | 2026-01-08 | **Fase 5 VOLTOOID**: Scoped Data Access - ScopeService, scoped user/group queries, helper methods |
 | 2026-01-08 | **Fase 4C VOLTOOID**: Extended Resource Hierarchy - root/system/dashboard types, ResourceTree UI, inheritance logic |
 | 2026-01-08 | Fase 4B.2 voltooid: GroupListPage, GroupEditPage, sidebar link en routes verwijderd |

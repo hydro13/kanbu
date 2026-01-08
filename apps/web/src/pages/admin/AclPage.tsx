@@ -389,7 +389,7 @@ export function AclPage() {
               workspaces={resources?.workspaces ?? []}
               projects={resources?.projects ?? []}
               groups={principals?.groups ?? []}
-              isAdmin={resources?.resourceTypes.some(r => r.type === 'admin') ?? false}
+              isAdmin={resources?.resourceTypes.some(r => r.type === 'root') ?? false}
               selectedResource={selectedResource}
               onSelectResource={setSelectedResource}
               treeState={treeState}

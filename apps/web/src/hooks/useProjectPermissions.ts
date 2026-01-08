@@ -80,7 +80,7 @@ export function useProjectPermissions(projectId: number): ProjectPermissions {
   const projectLoading = projectQuery.isLoading
 
   const isDomainAdminFromQuery = adminScopeQuery.data?.isDomainAdmin ?? false
-  const adminWorkspaceIds = adminScopeQuery.data?.adminWorkspaceIds ?? []
+  const adminWorkspaceIds = adminScopeQuery.data?.workspaceIds ?? []
   const projectWorkspaceId = projectQuery.data?.workspaceId
   const members = membersQuery.data
 

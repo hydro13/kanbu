@@ -1389,17 +1389,30 @@ export const groupRouter = router({
 
   /**
    * Get current user's admin scope.
-   * Returns whether user is a Domain Admin and which workspaces they can manage.
-   * Used by frontend to show/hide admin menu items.
+   * Returns comprehensive scope information for filtering admin panel views.
+   * Used by frontend to show/hide admin menu items and filter resources.
    */
   myAdminScope: protectedProcedure
     .query(async ({ ctx }) => {
-      const scope = await getGroupManagementScope(ctx.user!.id, ctx.prisma)
+      const userScope = await scopeService.getUserScope(ctx.user!.id)
 
       return {
-        isDomainAdmin: scope.isDomainAdmin,
-        adminWorkspaceIds: scope.adminWorkspaceIds,
-        hasAnyAdminAccess: scope.isDomainAdmin || scope.adminWorkspaceIds.length > 0,
+        // Scope level and flags
+        level: userScope.level,
+        isDomainAdmin: userScope.isDomainAdmin,
+
+        // Accessible resource IDs
+        workspaceIds: userScope.workspaceIds,
+        projectIds: userScope.projectIds,
+
+        // Permission flags for UI
+        permissions: userScope.permissions,
+
+        // Convenience flags
+        hasAnyAdminAccess: userScope.permissions.canAccessAdminPanel,
+        canSeeAllUsers: userScope.isDomainAdmin,
+        canSeeAllGroups: userScope.isDomainAdmin,
+        canSeeSystemSettings: userScope.isDomainAdmin,
       }
     }),
 })
