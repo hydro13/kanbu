@@ -47,3 +47,11 @@ export {
   type AclCheckResult,
   type AclEntry,
 } from './aclService'
+
+// Scope Service - User scope determination for data access filtering
+export {
+  ScopeService,
+  scopeService,
+  type ScopeLevel,
+  type UserScope,
+} from './scopeService'

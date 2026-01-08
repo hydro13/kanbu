@@ -21,7 +21,7 @@ import { TRPCError } from '@trpc/server'
 import { randomBytes } from 'crypto'
 import { router, adminProcedure } from '../router'
 import { hashPassword } from '../../lib/auth'
-import { groupPermissionService } from '../../services'
+import { groupPermissionService, scopeService } from '../../services'
 
 // =============================================================================
 // Input Schemas
@@ -88,15 +88,24 @@ const listInvitesSchema = z.object({
 
 export const adminRouter = router({
   /**
-   * List all users with search, filtering and pagination
+   * List users visible to the current user based on their scope.
+   * - Domain Admins: All users
+   * - Workspace Admins: Users in their workspace(s)
+   * - Others: No access (adminProcedure blocks them)
    */
   listUsers: adminProcedure
     .input(listUsersSchema)
     .query(async ({ ctx, input }) => {
       const { search, role, isActive, limit, offset, sortBy, sortOrder } = input
+      const userId = ctx.user!.id
 
-      // Build where clause
-      const where: Record<string, unknown> = {}
+      // Get visible user IDs based on scope
+      const visibleUserIds = await scopeService.getUsersInScope(userId)
+
+      // Build where clause with scope filter
+      const where: Record<string, unknown> = {
+        id: { in: visibleUserIds },
+      }
 
       if (search) {
         where.OR = [
@@ -191,11 +200,21 @@ export const adminRouter = router({
     }),
 
   /**
-   * Get a single user by ID
+   * Get a single user by ID (with scope check)
+   * Only returns users visible to the current user's scope.
    */
   getUser: adminProcedure
     .input(z.object({ userId: z.number() }))
     .query(async ({ ctx, input }) => {
+      // Check if user is in scope
+      const visibleUserIds = await scopeService.getUsersInScope(ctx.user!.id)
+      if (!visibleUserIds.includes(input.userId)) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You do not have access to this user',
+        })
+      }
+
       const user = await ctx.prisma.user.findUnique({
         where: { id: input.userId },
         select: {

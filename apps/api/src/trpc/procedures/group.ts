@@ -16,7 +16,7 @@
 import { z } from 'zod'
 import { TRPCError } from '@trpc/server'
 import { router, protectedProcedure } from '../router'
-import { groupPermissionService } from '../../services/groupPermissions'
+import { groupPermissionService, scopeService } from '../../services'
 import {
   emitGroupCreated,
   emitGroupUpdated,
@@ -272,28 +272,33 @@ export const groupRouter = router({
   // ===========================================================================
 
   /**
-   * List groups the current user can manage.
-   * - Domain Admins see all groups
-   * - Workspace Admins see only their workspace's groups
+   * List groups visible to the current user based on their scope.
+   * - Domain Admins: All groups
+   * - Workspace Admins: Groups in their workspace(s) + system groups they're members of
    */
   list: protectedProcedure
     .input(listGroupsSchema)
     .query(async ({ ctx, input }) => {
       const { type, workspaceId, projectId, search, limit, offset } = input
+      const userId = ctx.user!.id
 
-      // Get user's management scope
-      const scope = await getGroupManagementScope(ctx.user!.id, ctx.prisma)
+      // Get user's scope from scopeService
+      const userScope = await scopeService.getUserScope(userId)
+      const visibleGroupIds = await scopeService.getGroupsInScope(userId)
 
       // Non-admin users cannot access this endpoint at all
-      if (!scope.isDomainAdmin && scope.adminWorkspaceIds.length === 0) {
+      if (!userScope.permissions.canAccessAdminPanel) {
         throw new TRPCError({
           code: 'FORBIDDEN',
           message: 'You do not have permission to manage groups',
         })
       }
 
-      // Build where clause
-      const where: Record<string, unknown> = { isActive: true }
+      // Build where clause with scope filter
+      const where: Record<string, unknown> = {
+        isActive: true,
+        id: { in: visibleGroupIds },
+      }
 
       if (type) {
         where.type = type
@@ -302,17 +307,13 @@ export const groupRouter = router({
       // Workspace filtering
       if (workspaceId) {
         // If specific workspace requested, verify user can access it
-        if (!scope.isDomainAdmin && !scope.adminWorkspaceIds.includes(workspaceId)) {
+        if (!userScope.isDomainAdmin && !userScope.workspaceIds.includes(workspaceId)) {
           throw new TRPCError({
             code: 'FORBIDDEN',
             message: 'You do not have access to groups in this workspace',
           })
         }
         where.workspaceId = workspaceId
-      } else if (!scope.isDomainAdmin) {
-        // Non-Domain-Admins only see their own workspaces' groups
-        // They do NOT see SYSTEM groups at all
-        where.workspaceId = { in: scope.adminWorkspaceIds }
       }
 
       if (projectId) {
@@ -380,7 +381,7 @@ export const groupRouter = router({
           assignmentCount: g._count.roleAssignments,
           // User can manage if: Domain Admin OR (not SYSTEM and workspace matches)
           // Security groups (no workspace) can only be managed by Domain Admins
-          canManage: scope.isDomainAdmin || (g.type !== 'SYSTEM' && !g.isSecurityGroup && g.workspaceId !== null && scope.adminWorkspaceIds.includes(g.workspaceId)),
+          canManage: userScope.isDomainAdmin || (g.type !== 'SYSTEM' && !g.isSecurityGroup && g.workspaceId !== null && userScope.workspaceIds.includes(g.workspaceId)),
         })),
         total,
         limit,
