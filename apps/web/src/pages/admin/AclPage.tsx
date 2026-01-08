@@ -16,6 +16,7 @@
 import { useState } from 'react'
 import { AdminLayout } from '@/components/admin'
 import { ResourceTree, type SelectedResource, type ResourceType } from '@/components/admin/ResourceTree'
+import { GroupMembersPanel } from '@/components/admin/GroupMembersPanel'
 import { trpc } from '@/lib/trpc'
 import { cn } from '@/lib/utils'
 
@@ -25,8 +26,15 @@ import { cn } from '@/lib/utils'
 
 type PrincipalType = 'user' | 'group'
 
+// ACL API only accepts these resource types (not 'group')
+type AclResourceType = 'workspace' | 'project' | 'admin' | 'profile'
+
+function isAclResourceType(type: ResourceType): type is AclResourceType {
+  return type === 'workspace' || type === 'project' || type === 'admin' || type === 'profile'
+}
+
 interface AclFormData {
-  resourceType: ResourceType
+  resourceType: AclResourceType
   resourceId: number | null
   principalType: PrincipalType
   principalId: number
@@ -92,12 +100,14 @@ export function AclPage() {
   const { data: principals } = trpc.acl.getPrincipals.useQuery({
     search: searchPrincipal || undefined,
   })
+  // Only query ACL entries for valid resource types (not groups)
+  const isValidAclResource = selectedResource && isAclResourceType(selectedResource.type)
   const { data: aclEntries, isLoading: entriesLoading } = trpc.acl.list.useQuery(
     {
-      resourceType: selectedResource?.type ?? 'workspace',
-      resourceId: selectedResource?.id ?? null,
+      resourceType: (isValidAclResource ? selectedResource.type : 'workspace') as AclResourceType,
+      resourceId: isValidAclResource ? selectedResource.id : null,
     },
-    { enabled: !!selectedResource }
+    { enabled: !!isValidAclResource }
   )
 
   // Mutations
@@ -127,8 +137,11 @@ export function AclPage() {
   })
 
   const resetForm = () => {
+    const resourceType = selectedResource && isAclResourceType(selectedResource.type)
+      ? selectedResource.type
+      : 'workspace'
     setFormData({
-      resourceType: selectedResource?.type ?? 'workspace',
+      resourceType,
       resourceId: selectedResource?.id ?? null,
       principalType: 'user',
       principalId: 0,
@@ -163,7 +176,7 @@ export function AclPage() {
   }
 
   const openGrantDialog = () => {
-    if (!selectedResource) return
+    if (!selectedResource || !isAclResourceType(selectedResource.type)) return
     setFormData({
       ...formData,
       resourceType: selectedResource.type,
@@ -173,7 +186,7 @@ export function AclPage() {
   }
 
   const openDenyDialog = () => {
-    if (!selectedResource) return
+    if (!selectedResource || !isAclResourceType(selectedResource.type)) return
     setFormData({
       ...formData,
       resourceType: selectedResource.type,
@@ -219,6 +232,7 @@ export function AclPage() {
             <ResourceTree
               workspaces={resources?.workspaces ?? []}
               projects={resources?.projects ?? []}
+              groups={principals?.groups ?? []}
               isAdmin={resources?.resourceTypes.some(r => r.type === 'admin') ?? false}
               selectedResource={selectedResource}
               onSelectResource={setSelectedResource}
@@ -231,10 +245,12 @@ export function AclPage() {
           <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex items-center justify-between">
             <h2 className="font-medium text-gray-900 dark:text-white">
               {selectedResource
-                ? `ACL for: ${selectedResource.path ?? selectedResource.name}`
+                ? selectedResource.type === 'group'
+                  ? `Members: ${selectedResource.name}`
+                  : `ACL for: ${selectedResource.path ?? selectedResource.name}`
                 : 'Select a resource'}
             </h2>
-            {selectedResource && (
+            {selectedResource && isAclResourceType(selectedResource.type) && (
               <div className="flex gap-2">
                 <button
                   onClick={openGrantDialog}
@@ -257,6 +273,12 @@ export function AclPage() {
               <div className="text-center py-12 text-gray-500">
                 Select a resource to view its ACL entries
               </div>
+            ) : selectedResource.type === 'group' && selectedResource.id ? (
+              <GroupMembersPanel
+                groupId={selectedResource.id}
+                groupName={selectedResource.name}
+                groupPath={selectedResource.path}
+              />
             ) : entriesLoading ? (
               <div className="text-center py-12 text-gray-500">Loading...</div>
             ) : aclEntries && aclEntries.length > 0 ? (
