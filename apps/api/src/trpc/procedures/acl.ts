@@ -209,6 +209,39 @@ export const aclRouter = router({
     }),
 
   /**
+   * Get current user's effective ACL permissions on a resource.
+   * Used by frontend for conditional rendering (AclGate component).
+   * Returns bitmask and permission names for easy checking.
+   */
+  myPermission: protectedProcedure
+    .input(z.object({
+      resourceType: resourceTypeSchema,
+      resourceId: z.number().nullable(),
+    }))
+    .query(async ({ ctx, input }) => {
+      const result = await aclService.checkPermission(
+        ctx.user!.id,
+        input.resourceType,
+        input.resourceId
+      )
+
+      return {
+        allowed: result.allowed,
+        effectivePermissions: result.effectivePermissions,
+        deniedPermissions: result.deniedPermissions,
+        effectivePermissionNames: aclService.permissionToArray(result.effectivePermissions),
+        deniedPermissionNames: aclService.permissionToArray(result.deniedPermissions),
+        presetName: aclService.getPresetName(result.effectivePermissions),
+        // Convenience flags
+        canRead: (result.effectivePermissions & ACL_PERMISSIONS.READ) !== 0,
+        canWrite: (result.effectivePermissions & ACL_PERMISSIONS.WRITE) !== 0,
+        canExecute: (result.effectivePermissions & ACL_PERMISSIONS.EXECUTE) !== 0,
+        canDelete: (result.effectivePermissions & ACL_PERMISSIONS.DELETE) !== 0,
+        canManagePermissions: (result.effectivePermissions & ACL_PERMISSIONS.PERMISSIONS) !== 0,
+      }
+    }),
+
+  /**
    * Grant permissions to a user or group.
    */
   grant: protectedProcedure

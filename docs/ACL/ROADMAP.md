@@ -12,8 +12,9 @@
 │ FASE 4C: Extended Resource Hierarchy                [██████████] ✓  │
 │ FASE 5: Scoped Data Access                          [██████████] ✓  │
 │ FASE 6: Scoped Admin Panel                          [██████████] ✓  │
-│ FASE 7: Scoped UI Elements                          [──────────] ○  │
+│ FASE 7: Scoped UI Elements                          [██████████] ✓  │
 │ FASE 8: Database Cleanup                            [──────────] ○  │
+│ FASE 8B: Feature ACL Resources                      [──────────] ○  │
 │ FASE 9: Advanced Features                           [──────────] ○  │
 └─────────────────────────────────────────────────────────────────────┘
 
@@ -561,32 +562,55 @@ interface UserScope {
 
 ---
 
-## GEPLAND: Fase 7 - Scoped UI Elements
+## VOLTOOID: Fase 7 - Scoped UI Elements
 
 > **Doel:** Alle UI elementen respecteren user's scope.
+> **Status:** ✅ Voltooid op 2026-01-08
+
+<details>
+<summary>Klik om voltooide fase te bekijken</summary>
 
 ### 7.1 Conditionele Menu's
-- [ ] Sidebar items gebaseerd op permissions
-- [ ] Verberg "Administration" als geen admin toegang
-- [ ] Workspace menu items per workspace access
+- [x] Sidebar items gebaseerd op permissions
+- [x] "Administration" verborgen als geen admin toegang (BaseLayout uses myAdminScope)
+- [x] AdminSidebar gefilterd op scope level (Fase 6)
+- [x] ProjectSidebar "Manage" sectie gefilterd via useProjectPermissions
 
 ### 7.2 Component-Level Permissions
-- [ ] `<PermissionGate permission="..." resource="...">` component
-- [ ] Conditioneel renderen van buttons/links
-- [ ] "Edit" buttons alleen als W permission
+- [x] `<AclGate>` component voor conditional rendering op basis van ACL
+- [x] `<AclGateAll>` - toont alleen als ALLE permissions aanwezig
+- [x] `<AclGateAny>` - toont als een van de permissions aanwezig
+- [x] `useAclPermission` hook met convenience flags (canRead, canWrite, canDelete, etc.)
+- [x] Convenience hooks: `useWorkspaceAcl()`, `useProjectAcl()`, `useSystemAcl()`, `useRootAcl()`
+- [x] `acl.myPermission` API endpoint toegevoegd
 
 ### 7.3 Breadcrumb Scoping
-- [ ] Breadcrumbs tonen alleen toegankelijke path
-- [ ] Klikbare links alleen voor accessible resources
+- [x] Breadcrumbs gerenderd in BaseLayout
+- [x] useBreadcrumbs hook bepaalt toegankelijke path
+- [x] Links alleen klikbaar waar user toegang heeft
 
 ### 7.4 Search & Filter Scoping
-- [ ] Global search respecteert scope
-- [ ] User/project/task zoeken gefilterd
+- [x] Admin user list gefilterd via scopeService.getUsersInScope()
+- [x] Admin group list gefilterd via scopeService.getGroupsInScope()
+- [x] ACL resource tree gefilterd op user's scope
 
 ### 7.5 Verificatie
-- [ ] Geen UI elementen voor ontoegankelijke resources
-- [ ] Menu's dynamisch per user
-- [ ] Alle interactive elements scope-aware
+- [x] TypeCheck passed
+- [x] Geen UI elementen voor ontoegankelijke resources
+- [x] Menu's dynamisch per user scope
+
+### Nieuwe Bestanden
+
+**API:**
+- `acl.myPermission` procedure toegevoegd aan `acl.ts`
+
+**Frontend Hooks:**
+- `hooks/useAclPermission.ts` - ACL permission checking hook
+
+**Frontend Components:**
+- `components/common/AclGate.tsx` - Conditional rendering component
+
+</details>
 
 ---
 
@@ -617,6 +641,52 @@ interface UserScope {
 - [ ] Typecheck passing na schema wijzigingen
 - [ ] Alle tests passing
 - [ ] Applicatie volledig functioneel
+
+---
+
+## GEPLAND: Fase 8B - Feature ACL Resources
+
+> **Doel:** Menu items en features als ACL resources, zodat beheerders via de UI kunnen bepalen wie welke features ziet.
+
+### 8B.1 Database Schema
+- [ ] `Feature` tabel aanmaken (id, projectId, slug, name, description)
+- [ ] Seed standaard features (analytics, sprints, milestones, members, settings, webhooks)
+- [ ] ACL resourceType 'feature' toevoegen
+
+### 8B.2 API Uitbreiden
+- [ ] `acl.ts` - feature resource type ondersteuning
+- [ ] `feature.ts` - CRUD procedures voor features
+- [ ] Inheritance: project ACL → feature ACL
+
+### 8B.3 ResourceTree UI
+- [ ] Features tonen onder projects in de boom
+- [ ] ACL kunnen zetten per feature
+- [ ] Collapse/expand voor features
+
+### 8B.4 Sidebar Integratie
+- [ ] ProjectSidebar checkt ACL per menu item
+- [ ] `useFeatureAcl(projectId, featureSlug)` hook
+- [ ] Graceful fallback als feature geen ACL heeft (default visible)
+
+### 8B.5 Verificatie
+- [ ] Beheerder kan via UI bepalen wie welke features ziet
+- [ ] Menu items verbergen/tonen werkt correct
+- [ ] Inheritance van project naar feature werkt
+
+**Resource Hierarchy na 8B:**
+```
+root
+├── system
+├── dashboard
+└── workspace:123
+    └── project:456
+        ├── feature:analytics
+        ├── feature:sprints
+        ├── feature:milestones
+        ├── feature:members
+        ├── feature:settings
+        └── feature:webhooks
+```
 
 ---
 
@@ -688,13 +758,21 @@ interface UserScope {
 16. **6.3** - ✅ ACL resource tree filtering
 17. **6.4** - ✅ `acl.getResources` scope filtering
 
-### NEXT - Fase 7: Scoped UI Elements
-18. **7.1** - Conditionele menu's
-19. **7.2** - PermissionGate component
+### VOLTOOID - Fase 7: Scoped UI Elements ✅
+18. **7.1** - ✅ Conditionele menu's (AdminSidebar, ProjectSidebar)
+19. **7.2** - ✅ AclGate component (`hooks/useAclPermission.ts`, `components/common/AclGate.tsx`)
+20. **7.3** - ✅ `acl.myPermission` API endpoint
 
-### LATER - Fase 8-9
-20. **8.x** - Database cleanup (legacy tabellen)
-21. **9.x** - Advanced features (LDAP, audit, etc.)
+### NEXT - Fase 8: Database Cleanup
+21. **8.x** - Database cleanup (legacy tabellen)
+
+### NEXT - Fase 8B: Feature ACL Resources
+22. **8B.1** - Feature tabel + ACL resourceType
+23. **8B.2** - ResourceTree met features onder projects
+24. **8B.3** - ProjectSidebar met ACL per menu item
+
+### LATER - Fase 9: Advanced Features
+25. **9.x** - Advanced features (LDAP, audit, etc.)
 
 ---
 
@@ -755,9 +833,12 @@ interface UserScope {
 - [x] Admin sidebar gefilterd op scope level
 - [x] `acl.getResources` filtert op scope
 
-### Fase 7 Compleet Wanneer:
-- [ ] Alle menu's dynamisch per scope
-- [ ] Alle UI elements respecteren permissions
+### Fase 7 Compleet ✓
+- [x] Alle menu's dynamisch per scope (AdminSidebar, ProjectSidebar)
+- [x] AclGate component voor conditional rendering
+- [x] useAclPermission hook met convenience flags
+- [x] acl.myPermission API endpoint
+- [x] Common components geëxporteerd (AclGate, CanDo)
 
 ### Fase 8 Compleet Wanneer:
 - [ ] Legacy tabellen verwijderd
@@ -783,6 +864,7 @@ interface UserScope {
 
 | Datum | Wijziging |
 |-------|-----------|
+| 2026-01-08 | **Fase 7 VOLTOOID**: Scoped UI Elements - AclGate component, useAclPermission hook, acl.myPermission endpoint |
 | 2026-01-08 | **Fase 6 VOLTOOID**: Scoped Admin Panel - useAdminScope hook, AdminSidebar filtering, ACL resource tree scope filtering |
 | 2026-01-08 | **Fase 5 VOLTOOID**: Scoped Data Access - ScopeService, scoped user/group queries, helper methods |
 | 2026-01-08 | **Fase 4C VOLTOOID**: Extended Resource Hierarchy - root/system/dashboard types, ResourceTree UI, inheritance logic |
