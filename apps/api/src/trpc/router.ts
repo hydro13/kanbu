@@ -12,11 +12,15 @@
  * Session: ff2f815e-190c-4f7e-ada7-0c0a74177ac4
  * Signed: 2026-01-06
  * Change: Updated adminProcedure to use AD-style Domain Admins group check
+ *
+ * Session: 2026-01-08
+ * Change: Updated adminProcedure to also check ACL (admin:root with P permission)
  * ═══════════════════════════════════════════════════════════════════
  */
 
 import { initTRPC, TRPCError } from '@trpc/server';
 import type { Context, AuthUser } from './context';
+import { aclService, ACL_PERMISSIONS } from '../services/aclService';
 
 /**
  * Initialize tRPC with context
@@ -56,15 +60,30 @@ export const protectedProcedure = publicProcedure.use(
 );
 
 /**
- * Admin procedure - requires Domain Admin membership (AD-style)
- * Extends protectedProcedure with Domain Admin group check
+ * Admin procedure - requires admin access via ACL or Domain Admins group
+ * Checks in order:
+ * 1. ACL: admin:root resource with PERMISSIONS bit (Full Control)
+ * 2. Legacy: Domain Admins group membership
  */
 export const adminProcedure = protectedProcedure.use(
   middleware(async ({ ctx, next }) => {
     // ctx.user is guaranteed non-null by protectedProcedure
     const user = ctx.user as AuthUser;
 
-    // Check if user is a Domain Admin via group membership
+    // Check 1: ACL - user has Full Control on admin:root
+    // resourceId=null means "all admin resources" (root level)
+    const hasAclAdmin = await aclService.hasPermission(
+      user.id,
+      'admin',
+      null, // root level admin access
+      ACL_PERMISSIONS.PERMISSIONS // P bit = can manage permissions = full admin
+    );
+
+    if (hasAclAdmin) {
+      return next({ ctx });
+    }
+
+    // Check 2: Legacy - Domain Admins group membership
     const domainAdminMembership = await ctx.prisma.groupMember.findFirst({
       where: {
         userId: user.id,
@@ -75,13 +94,13 @@ export const adminProcedure = protectedProcedure.use(
       },
     });
 
-    if (!domainAdminMembership) {
-      throw new TRPCError({
-        code: 'FORBIDDEN',
-        message: 'Admin access required',
-      });
+    if (domainAdminMembership) {
+      return next({ ctx });
     }
 
-    return next({ ctx });
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: 'Admin access required',
+    });
   })
 );

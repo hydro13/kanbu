@@ -105,6 +105,14 @@ function TreeIcon({ className }: { className?: string }) {
   )
 }
 
+function KeyIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+    </svg>
+  )
+}
+
 // =============================================================================
 // Types
 // =============================================================================
@@ -138,6 +146,7 @@ const navSections: NavSection[] = [
       { label: 'All Users', path: '/admin/users', icon: UsersIcon, requiresDomainAdmin: true },
       { label: 'Create User', path: '/admin/users/create', icon: UserPlusIcon, requiresDomainAdmin: true },
       { label: 'Groups', path: '/admin/groups', icon: GroupIcon },
+      { label: 'ACL Manager', path: '/admin/acl', icon: KeyIcon, requiresDomainAdmin: true },
       { label: 'Permission Tree', path: '/admin/permissions', icon: TreeIcon, requiresDomainAdmin: true },
       { label: 'Invites', path: '/admin/invites', icon: MailIcon, requiresDomainAdmin: true },
     ],

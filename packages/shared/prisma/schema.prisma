@@ -189,6 +189,7 @@ model User {
   groupMemberships   GroupMember[]         // AD-style group memberships
   groupMembersAdded  GroupMember[]         @relation("GroupMemberAddedBy")
   pagePreferences    UserPagePreference[]  // Per-device page width preferences
+  aclEntriesCreated  AclEntry[]            @relation("AclCreator") // ACL entries created by this user
 
   @@map("users")
 }
@@ -1315,4 +1316,64 @@ enum AssignmentRole {
   MANAGER          // Can manage content, limited admin
   ADMIN            // Full admin within scope
   OWNER            // Ultimate control (typically only one per scope)
+}
+
+// =============================================================================
+// ACL SYSTEM - Filesystem-style permissions
+// =============================================================================
+//
+// Based on NTFS/AD permission model:
+// - Permissions as bitmask (R=1, W=2, X=4, D=8, P=16)
+// - Direct ACL entries on resources (workspaces, projects, etc.)
+// - Inheritance from parent to child
+// - Deny always overrides Allow
+//
+// Permission bits:
+//   R (1)  = Read      - View resource, list contents
+//   W (2)  = Write     - Create children (new tasks, new projects)
+//   X (4)  = Execute   - Perform actions (move tasks, change status)
+//   D (8)  = Delete    - Remove resource
+//   P (16) = Permissions - Manage ACL entries for this resource
+//
+// Common combinations:
+//   Read only      = R         = 1
+//   Contributor    = R+W+X     = 7
+//   Editor         = R+W+X+D   = 15
+//   Full Control   = R+W+X+D+P = 31
+
+model AclEntry {
+  id              Int         @id @default(autoincrement())
+
+  // Resource this ACL applies to
+  resourceType    String      @map("resource_type") @db.VarChar(50)  // 'workspace', 'project', 'admin', 'profile'
+  resourceId      Int?        @map("resource_id")                     // null = root level (e.g., /admin for all admin)
+
+  // Principal (who gets this permission)
+  principalType   String      @map("principal_type") @db.VarChar(10)  // 'user' | 'group'
+  principalId     Int         @map("principal_id")                     // user.id or group.id
+
+  // Permission bitmask (R=1, W=2, X=4, D=8, P=16)
+  permissions     Int         @default(0)                              // 0-31 bitmask
+
+  // Deny flag - if true, these permissions are explicitly denied
+  // Deny ALWAYS overrides Allow (like NTFS)
+  deny            Boolean     @default(false)
+
+  // Inheritance tracking
+  inherited       Boolean     @default(false)                          // Was this inherited from parent?
+  inheritToChildren Boolean   @default(true) @map("inherit_to_children") // Should this propagate to children?
+
+  // Audit trail
+  createdAt       DateTime    @default(now()) @map("created_at")
+  createdById     Int?        @map("created_by")
+  updatedAt       DateTime    @updatedAt @map("updated_at")
+
+  // Relations
+  createdBy       User?       @relation("AclCreator", fields: [createdById], references: [id])
+
+  @@unique([resourceType, resourceId, principalType, principalId, deny])
+  @@index([resourceType, resourceId])
+  @@index([principalType, principalId])
+  @@index([inherited])
+  @@map("acl_entries")
 }

@@ -35,3 +35,15 @@ export {
   type PermissionCheck,
   type EffectivePermission,
 } from './groupPermissions'
+
+// ACL Service - Filesystem-style Access Control Lists (NTFS/AD compatible)
+export {
+  AclService,
+  aclService,
+  ACL_PERMISSIONS,
+  ACL_PRESETS,
+  type AclResourceType,
+  type AclPrincipalType,
+  type AclCheckResult,
+  type AclEntry,
+} from './aclService'

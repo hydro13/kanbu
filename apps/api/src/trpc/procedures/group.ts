@@ -31,13 +31,22 @@ import {
 
 /**
  * Check if user can manage groups.
- * Returns the workspaces they can admin (or 'all' for Domain Admins).
+ * Returns the workspaces they can admin (or 'all' for Domain Admins/Super Admins).
  */
 async function getGroupManagementScope(
   userId: number,
   prisma: typeof import('@prisma/client').PrismaClient extends new () => infer R ? R : never
 ): Promise<{ isDomainAdmin: boolean; adminWorkspaceIds: number[] }> {
-  // Check if Domain Admin first
+  // Check if Super Admin (AppRole.ADMIN) first
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true },
+  })
+  if (user?.role === 'ADMIN') {
+    return { isDomainAdmin: true, adminWorkspaceIds: [] }
+  }
+
+  // Check if Domain Admin (member of "Domain Admins" group)
   const isDomainAdmin = await groupPermissionService.isDomainAdmin(userId)
   if (isDomainAdmin) {
     return { isDomainAdmin: true, adminWorkspaceIds: [] }

@@ -125,6 +125,7 @@ import { stickyNoteRouter } from './procedures/stickyNote';
 import { groupRouter } from './procedures/group';
 import { roleAssignmentRouter } from './procedures/roleAssignment';
 import { youtubeRouter } from './procedures/youtube';
+import { aclRouter } from './procedures/acl';
 
 /**
  * Main app router
@@ -160,6 +161,7 @@ export const appRouter = router({
   group: groupRouter,
   roleAssignment: roleAssignmentRouter,
   youtube: youtubeRouter,
+  acl: aclRouter,
 });
 
 /**
