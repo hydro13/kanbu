@@ -22,12 +22,16 @@ zichtbaar te zijn voor gebruikers.
 
 Features hebben een van de volgende scopes:
 
-| Scope | Beschrijving | Voorbeeld |
-|-------|--------------|-----------|
-| `dashboard` | Dashboard menu items | Overview, Widgets, Shortcuts |
-| `profile` | Gebruiker profiel features | Settings, Notifications, API Keys |
-| `admin` | Systeem administratie | Users, Groups, ACL, Invites |
-| `project` | Project-specifieke features | Board, List, Calendar, Analytics |
+| Scope | Aantal | Voorbeelden |
+|-------|--------|-------------|
+| `dashboard` | 4 | overview, my-tasks, my-subtasks, my-workspaces |
+| `profile` | 16 | summary, time-tracking, last-logins, sessions, edit-profile, notifications, api-tokens, etc. |
+| `admin` | 9 | users, create-user, acl, permission-tree, invites, workspaces, settings-general, etc. |
+| `project` | 11 | board, list, calendar, timeline, sprints, milestones, analytics, members, settings, etc. |
+
+**Totaal: 40 features in het systeem**
+
+Zie `packages/shared/prisma/seed-features.ts` voor de complete lijst per scope.
 
 ## Stap 2: Voeg Feature toe aan Seed File
 
@@ -170,17 +174,32 @@ Als je een nieuwe feature slug toevoegt, update de types in `useFeatureAccess.ts
 // In apps/web/src/hooks/useFeatureAccess.ts
 
 // Voeg nieuwe slug toe aan het juiste type
+// Voorbeeld voor Admin features:
 export type AdminFeatureSlug =
+  // User Management section
   | 'users'
-  | 'groups'
+  | 'create-user'
   | 'acl'
+  | 'permission-tree'
   | 'invites'
-  | 'system-settings'
+  // Workspaces section
+  | 'workspaces'
+  // System Settings section
+  | 'settings-general'
+  | 'settings-security'
+  | 'backup'
   | 'audit-log'  // Nieuwe feature
 
-// Update de feature categorieen
-const ADMIN_READ_FEATURES: AdminFeatureSlug[] = ['users', 'groups', 'audit-log']
+// Update de feature categorieen (bepaalt welke permission nodig is)
+const ADMIN_READ_FEATURES: AdminFeatureSlug[] = ['users', 'workspaces', 'audit-log']
+const ADMIN_EXECUTE_FEATURES: AdminFeatureSlug[] = ['create-user', 'invites']
+const ADMIN_PERMISSIONS_FEATURES: AdminFeatureSlug[] = ['acl', 'permission-tree', 'settings-general', 'settings-security', 'backup']
 ```
+
+**Let op:** De feature categorieen bepalen welke ACL permission level nodig is:
+- `READ_FEATURES`: Basis toegang (canRead)
+- `EXECUTE_FEATURES`: Geavanceerde features (canExecute)
+- `PERMISSIONS_FEATURES`: Beheer features (canManagePermissions)
 
 ## Stap 6: Test in Browser
 

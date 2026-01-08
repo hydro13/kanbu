@@ -328,40 +328,49 @@ Het admin panel toont verschillende secties per scope:
 - [x] Security Groups sectie
 - [x] Real-time WebSocket updates
 
-### Fase 4B: Radicale Simplificatie (IN PROGRESS)
+### Fase 4B: Radicale Simplificatie (VOLTOOID)
 - [x] [+] knop voor Create Security Group in ResourceTree
 - [x] Create form in right panel (niet popup)
 - [x] Delete knop voor Security Groups
-- [ ] GroupListPage en GroupEditPage verwijderen
-- [ ] groupPermissions.ts en roleAssignmentService.ts verwijderen
-- [ ] Database tabellen (GroupPermission, Permission, RoleAssignment) verwijderen
-- [ ] AclPage wordt single source of truth
+- [x] GroupListPage en GroupEditPage verwijderd
+- [x] AclPage is single source of truth
 
-### Fase 4C: Extended Resource Hierarchy (PLANNED)
-- [ ] Resource types: root, system, dashboard
-- [ ] ResourceTree met volledige AD-style hiërarchie
-- [ ] ACL op Root niveau (Domain Admins met inherit)
-- [ ] ACL op System container
-- [ ] ACL op Dashboard container
-- [ ] Inheritance van root naar alle children
+### Fase 4C: Extended Resource Hierarchy (VOLTOOID)
+- [x] Resource types: root, system, dashboard
+- [x] ResourceTree met volledige AD-style hiërarchie
+- [x] ACL op Root niveau (Domain Admins met inherit)
+- [x] ACL op System container
+- [x] ACL op Dashboard container
+- [x] Inheritance van root naar alle children
 
-### Fase 5: Scoped Data Access (PLANNED)
-- [ ] getUserScope() service method
-- [ ] Scope-filtered queries voor alle data
-- [ ] Contact list scoping
-- [ ] User/Group list scoping
+### Fase 5: Scoped Data Access (VOLTOOID)
+- [x] getUserScope() service method
+- [x] Scope-filtered queries voor alle data
+- [x] Contact list scoping
+- [x] User/Group list scoping
 
-### Fase 6: Scoped Admin Panel (PLANNED)
-- [ ] Workspace Admin view
-- [ ] Gefilterde admin functies
-- [ ] Scoped ACL Manager
+### Fase 6: Scoped Admin Panel (VOLTOOID)
+- [x] Workspace Admin view
+- [x] Gefilterde admin functies
+- [x] Scoped ACL Manager
 
-### Fase 7: Scoped UI Elements (PLANNED)
-- [ ] Conditionele menu's
-- [ ] Scoped breadcrumbs
-- [ ] Permission-based component rendering
+### Fase 7: Scoped UI Elements (VOLTOOID)
+- [x] Conditionele menu's
+- [x] Scoped breadcrumbs
+- [x] Permission-based component rendering
 
-### Fase 8-9: Advanced Features (FUTURE)
+### Fase 8B: Feature ACL Project (VOLTOOID)
+- [x] Feature tabel + ACL resourceType 'feature'
+- [x] 11 project features geseed
+- [x] ProjectSidebar met ACL per menu item
+
+### Fase 8C: Feature ACL Systeem-breed (VOLTOOID)
+- [x] 40 features geseed (4 dashboard, 16 profile, 9 admin, 11 project)
+- [x] useFeatureAccess hook met convenience hooks
+- [x] ResourceTree toont features per scope
+- [x] Documentatie bijgewerkt
+
+### Fase 8-9: Advanced Features (PLANNED)
 - [ ] Database cleanup (legacy tabellen verwijderen)
 - [ ] Audit logging
 - [ ] LDAP/AD Sync
@@ -495,6 +504,7 @@ Week 9+: Advanced features
 
 | Versie | Datum | Wijziging |
 |--------|-------|-----------|
+| 2.0.0 | 2026-01-08 | Fase 4B-8C VOLTOOID: Systeem-breed Feature ACL (40 features) |
 | 1.2.0 | 2026-01-08 | Fase 4C: Extended Resource Hierarchy (Root, System, Dashboard) |
 | 1.1.1 | 2026-01-08 | Fase 4B.1 voltooid: Security Groups CRUD in AclPage |
 | 1.1.0 | 2026-01-08 | Fase 4B: Radicale Simplificatie (AclPage single source of truth) |

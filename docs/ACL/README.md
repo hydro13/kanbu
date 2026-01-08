@@ -238,23 +238,28 @@ Het systeem draait nu in **pure ACL modus** (Fase 3B voltooid):
 - [x] Project listing/access via ACL
 - [x] 15 unit tests
 
-### In Development (Fase 4B)
+### Voltooid (Fase 4B-8C)
 
-**Radicale Simplificatie** - AclPage wordt de single source of truth:
-- [ ] [+] knop voor Create Security Group in ResourceTree
-- [ ] GroupListPage en GroupEditPage volledig verwijderen
-- [ ] groupPermissions.ts en roleAssignmentService.ts verwijderen
-- [ ] Database tabellen (GroupPermission, Permission, RoleAssignment) verwijderen
-- [ ] Sidebar link naar /admin/groups verwijderen
+- [x] **Fase 4B**: [+] knop voor Security Groups, GroupListPage verwijderd
+- [x] **Fase 4C**: Extended Resource Hierarchy (root, system, dashboard)
+- [x] **Fase 5**: ScopeService voor data filtering
+- [x] **Fase 6**: Workspace-scoped admin panel
+- [x] **Fase 7**: Conditionele menu's en AclGate component
+- [x] **Fase 8B**: Feature ACL voor Projects (11 features)
+- [x] **Fase 8C**: Systeem-breed Feature ACL (40 features totaal)
 
-### Gepland (Fase 5-9)
+### Feature ACL Overzicht
 
-Het systeem wordt uitgebreid naar een **Scoped Permission Model**:
-- [ ] ScopeService voor data filtering
-- [ ] Workspace-scoped admin panel
-- [ ] Conditionele menu's en UI elements
-- [ ] Database cleanup (legacy tabellen)
-- [ ] Advanced features (audit, LDAP sync)
+**40 features over 4 scopes:**
+- `dashboard` (4): overview, my-tasks, my-subtasks, my-workspaces
+- `profile` (16): summary, time-tracking, last-logins, sessions, password-history, metadata, edit-profile, avatar, change-password, two-factor-auth, public-access, notifications, external-accounts, integrations, api-tokens, hourly-rate
+- `admin` (9): users, create-user, acl, permission-tree, invites, workspaces, settings-general, settings-security, backup
+- `project` (11): board, list, calendar, timeline, sprints, milestones, analytics, members, settings, import-export, webhooks
+
+### Gepland (Fase 8-9)
+
+- [ ] **Fase 8**: Database cleanup (legacy tabellen)
+- [ ] **Fase 9**: Advanced features (audit, LDAP sync, task-level ACL)
 
 Zie [ROADMAP.md](./ROADMAP.md) voor de volledige planning.
 

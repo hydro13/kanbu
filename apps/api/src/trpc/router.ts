@@ -61,22 +61,27 @@ export const protectedProcedure = publicProcedure.use(
 
 /**
  * Admin procedure - requires admin access via ACL or Domain Admins group
- * Checks in order:
- * 1. ACL: admin:root resource with PERMISSIONS bit (Full Control)
- * 2. Legacy: Domain Admins group membership
+ *
+ * SECURITY: Access is granted if ANY of these conditions are met:
+ * 1. ACL: admin:root resource with READ permission or higher
+ * 2. ACL: PERMISSIONS (P) bit on ANY workspace (workspace admin)
+ * 3. ACL: System-level permissions (system:null with WRITE or PERMISSIONS)
+ * 4. Legacy: Domain Admins group membership
+ *
+ * Note: Individual procedures may further restrict access based on scope.
+ * For example, workspace admins can only see users in their workspace.
  */
 export const adminProcedure = protectedProcedure.use(
   middleware(async ({ ctx, next }) => {
     // ctx.user is guaranteed non-null by protectedProcedure
     const user = ctx.user as AuthUser;
 
-    // Check 1: ACL - user has Full Control on admin:root
-    // resourceId=null means "all admin resources" (root level)
+    // Check 1: ACL - user has access on admin:root
     const hasAclAdmin = await aclService.hasPermission(
       user.id,
       'admin',
-      null, // root level admin access
-      ACL_PERMISSIONS.PERMISSIONS // P bit = can manage permissions = full admin
+      null,
+      ACL_PERMISSIONS.READ
     );
 
     if (hasAclAdmin) {
@@ -95,6 +100,60 @@ export const adminProcedure = protectedProcedure.use(
     });
 
     if (domainAdminMembership) {
+      return next({ ctx });
+    }
+
+    // Check 3: ACL - user is a workspace admin (has PERMISSIONS on any workspace)
+    const workspaceAclEntries = await ctx.prisma.aclEntry.findMany({
+      where: {
+        principalType: 'user',
+        principalId: user.id,
+        resourceType: 'workspace',
+        deny: false,
+      },
+      select: {
+        permissions: true,
+      },
+    });
+
+    // Also check group memberships for workspace permissions
+    const userGroupIds = await ctx.prisma.groupMember.findMany({
+      where: { userId: user.id },
+      select: { groupId: true },
+    });
+    const groupIds = userGroupIds.map(g => g.groupId);
+
+    if (groupIds.length > 0) {
+      const groupAclEntries = await ctx.prisma.aclEntry.findMany({
+        where: {
+          principalType: 'group',
+          principalId: { in: groupIds },
+          resourceType: 'workspace',
+          deny: false,
+        },
+        select: {
+          permissions: true,
+        },
+      });
+      workspaceAclEntries.push(...groupAclEntries);
+    }
+
+    // Check if any entry has PERMISSIONS bit (workspace admin)
+    const isWorkspaceAdmin = workspaceAclEntries.some(
+      entry => (entry.permissions & ACL_PERMISSIONS.PERMISSIONS) !== 0
+    );
+
+    if (isWorkspaceAdmin) {
+      return next({ ctx });
+    }
+
+    // Check 4: ACL - system-level management permissions
+    const [canManageUsers, canManageAcl] = await Promise.all([
+      aclService.hasPermission(user.id, 'system', null, ACL_PERMISSIONS.WRITE),
+      aclService.hasPermission(user.id, 'system', null, ACL_PERMISSIONS.PERMISSIONS),
+    ]);
+
+    if (canManageUsers || canManageAcl) {
       return next({ ctx });
     }
 

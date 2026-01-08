@@ -8,15 +8,17 @@
 ┌─────────────────────────────────────────────────────────────────────┐
 │ FASE 1-3B: Foundation & Pure ACL                    [██████████] ✓  │
 │ FASE 4: Resource Tree UI                            [██████████] ✓  │
-│ FASE 4B: ACL-Only Groups Workflow                   [████████░░] ◐  │
+│ FASE 4B: ACL-Only Groups Workflow                   [██████████] ✓  │
 │ FASE 4C: Extended Resource Hierarchy                [██████████] ✓  │
 │ FASE 5: Scoped Data Access                          [██████████] ✓  │
 │ FASE 6: Scoped Admin Panel                          [██████████] ✓  │
 │ FASE 7: Scoped UI Elements                          [██████████] ✓  │
-│ FASE 8: Database Cleanup                            [──────────] ○  │
+│ FASE 8: Database Cleanup (legacy tables)            [──────────] ○  │
 │ FASE 8B: Feature ACL (Project)                      [██████████] ✓  │
 │ FASE 8C: Feature ACL (Systeem-breed) + Docs         [██████████] ✓  │
 │ FASE 9: Advanced Features                           [──────────] ○  │
+│                                                                     │
+│ ⚠️ SECURITY FIX 2026-01-08: Admin access vulnerability gefixt       │
 └─────────────────────────────────────────────────────────────────────┘
 
 Legenda: ✓ Voltooid | ◐ In Progress | ○ Gepland
@@ -156,10 +158,14 @@ Legenda: ✓ Voltooid | ◐ In Progress | ○ Gepland
 
 ---
 
-## GEPLAND: Fase 4B - Radicale Simplificatie
+## VOLTOOID: Fase 4B - Radicale Simplificatie
 
 > **Doel:** Eén admin panel voor alles: AclPage wordt de single source of truth.
 > Verwijder ALLE legacy permission systemen en aparte Groups pagina's.
+> **Status:** ✅ Voltooid - Frontend werk compleet. DB cleanup verplaatst naar Fase 8.
+
+<details>
+<summary>Klik om voltooide fase te bekijken</summary>
 
 ### Achtergrond: Waarom Radicale Simplificatie?
 
@@ -279,6 +285,8 @@ Deze worden verwijderd in een latere fase wanneer:
 | `group.addMember/removeMember` | Procedure | Members beheren |
 | `group.list/get` | Procedure | Groups ophalen |
 | WebSocket events | Backend | Real-time updates |
+
+</details>
 
 ---
 
@@ -617,31 +625,43 @@ interface UserScope {
 
 ## GEPLAND: Fase 8 - Database Cleanup
 
-> **Doel:** Legacy tabellen verwijderen na succesvolle scoped implementatie.
+> **Doel:** Legacy tabellen en code verwijderen na succesvolle scoped implementatie.
 >
 > **LET OP:** `groupPermissionService` is een APART systeem en moet NIET verwijderd worden.
+>
+> **Note:** Bevat ook items van voormalig Fase 4B.3.
 
-### 8.1 Legacy Tabellen Verwijderen
+### 8.1 Legacy Tabellen Verwijderen (Database Schema)
 - [ ] Verwijder WorkspaceUser model uit schema.prisma
 - [ ] Verwijder ProjectMember model uit schema.prisma
-- [ ] Verwijder GroupPermission model uit schema.prisma (indien niet gebruikt)
-- [ ] Verwijder gerelateerde enums (WorkspaceRole, ProjectRole indien unused)
+- [ ] Verwijder GroupPermission model uit schema.prisma
+- [ ] Verwijder Permission model uit schema.prisma
+- [ ] Verwijder RoleAssignment model uit schema.prisma
+- [ ] Verwijder gerelateerde enums (WorkspaceRole, ProjectRole, AccessType indien unused)
 
-### 8.2 Legacy Code Opruimen
+### 8.2 Legacy Backend Code Opruimen
+- [ ] Verwijder groupPermissions.ts service
+- [ ] Verwijder roleAssignmentService.ts service
+- [ ] Verwijder roleAssignment.ts procedures
+- [ ] Verwijder Permission procedures uit group.ts
 - [ ] Verwijder unused imports in procedures
 - [ ] Cleanup lib/project.ts (deprecated functies)
 - [ ] Cleanup PermissionService comments
 
 ### 8.3 Database Migratie
-- [ ] Genereer Prisma migration
+- [ ] Backup maken (voor zekerheid)
+- [ ] Genereer Prisma migration: `npx prisma migrate dev --name remove_legacy_permission_tables`
 - [ ] Test migration op dev database
+- [ ] Verify migration succesvol
 - [ ] Backup productie database voor migratie
-- [ ] Execute migration
+- [ ] Execute migration op productie
 
 ### 8.4 Verificatie
 - [ ] Typecheck passing na schema wijzigingen
 - [ ] Alle tests passing
 - [ ] Applicatie volledig functioneel
+- [ ] Geen 404's of runtime errors
+- [ ] Build succesvol
 
 ---
 
@@ -682,7 +702,7 @@ interface UserScope {
 > **Doel:** ALLE menu items en features in Kanbu via ACL beheren.
 > Elke sectie (Dashboard, Profile, Admin, Projects) heeft features die via ACL beheerd worden.
 > Inclusief documentatie zodat toekomstige Claude Code sessies dit systeem correct gebruiken.
-> **Status:** VOLTOOID - 24 features in database (4 dashboard, 4 profile, 5 admin, 11 project)
+> **Status:** VOLTOOID - 40 features in database (4 dashboard, 16 profile, 9 admin, 11 project)
 
 ### 8C.1 Feature Scope Uitbreiden
 
@@ -691,10 +711,10 @@ interface UserScope {
 - [x] Migratie uitgevoerd (prisma db push)
 
 #### Seed Alle Features
-- [x] Dashboard features: overview, widgets, shortcuts, recent-projects (4)
-- [x] Profile features: settings, notifications, api-keys, sessions (4)
-- [x] Admin features: users, groups, acl, invites, system-settings (5)
-- [x] Project features: 11 features (board, list, calendar, timeline, sprints, milestones, analytics, members, settings, import-export, webhooks)
+- [x] Dashboard features (4): overview, my-tasks, my-subtasks, my-workspaces
+- [x] Profile features (16): summary, time-tracking, last-logins, sessions, password-history, metadata, edit-profile, avatar, change-password, two-factor-auth, public-access, notifications, external-accounts, integrations, api-tokens, hourly-rate
+- [x] Admin features (9): users, create-user, acl, permission-tree, invites, workspaces, settings-general, settings-security, backup
+- [x] Project features (11): board, list, calendar, timeline, sprints, milestones, analytics, members, settings, import-export, webhooks
 
 ### 8C.2 ResourceTree UI Uitbreiden
 
@@ -708,34 +728,30 @@ interface UserScope {
 Kanbu (Root)
 ├── System
 │   ├── Administration
-│   │   └── Features
-│   │       ├── users
-│   │       ├── groups
-│   │       ├── acl
-│   │       ├── invites
-│   │       └── system-settings
+│   │   └── Features (9 admin features)
+│   │       ├── users, create-user, acl
+│   │       ├── permission-tree, invites
+│   │       ├── workspaces
+│   │       └── settings-general, settings-security, backup
 │   └── ...
 ├── Dashboard
-│   └── Features
-│       ├── overview
-│       ├── widgets
-│       ├── shortcuts
-│       └── recent-projects
+│   └── Features (4 dashboard features)
+│       ├── overview, my-tasks
+│       └── my-subtasks, my-workspaces
 ├── Profile
-│   └── Features
-│       ├── settings
-│       ├── notifications
-│       ├── api-keys
-│       └── sessions
+│   └── Features (16 profile features)
+│       ├── summary, time-tracking, last-logins, sessions
+│       ├── password-history, metadata, edit-profile, avatar
+│       ├── change-password, two-factor-auth, public-access
+│       └── notifications, external-accounts, integrations, api-tokens, hourly-rate
 ├── Workspaces
 │   └── [Workspace]
 │       └── Projects
 │           └── [Project]
-│               └── Features
-│                   ├── board
-│                   ├── list
-│                   ├── calendar
-│                   └── ... (11 project features)
+│               └── Features (11 project features)
+│                   ├── board, list, calendar, timeline
+│                   ├── sprints, milestones, analytics
+│                   └── members, settings, import-export, webhooks
 └── Security Groups
 ```
 
@@ -772,20 +788,20 @@ Kanbu (Root)
 - [x] Nieuwe features zonder ACL entry zijn NIET zichtbaar (fail-safe design)
 - [x] Documentatie is duidelijk voor toekomstige sessies
 - [x] TypeCheck passed
-- [x] Database bevat 24 features (4+4+5+11)
+- [x] Database bevat 40 features (4+16+9+11)
 
 **Resource Hierarchy na 8C:**
 ```
 root
 ├── system
-│   └── feature:users, groups, acl, invites, system-settings
+│   └── admin features (9): users, create-user, acl, permission-tree, invites, workspaces, settings-general, settings-security, backup
 ├── dashboard
-│   └── feature:overview, widgets, shortcuts, recent-projects
+│   └── dashboard features (4): overview, my-tasks, my-subtasks, my-workspaces
 ├── profile
-│   └── feature:settings, notifications, api-keys, sessions
+│   └── profile features (16): summary, time-tracking, last-logins, sessions, password-history, metadata, edit-profile, avatar, change-password, two-factor-auth, public-access, notifications, external-accounts, integrations, api-tokens, hourly-rate
 └── workspace:123
     └── project:456
-        └── feature:board, list, calendar, timeline, sprints, milestones, analytics, members, settings, import-export, webhooks
+        └── project features (11): board, list, calendar, timeline, sprints, milestones, analytics, members, settings, import-export, webhooks
 ```
 
 ---
@@ -793,18 +809,32 @@ root
 ## GEPLAND: Fase 9 - Advanced Features
 
 > **Doel:** Enterprise-grade features toevoegen.
+>
+> **⚠️ SECURITY NOTE (2026-01-08):** Alle Fase 9 items moeten de nieuwe admin access checks respecteren.
+> Admin panel toegang vereist een van:
+> 1. Explicit ACL op 'admin' resource met READ
+> 2. Membership in "Domain Admins" group
+> 3. PERMISSIONS (P) bit op een workspace (workspace admin)
+> 4. System-level permissions (WRITE of PERMISSIONS op 'system')
+>
+> Zie `scopeService.checkPermissionFlags()` en `adminProcedure` in router.ts.
 
 ### 9.1 Audit Logging
 - [ ] Log alle ACL wijzigingen
 - [ ] Wie, wanneer, wat gewijzigd
 - [ ] Permission change history per resource
 - [ ] Audit viewer in admin panel
+- [ ] **SECURITY:** Audit viewer moet scoped zijn (workspace admins zien alleen eigen workspace logs)
+- [ ] **SECURITY:** Log de 4-pad admin access checks
 
 ### 9.2 LDAP/AD Sync
 - [ ] Sync AD groups naar Kanbu groups
 - [ ] Automatische ACL updates bij groepswijzigingen
 - [ ] OU-based permission inheritance
 - [ ] Scheduled sync jobs
+- [ ] **⚠️ SECURITY:** AD sync mag NIET automatisch admin panel toegang geven
+- [ ] **⚠️ SECURITY:** AD Domain Admins moeten correct mappen naar "Domain Admins" group OF admin ACL
+- [ ] **⚠️ SECURITY:** AD workspace-level groups krijgen P bit, niet automatisch admin ACL
 
 ### 9.3 Task-Level ACL
 - [ ] ACL support voor individuele tasks
@@ -815,30 +845,38 @@ root
 - [ ] Bulk grant/revoke voor meerdere users
 - [ ] Template-based permission sets
 - [ ] Copy permissions van andere resource
+- [ ] **⚠️ SECURITY:** Bulk operations moeten scoped zijn (workspace admin kan alleen eigen workspace)
+- [ ] **⚠️ SECURITY:** Templates mogen NIET stilletjes admin ACL toewijzen
 
 ### 9.5 Advanced UI
 - [ ] Permission matrix view (users x resources)
 - [ ] Effective permissions calculator
 - [ ] "What-if" simulatie voor nieuwe permissies
 - [ ] Import/export van ACL configuratie
+- [ ] **⚠️ SECURITY:** Matrix moet ALLE 4 admin access paden tonen
+- [ ] **⚠️ SECURITY:** Calculator moet `scopeService.checkPermissionFlags()` logica gebruiken
+- [ ] **⚠️ SECURITY:** What-if moet waarschuwen als wijziging admin toegang geeft
+- [ ] **⚠️ SECURITY:** Import moet valideren dat ACL geen security holes creëert
 
 ### 9.6 API Keys & Service Accounts
 - [ ] ACL voor API keys
 - [ ] Service account permissies
 - [ ] Scoped tokens
+- [ ] **⚠️ CRITICAL:** API key auth MOET door dezelfde `adminProcedure` checks gaan
+- [ ] **⚠️ CRITICAL:** Service accounts krijgen NIET automatisch admin access
 
 ---
 
 ## Prioriteiten
 
-### NOW - Fase 4B: Radicale Simplificatie (◐ In Progress)
+### VOLTOOID - Fase 4B: Radicale Simplificatie ✅
 1. **4B.1** - ✅ [+] knop voor Create Security Group in ResourceTree
 2. **4B.1** - ✅ Create form in right panel (niet popup)
 3. **4B.1** - ✅ Delete knop voor Security Groups
 4. **4B.2** - ✅ Frontend legacy code verwijderd (GroupListPage, GroupEditPage, routes, sidebar)
-5. **4B.3** - ⏳ Database cleanup (wacht op volledige ACL migratie)
+5. **4B.3** - ➡️ Verplaatst naar Fase 8 (Database cleanup)
 
-> **Note:** Backend services (groupPermissions.ts, roleAssignmentService.ts) en permission procedures zijn nog in gebruik door middleware, usePermissions hook, en PermissionTreePage. Deze worden verwijderd na volledige ACL migratie.
+> **Note:** Backend services (groupPermissions.ts, roleAssignmentService.ts) en permission procedures zijn nog in gebruik door middleware, usePermissions hook, en PermissionTreePage. Deze worden verwijderd in Fase 8.
 
 ### VOLTOOID - Fase 4C: Extended Resource Hierarchy ✅
 6. **4C.1** - ✅ Resource types uitbreiden (root, system, dashboard)
@@ -873,11 +911,11 @@ root
 25. **8B.5** - ✅ Verificatie
 
 ### VOLTOOID - Fase 8C: Feature ACL (Systeem-breed) + Documentatie ✅
-26. **8C.1** - ✅ Scope veld toevoegen + 24 features seeden (4 dashboard, 4 profile, 5 admin, 11 project)
+26. **8C.1** - ✅ Scope veld toevoegen + 40 features seeden (4 dashboard, 16 profile, 9 admin, 11 project)
 27. **8C.2** - ✅ ResourceTree UI uitbreiden (Dashboard, Admin, Profile)
 28. **8C.3** - ✅ Alle sidebars/layouts hooks beschikbaar
 29. **8C.4** - ✅ Documentatie (CLAUDE.md, `docs/procedures/nieuwe-feature-acl.md`)
-30. **8C.5** - ✅ Verificatie (TypeCheck passed, 24 features in DB)
+30. **8C.5** - ✅ Verificatie (TypeCheck passed, 40 features in DB)
 
 ### LATER - Fase 9: Advanced Features
 31. **9.x** - Advanced features (LDAP, audit, etc.)
@@ -904,7 +942,7 @@ root
 - [x] VSCode-style navigatie werkt
 - [x] Real-time WebSocket updates
 
-### Fase 4B Compleet Wanneer:
+### Fase 4B Compleet ✓
 - [x] [+] knop werkt in ResourceTree voor nieuwe Security Groups
 - [x] Create form in right panel (niet popup)
 - [x] Delete knop voor Security Groups
@@ -913,7 +951,7 @@ root
 - [x] Routes /admin/groups verwijderd
 - [x] AclPage is single source of truth voor group + ACL management
 
-**Uitgesteld naar na ACL migratie:**
+**Verplaatst naar Fase 8 (Database Cleanup):**
 - [ ] groupPermissions.ts en roleAssignmentService.ts verwijderd
 - [ ] roleAssignment.ts procedures verwijderd
 - [ ] Permission procedures uit group.ts verwijderd
@@ -972,7 +1010,9 @@ root
 
 | Datum | Wijziging |
 |-------|-----------|
-| 2026-01-08 | **Fase 8C VOLTOOID**: Systeem-breed Feature ACL (24 features) + Documentatie (CLAUDE.md, procedures) |
+| 2026-01-08 | **SECURITY FIX**: Admin panel access vulnerability gefixt - `canAccessAdminPanel` vereist nu explicit admin permissions ipv alleen workspace READ. Gefixt in `scopeService.ts` en `adminProcedure` in `router.ts`. Fase 9 security notes toegevoegd. |
+| 2026-01-08 | **Fase 8C UPDATE**: Features gesynchroniseerd met sidebars - nu 40 features (was 24). Dashboard: 4, Profile: 16, Admin: 9, Project: 11 |
+| 2026-01-08 | **Fase 8C VOLTOOID**: Systeem-breed Feature ACL (40 features) + Documentatie (CLAUDE.md, procedures) |
 | 2026-01-08 | **Fase 8B VOLTOOID**: Feature ACL voor Projects - Feature tabel, ResourceTree, ProjectSidebar ACL |
 | 2026-01-08 | **Fase 7 VOLTOOID**: Scoped UI Elements - AclGate component, useAclPermission hook, acl.myPermission endpoint |
 | 2026-01-08 | **Fase 6 VOLTOOID**: Scoped Admin Panel - useAdminScope hook, AdminSidebar filtering, ACL resource tree scope filtering |

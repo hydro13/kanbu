@@ -215,6 +215,9 @@ export class ScopeService {
 
   /**
    * Check various permission flags for a user.
+   *
+   * SECURITY: Admin panel access requires explicit admin-level permissions.
+   * Having READ access on a workspace does NOT grant admin panel access.
    */
   private async checkPermissionFlags(userId: number, accessibleWorkspaceIds: number[]): Promise<UserScope['permissions']> {
     // Check system-level permissions
@@ -233,8 +236,27 @@ export class ScopeService {
       }
     }
 
-    // Can access admin panel if they have any workspace access or system access
-    const canAccessAdminPanel = accessibleWorkspaceIds.length > 0 ||
+    // Check if user is a workspace admin (has PERMISSIONS on any workspace)
+    // This is required for admin panel access - just having READ is NOT enough
+    let isWorkspaceAdmin = false
+    for (const wsId of accessibleWorkspaceIds) {
+      if (await aclService.hasPermission(userId, 'workspace', wsId, ACL_PERMISSIONS.PERMISSIONS)) {
+        isWorkspaceAdmin = true
+        break
+      }
+    }
+
+    // Check if user has explicit admin-level ACL access
+    const hasAdminAccess = await aclService.hasPermission(userId, 'admin', null, ACL_PERMISSIONS.READ)
+
+    // SECURITY FIX: Admin panel access requires explicit admin permissions
+    // Just having READ on a workspace does NOT grant admin panel access!
+    // User needs one of:
+    // 1. Explicit ACL on 'admin' resource, OR
+    // 2. PERMISSIONS (P) bit on a workspace (workspace admin), OR
+    // 3. System-level management permissions
+    const canAccessAdminPanel = hasAdminAccess ||
+                                isWorkspaceAdmin ||
                                 canManageUsers ||
                                 canManageGroups ||
                                 canManageAcl

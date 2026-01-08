@@ -43,14 +43,48 @@ import { useAclPermission, type AclResourceType } from './useAclPermission'
 
 export type FeatureScope = 'dashboard' | 'profile' | 'admin'
 
-// Dashboard feature slugs
-export type DashboardFeatureSlug = 'overview' | 'widgets' | 'shortcuts' | 'recent-projects'
+// Dashboard feature slugs (from DashboardSidebar.tsx)
+export type DashboardFeatureSlug =
+  | 'overview'
+  | 'my-tasks'
+  | 'my-subtasks'
+  | 'my-workspaces'
 
-// Profile feature slugs
-export type ProfileFeatureSlug = 'settings' | 'notifications' | 'api-keys' | 'sessions'
+// Profile feature slugs (from ProfileSidebar.tsx)
+export type ProfileFeatureSlug =
+  // Information section
+  | 'summary'
+  | 'time-tracking'
+  | 'last-logins'
+  | 'sessions'
+  | 'password-history'
+  | 'metadata'
+  // Actions section
+  | 'edit-profile'
+  | 'avatar'
+  | 'change-password'
+  | 'two-factor-auth'
+  | 'public-access'
+  | 'notifications'
+  | 'external-accounts'
+  | 'integrations'
+  | 'api-tokens'
+  | 'hourly-rate'
 
-// Admin feature slugs
-export type AdminFeatureSlug = 'users' | 'groups' | 'acl' | 'invites' | 'system-settings'
+// Admin feature slugs (from AdminSidebar.tsx)
+export type AdminFeatureSlug =
+  // User Management section
+  | 'users'
+  | 'create-user'
+  | 'acl'
+  | 'permission-tree'
+  | 'invites'
+  // Workspaces section
+  | 'workspaces'
+  // System Settings section
+  | 'settings-general'
+  | 'settings-security'
+  | 'backup'
 
 // Union of all feature slugs
 export type SystemFeatureSlug = DashboardFeatureSlug | ProfileFeatureSlug | AdminFeatureSlug
@@ -60,17 +94,23 @@ export type SystemFeatureSlug = DashboardFeatureSlug | ProfileFeatureSlug | Admi
 // =============================================================================
 
 // Dashboard features: all require at least READ on dashboard
-const DASHBOARD_READ_FEATURES: DashboardFeatureSlug[] = ['overview', 'recent-projects']
-const DASHBOARD_EXECUTE_FEATURES: DashboardFeatureSlug[] = ['widgets', 'shortcuts']
+const DASHBOARD_READ_FEATURES: DashboardFeatureSlug[] = ['overview', 'my-tasks', 'my-subtasks', 'my-workspaces']
+const DASHBOARD_EXECUTE_FEATURES: DashboardFeatureSlug[] = []
 
 // Profile features: all require at least READ on profile
-const PROFILE_READ_FEATURES: ProfileFeatureSlug[] = ['settings', 'notifications']
-const PROFILE_EXECUTE_FEATURES: ProfileFeatureSlug[] = ['api-keys', 'sessions']
+const PROFILE_READ_FEATURES: ProfileFeatureSlug[] = [
+  'summary', 'time-tracking', 'last-logins', 'sessions', 'password-history', 'metadata',
+  'edit-profile', 'avatar', 'notifications',
+]
+const PROFILE_EXECUTE_FEATURES: ProfileFeatureSlug[] = [
+  'change-password', 'two-factor-auth', 'public-access', 'external-accounts',
+  'integrations', 'api-tokens', 'hourly-rate',
+]
 
 // Admin features: different permission levels
-const ADMIN_READ_FEATURES: AdminFeatureSlug[] = ['users', 'groups']
-const ADMIN_EXECUTE_FEATURES: AdminFeatureSlug[] = ['invites']
-const ADMIN_PERMISSIONS_FEATURES: AdminFeatureSlug[] = ['acl', 'system-settings']
+const ADMIN_READ_FEATURES: AdminFeatureSlug[] = ['users', 'workspaces']
+const ADMIN_EXECUTE_FEATURES: AdminFeatureSlug[] = ['create-user', 'invites']
+const ADMIN_PERMISSIONS_FEATURES: AdminFeatureSlug[] = ['acl', 'permission-tree', 'settings-general', 'settings-security', 'backup']
 
 // =============================================================================
 // Hook Result Interface
