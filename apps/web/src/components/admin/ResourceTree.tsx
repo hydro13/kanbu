@@ -24,9 +24,9 @@ import { cn } from '@/lib/utils'
 // Types
 // =============================================================================
 
-// Extended resource types (Fase 4C)
-// root → system/dashboard/workspaces → workspace:{id} → project:{id}
-export type ResourceType = 'root' | 'system' | 'dashboard' | 'workspace' | 'project' | 'admin' | 'profile' | 'group'
+// Extended resource types (Fase 4C + Fase 8B)
+// root → system/dashboard/workspaces → workspace:{id} → project:{id} → feature:{id}
+export type ResourceType = 'root' | 'system' | 'dashboard' | 'workspace' | 'project' | 'feature' | 'admin' | 'profile' | 'group'
 
 export interface SelectedResource {
   type: ResourceType
@@ -40,6 +40,7 @@ export interface TreeState {
   expandedSections: Set<string>
   expandedWorkspaces: Set<number>
   expandedWorkspaceProjects: Set<number>
+  expandedProjectFeatures: Set<number> // Fase 8B: track expanded projects for features
 }
 
 interface Workspace {
@@ -67,10 +68,21 @@ interface SecurityGroup {
   memberCount?: number
 }
 
+// Fase 8B: Feature interface for menu items
+interface Feature {
+  id: number
+  slug: string
+  name: string
+  description: string | null
+  icon: string | null
+  sortOrder: number
+}
+
 interface ResourceTreeProps {
   workspaces: Workspace[]
   projects: Project[]
   groups?: SecurityGroup[]
+  features?: Feature[] // Fase 8B: system-wide features
   isAdmin: boolean
   selectedResource: SelectedResource | null
   onSelectResource: (resource: SelectedResource) => void
@@ -160,6 +172,18 @@ function ServerIcon({ className }: { className?: string }) {
   )
 }
 
+// Fase 8B: Feature icon (menu/grid icon)
+function FeatureIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5z" />
+      <path d="M14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5z" />
+      <path d="M4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4z" />
+      <path d="M14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z" />
+    </svg>
+  )
+}
+
 // =============================================================================
 // Tree Item Components
 // =============================================================================
@@ -241,6 +265,7 @@ export function ResourceTree({
   workspaces,
   projects,
   groups = [],
+  features = [],
   isAdmin,
   selectedResource,
   onSelectResource,
@@ -253,6 +278,7 @@ export function ResourceTree({
     expandedSections: new Set(['root', 'workspaces']),
     expandedWorkspaces: new Set(),
     expandedWorkspaceProjects: new Set(),
+    expandedProjectFeatures: new Set(),
   })
 
   // Use controlled state if provided, otherwise use internal state
@@ -315,6 +341,19 @@ export function ResourceTree({
     })
   }, [updateState])
 
+  // Fase 8B: Toggle features under a project
+  const toggleProjectFeatures = useCallback((projectId: number) => {
+    updateState((prev) => {
+      const next = new Set(prev.expandedProjectFeatures)
+      if (next.has(projectId)) {
+        next.delete(projectId)
+      } else {
+        next.add(projectId)
+      }
+      return { ...prev, expandedProjectFeatures: next }
+    })
+  }, [updateState])
+
   const isSelected = (type: ResourceType, id: number | null) => {
     return selectedResource?.type === type && selectedResource?.id === id
   }
@@ -322,6 +361,7 @@ export function ResourceTree({
   const isSectionExpanded = (section: string) => currentState.expandedSections.has(section)
   const isWorkspaceExpanded = (id: number) => currentState.expandedWorkspaces.has(id)
   const isProjectsExpanded = (workspaceId: number) => currentState.expandedWorkspaceProjects.has(workspaceId)
+  const isFeaturesExpanded = (projectId: number) => currentState.expandedProjectFeatures.has(projectId)
 
   return (
     <div className="space-y-0.5">
@@ -462,24 +502,72 @@ export function ResourceTree({
                       onClick={() => toggleWorkspaceProjects(workspace.id)}
                     />
 
-                    {projectsExpanded && workspaceProjects.map((project) => (
-                      <TreeItem
-                        key={project.id}
-                        label={project.name}
-                        icon={<FileIcon className="w-4 h-4 text-green-500" />}
-                        depth={4}
-                        isSelected={isSelected('project', project.id)}
-                        onClick={() =>
-                          onSelectResource({
-                            type: 'project',
-                            id: project.id,
-                            name: project.name,
-                            path: `Kanbu > Workspaces > ${workspace.name} > Projects > ${project.name}`,
-                          })
-                        }
-                        suffix={project.identifier}
-                      />
-                    ))}
+                    {projectsExpanded && workspaceProjects.map((project) => {
+                      const hasFeatures = features.length > 0
+                      const featuresExpanded = isFeaturesExpanded(project.id)
+
+                      return (
+                        <div key={project.id}>
+                          {/* Project item - now expandable when features exist */}
+                          <TreeItem
+                            label={project.name}
+                            icon={hasFeatures
+                              ? <FolderIcon className={cn('w-4 h-4', featuresExpanded ? 'text-green-400' : 'text-green-500')} open={featuresExpanded} />
+                              : <FileIcon className="w-4 h-4 text-green-500" />
+                            }
+                            depth={4}
+                            isSelected={isSelected('project', project.id)}
+                            isExpandable={hasFeatures}
+                            isExpanded={featuresExpanded}
+                            onClick={() => {
+                              if (hasFeatures) {
+                                toggleProjectFeatures(project.id)
+                              }
+                              onSelectResource({
+                                type: 'project',
+                                id: project.id,
+                                name: project.name,
+                                path: `Kanbu > Workspaces > ${workspace.name} > Projects > ${project.name}`,
+                              })
+                            }}
+                            suffix={project.identifier}
+                          />
+
+                          {/* Fase 8B: Features container under project */}
+                          {featuresExpanded && hasFeatures && (
+                            <>
+                              <TreeItem
+                                label="Features"
+                                icon={<FolderIcon className={cn('w-4 h-4', featuresExpanded ? 'text-yellow-500' : 'text-yellow-600')} open={true} />}
+                                depth={5}
+                                isSelected={false}
+                                isExpandable={false}
+                                onClick={() => {/* Features folder is always expanded when project is */}}
+                              />
+
+                              {features.map((feature) => (
+                                <TreeItem
+                                  key={feature.id}
+                                  label={feature.name}
+                                  icon={<FeatureIcon className="w-4 h-4 text-orange-500" />}
+                                  depth={6}
+                                  isSelected={isSelected('feature', feature.id)}
+                                  onClick={() =>
+                                    onSelectResource({
+                                      type: 'feature',
+                                      id: feature.id,
+                                      name: feature.name,
+                                      path: `Kanbu > Workspaces > ${workspace.name} > Projects > ${project.name} > Features > ${feature.name}`,
+                                    })
+                                  }
+                                  suffix={feature.slug}
+                                />
+                              ))}
+                            </>
+                          )}
+                        </div>
+                      )
+                    })}
                   </>
                 )}
               </div>

@@ -1,9 +1,10 @@
 /*
  * ProjectSidebar Component
- * Version: 1.1.0
+ * Version: 1.2.0
  *
  * Sidebar navigation for project-specific pages.
  * Shows links to all project views and features.
+ * Uses ACL-based feature visibility (Fase 8B).
  *
  * ═══════════════════════════════════════════════════════════════════
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
@@ -21,12 +22,17 @@
  * Host: MAX
  * Date: 2026-01-07
  * Change: Updated URLs to include workspace slug for SEO-friendly paths
+ *
+ * Modified by:
+ * Host: MAX
+ * Date: 2026-01-08
+ * Change: Fase 8B - ACL-based feature visibility
  * ═══════════════════════════════════════════════════════════════════
  */
 
 import { Link, useLocation } from 'react-router-dom'
 import { cn } from '@/lib/utils'
-import { useProjectPermissions } from '@/hooks/useProjectPermissions'
+import { useProjectFeatureAccess, type FeatureSlug } from '@/hooks/useProjectFeatureAccess'
 
 // =============================================================================
 // Icons
@@ -129,6 +135,7 @@ interface NavItem {
   label: string
   path: string
   icon: React.ComponentType<{ className?: string }>
+  slug: FeatureSlug // Fase 8B: map to feature slug for ACL checks
 }
 
 interface NavSection {
@@ -155,27 +162,27 @@ function getNavSections(workspaceSlug: string, projectIdentifier: string): NavSe
     {
       title: 'Views',
       items: [
-        { label: 'Board', path: `${basePath}/board`, icon: BoardIcon },
-        { label: 'List', path: `${basePath}/list`, icon: ListIcon },
-        { label: 'Calendar', path: `${basePath}/calendar`, icon: CalendarIcon },
-        { label: 'Timeline', path: `${basePath}/timeline`, icon: TimelineIcon },
+        { label: 'Board', path: `${basePath}/board`, icon: BoardIcon, slug: 'board' },
+        { label: 'List', path: `${basePath}/list`, icon: ListIcon, slug: 'list' },
+        { label: 'Calendar', path: `${basePath}/calendar`, icon: CalendarIcon, slug: 'calendar' },
+        { label: 'Timeline', path: `${basePath}/timeline`, icon: TimelineIcon, slug: 'timeline' },
       ],
     },
     {
       title: 'Planning',
       items: [
-        { label: 'Sprints', path: `${basePath}/sprints`, icon: SprintIcon },
-        { label: 'Milestones', path: `${basePath}/milestones`, icon: MilestoneIcon },
-        { label: 'Analytics', path: `${basePath}/analytics`, icon: AnalyticsIcon },
+        { label: 'Sprints', path: `${basePath}/sprints`, icon: SprintIcon, slug: 'sprints' },
+        { label: 'Milestones', path: `${basePath}/milestones`, icon: MilestoneIcon, slug: 'milestones' },
+        { label: 'Analytics', path: `${basePath}/analytics`, icon: AnalyticsIcon, slug: 'analytics' },
       ],
     },
     {
       title: 'Manage',
       items: [
-        { label: 'Members', path: `${basePath}/members`, icon: MembersIcon },
-        { label: 'Board Settings', path: `${basePath}/settings`, icon: SettingsIcon },
-        { label: 'Import/Export', path: `${basePath}/import-export`, icon: ImportExportIcon },
-        { label: 'Webhooks', path: `${basePath}/webhooks`, icon: WebhookIcon },
+        { label: 'Members', path: `${basePath}/members`, icon: MembersIcon, slug: 'members' },
+        { label: 'Board Settings', path: `${basePath}/settings`, icon: SettingsIcon, slug: 'settings' },
+        { label: 'Import/Export', path: `${basePath}/import-export`, icon: ImportExportIcon, slug: 'import-export' },
+        { label: 'Webhooks', path: `${basePath}/webhooks`, icon: WebhookIcon, slug: 'webhooks' },
       ],
     },
   ]
@@ -187,16 +194,16 @@ function getNavSections(workspaceSlug: string, projectIdentifier: string): NavSe
 
 export function ProjectSidebar({ projectIdentifier, projectId, workspaceSlug, collapsed = false }: ProjectSidebarProps) {
   const location = useLocation()
-  const { canManage, isLoading } = useProjectPermissions(projectId)
+  const { canSeeFeature, isLoading } = useProjectFeatureAccess(projectId)
   const navSections = getNavSections(workspaceSlug, projectIdentifier)
 
-  // Filter out "Manage" section for users without manage permissions
-  const filteredSections = navSections.filter(section => {
-    if (section.title === 'Manage' && !canManage && !isLoading) {
-      return false
-    }
-    return true
-  })
+  // Fase 8B: Filter items based on ACL permissions
+  const filteredSections = navSections
+    .map(section => ({
+      ...section,
+      items: section.items.filter(item => isLoading || canSeeFeature(item.slug)),
+    }))
+    .filter(section => section.items.length > 0)
 
   const isActive = (path: string) => location.pathname === path
 

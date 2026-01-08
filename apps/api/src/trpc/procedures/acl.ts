@@ -24,8 +24,8 @@ import { emitAclGranted, emitAclDenied, emitAclDeleted } from '../../socket/emit
 // Schemas
 // =============================================================================
 
-// Extended resource types (Fase 4C: added root, system, dashboard)
-const resourceTypeSchema = z.enum(['root', 'system', 'dashboard', 'workspace', 'project', 'admin', 'profile'])
+// Extended resource types (Fase 4C: added root, system, dashboard; Fase 8B: added feature)
+const resourceTypeSchema = z.enum(['root', 'system', 'dashboard', 'workspace', 'project', 'feature', 'admin', 'profile'])
 const principalTypeSchema = z.enum(['user', 'group'])
 
 const aclEntrySchema = z.object({
@@ -561,9 +561,23 @@ export const aclRouter = router({
         orderBy: { name: 'asc' },
       })
 
+      // Get features - system-wide features (Fase 8B)
+      const features = await ctx.prisma.feature.findMany({
+        where: { isActive: true, projectId: null }, // System-wide features only
+        select: {
+          id: true,
+          slug: true,
+          name: true,
+          description: true,
+          icon: true,
+          sortOrder: true,
+        },
+        orderBy: { sortOrder: 'asc' },
+      })
+
       // Build resource types based on scope
       // Domain Admins can see root, system, dashboard
-      // Workspace Admins can only see workspace/project
+      // Workspace Admins can only see workspace/project/feature
       const resourceTypes = [
         ...(isDomainAdmin ? [
           { type: 'root', label: 'Root (Kanbu)', supportsRoot: true },
@@ -572,6 +586,7 @@ export const aclRouter = router({
         ] : []),
         { type: 'workspace', label: 'Workspace', supportsRoot: true },
         { type: 'project', label: 'Project', supportsRoot: true },
+        { type: 'feature', label: 'Feature', supportsRoot: false }, // Features are always under projects
         ...(isSuperAdmin ? [
           { type: 'admin', label: 'Administration', supportsRoot: true },
           { type: 'profile', label: 'Profile', supportsRoot: true },
@@ -579,7 +594,7 @@ export const aclRouter = router({
       ]
 
       return {
-        // Extended resource types hierarchy (Fase 4C, filtered by scope in Fase 6)
+        // Extended resource types hierarchy (Fase 4C, 8B, filtered by scope in Fase 6)
         resourceTypes,
         workspaces: workspaces.map((w) => ({
           id: w.id,
@@ -594,6 +609,16 @@ export const aclRouter = router({
           workspaceId: p.workspaceId,
           workspaceName: p.workspace.name,
           resourceType: 'project' as const,
+        })),
+        // System features that can be ACL-controlled per project (Fase 8B)
+        features: features.map((f) => ({
+          id: f.id,
+          slug: f.slug,
+          name: f.name,
+          description: f.description,
+          icon: f.icon,
+          sortOrder: f.sortOrder,
+          resourceType: 'feature' as const,
         })),
       }
     }),

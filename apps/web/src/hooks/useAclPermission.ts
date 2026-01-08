@@ -35,7 +35,7 @@ import { selectUser } from '@/store/authSlice'
 // Types
 // =============================================================================
 
-export type AclResourceType = 'root' | 'system' | 'dashboard' | 'workspace' | 'project' | 'admin' | 'profile'
+export type AclResourceType = 'root' | 'system' | 'dashboard' | 'workspace' | 'project' | 'feature' | 'admin' | 'profile'
 
 export interface AclPermissionContext {
   resourceType: AclResourceType
@@ -149,6 +149,14 @@ export function useWorkspaceAcl(workspaceId: number): UseAclPermissionResult {
  */
 export function useProjectAcl(projectId: number): UseAclPermissionResult {
   return useAclPermission({ resourceType: 'project', resourceId: projectId })
+}
+
+/**
+ * Hook for checking feature permissions (Fase 8B).
+ * Use this to check if a user can see a specific menu item/feature.
+ */
+export function useFeatureAcl(featureId: number): UseAclPermissionResult {
+  return useAclPermission({ resourceType: 'feature', resourceId: featureId })
 }
 
 /**

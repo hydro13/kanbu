@@ -14,7 +14,8 @@
 │ FASE 6: Scoped Admin Panel                          [██████████] ✓  │
 │ FASE 7: Scoped UI Elements                          [██████████] ✓  │
 │ FASE 8: Database Cleanup                            [──────────] ○  │
-│ FASE 8B: Feature ACL Resources                      [──────────] ○  │
+│ FASE 8B: Feature ACL (Project)                      [████████░░] ◐  │
+│ FASE 8C: Feature ACL (Systeem-breed) + Docs         [──────────] ○  │
 │ FASE 9: Advanced Features                           [──────────] ○  │
 └─────────────────────────────────────────────────────────────────────┘
 
@@ -644,48 +645,137 @@ interface UserScope {
 
 ---
 
-## GEPLAND: Fase 8B - Feature ACL Resources
+## IN PROGRESS: Fase 8B - Feature ACL Resources (Project Scope)
 
-> **Doel:** Menu items en features als ACL resources, zodat beheerders via de UI kunnen bepalen wie welke features ziet.
+> **Doel:** Project menu items als ACL resources.
+> **Status:** ◐ Deels voltooid - alleen project features geïmplementeerd.
+> **Let op:** Fase 8C breidt dit uit naar systeem-breed.
 
 ### 8B.1 Database Schema
-- [ ] `Feature` tabel aanmaken (id, projectId, slug, name, description)
-- [ ] Seed standaard features (analytics, sprints, milestones, members, settings, webhooks)
-- [ ] ACL resourceType 'feature' toevoegen
+- [x] `Feature` tabel aanmaken (id, projectId, slug, name, description, icon, sortOrder)
+- [x] Seed project features (board, list, calendar, timeline, sprints, milestones, analytics, members, settings, import-export, webhooks)
+- [x] ACL resourceType 'feature' toevoegen
 
 ### 8B.2 API Uitbreiden
-- [ ] `acl.ts` - feature resource type ondersteuning
-- [ ] `feature.ts` - CRUD procedures voor features
-- [ ] Inheritance: project ACL → feature ACL
+- [x] `acl.ts` - feature resource type ondersteuning
+- [x] `aclService.ts` - feature inheritance van project
+- [x] `acl.getResources` - features returnen
 
 ### 8B.3 ResourceTree UI
-- [ ] Features tonen onder projects in de boom
-- [ ] ACL kunnen zetten per feature
-- [ ] Collapse/expand voor features
+- [x] Features tonen onder projects in de boom
+- [x] Collapse/expand voor features per project
+- [x] Feature icon toegevoegd
 
-### 8B.4 Sidebar Integratie
-- [ ] ProjectSidebar checkt ACL per menu item
-- [ ] `useFeatureAcl(projectId, featureSlug)` hook
-- [ ] Graceful fallback als feature geen ACL heeft (default visible)
+### 8B.4 Sidebar Integratie (Project)
+- [x] `useProjectFeatureAccess` hook gemaakt
+- [x] ProjectSidebar checkt ACL per menu item
+- [x] Filter secties op basis van permissions
 
 ### 8B.5 Verificatie
-- [ ] Beheerder kan via UI bepalen wie welke features ziet
-- [ ] Menu items verbergen/tonen werkt correct
-- [ ] Inheritance van project naar feature werkt
+- [x] TypeCheck passed
+- [x] Features geseed in database (11 project features)
+- [ ] **INCOMPLEET:** Alleen project features - zie Fase 8C voor systeem-breed
 
-**Resource Hierarchy na 8B:**
+---
+
+## GEPLAND: Fase 8C - Systeem-breed Feature ACL
+
+> **Doel:** ALLE menu items en features in Kanbu via ACL beheren.
+> Elke sectie (Dashboard, Profile, Admin, Projects) heeft features die via ACL beheerd worden.
+> Inclusief documentatie zodat toekomstige Claude Code sessies dit systeem correct gebruiken.
+
+### 8C.1 Feature Scope Uitbreiden
+
+#### Database Schema Update
+- [ ] `scope` veld toevoegen aan Feature tabel: `'dashboard' | 'profile' | 'admin' | 'project'`
+- [ ] Migratie uitvoeren
+
+#### Seed Alle Features
+- [ ] Dashboard features: overview, widgets, shortcuts, recent-projects
+- [ ] Profile features: settings, notifications, api-keys, sessions
+- [ ] Admin features: users, groups, acl, invites, system-settings
+- [ ] Project features: (bestaand uit 8B)
+
+### 8C.2 ResourceTree UI Uitbreiden
+
+- [ ] Features tonen onder Dashboard sectie
+- [ ] Features tonen onder System/Admin sectie
+- [ ] Features tonen onder Profile sectie (indien relevant)
+- [ ] Features groeperen per scope in de boom
+
+**Gewenste Tree Structuur:**
+```
+Kanbu (Root)
+├── System
+│   ├── Administration
+│   │   └── Features
+│   │       ├── admin.users
+│   │       ├── admin.groups
+│   │       ├── admin.acl
+│   │       └── admin.invites
+│   └── ...
+├── Dashboard
+│   └── Features
+│       ├── dashboard.overview
+│       ├── dashboard.widgets
+│       └── dashboard.shortcuts
+├── Workspaces
+│   └── [Workspace]
+│       └── Projects
+│           └── [Project]
+│               └── Features
+│                   ├── project.board
+│                   ├── project.analytics
+│                   └── ...
+└── Security Groups
+```
+
+### 8C.3 Sidebar Integraties
+
+- [ ] `useFeatureAccess(scope, featureSlug)` - generieke hook
+- [ ] AdminSidebar checkt ACL per admin feature
+- [ ] DashboardLayout checkt ACL per dashboard feature
+- [ ] ProfileLayout checkt ACL per profile feature (indien van toepassing)
+
+### 8C.4 Documentatie & Governance
+
+> **KRITIEK:** Zorgen dat toekomstige sessies dit systeem correct gebruiken.
+
+#### CLAUDE.md Aanvullen
+- [ ] ACL Feature sectie toevoegen aan project CLAUDE.md
+- [ ] Verplichte stappen bij nieuwe feature/pagina/menu
+- [ ] Voorbeeld code snippets
+
+#### Procedure Document
+- [ ] `docs/procedures/nieuwe-feature-acl.md` aanmaken
+- [ ] Stap-voor-stap instructies
+- [ ] Checklist voor nieuwe features
+
+#### Seed File als Source of Truth
+- [ ] `seed-features.ts` goed documenteren
+- [ ] Comments per scope sectie
+- [ ] Instructies voor toevoegen nieuwe features
+
+### 8C.5 Verificatie
+
+- [ ] Alle sidebars/layouts checken ACL
+- [ ] Nieuwe features zonder ACL entry zijn NIET zichtbaar (fail-safe)
+- [ ] Documentatie is duidelijk voor toekomstige sessies
+- [ ] TypeCheck passed
+- [ ] Handmatig getest
+
+**Resource Hierarchy na 8C:**
 ```
 root
 ├── system
+│   └── feature:admin.users, admin.groups, admin.acl, admin.invites
 ├── dashboard
+│   └── feature:dashboard.overview, dashboard.widgets, dashboard.shortcuts
+├── profile
+│   └── feature:profile.settings, profile.notifications
 └── workspace:123
     └── project:456
-        ├── feature:analytics
-        ├── feature:sprints
-        ├── feature:milestones
-        ├── feature:members
-        ├── feature:settings
-        └── feature:webhooks
+        └── feature:project.board, project.analytics, project.members, ...
 ```
 
 ---
@@ -766,13 +856,21 @@ root
 ### NEXT - Fase 8: Database Cleanup
 21. **8.x** - Database cleanup (legacy tabellen)
 
-### NEXT - Fase 8B: Feature ACL Resources
-22. **8B.1** - Feature tabel + ACL resourceType
-23. **8B.2** - ResourceTree met features onder projects
-24. **8B.3** - ProjectSidebar met ACL per menu item
+### IN PROGRESS - Fase 8B: Feature ACL (Project)
+22. **8B.1** - ✅ Feature tabel + ACL resourceType
+23. **8B.2** - ✅ ResourceTree met features onder projects
+24. **8B.3** - ✅ ProjectSidebar met ACL per menu item
+25. **8B.5** - ⏳ Verificatie (alleen project scope voltooid)
+
+### NEXT - Fase 8C: Feature ACL (Systeem-breed) + Documentatie
+26. **8C.1** - Scope veld toevoegen + alle features seeden
+27. **8C.2** - ResourceTree UI uitbreiden (Dashboard, Admin, Profile)
+28. **8C.3** - Alle sidebars/layouts ACL integratie
+29. **8C.4** - **KRITIEK:** Documentatie voor toekomstige sessies (CLAUDE.md, procedures)
+30. **8C.5** - Verificatie
 
 ### LATER - Fase 9: Advanced Features
-25. **9.x** - Advanced features (LDAP, audit, etc.)
+31. **9.x** - Advanced features (LDAP, audit, etc.)
 
 ---
 
@@ -864,6 +962,8 @@ root
 
 | Datum | Wijziging |
 |-------|-----------|
+| 2026-01-08 | **Fase 8C GEPLAND**: Systeem-breed Feature ACL + Documentatie voor toekomstige sessies |
+| 2026-01-08 | **Fase 8B DEELS VOLTOOID**: Feature ACL voor Projects - Feature tabel, ResourceTree, ProjectSidebar ACL |
 | 2026-01-08 | **Fase 7 VOLTOOID**: Scoped UI Elements - AclGate component, useAclPermission hook, acl.myPermission endpoint |
 | 2026-01-08 | **Fase 6 VOLTOOID**: Scoped Admin Panel - useAdminScope hook, AdminSidebar filtering, ACL resource tree scope filtering |
 | 2026-01-08 | **Fase 5 VOLTOOID**: Scoped Data Access - ScopeService, scoped user/group queries, helper methods |

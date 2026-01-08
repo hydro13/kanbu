@@ -35,6 +35,7 @@ interface AclPageSessionState {
     expandedSections: string[]
     expandedWorkspaces: number[]
     expandedWorkspaceProjects: number[]
+    expandedProjectFeatures: number[] // Fase 8B
   }
 }
 
@@ -64,13 +65,13 @@ function saveSessionState(state: AclPageSessionState): void {
 
 type PrincipalType = 'user' | 'group'
 
-// ACL API accepts these resource types (Fase 4C: added root, system, dashboard)
+// ACL API accepts these resource types (Fase 4C: added root, system, dashboard; Fase 8B: added feature)
 // 'group' is NOT an ACL resource - it's a principal
-type AclResourceType = 'root' | 'system' | 'dashboard' | 'workspace' | 'project' | 'admin' | 'profile'
+type AclResourceType = 'root' | 'system' | 'dashboard' | 'workspace' | 'project' | 'feature' | 'admin' | 'profile'
 
 function isAclResourceType(type: ResourceType): type is AclResourceType {
   return type === 'root' || type === 'system' || type === 'dashboard' ||
-         type === 'workspace' || type === 'project' || type === 'admin' || type === 'profile'
+         type === 'workspace' || type === 'project' || type === 'feature' || type === 'admin' || type === 'profile'
 }
 
 interface AclFormData {
@@ -135,6 +136,7 @@ export function AclPage() {
     expandedSections: new Set(initialState?.treeState.expandedSections ?? ['root', 'workspaces']),
     expandedWorkspaces: new Set(initialState?.treeState.expandedWorkspaces ?? []),
     expandedWorkspaceProjects: new Set(initialState?.treeState.expandedWorkspaceProjects ?? []),
+    expandedProjectFeatures: new Set(initialState?.treeState.expandedProjectFeatures ?? []),
   }))
   const [showGrantDialog, setShowGrantDialog] = useState(false)
   const [showDenyDialog, setShowDenyDialog] = useState(false)
@@ -161,6 +163,7 @@ export function AclPage() {
         expandedSections: Array.from(treeState.expandedSections),
         expandedWorkspaces: Array.from(treeState.expandedWorkspaces),
         expandedWorkspaceProjects: Array.from(treeState.expandedWorkspaceProjects),
+        expandedProjectFeatures: Array.from(treeState.expandedProjectFeatures),
       },
     })
   }, [selectedResource, treeState])
@@ -389,6 +392,7 @@ export function AclPage() {
               workspaces={resources?.workspaces ?? []}
               projects={resources?.projects ?? []}
               groups={principals?.groups ?? []}
+              features={resources?.features ?? []}
               isAdmin={resources?.resourceTypes.some(r => r.type === 'root') ?? false}
               selectedResource={selectedResource}
               onSelectResource={setSelectedResource}

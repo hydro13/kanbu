@@ -287,6 +287,7 @@ model Project {
   webhooks        Webhook[]
   groups          Group[]              // AD-style groups for this project
   roleAssignments RoleAssignment[]     // Security groups assigned to this project
+  features        Feature[]            // ACL-controlled menu items/features (Fase 8B)
 
   @@unique([workspaceId, identifier])
   @@map("projects")
@@ -312,6 +313,30 @@ enum ProjectRole {
   MANAGER
   MEMBER
   VIEWER
+}
+
+// ============================================================================
+// FEATURE ACCESS CONTROL (Fase 8B)
+// Menu items and features as ACL resources for fine-grained UI control
+// ============================================================================
+
+model Feature {
+  id          Int      @id @default(autoincrement())
+  projectId   Int?     @map("project_id")    // null = system-wide feature
+  slug        String   @db.VarChar(50)       // e.g., 'analytics', 'sprints', 'members'
+  name        String   @db.VarChar(100)      // Display name
+  description String?  @db.Text
+  icon        String?  @db.VarChar(50)       // Icon identifier for UI
+  sortOrder   Int      @default(0) @map("sort_order")
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  project Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, slug])
+  @@map("features")
 }
 
 // ============================================================================
