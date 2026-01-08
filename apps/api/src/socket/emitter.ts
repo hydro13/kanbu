@@ -522,3 +522,58 @@ export function emitRoleAssignmentRemoved(payload: RoleAssignmentEventPayload): 
 
   console.log(`[Socket] Emitted roleAssignment:removed to ${roomName}`);
 }
+
+// =============================================================================
+// ACL Events (for ACL Manager real-time sync)
+// =============================================================================
+
+export interface AclEventPayload {
+  entryId: number;
+  resourceType: string;
+  resourceId: number | null;
+  principalType: 'user' | 'group';
+  principalId: number;
+  permissions: number;
+  deny: boolean;
+  triggeredBy: {
+    id: number;
+    username: string;
+  };
+  timestamp: string;
+}
+
+/**
+ * Emit ACL granted event to admin room
+ */
+export function emitAclGranted(payload: AclEventPayload): void {
+  if (!ioInstance) return;
+
+  const roomName = RoomNames.admin();
+  ioInstance.to(roomName).emit('acl:granted', payload);
+
+  console.log(`[Socket] Emitted acl:granted to ${roomName}`);
+}
+
+/**
+ * Emit ACL denied event to admin room
+ */
+export function emitAclDenied(payload: AclEventPayload): void {
+  if (!ioInstance) return;
+
+  const roomName = RoomNames.admin();
+  ioInstance.to(roomName).emit('acl:denied', payload);
+
+  console.log(`[Socket] Emitted acl:denied to ${roomName}`);
+}
+
+/**
+ * Emit ACL deleted event to admin room
+ */
+export function emitAclDeleted(payload: Omit<AclEventPayload, 'permissions' | 'deny'>): void {
+  if (!ioInstance) return;
+
+  const roomName = RoomNames.admin();
+  ioInstance.to(roomName).emit('acl:deleted', payload);
+
+  console.log(`[Socket] Emitted acl:deleted to ${roomName}`);
+}

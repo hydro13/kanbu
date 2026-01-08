@@ -171,7 +171,7 @@ Project Member (RWX op project:5)
 | `system-admins` | Technisch beheer | RWX op `admin:null` |
 | `workspace-admins` | Workspace beheerders | P op specifieke workspaces |
 | `project-managers` | Project leiders | RWXD op specifieke projects |
-| `members` | Standaard gebruikers | RWX op hun projects |
+| `users` | Alle gebruikers (automatisch lid) | RWX op hun projects |
 | `viewers` | Alleen-lezen | R op specifieke resources |
 | `external-contractors` | Externe partijen | Beperkte R/RW op specifieke projects |
 | `guests` | Gasten | Minimale R toegang |

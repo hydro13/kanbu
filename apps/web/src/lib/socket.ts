@@ -378,3 +378,35 @@ export function leaveAdminRoom(): void {
   socket.emit('room:leave', 'admin');
   console.log('[Socket] Left admin room');
 }
+
+// =============================================================================
+// ACL Event Types (for ACL page real-time updates)
+// =============================================================================
+
+export interface AclEventPayload {
+  entryId: number;
+  resourceType: string;
+  resourceId: number | null;
+  principalType: 'user' | 'group';
+  principalId: number;
+  permissions: number;
+  deny: boolean;
+  triggeredBy: {
+    id: number;
+    username: string;
+  };
+  timestamp: string;
+}
+
+export interface AclDeletedEventPayload {
+  entryId: number;
+  resourceType: string;
+  resourceId: number | null;
+  principalType: 'user' | 'group';
+  principalId: number;
+  triggeredBy: {
+    id: number;
+    username: string;
+  };
+  timestamp: string;
+}

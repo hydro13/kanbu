@@ -14,6 +14,7 @@
  */
 
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { trpc } from '@/lib/trpc'
 import { cn } from '@/lib/utils'
 
@@ -307,17 +308,18 @@ export function GroupMembersPanel({ groupId, groupName, groupPath }: GroupMember
                     </p>
                   )}
                   <div className="mt-2 flex flex-wrap gap-2">
-                    <span className="px-2 py-0.5 text-xs rounded bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
-                      {group.type}
-                    </span>
-                    {group.isSecurityGroup && (
+                    {/* Single meaningful badge instead of redundant ones */}
+                    {group.isSecurityGroup && group.isSystem ? (
+                      <span className="px-2 py-0.5 text-xs rounded bg-indigo-200 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300">
+                        System Security Group
+                      </span>
+                    ) : group.isSecurityGroup ? (
                       <span className="px-2 py-0.5 text-xs rounded bg-indigo-200 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300">
                         Security Group
                       </span>
-                    )}
-                    {group.isSystem && (
-                      <span className="px-2 py-0.5 text-xs rounded bg-purple-200 dark:bg-purple-900 text-purple-700 dark:text-purple-300">
-                        System
+                    ) : (
+                      <span className="px-2 py-0.5 text-xs rounded bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
+                        {group.type}
                       </span>
                     )}
                     {group.workspace && (
@@ -325,10 +327,60 @@ export function GroupMembersPanel({ groupId, groupName, groupPath }: GroupMember
                         {group.workspace.name}
                       </span>
                     )}
+                    {/* Protected badge for domain-admins */}
+                    {group.name === 'domain-admins' && (
+                      <span className="px-2 py-0.5 text-xs rounded bg-amber-200 dark:bg-amber-900 text-amber-700 dark:text-amber-300 flex items-center gap-1">
+                        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M12 2L3 7V12C3 16.97 6.84 21.5 12 23C17.16 21.5 21 16.97 21 12V7L12 2Z" />
+                        </svg>
+                        Protected
+                      </span>
+                    )}
+                    {/* Auto-membership badge for users group */}
+                    {group.name === 'users' && (
+                      <span className="px-2 py-0.5 text-xs rounded bg-green-200 dark:bg-green-900 text-green-700 dark:text-green-300 flex items-center gap-1">
+                        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                          <polyline points="22 4 12 14.01 9 11.01" />
+                        </svg>
+                        Auto-membership
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
             </div>
+
+            {/* Special info boxes for system groups */}
+            {group.name === 'users' && (
+              <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                <div className="flex items-start gap-2">
+                  <svg className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="16" x2="12" y2="12" />
+                    <line x1="12" y1="8" x2="12.01" y2="8" />
+                  </svg>
+                  <div className="text-sm text-green-700 dark:text-green-300">
+                    <strong>Auto-membership:</strong> Alle nieuwe gebruikers worden automatisch toegevoegd aan deze group.
+                    Dit is de standaard group voor basis-rechten in het systeem.
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {group.name === 'domain-admins' && (
+              <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                <div className="flex items-start gap-2">
+                  <svg className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2L3 7V12C3 16.97 6.84 21.5 12 23C17.16 21.5 21 16.97 21 12V7L12 2Z" />
+                  </svg>
+                  <div className="text-sm text-amber-700 dark:text-amber-300">
+                    <strong>Protected Group:</strong> Deze system group kan niet worden verwijderd.
+                    Leden hebben volledige beheerdersrechten over het hele systeem.
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Members List */}
             <div>
@@ -344,8 +396,11 @@ export function GroupMembersPanel({ groupId, groupName, groupPath }: GroupMember
                       key={member.id}
                       className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
+                      <Link
+                        to={`/admin/users/${member.user.id}`}
+                        className="flex items-center gap-3 group hover:opacity-80 transition-opacity"
+                      >
+                        <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center ring-2 ring-transparent group-hover:ring-blue-400 transition-all">
                           {member.user.avatarUrl ? (
                             <img
                               src={member.user.avatarUrl}
@@ -359,7 +414,7 @@ export function GroupMembersPanel({ groupId, groupName, groupPath }: GroupMember
                           )}
                         </div>
                         <div>
-                          <div className="font-medium text-gray-900 dark:text-white">
+                          <div className="font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                             {member.user.name}
                           </div>
                           <div className="text-xs text-gray-500">
@@ -367,7 +422,7 @@ export function GroupMembersPanel({ groupId, groupName, groupPath }: GroupMember
                             {member.user.email && ` - ${member.user.email}`}
                           </div>
                         </div>
-                      </div>
+                      </Link>
 
                       <div className="flex items-center gap-2">
                         {member.addedBy && (

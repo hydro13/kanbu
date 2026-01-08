@@ -17,6 +17,7 @@ import { z } from 'zod'
 import { TRPCError } from '@trpc/server'
 import { router, protectedProcedure } from '../router'
 import { aclService, ACL_PERMISSIONS, ACL_PRESETS } from '../../services/aclService'
+import { emitAclGranted, emitAclDenied, emitAclDeleted } from '../../socket/emitter'
 
 // =============================================================================
 // Schemas
@@ -213,7 +214,7 @@ export const aclRouter = router({
     .mutation(async ({ ctx, input }) => {
       await requireAclManagement(ctx.user!.id, input.resourceType, input.resourceId, ctx.prisma)
 
-      await aclService.grantPermission({
+      const entry = await aclService.grantPermission({
         resourceType: input.resourceType,
         resourceId: input.resourceId,
         principalType: input.principalType,
@@ -221,6 +222,22 @@ export const aclRouter = router({
         permissions: input.permissions,
         inheritToChildren: input.inheritToChildren,
         createdById: ctx.user!.id,
+      })
+
+      // Emit real-time event
+      emitAclGranted({
+        entryId: entry.id,
+        resourceType: input.resourceType,
+        resourceId: input.resourceId,
+        principalType: input.principalType,
+        principalId: input.principalId,
+        permissions: input.permissions,
+        deny: false,
+        triggeredBy: {
+          id: ctx.user!.id,
+          username: ctx.user!.username,
+        },
+        timestamp: new Date().toISOString(),
       })
 
       return { success: true }
@@ -234,7 +251,7 @@ export const aclRouter = router({
     .mutation(async ({ ctx, input }) => {
       await requireAclManagement(ctx.user!.id, input.resourceType, input.resourceId, ctx.prisma)
 
-      await aclService.denyPermission({
+      const entry = await aclService.denyPermission({
         resourceType: input.resourceType,
         resourceId: input.resourceId,
         principalType: input.principalType,
@@ -242,6 +259,22 @@ export const aclRouter = router({
         permissions: input.permissions,
         inheritToChildren: input.inheritToChildren,
         createdById: ctx.user!.id,
+      })
+
+      // Emit real-time event
+      emitAclDenied({
+        entryId: entry.id,
+        resourceType: input.resourceType,
+        resourceId: input.resourceId,
+        principalType: input.principalType,
+        principalId: input.principalId,
+        permissions: input.permissions,
+        deny: true,
+        triggeredBy: {
+          id: ctx.user!.id,
+          username: ctx.user!.username,
+        },
+        timestamp: new Date().toISOString(),
       })
 
       return { success: true }
@@ -331,6 +364,20 @@ export const aclRouter = router({
         where: { id: input.id },
       })
 
+      // Emit real-time event
+      emitAclDeleted({
+        entryId: entry.id,
+        resourceType: entry.resourceType,
+        resourceId: entry.resourceId,
+        principalType: entry.principalType as 'user' | 'group',
+        principalId: entry.principalId,
+        triggeredBy: {
+          id: ctx.user!.id,
+          username: ctx.user!.username,
+        },
+        timestamp: new Date().toISOString(),
+      })
+
       return { success: true }
     }),
 
@@ -408,6 +455,9 @@ export const aclRouter = router({
           displayName: true,
           type: true,
           workspaceId: true,
+          _count: {
+            select: { members: true },
+          },
         },
         take: 50,
         orderBy: { displayName: 'asc' },
@@ -429,6 +479,7 @@ export const aclRouter = router({
           displayName: g.displayName,
           groupType: g.type,
           workspaceId: g.workspaceId,
+          memberCount: g._count.members,
         })),
       }
     }),

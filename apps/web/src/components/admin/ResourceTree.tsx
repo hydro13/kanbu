@@ -17,7 +17,7 @@
  * =============================================================================
  */
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { cn } from '@/lib/utils'
 
 // =============================================================================
@@ -31,6 +31,13 @@ export interface SelectedResource {
   id: number | null
   name: string
   path?: string // Breadcrumb path like "Kanbu > Workspaces > Workspace > Projects > Project"
+}
+
+// Tree state for controlled mode - allows parent to persist state
+export interface TreeState {
+  expandedSections: Set<string>
+  expandedWorkspaces: Set<number>
+  expandedWorkspaceProjects: Set<number>
 }
 
 interface Workspace {
@@ -55,6 +62,7 @@ interface SecurityGroup {
   displayName: string
   groupType?: string
   workspaceId?: number | null
+  memberCount?: number
 }
 
 interface ResourceTreeProps {
@@ -64,6 +72,9 @@ interface ResourceTreeProps {
   isAdmin: boolean
   selectedResource: SelectedResource | null
   onSelectResource: (resource: SelectedResource) => void
+  // Optional controlled tree state for persistence
+  treeState?: TreeState
+  onTreeStateChange?: (state: TreeState) => void
 }
 
 // =============================================================================
@@ -229,11 +240,28 @@ export function ResourceTree({
   isAdmin,
   selectedResource,
   onSelectResource,
+  treeState: controlledTreeState,
+  onTreeStateChange,
 }: ResourceTreeProps) {
-  // Track expanded sections
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['root', 'workspaces']))
-  const [expandedWorkspaces, setExpandedWorkspaces] = useState<Set<number>>(new Set())
-  const [expandedWorkspaceProjects, setExpandedWorkspaceProjects] = useState<Set<number>>(new Set())
+  // Internal state for uncontrolled mode
+  const [internalState, setInternalState] = useState<TreeState>({
+    expandedSections: new Set(['root', 'workspaces']),
+    expandedWorkspaces: new Set(),
+    expandedWorkspaceProjects: new Set(),
+  })
+
+  // Use controlled state if provided, otherwise use internal state
+  const isControlled = controlledTreeState !== undefined
+  const currentState = isControlled ? controlledTreeState : internalState
+
+  // Update state - either call parent callback or set internal state
+  const updateState = useCallback((updater: (prev: TreeState) => TreeState) => {
+    if (isControlled && onTreeStateChange) {
+      onTreeStateChange(updater(currentState))
+    } else {
+      setInternalState(updater)
+    }
+  }, [isControlled, onTreeStateChange, currentState])
 
   // Group projects by workspace
   const projectsByWorkspace = useMemo(() => {
@@ -246,63 +274,49 @@ export function ResourceTree({
     return map
   }, [projects])
 
-  // Group security groups by type (system vs workspace)
-  const groupsByScope = useMemo(() => {
-    const systemGroups: SecurityGroup[] = []
-    const workspaceGroups: SecurityGroup[] = []
-    for (const group of groups) {
-      if (group.workspaceId) {
-        workspaceGroups.push(group)
-      } else {
-        systemGroups.push(group)
-      }
-    }
-    return { systemGroups, workspaceGroups }
-  }, [groups])
-
-  const toggleSection = (section: string) => {
-    setExpandedSections((prev) => {
-      const next = new Set(prev)
+  const toggleSection = useCallback((section: string) => {
+    updateState((prev) => {
+      const next = new Set(prev.expandedSections)
       if (next.has(section)) {
         next.delete(section)
       } else {
         next.add(section)
       }
-      return next
+      return { ...prev, expandedSections: next }
     })
-  }
+  }, [updateState])
 
-  const toggleWorkspace = (workspaceId: number) => {
-    setExpandedWorkspaces((prev) => {
-      const next = new Set(prev)
+  const toggleWorkspace = useCallback((workspaceId: number) => {
+    updateState((prev) => {
+      const next = new Set(prev.expandedWorkspaces)
       if (next.has(workspaceId)) {
         next.delete(workspaceId)
       } else {
         next.add(workspaceId)
       }
-      return next
+      return { ...prev, expandedWorkspaces: next }
     })
-  }
+  }, [updateState])
 
-  const toggleWorkspaceProjects = (workspaceId: number) => {
-    setExpandedWorkspaceProjects((prev) => {
-      const next = new Set(prev)
+  const toggleWorkspaceProjects = useCallback((workspaceId: number) => {
+    updateState((prev) => {
+      const next = new Set(prev.expandedWorkspaceProjects)
       if (next.has(workspaceId)) {
         next.delete(workspaceId)
       } else {
         next.add(workspaceId)
       }
-      return next
+      return { ...prev, expandedWorkspaceProjects: next }
     })
-  }
+  }, [updateState])
 
   const isSelected = (type: ResourceType, id: number | null) => {
     return selectedResource?.type === type && selectedResource?.id === id
   }
 
-  const isSectionExpanded = (section: string) => expandedSections.has(section)
-  const isWorkspaceExpanded = (id: number) => expandedWorkspaces.has(id)
-  const isProjectsExpanded = (workspaceId: number) => expandedWorkspaceProjects.has(workspaceId)
+  const isSectionExpanded = (section: string) => currentState.expandedSections.has(section)
+  const isWorkspaceExpanded = (id: number) => currentState.expandedWorkspaces.has(id)
+  const isProjectsExpanded = (workspaceId: number) => currentState.expandedWorkspaceProjects.has(workspaceId)
 
   return (
     <div className="space-y-0.5">
@@ -455,83 +469,56 @@ export function ResourceTree({
                   onSelectResource({
                     type: 'group',
                     id: null,
-                    name: 'All Security Groups',
+                    name: 'Security Groups',
                     path: 'Kanbu > Security Groups',
                   })
                 }}
               />
 
-              {isSectionExpanded('groups') && (
-                <>
-                  {/* System-level groups */}
-                  {groupsByScope.systemGroups.length > 0 && (
-                    <>
-                      <TreeItem
-                        label="System Groups"
-                        icon={<FolderIcon className={cn('w-4 h-4', isSectionExpanded('groups-system') ? 'text-yellow-500' : 'text-yellow-600')} open={isSectionExpanded('groups-system')} />}
-                        depth={2}
-                        isSelected={false}
-                        isExpandable={true}
-                        isExpanded={isSectionExpanded('groups-system')}
-                        onClick={() => toggleSection('groups-system')}
-                      />
-
-                      {isSectionExpanded('groups-system') && groupsByScope.systemGroups.map((group) => (
-                        <TreeItem
-                          key={group.id}
-                          label={group.displayName}
-                          icon={<UserGroupIcon className="w-4 h-4 text-indigo-500" />}
-                          depth={3}
-                          isSelected={isSelected('group', group.id)}
-                          onClick={() =>
-                            onSelectResource({
-                              type: 'group',
-                              id: group.id,
-                              name: group.displayName,
-                              path: `Kanbu > Security Groups > System > ${group.displayName}`,
-                            })
-                          }
-                          suffix={group.name}
-                        />
-                      ))}
-                    </>
-                  )}
-
-                  {/* Workspace-scoped groups */}
-                  {groupsByScope.workspaceGroups.length > 0 && (
-                    <>
-                      <TreeItem
-                        label="Workspace Groups"
-                        icon={<FolderIcon className={cn('w-4 h-4', isSectionExpanded('groups-workspace') ? 'text-yellow-500' : 'text-yellow-600')} open={isSectionExpanded('groups-workspace')} />}
-                        depth={2}
-                        isSelected={false}
-                        isExpandable={true}
-                        isExpanded={isSectionExpanded('groups-workspace')}
-                        onClick={() => toggleSection('groups-workspace')}
-                      />
-
-                      {isSectionExpanded('groups-workspace') && groupsByScope.workspaceGroups.map((group) => (
-                        <TreeItem
-                          key={group.id}
-                          label={group.displayName}
-                          icon={<UserGroupIcon className="w-4 h-4 text-teal-500" />}
-                          depth={3}
-                          isSelected={isSelected('group', group.id)}
-                          onClick={() =>
-                            onSelectResource({
-                              type: 'group',
-                              id: group.id,
-                              name: group.displayName,
-                              path: `Kanbu > Security Groups > Workspace > ${group.displayName}`,
-                            })
-                          }
-                          suffix={group.name}
-                        />
-                      ))}
-                    </>
-                  )}
-                </>
-              )}
+              {/* Flat list of all groups - no sub-folders */}
+              {isSectionExpanded('groups') && groups.map((group) => {
+                const isSystemGroup = !group.workspaceId
+                return (
+                  <TreeItem
+                    key={group.id}
+                    label={group.displayName}
+                    icon={<UserGroupIcon className={cn('w-4 h-4', isSystemGroup ? 'text-indigo-500' : 'text-teal-500')} />}
+                    depth={2}
+                    isSelected={isSelected('group', group.id)}
+                    onClick={() =>
+                      onSelectResource({
+                        type: 'group',
+                        id: group.id,
+                        name: group.displayName,
+                        path: `Kanbu > Security Groups > ${group.displayName}`,
+                      })
+                    }
+                    suffix={
+                      <span className="inline-flex items-center gap-1.5">
+                        {/* System badge for system groups */}
+                        {isSystemGroup && (
+                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 font-medium">
+                            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M12 2L3 7V12C3 16.97 6.84 21.5 12 23C17.16 21.5 21 16.97 21 12V7L12 2Z" />
+                            </svg>
+                            SYSTEM
+                          </span>
+                        )}
+                        {/* Member count badge */}
+                        {group.memberCount !== undefined && (
+                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
+                            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                              <circle cx="12" cy="7" r="4" />
+                            </svg>
+                            {group.memberCount}
+                          </span>
+                        )}
+                      </span>
+                    }
+                  />
+                )
+              })}
             </>
           )}
         </>

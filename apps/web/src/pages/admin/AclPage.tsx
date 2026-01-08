@@ -13,12 +13,50 @@
  * =============================================================================
  */
 
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { AdminLayout } from '@/components/admin'
-import { ResourceTree, type SelectedResource, type ResourceType } from '@/components/admin/ResourceTree'
+import { ResourceTree, type SelectedResource, type ResourceType, type TreeState } from '@/components/admin/ResourceTree'
 import { GroupMembersPanel } from '@/components/admin/GroupMembersPanel'
 import { trpc } from '@/lib/trpc'
 import { cn } from '@/lib/utils'
+import { useAppSelector } from '@/store'
+import { selectUser } from '@/store/authSlice'
+import { useAclRealtimeSync } from '@/hooks/useAclRealtimeSync'
+
+// =============================================================================
+// Session Storage Keys
+// =============================================================================
+
+const STORAGE_KEY = 'kanbu:acl-page-state'
+
+interface AclPageSessionState {
+  selectedResource: SelectedResource | null
+  treeState: {
+    expandedSections: string[]
+    expandedWorkspaces: number[]
+    expandedWorkspaceProjects: number[]
+  }
+}
+
+function loadSessionState(): AclPageSessionState | null {
+  try {
+    const stored = sessionStorage.getItem(STORAGE_KEY)
+    if (stored) {
+      return JSON.parse(stored)
+    }
+  } catch {
+    // Ignore parse errors
+  }
+  return null
+}
+
+function saveSessionState(state: AclPageSessionState): void {
+  try {
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+  } catch {
+    // Ignore storage errors (e.g., quota exceeded)
+  }
+}
 
 // =============================================================================
 // Types
@@ -77,7 +115,25 @@ function permissionToArray(permissions: number): string[] {
 // =============================================================================
 
 export function AclPage() {
-  const [selectedResource, setSelectedResource] = useState<SelectedResource | null>(null)
+  // Get current user for real-time sync
+  const currentUser = useAppSelector(selectUser)
+
+  // Real-time sync for ACL updates
+  useAclRealtimeSync({
+    currentUserId: currentUser?.id ?? 0,
+  })
+
+  // Load initial state from sessionStorage
+  const [initialState] = useState(() => loadSessionState())
+
+  const [selectedResource, setSelectedResource] = useState<SelectedResource | null>(
+    initialState?.selectedResource ?? null
+  )
+  const [treeState, setTreeState] = useState<TreeState>(() => ({
+    expandedSections: new Set(initialState?.treeState.expandedSections ?? ['root', 'workspaces']),
+    expandedWorkspaces: new Set(initialState?.treeState.expandedWorkspaces ?? []),
+    expandedWorkspaceProjects: new Set(initialState?.treeState.expandedWorkspaceProjects ?? []),
+  }))
   const [showGrantDialog, setShowGrantDialog] = useState(false)
   const [showDenyDialog, setShowDenyDialog] = useState(false)
   const [formData, setFormData] = useState<AclFormData>({
@@ -89,6 +145,23 @@ export function AclPage() {
     inheritToChildren: true,
   })
   const [searchPrincipal, setSearchPrincipal] = useState('')
+
+  // Save state to sessionStorage when it changes
+  useEffect(() => {
+    saveSessionState({
+      selectedResource,
+      treeState: {
+        expandedSections: Array.from(treeState.expandedSections),
+        expandedWorkspaces: Array.from(treeState.expandedWorkspaces),
+        expandedWorkspaceProjects: Array.from(treeState.expandedWorkspaceProjects),
+      },
+    })
+  }, [selectedResource, treeState])
+
+  // Callback for tree state changes
+  const handleTreeStateChange = useCallback((newState: TreeState) => {
+    setTreeState(newState)
+  }, [])
 
   const utils = trpc.useUtils()
 
@@ -236,6 +309,8 @@ export function AclPage() {
               isAdmin={resources?.resourceTypes.some(r => r.type === 'admin') ?? false}
               selectedResource={selectedResource}
               onSelectResource={setSelectedResource}
+              treeState={treeState}
+              onTreeStateChange={handleTreeStateChange}
             />
           </div>
         </div>
@@ -245,9 +320,11 @@ export function AclPage() {
           <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex items-center justify-between">
             <h2 className="font-medium text-gray-900 dark:text-white">
               {selectedResource
-                ? selectedResource.type === 'group'
+                ? selectedResource.type === 'group' && selectedResource.id
                   ? `Members: ${selectedResource.name}`
-                  : `ACL for: ${selectedResource.path ?? selectedResource.name}`
+                  : selectedResource.type === 'group'
+                    ? selectedResource.name
+                    : `ACL for: ${selectedResource.path ?? selectedResource.name}`
                 : 'Select a resource'}
             </h2>
             {selectedResource && isAclResourceType(selectedResource.type) && (
@@ -279,6 +356,43 @@ export function AclPage() {
                 groupName={selectedResource.name}
                 groupPath={selectedResource.path}
               />
+            ) : selectedResource.type === 'group' && !selectedResource.id ? (
+              // Security Groups folder selected - show description
+              <div className="py-8">
+                <div className="max-w-2xl mx-auto">
+                  <div className="flex items-start gap-4 mb-6">
+                    <div className="w-16 h-16 rounded-xl bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center flex-shrink-0">
+                      <svg className="w-8 h-8 text-indigo-600 dark:text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                        <circle cx="9" cy="7" r="4" />
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                        Security Groups
+                      </h3>
+                      <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
+                        Security Groups zijn <strong>principals</strong> - de entiteiten die rechten kunnen krijgen op resources.
+                        Ze werken zoals in Active Directory: je voegt users toe aan groups, en verleent dan rechten aan die groups.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+                    <h4 className="font-medium text-blue-800 dark:text-blue-300 mb-2">
+                      Hoe werkt het?
+                    </h4>
+                    <ol className="text-sm text-blue-700 dark:text-blue-400 space-y-2 list-decimal list-inside">
+                      <li>Selecteer een Security Group in de tree om de leden te beheren</li>
+                      <li>Voeg users toe aan de group via "Add Member"</li>
+                      <li>Ga naar een Workspace of Project en verleen rechten aan de group</li>
+                      <li>Alle leden van de group krijgen automatisch die rechten</li>
+                    </ol>
+                  </div>
+                </div>
+              </div>
             ) : entriesLoading ? (
               <div className="text-center py-12 text-gray-500">Loading...</div>
             ) : aclEntries && aclEntries.length > 0 ? (

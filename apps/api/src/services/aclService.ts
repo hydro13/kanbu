@@ -324,7 +324,7 @@ export class AclService {
     permissions: number
     inheritToChildren?: boolean
     createdById?: number
-  }): Promise<void> {
+  }): Promise<{ id: number }> {
     const { resourceType, resourceId, principalType, principalId, permissions, inheritToChildren = true, createdById } = params
 
     // Find existing entry (handle null resourceId separately since Prisma unique constraints with nulls are tricky)
@@ -339,15 +339,16 @@ export class AclService {
     })
 
     if (existing) {
-      await prisma.aclEntry.update({
+      const updated = await prisma.aclEntry.update({
         where: { id: existing.id },
         data: {
           permissions,
           inheritToChildren,
         }
       })
+      return { id: updated.id }
     } else {
-      await prisma.aclEntry.create({
+      const created = await prisma.aclEntry.create({
         data: {
           resourceType,
           resourceId,
@@ -360,6 +361,7 @@ export class AclService {
           createdById,
         }
       })
+      return { id: created.id }
     }
   }
 
@@ -375,7 +377,7 @@ export class AclService {
     permissions: number
     inheritToChildren?: boolean
     createdById?: number
-  }): Promise<void> {
+  }): Promise<{ id: number }> {
     const { resourceType, resourceId, principalType, principalId, permissions, inheritToChildren = true, createdById } = params
 
     // Find existing entry (handle null resourceId separately since Prisma unique constraints with nulls are tricky)
@@ -390,15 +392,16 @@ export class AclService {
     })
 
     if (existing) {
-      await prisma.aclEntry.update({
+      const updated = await prisma.aclEntry.update({
         where: { id: existing.id },
         data: {
           permissions,
           inheritToChildren,
         }
       })
+      return { id: updated.id }
     } else {
-      await prisma.aclEntry.create({
+      const created = await prisma.aclEntry.create({
         data: {
           resourceType,
           resourceId,
@@ -411,6 +414,7 @@ export class AclService {
           createdById,
         }
       })
+      return { id: created.id }
     }
   }
 
