@@ -256,10 +256,17 @@ Het systeem draait nu in **pure ACL modus** (Fase 3B voltooid):
 - `admin` (9): users, create-user, acl, permission-tree, invites, workspaces, settings-general, settings-security, backup
 - `project` (11): board, list, calendar, timeline, sprints, milestones, analytics, members, settings, import-export, webhooks
 
-### Gepland (Fase 8-9)
+### Voltooid (Fase 9.1)
 
-- [ ] **Fase 8**: Database cleanup (legacy tabellen)
-- [ ] **Fase 9**: Advanced features (audit, LDAP sync, task-level ACL)
+- [x] **Fase 9.1**: Audit Logging - Security audit trail voor alle kritieke events
+
+### Gepland (Fase 9.2-9.6)
+
+- [ ] **Fase 9.2**: LDAP/AD Sync
+- [ ] **Fase 9.3**: Task-level ACL
+- [ ] **Fase 9.4**: Bulk Operations
+- [ ] **Fase 9.5**: Advanced UI (Permission matrix, What-if simulator)
+- [ ] **Fase 9.6**: API Keys & Service Accounts
 
 Zie [ROADMAP.md](./ROADMAP.md) voor de volledige planning.
 

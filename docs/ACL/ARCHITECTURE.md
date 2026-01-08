@@ -6,8 +6,8 @@ Dit document beschrijft de architectuur voor het **Scoped Permission Model** van
 Het systeem is geïnspireerd op Active Directory en biedt enterprise-grade toegangscontrole
 met workspace-level isolatie en gedelegeerde administratie.
 
-**Document versie:** 1.0.0
-**Datum:** 2026-01-08
+**Document versie:** 2.1.0
+**Datum:** 2026-01-09
 **Status:** Goedgekeurd voor implementatie
 
 ---
@@ -301,13 +301,14 @@ Het admin panel toont verschillende secties per scope:
 - All Groups
 - System Settings
 - ACL Manager (volledig)
-- Audit Logs
+- Audit Logs (alle logs)
 
 **Workspace Admin ziet:**
 - Workspace Settings (eigen)
 - Workspace Members (eigen)
 - Workspace Projects (eigen)
 - ACL Manager (workspace scope)
+- Audit Logs (workspace-scoped)
 
 ---
 
@@ -370,12 +371,21 @@ Het admin panel toont verschillende secties per scope:
 - [x] ResourceTree toont features per scope
 - [x] Documentatie bijgewerkt
 
-### Fase 8-9: Advanced Features (PLANNED)
+### Fase 9.1: Audit Logging (VOLTOOID)
+- [x] AuditLog database model
+- [x] AuditService met categorieën (ACL, GROUP, USER, WORKSPACE, SETTINGS)
+- [x] Logging integratie in alle CRUD procedures
+- [x] Query API met scope filtering
+- [x] AuditLogsPage UI met filtering, export (CSV/JSON)
+- [x] Workspace-scoped access (admins zien alleen eigen workspace logs)
+
+### Fase 9.2+: Advanced Features (PLANNED)
 - [ ] Database cleanup (legacy tabellen verwijderen)
-- [ ] Audit logging
 - [ ] LDAP/AD Sync
 - [ ] Task-level ACL
 - [ ] API Keys met scoped access
+- [ ] Bulk Operations
+- [ ] Advanced UI (Permission matrix, What-if simulator)
 
 ---
 
@@ -486,7 +496,7 @@ Week 9+: Advanced features
 
 - [ ] Scope check < 50ms per request
 - [ ] Geen breaking changes voor bestaande users
-- [ ] Audit trail voor alle scope-gerelateerde acties
+- [x] Audit trail voor alle scope-gerelateerde acties (Fase 9.1)
 - [ ] AD-compatible group structuur
 
 ---
@@ -504,6 +514,7 @@ Week 9+: Advanced features
 
 | Versie | Datum | Wijziging |
 |--------|-------|-----------|
+| 2.1.0 | 2026-01-09 | Fase 9.1 VOLTOOID: Security Audit Logging met scope-based access |
 | 2.0.0 | 2026-01-08 | Fase 4B-8C VOLTOOID: Systeem-breed Feature ACL (40 features) |
 | 1.2.0 | 2026-01-08 | Fase 4C: Extended Resource Hierarchy (Root, System, Dashboard) |
 | 1.1.1 | 2026-01-08 | Fase 4B.1 voltooid: Security Groups CRUD in AclPage |

@@ -16,7 +16,8 @@
 │ FASE 8: Database Cleanup (legacy tables)            [██████████] ✓  │
 │ FASE 8B: Feature ACL (Project)                      [██████████] ✓  │
 │ FASE 8C: Feature ACL (Systeem-breed) + Docs         [██████████] ✓  │
-│ FASE 9: Advanced Features                           [──────────] ○  │
+│ FASE 9.1: Audit Logging                             [██████████] ✓  │
+│ FASE 9.2-9.6: Advanced Features                     [──────────] ○  │
 │                                                                     │
 │ ⚠️ SECURITY FIX 2026-01-08: Admin access vulnerability gefixt       │
 └─────────────────────────────────────────────────────────────────────┘
@@ -839,7 +840,67 @@ root
 
 ---
 
-## GEPLAND: Fase 9 - Advanced Features
+## VOLTOOID: Fase 9.1 - Audit Logging
+
+> **Doel:** Comprehensive security audit logging voor alle kritieke events.
+> **Status:** ✅ Voltooid op 2026-01-09
+
+<details>
+<summary>Klik om voltooide fase te bekijken</summary>
+
+### 9.1.1 Database Schema
+- [x] `AuditLog` model toegevoegd aan Prisma schema
+- [x] Relaties naar User en Workspace
+- [x] Indexen voor performante queries (category, action, resourceType, userId, workspaceId, createdAt)
+
+### 9.1.2 AuditService
+- [x] `auditService.ts` aangemaakt met category-based helper methods
+- [x] Categories: ACL, GROUP, USER, WORKSPACE, SETTINGS
+- [x] Helper methods: `logAclEvent()`, `logGroupEvent()`, `logUserEvent()`, `logWorkspaceEvent()`, `logSettingsEvent()`
+- [x] Export via `services/index.ts`
+
+### 9.1.3 Integration Points
+- [x] ACL procedures: grant, deny, revoke, delete events
+- [x] Group procedures: create, update, delete, member add/remove events
+- [x] Admin procedures: user CRUD, password reset, 2FA disable, sessions revoke, settings, backups
+- [x] Workspace procedures: create, update, delete, member management events
+
+### 9.1.4 Query API
+- [x] `auditLog.list` - Paginated list met filtering (category, action, resourceType, userId, workspaceId, dateFrom, dateTo, search)
+- [x] `auditLog.get` - Single log entry met scope check
+- [x] `auditLog.getStats` - Dashboard statistics (counts by category, recent actions, top actors)
+- [x] `auditLog.export` - Export naar CSV of JSON (max 10.000 entries)
+- [x] `auditLog.getCategories` - Beschikbare categories voor filtering
+- [x] **SECURITY:** Scope-based access - Domain Admins zien alles, Workspace Admins zien alleen hun workspace logs
+
+### 9.1.5 Admin UI
+- [x] `AuditLogsPage.tsx` component aangemaakt
+- [x] Filtering op category, workspace, datum, zoekterm
+- [x] Paginatie met 50 logs per pagina
+- [x] Expandable log details (changes, metadata, IP address)
+- [x] Export buttons (CSV/JSON)
+- [x] Route `/admin/audit-logs` geconfigureerd
+- [x] Security sectie toegevoegd aan AdminSidebar
+
+### 9.1.6 Verificatie
+- [x] TypeCheck passed
+- [x] Alle event types loggen correct
+- [x] Scope filtering werkt (Domain Admin vs Workspace Admin)
+- [x] Export functionaliteit werkt
+
+### Nieuwe Bestanden
+
+| Bestand | Beschrijving |
+|---------|--------------|
+| `apps/api/src/services/auditService.ts` | Core audit logging service |
+| `apps/api/src/trpc/procedures/auditLog.ts` | tRPC router voor audit log queries |
+| `apps/web/src/pages/admin/AuditLogsPage.tsx` | Admin UI component |
+
+</details>
+
+---
+
+## GEPLAND: Fase 9.2-9.6 - Advanced Features
 
 > **Doel:** Enterprise-grade features toevoegen.
 >
@@ -851,14 +912,6 @@ root
 > 4. System-level permissions (WRITE of PERMISSIONS op 'system')
 >
 > Zie `scopeService.checkPermissionFlags()` en `adminProcedure` in router.ts.
-
-### 9.1 Audit Logging
-- [ ] Log alle ACL wijzigingen
-- [ ] Wie, wanneer, wat gewijzigd
-- [ ] Permission change history per resource
-- [ ] Audit viewer in admin panel
-- [ ] **SECURITY:** Audit viewer moet scoped zijn (workspace admins zien alleen eigen workspace logs)
-- [ ] **SECURITY:** Log de 4-pad admin access checks
 
 ### 9.2 LDAP/AD Sync
 - [ ] Sync AD groups naar Kanbu groups

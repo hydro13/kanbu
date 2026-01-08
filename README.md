@@ -36,6 +36,7 @@ A modern, self-hostable project management tool with Kanban boards, real-time co
 - **Group Management** - Create security groups, manage memberships
 - **ACL Manager** - Grant/revoke permissions with presets (Read-Only, Contributor, Editor, Full Control)
 - **Permission Tree** - Visual permission browser with effective permissions
+- **Audit Logs** - Security audit trail with filtering, export (CSV/JSON), scoped access
 - **Workspace Management** - Create and configure workspaces
 - **Backup Management** - Database and source code backups to Google Drive
 - **System Settings** - Global configuration
@@ -259,6 +260,7 @@ The API uses tRPC for type-safe client-server communication. Main routers:
 | `comment` | Task comments |
 | `group` | Group management |
 | `acl` | ACL management (grant, revoke, list permissions) |
+| `auditLog` | Audit log queries (list, stats, export) |
 | `admin` | Admin-only operations (backups, system settings) |
 | `user` | User profile and settings |
 
