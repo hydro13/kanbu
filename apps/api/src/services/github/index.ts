@@ -28,3 +28,16 @@ export {
   type GitHubConfig,
   type InstallationInfo,
 } from './githubService'
+
+export {
+  issueSyncService,
+  mapGitHubUserToKanbu,
+  mapGitHubAssignees,
+  getOrCreateTagsFromLabels,
+  getColumnForIssueState,
+  createTaskFromGitHubIssue,
+  updateTaskFromGitHubIssue,
+  importIssuesFromGitHub,
+  getImportProgress,
+  clearImportProgress,
+} from './issueSyncService'

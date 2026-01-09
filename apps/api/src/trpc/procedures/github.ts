@@ -18,6 +18,11 @@ import { z } from 'zod'
 import { TRPCError } from '@trpc/server'
 import { router, protectedProcedure } from '../router'
 import { aclService, ACL_PERMISSIONS, auditService, AUDIT_ACTIONS } from '../../services/index.js'
+import {
+  importIssuesFromGitHub,
+  getImportProgress,
+  clearImportProgress,
+} from '../../services/github/issueSyncService'
 import type { GitHubSyncSettings } from '@kanbu/shared'
 
 // =============================================================================
@@ -72,6 +77,13 @@ const syncLogsSchema = z.object({
   projectId: z.number(),
   limit: z.number().min(1).max(100).optional().default(20),
   offset: z.number().min(0).optional().default(0),
+})
+
+const importIssuesSchema = z.object({
+  projectId: z.number(),
+  state: z.enum(['open', 'closed', 'all']).optional().default('all'),
+  since: z.string().optional(), // ISO date string
+  limit: z.number().min(1).max(1000).optional().default(100),
 })
 
 // =============================================================================
@@ -658,6 +670,110 @@ export const githubRouter = router({
         // Note: Actual repository list requires GitHub API call
         // This will be implemented when we need it
       }
+    }),
+
+  /**
+   * Import issues from GitHub repository
+   * Requires project WRITE permission
+   */
+  importIssues: protectedProcedure
+    .input(importIssuesSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { projectId, state, since, limit } = input
+
+      // Check project write permission
+      await checkProjectWriteAccess(ctx.user.id, projectId)
+
+      // Get the linked repository
+      const repository = await ctx.prisma.gitHubRepository.findUnique({
+        where: { projectId },
+      })
+
+      if (!repository) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'No GitHub repository linked to this project',
+        })
+      }
+
+      if (!repository.syncEnabled) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Sync is disabled for this repository',
+        })
+      }
+
+      // Check sync settings
+      const syncSettings = repository.syncSettings as { issues?: { enabled: boolean; direction: string } } | null
+      if (!syncSettings?.issues?.enabled) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Issue sync is disabled for this repository',
+        })
+      }
+
+      // Start import
+      const result = await importIssuesFromGitHub(repository.id, {
+        state,
+        since: since ? new Date(since) : undefined,
+        limit,
+      })
+
+      // Audit log
+      await auditService.log({
+        userId: ctx.user.id,
+        action: 'GITHUB_ISSUES_IMPORTED' as keyof typeof AUDIT_ACTIONS,
+        category: 'WORKSPACE',
+        resourceType: 'project',
+        resourceId: projectId,
+        resourceName: repository.fullName,
+        metadata: {
+          repositoryId: repository.id,
+          imported: result.imported,
+          skipped: result.skipped,
+          failed: result.failed,
+        },
+      })
+
+      return {
+        success: true,
+        imported: result.imported,
+        skipped: result.skipped,
+        failed: result.failed,
+        errors: result.errors,
+      }
+    }),
+
+  /**
+   * Get import progress for a repository
+   * Requires project READ permission
+   */
+  getImportProgress: protectedProcedure
+    .input(projectIdSchema)
+    .query(async ({ ctx, input }) => {
+      const { projectId } = input
+
+      // Check project read permission
+      await checkProjectReadAccess(ctx.user.id, projectId)
+
+      // Get the linked repository
+      const repository = await ctx.prisma.gitHubRepository.findUnique({
+        where: { projectId },
+        select: { id: true },
+      })
+
+      if (!repository) {
+        return null
+      }
+
+      const progress = getImportProgress(repository.id)
+
+      // Clean up completed progress after retrieval
+      if (progress?.status === 'completed' || progress?.status === 'failed') {
+        clearImportProgress(repository.id)
+      }
+
+      return progress
     }),
 })
 

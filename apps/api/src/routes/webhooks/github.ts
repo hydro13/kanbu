@@ -17,6 +17,10 @@
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import crypto from 'crypto'
 import { prisma } from '../../lib/prisma'
+import {
+  createTaskFromGitHubIssue,
+  updateTaskFromGitHubIssue,
+} from '../../services/github/issueSyncService'
 
 // =============================================================================
 // Types
@@ -46,10 +50,13 @@ interface WebhookPayload {
     title: string
     body: string | null
     state: 'open' | 'closed'
-    labels: Array<{ name: string }>
+    labels: Array<{ name: string; color?: string }>
     assignees: Array<{ login: string; id: number }>
-    milestone?: { id: number; title: string } | null
+    milestone?: { id: number; number: number; title: string } | null
     user: { login: string; id: number }
+    created_at: string
+    updated_at: string
+    closed_at?: string | null
   }
   pull_request?: {
     id: number
@@ -307,22 +314,36 @@ async function handleIssues(ctx: WebhookContext): Promise<{ processed: boolean; 
     },
   })
 
+  // Prepare issue data for sync service
+  const issueData = {
+    number: issue.number,
+    id: issue.id,
+    title: issue.title,
+    body: issue.body,
+    state: issue.state,
+    labels: issue.labels,
+    assignees: issue.assignees,
+    milestone: issue.milestone ? {
+      title: issue.milestone.title,
+      number: issue.milestone.number,
+    } : null,
+    created_at: issue.created_at,
+    updated_at: issue.updated_at,
+    closed_at: issue.closed_at,
+  }
+
   switch (action) {
     case 'opened':
       if (!existingIssue) {
-        // Create GitHubIssue record (task creation will be in Fase 5)
-        await prisma.gitHubIssue.create({
-          data: {
-            repositoryId: linkedRepo.id,
-            issueNumber: issue.number,
-            issueId: BigInt(issue.id),
-            title: issue.title,
-            state: issue.state,
-            syncDirection: direction,
-            lastSyncAt: new Date(),
-          },
-        })
-        console.log(`[GitHub Webhook] Created GitHubIssue record for #${issue.number}`)
+        // Create task AND GitHubIssue record via sync service
+        const { taskId, created } = await createTaskFromGitHubIssue(
+          linkedRepo.id,
+          issueData,
+          { syncDirection: direction as 'github_to_kanbu' | 'kanbu_to_github' | 'bidirectional', skipExisting: false }
+        )
+        if (created) {
+          console.log(`[GitHub Webhook] Created task ${taskId} from issue #${issue.number}`)
+        }
       }
       break
 
@@ -332,32 +353,38 @@ async function handleIssues(ctx: WebhookContext): Promise<{ processed: boolean; 
     case 'assigned':
     case 'unassigned':
       if (existingIssue) {
-        await prisma.gitHubIssue.update({
-          where: { id: existingIssue.id },
-          data: {
-            title: issue.title,
-            state: issue.state,
-            lastSyncAt: new Date(),
-          },
-        })
+        // Update task via sync service
+        const { updated, taskId } = await updateTaskFromGitHubIssue(issue.id, issueData)
+        if (updated) {
+          console.log(`[GitHub Webhook] Updated task ${taskId} from issue #${issue.number}`)
+        }
+      } else {
+        // Issue not in our system yet, create it
+        const { taskId, created } = await createTaskFromGitHubIssue(
+          linkedRepo.id,
+          issueData,
+          { syncDirection: direction as 'github_to_kanbu' | 'kanbu_to_github' | 'bidirectional', skipExisting: false }
+        )
+        if (created) {
+          console.log(`[GitHub Webhook] Created task ${taskId} from edited issue #${issue.number}`)
+        }
       }
       break
 
     case 'closed':
     case 'reopened':
       if (existingIssue) {
-        await prisma.gitHubIssue.update({
-          where: { id: existingIssue.id },
-          data: {
-            state: issue.state,
-            lastSyncAt: new Date(),
-          },
-        })
+        // Update task state via sync service
+        const { updated, taskId } = await updateTaskFromGitHubIssue(issue.id, issueData)
+        if (updated) {
+          console.log(`[GitHub Webhook] Updated task ${taskId} state to ${issue.state}`)
+        }
       }
       break
 
     case 'deleted':
       if (existingIssue) {
+        // For now, just delete the GitHubIssue record (keep the task)
         await prisma.gitHubIssue.delete({
           where: { id: existingIssue.id },
         })
@@ -565,7 +592,7 @@ async function handlePush(ctx: WebhookContext): Promise<{ processed: boolean; co
     }
   }
 
-  if (processedCount > 0) {
+  if (processedCount > 0 && commits[0]) {
     // Log sync operation
     await prisma.gitHubSyncLog.create({
       data: {
