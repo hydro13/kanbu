@@ -560,7 +560,7 @@ interface SyncSettings {
 - [x] **MCP**: Sync operaties gelogd in GitHubSyncLog met action prefix (`issue_`, `pr_`, `commits_received`)
 - [x] **Docs**: ROADMAP.md bijgewerkt met finale status
 - [x] **CLAUDE.md**: Webhook endpoint gedocumenteerd (in .gitignore, local only)
-- [ ] **Commit**: `feat(github): Fase 4 - Webhook Handler`
+- [x] **Commit**: `feat(github): Fase 4 - Webhook Handler` (bc5f4d6d)
 
 ---
 
