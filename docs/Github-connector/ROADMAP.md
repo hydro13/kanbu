@@ -313,7 +313,7 @@ model GitHubUserMapping {
 - [x] **MCP**: N.v.t. (geen nieuwe tools)
 - [x] **Docs**: ROADMAP bijgewerkt met finale status
 - [x] **CLAUDE.md**: GitHub database patterns gedocumenteerd
-- [ ] **Commit**: `feat(github): Fase 1 - Database & Infrastructure`
+- [x] **Commit**: `feat(github): Fase 1 - Database & Infrastructure`
 
 ---
 
@@ -404,7 +404,7 @@ Tabs:
 - [x] **MCP**: Audit logging voor installation/mapping acties (`GITHUB_INSTALLATION_*`, `GITHUB_USER_MAPPING_*`). Admin MCP tools overwegen voor Fase 9+
 - [x] **Docs**: OAuth flow gedocumenteerd in ARCHITECTURE
 - [x] **CLAUDE.md**: Admin GitHub Settings page gedocumenteerd
-- [ ] **Commit**: `feat(github): Fase 2 - GitHub App & OAuth`
+- [x] **Commit**: `feat(github): Fase 2 - GitHub App & OAuth`
 
 ---
 
@@ -506,8 +506,8 @@ interface SyncSettings {
 - [x] **ACL**: `github` project feature geregistreerd in `seed-features.ts`, hook updated in `useProjectFeatureAccess.ts`
 - [x] **MCP**: Audit logging voor repo linking (`GITHUB_REPO_LINKED`, `GITHUB_SETTINGS_UPDATED`, `GITHUB_SYNC_TRIGGERED`). MCP tools komen in Fase 9
 - [x] **Docs**: ROADMAP.md bijgewerkt met finale status
-- [ ] **CLAUDE.md**: Project GitHub Settings gedocumenteerd
-- [ ] **Commit**: `feat(github): Fase 3 - Repository Linking`
+- [x] **CLAUDE.md**: Project GitHub Settings gedocumenteerd
+- [x] **Commit**: `feat(github): Fase 3 - Repository Linking`
 
 ---
 
