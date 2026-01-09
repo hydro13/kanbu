@@ -40,3 +40,6 @@ export * from './system.js'
 
 // Fase 12 - Profile Management
 export * from './profile.js'
+
+// GitHub Connector - Fase 9
+export * from './github.js'

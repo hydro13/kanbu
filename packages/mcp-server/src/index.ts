@@ -200,6 +200,19 @@ import {
   handleRevokeSession,
   handleRevokeAllSessions,
 } from './tools/profile.js'
+import {
+  githubToolDefinitions,
+  handleGetGitHubRepo,
+  handleListGitHubPRs,
+  handleListGitHubCommits,
+  handleGetTaskPRs,
+  handleGetTaskCommits,
+  handleLinkGitHubRepo,
+  handleUnlinkGitHubRepo,
+  handleSyncGitHubIssues,
+  handleCreateGitHubBranch,
+  handleLinkPRToTask,
+} from './tools/github.js'
 
 // =============================================================================
 // Tool Schemas
@@ -304,6 +317,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       ...systemToolDefinitions,
       // Profile tools (Fase 12)
       ...profileToolDefinitions,
+      // GitHub tools (GitHub Connector Fase 9)
+      ...githubToolDefinitions,
     ],
   }
 })
@@ -605,6 +620,28 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return await handleRevokeSession(args)
       case 'kanbu_revoke_all_sessions':
         return await handleRevokeAllSessions(args)
+
+      // GitHub tools (GitHub Connector Fase 9)
+      case 'kanbu_get_github_repo':
+        return await handleGetGitHubRepo(args)
+      case 'kanbu_list_github_prs':
+        return await handleListGitHubPRs(args)
+      case 'kanbu_list_github_commits':
+        return await handleListGitHubCommits(args)
+      case 'kanbu_get_task_prs':
+        return await handleGetTaskPRs(args)
+      case 'kanbu_get_task_commits':
+        return await handleGetTaskCommits(args)
+      case 'kanbu_link_github_repo':
+        return await handleLinkGitHubRepo(args)
+      case 'kanbu_unlink_github_repo':
+        return await handleUnlinkGitHubRepo(args)
+      case 'kanbu_sync_github_issues':
+        return await handleSyncGitHubIssues(args)
+      case 'kanbu_create_github_branch':
+        return await handleCreateGitHubBranch(args)
+      case 'kanbu_link_pr_to_task':
+        return await handleLinkPRToTask(args)
 
       default:
         throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`)

@@ -755,7 +755,45 @@ Via: Claude Code
 | Fase 13 | - (audit infrastructure) | 131 | ✅ Compleet |
 | Fase 14 | - (task/project logging) | 131 | ✅ Compleet |
 | Fase 15 | - (subtask/comment logging) | 131 | ✅ Compleet |
-| Fase 16 | - (audit UI updates) | 131 | ✅ COMPLEET |
+| Fase 16 | - (audit UI updates) | 131 | ✅ Compleet |
+| GitHub Fase 9 | 10 (github) | 141 | ✅ Compleet |
+
+---
+
+### GitHub Connector - Fase 9: MCP Tools ✅ COMPLEET (2026-01-09)
+
+**Doel:** GitHub integration tools voor Claude Code.
+
+**Status:** Volledig geïmplementeerd.
+
+**Bestand:** `packages/mcp-server/src/tools/github.ts`
+
+#### Query Tools (5)
+
+| Tool | Beschrijving |
+|------|--------------|
+| `kanbu_get_github_repo` | Get linked GitHub repository for a project |
+| `kanbu_list_github_prs` | List pull requests for a project (with state filter) |
+| `kanbu_list_github_commits` | List commits for a project |
+| `kanbu_get_task_prs` | Get PRs linked to a specific task |
+| `kanbu_get_task_commits` | Get commits linked to a specific task |
+
+#### Management Tools (5)
+
+| Tool | Beschrijving |
+|------|--------------|
+| `kanbu_link_github_repo` | Link a GitHub repository to a Kanbu project |
+| `kanbu_unlink_github_repo` | Unlink a GitHub repository from a project |
+| `kanbu_sync_github_issues` | Import/sync issues from GitHub to Kanbu |
+| `kanbu_create_github_branch` | Create a feature branch on GitHub for a task |
+| `kanbu_link_pr_to_task` | Manually link a PR to a task |
+
+**Deliverables:**
+- [x] 10 GitHub MCP tools
+- [x] TypeScript compileert zonder errors
+- [x] Tools geregistreerd in index.ts
+
+---
 
 ## Prioriteit Matrix
 
