@@ -1504,24 +1504,17 @@ export const adminRouter = router({
         // Clean up temp file
         await fs.unlink(tempFile)
 
-        // Clean up old backups (keep last 10)
+        // Count existing backups (no cleanup - unlimited retention)
         const files = await fs.readdir(GDRIVE_BACKUP_DIR)
         const backupFiles = files
           .filter(f => f.startsWith('kanbu_backup_') && f.endsWith('.sql'))
-          .sort()
-          .reverse()
-
-        // Delete old backups beyond the 10 most recent
-        for (const oldFile of backupFiles.slice(10)) {
-          await fs.unlink(path.join(GDRIVE_BACKUP_DIR, oldFile))
-        }
 
         // Audit logging
         await auditService.logSettingsEvent({
           action: AUDIT_ACTIONS.BACKUP_CREATED,
           resourceType: 'backup',
           resourceName: backupFileName,
-          metadata: { type: 'database', fileSizeKB, backupsKept: Math.min(backupFiles.length, 10) },
+          metadata: { type: 'database', fileSizeKB, totalBackups: backupFiles.length + 1 },
           userId: ctx.user!.id,
           ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
         })
@@ -1531,7 +1524,7 @@ export const adminRouter = router({
           fileName: backupFileName,
           timestamp,
           fileSizeKB,
-          backupsKept: Math.min(backupFiles.length, 10),
+          totalBackups: backupFiles.length + 1,
           message: `Backup saved to Google Drive: ${backupFileName}`,
         }
       } catch (error) {
@@ -1607,23 +1600,17 @@ export const adminRouter = router({
         // Clean up temp file
         await fs.unlink(tempArchive)
 
-        // Clean up old source backups (keep last 5 - they're larger)
+        // Count existing backups (no cleanup - unlimited retention)
         const files = await fs.readdir(GDRIVE_BACKUP_DIR)
         const sourceBackups = files
           .filter(f => f.startsWith('kanbu_source_') && f.endsWith('.tar.gz'))
-          .sort()
-          .reverse()
-
-        for (const oldFile of sourceBackups.slice(5)) {
-          await fs.unlink(path.join(GDRIVE_BACKUP_DIR, oldFile))
-        }
 
         // Audit logging
         await auditService.logSettingsEvent({
           action: AUDIT_ACTIONS.BACKUP_CREATED,
           resourceType: 'backup',
           resourceName: archiveName,
-          metadata: { type: 'source', fileSizeMB, backupsKept: Math.min(sourceBackups.length, 5) },
+          metadata: { type: 'source', fileSizeMB, totalBackups: sourceBackups.length + 1 },
           userId: ctx.user!.id,
           ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
         })
@@ -1633,7 +1620,7 @@ export const adminRouter = router({
           fileName: archiveName,
           timestamp,
           fileSizeMB,
-          backupsKept: Math.min(sourceBackups.length, 5),
+          totalBackups: sourceBackups.length + 1,
           message: `Source backup saved to Google Drive: ${archiveName}`,
           instructions: [
             '1. Download the archive from Google Drive',

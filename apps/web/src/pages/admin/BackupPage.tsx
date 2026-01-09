@@ -21,14 +21,14 @@ interface LastDbBackupInfo {
   timestamp: string
   fileName: string
   fileSizeKB: number
-  backupsKept: number
+  totalBackups: number
 }
 
 interface LastSourceBackupInfo {
   timestamp: string
   fileName: string
   fileSizeMB: number
-  backupsKept: number
+  totalBackups: number
   instructions: string[]
 }
 
@@ -42,7 +42,7 @@ export function BackupPage() {
         timestamp: new Date().toISOString(),
         fileName: data.fileName,
         fileSizeKB: data.fileSizeKB,
-        backupsKept: data.backupsKept,
+        totalBackups: data.totalBackups,
       })
     },
   })
@@ -53,7 +53,7 @@ export function BackupPage() {
         timestamp: new Date().toISOString(),
         fileName: data.fileName,
         fileSizeMB: data.fileSizeMB,
-        backupsKept: data.backupsKept,
+        totalBackups: data.totalBackups,
         instructions: data.instructions,
       })
     },
@@ -132,8 +132,8 @@ export function BackupPage() {
                     <span>{lastDbBackup.fileSizeKB} KB</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Kept:</span>
-                    <span>{lastDbBackup.backupsKept} / 10</span>
+                    <span className="text-muted-foreground">Total backups:</span>
+                    <span>{lastDbBackup.totalBackups}</span>
                   </div>
                 </div>
               </div>
@@ -212,8 +212,8 @@ export function BackupPage() {
                     <span>{lastSourceBackup.fileSizeMB} MB</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Kept:</span>
-                    <span>{lastSourceBackup.backupsKept} / 5</span>
+                    <span className="text-muted-foreground">Total backups:</span>
+                    <span>{lastSourceBackup.totalBackups}</span>
                   </div>
                 </div>
 
@@ -231,15 +231,15 @@ export function BackupPage() {
         </div>
 
         {/* Info Card */}
-        <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800 p-4">
+        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 p-4">
           <div className="flex gap-3">
-            <svg className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <div className="text-sm text-amber-800 dark:text-amber-200">
-              <p className="font-medium">Backup Retention</p>
-              <p className="mt-1 text-amber-700 dark:text-amber-300">
-                Database backups: 10 most recent kept. Source backups: 5 most recent kept.
+            <div className="text-sm text-blue-800 dark:text-blue-200">
+              <p className="font-medium">Backup Storage</p>
+              <p className="mt-1 text-blue-700 dark:text-blue-300">
+                All backups are stored on Google Drive with unlimited retention.
                 For a full restore, you need both a database backup and a source backup.
               </p>
             </div>
