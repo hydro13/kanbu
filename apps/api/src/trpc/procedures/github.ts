@@ -61,6 +61,13 @@ import {
   getPendingReviewRequests,
   syncReviewsFromGitHub,
 } from '../../services/github/reviewService'
+import {
+  getCycleTimeStats,
+  getReviewTimeStats,
+  getContributorStats,
+  getThroughputStats,
+  getProjectAnalytics,
+} from '../../services/github/analyticsService'
 import type { GitHubSyncSettings } from '@kanbu/shared'
 
 // =============================================================================
@@ -2488,6 +2495,186 @@ export const githubRouter = router({
       })
 
       return result
+    }),
+
+  // ===========================================================================
+  // Analytics Procedures (Fase 13)
+  // ===========================================================================
+
+  /**
+   * Get cycle time statistics for a project.
+   * Shows how long it takes from task creation to PR merge.
+   */
+  getCycleTimeStats: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.number(),
+        dateFrom: z.string().datetime().optional(),
+        dateTo: z.string().datetime().optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      // Check project read permission
+      const hasAccess = await aclService.hasProjectPermission(
+        ctx.user.id,
+        input.projectId,
+        ACL_PERMISSIONS.READ
+      )
+
+      if (!hasAccess) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You do not have access to this project',
+        })
+      }
+
+      const dateRange =
+        input.dateFrom && input.dateTo
+          ? { from: new Date(input.dateFrom), to: new Date(input.dateTo) }
+          : undefined
+
+      return getCycleTimeStats(input.projectId, dateRange)
+    }),
+
+  /**
+   * Get code review time statistics.
+   * Shows average time to first review, time to approval, etc.
+   */
+  getReviewTimeStats: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.number(),
+        dateFrom: z.string().datetime().optional(),
+        dateTo: z.string().datetime().optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      // Check project read permission
+      const hasAccess = await aclService.hasProjectPermission(
+        ctx.user.id,
+        input.projectId,
+        ACL_PERMISSIONS.READ
+      )
+
+      if (!hasAccess) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You do not have access to this project',
+        })
+      }
+
+      const dateRange =
+        input.dateFrom && input.dateTo
+          ? { from: new Date(input.dateFrom), to: new Date(input.dateTo) }
+          : undefined
+
+      return getReviewTimeStats(input.projectId, dateRange)
+    }),
+
+  /**
+   * Get contributor statistics.
+   * Shows commits, PRs, reviews per contributor.
+   */
+  getContributorStats: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.number(),
+        dateFrom: z.string().datetime().optional(),
+        dateTo: z.string().datetime().optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      // Check project read permission
+      const hasAccess = await aclService.hasProjectPermission(
+        ctx.user.id,
+        input.projectId,
+        ACL_PERMISSIONS.READ
+      )
+
+      if (!hasAccess) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You do not have access to this project',
+        })
+      }
+
+      const dateRange =
+        input.dateFrom && input.dateTo
+          ? { from: new Date(input.dateFrom), to: new Date(input.dateTo) }
+          : undefined
+
+      return getContributorStats(input.projectId, dateRange)
+    }),
+
+  /**
+   * Get throughput statistics.
+   * Shows tasks/PRs completed per period.
+   */
+  getThroughputStats: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.number(),
+        periodType: z.enum(['week', 'month']).default('week'),
+        dateFrom: z.string().datetime().optional(),
+        dateTo: z.string().datetime().optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      // Check project read permission
+      const hasAccess = await aclService.hasProjectPermission(
+        ctx.user.id,
+        input.projectId,
+        ACL_PERMISSIONS.READ
+      )
+
+      if (!hasAccess) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You do not have access to this project',
+        })
+      }
+
+      const dateRange =
+        input.dateFrom && input.dateTo
+          ? { from: new Date(input.dateFrom), to: new Date(input.dateTo) }
+          : undefined
+
+      return getThroughputStats(input.projectId, input.periodType, dateRange)
+    }),
+
+  /**
+   * Get all analytics in one call.
+   * Combines cycle time, review time, contributors, and throughput.
+   */
+  getProjectAnalytics: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.number(),
+        dateFrom: z.string().datetime().optional(),
+        dateTo: z.string().datetime().optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      // Check project read permission
+      const hasAccess = await aclService.hasProjectPermission(
+        ctx.user.id,
+        input.projectId,
+        ACL_PERMISSIONS.READ
+      )
+
+      if (!hasAccess) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You do not have access to this project',
+        })
+      }
+
+      const dateRange =
+        input.dateFrom && input.dateTo
+          ? { from: new Date(input.dateFrom), to: new Date(input.dateTo) }
+          : undefined
+
+      return getProjectAnalytics(input.projectId, dateRange)
     }),
 })
 

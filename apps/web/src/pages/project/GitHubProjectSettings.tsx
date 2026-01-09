@@ -1,16 +1,16 @@
 /*
  * GitHubProjectSettings
- * Version: 1.0.0
+ * Version: 1.1.0
  *
  * Project-level GitHub settings page.
- * Link repositories, configure sync settings, and view sync status.
+ * Link repositories, configure sync settings, view sync status, and analytics.
  *
  * =============================================================================
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
  * Claude Code: Opus 4.5
  * Host: MAX
  * Date: 2026-01-09
- * Fase: 3 - Repository Linking
+ * Fase: 3 - Repository Linking, 13 - Analytics & Insights
  * =============================================================================
  */
 
@@ -18,6 +18,7 @@ import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { trpc } from '@/lib/trpc'
+import { ProjectAnalyticsPanel } from '@/components/github/ProjectAnalyticsPanel'
 
 // =============================================================================
 // Icons
@@ -72,6 +73,14 @@ function CheckIcon({ className }: { className?: string }) {
   )
 }
 
+function BarChartIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+    </svg>
+  )
+}
+
 function XIcon({ className }: { className?: string }) {
   return (
     <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -84,7 +93,7 @@ function XIcon({ className }: { className?: string }) {
 // Types
 // =============================================================================
 
-type TabId = 'repository' | 'settings' | 'logs'
+type TabId = 'repository' | 'settings' | 'logs' | 'analytics'
 
 interface Tab {
   id: TabId
@@ -96,6 +105,7 @@ const TABS: Tab[] = [
   { id: 'repository', label: 'Repository', icon: GitHubIcon },
   { id: 'settings', label: 'Sync Settings', icon: SettingsIcon },
   { id: 'logs', label: 'Sync Logs', icon: ClockIcon },
+  { id: 'analytics', label: 'Analytics', icon: BarChartIcon },
 ]
 
 // =============================================================================
@@ -245,6 +255,10 @@ export function GitHubProjectSettings() {
 
       {activeTab === 'logs' && linkedRepo && (
         <LogsTab logs={syncLogs?.logs || []} total={syncLogs?.total || 0} />
+      )}
+
+      {activeTab === 'analytics' && linkedRepo && project && (
+        <ProjectAnalyticsPanel projectId={project.id} />
       )}
     </div>
   )

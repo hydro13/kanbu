@@ -153,3 +153,24 @@ export {
   type ReviewState,
   type PRReviewSummary,
 } from './reviewService'
+
+export {
+  analyticsService,
+  // Cycle time
+  getCycleTimeStats,
+  // Review time
+  getReviewTimeStats,
+  // Contributors
+  getContributorStats,
+  // Throughput
+  getThroughputStats,
+  // Combined
+  getProjectAnalytics,
+  // Types
+  type DateRange,
+  type CycleTimeStats,
+  type ReviewTimeStats,
+  type ContributorStats,
+  type ThroughputStats,
+  type ProjectAnalytics,
+} from './analyticsService'
