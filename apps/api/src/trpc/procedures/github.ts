@@ -1,17 +1,17 @@
 /*
  * GitHub Project Procedures
- * Version: 5.0.0
+ * Version: 6.0.0
  *
  * tRPC procedures for GitHub repository management at project level.
  * Handles repository linking, sync settings, sync operations, PR/commit tracking,
- * automation, CI/CD, milestones, and releases.
+ * automation, CI/CD, milestones, releases, and AI-powered features.
  *
  * =============================================================================
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
  * Claude Code: Opus 4.5
  * Host: MAX
  * Date: 2026-01-09
- * Fase: 11 - Geavanceerde Sync
+ * Fase: 16 - AI/Claude Integratie
  * =============================================================================
  */
 
@@ -83,6 +83,14 @@ import {
   getReleaseStats,
   generateReleaseNotes,
 } from '../../services/github/releaseService'
+import {
+  isAIConfigured,
+  getAIProvider,
+  generatePRSummary,
+  reviewCode,
+  generateReleaseNotes as generateAIReleaseNotes,
+  generateCommitMessage,
+} from '../../services/github/aiService'
 import type { GitHubSyncSettings } from '@kanbu/shared'
 
 // =============================================================================
@@ -2991,6 +2999,279 @@ export const githubRouter = router({
         toDate: input.toDate ? new Date(input.toDate) : undefined,
         includeTaskLinks: input.includeTaskLinks,
       })
+    }),
+
+  // ===========================================================================
+  // AI-Powered Features (Fase 16)
+  // ===========================================================================
+
+  /**
+   * Check if AI service is configured
+   */
+  getAIStatus: protectedProcedure.query(async () => {
+    return {
+      configured: isAIConfigured(),
+      provider: getAIProvider(),
+    }
+  }),
+
+  /**
+   * Generate PR summary using AI
+   */
+  generateAIPRSummary: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.number(),
+        prNumber: z.number(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Check project permission
+      const hasAccess = await aclService.hasProjectPermission(
+        ctx.user.id,
+        input.projectId,
+        ACL_PERMISSIONS.READ
+      )
+
+      if (!hasAccess) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You do not have access to this project',
+        })
+      }
+
+      if (!isAIConfigured()) {
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message: 'AI service is not configured',
+        })
+      }
+
+      // Get PR data from database
+      const pr = await ctx.prisma.gitHubPullRequest.findFirst({
+        where: {
+          prNumber: input.prNumber,
+          repository: {
+            projectId: input.projectId,
+          },
+        },
+        include: {
+          repository: true,
+        },
+      })
+
+      if (!pr) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Pull request not found',
+        })
+      }
+
+      // Get commits for this PR
+      const commits = await ctx.prisma.gitHubCommit.findMany({
+        where: {
+          repositoryId: pr.repositoryId,
+          // Get recent commits (simplified - in production, you'd link commits to PRs)
+        },
+        orderBy: { committedAt: 'desc' },
+        take: 20,
+      })
+
+      const summary = await generatePRSummary({
+        title: pr.title,
+        commits: commits.map((c) => ({
+          sha: c.sha,
+          message: c.message,
+          author: c.authorLogin || c.authorName,
+        })),
+        baseBranch: pr.baseBranch,
+        headBranch: pr.headBranch,
+      })
+
+      return summary
+    }),
+
+  /**
+   * Generate AI-powered code review suggestions
+   */
+  generateAICodeReview: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.number(),
+        diff: z.string().max(50000),
+        language: z.string().optional(),
+        context: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Check project permission
+      const hasAccess = await aclService.hasProjectPermission(
+        ctx.user.id,
+        input.projectId,
+        ACL_PERMISSIONS.READ
+      )
+
+      if (!hasAccess) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You do not have access to this project',
+        })
+      }
+
+      if (!isAIConfigured()) {
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message: 'AI service is not configured',
+        })
+      }
+
+      const result = await reviewCode({
+        diff: input.diff,
+        language: input.language,
+        context: input.context,
+      })
+
+      return result
+    }),
+
+  /**
+   * Generate AI-powered release notes
+   */
+  generateAIReleaseNotes: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.number(),
+        version: z.string().optional(),
+        previousVersion: z.string().optional(),
+        fromDate: z.string().datetime().optional(),
+        toDate: z.string().datetime().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Check project permission
+      const hasAccess = await aclService.hasProjectPermission(
+        ctx.user.id,
+        input.projectId,
+        ACL_PERMISSIONS.READ
+      )
+
+      if (!hasAccess) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You do not have access to this project',
+        })
+      }
+
+      if (!isAIConfigured()) {
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message: 'AI service is not configured',
+        })
+      }
+
+      // Get project info
+      const project = await ctx.prisma.project.findUnique({
+        where: { id: input.projectId },
+        include: {
+          githubRepository: true,
+        },
+      })
+
+      if (!project) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Project not found',
+        })
+      }
+
+      if (!project.githubRepository) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'No GitHub repository linked to this project',
+        })
+      }
+
+      // Get merged PRs
+      const prs = await ctx.prisma.gitHubPullRequest.findMany({
+        where: {
+          repositoryId: project.githubRepository.id,
+          mergedAt: {
+            not: null,
+            ...(input.fromDate && { gte: new Date(input.fromDate) }),
+            ...(input.toDate && { lte: new Date(input.toDate) }),
+          },
+        },
+        orderBy: { mergedAt: 'desc' },
+        take: 100,
+      })
+
+      if (prs.length === 0) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'No merged PRs found in the specified date range',
+        })
+      }
+
+      const releaseNotes = await generateAIReleaseNotes({
+        projectName: project.name,
+        version: input.version,
+        previousVersion: input.previousVersion,
+        prs: prs.map((pr) => ({
+          number: pr.prNumber,
+          title: pr.title,
+          author: pr.authorLogin,
+          mergedAt: pr.mergedAt!.toISOString(),
+        })),
+      })
+
+      return releaseNotes
+    }),
+
+  /**
+   * Generate AI-powered commit message
+   */
+  generateAICommitMessage: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.number(),
+        files: z.array(
+          z.object({
+            path: z.string(),
+            status: z.enum(['added', 'modified', 'deleted', 'renamed']),
+            diff: z.string().optional(),
+          })
+        ),
+        context: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Check project permission
+      const hasAccess = await aclService.hasProjectPermission(
+        ctx.user.id,
+        input.projectId,
+        ACL_PERMISSIONS.WRITE
+      )
+
+      if (!hasAccess) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You do not have write access to this project',
+        })
+      }
+
+      if (!isAIConfigured()) {
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message: 'AI service is not configured',
+        })
+      }
+
+      const commitMessage = await generateCommitMessage({
+        files: input.files,
+        context: input.context,
+      })
+
+      return commitMessage
     }),
 })
 

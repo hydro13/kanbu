@@ -16,6 +16,7 @@
     "test:run": "vitest run"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.71.2",
     "@fastify/cors": "^11.2.0",
     "@kanbu/shared": "workspace:*",
     "@octokit/app": "^16.1.2",

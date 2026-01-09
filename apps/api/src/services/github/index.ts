@@ -1,6 +1,6 @@
 /*
  * GitHub Services Index
- * Version: 5.0.0
+ * Version: 6.0.0
  *
  * Central export for all GitHub-related services.
  *
@@ -9,7 +9,7 @@
  * Claude Code: Opus 4.5
  * Host: MAX
  * Date: 2026-01-09
- * Fase: 11 - Geavanceerde Sync
+ * Fase: 16 - AI/Claude Integratie
  * =============================================================================
  */
 
@@ -207,3 +207,25 @@ export {
   type ReleaseInfo,
   type ReleaseStats,
 } from './releaseService'
+
+export {
+  aiService,
+  isAIConfigured,
+  getAIProvider,
+  generatePRSummary,
+  reviewCode,
+  generateReleaseNotes as generateAIReleaseNotes,
+  generateCommitMessage,
+  // Types
+  type AIProvider,
+  type AIConfig,
+  type PRSummaryInput,
+  type PRSummary,
+  type CodeReviewInput,
+  type CodeReviewSuggestion,
+  type CodeReviewResult,
+  type ReleaseNotesInput,
+  type ReleaseNotes,
+  type CommitMessageInput,
+  type CommitMessage,
+} from './aiService'
