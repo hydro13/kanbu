@@ -56,6 +56,11 @@ import {
   processCheckRunWebhook,
   type CheckRunWebhookPayload,
 } from '../../services/github/checkRunService'
+import {
+  notifyWorkflowRun,
+  notifyDeployment,
+  notifyCheckRun,
+} from '../../services/github/cicdNotificationService'
 import type { GitHubSyncSettings } from '@kanbu/shared'
 
 // =============================================================================
@@ -834,6 +839,23 @@ async function handleWorkflowRun(ctx: WebhookContext): Promise<{
         status: 'success',
       },
     })
+
+    // Send notifications for workflow completion (Fase 10B.3)
+    if (workflowRun.conclusion) {
+      try {
+        await notifyWorkflowRun({
+          repositoryId: linkedRepo.id,
+          workflowName: workflowRun.name,
+          workflowRunId: BigInt(workflowRun.id),
+          branch: workflowRun.head_branch,
+          conclusion: workflowRun.conclusion,
+          htmlUrl: workflowRun.html_url,
+          actorLogin: workflowRun.actor?.login,
+        })
+      } catch (error) {
+        console.error(`[GitHub Webhook] Failed to send workflow notification:`, error)
+      }
+    }
   }
 
   return { processed: true, action, workflowName: workflowRun.name }
@@ -1083,6 +1105,20 @@ async function handleDeploymentStatus(ctx: WebhookContext): Promise<{
   const deployment = await processDeploymentStatusWebhook(typedPayload)
 
   if (deployment) {
+    // Send notifications for deployment status (Fase 10B.3)
+    try {
+      await notifyDeployment({
+        repositoryId: deployment.repositoryId,
+        environment: deployment.environment,
+        status: deployment.status,
+        ref: deployment.ref,
+        targetUrl: deployment.targetUrl || undefined,
+        creator: deployment.creator || undefined,
+      })
+    } catch (error) {
+      console.error(`[GitHub Webhook] Failed to send deployment notification:`, error)
+    }
+
     return { processed: true, status }
   }
 
@@ -1117,6 +1153,25 @@ async function handleCheckRun(ctx: WebhookContext): Promise<{
   const checkRun = await processCheckRunWebhook(typedPayload)
 
   if (checkRun) {
+    // Send notifications for completed check runs (Fase 10B.3)
+    if (action === 'completed' && conclusion) {
+      try {
+        // Get PR number if available
+        const prNumber = typedPayload.check_run.pull_requests?.[0]?.number
+
+        await notifyCheckRun({
+          repositoryId: checkRun.repositoryId,
+          checkName: checkRun.name,
+          conclusion: conclusion,
+          headSha: checkRun.headSha,
+          outputTitle: checkRun.outputTitle || undefined,
+          prNumber,
+        })
+      } catch (error) {
+        console.error(`[GitHub Webhook] Failed to send check run notification:`, error)
+      }
+    }
+
     return { processed: true, action, checkName, conclusion }
   }
 

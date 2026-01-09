@@ -288,3 +288,21 @@ export {
   type PRCheckSummary,
   type CheckRunWebhookPayload,
 } from './checkRunService'
+
+export {
+  cicdNotificationService,
+  // Settings
+  getCICDSettings,
+  updateCICDSettings,
+  // Notification functions
+  notifyWorkflowRun,
+  notifyDeployment,
+  notifyCheckRun,
+  // Types
+  type CICDNotificationType,
+  type NotificationTrigger,
+  type CICDNotificationSettings,
+  type WorkflowNotificationData,
+  type DeploymentNotificationData,
+  type CheckRunNotificationData,
+} from './cicdNotificationService'

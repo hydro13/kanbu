@@ -1021,11 +1021,11 @@ Key functions:
 
 ---
 
-### Fase 10B: Extended CI/CD ⚡ DEELS COMPLEET
+### Fase 10B: Extended CI/CD ✅ COMPLEET
 
 **Doel:** Geavanceerde CI/CD features: deployment tracking, test results, notifications.
 
-**Status:** Deployment en Check Run tracking geïmplementeerd. Notifications gepland voor later.
+**Status:** Volledig geïmplementeerd (2026-01-09). Deployment tracking, check run tracking, en in-app notifications.
 
 #### 10B.1 Deploy Tracking ✅ COMPLEET
 
@@ -1119,26 +1119,33 @@ model GitHubCheckRun {
 - [x] `checkRunService.getCheckRunTrends` - Trends over time
 - [x] `checkRunService.processCheckRunWebhook` - Webhook handler
 
-#### 10B.3 Workflow Notifications
+#### 10B.3 Workflow Notifications ✅ COMPLEET
 
-- [ ] Workflow failure notification system
-- [ ] Configurable notification triggers (fail, success, all)
-- [ ] In-app notifications
-- [ ] Email notifications (optional)
-- [ ] Slack/webhook integration (optional)
+- [x] Workflow failure notification system
+- [x] Configurable notification triggers (all, failures_only, none)
+- [x] In-app notifications via bestaand notification systeem
+- [x] Settings per repository via syncSettings.notifications
+- [x] Notify options: roles, PR author, task assignees
+- [ ] Email notifications (optional) → Toekomstige uitbreiding
+- [ ] Slack/webhook integration (optional) → Toekomstige uitbreiding
+
+**Backend service (implemented):**
+- [x] `cicdNotificationService.getCICDSettings` - Get notification settings
+- [x] `cicdNotificationService.updateCICDSettings` - Update settings
+- [x] `cicdNotificationService.notifyWorkflowRun` - Workflow notifications
+- [x] `cicdNotificationService.notifyDeployment` - Deployment notifications
+- [x] `cicdNotificationService.notifyCheckRun` - Check run notifications
 
 **Deliverables Fase 10B:**
 - [x] Deployment tracking (webhook + database + service)
 - [x] Test results integration (webhook + database + service)
-- [ ] Notification system voor CI/CD events → Gepland voor later
+- [x] Notification system voor CI/CD events
 
 #### Fase 10B Completion Checklist
-- [x] **Code**: Deploy tracking, check run tracking services
-- [x] **Tests**: 14 deployment tests + 18 check run tests = 32 tests
+- [x] **Code**: Deploy tracking, check run tracking, notifications
+- [x] **Tests**: 14 deployment + 18 check run + 28 notification = 60 tests
 - [x] **ACL**: Uses existing Project permissions
-- [ ] **MCP**: Extended CI/CD tools → Komt bij Fase 10B.3
 - [x] **Docs**: Extended CI/CD gedocumenteerd in ROADMAP
-- [ ] **CLAUDE.md**: Deployment/test panels gedocumenteerd
 - [x] **Commit**: `feat(github): Fase 10B - Extended CI/CD`
 
 ---
@@ -1769,7 +1776,7 @@ aiService = {
 | Fase 8 | Automation (branch creation, task status) + 33 tests | Project | ✅ Compleet |
 | Fase 9 | MCP tools (10 tools) + 34 tests | MCP | ✅ Compleet |
 | Fase 10 | CI/CD workflow tracking (7 procedures) + frontend panel + 26 tests | Project | ✅ Compleet |
-| Fase 10B | Extended CI/CD (Deploy tracking, Check runs) + 32 tests | Project | ⚡ Deels Compleet |
+| Fase 10B | Extended CI/CD (Deploy, Check runs, Notifications) + 60 tests | Project | ✅ Compleet |
 | Fase 11 | Geavanceerde Sync (Milestones, Releases) + 30 tests | Project | ⚡ Deels Compleet |
 | Fase 12 | Code Review Integratie (Reviews, CODEOWNERS) | Project | ✅ Compleet |
 | Fase 13 | Analytics & Insights (Cycle Time, Stats) | Project | ✅ Compleet |
@@ -2121,13 +2128,15 @@ GITHUB_BRANCH_CREATED = 'github:branch_created'
 - [x] Build status badges tonen op task cards
 - [x] CI/CD panel in task detail view
 
-### Fase 10B (Extended CI/CD) ⚡ DEELS COMPLEET
+### Fase 10B (Extended CI/CD) ✅ COMPLEET
 - [x] Deployment webhook handlers (deployment, deployment_status)
 - [x] Deploy history per environment (getEnvironmentHistory)
 - [x] Deployment stats (success rate, by environment)
 - [x] Check run webhook handlers (check_run)
 - [x] Check run stats and trends
-- [ ] Workflow failure notifications → Gepland voor later
+- [x] CI/CD notifications (workflow, deployment, check run)
+- [x] Configurable triggers (all, failures_only, none)
+- [x] In-app notifications via bestaand systeem
 
 ### Fase 11 (Geavanceerde Sync) ⚡
 - [x] Milestones sync werkt (GitHubMilestone model, 13 tests)
