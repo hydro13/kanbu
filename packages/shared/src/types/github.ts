@@ -24,8 +24,11 @@ export type SyncDirection = (typeof SYNC_DIRECTIONS)[number]
 export const SYNC_STATUSES = ['success', 'failed', 'skipped'] as const
 export type SyncStatus = (typeof SYNC_STATUSES)[number]
 
-export const SYNC_ENTITY_TYPES = ['issue', 'pr', 'commit', 'task'] as const
+export const SYNC_ENTITY_TYPES = ['issue', 'pr', 'commit', 'task', 'review'] as const
 export type SyncEntityType = (typeof SYNC_ENTITY_TYPES)[number]
+
+export const GITHUB_REVIEW_STATES = ['PENDING', 'COMMENTED', 'APPROVED', 'CHANGES_REQUESTED', 'DISMISSED'] as const
+export type GitHubReviewState = (typeof GITHUB_REVIEW_STATES)[number]
 
 // =============================================================================
 // Sync Settings Interface
@@ -192,4 +195,50 @@ export interface UpdateSyncSettingsInput {
   repositoryId: number
   syncEnabled?: boolean
   syncSettings?: GitHubSyncSettings
+}
+
+// =============================================================================
+// Code Review Types (Fase 12)
+// =============================================================================
+
+export interface GitHubReviewInfo {
+  id: number
+  pullRequestId: number
+  reviewId: bigint
+  authorLogin: string
+  state: GitHubReviewState
+  body?: string | null
+  htmlUrl?: string | null
+  submittedAt?: Date | null
+  createdAt: Date
+}
+
+export interface GitHubReviewCommentInfo {
+  id: number
+  reviewId: number
+  commentId: bigint
+  path: string
+  line?: number | null
+  side?: 'LEFT' | 'RIGHT' | null
+  body: string
+  authorLogin: string
+  htmlUrl?: string | null
+  createdAt: Date
+}
+
+export interface PRReviewSummary {
+  approved: number
+  changesRequested: number
+  commented: number
+  pending: number
+  latestState: GitHubReviewState | null
+  reviewers: Array<{
+    login: string
+    state: GitHubReviewState
+    submittedAt: Date | null
+  }>
+}
+
+export interface TaskReviewSummary extends PRReviewSummary {
+  prCount: number
 }

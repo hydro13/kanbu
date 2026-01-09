@@ -1101,6 +1101,7 @@ model GitHubPullRequest {
   repository   GitHubRepository    @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
   task         Task?               @relation(fields: [taskId], references: [id])
   workflowRuns GitHubWorkflowRun[]
+  reviews      GitHubReview[]
 
   @@unique([repositoryId, prNumber])
   @@index([taskId])
@@ -1178,6 +1179,48 @@ model GitHubWorkflowRun {
   @@index([status])
   @@index([headBranch])
   @@map("github_workflow_runs")
+}
+
+/// GitHub Pull Request Reviews
+/// Tracks code review submissions and their state
+model GitHubReview {
+  id            Int                   @id @default(autoincrement())
+  pullRequestId Int                   @map("pull_request_id")
+  reviewId      BigInt                @map("review_id")
+  authorLogin   String                @map("author_login") @db.VarChar(255)
+  state         String                @db.VarChar(50) // 'PENDING' | 'COMMENTED' | 'APPROVED' | 'CHANGES_REQUESTED' | 'DISMISSED'
+  body          String?               @db.Text
+  htmlUrl       String?               @map("html_url") @db.VarChar(512)
+  submittedAt   DateTime?             @map("submitted_at")
+  createdAt     DateTime              @default(now()) @map("created_at")
+  updatedAt     DateTime              @updatedAt @map("updated_at")
+  pullRequest   GitHubPullRequest     @relation(fields: [pullRequestId], references: [id], onDelete: Cascade)
+  comments      GitHubReviewComment[]
+
+  @@unique([pullRequestId, reviewId])
+  @@index([authorLogin])
+  @@index([state])
+  @@map("github_reviews")
+}
+
+/// GitHub Review Comments
+/// Individual comments within a review, linked to specific code locations
+model GitHubReviewComment {
+  id          Int          @id @default(autoincrement())
+  reviewId    Int          @map("review_id")
+  commentId   BigInt       @map("comment_id")
+  path        String       @db.VarChar(512)
+  line        Int?
+  side        String?      @db.VarChar(10) // 'LEFT' | 'RIGHT'
+  body        String       @db.Text
+  authorLogin String       @map("author_login") @db.VarChar(255)
+  htmlUrl     String?      @map("html_url") @db.VarChar(512)
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+  review      GitHubReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  @@unique([reviewId, commentId])
+  @@map("github_review_comments")
 }
 
 enum WorkspaceRole {

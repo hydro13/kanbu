@@ -132,3 +132,24 @@ export {
   type WorkflowRunFilters,
   type WorkflowJob,
 } from './workflowService'
+
+export {
+  // Review CRUD
+  upsertReview,
+  upsertReviewComment,
+  // Review queries
+  getReviewsForPR,
+  getPRReviewSummary,
+  getReviewsForTask,
+  getTaskReviewSummary,
+  // Review actions
+  requestReview,
+  getSuggestedReviewers,
+  getPendingReviewRequests,
+  syncReviewsFromGitHub,
+  // Types
+  type ReviewData,
+  type ReviewCommentData,
+  type ReviewState,
+  type PRReviewSummary,
+} from './reviewService'

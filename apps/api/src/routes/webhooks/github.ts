@@ -35,6 +35,10 @@ import {
 import {
   processWorkflowRunEvent,
 } from '../../services/github/workflowService'
+import {
+  upsertReview,
+  type ReviewData,
+} from '../../services/github/reviewService'
 import type { GitHubSyncSettings } from '@kanbu/shared'
 
 // =============================================================================
@@ -799,6 +803,102 @@ async function handleWorkflowRun(ctx: WebhookContext): Promise<{
 }
 
 // =============================================================================
+// Pull Request Review Handler
+// =============================================================================
+
+async function handlePullRequestReview(ctx: WebhookContext): Promise<{
+  processed: boolean
+  action: string | undefined
+  prNumber: number | null
+  reviewState: string | null
+}> {
+  const { action, payload } = ctx
+  const repo = payload.repository
+  const pr = payload.pull_request
+  const review = payload.review
+
+  if (!repo || !pr || !review) {
+    return { processed: false, action, prNumber: null, reviewState: null }
+  }
+
+  console.log(`[GitHub Webhook] PR review ${action}: ${repo.full_name}#${pr.number} by ${review.user?.login}`)
+
+  // Find the linked repository in Kanbu
+  const linkedRepo = await prisma.gitHubRepository.findUnique({
+    where: {
+      owner_name: {
+        owner: repo.owner.login,
+        name: repo.name,
+      },
+    },
+  })
+
+  if (!linkedRepo || !linkedRepo.syncEnabled) {
+    return { processed: false, action, prNumber: pr.number, reviewState: review.state }
+  }
+
+  // Check if PR tracking is enabled
+  const syncSettings = linkedRepo.syncSettings as GitHubSyncSettings | null
+  if (!syncSettings?.pullRequests?.enabled) {
+    return { processed: false, action, prNumber: pr.number, reviewState: review.state }
+  }
+
+  // Find the PR in our database
+  const dbPR = await prisma.gitHubPullRequest.findUnique({
+    where: {
+      repositoryId_prNumber: {
+        repositoryId: linkedRepo.id,
+        prNumber: pr.number,
+      },
+    },
+  })
+
+  if (!dbPR) {
+    // PR not tracked yet, skip
+    return { processed: false, action, prNumber: pr.number, reviewState: review.state }
+  }
+
+  // Upsert the review
+  const reviewData: ReviewData = {
+    pullRequestId: dbPR.id,
+    reviewId: BigInt(review.id),
+    authorLogin: review.user?.login ?? 'unknown',
+    state: (review.state?.toUpperCase() ?? 'COMMENTED') as ReviewData['state'],
+    body: review.body ?? null,
+    htmlUrl: review.html_url ?? null,
+    submittedAt: review.submitted_at ? new Date(review.submitted_at) : null,
+  }
+
+  await upsertReview(reviewData)
+
+  // Log sync operation
+  await prisma.gitHubSyncLog.create({
+    data: {
+      repositoryId: linkedRepo.id,
+      action: `review_${action}`,
+      direction: 'github_to_kanbu',
+      entityType: 'pr',
+      entityId: String(pr.number),
+      details: {
+        reviewId: review.id,
+        reviewState: review.state,
+        reviewer: review.user?.login,
+        prNumber: pr.number,
+        prTitle: pr.title,
+      },
+      status: 'success',
+    },
+  })
+
+  return {
+    processed: true,
+    action,
+    prNumber: pr.number,
+    reviewState: review.state,
+  }
+}
+
+// =============================================================================
 // Main Webhook Handler
 // =============================================================================
 
@@ -882,6 +982,10 @@ async function webhookHandler(
 
       case 'workflow_run':
         result = await handleWorkflowRun(ctx)
+        break
+
+      case 'pull_request_review':
+        result = await handlePullRequestReview(ctx)
         break
 
       default:

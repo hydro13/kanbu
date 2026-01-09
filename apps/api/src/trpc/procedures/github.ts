@@ -51,6 +51,16 @@ import {
   rerunFailedJobs,
   cancelWorkflow,
 } from '../../services/github/workflowService'
+import {
+  getReviewsForPR,
+  getPRReviewSummary,
+  getReviewsForTask,
+  getTaskReviewSummary,
+  requestReview,
+  getSuggestedReviewers,
+  getPendingReviewRequests,
+  syncReviewsFromGitHub,
+} from '../../services/github/reviewService'
 import type { GitHubSyncSettings } from '@kanbu/shared'
 
 // =============================================================================
@@ -2102,6 +2112,378 @@ export const githubRouter = router({
         resourceName: `${run.workflowName} #${run.runNumber}`,
         metadata: {
           repositoryFullName: run.repository.fullName,
+        },
+      })
+
+      return result
+    }),
+
+  // ===========================================================================
+  // Code Review Procedures (Fase 12)
+  // ===========================================================================
+
+  /**
+   * Get reviews for a pull request
+   * Requires project READ permission
+   */
+  getPRReviews: protectedProcedure
+    .input(z.object({
+      prId: z.number(),
+    }))
+    .query(async ({ ctx, input }) => {
+      const { prId } = input
+
+      // Get PR to check permissions
+      const pr = await ctx.prisma.gitHubPullRequest.findUnique({
+        where: { id: prId },
+        include: {
+          repository: {
+            select: { projectId: true },
+          },
+        },
+      })
+
+      if (!pr) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Pull request not found',
+        })
+      }
+
+      // Check project read permission
+      await checkProjectReadAccess(ctx.user.id, pr.repository.projectId)
+
+      return getReviewsForPR(prId)
+    }),
+
+  /**
+   * Get review summary for a pull request (approved/changes_requested counts)
+   * Requires project READ permission
+   */
+  getPRReviewSummary: protectedProcedure
+    .input(z.object({
+      prId: z.number(),
+    }))
+    .query(async ({ ctx, input }) => {
+      const { prId } = input
+
+      // Get PR to check permissions
+      const pr = await ctx.prisma.gitHubPullRequest.findUnique({
+        where: { id: prId },
+        include: {
+          repository: {
+            select: { projectId: true },
+          },
+        },
+      })
+
+      if (!pr) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Pull request not found',
+        })
+      }
+
+      // Check project read permission
+      await checkProjectReadAccess(ctx.user.id, pr.repository.projectId)
+
+      return getPRReviewSummary(prId)
+    }),
+
+  /**
+   * Get reviews for a task (aggregated from all linked PRs)
+   * Requires project READ permission
+   */
+  getTaskReviews: protectedProcedure
+    .input(z.object({
+      taskId: z.number(),
+    }))
+    .query(async ({ ctx, input }) => {
+      const { taskId } = input
+
+      // Get task to check permissions
+      const task = await ctx.prisma.task.findUnique({
+        where: { id: taskId },
+        include: {
+          column: {
+            include: {
+              project: {
+                select: { id: true },
+              },
+            },
+          },
+        },
+      })
+
+      if (!task) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Task not found',
+        })
+      }
+
+      // Check project read permission
+      await checkProjectReadAccess(ctx.user.id, task.column.project.id)
+
+      return getReviewsForTask(taskId)
+    }),
+
+  /**
+   * Get review summary for a task (aggregated from all linked PRs)
+   * Requires project READ permission
+   */
+  getTaskReviewSummary: protectedProcedure
+    .input(z.object({
+      taskId: z.number(),
+    }))
+    .query(async ({ ctx, input }) => {
+      const { taskId } = input
+
+      // Get task to check permissions
+      const task = await ctx.prisma.task.findUnique({
+        where: { id: taskId },
+        include: {
+          column: {
+            include: {
+              project: {
+                select: { id: true },
+              },
+            },
+          },
+        },
+      })
+
+      if (!task) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Task not found',
+        })
+      }
+
+      // Check project read permission
+      await checkProjectReadAccess(ctx.user.id, task.column.project.id)
+
+      return getTaskReviewSummary(taskId)
+    }),
+
+  /**
+   * Request review from specific users on a PR
+   * Requires project WRITE permission
+   */
+  requestReview: protectedProcedure
+    .input(z.object({
+      prId: z.number(),
+      reviewers: z.array(z.string()).min(1),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { prId, reviewers } = input
+
+      // Get PR with repository info
+      const pr = await ctx.prisma.gitHubPullRequest.findUnique({
+        where: { id: prId },
+        include: {
+          repository: {
+            select: {
+              id: true,
+              projectId: true,
+              owner: true,
+              name: true,
+              installation: {
+                select: { id: true },
+              },
+            },
+          },
+        },
+      })
+
+      if (!pr) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Pull request not found',
+        })
+      }
+
+      // Check project write permission
+      await checkProjectWriteAccess(ctx.user.id, pr.repository.projectId)
+
+      // Request review via GitHub API
+      const result = await requestReview(
+        pr.repository.installation.id,
+        pr.repository.owner,
+        pr.repository.name,
+        pr.prNumber,
+        reviewers
+      )
+
+      // Audit log
+      await auditService.log({
+        userId: ctx.user.id,
+        action: 'GITHUB_REVIEW_REQUESTED' as keyof typeof AUDIT_ACTIONS,
+        category: 'WORKSPACE',
+        resourceType: 'pr',
+        resourceId: prId,
+        resourceName: `PR #${pr.prNumber}`,
+        metadata: {
+          reviewers,
+          requestedReviewers: result.requestedReviewers,
+        },
+      })
+
+      return result
+    }),
+
+  /**
+   * Get suggested reviewers for a PR
+   * Requires project READ permission
+   */
+  getSuggestedReviewers: protectedProcedure
+    .input(z.object({
+      prId: z.number(),
+    }))
+    .query(async ({ ctx, input }) => {
+      const { prId } = input
+
+      // Get PR with repository info
+      const pr = await ctx.prisma.gitHubPullRequest.findUnique({
+        where: { id: prId },
+        include: {
+          repository: {
+            select: {
+              id: true,
+              projectId: true,
+              owner: true,
+              name: true,
+              installation: {
+                select: { id: true },
+              },
+            },
+          },
+        },
+      })
+
+      if (!pr) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Pull request not found',
+        })
+      }
+
+      // Check project read permission
+      await checkProjectReadAccess(ctx.user.id, pr.repository.projectId)
+
+      return getSuggestedReviewers(
+        pr.repository.installation.id,
+        pr.repository.owner,
+        pr.repository.name,
+        pr.prNumber
+      )
+    }),
+
+  /**
+   * Get pending review requests for a PR
+   * Requires project READ permission
+   */
+  getPendingReviewRequests: protectedProcedure
+    .input(z.object({
+      prId: z.number(),
+    }))
+    .query(async ({ ctx, input }) => {
+      const { prId } = input
+
+      // Get PR with repository info
+      const pr = await ctx.prisma.gitHubPullRequest.findUnique({
+        where: { id: prId },
+        include: {
+          repository: {
+            select: {
+              id: true,
+              projectId: true,
+              owner: true,
+              name: true,
+              installation: {
+                select: { id: true },
+              },
+            },
+          },
+        },
+      })
+
+      if (!pr) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Pull request not found',
+        })
+      }
+
+      // Check project read permission
+      await checkProjectReadAccess(ctx.user.id, pr.repository.projectId)
+
+      return getPendingReviewRequests(
+        pr.repository.installation.id,
+        pr.repository.owner,
+        pr.repository.name,
+        pr.prNumber
+      )
+    }),
+
+  /**
+   * Sync reviews from GitHub for a PR (manual resync)
+   * Requires project WRITE permission
+   */
+  syncPRReviews: protectedProcedure
+    .input(z.object({
+      prId: z.number(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { prId } = input
+
+      // Get PR with repository info
+      const pr = await ctx.prisma.gitHubPullRequest.findUnique({
+        where: { id: prId },
+        include: {
+          repository: {
+            select: {
+              id: true,
+              projectId: true,
+              owner: true,
+              name: true,
+              installation: {
+                select: { id: true },
+              },
+            },
+          },
+        },
+      })
+
+      if (!pr) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Pull request not found',
+        })
+      }
+
+      // Check project write permission
+      await checkProjectWriteAccess(ctx.user.id, pr.repository.projectId)
+
+      // Sync reviews from GitHub
+      const result = await syncReviewsFromGitHub(
+        pr.repository.installation.id,
+        pr.repository.owner,
+        pr.repository.name,
+        pr.prNumber,
+        prId
+      )
+
+      // Audit log
+      await auditService.log({
+        userId: ctx.user.id,
+        action: 'GITHUB_REVIEWS_SYNCED' as keyof typeof AUDIT_ACTIONS,
+        category: 'WORKSPACE',
+        resourceType: 'pr',
+        resourceId: prId,
+        resourceName: `PR #${pr.prNumber}`,
+        metadata: {
+          syncedReviews: result.synced,
         },
       })
 
