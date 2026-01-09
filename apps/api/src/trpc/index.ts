@@ -132,6 +132,7 @@ import { aclRouter } from './procedures/acl';
 import { auditLogRouter } from './procedures/auditLog';
 import { assistantRouter } from './procedures/assistant';
 import { githubAdminRouter } from './procedures/githubAdmin';
+import { githubRouter } from './procedures/github';
 
 /**
  * Main app router
@@ -171,6 +172,7 @@ export const appRouter = router({
   auditLog: auditLogRouter,
   assistant: assistantRouter,
   githubAdmin: githubAdminRouter,
+  github: githubRouter,
 });
 
 /**

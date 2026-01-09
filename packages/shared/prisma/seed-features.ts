@@ -432,6 +432,16 @@ const PROJECT_FEATURES: FeatureDefinition[] = [
     icon: 'webhook',
     sortOrder: 230,
   },
+
+  // Integrations
+  {
+    scope: 'project',
+    slug: 'github',
+    name: 'GitHub',
+    description: 'Link repository and configure GitHub sync settings',
+    icon: 'github',
+    sortOrder: 300,
+  },
 ]
 
 // =============================================================================

@@ -114,6 +114,8 @@ import { ChangePassword } from './pages/profile/ChangePassword'
 import { UserListPage, UserCreatePage, UserEditPage, InvitesPage, SystemSettingsPage, WorkspaceListPage, WorkspaceCreatePage, WorkspaceEditPage, BackupPage, PermissionTreePage, AclPage, AuditLogsPage, PermissionMatrixPage, GitHubAdminPage } from './pages/admin'
 // Dashboard pages
 import { DashboardOverview, MyTasks, MySubtasks } from './pages/dashboard'
+// Project pages
+import { GitHubProjectSettings } from './pages/project'
 import { AcceptInvitePage } from './pages/AcceptInvite'
 // Demo pages
 import { EditorDemoPage } from './pages/EditorDemo'
@@ -425,6 +427,14 @@ function App() {
           element={
             <ProtectedRoute>
               <WebhookSettings />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/workspace/:workspaceSlug/project/:projectIdentifier/github"
+          element={
+            <ProtectedRoute>
+              <GitHubProjectSettings />
             </ProtectedRoute>
           }
         />
