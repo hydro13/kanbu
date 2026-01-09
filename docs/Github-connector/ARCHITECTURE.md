@@ -4,9 +4,37 @@
 
 Dit document beschrijft de technische architectuur van de Kanbu GitHub Connector.
 
+### Twee-Tier Architectuur
+
+De connector is opgebouwd met een **twee-tier structuur**: Admin (Workspace) niveau en Project niveau.
+
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                              KANBU                                       │
+│                                                                          │
+│  ┌─────────────────────────────────────────────────────────────────┐    │
+│  │                 ADMIN NIVEAU (Workspace)                         │    │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐           │    │
+│  │  │ Installations│  │ User Mapping │  │ Repos        │           │    │
+│  │  │ Management   │  │ GitHub↔Kanbu │  │ Overview     │           │    │
+│  │  └──────────────┘  └──────────────┘  └──────────────┘           │    │
+│  │                                                                  │    │
+│  │  Beheerd door: Workspace Admins                                  │    │
+│  │  UI: Admin → GitHub Settings                                     │    │
+│  └──────────────────────────────────────┬──────────────────────────┘    │
+│                                         │                                │
+│                                         ▼                                │
+│  ┌──────────────────────────────────────────────────────────────────┐   │
+│  │                 PROJECT NIVEAU                                    │   │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐            │   │
+│  │  │ Repo Linking │  │ Sync Settings│  │ Sync Status  │            │   │
+│  │  │ (1 per proj) │  │ & Mapping    │  │ & Logs       │            │   │
+│  │  └──────────────┘  └──────────────┘  └──────────────┘            │   │
+│  │                                                                   │   │
+│  │  Beheerd door: Project Managers                                   │   │
+│  │  UI: Project Settings → GitHub                                    │   │
+│  └───────────────────────────────────────────────────────────────────┘   │
+│                                                                          │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐    │
 │  │   Web App   │  │   tRPC API  │  │  MCP Server │  │   Workers   │    │
 │  │  (React)    │  │  (Fastify)  │  │  (Claude)   │  │  (Queues)   │    │
@@ -19,12 +47,16 @@ Dit document beschrijft de technische architectuur van de Kanbu GitHub Connector
 │                   │   Service   │                                       │
 │                   └──────┬──────┘                                       │
 │                          │                                              │
-│  ┌───────────────────────┴───────────────────────┐                     │
-│  │                    Database                    │                     │
-│  │  ┌────────────┐ ┌────────────┐ ┌────────────┐ │                     │
-│  │  │ Installs   │ │   Repos    │ │  Sync Log  │ │                     │
-│  │  └────────────┘ └────────────┘ └────────────┘ │                     │
-│  └───────────────────────────────────────────────┘                     │
+│  ┌───────────────────────┴────────────────────────────┐                │
+│  │                    Database                         │                │
+│  │  ┌────────────┐ ┌────────────┐ ┌────────────────┐  │                │
+│  │  │ Installs   │ │   Repos    │ │ User Mappings  │  │                │
+│  │  │ (workspace)│ │  (project) │ │  (workspace)   │  │                │
+│  │  └────────────┘ └────────────┘ └────────────────┘  │                │
+│  │  ┌────────────┐ ┌────────────┐ ┌────────────────┐  │                │
+│  │  │  Issues    │ │    PRs     │ │   Sync Log     │  │                │
+│  │  └────────────┘ └────────────┘ └────────────────┘  │                │
+│  └────────────────────────────────────────────────────┘                │
 └─────────────────────────────────────────────────────────────────────────┘
                                     │
                                     │ HTTPS / Webhooks
@@ -37,6 +69,16 @@ Dit document beschrijft de technische architectuur van de Kanbu GitHub Connector
 │  └─────────────┘  └─────────────┘  └─────────────┘                    │
 └────────────────────────────────────────────────────────────────────────┘
 ```
+
+### Waarom Twee Niveaus?
+
+| Aspect | Admin Niveau | Project Niveau |
+|--------|--------------|----------------|
+| **Scope** | Hele workspace | Enkel project |
+| **GitHub App Install** | Eenmalig per org/user | Selecteer repo uit installatie |
+| **User Mapping** | Centraal beheren | Automatisch gebruiken bij sync |
+| **Rechten** | Workspace P | Project P |
+| **Wie** | Workspace Admins | Project Managers |
 
 ---
 
@@ -377,7 +419,43 @@ const issueToTask: FieldMapping = {
 
 ## 5. ACL Integratie
 
-### 5.1 Permission Checks
+### 5.1 Twee-Niveau Permission Checks
+
+De GitHub connector vereist permission checks op **twee niveaus**:
+
+#### Admin-Niveau Procedures (Workspace)
+
+```typescript
+// apps/api/src/trpc/procedures/githubAdmin.ts
+
+import { checkWorkspacePermission } from '@/services/permissionService'
+
+export const githubAdminRouter = router({
+  // List installations (requires Workspace R)
+  listInstallations: protectedProcedure
+    .input(z.object({ workspaceId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      await checkWorkspacePermission(ctx.user.id, input.workspaceId, 'R')
+      return db.gitHubInstallation.findMany({
+        where: { workspaceId: input.workspaceId }
+      })
+    }),
+
+  // Create user mapping (requires Workspace P)
+  createUserMapping: protectedProcedure
+    .input(z.object({
+      workspaceId: z.number(),
+      userId: z.number(),
+      githubLogin: z.string(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      await checkWorkspacePermission(ctx.user.id, input.workspaceId, 'P')
+      // ... create mapping logic
+    }),
+})
+```
+
+#### Project-Niveau Procedures
 
 ```typescript
 // apps/api/src/trpc/procedures/github.ts
@@ -385,7 +463,7 @@ const issueToTask: FieldMapping = {
 import { checkProjectPermission } from '@/services/permissionService'
 
 export const githubRouter = router({
-  // View linked repository (requires R)
+  // View linked repository (requires Project R)
   getLinkedRepository: protectedProcedure
     .input(z.object({ projectId: z.number() }))
     .query(async ({ ctx, input }) => {
@@ -395,7 +473,8 @@ export const githubRouter = router({
       })
     }),
 
-  // Link repository (requires P)
+  // Link repository (requires Project P)
+  // Note: repository moet uit een workspace installation komen
   linkRepository: protectedProcedure
     .input(z.object({
       projectId: z.number(),
@@ -405,10 +484,22 @@ export const githubRouter = router({
     .mutation(async ({ ctx, input }) => {
       await checkProjectPermission(ctx.user.id, input.projectId, 'P')
 
+      // Verify installation belongs to project's workspace
+      const project = await db.project.findUnique({
+        where: { id: input.projectId },
+        select: { workspaceId: true }
+      })
+      const installation = await db.gitHubInstallation.findUnique({
+        where: { id: input.installationId }
+      })
+      if (installation.workspaceId !== project.workspaceId) {
+        throw new TRPCError({ code: 'FORBIDDEN' })
+      }
+
       // ... link logic
     }),
 
-  // Trigger sync (requires W)
+  // Trigger sync (requires Project W)
   triggerSync: protectedProcedure
     .input(z.object({ projectId: z.number() }))
     .mutation(async ({ ctx, input }) => {
@@ -479,23 +570,34 @@ await auditLog({
 ### 6.1 Entity Relationship Diagram
 
 ```
-┌─────────────────────┐
-│ GitHubInstallation  │
-├─────────────────────┤
-│ id                  │
-│ installationId      │◄───────────────────┐
-│ accountType         │                    │
-│ accountLogin        │                    │
-│ accessToken (enc)   │                    │
-│ tokenExpiresAt      │                    │
-└─────────────────────┘                    │
-                                           │
-┌─────────────────────┐              ┌─────┴───────────────┐
-│ Project             │              │ GitHubRepository    │
-├─────────────────────┤              ├─────────────────────┤
-│ id                  │◄─────────────│ projectId (unique)  │
-│ name                │              │ installationId      │
-│ ...                 │              │ repoId              │
+┌─────────────────────┐                           ┌─────────────────────┐
+│ Workspace           │                           │ User                │
+├─────────────────────┤                           ├─────────────────────┤
+│ id                  │◄─────────────┬───────────►│ id                  │
+│ name                │              │            │ name                │
+│ slug                │              │            │ email               │
+└─────────────────────┘              │            └─────────────────────┘
+         │                           │                      │
+         │                           │                      │
+         ▼                           │                      │
+┌─────────────────────┐              │            ┌────────┴────────────┐
+│ GitHubInstallation  │              │            │ GitHubUserMapping   │
+├─────────────────────┤              │            ├─────────────────────┤
+│ id                  │◄──────┐      │            │ id                  │
+│ installationId      │       │      └───────────►│ workspaceId         │
+│ accountType         │       │                   │ userId              │
+│ accountLogin        │       │                   │ githubLogin         │
+│ accessToken (enc)   │       │                   │ githubId            │
+│ tokenExpiresAt      │       │                   │ githubEmail         │
+└─────────────────────┘       │                   │ autoMatched         │
+                              │                   └─────────────────────┘
+                              │
+┌─────────────────────┐       │      ┌─────────────────────┐
+│ Project             │       │      │ GitHubRepository    │
+├─────────────────────┤       │      ├─────────────────────┤
+│ id                  │◄──────┼──────│ projectId (unique)  │
+│ name                │       └──────│ installationId      │
+│ workspaceId         │              │ repoId              │
 └─────────────────────┘              │ owner               │
          ▲                           │ name                │
          │                           │ syncSettings (json) │
@@ -526,9 +628,34 @@ await auditLog({
 └─────────────────────┘              └─────────────────────┘
 ```
 
-### 6.2 Indexes
+### 6.2 Scope per Model
+
+| Model | Scope | Key Relations |
+|-------|-------|---------------|
+| `GitHubInstallation` | Workspace | Shared by all projects in workspace |
+| `GitHubUserMapping` | Workspace | Maps GitHub login → Kanbu user |
+| `GitHubRepository` | Project | 1:1 with Project |
+| `GitHubIssue` | Project | Links to Task |
+| `GitHubPullRequest` | Project | Links to Task |
+| `GitHubCommit` | Project | Links to Task |
+| `GitHubSyncLog` | Project | Audit trail for sync operations |
+
+### 6.3 Indexes
 
 ```prisma
+model GitHubInstallation {
+  // ...
+  @@unique([installationId])
+  @@index([accountLogin])
+}
+
+model GitHubUserMapping {
+  // ...
+  @@unique([workspaceId, githubLogin])  // 1 mapping per GitHub login per workspace
+  @@unique([workspaceId, userId])        // 1 mapping per Kanbu user per workspace
+  @@index([githubLogin])
+}
+
 model GitHubRepository {
   // ...
   @@unique([owner, name])
@@ -768,4 +895,8 @@ logger.info('GitHub sync completed', {
 
 | Datum | Wijziging |
 |-------|-----------|
+| 2026-01-09 | Twee-tier architectuur toegevoegd (Admin + Project niveau) |
+| 2026-01-09 | GitHubUserMapping model toegevoegd aan ERD |
+| 2026-01-09 | Permission checks gesplitst in Admin en Project niveau |
+| 2026-01-09 | Scope per Model tabel toegevoegd |
 | 2026-01-09 | Initiële architectuur document |
