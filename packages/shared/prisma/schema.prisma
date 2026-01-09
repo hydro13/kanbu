@@ -56,6 +56,8 @@ model Workspace {
   roleAssignments RoleAssignment[]    // Security groups assigned to this workspace
   auditLogs       AuditLog[]          // Audit logs scoped to this workspace
   apiKeys         ApiKey[]            // API keys scoped to this workspace (Fase 9.6)
+  githubInstallations GitHubInstallation[]  // GitHub App installations (Fase 1)
+  githubUserMappings  GitHubUserMapping[]   // GitHub user mappings (Fase 1)
 
   @@map("workspaces")
 }
@@ -186,6 +188,7 @@ model User {
   auditLogs          AuditLog[]            @relation("AuditLogActor") // Audit logs created by this user
   assistantSetupCodes AssistantSetupCode[]  // AI Assistant setup codes (MCP pairing)
   assistantBindings  AssistantBinding[]     // AI Assistant machine bindings
+  githubUserMappings GitHubUserMapping[]    // GitHub user mappings (Fase 1)
 
   @@map("users")
 }
@@ -285,6 +288,7 @@ model Project {
   roleAssignments RoleAssignment[]     // Security groups assigned to this project
   features        Feature[]            // ACL-controlled menu items/features (Fase 8B)
   apiKeys         ApiKey[]             // API keys scoped to this project (Fase 9.6)
+  githubRepository GitHubRepository?   // Linked GitHub repository (Fase 1)
 
   @@unique([workspaceId, identifier])
   @@map("projects")
@@ -403,6 +407,7 @@ model Task {
   isActive       Boolean   @default(true) @map("is_active") // false = closed
   isDraggable    Boolean   @default(true) @map("is_draggable")
   recurrenceData Json?     @map("recurrence_data")
+  githubBranch   String?   @db.VarChar(255) @map("github_branch") // Feature branch name (Fase 1)
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
 
@@ -430,6 +435,9 @@ model Task {
   linksFrom    TaskLink[]        @relation("TaskLinkFrom")
   linksTo      TaskLink[]        @relation("TaskLinkTo")
   genxSessions TaskSession[]
+  githubIssue        GitHubIssue?        // Linked GitHub issue (Fase 1)
+  githubPullRequests GitHubPullRequest[] // Linked pull requests (Fase 1)
+  githubCommits      GitHubCommit[]      // Linked commits (Fase 1)
 
   @@index([projectId, isActive])
   @@index([columnId])
@@ -1533,4 +1541,193 @@ model AssistantBinding {
   @@index([tokenPrefix])
   @@index([revokedAt])
   @@map("assistant_bindings")
+}
+
+// =============================================================================
+// GITHUB CONNECTOR - Fase 1: Database Infrastructure
+// =============================================================================
+//
+// Two-tier architecture:
+// - Admin (Workspace level): GitHubInstallation, GitHubUserMapping
+// - Project level: GitHubRepository, GitHubIssue, GitHubPullRequest, GitHubCommit, GitHubSyncLog
+//
+// Enables:
+// - Bidirectional issue synchronization
+// - Pull request tracking with task linking
+// - Commit tracking via task references
+// - Feature branch creation from tasks
+// - Automatic task status updates
+//
+// Added: 2026-01-09
+// =============================================================================
+
+/// GitHub App Installation (org/user level) - Workspace scoped
+model GitHubInstallation {
+  id              Int       @id @default(autoincrement())
+  workspaceId     Int       @map("workspace_id")
+  installationId  BigInt    @unique @map("installation_id")
+  accountType     String    @db.VarChar(20)  // 'user' | 'organization'
+  accountId       BigInt    @map("account_id")
+  accountLogin    String    @db.VarChar(255) @map("account_login")
+  accessToken     String?   @db.Text @map("access_token")  // Encrypted
+  tokenExpiresAt  DateTime? @map("token_expires_at")
+  permissions     Json      @default("{}")
+  events          String[]  @default([])
+  suspendedAt     DateTime? @map("suspended_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  repositories    GitHubRepository[]
+
+  @@index([workspaceId])
+  @@index([accountLogin])
+  @@map("github_installations")
+}
+
+/// User Mapping: GitHub Login ↔ Kanbu User (Workspace Level)
+model GitHubUserMapping {
+  id              Int       @id @default(autoincrement())
+  workspaceId     Int       @map("workspace_id")
+  userId          Int       @map("user_id")
+  githubLogin     String    @db.VarChar(255) @map("github_login")
+  githubId        BigInt?   @map("github_id")
+  githubEmail     String?   @db.VarChar(255) @map("github_email")
+  githubAvatarUrl String?   @db.VarChar(512) @map("github_avatar_url")
+  autoMatched     Boolean   @default(false) @map("auto_matched")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, githubLogin])
+  @@unique([workspaceId, userId])
+  @@index([githubLogin])
+  @@map("github_user_mappings")
+}
+
+/// GitHub Repository linked to Kanbu Project (1:1)
+model GitHubRepository {
+  id              Int       @id @default(autoincrement())
+  projectId       Int       @unique @map("project_id")
+  installationId  Int       @map("installation_id")
+  repoId          BigInt    @map("repo_id")
+  owner           String    @db.VarChar(255)
+  name            String    @db.VarChar(255)
+  fullName        String    @db.VarChar(512) @map("full_name")
+  defaultBranch   String    @default("main") @db.VarChar(255) @map("default_branch")
+  isPrivate       Boolean   @default(false) @map("is_private")
+  syncEnabled     Boolean   @default(true) @map("sync_enabled")
+  syncSettings    Json      @default("{}") @map("sync_settings")
+  lastSyncAt      DateTime? @map("last_sync_at")
+  webhookId       BigInt?   @map("webhook_id")
+  webhookSecret   String?   @db.VarChar(255) @map("webhook_secret")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  project         Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  installation    GitHubInstallation @relation(fields: [installationId], references: [id])
+  issues          GitHubIssue[]
+  pullRequests    GitHubPullRequest[]
+  commits         GitHubCommit[]
+  syncLogs        GitHubSyncLog[]
+
+  @@unique([owner, name])
+  @@index([installationId])
+  @@map("github_repositories")
+}
+
+/// Synced GitHub Issues
+model GitHubIssue {
+  id              Int       @id @default(autoincrement())
+  repositoryId    Int       @map("repository_id")
+  taskId          Int?      @unique @map("task_id")
+  issueNumber     Int       @map("issue_number")
+  issueId         BigInt    @map("issue_id")
+  title           String    @db.VarChar(500)
+  state           String    @db.VarChar(20)  // 'open' | 'closed'
+  syncDirection   String    @default("bidirectional") @db.VarChar(20) @map("sync_direction")
+  lastSyncAt      DateTime? @map("last_sync_at")
+  syncHash        String?   @db.VarChar(64) @map("sync_hash")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  repository      GitHubRepository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  task            Task?     @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  @@unique([repositoryId, issueNumber])
+  @@map("github_issues")
+}
+
+/// Pull Requests linked to Tasks
+model GitHubPullRequest {
+  id              Int       @id @default(autoincrement())
+  repositoryId    Int       @map("repository_id")
+  taskId          Int?      @map("task_id")
+  prNumber        Int       @map("pr_number")
+  prId            BigInt    @map("pr_id")
+  title           String    @db.VarChar(500)
+  state           String    @db.VarChar(20)  // 'open' | 'closed' | 'merged'
+  headBranch      String    @db.VarChar(255) @map("head_branch")
+  baseBranch      String    @db.VarChar(255) @map("base_branch")
+  authorLogin     String    @db.VarChar(255) @map("author_login")
+  mergedAt        DateTime? @map("merged_at")
+  closedAt        DateTime? @map("closed_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  repository      GitHubRepository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  task            Task?     @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  @@unique([repositoryId, prNumber])
+  @@index([taskId])
+  @@map("github_pull_requests")
+}
+
+/// Commits linked to Tasks
+model GitHubCommit {
+  id              Int       @id @default(autoincrement())
+  repositoryId    Int       @map("repository_id")
+  taskId          Int?      @map("task_id")
+  sha             String    @db.VarChar(40)
+  message         String    @db.Text
+  authorName      String    @db.VarChar(255) @map("author_name")
+  authorEmail     String    @db.VarChar(255) @map("author_email")
+  authorLogin     String?   @db.VarChar(255) @map("author_login")
+  committedAt     DateTime  @map("committed_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  repository      GitHubRepository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  task            Task?     @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
+  @@unique([repositoryId, sha])
+  @@index([taskId])
+  @@map("github_commits")
+}
+
+/// Sync Activity Log
+model GitHubSyncLog {
+  id              Int       @id @default(autoincrement())
+  repositoryId    Int       @map("repository_id")
+  action          String    @db.VarChar(50)   // 'issue_created', 'pr_linked', etc.
+  direction       String    @db.VarChar(20)   // 'kanbu_to_github' | 'github_to_kanbu'
+  entityType      String    @db.VarChar(20)   // 'issue' | 'pr' | 'commit' | 'task'
+  entityId        String?   @db.VarChar(50)   @map("entity_id")
+  details         Json      @default("{}")
+  status          String    @default("success") @db.VarChar(20)
+  errorMessage    String?   @db.Text @map("error_message")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  // Relations
+  repository      GitHubRepository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+
+  @@index([repositoryId, createdAt])
+  @@map("github_sync_logs")
 }

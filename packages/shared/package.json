@@ -12,11 +12,14 @@
     "clean": "rm -rf dist",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
-    "db:migrate": "prisma migrate dev"
+    "db:migrate": "prisma migrate dev",
+    "test": "vitest",
+    "test:run": "vitest run"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "vitest": "^4.0.16"
   },
   "dependencies": {
     "@prisma/client": "6",
