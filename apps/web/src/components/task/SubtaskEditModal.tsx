@@ -1,8 +1,9 @@
 /*
  * SubtaskEditModal Component
- * Version: 1.0.0
+ * Version: 2.0.0
  *
  * Modal for editing subtask details including title, description, status, assignee, and time.
+ * Now uses RichTextEditor for rich text description support.
  *
  * ═══════════════════════════════════════════════════════════════════
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
@@ -11,10 +12,14 @@
  * Host: max
  * Signed: 2026-01-03
  * Change: Task 266 - Created SubtaskEditModal for mini-task functionality
+ *
+ * Modified by:
+ * Session: MAX-2026-01-09
+ * Change: Upgraded to RichTextEditor (Lexical) for rich text support
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -25,6 +30,8 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { RichTextEditor, getDisplayContent, isLexicalContent, lexicalToPlainText } from '@/components/editor'
+import type { EditorState, LexicalEditor } from 'lexical'
 import type { Subtask } from './SubtaskList'
 
 // =============================================================================
@@ -76,18 +83,36 @@ export function SubtaskEditModal({
   const [assigneeId, setAssigneeId] = useState<string>('none')
   const [timeEstimated, setTimeEstimated] = useState('')
   const [timeSpent, setTimeSpent] = useState('')
+  const [editorKey, setEditorKey] = useState(0)
 
   // Reset form when subtask changes
   useEffect(() => {
     if (subtask) {
       setTitle(subtask.title)
-      setDescription(subtask.description ?? '')
+      setDescription(getDisplayContent(subtask.description ?? ''))
       setStatus(subtask.status)
       setAssigneeId(subtask.assignee?.id.toString() ?? 'none')
       setTimeEstimated(subtask.timeEstimated > 0 ? subtask.timeEstimated.toString() : '')
       setTimeSpent(subtask.timeSpent > 0 ? subtask.timeSpent.toString() : '')
+      setEditorKey((k) => k + 1)
     }
   }, [subtask])
+
+  // Handle editor content changes
+  const handleEditorChange = useCallback(
+    (_editorState: EditorState, _editor: LexicalEditor, jsonString: string) => {
+      setDescription(jsonString)
+    },
+    []
+  )
+
+  // Check if description content is empty
+  const isDescriptionEmpty = useCallback((content: string) => {
+    if (!content) return true
+    if (!isLexicalContent(content)) return !content.trim()
+    const plainText = lexicalToPlainText(content)
+    return !plainText.trim()
+  }, [])
 
   const handleSave = async () => {
     if (!subtask || !title.trim()) return
@@ -95,7 +120,7 @@ export function SubtaskEditModal({
     await onSave({
       subtaskId: subtask.id,
       title: title.trim(),
-      description: description.trim() || null,
+      description: isDescriptionEmpty(description) ? null : description,
       status,
       assigneeId: assigneeId === 'none' ? null : parseInt(assigneeId),
       timeEstimated: parseFloat(timeEstimated) || 0,
@@ -112,7 +137,6 @@ export function SubtaskEditModal({
   if (!subtask) return null
 
   const selectClassName = 'h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring'
-  const textareaClassName = 'w-full min-h-[80px] rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring resize-none'
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -137,14 +161,16 @@ export function SubtaskEditModal({
           {/* Description */}
           <div className="space-y-2">
             <Label htmlFor="description">Description</Label>
-            <textarea
-              id="description"
-              value={description}
-              onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setDescription(e.target.value)}
+            <RichTextEditor
+              key={editorKey}
+              initialContent={description || undefined}
+              onChange={handleEditorChange}
               placeholder="Optional description or instructions..."
-              rows={3}
-              className={textareaClassName}
+              minHeight="80px"
+              maxHeight="200px"
+              namespace={`subtask-description-${subtask?.id}-${editorKey}`}
             />
+            <p className="text-xs text-muted-foreground">Rich text formatting supported</p>
           </div>
 
           {/* Status */}

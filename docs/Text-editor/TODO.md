@@ -50,12 +50,23 @@ De editor is gebouwd op **Lexical** (Meta's editor framework) en biedt:
 - [x] Typing indicator compatible
 - [x] Empty content detection werkt met Lexical JSON
 
-### Sprint 4: Project & Workspace Descriptions - GEPLAND
+### Sprint 4: Project & Workspace Descriptions - VOLTOOID
 
-- [ ] Project description editor (ProjectSettings)
-- [ ] Workspace description editor (WorkspaceSettings)
-- [ ] Project overview page rich content display
-- [ ] Workspace overview page rich content display
+**Project Description:**
+- [x] `ProjectSettings.tsx` geupgrade naar RichTextEditor
+- [x] View mode met rich text rendering (read-only editor)
+- [x] Edit mode met RichTextEditor
+
+**Workspace Description:**
+- [x] `WorkspaceSettings.tsx` geupgrade naar RichTextEditor
+- [x] Edit mode met RichTextEditor
+
+**Subtask Description:**
+- [x] `SubtaskEditModal.tsx` geupgrade naar RichTextEditor
+
+**Overview Pages (plain text display):**
+- [x] `ProjectList.tsx` - Lexical JSON naar plain text voor card display
+- [x] `WorkspacePage.tsx` - Lexical JSON naar plain text voor header display
 
 ### Sprint 5: Wiki System - GEPLAND
 
@@ -90,11 +101,11 @@ Zie [03-knowledge-graph.md](./03-knowledge-graph.md) voor details.
 | Sticky Notes | `StickyNoteModal.tsx` | VOLTOOID | 2 |
 | Task Description | `TaskDescription.tsx` | VOLTOOID | 3 |
 | Task Comments | `CommentSection.tsx` | VOLTOOID | 3 |
-| Project Description | `ProjectSettings.tsx` | GEPLAND | 4 |
-| Workspace Description | `WorkspaceSettings.tsx` | GEPLAND | 4 |
+| Project Description | `ProjectSettings.tsx` | VOLTOOID | 4 |
+| Workspace Description | `WorkspaceSettings.tsx` | VOLTOOID | 4 |
+| Subtask Description | `SubtaskEditModal.tsx` | VOLTOOID | 4 |
 | Wiki Pages | `WikiEditor.tsx` | GEPLAND | 5 |
-| Subtask Description | `SubtaskEditModal.tsx` | GEPLAND | 4 |
-| Activity Feed | `ActivityTab.tsx` | GEPLAND | 4 |
+| Activity Feed | `ActivityTab.tsx` | GEPLAND | 5 |
 
 ## Technische Details
 
@@ -155,6 +166,7 @@ Legacy plain text wordt automatisch geconverteerd bij laden.
 
 | Datum | Wijziging |
 |-------|-----------|
+| 2026-01-09 | **Sprint 4 VOLTOOID**: ProjectSettings, WorkspaceSettings, SubtaskEditModal geupgrade naar RichTextEditor |
 | 2026-01-09 | **Sprint 3 VOLTOOID**: TaskDescription en CommentSection geupgrade naar RichTextEditor |
 | 2026-01-09 | Sprint 3 gestart: Task Description en Comments |
 | 2026-01-07 | Sprint 2 voltooid: Sticky Notes |

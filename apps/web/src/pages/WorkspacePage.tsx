@@ -23,12 +23,27 @@ import { ProjectCard } from '@/components/project/ProjectCard'
 import { useAppDispatch } from '@/store'
 import { setProjects, setLoading, setError } from '@/store/projectSlice'
 import { trpc } from '@/lib/trpc'
+import { lexicalToPlainText, isLexicalContent } from '@/components/editor'
 
 // =============================================================================
 // Types
 // =============================================================================
 
 type ViewMode = 'grid' | 'list'
+
+// =============================================================================
+// Helper Functions
+// =============================================================================
+
+/** Get plain text description for display (handles Lexical JSON) */
+function getPlainDescription(description: string | null): string {
+  if (!description) return 'No description'
+  if (isLexicalContent(description)) {
+    const plainText = lexicalToPlainText(description).trim()
+    return plainText || 'No description'
+  }
+  return description
+}
 
 // =============================================================================
 // Component
@@ -134,7 +149,7 @@ export function WorkspacePage() {
             <div>
               <h1 className="text-3xl font-bold tracking-tight">{workspace.name}</h1>
               <p className="text-muted-foreground">
-                {workspace.description || 'No description'}
+                {getPlainDescription(workspace.description)}
               </p>
             </div>
           </div>

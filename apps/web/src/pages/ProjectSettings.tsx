@@ -1,8 +1,9 @@
 /*
  * Project Settings Page
- * Version: 1.0.0
+ * Version: 2.0.0
  *
  * Manage project: members, settings, archive/delete.
+ * Now uses RichTextEditor for rich text description support.
  *
  * ═══════════════════════════════════════════════════════════════════
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
@@ -12,13 +13,12 @@
  * Signed: 2025-12-28T13:XX CET
  *
  * Modified by:
- * Session: 6d3e997a-128a-4d11-88ac-c4caee3bb622
- * Signed: 2025-12-29T00:49 CET
- * Change: Updated to use ProjectLayout (EXT-15)
+ * Session: MAX-2026-01-09
+ * Change: Upgraded to RichTextEditor (Lexical) for rich text support
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { ProjectLayout } from '@/components/layout/ProjectLayout'
 import { Button } from '@/components/ui/button'
@@ -34,6 +34,8 @@ import {
 import { useAppSelector } from '@/store'
 import { selectCurrentWorkspace } from '@/store/workspaceSlice'
 import { trpc } from '@/lib/trpc'
+import { RichTextEditor, getDisplayContent, isLexicalContent, lexicalToPlainText } from '@/components/editor'
+import type { EditorState, LexicalEditor } from 'lexical'
 
 // =============================================================================
 // Types
@@ -59,6 +61,7 @@ export function ProjectSettingsPage() {
   const [endDate, setEndDate] = useState('')
   const [addMemberId, setAddMemberId] = useState('')
   const [addMemberRole, setAddMemberRole] = useState<ProjectMemberRole>('MEMBER')
+  const [editorKey, setEditorKey] = useState(0)
 
   // Fetch project by identifier (SEO-friendly URL)
   const projectQuery = trpc.project.getByIdentifier.useQuery(
@@ -83,11 +86,28 @@ export function ProjectSettingsPage() {
   useEffect(() => {
     if (projectQuery.data) {
       setName(projectQuery.data.name)
-      setDescription(projectQuery.data.description ?? '')
+      setDescription(getDisplayContent(projectQuery.data.description ?? ''))
       setStartDate(projectQuery.data.startDate ? projectQuery.data.startDate.split('T')[0] ?? '' : '')
       setEndDate(projectQuery.data.endDate ? projectQuery.data.endDate.split('T')[0] ?? '' : '')
+      setEditorKey((k) => k + 1)
     }
   }, [projectQuery.data])
+
+  // Handle editor content changes
+  const handleEditorChange = useCallback(
+    (_editorState: EditorState, _editor: LexicalEditor, jsonString: string) => {
+      setDescription(jsonString)
+    },
+    []
+  )
+
+  // Check if description content is empty
+  const isDescriptionEmpty = useCallback((content: string) => {
+    if (!content) return true
+    if (!isLexicalContent(content)) return !content.trim()
+    const plainText = lexicalToPlainText(content)
+    return !plainText.trim()
+  }, [])
 
   // Scroll to anchor (e.g., #members) when URL hash changes
   useEffect(() => {
@@ -147,7 +167,7 @@ export function ProjectSettingsPage() {
     updateMutation.mutate({
       projectId,
       name,
-      description: description || undefined,
+      description: isDescriptionEmpty(description) ? undefined : description,
       startDate: startDate || undefined,
       endDate: endDate || undefined,
     })
@@ -256,12 +276,16 @@ export function ProjectSettingsPage() {
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Description</label>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Optional description"
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm min-h-[80px]"
+                <RichTextEditor
+                  key={editorKey}
+                  initialContent={description || undefined}
+                  onChange={handleEditorChange}
+                  placeholder="Add a description... Use **bold**, *italic*, lists, and more!"
+                  minHeight="120px"
+                  maxHeight="300px"
+                  namespace={`project-description-${projectId}-${editorKey}`}
                 />
+                <p className="text-xs text-muted-foreground">Rich text formatting supported</p>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -299,15 +323,24 @@ export function ProjectSettingsPage() {
             <CardHeader>
               <CardTitle>Project Details</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2">
+            <CardContent className="space-y-4">
               <div>
                 <span className="text-sm text-muted-foreground">Name:</span>
                 <p>{project.name}</p>
               </div>
-              {project.description && (
+              {project.description && !isDescriptionEmpty(project.description) && (
                 <div>
                   <span className="text-sm text-muted-foreground">Description:</span>
-                  <p>{project.description}</p>
+                  <div className="mt-1 rounded-lg bg-gray-50 dark:bg-gray-800 p-1">
+                    <RichTextEditor
+                      initialContent={getDisplayContent(project.description)}
+                      readOnly={true}
+                      showToolbar={false}
+                      minHeight="auto"
+                      maxHeight="none"
+                      namespace="project-description-view"
+                    />
+                  </div>
                 </div>
               )}
               <div>

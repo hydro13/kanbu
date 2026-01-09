@@ -1,8 +1,9 @@
 /*
  * Workspace Settings Page
- * Version: 1.1.0
+ * Version: 2.0.0
  *
  * Manage workspace: members, invitations, logo, and settings.
+ * Now uses RichTextEditor for rich text description support.
  *
  * ═══════════════════════════════════════════════════════════════════
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
@@ -12,13 +13,12 @@
  * Signed: 2025-12-28T04:10 CET
  *
  * Modified by:
- * Session: (current)
- * Signed: 2026-01-02
- * Change: Added logo upload functionality, consolidated settings
+ * Session: MAX-2026-01-09
+ * Change: Upgraded to RichTextEditor (Lexical) for rich text support
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { Layout } from '../components/layout/Layout'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
@@ -44,6 +44,8 @@ import {
   type MemberFiltersState,
   type PaginationState,
 } from '../components/workspace/MemberFilters'
+import { RichTextEditor, getDisplayContent, isLexicalContent, lexicalToPlainText } from '../components/editor'
+import type { EditorState, LexicalEditor } from 'lexical'
 
 // =============================================================================
 // Constants
@@ -107,7 +109,10 @@ export function WorkspaceSettingsPage() {
 
   // Form states
   const [name, setName] = useState(currentWorkspace?.name ?? '')
-  const [description, setDescription] = useState(currentWorkspace?.description ?? '')
+  const [description, setDescription] = useState(
+    getDisplayContent(currentWorkspace?.description ?? '')
+  )
+  const [editorKey] = useState(0)
 
   // Logo states
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
@@ -223,6 +228,22 @@ export function WorkspaceSettingsPage() {
     },
   })
 
+  // Handle editor content changes
+  const handleEditorChange = useCallback(
+    (_editorState: EditorState, _editor: LexicalEditor, jsonString: string) => {
+      setDescription(jsonString)
+    },
+    []
+  )
+
+  // Check if description content is empty
+  const isDescriptionEmpty = useCallback((content: string) => {
+    if (!content) return true
+    if (!isLexicalContent(content)) return !content.trim()
+    const plainText = lexicalToPlainText(content)
+    return !plainText.trim()
+  }, [])
+
   // Handlers
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -289,7 +310,7 @@ export function WorkspaceSettingsPage() {
     updateMutation.mutate({
       workspaceId: currentWorkspace.id,
       name,
-      description: description || undefined,
+      description: isDescriptionEmpty(description) ? undefined : description,
     })
   }
 
@@ -459,11 +480,16 @@ export function WorkspaceSettingsPage() {
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Description</label>
-                <Input
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Optional description"
+                <RichTextEditor
+                  key={editorKey}
+                  initialContent={description || undefined}
+                  onChange={handleEditorChange}
+                  placeholder="Add a description... Use **bold**, *italic*, lists, and more!"
+                  minHeight="120px"
+                  maxHeight="300px"
+                  namespace={`workspace-description-${currentWorkspace?.id}-${editorKey}`}
                 />
+                <p className="text-xs text-muted-foreground">Rich text formatting supported</p>
               </div>
             </CardContent>
             <CardFooter>
