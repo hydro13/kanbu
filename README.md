@@ -53,12 +53,15 @@ A modern, self-hostable project management tool with Kanban boards, real-time co
 - **Audit Logging** - All API key events logged (create, use, revoke)
 
 ### AI Assistant (Claude Code Integration)
-- **MCP Server** - Model Context Protocol server for Claude Code
+- **MCP Server** - Model Context Protocol server with 32 tools for Claude Code
 - **One-time Setup Code** - Secure pairing flow (KNB-XXXX-XXXX format, 5-min TTL)
 - **Permission Inheritance** - Claude inherits your ACL permissions
 - **Multi-machine Support** - Connect from multiple workstations
 - **Machine Binding** - Tokens bound to specific machines for security
 - **Audit Trail** - All Claude actions logged with "via Claude Code" marker
+- **Full CRUD Operations** - Manage workspaces, projects, tasks, subtasks, comments
+- **Search & Activity** - Full-text search, activity timeline, statistics
+- **Analytics** - Project stats, velocity, cycle time, team workload
 
 ## Quick Start
 
@@ -115,9 +118,19 @@ kanbu/
 │   │   │   └── seed-permissions.ts
 │   │   └── src/                # Shared types
 │   │
-│   └── mcp-server/             # Claude Code MCP integration
+│   └── mcp-server/             # Claude Code MCP integration (32 tools)
 │       └── src/
 │           ├── index.ts        # MCP server entry point
+│           ├── tools.ts        # Shared helpers and types
+│           ├── tools/          # Tool handlers by phase
+│           │   ├── workspaces.ts
+│           │   ├── projects.ts
+│           │   ├── tasks.ts
+│           │   ├── subtasks.ts
+│           │   ├── comments.ts
+│           │   ├── search.ts
+│           │   ├── activity.ts
+│           │   └── analytics.ts
 │           ├── storage.ts      # Token storage
 │           ├── client.ts       # Kanbu API client
 │           └── machine.ts      # Machine ID generation
@@ -347,7 +360,17 @@ The ACL entry grants Full Control (31 = RWXDP) on admin resources.
 
 ## AI Assistant Setup (Claude Code)
 
-Connect Claude Code to manage your Kanbu projects:
+Connect Claude Code to manage your Kanbu projects with 32 available tools:
+
+### Available Tools (32 total)
+
+| Category | Tools | Examples |
+|----------|-------|----------|
+| **Pairing** | 3 | `kanbu_connect`, `kanbu_whoami`, `kanbu_disconnect` |
+| **Core** | 11 | `kanbu_list_workspaces`, `kanbu_create_task`, `kanbu_my_tasks` |
+| **Subtasks & Comments** | 9 | `kanbu_create_subtask`, `kanbu_toggle_subtask`, `kanbu_add_comment` |
+| **Search & Activity** | 5 | `kanbu_search_tasks`, `kanbu_search_global`, `kanbu_recent_activity` |
+| **Analytics** | 4 | `kanbu_project_stats`, `kanbu_velocity`, `kanbu_team_workload` |
 
 ### 1. Build the MCP Server
 
@@ -368,6 +391,19 @@ claude mcp add kanbu -- node /path/to/kanbu/packages/mcp-server/dist/index.js
 1. Go to your Kanbu profile page → AI Assistant section
 2. Click "Generate Setup Code"
 3. Tell Claude: "Connect to Kanbu with code KNB-XXXX-XXXX"
+
+### Example Usage
+
+```
+User: What are my tasks?
+Claude: [kanbu_my_tasks] → Shows all your assigned tasks
+
+User: Create a task "Fix login bug" in project Kanbu Dev
+Claude: [kanbu_create_task] → Creates the task and returns reference
+
+User: Show me project statistics
+Claude: [kanbu_project_stats] → Shows completion rate, trends, workload
+```
 
 For detailed documentation, see [docs/MCP/README.md](docs/MCP/README.md).
 
