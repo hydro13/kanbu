@@ -1212,11 +1212,11 @@ model GitHubMilestone {
 
 ---
 
-### Fase 12: Code Review Integratie 🔄 BACKEND COMPLEET
+### Fase 12: Code Review Integratie ✅ COMPLEET
 
 **Doel:** Diepe integratie met GitHub code review workflow.
 
-**Status:** Backend compleet, frontend pending.
+**Status:** Compleet. Backend + frontend geïmplementeerd.
 
 #### 12.1 Review Request Tracking
 
@@ -1322,32 +1322,32 @@ model GitHubReviewComment {
 - [ ] Suggest reviewers based on changed files
 - [ ] Show code ownership in file list
 
-#### 12.5 Frontend: Code Review Panel 🚧 PENDING
+#### 12.5 Frontend: Code Review Panel ✅ COMPLEET
 
 **Bestand:** `apps/web/src/components/task/TaskReviewPanel.tsx`
 
-- [ ] Review status overview
-- [ ] Reviewer list met status
-- [ ] Comment threads (collapsed)
-- [ ] Request review button
-- [ ] Approve/Request changes actions (if authorized)
+- [x] Review status overview (summary card met approved/changes/comments/pending counts)
+- [x] Reviewer list met status (avatar, login, state badge)
+- [x] Review body weergave
+- [ ] Comment threads (collapsed) - future enhancement
+- [ ] Request review button - future enhancement
+- [ ] Approve/Request changes actions - future enhancement
 
 **Deliverables Fase 12:**
 - [x] Review tracking backend (database, service, tRPC)
 - [x] Webhook handler voor pull_request_review
 - [x] Review summary aggregatie
-- [ ] Frontend: TaskReviewPanel
-- [ ] CODEOWNERS integratie
+- [x] Frontend: TaskReviewPanel met Reviews tab in TaskDetailModal
+- [ ] CODEOWNERS integratie (deferred)
 
 #### Fase 12 Completion Checklist
-- [x] **Code**: Backend review service compleet
+- [x] **Code**: Backend + Frontend review integration compleet
 - [x] **Tests**: 17 tests voor reviewService
 - [x] **ACL**: N.v.t. (gebruikt project R/W permissions)
-- [ ] **MCP**: Review tools (3 tools) toegevoegd
-- [ ] **Frontend**: TaskReviewPanel.tsx
+- [ ] **MCP**: Review tools (deferred naar Fase 9B)
+- [x] **Frontend**: TaskReviewPanel.tsx + Reviews tab
 - [x] **Docs**: ROADMAP bijgewerkt
-- [ ] **CLAUDE.md**: TaskReviewPanel gedocumenteerd
-- [ ] **Commit**: `feat(github): Fase 12 - Code Review Integratie (Backend)`
+- [ ] **Commit**: `feat(github): Fase 12 - Code Review Integratie`
 
 ---
 
@@ -2061,13 +2061,13 @@ GITHUB_BRANCH_CREATED = 'github:branch_created'
 - [ ] Releases worden getracked
 - [ ] Wiki integratie functioneel
 
-### Fase 12 (Code Review) - Backend ✅
+### Fase 12 (Code Review) ✅
 - [x] Review tracking in database (GitHubReview + GitHubReviewComment models)
 - [x] Review comments sync via webhook
 - [x] Approval status correct (via getPRReviewSummary)
 - [x] 8 tRPC procedures, 17 tests
-- [ ] Frontend: TaskReviewPanel
-- [ ] CODEOWNERS parsing
+- [x] Frontend: TaskReviewPanel met Reviews tab
+- [ ] CODEOWNERS parsing (deferred)
 
 ### Fase 13 (Analytics)
 - [ ] Cycle time correct berekend
@@ -2098,7 +2098,7 @@ GITHUB_BRANCH_CREATED = 'github:branch_created'
 
 | Datum | Wijziging |
 |-------|-----------|
-| 2026-01-09 | **Fase 12 BACKEND COMPLEET**: Code Review Integratie - GitHubReview + GitHubReviewComment models, reviewService.ts (10 functies), webhook handler voor pull_request_review events, 8 tRPC procedures, 17 tests, TypeScript types uitgebreid. Frontend TaskReviewPanel pending. |
+| 2026-01-09 | **Fase 12 COMPLEET**: Code Review Integratie - GitHubReview + GitHubReviewComment models, reviewService.ts (10 functies), webhook handler voor pull_request_review events, 8 tRPC procedures, 17 tests, TypeScript types uitgebreid. Frontend: TaskReviewPanel.tsx met Reviews tab in TaskDetailModal. |
 | 2026-01-09 | **Fase 10 COMPLEET**: CI/CD Integratie - GitHubWorkflowRun model, workflowService.ts, webhook handler voor workflow_run events, 7 tRPC procedures (getWorkflowRuns, getWorkflowRunDetails, getWorkflowJobs, getTaskWorkflowRuns, getWorkflowStats, rerunWorkflow, cancelWorkflow), 26 tests. Frontend panel en deploy tracking deferred. |
 | 2026-01-09 | **Fase 9 COMPLEET**: MCP Tools - 10 GitHub tools in `packages/mcp-server/src/tools/github.ts` (5 query + 5 management), 34 tests, TypeScript compileert, docs/MCP/ROADMAP.md bijgewerkt |
 | 2026-01-09 | **Fase 8 COMPLEET**: Automation - automationService.ts met branch creation, task status automation via webhooks, column fuzzy matching, sync settings extension, 3 tRPC procedures, 33 tests |

@@ -49,6 +49,7 @@ import { CommentSection } from './CommentSection'
 import { TaskSidebar } from './TaskSidebar'
 import { ConflictWarningModal } from './ConflictWarningModal'
 import { TaskCICDPanel } from './TaskCICDPanel'
+import { TaskReviewPanel } from './TaskReviewPanel'
 import { useEditingPresence } from '@/hooks/useEditingPresence'
 import { useSocket } from '@/hooks/useSocket'
 import { useAppSelector } from '@/store'
@@ -288,6 +289,9 @@ export function TaskDetailModal({
                     <TabsTrigger value="cicd">
                       CI/CD
                     </TabsTrigger>
+                    <TabsTrigger value="reviews">
+                      Reviews
+                    </TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="details" className="mt-0">
@@ -328,6 +332,10 @@ export function TaskDetailModal({
 
                   <TabsContent value="cicd" className="mt-0">
                     <TaskCICDPanel taskId={taskId!} />
+                  </TabsContent>
+
+                  <TabsContent value="reviews" className="mt-0">
+                    <TaskReviewPanel taskId={taskId!} />
                   </TabsContent>
                 </Tabs>
               </div>
