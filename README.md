@@ -53,7 +53,7 @@ A modern, self-hostable project management tool with Kanban boards, real-time co
 - **Audit Logging** - All API key events logged (create, use, revoke)
 
 ### AI Assistant (Claude Code Integration)
-- **MCP Server** - Model Context Protocol server with 32 tools for Claude Code
+- **MCP Server** - Model Context Protocol server with **95 tools** for Claude Code
 - **One-time Setup Code** - Secure pairing flow (KNB-XXXX-XXXX format, 5-min TTL)
 - **Permission Inheritance** - Claude inherits your ACL permissions
 - **Multi-machine Support** - Connect from multiple workstations
@@ -62,6 +62,12 @@ A modern, self-hostable project management tool with Kanban boards, real-time co
 - **Full CRUD Operations** - Manage workspaces, projects, tasks, subtasks, comments
 - **Search & Activity** - Full-text search, activity timeline, statistics
 - **Analytics** - Project stats, velocity, cycle time, team workload
+- **User Management** - List, create, update, delete users; reset passwords; manage 2FA
+- **Group Management** - Security groups, memberships, workspace admin groups
+- **ACL Management** - Grant/deny/revoke permissions, bulk operations, templates, what-if simulation
+- **Invite Management** - Send, cancel, resend invitations
+- **Audit Logs** - Query, export, statistics for audit trail
+- **System Admin** - Settings management, database/source backups, workspace admin
 
 ## Quick Start
 
@@ -118,19 +124,25 @@ kanbu/
 │   │   │   └── seed-permissions.ts
 │   │   └── src/                # Shared types
 │   │
-│   └── mcp-server/             # Claude Code MCP integration (32 tools)
+│   └── mcp-server/             # Claude Code MCP integration (95 tools)
 │       └── src/
-│           ├── index.ts        # MCP server entry point
+│           ├── index.ts        # MCP server entry point (v2.0.0)
 │           ├── tools.ts        # Shared helpers and types
 │           ├── tools/          # Tool handlers by phase
-│           │   ├── workspaces.ts
-│           │   ├── projects.ts
-│           │   ├── tasks.ts
-│           │   ├── subtasks.ts
-│           │   ├── comments.ts
-│           │   ├── search.ts
-│           │   ├── activity.ts
-│           │   └── analytics.ts
+│           │   ├── workspaces.ts  # Fase 2: Workspace tools
+│           │   ├── projects.ts    # Fase 2: Project tools
+│           │   ├── tasks.ts       # Fase 2: Task tools
+│           │   ├── subtasks.ts    # Fase 3: Subtask tools
+│           │   ├── comments.ts    # Fase 3: Comment tools
+│           │   ├── search.ts      # Fase 4: Search tools
+│           │   ├── activity.ts    # Fase 4: Activity tools
+│           │   ├── analytics.ts   # Fase 5: Analytics tools
+│           │   ├── admin.ts       # Fase 6: User Management tools
+│           │   ├── groups.ts      # Fase 7: Group Management tools
+│           │   ├── acl.ts         # Fase 8: ACL Management tools
+│           │   ├── invites.ts     # Fase 9: Invite tools
+│           │   ├── audit.ts       # Fase 10: Audit Log tools
+│           │   └── system.ts      # Fase 11: System/Backup tools
 │           ├── storage.ts      # Token storage
 │           ├── client.ts       # Kanbu API client
 │           └── machine.ts      # Machine ID generation
@@ -360,17 +372,23 @@ The ACL entry grants Full Control (31 = RWXDP) on admin resources.
 
 ## AI Assistant Setup (Claude Code)
 
-Connect Claude Code to manage your Kanbu projects with 32 available tools:
+Connect Claude Code to manage your Kanbu projects with **95 available tools** across 11 phases:
 
-### Available Tools (32 total)
+### Available Tools (95 total)
 
-| Category | Tools | Examples |
-|----------|-------|----------|
-| **Pairing** | 3 | `kanbu_connect`, `kanbu_whoami`, `kanbu_disconnect` |
-| **Core** | 11 | `kanbu_list_workspaces`, `kanbu_create_task`, `kanbu_my_tasks` |
-| **Subtasks & Comments** | 9 | `kanbu_create_subtask`, `kanbu_toggle_subtask`, `kanbu_add_comment` |
-| **Search & Activity** | 5 | `kanbu_search_tasks`, `kanbu_search_global`, `kanbu_recent_activity` |
-| **Analytics** | 4 | `kanbu_project_stats`, `kanbu_velocity`, `kanbu_team_workload` |
+| Phase | Category | Tools | Examples |
+|-------|----------|-------|----------|
+| **1** | Pairing | 3 | `kanbu_connect`, `kanbu_whoami`, `kanbu_disconnect` |
+| **2** | Core | 11 | `kanbu_list_workspaces`, `kanbu_create_task`, `kanbu_my_tasks` |
+| **3** | Subtasks & Comments | 9 | `kanbu_create_subtask`, `kanbu_toggle_subtask`, `kanbu_add_comment` |
+| **4** | Search & Activity | 5 | `kanbu_search_tasks`, `kanbu_search_global`, `kanbu_recent_activity` |
+| **5** | Analytics | 4 | `kanbu_project_stats`, `kanbu_velocity`, `kanbu_team_workload` |
+| **6** | User Management | 11 | `kanbu_list_users`, `kanbu_create_user`, `kanbu_reset_password` |
+| **7** | Groups | 10 | `kanbu_list_groups`, `kanbu_create_group`, `kanbu_add_group_member` |
+| **8** | ACL | 20 | `kanbu_grant_permission`, `kanbu_bulk_grant`, `kanbu_simulate_change` |
+| **9** | Invites | 5 | `kanbu_list_invites`, `kanbu_send_invite`, `kanbu_cancel_invite` |
+| **10** | Audit Logs | 5 | `kanbu_list_audit_logs`, `kanbu_audit_stats`, `kanbu_export_audit_logs` |
+| **11** | System | 12 | `kanbu_get_settings`, `kanbu_create_db_backup`, `kanbu_admin_list_workspaces` |
 
 ### 1. Build the MCP Server
 
@@ -403,9 +421,18 @@ Claude: [kanbu_create_task] → Creates the task and returns reference
 
 User: Show me project statistics
 Claude: [kanbu_project_stats] → Shows completion rate, trends, workload
+
+User: List all users in the system
+Claude: [kanbu_list_users] → Shows users with status and roles
+
+User: Grant read access to user john on workspace Product
+Claude: [kanbu_grant_permission] → Creates ACL entry with READ permissions
+
+User: Create a database backup
+Claude: [kanbu_create_db_backup] → Saves backup to Google Drive
 ```
 
-For detailed documentation, see [docs/MCP/README.md](docs/MCP/README.md).
+For detailed documentation, see [docs/MCP/ROADMAP.md](docs/MCP/ROADMAP.md).
 
 ## License
 

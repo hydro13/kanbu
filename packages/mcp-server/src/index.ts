@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /*
  * Kanbu MCP Server
- * Version: 1.4.0
+ * Version: 2.0.0
  *
  * MCP Server for Claude Code integration with Kanbu.
  * Implements pairing flow and provides tools for project/task management.
@@ -11,7 +11,7 @@
  * Claude Code: Opus 4.5
  * Host: MAX
  * Date: 2026-01-09
- * Fase: MCP Fase 5 - Analytics & Insights
+ * Fase: MCP Fase 11 - System Settings & Backup (ALL PHASES COMPLETE!)
  * ═══════════════════════════════════════════════════════════════════
  */
 
@@ -82,6 +82,87 @@ import {
   handleCycleTime,
   handleTeamWorkload,
 } from './tools/analytics.js'
+import {
+  adminToolDefinitions,
+  handleListUsers,
+  handleGetUser,
+  handleGetUserLogins,
+  handleCreateUser,
+  handleUpdateUser,
+  handleDeleteUser,
+  handleReactivateUser,
+  handleResetPassword,
+  handleUnlockUser,
+  handleDisable2FA,
+  handleRevokeSessions,
+} from './tools/admin.js'
+import {
+  groupToolDefinitions,
+  handleListGroups,
+  handleGetGroup,
+  handleMyGroups,
+  handleListGroupMembers,
+  handleCreateGroup,
+  handleCreateSecurityGroup,
+  handleUpdateGroup,
+  handleDeleteGroup,
+  handleAddGroupMember,
+  handleRemoveGroupMember,
+} from './tools/groups.js'
+import {
+  aclToolDefinitions,
+  handleListAcl,
+  handleCheckPermission,
+  handleMyPermission,
+  handleGetPrincipals,
+  handleGetResources,
+  handleGetAclPresets,
+  handleGetPermissionMatrix,
+  handleCalculateEffective,
+  handleGrantPermission,
+  handleDenyPermission,
+  handleRevokePermission,
+  handleUpdateAcl,
+  handleDeleteAcl,
+  handleBulkGrant,
+  handleBulkRevoke,
+  handleCopyPermissions,
+  handleApplyTemplate,
+  handleSimulateChange,
+  handleExportAcl,
+  handleImportAcl,
+} from './tools/acl.js'
+import {
+  inviteToolDefinitions,
+  handleListInvites,
+  handleGetInvite,
+  handleSendInvite,
+  handleCancelInvite,
+  handleResendInvite,
+} from './tools/invites.js'
+import {
+  auditToolDefinitions,
+  handleListAuditLogs,
+  handleGetAuditLog,
+  handleAuditStats,
+  handleExportAuditLogs,
+  handleGetAuditCategories,
+} from './tools/audit.js'
+import {
+  systemToolDefinitions,
+  handleGetSettings,
+  handleGetSetting,
+  handleSetSetting,
+  handleSetSettings,
+  handleDeleteSetting,
+  handleCreateDbBackup,
+  handleCreateSourceBackup,
+  handleAdminListWorkspaces,
+  handleAdminGetWorkspace,
+  handleAdminUpdateWorkspace,
+  handleAdminDeleteWorkspace,
+  handleAdminReactivateWorkspace,
+} from './tools/system.js'
 
 // =============================================================================
 // Tool Schemas
@@ -172,6 +253,18 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       ...activityToolDefinitions,
       // Analytics tools (Fase 5)
       ...analyticsToolDefinitions,
+      // Admin tools (Fase 6)
+      ...adminToolDefinitions,
+      // Group tools (Fase 7)
+      ...groupToolDefinitions,
+      // ACL tools (Fase 8)
+      ...aclToolDefinitions,
+      // Invite tools (Fase 9)
+      ...inviteToolDefinitions,
+      // Audit tools (Fase 10)
+      ...auditToolDefinitions,
+      // System tools (Fase 11)
+      ...systemToolDefinitions,
     ],
   }
 })
@@ -265,6 +358,144 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return await handleCycleTime(args)
       case 'kanbu_team_workload':
         return await handleTeamWorkload(args)
+
+      // Admin tools (Fase 6)
+      case 'kanbu_list_users':
+        return await handleListUsers(args)
+      case 'kanbu_get_user':
+        return await handleGetUser(args)
+      case 'kanbu_get_user_logins':
+        return await handleGetUserLogins(args)
+      case 'kanbu_create_user':
+        return await handleCreateUser(args)
+      case 'kanbu_update_user':
+        return await handleUpdateUser(args)
+      case 'kanbu_delete_user':
+        return await handleDeleteUser(args)
+      case 'kanbu_reactivate_user':
+        return await handleReactivateUser(args)
+      case 'kanbu_reset_password':
+        return await handleResetPassword(args)
+      case 'kanbu_unlock_user':
+        return await handleUnlockUser(args)
+      case 'kanbu_disable_2fa':
+        return await handleDisable2FA(args)
+      case 'kanbu_revoke_sessions':
+        return await handleRevokeSessions(args)
+
+      // Group tools (Fase 7)
+      case 'kanbu_list_groups':
+        return await handleListGroups(args)
+      case 'kanbu_get_group':
+        return await handleGetGroup(args)
+      case 'kanbu_my_groups':
+        return await handleMyGroups(args)
+      case 'kanbu_list_group_members':
+        return await handleListGroupMembers(args)
+      case 'kanbu_create_group':
+        return await handleCreateGroup(args)
+      case 'kanbu_create_security_group':
+        return await handleCreateSecurityGroup(args)
+      case 'kanbu_update_group':
+        return await handleUpdateGroup(args)
+      case 'kanbu_delete_group':
+        return await handleDeleteGroup(args)
+      case 'kanbu_add_group_member':
+        return await handleAddGroupMember(args)
+      case 'kanbu_remove_group_member':
+        return await handleRemoveGroupMember(args)
+
+      // ACL tools (Fase 8)
+      case 'kanbu_list_acl':
+        return await handleListAcl(args)
+      case 'kanbu_check_permission':
+        return await handleCheckPermission(args)
+      case 'kanbu_my_permission':
+        return await handleMyPermission(args)
+      case 'kanbu_get_principals':
+        return await handleGetPrincipals(args)
+      case 'kanbu_get_resources':
+        return await handleGetResources(args)
+      case 'kanbu_get_acl_presets':
+        return await handleGetAclPresets(args)
+      case 'kanbu_get_permission_matrix':
+        return await handleGetPermissionMatrix(args)
+      case 'kanbu_calculate_effective':
+        return await handleCalculateEffective(args)
+      case 'kanbu_grant_permission':
+        return await handleGrantPermission(args)
+      case 'kanbu_deny_permission':
+        return await handleDenyPermission(args)
+      case 'kanbu_revoke_permission':
+        return await handleRevokePermission(args)
+      case 'kanbu_update_acl':
+        return await handleUpdateAcl(args)
+      case 'kanbu_delete_acl':
+        return await handleDeleteAcl(args)
+      case 'kanbu_bulk_grant':
+        return await handleBulkGrant(args)
+      case 'kanbu_bulk_revoke':
+        return await handleBulkRevoke(args)
+      case 'kanbu_copy_permissions':
+        return await handleCopyPermissions(args)
+      case 'kanbu_apply_template':
+        return await handleApplyTemplate(args)
+      case 'kanbu_simulate_change':
+        return await handleSimulateChange(args)
+      case 'kanbu_export_acl':
+        return await handleExportAcl(args)
+      case 'kanbu_import_acl':
+        return await handleImportAcl(args)
+
+      // Invite tools (Fase 9)
+      case 'kanbu_list_invites':
+        return await handleListInvites(args)
+      case 'kanbu_get_invite':
+        return await handleGetInvite(args)
+      case 'kanbu_send_invite':
+        return await handleSendInvite(args)
+      case 'kanbu_cancel_invite':
+        return await handleCancelInvite(args)
+      case 'kanbu_resend_invite':
+        return await handleResendInvite(args)
+
+      // Audit tools (Fase 10)
+      case 'kanbu_list_audit_logs':
+        return await handleListAuditLogs(args)
+      case 'kanbu_get_audit_log':
+        return await handleGetAuditLog(args)
+      case 'kanbu_audit_stats':
+        return await handleAuditStats(args)
+      case 'kanbu_export_audit_logs':
+        return await handleExportAuditLogs(args)
+      case 'kanbu_get_audit_categories':
+        return await handleGetAuditCategories(args)
+
+      // System tools (Fase 11)
+      case 'kanbu_get_settings':
+        return await handleGetSettings(args)
+      case 'kanbu_get_setting':
+        return await handleGetSetting(args)
+      case 'kanbu_set_setting':
+        return await handleSetSetting(args)
+      case 'kanbu_set_settings':
+        return await handleSetSettings(args)
+      case 'kanbu_delete_setting':
+        return await handleDeleteSetting(args)
+      case 'kanbu_create_db_backup':
+        return await handleCreateDbBackup(args)
+      case 'kanbu_create_source_backup':
+        return await handleCreateSourceBackup(args)
+      case 'kanbu_admin_list_workspaces':
+        return await handleAdminListWorkspaces(args)
+      case 'kanbu_admin_get_workspace':
+        return await handleAdminGetWorkspace(args)
+      case 'kanbu_admin_update_workspace':
+        return await handleAdminUpdateWorkspace(args)
+      case 'kanbu_admin_delete_workspace':
+        return await handleAdminDeleteWorkspace(args)
+      case 'kanbu_admin_reactivate_workspace':
+        return await handleAdminReactivateWorkspace(args)
 
       default:
         throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`)

@@ -247,6 +247,257 @@ model AssistantBinding {
 
 ---
 
+---
+
+### Fase 6: User Management ✅ COMPLEET
+
+**Doel:** Beheer van gebruikers via MCP.
+
+**Status:** Voltooid.
+
+#### 6.1 User Query Tools
+
+- [x] `kanbu_list_users` - Lijst alle gebruikers (met filters)
+- [x] `kanbu_get_user` - Gebruiker details ophalen
+- [x] `kanbu_get_user_logins` - Login historie van gebruiker
+
+#### 6.2 User Management Tools
+
+- [x] `kanbu_create_user` - Nieuwe gebruiker aanmaken
+- [x] `kanbu_update_user` - Gebruiker gegevens wijzigen
+- [x] `kanbu_delete_user` - Gebruiker deactiveren (soft delete)
+- [x] `kanbu_reactivate_user` - Gebruiker heractiveren
+- [x] `kanbu_reset_password` - Wachtwoord resetten
+- [x] `kanbu_unlock_user` - Geblokkeerde gebruiker deblokkeren
+- [x] `kanbu_disable_2fa` - 2FA uitschakelen
+- [x] `kanbu_revoke_sessions` - Alle sessies beëindigen
+
+**Deliverables Fase 6:**
+- [x] 11 user management tools
+- [x] Admin-only access via ACL check
+- [x] Audit logging voor alle acties
+
+---
+
+### Fase 7: Groups Management ✅ COMPLEET
+
+**Doel:** Security groups beheer via MCP.
+
+**Status:** Voltooid.
+
+#### 7.1 Group Query Tools
+
+- [x] `kanbu_list_groups` - Lijst alle groepen (met filters)
+- [x] `kanbu_get_group` - Groep details ophalen
+- [x] `kanbu_my_groups` - Mijn groepen ophalen
+- [x] `kanbu_list_group_members` - Leden van een groep
+
+#### 7.2 Group Management Tools
+
+- [x] `kanbu_create_group` - Nieuwe groep aanmaken
+- [x] `kanbu_create_security_group` - Security group aanmaken (Domain Admin)
+- [x] `kanbu_update_group` - Groep wijzigen
+- [x] `kanbu_delete_group` - Groep verwijderen
+- [x] `kanbu_add_group_member` - Lid toevoegen aan groep
+- [x] `kanbu_remove_group_member` - Lid verwijderen uit groep
+
+**Deliverables Fase 7:**
+- [x] 10 group management tools
+- [x] Privilege escalation prevention
+- [x] WebSocket events voor real-time updates
+
+---
+
+### Fase 8: ACL Manager ✅ COMPLEET
+
+**Doel:** Access Control List beheer via MCP.
+
+**Status:** Voltooid.
+
+#### 8.1 ACL Query Tools
+
+- [x] `kanbu_list_acl` - ACL entries voor resource
+- [x] `kanbu_check_permission` - Permissies checken
+- [x] `kanbu_my_permission` - Mijn permissies op resource
+- [x] `kanbu_get_principals` - Alle users/groups voor ACL
+- [x] `kanbu_get_resources` - Alle resources voor ACL
+- [x] `kanbu_get_acl_presets` - Beschikbare presets en bitmask waardes
+- [x] `kanbu_get_permission_matrix` - Permission matrix view
+- [x] `kanbu_calculate_effective` - Effectieve permissies berekenen met breakdown
+
+#### 8.2 ACL Management Tools
+
+- [x] `kanbu_grant_permission` - Permissies toekennen
+- [x] `kanbu_deny_permission` - Permissies weigeren (DENY entry)
+- [x] `kanbu_revoke_permission` - Permissies intrekken
+- [x] `kanbu_update_acl` - ACL entry wijzigen
+- [x] `kanbu_delete_acl` - ACL entry verwijderen
+- [x] `kanbu_bulk_grant` - Bulk permissies toekennen
+- [x] `kanbu_bulk_revoke` - Bulk permissies intrekken
+- [x] `kanbu_copy_permissions` - Permissies kopiëren naar andere resources
+- [x] `kanbu_apply_template` - Permission template toepassen
+- [x] `kanbu_simulate_change` - What-If analyse voor ACL wijzigingen
+- [x] `kanbu_export_acl` - ACL exporteren (JSON/CSV)
+- [x] `kanbu_import_acl` - ACL importeren (JSON/CSV)
+
+**Deliverables Fase 8:**
+- [x] 20 ACL management tools (8 query + 12 management)
+- [x] RWXDP bitmask support (R=1, W=2, X=4, D=8, P=16)
+- [x] Presets: None (0), Read Only (1), Contributor (7), Editor (15), Full Control (31)
+- [x] What-If simulator voor change preview
+
+---
+
+### Fase 9: Invites ✅ COMPLEET
+
+**Doel:** Uitnodigingen beheer via MCP.
+
+**Status:** Voltooid.
+
+- [x] `kanbu_list_invites` - Lijst alle uitnodigingen (met status filter)
+- [x] `kanbu_get_invite` - Uitnodiging details ophalen
+- [x] `kanbu_send_invite` - Uitnodiging versturen (max 50 emails per call)
+- [x] `kanbu_cancel_invite` - Uitnodiging annuleren
+- [x] `kanbu_resend_invite` - Uitnodiging opnieuw versturen (met nieuwe token)
+
+**Deliverables Fase 9:**
+- [x] 5 invite management tools
+- [x] Status tracking (pending, accepted, expired)
+- [x] Bulk invite support
+
+---
+
+### Fase 10: Audit Logs ✅ COMPLEET
+
+**Doel:** Audit logs raadplegen via MCP.
+
+**Status:** Voltooid.
+
+- [x] `kanbu_list_audit_logs` - Audit logs ophalen (met filters: category, action, date, workspace)
+- [x] `kanbu_get_audit_log` - Enkele audit log entry met alle details
+- [x] `kanbu_audit_stats` - Audit statistieken (counts by category, top actors, recent actions)
+- [x] `kanbu_export_audit_logs` - Audit logs exporteren (CSV/JSON, max 10.000)
+- [x] `kanbu_get_audit_categories` - Beschikbare categorieën (ACL, GROUP, USER, WORKSPACE, SETTINGS)
+
+**Deliverables Fase 10:**
+- [x] 5 audit log tools
+- [x] Scoped access (Domain Admin vs Workspace Admin)
+- [x] Export functionaliteit (CSV en JSON)
+- [x] Statistics dashboard data
+
+---
+
+### Fase 11: System Settings & Backup ✅ COMPLEET
+
+**Doel:** Systeeminstellingen en backups via MCP.
+
+**Status:** Voltooid.
+
+#### 11.1 Settings Tools
+
+- [x] `kanbu_get_settings` - Alle instellingen ophalen
+- [x] `kanbu_get_setting` - Enkele instelling ophalen
+- [x] `kanbu_set_setting` - Instelling wijzigen (create/update)
+- [x] `kanbu_set_settings` - Meerdere instellingen wijzigen (bulk)
+- [x] `kanbu_delete_setting` - Instelling verwijderen
+
+#### 11.2 Backup Tools
+
+- [x] `kanbu_create_db_backup` - Database backup naar Google Drive (keeps 10)
+- [x] `kanbu_create_source_backup` - Source code backup naar Google Drive (keeps 5)
+
+#### 11.3 Admin Workspace Tools
+
+- [x] `kanbu_admin_list_workspaces` - Alle workspaces (admin view, scoped)
+- [x] `kanbu_admin_get_workspace` - Workspace details met stats
+- [x] `kanbu_admin_update_workspace` - Workspace wijzigen
+- [x] `kanbu_admin_delete_workspace` - Workspace deactiveren (soft delete)
+- [x] `kanbu_admin_reactivate_workspace` - Workspace heractiveren
+
+**Deliverables Fase 11:**
+- [x] 12 system management tools
+- [x] Domain Admin / Workspace Admin scoped access
+- [x] Backup naar Google Drive met automatic cleanup
+
+---
+
+### Fase 12: Profile Management 🚧 GEPLAND
+
+**Doel:** Eigen profiel beheer via MCP (alle functies uit Profile Settings sidebar).
+
+**Status:** Gepland.
+
+#### 12.1 Profile Information Tools
+
+- [ ] `kanbu_get_profile` - Eigen profiel samenvatting ophalen
+- [ ] `kanbu_get_time_tracking` - Eigen time tracking overzicht (per project/periode)
+- [ ] `kanbu_get_logins` - Eigen login historie
+- [ ] `kanbu_get_connections` - Persistent connections (actieve sessies)
+- [ ] `kanbu_get_password_history` - Wachtwoord reset historie
+- [ ] `kanbu_get_metadata` - Eigen user metadata
+
+#### 12.2 Profile Update Tools
+
+- [ ] `kanbu_update_profile` - Profiel bewerken (name, display name, email, timezone, etc.)
+- [ ] `kanbu_remove_avatar` - Avatar verwijderen
+- [ ] `kanbu_change_password` - Eigen wachtwoord wijzigen
+
+#### 12.3 Two Factor Authentication Tools
+
+- [ ] `kanbu_get_2fa_status` - 2FA status ophalen (enabled, backup codes count)
+- [ ] `kanbu_setup_2fa` - 2FA setup initiëren (genereert TOTP secret en QR data)
+- [ ] `kanbu_verify_2fa` - 2FA verificatie (code checken en activeren)
+- [ ] `kanbu_disable_own_2fa` - Eigen 2FA uitschakelen (vereist wachtwoord)
+- [ ] `kanbu_regenerate_backup_codes` - Nieuwe backup codes genereren
+
+#### 12.4 Public Access Tools
+
+- [ ] `kanbu_get_public_access` - Public access instellingen ophalen
+- [ ] `kanbu_update_public_access` - Public access instellingen wijzigen
+
+#### 12.5 Notification Tools
+
+- [ ] `kanbu_get_notifications` - Notificatie-instellingen ophalen
+- [ ] `kanbu_update_notifications` - Notificatie-instellingen wijzigen (email, push, in-app)
+
+#### 12.6 External Accounts Tools
+
+- [ ] `kanbu_list_external_accounts` - Gekoppelde externe accounts (OAuth providers)
+- [ ] `kanbu_unlink_external_account` - Externe account ontkoppelen
+
+#### 12.7 Integrations Tools
+
+- [ ] `kanbu_list_integrations` - Beschikbare integraties ophalen
+- [ ] `kanbu_get_integration` - Integratie details en configuratie
+- [ ] `kanbu_update_integration` - Integratie configuratie wijzigen
+
+#### 12.8 API Tokens Tools
+
+- [ ] `kanbu_list_api_tokens` - Eigen API tokens ophalen
+- [ ] `kanbu_create_api_token` - Nieuw API token aanmaken (met scope en expiry)
+- [ ] `kanbu_get_api_token` - API token details ophalen
+- [ ] `kanbu_revoke_api_token` - API token intrekken
+
+#### 12.9 AI Assistant Tools (uitbreiding)
+
+- [ ] `kanbu_list_ai_bindings` - Alle AI assistant bindings bekijken
+- [ ] `kanbu_revoke_ai_binding` - Specifieke AI binding intrekken
+
+#### 12.10 Hourly Rate Tools
+
+- [ ] `kanbu_get_hourly_rate` - Eigen uurtarief ophalen
+- [ ] `kanbu_set_hourly_rate` - Uurtarief instellen (currency, rate)
+
+**Deliverables Fase 12:**
+- [ ] 32 profile management tools
+- [ ] Self-service profiel beheer
+- [ ] 2FA setup en beheer
+- [ ] API tokens beheer met scopes
+- [ ] Notification preferences
+- [ ] Hourly rate voor time tracking
+
+---
+
 ## Tool Overzicht
 
 | Fase | Tools | Cumulatief | Status |
@@ -256,6 +507,13 @@ model AssistantBinding {
 | Fase 3 | 9 (subtasks/comments) | 23 | ✅ Compleet |
 | Fase 4 | 5 (search/activity) | 28 | ✅ Compleet |
 | Fase 5 | 4 (analytics) | 32 | ✅ Compleet |
+| Fase 6 | 11 (user management) | 43 | ✅ Compleet |
+| Fase 7 | 10 (groups) | 53 | ✅ Compleet |
+| Fase 8 | 20 (ACL) | 73 | ✅ Compleet |
+| Fase 9 | 5 (invites) | 78 | ✅ Compleet |
+| Fase 10 | 5 (audit) | 83 | ✅ Compleet |
+| Fase 11 | 12 (system) | 95 | ✅ Compleet |
+| Fase 12 | 32 (profile) | 127 | 🚧 Gepland |
 
 ## Prioriteit Matrix
 
@@ -335,6 +593,15 @@ model AssistantBinding {
 
 | Datum | Wijziging |
 |-------|-----------|
+| 2026-01-09 | **Fase 12 GEPLAND** - 32 tools voor profile management (info, 2FA, notifications, API tokens, etc.) |
+| 2026-01-09 | **Fase 11 COMPLEET** - 12 tools voor system settings & backup (settings, backup, admin workspaces) |
+| 2026-01-09 | **ALL ADMIN PHASES COMPLETE!** - 95 MCP tools geïmplementeerd across 11 phases |
+| 2026-01-09 | **Fase 10 COMPLEET** - 5 tools voor audit logs (list, get, stats, export, categories) |
+| 2026-01-09 | **Fase 9 COMPLEET** - 5 tools voor invite management (list, get, send, cancel, resend) |
+| 2026-01-09 | **Fase 8 COMPLEET** - 20 tools voor ACL management (query, grant, deny, bulk, export, import, simulate) |
+| 2026-01-09 | **Fase 7 COMPLEET** - 10 tools voor groups management (list, create, members, etc.) |
+| 2026-01-09 | **Fase 6 COMPLEET** - 11 tools voor user management (list, create, update, delete, etc.) |
+| 2026-01-09 | **ROADMAP UPDATE** - Fases 6-11 toegevoegd (61 nieuwe tools gepland, totaal 93) |
 | 2026-01-09 | **Fase 5 COMPLEET** - 4 tools voor analytics en insights |
 | 2026-01-09 | **Fase 4 COMPLEET** - 5 tools voor search en activity queries |
 | 2026-01-09 | **Fase 3 COMPLEET** - 9 tools voor subtask en comment management |

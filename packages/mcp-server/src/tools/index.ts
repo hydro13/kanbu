@@ -19,3 +19,21 @@ export * from './activity.js'
 
 // Fase 5 - Analytics & Insights
 export * from './analytics.js'
+
+// Fase 6 - User Management
+export * from './admin.js'
+
+// Fase 7 - Groups Management
+export * from './groups.js'
+
+// Fase 8 - ACL Manager
+export * from './acl.js'
+
+// Fase 9 - Invites
+export * from './invites.js'
+
+// Fase 10 - Audit Logs
+export * from './audit.js'
+
+// Fase 11 - System Settings & Backup
+export * from './system.js'
