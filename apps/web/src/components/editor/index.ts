@@ -71,4 +71,6 @@ export {
   lexicalToPlainText,
   normalizeContent,
   getDisplayContent,
+  isMarkdownOrHtml,
+  markdownToLexical,
 } from './utils'
