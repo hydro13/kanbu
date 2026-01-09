@@ -240,6 +240,7 @@ export const taskRouter = router({
           isActive: true,
           createdAt: true,
           updatedAt: true,
+          githubBranch: true,
           column: {
             select: { id: true, title: true },
           },

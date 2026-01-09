@@ -48,6 +48,7 @@ import { SubtaskEditModal } from './SubtaskEditModal'
 import { CommentSection } from './CommentSection'
 import { TaskSidebar } from './TaskSidebar'
 import { ConflictWarningModal } from './ConflictWarningModal'
+import { TaskCICDPanel } from './TaskCICDPanel'
 import { useEditingPresence } from '@/hooks/useEditingPresence'
 import { useSocket } from '@/hooks/useSocket'
 import { useAppSelector } from '@/store'
@@ -284,6 +285,9 @@ export function TaskDetailModal({
                     <TabsTrigger value="comments">
                       Comments ({comments.length})
                     </TabsTrigger>
+                    <TabsTrigger value="cicd">
+                      CI/CD
+                    </TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="details" className="mt-0">
@@ -320,6 +324,10 @@ export function TaskDetailModal({
                       onDelete={deleteComment}
                       isCreating={isCreatingComment}
                     />
+                  </TabsContent>
+
+                  <TabsContent value="cicd" className="mt-0">
+                    <TaskCICDPanel taskId={taskId!} />
                   </TabsContent>
                 </Tabs>
               </div>

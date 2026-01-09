@@ -1,16 +1,16 @@
 /*
  * GitHub Project Procedures
- * Version: 3.0.0
+ * Version: 4.0.0
  *
  * tRPC procedures for GitHub repository management at project level.
- * Handles repository linking, sync settings, sync operations, PR/commit tracking, and automation.
+ * Handles repository linking, sync settings, sync operations, PR/commit tracking, automation, and CI/CD.
  *
  * =============================================================================
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
  * Claude Code: Opus 4.5
  * Host: MAX
  * Date: 2026-01-09
- * Fase: 8 - Automation
+ * Fase: 10 - CI/CD Integratie
  * =============================================================================
  */
 
@@ -40,6 +40,17 @@ import {
   generateBranchName,
   getAutomationSettings,
 } from '../../services/github/automationService'
+import {
+  getWorkflowRuns,
+  getWorkflowRunDetails,
+  getTaskWorkflowRuns,
+  getPRWorkflowRuns,
+  getWorkflowJobs,
+  getWorkflowStats,
+  rerunWorkflow,
+  rerunFailedJobs,
+  cancelWorkflow,
+} from '../../services/github/workflowService'
 import type { GitHubSyncSettings } from '@kanbu/shared'
 
 // =============================================================================
@@ -1792,6 +1803,309 @@ export const githubRouter = router({
         hasRepository: true,
         settings,
       }
+    }),
+
+  // ==========================================================================
+  // CI/CD Workflow Procedures (Fase 10)
+  // ==========================================================================
+
+  /**
+   * Get workflow runs for a project/repository
+   * Requires project READ permission
+   */
+  getWorkflowRuns: protectedProcedure
+    .input(z.object({
+      projectId: z.number(),
+      status: z.enum(['queued', 'in_progress', 'completed', 'waiting']).optional(),
+      conclusion: z.enum(['success', 'failure', 'cancelled', 'skipped', 'timed_out']).optional(),
+      branch: z.string().optional(),
+      event: z.string().optional(),
+      limit: z.number().min(1).max(100).optional().default(20),
+      offset: z.number().min(0).optional().default(0),
+    }))
+    .query(async ({ ctx, input }) => {
+      const { projectId, status, conclusion, branch, event, limit, offset } = input
+
+      // Check project read permission
+      await checkProjectReadAccess(ctx.user.id, projectId)
+
+      // Get repository
+      const repository = await ctx.prisma.gitHubRepository.findUnique({
+        where: { projectId },
+        select: { id: true },
+      })
+
+      if (!repository) {
+        return { runs: [], total: 0, hasMore: false }
+      }
+
+      const result = await getWorkflowRuns(repository.id, { status, conclusion, branch, event }, limit, offset)
+
+      return result
+    }),
+
+  /**
+   * Get workflow run details with jobs
+   * Requires project READ permission
+   */
+  getWorkflowRunDetails: protectedProcedure
+    .input(z.object({
+      workflowRunId: z.number(),
+    }))
+    .query(async ({ ctx, input }) => {
+      const { workflowRunId } = input
+
+      // Get workflow run with repository
+      const run = await getWorkflowRunDetails(workflowRunId)
+
+      if (!run) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Workflow run not found',
+        })
+      }
+
+      // Get project ID from repository
+      const repository = await ctx.prisma.gitHubRepository.findUnique({
+        where: { id: run.repositoryId },
+        select: { projectId: true },
+      })
+
+      if (!repository) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Repository not found',
+        })
+      }
+
+      // Check project read permission
+      await checkProjectReadAccess(ctx.user.id, repository.projectId)
+
+      return run
+    }),
+
+  /**
+   * Get workflow jobs for a run (fetched from GitHub API)
+   * Requires project READ permission
+   */
+  getWorkflowJobs: protectedProcedure
+    .input(z.object({
+      workflowRunId: z.number(),
+    }))
+    .query(async ({ ctx, input }) => {
+      const { workflowRunId } = input
+
+      // Get workflow run to check permissions
+      const run = await ctx.prisma.gitHubWorkflowRun.findUnique({
+        where: { id: workflowRunId },
+        include: {
+          repository: {
+            select: { projectId: true },
+          },
+        },
+      })
+
+      if (!run) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Workflow run not found',
+        })
+      }
+
+      // Check project read permission
+      await checkProjectReadAccess(ctx.user.id, run.repository.projectId)
+
+      const result = await getWorkflowJobs(workflowRunId)
+
+      return result
+    }),
+
+  /**
+   * Get workflow runs for a task
+   * Requires project READ permission
+   */
+  getTaskWorkflowRuns: protectedProcedure
+    .input(z.object({
+      taskId: z.number(),
+      limit: z.number().min(1).max(50).optional().default(10),
+    }))
+    .query(async ({ ctx, input }) => {
+      const { taskId, limit } = input
+
+      // Get task to check permissions
+      const task = await ctx.prisma.task.findUnique({
+        where: { id: taskId },
+        select: { projectId: true },
+      })
+
+      if (!task) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Task not found',
+        })
+      }
+
+      // Check project read permission
+      await checkProjectReadAccess(ctx.user.id, task.projectId)
+
+      const result = await getTaskWorkflowRuns(taskId, limit)
+
+      return result
+    }),
+
+  /**
+   * Get workflow statistics for a project
+   * Requires project READ permission
+   */
+  getWorkflowStats: protectedProcedure
+    .input(z.object({
+      projectId: z.number(),
+      days: z.number().min(1).max(365).optional().default(30),
+    }))
+    .query(async ({ ctx, input }) => {
+      const { projectId, days } = input
+
+      // Check project read permission
+      await checkProjectReadAccess(ctx.user.id, projectId)
+
+      // Get repository
+      const repository = await ctx.prisma.gitHubRepository.findUnique({
+        where: { projectId },
+        select: { id: true },
+      })
+
+      if (!repository) {
+        return {
+          total: 0,
+          byConclusion: {},
+          byWorkflow: {},
+          successRate: 0,
+          avgDurationMinutes: 0,
+          period: { days, since: new Date() },
+        }
+      }
+
+      const stats = await getWorkflowStats(repository.id, days)
+
+      return stats
+    }),
+
+  /**
+   * Re-run a workflow
+   * Requires project WRITE permission
+   */
+  rerunWorkflow: protectedProcedure
+    .input(z.object({
+      workflowRunId: z.number(),
+      failedJobsOnly: z.boolean().optional().default(false),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { workflowRunId, failedJobsOnly } = input
+
+      // Get workflow run to check permissions
+      const run = await ctx.prisma.gitHubWorkflowRun.findUnique({
+        where: { id: workflowRunId },
+        include: {
+          repository: {
+            select: { projectId: true, fullName: true },
+          },
+        },
+      })
+
+      if (!run) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Workflow run not found',
+        })
+      }
+
+      // Check project write permission
+      await checkProjectWriteAccess(ctx.user.id, run.repository.projectId)
+
+      // Re-run workflow
+      const result = failedJobsOnly
+        ? await rerunFailedJobs(workflowRunId)
+        : await rerunWorkflow(workflowRunId)
+
+      if (!result.success) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: result.message,
+        })
+      }
+
+      // Audit log
+      await auditService.log({
+        userId: ctx.user.id,
+        action: 'GITHUB_WORKFLOW_RERUN' as keyof typeof AUDIT_ACTIONS,
+        category: 'WORKSPACE',
+        resourceType: 'workflow',
+        resourceId: workflowRunId,
+        resourceName: `${run.workflowName} #${run.runNumber}`,
+        metadata: {
+          repositoryFullName: run.repository.fullName,
+          failedJobsOnly,
+        },
+      })
+
+      return result
+    }),
+
+  /**
+   * Cancel a running workflow
+   * Requires project WRITE permission
+   */
+  cancelWorkflow: protectedProcedure
+    .input(z.object({
+      workflowRunId: z.number(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { workflowRunId } = input
+
+      // Get workflow run to check permissions
+      const run = await ctx.prisma.gitHubWorkflowRun.findUnique({
+        where: { id: workflowRunId },
+        include: {
+          repository: {
+            select: { projectId: true, fullName: true },
+          },
+        },
+      })
+
+      if (!run) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Workflow run not found',
+        })
+      }
+
+      // Check project write permission
+      await checkProjectWriteAccess(ctx.user.id, run.repository.projectId)
+
+      // Cancel workflow
+      const result = await cancelWorkflow(workflowRunId)
+
+      if (!result.success) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: result.message,
+        })
+      }
+
+      // Audit log
+      await auditService.log({
+        userId: ctx.user.id,
+        action: 'GITHUB_WORKFLOW_CANCELLED' as keyof typeof AUDIT_ACTIONS,
+        category: 'WORKSPACE',
+        resourceType: 'workflow',
+        resourceId: workflowRunId,
+        resourceName: `${run.workflowName} #${run.runNumber}`,
+        metadata: {
+          repositoryFullName: run.repository.fullName,
+        },
+      })
+
+      return result
     }),
 })
 

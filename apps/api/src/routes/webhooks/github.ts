@@ -1,17 +1,17 @@
 /*
  * GitHub Webhook Handler
- * Version: 3.0.0
+ * Version: 4.0.0
  *
  * Receives and processes GitHub webhook events.
  * Handles signature verification, event routing, and sync operations.
- * Includes auto-linking of PRs/commits and task status automation.
+ * Includes auto-linking of PRs/commits, task status automation, and workflow tracking.
  *
  * =============================================================================
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
  * Claude Code: Opus 4.5
  * Host: MAX
  * Date: 2026-01-09
- * Fase: 8 - Automation
+ * Fase: 10 - CI/CD Integratie
  * =============================================================================
  */
 
@@ -32,6 +32,9 @@ import {
   onPRMerged,
   onIssueClosed,
 } from '../../services/github/automationService'
+import {
+  processWorkflowRunEvent,
+} from '../../services/github/workflowService'
 import type { GitHubSyncSettings } from '@kanbu/shared'
 
 // =============================================================================
@@ -98,12 +101,29 @@ interface WebhookPayload {
     login: string
     id: number
   }
+  workflow_run?: {
+    id: number
+    workflow_id: number
+    name: string
+    event: string
+    status: string
+    conclusion: string | null
+    head_sha: string
+    head_branch: string
+    html_url: string
+    run_number: number
+    run_attempt: number
+    actor: { login: string } | null
+    run_started_at: string | null
+    updated_at: string | null
+  }
 }
 
 type GitHubEventType =
   | 'issues'
   | 'pull_request'
   | 'push'
+  | 'workflow_run'
   | 'installation'
   | 'installation_repositories'
   | 'ping'
@@ -719,6 +739,65 @@ async function handlePush(ctx: WebhookContext): Promise<{
   return { processed: true, commitCount: processedCount, linkedCount }
 }
 
+/**
+ * Handle workflow_run events (GitHub Actions CI/CD)
+ */
+async function handleWorkflowRun(ctx: WebhookContext): Promise<{
+  processed: boolean
+  action: string | undefined
+  workflowName: string | null
+}> {
+  const { action, payload } = ctx
+  const repo = payload.repository
+  const workflowRun = payload.workflow_run
+
+  if (!repo || !workflowRun) {
+    return { processed: false, action, workflowName: null }
+  }
+
+  console.log(`[GitHub Webhook] Workflow run ${action}: ${workflowRun.name} #${workflowRun.run_number}`)
+
+  // Find the linked repository in Kanbu
+  const linkedRepo = await prisma.gitHubRepository.findUnique({
+    where: {
+      owner_name: {
+        owner: repo.owner.login,
+        name: repo.name,
+      },
+    },
+  })
+
+  if (!linkedRepo || !linkedRepo.syncEnabled) {
+    return { processed: false, action, workflowName: workflowRun.name }
+  }
+
+  // Process the workflow run event
+  await processWorkflowRunEvent(linkedRepo.id, action || 'unknown', workflowRun)
+
+  // Log sync operation for completed workflows
+  if (action === 'completed') {
+    await prisma.gitHubSyncLog.create({
+      data: {
+        repositoryId: linkedRepo.id,
+        action: 'workflow_completed',
+        direction: 'github_to_kanbu',
+        entityType: 'workflow',
+        entityId: String(workflowRun.id),
+        details: {
+          workflowName: workflowRun.name,
+          runNumber: workflowRun.run_number,
+          conclusion: workflowRun.conclusion,
+          event: workflowRun.event,
+          headBranch: workflowRun.head_branch,
+        },
+        status: 'success',
+      },
+    })
+  }
+
+  return { processed: true, action, workflowName: workflowRun.name }
+}
+
 // =============================================================================
 // Main Webhook Handler
 // =============================================================================
@@ -799,6 +878,10 @@ async function webhookHandler(
 
       case 'push':
         result = await handlePush(ctx)
+        break
+
+      case 'workflow_run':
+        result = await handleWorkflowRun(ctx)
         break
 
       default:

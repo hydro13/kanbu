@@ -1,6 +1,6 @@
 /*
  * GitHub Services Index
- * Version: 3.0.0
+ * Version: 4.0.0
  *
  * Central export for all GitHub-related services.
  *
@@ -9,7 +9,7 @@
  * Claude Code: Opus 4.5
  * Host: MAX
  * Date: 2026-01-09
- * Fase: 8 - Automation
+ * Fase: 10 - CI/CD Integratie
  * =============================================================================
  */
 
@@ -109,3 +109,26 @@ export {
   type TaskStatusAutomationResult,
   type AutomationSettings,
 } from './automationService'
+
+export {
+  // Workflow CRUD
+  upsertWorkflowRun,
+  getWorkflowRuns,
+  getTaskWorkflowRuns,
+  getPRWorkflowRuns,
+  getWorkflowRunDetails,
+  // Workflow actions
+  rerunWorkflow,
+  rerunFailedJobs,
+  cancelWorkflow,
+  // Job details
+  getWorkflowJobs,
+  // Statistics
+  getWorkflowStats,
+  // Webhook handler
+  processWorkflowRunEvent,
+  // Types
+  type WorkflowRunData,
+  type WorkflowRunFilters,
+  type WorkflowJob,
+} from './workflowService'

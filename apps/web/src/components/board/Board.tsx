@@ -75,6 +75,7 @@ export interface BoardTask {
   isActive: boolean
   createdAt: string
   updatedAt: string
+  githubBranch: string | null
   column: { id: number; title: string }
   swimlane: { id: number; name: string } | null
   assignees: Array<{

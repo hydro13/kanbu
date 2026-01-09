@@ -21,6 +21,7 @@
 
 import { useState } from 'react'
 import { TaskQuickActions } from '@/components/task/TaskQuickActions'
+import { GitBranchIndicator } from './WorkflowStatusBadge'
 import { SubtaskPopover } from './SubtaskPopover'
 import { DescriptionPopover } from './DescriptionPopover'
 import { CommentPopover } from './CommentPopover'
@@ -347,6 +348,9 @@ export function TaskCard({ task, projectId, onTaskClick, onContextMenu }: TaskCa
               <CalendarIcon />
               {dueInfo.text}
             </span>
+          )}
+          {task.githubBranch && (
+            <GitBranchIndicator branchName={task.githubBranch} />
           )}
         </div>
 
