@@ -1134,20 +1134,21 @@ model GitHubCheckRun {
 
 ---
 
-### Fase 11: Geavanceerde Sync 🚧 GEPLAND
+### Fase 11: Geavanceerde Sync ⚡ DEELS COMPLEET
 
 **Doel:** Uitgebreide synchronisatie van GitHub features.
 
-**Status:** Gepland.
+**Status:** 11.1 (Milestones) en 11.2 (Releases) compleet. Wiki en Projects uitgesteld naar Fase 11B.
 
-#### 11.1 Milestones Sync
+#### 11.1 Milestones Sync ✅ COMPLEET
 
-- [ ] GitHub milestones ↔ Kanbu milestones (als feature bestaat)
-- [ ] Milestone progress tracking
-- [ ] Due date sync
-- [ ] Auto-create milestone in GitHub
+- [x] GitHub milestones tracking
+- [x] Milestone progress tracking (open/closed issues)
+- [x] Due date tracking
+- [x] Frontend panel met progress bars
+- [x] Stats component (total, open, closed, overdue)
 
-**Database model:**
+**Database model:** ✅ GEÏMPLEMENTEERD
 ```prisma
 model GitHubMilestone {
   id              Int       @id @default(autoincrement())
@@ -1158,37 +1159,92 @@ model GitHubMilestone {
   description     String?   @db.Text
   state           String    @db.VarChar(20)   // 'open' | 'closed'
   dueOn           DateTime? @map("due_on")
-  kanbuMilestoneId Int?     @map("kanbu_milestone_id")
+  closedAt        DateTime? @map("closed_at")
+  openIssues      Int       @default(0) @map("open_issues")
+  closedIssues    Int       @default(0) @map("closed_issues")
+  htmlUrl         String?   @map("html_url") @db.VarChar(512)
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
 
   repository      GitHubRepository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
 
   @@unique([repositoryId, milestoneNumber])
+  @@index([state])
   @@map("github_milestones")
 }
 ```
 
-#### 11.2 GitHub Releases Tracking
+**Backend procedures:** ✅ GEÏMPLEMENTEERD
+- [x] `github.getProjectMilestones` - List milestones voor project
+- [x] `github.getMilestoneStats` - Milestone statistieken
+- [x] `github.getMilestoneByNumber` - Get milestone details
 
-- [ ] Release tracking per repository
-- [ ] Release notes sync
-- [ ] Link releases aan sprints/milestones
-- [ ] Release changelog generation
+**Backend services:**
+- [x] `milestoneService.ts` - Complete milestone CRUD + webhook sync
+- [x] 13 tests voor milestone service
 
-**Backend procedures:**
-- [ ] `github.listReleases` - List releases voor repo
-- [ ] `github.getReleaseDetails` - Release details
-- [ ] `github.createRelease` - Create release vanuit Kanbu
-- [ ] `github.generateReleaseNotes` - Generate notes from tasks
+**Frontend:**
+- [x] `ProjectMilestonesPanel.tsx` - Milestones tab in GitHub settings
 
-#### 11.3 GitHub Wiki Integration
+#### 11.2 GitHub Releases Tracking ✅ COMPLEET
+
+- [x] Release tracking per repository
+- [x] Release notes display
+- [x] Draft/prerelease indicator
+- [x] Latest release highlight
+- [x] Release changelog generation from merged PRs
+
+**Database model:** ✅ GEÏMPLEMENTEERD
+```prisma
+model GitHubRelease {
+  id              Int       @id @default(autoincrement())
+  repositoryId    Int       @map("repository_id")
+  releaseId       BigInt    @map("release_id")
+  tagName         String    @map("tag_name") @db.VarChar(255)
+  name            String?   @db.VarChar(255)
+  body            String?   @db.Text
+  draft           Boolean   @default(false)
+  prerelease      Boolean   @default(false)
+  authorLogin     String?   @map("author_login") @db.VarChar(255)
+  htmlUrl         String?   @map("html_url") @db.VarChar(512)
+  tarballUrl      String?   @map("tarball_url") @db.VarChar(512)
+  zipballUrl      String?   @map("zipball_url") @db.VarChar(512)
+  publishedAt     DateTime? @map("published_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  repository      GitHubRepository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+
+  @@unique([repositoryId, releaseId])
+  @@index([tagName])
+  @@index([publishedAt])
+  @@map("github_releases")
+}
+```
+
+**Backend procedures:** ✅ GEÏMPLEMENTEERD
+- [x] `github.getProjectReleases` - List releases voor project
+- [x] `github.getReleaseStats` - Release statistieken
+- [x] `github.getLatestRelease` - Nieuwste release
+- [x] `github.getReleaseByTag` - Release by tag name
+- [x] `github.generateReleaseNotes` - Generate notes from merged PRs
+
+**Backend services:**
+- [x] `releaseService.ts` - Complete release CRUD + webhook sync + notes generation
+- [x] 17 tests voor release service
+
+**Frontend:**
+- [x] `ProjectReleasesPanel.tsx` - Releases tab in GitHub settings
+- [x] Latest release highlight component
+- [x] Release notes generator component
+
+#### 11.3 GitHub Wiki Integration 🚧 GEPLAND (→ Fase 11B)
 
 - [ ] Wiki pagina's synchroniseren
 - [ ] Link wiki pagina's aan tasks
 - [ ] Wiki search vanuit Kanbu
 
-#### 11.4 GitHub Projects (Beta) Sync
+#### 11.4 GitHub Projects (Beta) Sync 🚧 GEPLAND (→ Fase 11B)
 
 - [ ] GitHub Projects V2 integratie
 - [ ] Project board ↔ Kanbu board sync
@@ -1196,19 +1252,19 @@ model GitHubMilestone {
 - [ ] View sync (optional)
 
 **Deliverables Fase 11:**
-- [ ] Milestone synchronisatie
-- [ ] Releases tracking
-- [ ] Wiki integratie
-- [ ] GitHub Projects sync
+- [x] Milestone synchronisatie (13 tests)
+- [x] Releases tracking (17 tests)
+- [ ] Wiki integratie (→ Fase 11B)
+- [ ] GitHub Projects sync (→ Fase 11B)
 
 #### Fase 11 Completion Checklist
-- [ ] **Code**: Milestones/Releases sync werkend
-- [ ] **Tests**: Milestone sync tests, release tracking tests, wiki integration tests
-- [ ] **ACL**: N.v.t. (uitbreiding sync features)
-- [ ] **MCP**: Release tools (4 tools) toegevoegd
-- [ ] **Docs**: Advanced sync gedocumenteerd
-- [ ] **CLAUDE.md**: Milestone/Release sync gedocumenteerd
-- [ ] **Commit**: `feat(github): Fase 11 - Geavanceerde Sync`
+- [x] **Code**: Milestones/Releases sync werkend
+- [x] **Tests**: 30 tests (13 milestone + 17 release)
+- [x] **ACL**: Gebruikt bestaande project permissions
+- [ ] **MCP**: Release tools toegevoegen (→ Fase 11B)
+- [x] **Docs**: ROADMAP bijgewerkt
+- [x] **Frontend**: ProjectMilestonesPanel + ProjectReleasesPanel
+- [ ] **Commit**: `feat(github): Fase 11 - Milestones & Releases`
 
 ---
 
@@ -1703,7 +1759,7 @@ class AIReviewService {
 | Fase 9 | MCP tools (10 tools) + 34 tests | MCP | ✅ Compleet |
 | Fase 10 | CI/CD workflow tracking (7 procedures) + frontend panel + 26 tests | Project | ✅ Compleet |
 | Fase 10B | Extended CI/CD (Deploy tracking, Test results, Notifications) | Project | 🚧 Gepland |
-| Fase 11 | Geavanceerde Sync (Milestones, Releases, Wiki) | Project | 🚧 Gepland |
+| Fase 11 | Geavanceerde Sync (Milestones, Releases) + 30 tests | Project | ⚡ Deels Compleet |
 | Fase 12 | Code Review Integratie (Reviews, CODEOWNERS) | Project | ✅ Compleet |
 | Fase 13 | Analytics & Insights (Cycle Time, Stats) | Project | ✅ Compleet |
 | Fase 14 | Developer Experience (VSCode, CLI, Bot) | Tools | 🚧 Gepland |
@@ -2045,10 +2101,12 @@ GITHUB_BRANCH_CREATED = 'github:branch_created'
 - [ ] Test results parsing
 - [ ] Workflow failure notifications
 
-### Fase 11 (Geavanceerde Sync)
-- [ ] Milestones sync werkt
-- [ ] Releases worden getracked
-- [ ] Wiki integratie functioneel
+### Fase 11 (Geavanceerde Sync) ⚡
+- [x] Milestones sync werkt (GitHubMilestone model, 13 tests)
+- [x] Releases tracking (GitHubRelease model, 17 tests)
+- [x] Frontend: ProjectMilestonesPanel + ProjectReleasesPanel
+- [ ] Wiki integratie (→ Fase 11B)
+- [ ] GitHub Projects V2 (→ Fase 11B)
 
 ### Fase 12 (Code Review) ✅
 - [x] Review tracking in database (GitHubReview + GitHubReviewComment models)

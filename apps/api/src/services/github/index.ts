@@ -1,6 +1,6 @@
 /*
  * GitHub Services Index
- * Version: 4.0.0
+ * Version: 5.0.0
  *
  * Central export for all GitHub-related services.
  *
@@ -9,7 +9,7 @@
  * Claude Code: Opus 4.5
  * Host: MAX
  * Date: 2026-01-09
- * Fase: 10 - CI/CD Integratie
+ * Fase: 11 - Geavanceerde Sync
  * =============================================================================
  */
 
@@ -174,3 +174,36 @@ export {
   type ThroughputStats,
   type ProjectAnalytics,
 } from './analyticsService'
+
+export {
+  milestoneService,
+  // Milestone CRUD
+  upsertMilestone,
+  getMilestones,
+  getMilestoneByNumber,
+  getProjectMilestones,
+  getMilestoneStats,
+  deleteMilestone,
+  syncMilestoneFromWebhook,
+  // Types
+  type MilestoneData,
+  type MilestoneInfo,
+} from './milestoneService'
+
+export {
+  releaseService,
+  // Release CRUD
+  upsertRelease,
+  getReleases,
+  getReleaseByTag,
+  getLatestRelease,
+  getProjectReleases,
+  getReleaseStats,
+  deleteRelease,
+  syncReleaseFromWebhook,
+  generateReleaseNotes,
+  // Types
+  type ReleaseData,
+  type ReleaseInfo,
+  type ReleaseStats,
+} from './releaseService'

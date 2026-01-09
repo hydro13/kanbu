@@ -1,16 +1,17 @@
 /*
  * GitHub Project Procedures
- * Version: 4.0.0
+ * Version: 5.0.0
  *
  * tRPC procedures for GitHub repository management at project level.
- * Handles repository linking, sync settings, sync operations, PR/commit tracking, automation, and CI/CD.
+ * Handles repository linking, sync settings, sync operations, PR/commit tracking,
+ * automation, CI/CD, milestones, and releases.
  *
  * =============================================================================
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
  * Claude Code: Opus 4.5
  * Host: MAX
  * Date: 2026-01-09
- * Fase: 10 - CI/CD Integratie
+ * Fase: 11 - Geavanceerde Sync
  * =============================================================================
  */
 
@@ -68,6 +69,20 @@ import {
   getThroughputStats,
   getProjectAnalytics,
 } from '../../services/github/analyticsService'
+import {
+  getMilestones,
+  getMilestoneByNumber,
+  getProjectMilestones,
+  getMilestoneStats,
+} from '../../services/github/milestoneService'
+import {
+  getReleases,
+  getReleaseByTag,
+  getLatestRelease,
+  getProjectReleases,
+  getReleaseStats,
+  generateReleaseNotes,
+} from '../../services/github/releaseService'
 import type { GitHubSyncSettings } from '@kanbu/shared'
 
 // =============================================================================
@@ -2675,6 +2690,307 @@ export const githubRouter = router({
           : undefined
 
       return getProjectAnalytics(input.projectId, dateRange)
+    }),
+
+  // ===========================================================================
+  // Milestone Procedures (Fase 11)
+  // ===========================================================================
+
+  /**
+   * Get milestones for a project.
+   * Returns all milestones with progress information.
+   */
+  getProjectMilestones: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.number(),
+        state: z.enum(['open', 'closed', 'all']).default('all'),
+        limit: z.number().min(1).max(100).default(50),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      // Check project read permission
+      const hasAccess = await aclService.hasProjectPermission(
+        ctx.user.id,
+        input.projectId,
+        ACL_PERMISSIONS.READ
+      )
+
+      if (!hasAccess) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You do not have access to this project',
+        })
+      }
+
+      return getProjectMilestones(input.projectId, {
+        state: input.state,
+        limit: input.limit,
+      })
+    }),
+
+  /**
+   * Get milestone statistics for a project.
+   * Shows counts for open, closed, overdue, and upcoming milestones.
+   */
+  getMilestoneStats: protectedProcedure
+    .input(projectIdSchema)
+    .query(async ({ ctx, input }) => {
+      // Check project read permission
+      const hasAccess = await aclService.hasProjectPermission(
+        ctx.user.id,
+        input.projectId,
+        ACL_PERMISSIONS.READ
+      )
+
+      if (!hasAccess) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You do not have access to this project',
+        })
+      }
+
+      return getMilestoneStats(input.projectId)
+    }),
+
+  /**
+   * Get a single milestone by number.
+   */
+  getMilestoneByNumber: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.number(),
+        milestoneNumber: z.number(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      // Check project read permission
+      const hasAccess = await aclService.hasProjectPermission(
+        ctx.user.id,
+        input.projectId,
+        ACL_PERMISSIONS.READ
+      )
+
+      if (!hasAccess) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You do not have access to this project',
+        })
+      }
+
+      // Get repository ID from project
+      const repo = await ctx.prisma.gitHubRepository.findUnique({
+        where: { projectId: input.projectId },
+        select: { id: true },
+      })
+
+      if (!repo) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'No GitHub repository linked to this project',
+        })
+      }
+
+      const milestone = await getMilestoneByNumber(repo.id, input.milestoneNumber)
+
+      if (!milestone) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Milestone not found',
+        })
+      }
+
+      return milestone
+    }),
+
+  // ===========================================================================
+  // Release Procedures (Fase 11)
+  // ===========================================================================
+
+  /**
+   * Get releases for a project.
+   * Returns all releases ordered by published date.
+   */
+  getProjectReleases: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.number(),
+        includeDrafts: z.boolean().default(false),
+        includePrereleases: z.boolean().default(true),
+        limit: z.number().min(1).max(100).default(20),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      // Check project read permission
+      const hasAccess = await aclService.hasProjectPermission(
+        ctx.user.id,
+        input.projectId,
+        ACL_PERMISSIONS.READ
+      )
+
+      if (!hasAccess) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You do not have access to this project',
+        })
+      }
+
+      return getProjectReleases(input.projectId, {
+        includeDrafts: input.includeDrafts,
+        includePrereleases: input.includePrereleases,
+        limit: input.limit,
+      })
+    }),
+
+  /**
+   * Get release statistics for a project.
+   * Shows counts for published, drafts, prereleases, and latest release.
+   */
+  getReleaseStats: protectedProcedure
+    .input(projectIdSchema)
+    .query(async ({ ctx, input }) => {
+      // Check project read permission
+      const hasAccess = await aclService.hasProjectPermission(
+        ctx.user.id,
+        input.projectId,
+        ACL_PERMISSIONS.READ
+      )
+
+      if (!hasAccess) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You do not have access to this project',
+        })
+      }
+
+      return getReleaseStats(input.projectId)
+    }),
+
+  /**
+   * Get the latest release for a project.
+   */
+  getLatestRelease: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.number(),
+        includeDrafts: z.boolean().default(false),
+        includePrereleases: z.boolean().default(false),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      // Check project read permission
+      const hasAccess = await aclService.hasProjectPermission(
+        ctx.user.id,
+        input.projectId,
+        ACL_PERMISSIONS.READ
+      )
+
+      if (!hasAccess) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You do not have access to this project',
+        })
+      }
+
+      // Get repository ID from project
+      const repo = await ctx.prisma.gitHubRepository.findUnique({
+        where: { projectId: input.projectId },
+        select: { id: true },
+      })
+
+      if (!repo) {
+        return null
+      }
+
+      return getLatestRelease(repo.id, {
+        includeDrafts: input.includeDrafts,
+        includePrereleases: input.includePrereleases,
+      })
+    }),
+
+  /**
+   * Get a release by tag name.
+   */
+  getReleaseByTag: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.number(),
+        tagName: z.string(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      // Check project read permission
+      const hasAccess = await aclService.hasProjectPermission(
+        ctx.user.id,
+        input.projectId,
+        ACL_PERMISSIONS.READ
+      )
+
+      if (!hasAccess) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You do not have access to this project',
+        })
+      }
+
+      // Get repository ID from project
+      const repo = await ctx.prisma.gitHubRepository.findUnique({
+        where: { projectId: input.projectId },
+        select: { id: true },
+      })
+
+      if (!repo) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'No GitHub repository linked to this project',
+        })
+      }
+
+      const release = await getReleaseByTag(repo.id, input.tagName)
+
+      if (!release) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Release not found',
+        })
+      }
+
+      return release
+    }),
+
+  /**
+   * Generate release notes from completed tasks.
+   * Returns markdown-formatted release notes.
+   */
+  generateReleaseNotes: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.number(),
+        fromDate: z.string().datetime().optional(),
+        toDate: z.string().datetime().optional(),
+        includeTaskLinks: z.boolean().default(true),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      // Check project read permission
+      const hasAccess = await aclService.hasProjectPermission(
+        ctx.user.id,
+        input.projectId,
+        ACL_PERMISSIONS.READ
+      )
+
+      if (!hasAccess) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You do not have access to this project',
+        })
+      }
+
+      return generateReleaseNotes(input.projectId, {
+        fromDate: input.fromDate ? new Date(input.fromDate) : undefined,
+        toDate: input.toDate ? new Date(input.toDate) : undefined,
+        includeTaskLinks: input.includeTaskLinks,
+      })
     }),
 })
 

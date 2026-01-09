@@ -1,6 +1,6 @@
 /*
  * GitHubProjectSettings
- * Version: 1.1.0
+ * Version: 1.2.0
  *
  * Project-level GitHub settings page.
  * Link repositories, configure sync settings, view sync status, and analytics.
@@ -10,7 +10,7 @@
  * Claude Code: Opus 4.5
  * Host: MAX
  * Date: 2026-01-09
- * Fase: 3 - Repository Linking, 13 - Analytics & Insights
+ * Fase: 3 - Repository Linking, 11 - Milestones & Releases, 13 - Analytics
  * =============================================================================
  */
 
@@ -19,6 +19,8 @@ import { useParams, Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { trpc } from '@/lib/trpc'
 import { ProjectAnalyticsPanel } from '@/components/github/ProjectAnalyticsPanel'
+import { ProjectMilestonesPanel } from '@/components/github/ProjectMilestonesPanel'
+import { ProjectReleasesPanel } from '@/components/github/ProjectReleasesPanel'
 
 // =============================================================================
 // Icons
@@ -81,6 +83,24 @@ function BarChartIcon({ className }: { className?: string }) {
   )
 }
 
+function TargetIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <circle cx="12" cy="12" r="10" strokeWidth={2} />
+      <circle cx="12" cy="12" r="6" strokeWidth={2} />
+      <circle cx="12" cy="12" r="2" strokeWidth={2} />
+    </svg>
+  )
+}
+
+function TagIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+    </svg>
+  )
+}
+
 function XIcon({ className }: { className?: string }) {
   return (
     <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -93,7 +113,7 @@ function XIcon({ className }: { className?: string }) {
 // Types
 // =============================================================================
 
-type TabId = 'repository' | 'settings' | 'logs' | 'analytics'
+type TabId = 'repository' | 'settings' | 'logs' | 'milestones' | 'releases' | 'analytics'
 
 interface Tab {
   id: TabId
@@ -105,6 +125,8 @@ const TABS: Tab[] = [
   { id: 'repository', label: 'Repository', icon: GitHubIcon },
   { id: 'settings', label: 'Sync Settings', icon: SettingsIcon },
   { id: 'logs', label: 'Sync Logs', icon: ClockIcon },
+  { id: 'milestones', label: 'Milestones', icon: TargetIcon },
+  { id: 'releases', label: 'Releases', icon: TagIcon },
   { id: 'analytics', label: 'Analytics', icon: BarChartIcon },
 ]
 
@@ -255,6 +277,14 @@ export function GitHubProjectSettings() {
 
       {activeTab === 'logs' && linkedRepo && (
         <LogsTab logs={syncLogs?.logs || []} total={syncLogs?.total || 0} />
+      )}
+
+      {activeTab === 'milestones' && linkedRepo && project && (
+        <ProjectMilestonesPanel projectId={project.id} />
+      )}
+
+      {activeTab === 'releases' && linkedRepo && project && (
+        <ProjectReleasesPanel projectId={project.id} />
       )}
 
       {activeTab === 'analytics' && linkedRepo && project && (

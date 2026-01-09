@@ -1050,7 +1050,9 @@ model GitHubRepository {
   updatedAt      DateTime            @updatedAt @map("updated_at")
   commits        GitHubCommit[]
   issues         GitHubIssue[]
+  milestones     GitHubMilestone[]
   pullRequests   GitHubPullRequest[]
+  releases       GitHubRelease[]
   installation   GitHubInstallation  @relation(fields: [installationId], references: [id])
   project        Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
   syncLogs       GitHubSyncLog[]
@@ -1221,6 +1223,56 @@ model GitHubReviewComment {
 
   @@unique([reviewId, commentId])
   @@map("github_review_comments")
+}
+
+/// GitHub Milestones
+/// Synced from GitHub, can be linked to Kanbu milestones
+model GitHubMilestone {
+  id              Int              @id @default(autoincrement())
+  repositoryId    Int              @map("repository_id")
+  milestoneNumber Int              @map("milestone_number")
+  milestoneId     BigInt           @map("milestone_id")
+  title           String           @db.VarChar(255)
+  description     String?          @db.Text
+  state           String           @db.VarChar(20) // 'open' | 'closed'
+  dueOn           DateTime?        @map("due_on")
+  closedAt        DateTime?        @map("closed_at")
+  openIssues      Int              @default(0) @map("open_issues")
+  closedIssues    Int              @default(0) @map("closed_issues")
+  htmlUrl         String?          @map("html_url") @db.VarChar(512)
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+  repository      GitHubRepository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+
+  @@unique([repositoryId, milestoneNumber])
+  @@index([state])
+  @@map("github_milestones")
+}
+
+/// GitHub Releases
+/// Track releases and release notes for a repository
+model GitHubRelease {
+  id              Int              @id @default(autoincrement())
+  repositoryId    Int              @map("repository_id")
+  releaseId       BigInt           @map("release_id")
+  tagName         String           @map("tag_name") @db.VarChar(255)
+  name            String?          @db.VarChar(255)
+  body            String?          @db.Text
+  draft           Boolean          @default(false)
+  prerelease      Boolean          @default(false)
+  authorLogin     String?          @map("author_login") @db.VarChar(255)
+  htmlUrl         String?          @map("html_url") @db.VarChar(512)
+  tarballUrl      String?          @map("tarball_url") @db.VarChar(512)
+  zipballUrl      String?          @map("zipball_url") @db.VarChar(512)
+  publishedAt     DateTime?        @map("published_at")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+  repository      GitHubRepository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+
+  @@unique([repositoryId, releaseId])
+  @@index([tagName])
+  @@index([publishedAt])
+  @@map("github_releases")
 }
 
 enum WorkspaceRole {
