@@ -244,3 +244,47 @@ export {
   type CommentContext,
   type BotResponse,
 } from './botService'
+
+export {
+  deploymentService,
+  // Deployment CRUD
+  upsertDeployment,
+  updateDeploymentStatus,
+  getDeployment,
+  getRepositoryDeployments,
+  getLatestDeployments,
+  getEnvironmentHistory,
+  getDeploymentStats,
+  // Webhook processing
+  processDeploymentWebhook,
+  processDeploymentStatusWebhook,
+  // Types
+  type DeploymentStatus,
+  type DeploymentData,
+  type DeploymentInfo,
+  type DeploymentStats,
+  type DeploymentWebhookPayload,
+  type DeploymentStatusWebhookPayload,
+} from './deploymentService'
+
+export {
+  checkRunService,
+  // Check run CRUD
+  upsertCheckRun,
+  getCheckRun,
+  getCheckRunsForCommit,
+  getCheckRunsForPR,
+  getPRCheckSummary,
+  getCheckRunStats,
+  getTestTrends,
+  // Webhook processing
+  processCheckRunWebhook,
+  // Types
+  type CheckRunStatus,
+  type CheckRunConclusion,
+  type CheckRunData,
+  type CheckRunInfo,
+  type CheckRunStats,
+  type PRCheckSummary,
+  type CheckRunWebhookPayload,
+} from './checkRunService'

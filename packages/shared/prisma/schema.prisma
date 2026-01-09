@@ -1053,6 +1053,8 @@ model GitHubRepository {
   milestones     GitHubMilestone[]
   pullRequests   GitHubPullRequest[]
   releases       GitHubRelease[]
+  deployments    GitHubDeployment[]
+  checkRuns      GitHubCheckRun[]
   installation   GitHubInstallation  @relation(fields: [installationId], references: [id])
   project        Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
   syncLogs       GitHubSyncLog[]
@@ -1104,6 +1106,7 @@ model GitHubPullRequest {
   task         Task?               @relation(fields: [taskId], references: [id])
   workflowRuns GitHubWorkflowRun[]
   reviews      GitHubReview[]
+  checkRuns    GitHubCheckRun[]
 
   @@unique([repositoryId, prNumber])
   @@index([taskId])
@@ -1273,6 +1276,56 @@ model GitHubRelease {
   @@index([tagName])
   @@index([publishedAt])
   @@map("github_releases")
+}
+
+/// GitHub Deployments
+/// Tracks deployment events and their status for environments
+model GitHubDeployment {
+  id           Int              @id @default(autoincrement())
+  repositoryId Int              @map("repository_id")
+  deploymentId BigInt           @map("deployment_id")
+  environment  String           @db.VarChar(255)
+  ref          String           @db.VarChar(255)
+  sha          String           @db.VarChar(40)
+  task         String?          @db.VarChar(255)
+  description  String?          @db.Text
+  creator      String?          @db.VarChar(255)
+  status       String           @db.VarChar(50)
+  targetUrl    String?          @map("target_url") @db.VarChar(512)
+  createdAt    DateTime         @default(now()) @map("created_at")
+  updatedAt    DateTime         @updatedAt @map("updated_at")
+  repository   GitHubRepository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+
+  @@unique([repositoryId, deploymentId])
+  @@index([environment])
+  @@index([status])
+  @@map("github_deployments")
+}
+
+/// GitHub Check Runs
+/// Tracks CI check runs and their results
+model GitHubCheckRun {
+  id            Int                @id @default(autoincrement())
+  repositoryId  Int                @map("repository_id")
+  pullRequestId Int?               @map("pull_request_id")
+  checkRunId    BigInt             @map("check_run_id")
+  name          String             @db.VarChar(255)
+  headSha       String             @map("head_sha") @db.VarChar(40)
+  status        String             @db.VarChar(50)
+  conclusion    String?            @db.VarChar(50)
+  startedAt     DateTime?          @map("started_at")
+  completedAt   DateTime?          @map("completed_at")
+  outputTitle   String?            @map("output_title") @db.VarChar(255)
+  outputSummary String?            @map("output_summary") @db.Text
+  createdAt     DateTime           @default(now()) @map("created_at")
+  repository    GitHubRepository   @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  pullRequest   GitHubPullRequest? @relation(fields: [pullRequestId], references: [id], onDelete: SetNull)
+
+  @@unique([repositoryId, checkRunId])
+  @@index([pullRequestId])
+  @@index([headSha])
+  @@index([status])
+  @@map("github_check_runs")
 }
 
 enum WorkspaceRole {

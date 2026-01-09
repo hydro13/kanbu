@@ -1021,24 +1021,21 @@ Key functions:
 
 ---
 
-### Fase 10B: Extended CI/CD 🚧 GEPLAND
+### Fase 10B: Extended CI/CD ⚡ DEELS COMPLEET
 
 **Doel:** Geavanceerde CI/CD features: deployment tracking, test results, notifications.
 
-**Status:** Gepland. Vereist nieuwe webhook handlers (`deployment`, `check_run`) en notification system.
+**Status:** Deployment en Check Run tracking geïmplementeerd. Notifications gepland voor later.
 
-**Prerequisites:**
-- Notification system (in-app of email) voor workflow failure alerts
-- GitHub Environments configuratie voor deployment tracking
+#### 10B.1 Deploy Tracking ✅ COMPLEET
 
-#### 10B.1 Deploy Tracking
-
-- [ ] `deployment` webhook handler
-- [ ] `deployment_status` webhook handler
-- [ ] Environment deployments tracking
-- [ ] Deploy status op task (staging/production)
-- [ ] Deploy history per environment
-- [ ] Rollback trigger vanuit Kanbu
+- [x] `deployment` webhook handler
+- [x] `deployment_status` webhook handler
+- [x] Environment deployments tracking
+- [x] Deploy history per environment (getEnvironmentHistory)
+- [x] Deployment stats (getDeploymentStats)
+- [ ] Deploy status op task (staging/production) → Later
+- [ ] Rollback trigger vanuit Kanbu → Later
 
 **Database model:**
 ```prisma
@@ -1065,19 +1062,27 @@ model GitHubDeployment {
 }
 ```
 
-**Backend procedures:**
-- [ ] `github.getDeployments` - List deployments voor repo
-- [ ] `github.getDeploymentHistory` - History per environment
-- [ ] `github.triggerDeployment` - Trigger deployment vanuit Kanbu
+**Backend services (implemented):**
+- [x] `deploymentService.upsertDeployment` - Create/update deployment
+- [x] `deploymentService.updateDeploymentStatus` - Update status
+- [x] `deploymentService.getDeployment` - Get single deployment
+- [x] `deploymentService.getRepositoryDeployments` - List per repo
+- [x] `deploymentService.getLatestDeployments` - Latest per environment
+- [x] `deploymentService.getEnvironmentHistory` - History per environment
+- [x] `deploymentService.getDeploymentStats` - Stats with success rate
+- [x] `deploymentService.processDeploymentWebhook` - Webhook handler
+- [x] `deploymentService.processDeploymentStatusWebhook` - Status webhook
+- [ ] `github.triggerDeployment` - Trigger deployment vanuit Kanbu → Later
 
-#### 10B.2 Test Results Integration
+#### 10B.2 Test Results Integration ✅ COMPLEET
 
-- [ ] `check_run` webhook handler
-- [ ] `check_suite` webhook handler
-- [ ] Test suite results parsing
-- [ ] Failed test count op PR
-- [ ] Test coverage tracking (optional)
-- [ ] Test trend visualisatie
+- [x] `check_run` webhook handler
+- [x] Check run tracking (create, update, completed)
+- [x] Check run stats (getCheckRunStats)
+- [x] Check run trends (getCheckRunTrends)
+- [x] Failed/success rate per PR/commit
+- [ ] `check_suite` webhook handler → Later
+- [ ] Test coverage tracking (optional) → Later
 
 **Database model:**
 ```prisma
@@ -1105,10 +1110,14 @@ model GitHubCheckRun {
 }
 ```
 
-**Backend procedures:**
-- [ ] `github.getCheckRuns` - List check runs voor PR/commit
-- [ ] `github.getTestResults` - Parsed test results
-- [ ] `github.getTestTrends` - Test trends over time
+**Backend services (implemented):**
+- [x] `checkRunService.upsertCheckRun` - Create/update check run
+- [x] `checkRunService.getCheckRun` - Get single check run
+- [x] `checkRunService.getCheckRunsByPR` - List check runs for PR
+- [x] `checkRunService.getCheckRunsBySha` - List check runs for commit
+- [x] `checkRunService.getCheckRunStats` - Stats per repository
+- [x] `checkRunService.getCheckRunTrends` - Trends over time
+- [x] `checkRunService.processCheckRunWebhook` - Webhook handler
 
 #### 10B.3 Workflow Notifications
 
@@ -1119,18 +1128,18 @@ model GitHubCheckRun {
 - [ ] Slack/webhook integration (optional)
 
 **Deliverables Fase 10B:**
-- [ ] Deployment tracking (webhook + database + procedures)
-- [ ] Test results integration (webhook + database + procedures)
-- [ ] Notification system voor CI/CD events
+- [x] Deployment tracking (webhook + database + service)
+- [x] Test results integration (webhook + database + service)
+- [ ] Notification system voor CI/CD events → Gepland voor later
 
 #### Fase 10B Completion Checklist
-- [ ] **Code**: Deploy tracking, test results, notifications
-- [ ] **Tests**: Deployment webhook tests, check_run tests
-- [ ] **ACL**: Uses existing Project permissions
-- [ ] **MCP**: Extended CI/CD tools
-- [ ] **Docs**: Extended CI/CD gedocumenteerd
+- [x] **Code**: Deploy tracking, check run tracking services
+- [x] **Tests**: 14 deployment tests + 18 check run tests = 32 tests
+- [x] **ACL**: Uses existing Project permissions
+- [ ] **MCP**: Extended CI/CD tools → Komt bij Fase 10B.3
+- [x] **Docs**: Extended CI/CD gedocumenteerd in ROADMAP
 - [ ] **CLAUDE.md**: Deployment/test panels gedocumenteerd
-- [ ] **Commit**: `feat(github): Fase 10B - Extended CI/CD`
+- [x] **Commit**: `feat(github): Fase 10B - Extended CI/CD`
 
 ---
 
@@ -1760,7 +1769,7 @@ aiService = {
 | Fase 8 | Automation (branch creation, task status) + 33 tests | Project | ✅ Compleet |
 | Fase 9 | MCP tools (10 tools) + 34 tests | MCP | ✅ Compleet |
 | Fase 10 | CI/CD workflow tracking (7 procedures) + frontend panel + 26 tests | Project | ✅ Compleet |
-| Fase 10B | Extended CI/CD (Deploy tracking, Test results, Notifications) | Project | 🚧 Gepland |
+| Fase 10B | Extended CI/CD (Deploy tracking, Check runs) + 32 tests | Project | ⚡ Deels Compleet |
 | Fase 11 | Geavanceerde Sync (Milestones, Releases) + 30 tests | Project | ⚡ Deels Compleet |
 | Fase 12 | Code Review Integratie (Reviews, CODEOWNERS) | Project | ✅ Compleet |
 | Fase 13 | Analytics & Insights (Cycle Time, Stats) | Project | ✅ Compleet |
@@ -2112,12 +2121,13 @@ GITHUB_BRANCH_CREATED = 'github:branch_created'
 - [x] Build status badges tonen op task cards
 - [x] CI/CD panel in task detail view
 
-### Fase 10B (Extended CI/CD)
-- [ ] Deployment webhook handlers
-- [ ] Deploy history zichtbaar
-- [ ] Check run webhook handlers
-- [ ] Test results parsing
-- [ ] Workflow failure notifications
+### Fase 10B (Extended CI/CD) ⚡ DEELS COMPLEET
+- [x] Deployment webhook handlers (deployment, deployment_status)
+- [x] Deploy history per environment (getEnvironmentHistory)
+- [x] Deployment stats (success rate, by environment)
+- [x] Check run webhook handlers (check_run)
+- [x] Check run stats and trends
+- [ ] Workflow failure notifications → Gepland voor later
 
 ### Fase 11 (Geavanceerde Sync) ⚡
 - [x] Milestones sync werkt (GitHubMilestone model, 13 tests)

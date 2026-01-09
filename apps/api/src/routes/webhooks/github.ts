@@ -46,6 +46,16 @@ import {
   postTaskInfoComment,
   type CommentContext,
 } from '../../services/github/botService'
+import {
+  processDeploymentWebhook,
+  processDeploymentStatusWebhook,
+  type DeploymentWebhookPayload,
+  type DeploymentStatusWebhookPayload,
+} from '../../services/github/deploymentService'
+import {
+  processCheckRunWebhook,
+  type CheckRunWebhookPayload,
+} from '../../services/github/checkRunService'
 import type { GitHubSyncSettings } from '@kanbu/shared'
 
 // =============================================================================
@@ -152,6 +162,9 @@ type GitHubEventType =
   | 'pull_request_review'
   | 'push'
   | 'workflow_run'
+  | 'deployment'
+  | 'deployment_status'
+  | 'check_run'
   | 'installation'
   | 'installation_repositories'
   | 'ping'
@@ -1020,6 +1033,97 @@ async function handlePullRequestReview(ctx: WebhookContext): Promise<{
 }
 
 // =============================================================================
+// Deployment Handlers (Fase 10B)
+// =============================================================================
+
+/**
+ * Handle deployment event
+ */
+async function handleDeployment(ctx: WebhookContext): Promise<{
+  processed: boolean
+  action: string | undefined
+  environment: string | null
+}> {
+  const { action, payload } = ctx
+  const typedPayload = payload as unknown as DeploymentWebhookPayload
+
+  if (!typedPayload.deployment || !typedPayload.repository) {
+    return { processed: false, action, environment: null }
+  }
+
+  const environment = typedPayload.deployment.environment
+  console.log(`[GitHub Webhook] Deployment ${action}: ${typedPayload.repository.full_name} to ${environment}`)
+
+  const deployment = await processDeploymentWebhook(typedPayload)
+
+  if (deployment) {
+    return { processed: true, action, environment }
+  }
+
+  return { processed: false, action, environment }
+}
+
+/**
+ * Handle deployment_status event
+ */
+async function handleDeploymentStatus(ctx: WebhookContext): Promise<{
+  processed: boolean
+  status: string | null
+}> {
+  const { payload } = ctx
+  const typedPayload = payload as unknown as DeploymentStatusWebhookPayload
+
+  if (!typedPayload.deployment || !typedPayload.deployment_status || !typedPayload.repository) {
+    return { processed: false, status: null }
+  }
+
+  const status = typedPayload.deployment_status.state
+  console.log(`[GitHub Webhook] Deployment status: ${typedPayload.repository.full_name} -> ${status}`)
+
+  const deployment = await processDeploymentStatusWebhook(typedPayload)
+
+  if (deployment) {
+    return { processed: true, status }
+  }
+
+  return { processed: false, status }
+}
+
+// =============================================================================
+// Check Run Handler (Fase 10B)
+// =============================================================================
+
+/**
+ * Handle check_run event
+ */
+async function handleCheckRun(ctx: WebhookContext): Promise<{
+  processed: boolean
+  action: string | undefined
+  checkName: string | null
+  conclusion: string | null
+}> {
+  const { action, payload } = ctx
+  const typedPayload = payload as unknown as CheckRunWebhookPayload
+
+  if (!typedPayload.check_run || !typedPayload.repository) {
+    return { processed: false, action, checkName: null, conclusion: null }
+  }
+
+  const checkName = typedPayload.check_run.name
+  const conclusion = typedPayload.check_run.conclusion
+
+  console.log(`[GitHub Webhook] Check run ${action}: ${typedPayload.repository.full_name} - ${checkName} (${typedPayload.check_run.status}${conclusion ? `/${conclusion}` : ''})`)
+
+  const checkRun = await processCheckRunWebhook(typedPayload)
+
+  if (checkRun) {
+    return { processed: true, action, checkName, conclusion }
+  }
+
+  return { processed: false, action, checkName, conclusion }
+}
+
+// =============================================================================
 // Main Webhook Handler
 // =============================================================================
 
@@ -1111,6 +1215,18 @@ async function webhookHandler(
 
       case 'pull_request_review':
         result = await handlePullRequestReview(ctx)
+        break
+
+      case 'deployment':
+        result = await handleDeployment(ctx)
+        break
+
+      case 'deployment_status':
+        result = await handleDeploymentStatus(ctx)
+        break
+
+      case 'check_run':
+        result = await handleCheckRun(ctx)
         break
 
       default:
