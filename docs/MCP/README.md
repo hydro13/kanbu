@@ -1,8 +1,8 @@
 # Kanbu MCP Server - Claude Code Integration
 
-> **Status: Fase 1 COMPLEET** (2026-01-09)
+> **Status: Fase 3 COMPLEET** (2026-01-09)
 >
-> De MCP server is werkend met pairing tools. Fase 2 (project/task management) volgt.
+> De MCP server is volledig werkend met 23 tools: pairing (3), core (11), en subtasks/comments (9).
 
 ## Overzicht
 
@@ -232,29 +232,43 @@ Als jouw rechten veranderen, veranderen die van Claude automatisch mee.
 | `kanbu_whoami` | Toon verbonden user en rechten | ✅ Werkend |
 | `kanbu_disconnect` | Verbreek verbinding | ✅ Werkend |
 
-### Fase 2 - Core Tools (Gepland)
+### Fase 2 - Core Tools (✅ Geïmplementeerd)
 
-| Tool | Beschrijving | Vereiste Permissie |
-|------|--------------|-------------------|
-| `kanbu_list_workspaces` | Lijst toegankelijke workspaces | R op workspace |
-| `kanbu_list_projects` | Lijst projecten in workspace | R op project |
-| `kanbu_get_project` | Project details | R op project |
-| `kanbu_create_project` | Nieuw project aanmaken | W op workspace |
-| `kanbu_list_tasks` | Taken in project | R op project |
-| `kanbu_get_task` | Taak details | R op task |
-| `kanbu_create_task` | Nieuwe taak | W op project |
-| `kanbu_update_task` | Taak bewerken | W op task |
-| `kanbu_move_task` | Status wijzigen | W op task |
-| `kanbu_my_tasks` | Jouw toegewezen taken | - (eigen taken) |
+| Tool | Beschrijving | Vereiste Permissie | Status |
+|------|--------------|-------------------|--------|
+| `kanbu_list_workspaces` | Lijst toegankelijke workspaces | R op workspace | ✅ Werkend |
+| `kanbu_get_workspace` | Workspace details met projecten | R op workspace | ✅ Werkend |
+| `kanbu_list_projects` | Lijst projecten in workspace | R op project | ✅ Werkend |
+| `kanbu_get_project` | Project details met columns | R op project | ✅ Werkend |
+| `kanbu_create_project` | Nieuw project aanmaken | W op workspace | ✅ Werkend |
+| `kanbu_list_tasks` | Taken in project met filters | R op project | ✅ Werkend |
+| `kanbu_get_task` | Taak details met subtasks/comments | R op task | ✅ Werkend |
+| `kanbu_create_task` | Nieuwe taak aanmaken | W op project | ✅ Werkend |
+| `kanbu_update_task` | Taak bewerken | W op task | ✅ Werkend |
+| `kanbu_move_task` | Status/kolom wijzigen | W op task | ✅ Werkend |
+| `kanbu_my_tasks` | Jouw toegewezen taken | - (eigen taken) | ✅ Werkend |
 
-### Fase 3+ - Extended Tools (Gepland)
+### Fase 3 - Subtask & Comment Tools (✅ Geïmplementeerd)
+
+| Tool | Beschrijving | Vereiste Permissie | Status |
+|------|--------------|-------------------|--------|
+| `kanbu_list_subtasks` | Lijst subtaken voor een taak | R op project | ✅ Werkend |
+| `kanbu_create_subtask` | Nieuwe subtaak aanmaken | W op project | ✅ Werkend |
+| `kanbu_update_subtask` | Subtaak properties bewerken | W op project | ✅ Werkend |
+| `kanbu_toggle_subtask` | Toggle TODO/DONE status | W op project | ✅ Werkend |
+| `kanbu_delete_subtask` | Subtaak verwijderen | W op project | ✅ Werkend |
+| `kanbu_list_comments` | Comments op een taak | R op project | ✅ Werkend |
+| `kanbu_add_comment` | Comment toevoegen | W op project | ✅ Werkend |
+| `kanbu_update_comment` | Eigen comment bewerken | W op project | ✅ Werkend |
+| `kanbu_delete_comment` | Comment verwijderen | W op project | ✅ Werkend |
+
+### Fase 4+ - Extended Tools (Gepland)
 
 | Tool | Beschrijving |
 |------|--------------|
-| `kanbu_create_subtask` | Subtaak aanmaken |
-| `kanbu_add_comment` | Comment toevoegen |
 | `kanbu_search_tasks` | Zoeken in taken |
 | `kanbu_project_stats` | Project statistieken |
+| `kanbu_bulk_update` | Bulk taak updates |
 
 ## Audit Logging
 

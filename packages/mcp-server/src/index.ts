@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /*
  * Kanbu MCP Server
- * Version: 1.0.0
+ * Version: 1.2.0
  *
  * MCP Server for Claude Code integration with Kanbu.
  * Implements pairing flow and provides tools for project/task management.
@@ -11,7 +11,7 @@
  * Claude Code: Opus 4.5
  * Host: MAX
  * Date: 2026-01-09
- * Fase: 9.7 - Claude Code MCP Integration
+ * Fase: MCP Fase 3 - Subtasks & Comments
  * ═══════════════════════════════════════════════════════════════════
  */
 
@@ -27,6 +27,43 @@ import { z } from 'zod'
 import { TokenStorage } from './storage.js'
 import { KanbuClient } from './client.js'
 import { getMachineId, getMachineName } from './machine.js'
+
+// Tool imports
+import {
+  workspaceToolDefinitions,
+  handleListWorkspaces,
+  handleGetWorkspace,
+} from './tools/workspaces.js'
+import {
+  projectToolDefinitions,
+  handleListProjects,
+  handleGetProject,
+  handleCreateProject,
+} from './tools/projects.js'
+import {
+  taskToolDefinitions,
+  handleListTasks,
+  handleGetTask,
+  handleCreateTask,
+  handleUpdateTask,
+  handleMoveTask,
+  handleMyTasks,
+} from './tools/tasks.js'
+import {
+  subtaskToolDefinitions,
+  handleListSubtasks,
+  handleCreateSubtask,
+  handleUpdateSubtask,
+  handleToggleSubtask,
+  handleDeleteSubtask,
+} from './tools/subtasks.js'
+import {
+  commentToolDefinitions,
+  handleListComments,
+  handleAddComment,
+  handleUpdateComment,
+  handleDeleteComment,
+} from './tools/comments.js'
 
 // =============================================================================
 // Tool Schemas
@@ -68,10 +105,9 @@ const client = new KanbuClient()
  * List available tools
  */
 server.setRequestHandler(ListToolsRequestSchema, async () => {
-  const isConnected = storage.hasToken()
-
   return {
     tools: [
+      // Pairing tools (Fase 1)
       {
         name: 'kanbu_connect',
         description: 'Connect to Kanbu using a setup code from your profile page. After connecting, you can manage projects and tasks on behalf of the user.',
@@ -102,7 +138,16 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           properties: {},
         },
       },
-      // Additional tools will be added in Phase 2
+      // Workspace tools (Fase 2)
+      ...workspaceToolDefinitions,
+      // Project tools (Fase 2)
+      ...projectToolDefinitions,
+      // Task tools (Fase 2)
+      ...taskToolDefinitions,
+      // Subtask tools (Fase 3)
+      ...subtaskToolDefinitions,
+      // Comment tools (Fase 3)
+      ...commentToolDefinitions,
     ],
   }
 })
@@ -115,12 +160,64 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   try {
     switch (name) {
+      // Pairing tools (Fase 1)
       case 'kanbu_connect':
         return await handleConnect(args)
       case 'kanbu_whoami':
         return await handleWhoAmI()
       case 'kanbu_disconnect':
         return await handleDisconnect()
+
+      // Workspace tools (Fase 2)
+      case 'kanbu_list_workspaces':
+        return await handleListWorkspaces(args)
+      case 'kanbu_get_workspace':
+        return await handleGetWorkspace(args)
+
+      // Project tools (Fase 2)
+      case 'kanbu_list_projects':
+        return await handleListProjects(args)
+      case 'kanbu_get_project':
+        return await handleGetProject(args)
+      case 'kanbu_create_project':
+        return await handleCreateProject(args)
+
+      // Task tools (Fase 2)
+      case 'kanbu_list_tasks':
+        return await handleListTasks(args)
+      case 'kanbu_get_task':
+        return await handleGetTask(args)
+      case 'kanbu_create_task':
+        return await handleCreateTask(args)
+      case 'kanbu_update_task':
+        return await handleUpdateTask(args)
+      case 'kanbu_move_task':
+        return await handleMoveTask(args)
+      case 'kanbu_my_tasks':
+        return await handleMyTasks(args)
+
+      // Subtask tools (Fase 3)
+      case 'kanbu_list_subtasks':
+        return await handleListSubtasks(args)
+      case 'kanbu_create_subtask':
+        return await handleCreateSubtask(args)
+      case 'kanbu_update_subtask':
+        return await handleUpdateSubtask(args)
+      case 'kanbu_toggle_subtask':
+        return await handleToggleSubtask(args)
+      case 'kanbu_delete_subtask':
+        return await handleDeleteSubtask(args)
+
+      // Comment tools (Fase 3)
+      case 'kanbu_list_comments':
+        return await handleListComments(args)
+      case 'kanbu_add_comment':
+        return await handleAddComment(args)
+      case 'kanbu_update_comment':
+        return await handleUpdateComment(args)
+      case 'kanbu_delete_comment':
+        return await handleDeleteComment(args)
+
       default:
         throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`)
     }

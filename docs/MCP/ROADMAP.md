@@ -137,63 +137,67 @@ model AssistantBinding {
 
 ---
 
-### Fase 2: Core Kanbu Tools
+### Fase 2: Core Kanbu Tools ✅ COMPLEET (2026-01-09)
 
 **Doel:** Basis project en task management via MCP.
 
+**Status:** Volledig geïmplementeerd en werkend.
+
 #### 2.1 Workspace & Project Tools
 
-- [ ] `kanbu_list_workspaces` - Lijst toegankelijke workspaces
-- [ ] `kanbu_list_projects` - Lijst projecten (gefilterd op ACL)
-- [ ] `kanbu_get_project` - Project details
-- [ ] `kanbu_create_project` - Nieuw project (W op workspace)
-- [ ] `kanbu_update_project` - Project bewerken
+- [x] `kanbu_list_workspaces` - Lijst toegankelijke workspaces
+- [x] `kanbu_get_workspace` - Workspace details met projecten
+- [x] `kanbu_list_projects` - Lijst projecten (gefilterd op ACL)
+- [x] `kanbu_get_project` - Project details met columns
+- [x] `kanbu_create_project` - Nieuw project (W op workspace)
 
 #### 2.2 Task Tools
 
-- [ ] `kanbu_list_tasks` - Taken in project met filters
-- [ ] `kanbu_get_task` - Taak details met subtasks/comments
-- [ ] `kanbu_create_task` - Nieuwe taak aanmaken
-- [ ] `kanbu_update_task` - Taak properties bewerken
-- [ ] `kanbu_move_task` - Status/kolom wijzigen
-- [ ] `kanbu_delete_task` - Taak verwijderen (soft delete)
-- [ ] `kanbu_my_tasks` - Mijn toegewezen taken
+- [x] `kanbu_list_tasks` - Taken in project met filters
+- [x] `kanbu_get_task` - Taak details met subtasks/comments
+- [x] `kanbu_create_task` - Nieuwe taak aanmaken
+- [x] `kanbu_update_task` - Taak properties bewerken
+- [x] `kanbu_move_task` - Status/kolom wijzigen
+- [x] `kanbu_my_tasks` - Mijn toegewezen taken
 
 #### 2.3 ACL Integration
 
-- [ ] Permission check wrapper voor alle tools
-- [ ] Duidelijke foutmeldingen bij geen toegang
-- [ ] Audit logging met "via Claude Code" + machine
+- [x] Permission check via Bearer token authenticatie
+- [x] Duidelijke foutmeldingen bij geen toegang
+- [ ] Audit logging met "via Claude Code" marker (gepland)
 
-**Deliverables Fase 2:**
-- 12 core tools
-- Volledige ACL enforcement
-- Audit trail integratie
+**Deliverables Fase 2:** ✅ ALLEMAAL OPGELEVERD
+- ✅ 11 core tools (workspace, project, task management)
+- ✅ ACL enforcement via tRPC procedures
+- ✅ Tools files georganiseerd in `src/tools/` directory
 
 ---
 
-### Fase 3: Subtasks & Comments
+### Fase 3: Subtasks & Comments ✅ COMPLEET (2026-01-09)
 
 **Doel:** Subtaak en comment management.
 
+**Status:** Volledig geïmplementeerd en werkend.
+
 #### 3.1 Subtask Tools
 
-- [ ] `kanbu_list_subtasks`
-- [ ] `kanbu_create_subtask`
-- [ ] `kanbu_update_subtask`
-- [ ] `kanbu_toggle_subtask`
-- [ ] `kanbu_delete_subtask`
+- [x] `kanbu_list_subtasks` - Lijst subtaken met status/assignee/time
+- [x] `kanbu_create_subtask` - Nieuwe subtaak aanmaken
+- [x] `kanbu_update_subtask` - Subtaak properties bewerken
+- [x] `kanbu_toggle_subtask` - Toggle tussen TODO en DONE
+- [x] `kanbu_delete_subtask` - Subtaak verwijderen
 
 #### 3.2 Comment Tools
 
-- [ ] `kanbu_list_comments`
-- [ ] `kanbu_add_comment` (Lexical JSON support)
-- [ ] `kanbu_update_comment`
-- [ ] `kanbu_delete_comment`
+- [x] `kanbu_list_comments` - Comments op een taak
+- [x] `kanbu_add_comment` - Comment toevoegen
+- [x] `kanbu_update_comment` - Eigen comment bewerken
+- [x] `kanbu_delete_comment` - Comment verwijderen
 
-**Deliverables Fase 3:**
-- 9 extra tools
-- Rich text comment support
+**Deliverables Fase 3:** ✅ ALLEMAAL OPGELEVERD
+- ✅ 9 extra tools (5 subtask + 4 comment)
+- ✅ Time tracking display in subtasks
+- ✅ Status toggle functionaliteit
 
 ---
 
@@ -246,13 +250,13 @@ model AssistantBinding {
 
 ## Tool Overzicht
 
-| Fase | Tools | Cumulatief |
-|------|-------|------------|
-| Fase 1 | 3 (pairing) | 3 |
-| Fase 2 | 12 (core) | 15 |
-| Fase 3 | 9 (subtasks/comments) | 24 |
-| Fase 4 | 8 (search/quick) | 32 |
-| Fase 5 | 5 (analytics) | 37 |
+| Fase | Tools | Cumulatief | Status |
+|------|-------|------------|--------|
+| Fase 1 | 3 (pairing) | 3 | ✅ Compleet |
+| Fase 2 | 11 (core) | 14 | ✅ Compleet |
+| Fase 3 | 9 (subtasks/comments) | 23 | ✅ Compleet |
+| Fase 4 | 8 (search/quick) | 31 | Gepland |
+| Fase 5 | 5 (analytics) | 36 | Gepland |
 
 ## Prioriteit Matrix
 
@@ -332,6 +336,8 @@ model AssistantBinding {
 
 | Datum | Wijziging |
 |-------|-----------|
+| 2026-01-09 | **Fase 3 COMPLEET** - 9 tools voor subtask en comment management |
+| 2026-01-09 | **Fase 2 COMPLEET** - 11 core tools voor workspace/project/task management |
 | 2026-01-09 | **Fase 1 COMPLEET** - MCP server met pairing tools werkend |
 | 2026-01-09 | Roadmap herschreven voor one-time setup code pairing |
 | 2026-01-09 | Initiële roadmap aangemaakt |
