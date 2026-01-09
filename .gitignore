@@ -49,6 +49,9 @@ packages/shared/prisma/*.db-journal
 # TypeScript build info
 *.tsbuildinfo
 
+# Vite generated config (we use .ts)
+vite.config.js
+
 # Claude Code session files
 CLAUDE.md
 
