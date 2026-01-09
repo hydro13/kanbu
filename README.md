@@ -53,7 +53,7 @@ A modern, self-hostable project management tool with Kanban boards, real-time co
 - **Audit Logging** - All API key events logged (create, use, revoke)
 
 ### AI Assistant (Claude Code Integration)
-- **MCP Server** - Model Context Protocol server with **95 tools** for Claude Code
+- **MCP Server** - Model Context Protocol server with **131 tools** for Claude Code
 - **One-time Setup Code** - Secure pairing flow (KNB-XXXX-XXXX format, 5-min TTL)
 - **Permission Inheritance** - Claude inherits your ACL permissions
 - **Multi-machine Support** - Connect from multiple workstations
@@ -124,7 +124,7 @@ kanbu/
 │   │   │   └── seed-permissions.ts
 │   │   └── src/                # Shared types
 │   │
-│   └── mcp-server/             # Claude Code MCP integration (95 tools)
+│   └── mcp-server/             # Claude Code MCP integration (131 tools)
 │       └── src/
 │           ├── index.ts        # MCP server entry point (v2.0.0)
 │           ├── tools.ts        # Shared helpers and types
@@ -372,9 +372,9 @@ The ACL entry grants Full Control (31 = RWXDP) on admin resources.
 
 ## AI Assistant Setup (Claude Code)
 
-Connect Claude Code to manage your Kanbu projects with **95 available tools** across 11 phases:
+Connect Claude Code to manage your Kanbu projects with **131 available tools** across 12 phases:
 
-### Available Tools (95 total)
+### Available Tools (131 total)
 
 | Phase | Category | Tools | Examples |
 |-------|----------|-------|----------|
@@ -389,6 +389,7 @@ Connect Claude Code to manage your Kanbu projects with **95 available tools** ac
 | **9** | Invites | 5 | `kanbu_list_invites`, `kanbu_send_invite`, `kanbu_cancel_invite` |
 | **10** | Audit Logs | 5 | `kanbu_list_audit_logs`, `kanbu_audit_stats`, `kanbu_export_audit_logs` |
 | **11** | System | 12 | `kanbu_get_settings`, `kanbu_create_db_backup`, `kanbu_admin_list_workspaces` |
+| **12** | Profile | 36 | `kanbu_get_profile`, `kanbu_setup_2fa`, `kanbu_create_api_token` |
 
 ### 1. Build the MCP Server
 

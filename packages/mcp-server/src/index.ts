@@ -11,7 +11,7 @@
  * Claude Code: Opus 4.5
  * Host: MAX
  * Date: 2026-01-09
- * Fase: MCP Fase 11 - System Settings & Backup (ALL PHASES COMPLETE!)
+ * Fase: MCP Fase 12 - Profile Management (ALL PHASES COMPLETE!)
  * ═══════════════════════════════════════════════════════════════════
  */
 
@@ -163,6 +163,43 @@ import {
   handleAdminDeleteWorkspace,
   handleAdminReactivateWorkspace,
 } from './tools/system.js'
+import {
+  profileToolDefinitions,
+  handleGetProfile,
+  handleGetTimeTracking,
+  handleGetLogins,
+  handleGetSessions,
+  handleGetPasswordHistory,
+  handleGetMetadata,
+  handleUpdateProfile,
+  handleRemoveAvatar,
+  handleChangePassword,
+  handleGet2FAStatus,
+  handleSetup2FA,
+  handleVerify2FA,
+  handleDisableOwn2FA,
+  handleRegenerateBackupCodes,
+  handleGetPublicAccess,
+  handleEnablePublicAccess,
+  handleDisablePublicAccess,
+  handleRegeneratePublicToken,
+  handleGetNotificationSettings,
+  handleUpdateNotificationSettings,
+  handleListExternalAccounts,
+  handleUnlinkExternalAccount,
+  handleListApiTokens,
+  handleCreateApiToken,
+  handleRevokeApiToken,
+  handleGetApiPermissions,
+  handleListAiBindings,
+  handleRevokeAiBinding,
+  handleGetHourlyRate,
+  handleSetHourlyRate,
+  handleSetMetadata,
+  handleDeleteMetadata,
+  handleRevokeSession,
+  handleRevokeAllSessions,
+} from './tools/profile.js'
 
 // =============================================================================
 // Tool Schemas
@@ -265,6 +302,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       ...auditToolDefinitions,
       // System tools (Fase 11)
       ...systemToolDefinitions,
+      // Profile tools (Fase 12)
+      ...profileToolDefinitions,
     ],
   }
 })
@@ -496,6 +535,76 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return await handleAdminDeleteWorkspace(args)
       case 'kanbu_admin_reactivate_workspace':
         return await handleAdminReactivateWorkspace(args)
+
+      // Profile tools (Fase 12)
+      case 'kanbu_get_profile':
+        return await handleGetProfile(args)
+      case 'kanbu_get_time_tracking':
+        return await handleGetTimeTracking(args)
+      case 'kanbu_get_logins':
+        return await handleGetLogins(args)
+      case 'kanbu_get_sessions':
+        return await handleGetSessions(args)
+      case 'kanbu_get_password_history':
+        return await handleGetPasswordHistory(args)
+      case 'kanbu_get_metadata':
+        return await handleGetMetadata(args)
+      case 'kanbu_update_profile':
+        return await handleUpdateProfile(args)
+      case 'kanbu_remove_avatar':
+        return await handleRemoveAvatar(args)
+      case 'kanbu_change_password':
+        return await handleChangePassword(args)
+      case 'kanbu_get_2fa_status':
+        return await handleGet2FAStatus(args)
+      case 'kanbu_setup_2fa':
+        return await handleSetup2FA(args)
+      case 'kanbu_verify_2fa':
+        return await handleVerify2FA(args)
+      case 'kanbu_disable_2fa':
+        return await handleDisableOwn2FA(args)
+      case 'kanbu_regenerate_backup_codes':
+        return await handleRegenerateBackupCodes(args)
+      case 'kanbu_get_public_access':
+        return await handleGetPublicAccess(args)
+      case 'kanbu_enable_public_access':
+        return await handleEnablePublicAccess(args)
+      case 'kanbu_disable_public_access':
+        return await handleDisablePublicAccess(args)
+      case 'kanbu_regenerate_public_token':
+        return await handleRegeneratePublicToken(args)
+      case 'kanbu_get_notification_settings':
+        return await handleGetNotificationSettings(args)
+      case 'kanbu_update_notification_settings':
+        return await handleUpdateNotificationSettings(args)
+      case 'kanbu_list_external_accounts':
+        return await handleListExternalAccounts(args)
+      case 'kanbu_unlink_external_account':
+        return await handleUnlinkExternalAccount(args)
+      case 'kanbu_list_api_tokens':
+        return await handleListApiTokens(args)
+      case 'kanbu_create_api_token':
+        return await handleCreateApiToken(args)
+      case 'kanbu_revoke_api_token':
+        return await handleRevokeApiToken(args)
+      case 'kanbu_get_api_permissions':
+        return await handleGetApiPermissions(args)
+      case 'kanbu_list_ai_bindings':
+        return await handleListAiBindings(args)
+      case 'kanbu_revoke_ai_binding':
+        return await handleRevokeAiBinding(args)
+      case 'kanbu_get_hourly_rate':
+        return await handleGetHourlyRate(args)
+      case 'kanbu_set_hourly_rate':
+        return await handleSetHourlyRate(args)
+      case 'kanbu_set_metadata':
+        return await handleSetMetadata(args)
+      case 'kanbu_delete_metadata':
+        return await handleDeleteMetadata(args)
+      case 'kanbu_revoke_session':
+        return await handleRevokeSession(args)
+      case 'kanbu_revoke_all_sessions':
+        return await handleRevokeAllSessions(args)
 
       default:
         throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`)

@@ -37,3 +37,6 @@ export * from './audit.js'
 
 // Fase 11 - System Settings & Backup
 export * from './system.js'
+
+// Fase 12 - Profile Management
+export * from './profile.js'

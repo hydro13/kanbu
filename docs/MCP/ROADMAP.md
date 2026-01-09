@@ -421,80 +421,83 @@ model AssistantBinding {
 
 ---
 
-### Fase 12: Profile Management 🚧 GEPLAND
+### Fase 12: Profile Management ✅ COMPLEET
 
 **Doel:** Eigen profiel beheer via MCP (alle functies uit Profile Settings sidebar).
 
-**Status:** Gepland.
+**Status:** Voltooid.
 
 #### 12.1 Profile Information Tools
 
-- [ ] `kanbu_get_profile` - Eigen profiel samenvatting ophalen
-- [ ] `kanbu_get_time_tracking` - Eigen time tracking overzicht (per project/periode)
-- [ ] `kanbu_get_logins` - Eigen login historie
-- [ ] `kanbu_get_connections` - Persistent connections (actieve sessies)
-- [ ] `kanbu_get_password_history` - Wachtwoord reset historie
-- [ ] `kanbu_get_metadata` - Eigen user metadata
+- [x] `kanbu_get_profile` - Eigen profiel samenvatting ophalen
+- [x] `kanbu_get_time_tracking` - Eigen time tracking overzicht (per project/periode)
+- [x] `kanbu_get_logins` - Eigen login historie
+- [x] `kanbu_get_sessions` - Actieve sessies ophalen
+- [x] `kanbu_get_password_history` - Wachtwoord reset historie
+- [x] `kanbu_get_metadata` - Eigen user metadata
 
 #### 12.2 Profile Update Tools
 
-- [ ] `kanbu_update_profile` - Profiel bewerken (name, display name, email, timezone, etc.)
-- [ ] `kanbu_remove_avatar` - Avatar verwijderen
-- [ ] `kanbu_change_password` - Eigen wachtwoord wijzigen
+- [x] `kanbu_update_profile` - Profiel bewerken (name, display name, email, timezone, etc.)
+- [x] `kanbu_remove_avatar` - Avatar verwijderen
+- [x] `kanbu_change_password` - Eigen wachtwoord wijzigen
 
 #### 12.3 Two Factor Authentication Tools
 
-- [ ] `kanbu_get_2fa_status` - 2FA status ophalen (enabled, backup codes count)
-- [ ] `kanbu_setup_2fa` - 2FA setup initiëren (genereert TOTP secret en QR data)
-- [ ] `kanbu_verify_2fa` - 2FA verificatie (code checken en activeren)
-- [ ] `kanbu_disable_own_2fa` - Eigen 2FA uitschakelen (vereist wachtwoord)
-- [ ] `kanbu_regenerate_backup_codes` - Nieuwe backup codes genereren
+- [x] `kanbu_get_2fa_status` - 2FA status ophalen (enabled, backup codes count)
+- [x] `kanbu_setup_2fa` - 2FA setup initiëren (genereert TOTP secret en QR data)
+- [x] `kanbu_verify_2fa` - 2FA verificatie (code checken en activeren)
+- [x] `kanbu_disable_2fa` - Eigen 2FA uitschakelen (vereist wachtwoord)
+- [x] `kanbu_regenerate_backup_codes` - Nieuwe backup codes genereren
 
 #### 12.4 Public Access Tools
 
-- [ ] `kanbu_get_public_access` - Public access instellingen ophalen
-- [ ] `kanbu_update_public_access` - Public access instellingen wijzigen
+- [x] `kanbu_get_public_access` - Public access instellingen ophalen
+- [x] `kanbu_update_public_access` - Public access instellingen wijzigen
+- [x] `kanbu_get_public_link` - Public profile link ophalen
+- [x] `kanbu_regenerate_public_token` - Nieuwe public access token genereren
 
 #### 12.5 Notification Tools
 
-- [ ] `kanbu_get_notifications` - Notificatie-instellingen ophalen
-- [ ] `kanbu_update_notifications` - Notificatie-instellingen wijzigen (email, push, in-app)
+- [x] `kanbu_get_notifications` - Notificatie-instellingen ophalen
+- [x] `kanbu_update_notifications` - Notificatie-instellingen wijzigen (email, push, in-app)
 
 #### 12.6 External Accounts Tools
 
-- [ ] `kanbu_list_external_accounts` - Gekoppelde externe accounts (OAuth providers)
-- [ ] `kanbu_unlink_external_account` - Externe account ontkoppelen
+- [x] `kanbu_list_external_accounts` - Gekoppelde externe accounts (OAuth providers)
+- [x] `kanbu_unlink_external_account` - Externe account ontkoppelen
 
-#### 12.7 Integrations Tools
+#### 12.7 API Tokens Tools
 
-- [ ] `kanbu_list_integrations` - Beschikbare integraties ophalen
-- [ ] `kanbu_get_integration` - Integratie details en configuratie
-- [ ] `kanbu_update_integration` - Integratie configuratie wijzigen
+- [x] `kanbu_list_api_tokens` - Eigen API tokens ophalen
+- [x] `kanbu_create_api_token` - Nieuw API token aanmaken (met scope en expiry)
+- [x] `kanbu_get_api_token` - API token details ophalen
+- [x] `kanbu_revoke_api_token` - API token intrekken
 
-#### 12.8 API Tokens Tools
+#### 12.8 AI Assistant Tools (uitbreiding)
 
-- [ ] `kanbu_list_api_tokens` - Eigen API tokens ophalen
-- [ ] `kanbu_create_api_token` - Nieuw API token aanmaken (met scope en expiry)
-- [ ] `kanbu_get_api_token` - API token details ophalen
-- [ ] `kanbu_revoke_api_token` - API token intrekken
+- [x] `kanbu_list_ai_bindings` - Alle AI assistant bindings bekijken
+- [x] `kanbu_revoke_ai_binding` - Specifieke AI binding intrekken
 
-#### 12.9 AI Assistant Tools (uitbreiding)
+#### 12.9 Hourly Rate Tools
 
-- [ ] `kanbu_list_ai_bindings` - Alle AI assistant bindings bekijken
-- [ ] `kanbu_revoke_ai_binding` - Specifieke AI binding intrekken
+- [x] `kanbu_get_hourly_rate` - Eigen uurtarief ophalen
+- [x] `kanbu_set_hourly_rate` - Uurtarief instellen (currency, rate)
 
-#### 12.10 Hourly Rate Tools
+#### 12.10 Session Management Tools
 
-- [ ] `kanbu_get_hourly_rate` - Eigen uurtarief ophalen
-- [ ] `kanbu_set_hourly_rate` - Uurtarief instellen (currency, rate)
+- [x] `kanbu_revoke_session` - Specifieke sessie beëindigen
+- [x] `kanbu_revoke_all_sessions` - Alle sessies beëindigen (behalve huidige)
 
 **Deliverables Fase 12:**
-- [ ] 32 profile management tools
-- [ ] Self-service profiel beheer
-- [ ] 2FA setup en beheer
-- [ ] API tokens beheer met scopes
-- [ ] Notification preferences
-- [ ] Hourly rate voor time tracking
+- [x] 36 profile management tools
+- [x] Self-service profiel beheer
+- [x] 2FA setup en beheer (TOTP)
+- [x] API tokens beheer met scopes
+- [x] Notification preferences
+- [x] Hourly rate voor time tracking
+- [x] Public access link management
+- [x] Session management
 
 ---
 
@@ -513,7 +516,7 @@ model AssistantBinding {
 | Fase 9 | 5 (invites) | 78 | ✅ Compleet |
 | Fase 10 | 5 (audit) | 83 | ✅ Compleet |
 | Fase 11 | 12 (system) | 95 | ✅ Compleet |
-| Fase 12 | 32 (profile) | 127 | 🚧 Gepland |
+| Fase 12 | 36 (profile) | 131 | ✅ Compleet |
 
 ## Prioriteit Matrix
 
@@ -593,9 +596,9 @@ model AssistantBinding {
 
 | Datum | Wijziging |
 |-------|-----------|
-| 2026-01-09 | **Fase 12 GEPLAND** - 32 tools voor profile management (info, 2FA, notifications, API tokens, etc.) |
+| 2026-01-09 | **Fase 12 COMPLEET** - 36 tools voor profile management (info, 2FA, notifications, API tokens, sessions, hourly rate) |
+| 2026-01-09 | **ALL 12 PHASES COMPLETE!** - 131 MCP tools geïmplementeerd across 12 phases |
 | 2026-01-09 | **Fase 11 COMPLEET** - 12 tools voor system settings & backup (settings, backup, admin workspaces) |
-| 2026-01-09 | **ALL ADMIN PHASES COMPLETE!** - 95 MCP tools geïmplementeerd across 11 phases |
 | 2026-01-09 | **Fase 10 COMPLEET** - 5 tools voor audit logs (list, get, stats, export, categories) |
 | 2026-01-09 | **Fase 9 COMPLEET** - 5 tools voor invite management (list, get, send, cancel, resend) |
 | 2026-01-09 | **Fase 8 COMPLEET** - 20 tools voor ACL management (query, grant, deny, bulk, export, import, simulate) |
