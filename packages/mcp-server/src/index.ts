@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /*
  * Kanbu MCP Server
- * Version: 1.3.0
+ * Version: 1.4.0
  *
  * MCP Server for Claude Code integration with Kanbu.
  * Implements pairing flow and provides tools for project/task management.
@@ -11,7 +11,7 @@
  * Claude Code: Opus 4.5
  * Host: MAX
  * Date: 2026-01-09
- * Fase: MCP Fase 4 - Search & Smart Features
+ * Fase: MCP Fase 5 - Analytics & Insights
  * ═══════════════════════════════════════════════════════════════════
  */
 
@@ -75,6 +75,13 @@ import {
   handleTaskActivity,
   handleActivityStats,
 } from './tools/activity.js'
+import {
+  analyticsToolDefinitions,
+  handleProjectStats,
+  handleVelocity,
+  handleCycleTime,
+  handleTeamWorkload,
+} from './tools/analytics.js'
 
 // =============================================================================
 // Tool Schemas
@@ -163,6 +170,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       ...searchToolDefinitions,
       // Activity tools (Fase 4)
       ...activityToolDefinitions,
+      // Analytics tools (Fase 5)
+      ...analyticsToolDefinitions,
     ],
   }
 })
@@ -246,6 +255,16 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return await handleTaskActivity(args)
       case 'kanbu_activity_stats':
         return await handleActivityStats(args)
+
+      // Analytics tools (Fase 5)
+      case 'kanbu_project_stats':
+        return await handleProjectStats(args)
+      case 'kanbu_velocity':
+        return await handleVelocity(args)
+      case 'kanbu_cycle_time':
+        return await handleCycleTime(args)
+      case 'kanbu_team_workload':
+        return await handleTeamWorkload(args)
 
       default:
         throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`)

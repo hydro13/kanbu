@@ -1,8 +1,8 @@
 # Kanbu MCP Server - Claude Code Integration
 
-> **Status: Fase 4 COMPLEET** (2026-01-09)
+> **Status: Fase 5 COMPLEET** (2026-01-09)
 >
-> De MCP server is volledig werkend met 28 tools: pairing (3), core (11), subtasks/comments (9), en search/activity (5).
+> De MCP server is volledig werkend met 32 tools: pairing (3), core (11), subtasks/comments (9), search/activity (5), en analytics (4).
 
 ## Overzicht
 
@@ -272,13 +272,21 @@ Als jouw rechten veranderen, veranderen die van Claude automatisch mee.
 | `kanbu_task_activity` | Activiteit historie voor een taak | R op project | ✅ Werkend |
 | `kanbu_activity_stats` | Activiteit statistieken (30 dagen) | R op project | ✅ Werkend |
 
-### Fase 5+ - Extended Tools (Gepland)
+### Fase 5 - Analytics & Insights Tools (✅ Geïmplementeerd)
+
+| Tool | Beschrijving | Vereiste Permissie | Status |
+|------|--------------|-------------------|--------|
+| `kanbu_project_stats` | Project statistieken, completion rate, trends | R op project | ✅ Werkend |
+| `kanbu_velocity` | Team velocity per week, rolling average | R op project | ✅ Werkend |
+| `kanbu_cycle_time` | Cycle time per kolom, bottleneck detectie | R op project | ✅ Werkend |
+| `kanbu_team_workload` | Workload per teamlid, overdue counts | R op project | ✅ Werkend |
+
+### Fase 6+ - Extended Tools (Gepland)
 
 | Tool | Beschrijving |
 |------|--------------|
-| `kanbu_project_stats` | Project statistieken |
 | `kanbu_burndown_data` | Burndown chart data |
-| `kanbu_my_productivity` | Persoonlijke productiviteit |
+| `kanbu_forecast` | Sprint/project completion forecast |
 
 ## Audit Logging
 

@@ -16,3 +16,6 @@ export * from './comments.js'
 // Fase 4 - Search & Activity
 export * from './search.js'
 export * from './activity.js'
+
+// Fase 5 - Analytics & Insights
+export * from './analytics.js'
