@@ -1,1 +1,0 @@
-{"version":3,"file":"router.d.ts","sourceRoot":"","sources":["../../src/trpc/router.ts"],"names":[],"mappings":"AAAA;;;;GAIG;AAGH,OAAO,KAAK,EAAW,QAAQ,EAAE,MAAM,WAAW,CAAC;AAWnD;;GAEG;AACH,eAAO,MAAM,MAAM;;;;;;;;;;EAAW,CAAC;AAC/B,eAAO,MAAM,eAAe;;;;;yLAAc,CAAC;AAC3C,eAAO,MAAM,UAAU;;;;;;;;;;sCAAe,CAAC;AAEvC;;;GAGG;AACH,eAAO,MAAM,kBAAkB;;;;;;;;;;yKAe9B,CAAC"}

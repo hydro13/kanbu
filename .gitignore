@@ -46,6 +46,9 @@ packages/shared/prisma/*.db-journal
 # Turbo
 .turbo/
 
+# TypeScript build info
+*.tsbuildinfo
+
 # Claude Code session files
 CLAUDE.md
 
