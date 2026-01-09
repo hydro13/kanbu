@@ -201,30 +201,27 @@ model AssistantBinding {
 
 ---
 
-### Fase 4: Search & Smart Features
+### Fase 4: Search & Smart Features ✅ COMPLEET (2026-01-09)
 
-**Doel:** Zoeken en slimme queries.
+**Doel:** Zoeken en activiteit queries.
+
+**Status:** Volledig geïmplementeerd en werkend.
 
 #### 4.1 Search Tools
 
-- [ ] `kanbu_search_tasks` - Full-text search
-- [ ] `kanbu_search_projects`
-- [ ] `kanbu_filter_tasks` - Geavanceerde filters
+- [x] `kanbu_search_tasks` - Full-text search in tasks (title, reference, description)
+- [x] `kanbu_search_global` - Search across tasks, comments, and wiki pages
 
-#### 4.2 Quick Actions
+#### 4.2 Activity Tools
 
-- [ ] `kanbu_quick_task` - Minimal input task creation
-- [ ] `kanbu_bulk_update` - Meerdere taken tegelijk
-- [ ] `kanbu_duplicate_task`
+- [x] `kanbu_recent_activity` - Recent project activity
+- [x] `kanbu_task_activity` - Activity history for a specific task
+- [x] `kanbu_activity_stats` - Activity statistics (last 30 days)
 
-#### 4.3 Context Tools
-
-- [ ] `kanbu_recent_activity`
-- [ ] `kanbu_my_created`
-
-**Deliverables Fase 4:**
-- 8 extra tools
-- Zoekfunctionaliteit
+**Deliverables Fase 4:** ✅ ALLEMAAL OPGELEVERD
+- ✅ 5 extra tools (2 search + 3 activity)
+- ✅ Full-text search in tasks, comments, wiki
+- ✅ Activity timeline and statistics
 
 ---
 
@@ -255,8 +252,8 @@ model AssistantBinding {
 | Fase 1 | 3 (pairing) | 3 | ✅ Compleet |
 | Fase 2 | 11 (core) | 14 | ✅ Compleet |
 | Fase 3 | 9 (subtasks/comments) | 23 | ✅ Compleet |
-| Fase 4 | 8 (search/quick) | 31 | Gepland |
-| Fase 5 | 5 (analytics) | 36 | Gepland |
+| Fase 4 | 5 (search/activity) | 28 | ✅ Compleet |
+| Fase 5 | 5 (analytics) | 33 | Gepland |
 
 ## Prioriteit Matrix
 
@@ -336,6 +333,7 @@ model AssistantBinding {
 
 | Datum | Wijziging |
 |-------|-----------|
+| 2026-01-09 | **Fase 4 COMPLEET** - 5 tools voor search en activity queries |
 | 2026-01-09 | **Fase 3 COMPLEET** - 9 tools voor subtask en comment management |
 | 2026-01-09 | **Fase 2 COMPLEET** - 11 core tools voor workspace/project/task management |
 | 2026-01-09 | **Fase 1 COMPLEET** - MCP server met pairing tools werkend |

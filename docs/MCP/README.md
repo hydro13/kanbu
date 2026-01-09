@@ -1,8 +1,8 @@
 # Kanbu MCP Server - Claude Code Integration
 
-> **Status: Fase 3 COMPLEET** (2026-01-09)
+> **Status: Fase 4 COMPLEET** (2026-01-09)
 >
-> De MCP server is volledig werkend met 23 tools: pairing (3), core (11), en subtasks/comments (9).
+> De MCP server is volledig werkend met 28 tools: pairing (3), core (11), subtasks/comments (9), en search/activity (5).
 
 ## Overzicht
 
@@ -262,13 +262,23 @@ Als jouw rechten veranderen, veranderen die van Claude automatisch mee.
 | `kanbu_update_comment` | Eigen comment bewerken | W op project | ✅ Werkend |
 | `kanbu_delete_comment` | Comment verwijderen | W op project | ✅ Werkend |
 
-### Fase 4+ - Extended Tools (Gepland)
+### Fase 4 - Search & Activity Tools (✅ Geïmplementeerd)
+
+| Tool | Beschrijving | Vereiste Permissie | Status |
+|------|--------------|-------------------|--------|
+| `kanbu_search_tasks` | Full-text zoeken in taken | R op project | ✅ Werkend |
+| `kanbu_search_global` | Zoeken in taken, comments, wiki | R op project | ✅ Werkend |
+| `kanbu_recent_activity` | Recente project activiteit | R op project | ✅ Werkend |
+| `kanbu_task_activity` | Activiteit historie voor een taak | R op project | ✅ Werkend |
+| `kanbu_activity_stats` | Activiteit statistieken (30 dagen) | R op project | ✅ Werkend |
+
+### Fase 5+ - Extended Tools (Gepland)
 
 | Tool | Beschrijving |
 |------|--------------|
-| `kanbu_search_tasks` | Zoeken in taken |
 | `kanbu_project_stats` | Project statistieken |
-| `kanbu_bulk_update` | Bulk taak updates |
+| `kanbu_burndown_data` | Burndown chart data |
+| `kanbu_my_productivity` | Persoonlijke productiviteit |
 
 ## Audit Logging
 

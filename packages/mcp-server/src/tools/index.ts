@@ -12,3 +12,7 @@ export * from './tasks.js'
 // Fase 3 - Subtasks & Comments
 export * from './subtasks.js'
 export * from './comments.js'
+
+// Fase 4 - Search & Activity
+export * from './search.js'
+export * from './activity.js'

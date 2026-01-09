@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /*
  * Kanbu MCP Server
- * Version: 1.2.0
+ * Version: 1.3.0
  *
  * MCP Server for Claude Code integration with Kanbu.
  * Implements pairing flow and provides tools for project/task management.
@@ -11,7 +11,7 @@
  * Claude Code: Opus 4.5
  * Host: MAX
  * Date: 2026-01-09
- * Fase: MCP Fase 3 - Subtasks & Comments
+ * Fase: MCP Fase 4 - Search & Smart Features
  * ═══════════════════════════════════════════════════════════════════
  */
 
@@ -64,6 +64,17 @@ import {
   handleUpdateComment,
   handleDeleteComment,
 } from './tools/comments.js'
+import {
+  searchToolDefinitions,
+  handleSearchTasks,
+  handleSearchGlobal,
+} from './tools/search.js'
+import {
+  activityToolDefinitions,
+  handleRecentActivity,
+  handleTaskActivity,
+  handleActivityStats,
+} from './tools/activity.js'
 
 // =============================================================================
 // Tool Schemas
@@ -148,6 +159,10 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       ...subtaskToolDefinitions,
       // Comment tools (Fase 3)
       ...commentToolDefinitions,
+      // Search tools (Fase 4)
+      ...searchToolDefinitions,
+      // Activity tools (Fase 4)
+      ...activityToolDefinitions,
     ],
   }
 })
@@ -217,6 +232,20 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return await handleUpdateComment(args)
       case 'kanbu_delete_comment':
         return await handleDeleteComment(args)
+
+      // Search tools (Fase 4)
+      case 'kanbu_search_tasks':
+        return await handleSearchTasks(args)
+      case 'kanbu_search_global':
+        return await handleSearchGlobal(args)
+
+      // Activity tools (Fase 4)
+      case 'kanbu_recent_activity':
+        return await handleRecentActivity(args)
+      case 'kanbu_task_activity':
+        return await handleTaskActivity(args)
+      case 'kanbu_activity_stats':
+        return await handleActivityStats(args)
 
       default:
         throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`)
