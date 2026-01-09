@@ -1,6 +1,6 @@
 /*
  * GitHub Services Index
- * Version: 6.0.0
+ * Version: 7.0.0
  *
  * Central export for all GitHub-related services.
  *
@@ -9,7 +9,7 @@
  * Claude Code: Opus 4.5
  * Host: MAX
  * Date: 2026-01-09
- * Fase: 16 - AI/Claude Integratie
+ * Fase: 14 - Developer Experience (Bot Service)
  * =============================================================================
  */
 
@@ -229,3 +229,18 @@ export {
   type CommitMessageInput,
   type CommitMessage,
 } from './aiService'
+
+export {
+  botService,
+  // Command parsing
+  parseCommands,
+  // Comment processing
+  processComment,
+  // Auto-comment features
+  postTaskInfoComment,
+  autoPostPRSummary,
+  // Types
+  type BotCommand,
+  type CommentContext,
+  type BotResponse,
+} from './botService'

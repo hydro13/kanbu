@@ -1,17 +1,18 @@
 /*
  * GitHub Webhook Handler
- * Version: 4.0.0
+ * Version: 5.0.0
  *
  * Receives and processes GitHub webhook events.
  * Handles signature verification, event routing, and sync operations.
- * Includes auto-linking of PRs/commits, task status automation, and workflow tracking.
+ * Includes auto-linking of PRs/commits, task status automation, workflow tracking,
+ * and bot command processing.
  *
  * =============================================================================
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
  * Claude Code: Opus 4.5
  * Host: MAX
  * Date: 2026-01-09
- * Fase: 10 - CI/CD Integratie
+ * Fase: 14 - Developer Experience (Bot Commands)
  * =============================================================================
  */
 
@@ -39,6 +40,12 @@ import {
   upsertReview,
   type ReviewData,
 } from '../../services/github/reviewService'
+import {
+  processComment,
+  autoPostPRSummary,
+  postTaskInfoComment,
+  type CommentContext,
+} from '../../services/github/botService'
 import type { GitHubSyncSettings } from '@kanbu/shared'
 
 // =============================================================================
@@ -121,11 +128,28 @@ interface WebhookPayload {
     run_started_at: string | null
     updated_at: string | null
   }
+  comment?: {
+    id: number
+    body: string
+    user: { login: string; id: number }
+    created_at: string
+    updated_at: string
+  }
+  review?: {
+    id: number
+    body: string | null
+    state: string
+    user: { login: string; id: number } | null
+    html_url: string | null
+    submitted_at: string | null
+  }
 }
 
 type GitHubEventType =
   | 'issues'
+  | 'issue_comment'
   | 'pull_request'
+  | 'pull_request_review'
   | 'push'
   | 'workflow_run'
   | 'installation'
@@ -803,6 +827,103 @@ async function handleWorkflowRun(ctx: WebhookContext): Promise<{
 }
 
 // =============================================================================
+// Issue Comment Handler (Bot Commands)
+// =============================================================================
+
+async function handleIssueComment(ctx: WebhookContext): Promise<{
+  processed: boolean
+  action: string | undefined
+  commandsProcessed: number
+}> {
+  const { action, payload } = ctx
+  const repo = payload.repository
+  const issue = payload.issue
+  const comment = payload.comment
+
+  // Only process created comments (not edited/deleted)
+  if (action !== 'created') {
+    return { processed: false, action, commandsProcessed: 0 }
+  }
+
+  if (!repo || !issue || !comment) {
+    return { processed: false, action, commandsProcessed: 0 }
+  }
+
+  // Skip comments from bots to prevent loops
+  if (comment.user.login.endsWith('[bot]')) {
+    return { processed: false, action, commandsProcessed: 0 }
+  }
+
+  // Check if comment contains any bot commands
+  if (!comment.body.includes('/kanbu')) {
+    return { processed: false, action, commandsProcessed: 0 }
+  }
+
+  console.log(`[GitHub Webhook] Issue comment with /kanbu command: ${repo.full_name}#${issue.number}`)
+
+  // Find the linked repository in Kanbu
+  const linkedRepo = await prisma.gitHubRepository.findUnique({
+    where: {
+      owner_name: {
+        owner: repo.owner.login,
+        name: repo.name,
+      },
+    },
+    include: {
+      installation: true,
+    },
+  })
+
+  if (!linkedRepo || !linkedRepo.syncEnabled) {
+    return { processed: false, action, commandsProcessed: 0 }
+  }
+
+  // Determine if this is a PR or issue
+  // GitHub sends issue_comment for both issues and PRs
+  const isPullRequest = !!payload.pull_request || issue.state === 'open' && 'pull_request' in (issue as unknown as Record<string, unknown>)
+
+  // Process bot commands
+  const commentCtx: CommentContext = {
+    repositoryId: linkedRepo.id,
+    owner: repo.owner.login,
+    repo: repo.name,
+    issueNumber: issue.number,
+    isPullRequest,
+    commentId: comment.id,
+    commentBody: comment.body,
+    commentAuthor: comment.user.login,
+    installationId: Number(linkedRepo.installation.installationId),
+  }
+
+  const responses = await processComment(commentCtx)
+
+  // Log sync operation
+  if (responses.length > 0) {
+    await prisma.gitHubSyncLog.create({
+      data: {
+        repositoryId: linkedRepo.id,
+        action: 'bot_commands_processed',
+        direction: 'github_to_kanbu',
+        entityType: isPullRequest ? 'pr' : 'issue',
+        entityId: String(issue.number),
+        details: {
+          commandCount: responses.length,
+          commands: responses.map(r => r.command),
+          author: comment.user.login,
+        },
+        status: 'success',
+      },
+    })
+  }
+
+  return {
+    processed: true,
+    action,
+    commandsProcessed: responses.length,
+  }
+}
+
+// =============================================================================
 // Pull Request Review Handler
 // =============================================================================
 
@@ -982,6 +1103,10 @@ async function webhookHandler(
 
       case 'workflow_run':
         result = await handleWorkflowRun(ctx)
+        break
+
+      case 'issue_comment':
+        result = await handleIssueComment(ctx)
         break
 
       case 'pull_request_review':
