@@ -306,3 +306,55 @@ export {
   type DeploymentNotificationData,
   type CheckRunNotificationData,
 } from './cicdNotificationService'
+
+export {
+  monorepoService,
+  // Settings
+  getMonorepoSettings,
+  updateMonorepoSettings,
+  // Package management
+  addPackage,
+  removePackage,
+  getPackages,
+  // Path matching
+  matchesPackage,
+  findPackageForFile,
+  getAffectedPackages,
+  filterFilesByPackage,
+  // Label management
+  getLabelPrefixForFile,
+  generatePackageLabels,
+  // Statistics
+  getPackageStats,
+  // Glob matching
+  matchGlob,
+  filterByPatterns,
+  // Types
+  type MonorepoPackage,
+  type MonorepoSettings,
+  type AffectedPackagesResult,
+  type PackageInfo,
+} from './monorepoService'
+
+export {
+  multiRepoService,
+  // Repository management
+  getProjectRepositories,
+  linkRepository,
+  unlinkRepository,
+  setPrimaryRepository,
+  getPrimaryRepository,
+  // Statistics
+  getCrossRepoStats,
+  // Search
+  searchAcrossRepositories,
+  // References
+  parseCrossRepoReference,
+  findCrossRepoReferences,
+  resolveCrossRepoReferences,
+  // Types
+  type RepositoryInfo,
+  type ProjectRepositories,
+  type CrossRepoStats,
+  type CrossRepoSearchResult,
+} from './multiRepoService'

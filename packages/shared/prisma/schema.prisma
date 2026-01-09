@@ -189,7 +189,7 @@ model Project {
   columns          Column[]
   customFields     CustomField[]
   features         Feature[]
-  githubRepository GitHubRepository?
+  githubRepositories GitHubRepository[]
   groups           Group[]
   milestones       Milestone[]
   modules          Module[]
@@ -1030,10 +1030,10 @@ model GitHubUserMapping {
   @@map("github_user_mappings")
 }
 
-/// GitHub Repository linked to Kanbu Project (1:1)
+/// GitHub Repository linked to Kanbu Project (multi-repo support)
 model GitHubRepository {
   id             Int                 @id @default(autoincrement())
-  projectId      Int                 @unique @map("project_id")
+  projectId      Int                 @map("project_id")
   installationId Int                 @map("installation_id")
   repoId         BigInt              @map("repo_id")
   owner          String              @db.VarChar(255)
@@ -1041,6 +1041,7 @@ model GitHubRepository {
   fullName       String              @map("full_name") @db.VarChar(512)
   defaultBranch  String              @default("main") @map("default_branch") @db.VarChar(255)
   isPrivate      Boolean             @default(false) @map("is_private")
+  isPrimary      Boolean             @default(false) @map("is_primary")
   syncEnabled    Boolean             @default(true) @map("sync_enabled")
   syncSettings   Json                @default("{}") @map("sync_settings")
   lastSyncAt     DateTime?           @map("last_sync_at")
@@ -1060,8 +1061,10 @@ model GitHubRepository {
   syncLogs       GitHubSyncLog[]
   workflowRuns   GitHubWorkflowRun[]
 
+  @@unique([projectId, owner, name])
   @@unique([owner, name])
   @@index([installationId])
+  @@index([projectId])
   @@map("github_repositories")
 }
 
