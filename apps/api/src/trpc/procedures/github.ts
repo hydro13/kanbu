@@ -22,6 +22,9 @@ import {
   importIssuesFromGitHub,
   getImportProgress,
   clearImportProgress,
+  createGitHubIssueFromTask,
+  updateGitHubIssueFromTask,
+  syncTaskToGitHub,
 } from '../../services/github/issueSyncService'
 import type { GitHubSyncSettings } from '@kanbu/shared'
 
@@ -86,6 +89,15 @@ const importIssuesSchema = z.object({
   limit: z.number().min(1).max(1000).optional().default(100),
 })
 
+const taskIdSchema = z.object({
+  taskId: z.number(),
+})
+
+const syncTaskSchema = z.object({
+  taskId: z.number(),
+  force: z.boolean().optional().default(false),
+})
+
 // =============================================================================
 // Helper Functions
 // =============================================================================
@@ -132,6 +144,40 @@ async function checkProjectReadAccess(
       message: 'You need project read permission to view GitHub settings',
     })
   }
+}
+
+/**
+ * Get task with project info and check write access
+ */
+async function getTaskWithProjectAccess(
+  prisma: typeof import('../../lib/prisma').prisma,
+  userId: number,
+  taskId: number
+): Promise<{
+  task: { id: number; projectId: number; title: string; reference: string }
+  projectId: number
+}> {
+  const task = await prisma.task.findUnique({
+    where: { id: taskId },
+    select: {
+      id: true,
+      projectId: true,
+      title: true,
+      reference: true,
+    },
+  })
+
+  if (!task) {
+    throw new TRPCError({
+      code: 'NOT_FOUND',
+      message: 'Task not found',
+    })
+  }
+
+  // Check project write permission
+  await checkProjectWriteAccess(userId, task.projectId)
+
+  return { task, projectId: task.projectId }
 }
 
 /**
@@ -774,6 +820,255 @@ export const githubRouter = router({
       }
 
       return progress
+    }),
+
+  // ===========================================================================
+  // Outbound Sync (Kanbu → GitHub) - Fase 6
+  // ===========================================================================
+
+  /**
+   * Create a GitHub issue from a task
+   * Requires project WRITE permission
+   */
+  createIssueFromTask: protectedProcedure
+    .input(taskIdSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { taskId } = input
+
+      // Get task and check access
+      const { task, projectId } = await getTaskWithProjectAccess(
+        ctx.prisma,
+        ctx.user.id,
+        taskId
+      )
+
+      // Get the linked repository
+      const repository = await ctx.prisma.gitHubRepository.findUnique({
+        where: { projectId },
+        select: { id: true, fullName: true, syncEnabled: true, syncSettings: true },
+      })
+
+      if (!repository) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'No GitHub repository linked to this project',
+        })
+      }
+
+      if (!repository.syncEnabled) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Sync is disabled for this repository',
+        })
+      }
+
+      // Check sync settings
+      const syncSettings = repository.syncSettings as { issues?: { enabled: boolean; direction: string } } | null
+      if (!syncSettings?.issues?.enabled) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Issue sync is disabled for this repository',
+        })
+      }
+
+      // Check direction allows outbound
+      const direction = syncSettings.issues.direction
+      if (direction !== 'kanbu_to_github' && direction !== 'bidirectional') {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Outbound sync is not enabled for this repository',
+        })
+      }
+
+      // Create GitHub issue
+      const result = await createGitHubIssueFromTask(taskId, {
+        syncDirection: direction as 'kanbu_to_github' | 'bidirectional',
+      })
+
+      // Audit log
+      await auditService.log({
+        userId: ctx.user.id,
+        action: 'GITHUB_ISSUE_CREATED' as keyof typeof AUDIT_ACTIONS,
+        category: 'WORKSPACE',
+        resourceType: 'task',
+        resourceId: taskId,
+        resourceName: task.reference,
+        metadata: {
+          repositoryId: repository.id,
+          issueNumber: result.issueNumber,
+          taskTitle: task.title,
+        },
+      })
+
+      return {
+        success: true,
+        issueNumber: result.issueNumber,
+        issueUrl: `https://github.com/${repository.fullName}/issues/${result.issueNumber}`,
+      }
+    }),
+
+  /**
+   * Update a GitHub issue from a task
+   * Requires project WRITE permission
+   */
+  updateIssueFromTask: protectedProcedure
+    .input(syncTaskSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { taskId, force } = input
+
+      // Get task and check access
+      const { task, projectId } = await getTaskWithProjectAccess(
+        ctx.prisma,
+        ctx.user.id,
+        taskId
+      )
+
+      // Get the linked repository
+      const repository = await ctx.prisma.gitHubRepository.findUnique({
+        where: { projectId },
+        select: { id: true, fullName: true, syncEnabled: true, syncSettings: true },
+      })
+
+      if (!repository) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'No GitHub repository linked to this project',
+        })
+      }
+
+      if (!repository.syncEnabled) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Sync is disabled for this repository',
+        })
+      }
+
+      // Check if task has a linked issue
+      const githubIssue = await ctx.prisma.gitHubIssue.findUnique({
+        where: { taskId },
+      })
+
+      if (!githubIssue) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Task has no linked GitHub issue',
+        })
+      }
+
+      // Update GitHub issue
+      const result = await updateGitHubIssueFromTask(taskId, { force })
+
+      // Audit log
+      if (result.updated) {
+        await auditService.log({
+          userId: ctx.user.id,
+          action: 'GITHUB_ISSUE_UPDATED' as keyof typeof AUDIT_ACTIONS,
+          category: 'WORKSPACE',
+          resourceType: 'task',
+          resourceId: taskId,
+          resourceName: task.reference,
+          metadata: {
+            repositoryId: repository.id,
+            issueNumber: result.issueNumber,
+            taskTitle: task.title,
+          },
+        })
+      }
+
+      return {
+        success: true,
+        updated: result.updated,
+        issueNumber: result.issueNumber,
+        issueUrl: `https://github.com/${repository.fullName}/issues/${result.issueNumber}`,
+      }
+    }),
+
+  /**
+   * Sync a task to GitHub (create or update)
+   * Requires project WRITE permission
+   */
+  syncTaskToGitHub: protectedProcedure
+    .input(syncTaskSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { taskId, force } = input
+
+      // Get task and check access
+      const { task, projectId } = await getTaskWithProjectAccess(
+        ctx.prisma,
+        ctx.user.id,
+        taskId
+      )
+
+      // Get the linked repository
+      const repository = await ctx.prisma.gitHubRepository.findUnique({
+        where: { projectId },
+        select: { id: true, fullName: true, syncEnabled: true, syncSettings: true },
+      })
+
+      if (!repository) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'No GitHub repository linked to this project',
+        })
+      }
+
+      if (!repository.syncEnabled) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Sync is disabled for this repository',
+        })
+      }
+
+      // Check sync settings
+      const syncSettings = repository.syncSettings as { issues?: { enabled: boolean; direction: string } } | null
+      if (!syncSettings?.issues?.enabled) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Issue sync is disabled for this repository',
+        })
+      }
+
+      // Check direction allows outbound
+      const direction = syncSettings.issues.direction
+      if (direction !== 'kanbu_to_github' && direction !== 'bidirectional') {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Outbound sync is not enabled for this repository',
+        })
+      }
+
+      // Sync task to GitHub
+      const result = await syncTaskToGitHub(taskId, {
+        syncDirection: direction as 'kanbu_to_github' | 'bidirectional',
+        force,
+      })
+
+      // Audit log
+      if (result.created || result.updated) {
+        await auditService.log({
+          userId: ctx.user.id,
+          action: result.created ? 'GITHUB_ISSUE_CREATED' as keyof typeof AUDIT_ACTIONS : 'GITHUB_ISSUE_UPDATED' as keyof typeof AUDIT_ACTIONS,
+          category: 'WORKSPACE',
+          resourceType: 'task',
+          resourceId: taskId,
+          resourceName: task.reference,
+          metadata: {
+            repositoryId: repository.id,
+            issueNumber: result.issueNumber,
+            taskTitle: task.title,
+            created: result.created,
+            updated: result.updated,
+          },
+        })
+      }
+
+      return {
+        success: true,
+        created: result.created,
+        updated: result.updated,
+        issueNumber: result.issueNumber,
+        issueUrl: `https://github.com/${repository.fullName}/issues/${result.issueNumber}`,
+      }
     }),
 })
 

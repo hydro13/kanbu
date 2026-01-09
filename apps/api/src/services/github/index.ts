@@ -31,6 +31,7 @@ export {
 
 export {
   issueSyncService,
+  // Inbound (GitHub → Kanbu)
   mapGitHubUserToKanbu,
   mapGitHubAssignees,
   getOrCreateTagsFromLabels,
@@ -40,4 +41,13 @@ export {
   importIssuesFromGitHub,
   getImportProgress,
   clearImportProgress,
+  // Outbound (Kanbu → GitHub)
+  mapKanbuUserToGitHub,
+  mapKanbuAssigneesToGitHub,
+  getLabelsFromTags,
+  calculateSyncHash,
+  hasTaskChangedSinceSync,
+  createGitHubIssueFromTask,
+  updateGitHubIssueFromTask,
+  syncTaskToGitHub,
 } from './issueSyncService'

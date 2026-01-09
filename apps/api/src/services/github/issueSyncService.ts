@@ -1,16 +1,17 @@
 /*
  * GitHub Issue Sync Service
- * Version: 1.0.0
+ * Version: 2.0.0
  *
- * Handles synchronization of GitHub issues to Kanbu tasks.
- * Part of Fase 5: Issue Sync (GitHub → Kanbu)
+ * Handles bidirectional synchronization between GitHub issues and Kanbu tasks.
+ * - Fase 5: Issue Sync (GitHub → Kanbu) - Inbound
+ * - Fase 6: Issue Sync (Kanbu → GitHub) - Outbound
  *
  * =============================================================================
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
  * Claude Code: Opus 4.5
  * Host: MAX
  * Date: 2026-01-09
- * Fase: 5 - Issue Sync Inbound
+ * Fase: 5+6 - Issue Sync Bidirectional
  * =============================================================================
  */
 
@@ -51,6 +52,22 @@ interface ImportProgress {
   status: 'pending' | 'running' | 'completed' | 'failed'
   result?: ImportResult
   error?: string
+}
+
+interface OutboundSyncResult {
+  issueNumber: number
+  issueId: bigint
+  created: boolean
+  updated: boolean
+}
+
+interface TaskData {
+  id: number
+  title: string
+  description: string | null
+  isActive: boolean
+  tags?: Array<{ tag: { id: number; name: string; color: string } }>
+  assignees?: Array<{ user: { id: number } }>
 }
 
 // In-memory import progress tracking
@@ -102,6 +119,107 @@ export async function mapGitHubAssignees(
   return { mapped, unmapped }
 }
 
+/**
+ * Look up GitHub login from Kanbu user ID (reverse mapping for outbound sync)
+ */
+export async function mapKanbuUserToGitHub(
+  userId: number,
+  workspaceId: number
+): Promise<string | null> {
+  const mapping = await prisma.gitHubUserMapping.findUnique({
+    where: {
+      workspaceId_userId: {
+        workspaceId,
+        userId,
+      },
+    },
+    select: { githubLogin: true },
+  })
+
+  return mapping?.githubLogin ?? null
+}
+
+/**
+ * Map Kanbu assignee user IDs to GitHub logins (for outbound sync)
+ */
+export async function mapKanbuAssigneesToGitHub(
+  userIds: number[],
+  workspaceId: number
+): Promise<{ mapped: string[]; unmapped: number[] }> {
+  const mapped: string[] = []
+  const unmapped: number[] = []
+
+  for (const userId of userIds) {
+    const githubLogin = await mapKanbuUserToGitHub(userId, workspaceId)
+    if (githubLogin) {
+      mapped.push(githubLogin)
+    } else {
+      unmapped.push(userId)
+    }
+  }
+
+  return { mapped, unmapped }
+}
+
+// =============================================================================
+// Sync Hash (Conflict Detection)
+// =============================================================================
+
+/**
+ * Calculate a sync hash for conflict detection
+ * Hash is based on title, description, and state
+ */
+export function calculateSyncHash(
+  title: string,
+  description: string | null,
+  state: 'open' | 'closed'
+): string {
+  const crypto = require('crypto')
+  const content = JSON.stringify({
+    title: title.trim(),
+    description: (description || '').trim(),
+    state,
+  })
+  return crypto.createHash('sha256').update(content).digest('hex').substring(0, 64)
+}
+
+/**
+ * Check if a task has changed since last sync (for conflict detection)
+ */
+export async function hasTaskChangedSinceSync(
+  taskId: number
+): Promise<{ changed: boolean; currentHash: string; lastHash: string | null }> {
+  const task = await prisma.task.findUnique({
+    where: { id: taskId },
+    select: {
+      title: true,
+      description: true,
+      isActive: true,
+      githubIssue: {
+        select: { syncHash: true },
+      },
+    },
+  })
+
+  if (!task) {
+    throw new Error(`Task ${taskId} not found`)
+  }
+
+  const currentHash = calculateSyncHash(
+    task.title,
+    task.description,
+    task.isActive ? 'open' : 'closed'
+  )
+
+  const lastHash = task.githubIssue?.syncHash ?? null
+
+  return {
+    changed: lastHash !== currentHash,
+    currentHash,
+    lastHash,
+  }
+}
+
 // =============================================================================
 // Tag/Label Mapping
 // =============================================================================
@@ -142,6 +260,25 @@ export async function getOrCreateTagsFromLabels(
   }
 
   return tagIds
+}
+
+/**
+ * Convert Kanbu tags to GitHub label names (for outbound sync)
+ * Returns array of label names
+ */
+export async function getLabelsFromTags(
+  taskId: number
+): Promise<string[]> {
+  const taskTags = await prisma.taskTag.findMany({
+    where: { taskId },
+    include: {
+      tag: {
+        select: { name: true },
+      },
+    },
+  })
+
+  return taskTags.map((tt) => tt.tag.name)
 }
 
 // =============================================================================
@@ -590,10 +727,325 @@ export function clearImportProgress(repositoryId: number): void {
 }
 
 // =============================================================================
+// Outbound Sync: Task → GitHub Issue (Fase 6)
+// =============================================================================
+
+/**
+ * Create a GitHub issue from a Kanbu task
+ * Used when a task is created in Kanbu and needs to be synced to GitHub
+ */
+export async function createGitHubIssueFromTask(
+  taskId: number,
+  options: {
+    syncDirection?: SyncDirection
+  } = {}
+): Promise<OutboundSyncResult> {
+  const { syncDirection = 'kanbu_to_github' } = options
+
+  // Get task with all related data
+  const task = await prisma.task.findUnique({
+    where: { id: taskId },
+    include: {
+      project: {
+        include: {
+          workspace: true,
+          githubRepository: {
+            include: {
+              installation: true,
+            },
+          },
+        },
+      },
+      tags: {
+        include: {
+          tag: true,
+        },
+      },
+      assignees: {
+        include: {
+          user: true,
+        },
+      },
+      githubIssue: true,
+    },
+  })
+
+  if (!task) {
+    throw new Error(`Task ${taskId} not found`)
+  }
+
+  const repository = task.project.githubRepository
+  if (!repository) {
+    throw new Error(`Project ${task.project.id} has no linked GitHub repository`)
+  }
+
+  // Check if task already has a GitHub issue
+  if (task.githubIssue) {
+    throw new Error(`Task ${taskId} already has GitHub issue #${task.githubIssue.issueNumber}`)
+  }
+
+  const workspaceId = task.project.workspaceId
+
+  // Get Octokit client
+  const octokit = await getInstallationOctokit(repository.installation.installationId)
+
+  // Map assignees to GitHub logins
+  const assigneeUserIds = task.assignees.map((a) => a.user.id)
+  const { mapped: assigneeLogins } = await mapKanbuAssigneesToGitHub(
+    assigneeUserIds,
+    workspaceId
+  )
+
+  // Get labels from tags
+  const labels = await getLabelsFromTags(taskId)
+
+  // Determine state based on isActive
+  const state: 'open' | 'closed' = task.isActive ? 'open' : 'closed'
+
+  // Create the GitHub issue
+  const response = await octokit.rest.issues.create({
+    owner: repository.owner,
+    repo: repository.name,
+    title: task.title,
+    body: task.description || undefined,
+    labels: labels.length > 0 ? labels : undefined,
+    assignees: assigneeLogins.length > 0 ? assigneeLogins : undefined,
+  })
+
+  const issueNumber = response.data.number
+  const issueId = BigInt(response.data.id)
+
+  // If task is inactive (closed), close the issue
+  if (!task.isActive) {
+    await octokit.rest.issues.update({
+      owner: repository.owner,
+      repo: repository.name,
+      issue_number: issueNumber,
+      state: 'closed',
+    })
+  }
+
+  // Calculate sync hash
+  const syncHash = calculateSyncHash(task.title, task.description, state)
+
+  // Create GitHubIssue record
+  await prisma.gitHubIssue.create({
+    data: {
+      repositoryId: repository.id,
+      taskId: task.id,
+      issueNumber,
+      issueId,
+      title: task.title,
+      state,
+      syncDirection,
+      syncHash,
+      lastSyncAt: new Date(),
+    },
+  })
+
+  // Log sync operation
+  await prisma.gitHubSyncLog.create({
+    data: {
+      repositoryId: repository.id,
+      action: 'issue_created',
+      direction: 'kanbu_to_github',
+      entityType: 'issue',
+      entityId: String(issueNumber),
+      status: 'success',
+      details: {
+        taskId: task.id,
+        taskReference: task.reference,
+        issueNumber,
+        assigneesMapped: assigneeLogins.length,
+        labelsAdded: labels.length,
+      },
+    },
+  })
+
+  return {
+    issueNumber,
+    issueId,
+    created: true,
+    updated: false,
+  }
+}
+
+/**
+ * Update a GitHub issue from a Kanbu task
+ * Used when a task is edited in Kanbu and needs to be synced to GitHub
+ */
+export async function updateGitHubIssueFromTask(
+  taskId: number,
+  options: {
+    force?: boolean // Skip conflict check
+  } = {}
+): Promise<OutboundSyncResult> {
+  const { force = false } = options
+
+  // Get task with all related data
+  const task = await prisma.task.findUnique({
+    where: { id: taskId },
+    include: {
+      project: {
+        include: {
+          workspace: true,
+          githubRepository: {
+            include: {
+              installation: true,
+            },
+          },
+        },
+      },
+      tags: {
+        include: {
+          tag: true,
+        },
+      },
+      assignees: {
+        include: {
+          user: true,
+        },
+      },
+      githubIssue: true,
+    },
+  })
+
+  if (!task) {
+    throw new Error(`Task ${taskId} not found`)
+  }
+
+  const repository = task.project.githubRepository
+  if (!repository) {
+    throw new Error(`Project ${task.project.id} has no linked GitHub repository`)
+  }
+
+  const githubIssue = task.githubIssue
+  if (!githubIssue) {
+    throw new Error(`Task ${taskId} has no linked GitHub issue`)
+  }
+
+  const workspaceId = task.project.workspaceId
+
+  // Conflict detection (unless force is true)
+  if (!force) {
+    const state: 'open' | 'closed' = task.isActive ? 'open' : 'closed'
+    const currentHash = calculateSyncHash(task.title, task.description, state)
+
+    // If the hash hasn't changed, skip the update
+    if (githubIssue.syncHash === currentHash) {
+      return {
+        issueNumber: githubIssue.issueNumber,
+        issueId: githubIssue.issueId,
+        created: false,
+        updated: false,
+      }
+    }
+  }
+
+  // Get Octokit client
+  const octokit = await getInstallationOctokit(repository.installation.installationId)
+
+  // Map assignees to GitHub logins
+  const assigneeUserIds = task.assignees.map((a) => a.user.id)
+  const { mapped: assigneeLogins } = await mapKanbuAssigneesToGitHub(
+    assigneeUserIds,
+    workspaceId
+  )
+
+  // Get labels from tags
+  const labels = await getLabelsFromTags(taskId)
+
+  // Determine state
+  const state: 'open' | 'closed' = task.isActive ? 'open' : 'closed'
+
+  // Update the GitHub issue
+  await octokit.rest.issues.update({
+    owner: repository.owner,
+    repo: repository.name,
+    issue_number: githubIssue.issueNumber,
+    title: task.title,
+    body: task.description || '',
+    labels,
+    assignees: assigneeLogins,
+    state,
+  })
+
+  // Calculate new sync hash
+  const syncHash = calculateSyncHash(task.title, task.description, state)
+
+  // Update GitHubIssue record
+  await prisma.gitHubIssue.update({
+    where: { id: githubIssue.id },
+    data: {
+      title: task.title,
+      state,
+      syncHash,
+      lastSyncAt: new Date(),
+    },
+  })
+
+  // Log sync operation
+  await prisma.gitHubSyncLog.create({
+    data: {
+      repositoryId: repository.id,
+      action: 'issue_updated',
+      direction: 'kanbu_to_github',
+      entityType: 'issue',
+      entityId: String(githubIssue.issueNumber),
+      status: 'success',
+      details: {
+        taskId: task.id,
+        issueNumber: githubIssue.issueNumber,
+        newState: state,
+        assigneesMapped: assigneeLogins.length,
+        labelsUpdated: labels.length,
+      },
+    },
+  })
+
+  return {
+    issueNumber: githubIssue.issueNumber,
+    issueId: githubIssue.issueId,
+    created: false,
+    updated: true,
+  }
+}
+
+/**
+ * Sync a task to GitHub - creates issue if not exists, updates if exists
+ */
+export async function syncTaskToGitHub(
+  taskId: number,
+  options: {
+    syncDirection?: SyncDirection
+    force?: boolean
+  } = {}
+): Promise<OutboundSyncResult> {
+  // Check if task already has a GitHub issue
+  const task = await prisma.task.findUnique({
+    where: { id: taskId },
+    include: { githubIssue: true },
+  })
+
+  if (!task) {
+    throw new Error(`Task ${taskId} not found`)
+  }
+
+  if (task.githubIssue) {
+    // Update existing issue
+    return updateGitHubIssueFromTask(taskId, { force: options.force })
+  } else {
+    // Create new issue
+    return createGitHubIssueFromTask(taskId, { syncDirection: options.syncDirection })
+  }
+}
+
+// =============================================================================
 // Export
 // =============================================================================
 
 export const issueSyncService = {
+  // Inbound (GitHub → Kanbu)
   mapGitHubUserToKanbu,
   mapGitHubAssignees,
   getOrCreateTagsFromLabels,
@@ -603,4 +1055,13 @@ export const issueSyncService = {
   importIssuesFromGitHub,
   getImportProgress,
   clearImportProgress,
+  // Outbound (Kanbu → GitHub)
+  mapKanbuUserToGitHub,
+  mapKanbuAssigneesToGitHub,
+  getLabelsFromTags,
+  calculateSyncHash,
+  hasTaskChangedSinceSync,
+  createGitHubIssueFromTask,
+  updateGitHubIssueFromTask,
+  syncTaskToGitHub,
 }

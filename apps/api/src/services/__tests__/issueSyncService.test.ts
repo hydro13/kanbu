@@ -1,21 +1,24 @@
 /*
  * Issue Sync Service Tests
- * Version: 1.0.0
+ * Version: 2.0.0
  *
- * Tests for GitHub issue to Kanbu task synchronization.
+ * Tests for bidirectional GitHub issue ↔ Kanbu task synchronization.
+ * - Fase 5: Inbound sync (GitHub → Kanbu)
+ * - Fase 6: Outbound sync (Kanbu → GitHub)
  *
  * =============================================================================
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
  * Claude Code: Opus 4.5
  * Host: MAX
  * Date: 2026-01-09
- * Fase: 5 - Issue Sync Inbound
+ * Fase: 5+6 - Issue Sync Bidirectional
  * =============================================================================
  */
 
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'
 import { prisma } from '../../lib/prisma'
 import {
+  // Inbound (GitHub → Kanbu)
   mapGitHubUserToKanbu,
   mapGitHubAssignees,
   getOrCreateTagsFromLabels,
@@ -24,6 +27,12 @@ import {
   updateTaskFromGitHubIssue,
   getImportProgress,
   clearImportProgress,
+  // Outbound (Kanbu → GitHub)
+  mapKanbuUserToGitHub,
+  mapKanbuAssigneesToGitHub,
+  getLabelsFromTags,
+  calculateSyncHash,
+  hasTaskChangedSinceSync,
 } from '../github/issueSyncService'
 
 // =============================================================================
@@ -610,5 +619,293 @@ describe('Import Progress Tracking', () => {
     clearImportProgress(testRepositoryId)
     const progress = getImportProgress(testRepositoryId)
     expect(progress).toBeNull()
+  })
+})
+
+// =============================================================================
+// Outbound Sync Tests (Fase 6)
+// =============================================================================
+
+// =============================================================================
+// Reverse User Mapping Tests
+// =============================================================================
+
+describe('Reverse User Mapping (Kanbu → GitHub)', () => {
+  beforeEach(async () => {
+    // Clean up user mappings before each test
+    await prisma.gitHubUserMapping.deleteMany({
+      where: { workspaceId: testWorkspaceId },
+    })
+  })
+
+  it('should return null for unmapped Kanbu user', async () => {
+    const result = await mapKanbuUserToGitHub(testUserId, testWorkspaceId)
+    expect(result).toBeNull()
+  })
+
+  it('should return GitHub login for mapped Kanbu user', async () => {
+    // Create a mapping
+    await prisma.gitHubUserMapping.create({
+      data: {
+        workspaceId: testWorkspaceId,
+        userId: testUserId,
+        githubLogin: 'mapped-github-user',
+        githubId: BigInt(789012),
+      },
+    })
+
+    const result = await mapKanbuUserToGitHub(testUserId, testWorkspaceId)
+    expect(result).toBe('mapped-github-user')
+  })
+
+  it('should map multiple Kanbu users to GitHub logins', async () => {
+    // Create a mapping for the test user
+    await prisma.gitHubUserMapping.create({
+      data: {
+        workspaceId: testWorkspaceId,
+        userId: testUserId,
+        githubLogin: 'test-github-user',
+        githubId: BigInt(111111),
+      },
+    })
+
+    const userIds = [testUserId, 99999, 88888]
+
+    const result = await mapKanbuAssigneesToGitHub(userIds, testWorkspaceId)
+
+    expect(result.mapped).toHaveLength(1)
+    expect(result.mapped[0]).toBe('test-github-user')
+    expect(result.unmapped).toHaveLength(2)
+    expect(result.unmapped).toContain(99999)
+    expect(result.unmapped).toContain(88888)
+  })
+})
+
+// =============================================================================
+// Reverse Label Mapping Tests
+// =============================================================================
+
+describe('Labels from Tags (Kanbu → GitHub)', () => {
+  let testTaskId: number
+
+  beforeEach(async () => {
+    // Clean up
+    await prisma.gitHubIssue.deleteMany({
+      where: { repositoryId: testRepositoryId },
+    })
+    await prisma.task.deleteMany({
+      where: { projectId: testProjectId },
+    })
+    await prisma.tag.deleteMany({
+      where: { projectId: testProjectId },
+    })
+
+    // Create a test task
+    const task = await prisma.task.create({
+      data: {
+        projectId: testProjectId,
+        columnId: firstColumnId,
+        creatorId: testUserId,
+        title: 'Test Task for Labels',
+        reference: 'IST-999',
+        position: 1,
+      },
+    })
+    testTaskId = task.id
+  })
+
+  it('should return empty array for task with no tags', async () => {
+    const labels = await getLabelsFromTags(testTaskId)
+    expect(labels).toHaveLength(0)
+  })
+
+  it('should return label names from task tags', async () => {
+    // Create tags
+    const tag1 = await prisma.tag.create({
+      data: {
+        projectId: testProjectId,
+        name: 'feature',
+        color: '#00ff00',
+      },
+    })
+    const tag2 = await prisma.tag.create({
+      data: {
+        projectId: testProjectId,
+        name: 'priority-high',
+        color: '#ff0000',
+      },
+    })
+
+    // Assign tags to task
+    await prisma.taskTag.createMany({
+      data: [
+        { taskId: testTaskId, tagId: tag1.id },
+        { taskId: testTaskId, tagId: tag2.id },
+      ],
+    })
+
+    const labels = await getLabelsFromTags(testTaskId)
+
+    expect(labels).toHaveLength(2)
+    expect(labels).toContain('feature')
+    expect(labels).toContain('priority-high')
+  })
+})
+
+// =============================================================================
+// Sync Hash Tests
+// =============================================================================
+
+describe('Sync Hash Calculation', () => {
+  it('should generate consistent hash for same content', () => {
+    const hash1 = calculateSyncHash('Test Title', 'Test Description', 'open')
+    const hash2 = calculateSyncHash('Test Title', 'Test Description', 'open')
+    expect(hash1).toBe(hash2)
+  })
+
+  it('should generate different hash for different title', () => {
+    const hash1 = calculateSyncHash('Title A', 'Description', 'open')
+    const hash2 = calculateSyncHash('Title B', 'Description', 'open')
+    expect(hash1).not.toBe(hash2)
+  })
+
+  it('should generate different hash for different description', () => {
+    const hash1 = calculateSyncHash('Title', 'Description A', 'open')
+    const hash2 = calculateSyncHash('Title', 'Description B', 'open')
+    expect(hash1).not.toBe(hash2)
+  })
+
+  it('should generate different hash for different state', () => {
+    const hash1 = calculateSyncHash('Title', 'Description', 'open')
+    const hash2 = calculateSyncHash('Title', 'Description', 'closed')
+    expect(hash1).not.toBe(hash2)
+  })
+
+  it('should handle null description', () => {
+    const hash1 = calculateSyncHash('Title', null, 'open')
+    const hash2 = calculateSyncHash('Title', '', 'open')
+    expect(hash1).toBe(hash2)
+  })
+
+  it('should trim whitespace in content', () => {
+    const hash1 = calculateSyncHash('  Title  ', '  Description  ', 'open')
+    const hash2 = calculateSyncHash('Title', 'Description', 'open')
+    expect(hash1).toBe(hash2)
+  })
+})
+
+// =============================================================================
+// Task Change Detection Tests
+// =============================================================================
+
+describe('Task Change Detection', () => {
+  let testTaskWithIssue: number
+
+  beforeEach(async () => {
+    // Clean up
+    await prisma.gitHubIssue.deleteMany({
+      where: { repositoryId: testRepositoryId },
+    })
+    await prisma.task.deleteMany({
+      where: { projectId: testProjectId },
+    })
+    await prisma.gitHubSyncLog.deleteMany({
+      where: { repositoryId: testRepositoryId },
+    })
+
+    // Create task with linked GitHub issue
+    const task = await prisma.task.create({
+      data: {
+        projectId: testProjectId,
+        columnId: firstColumnId,
+        creatorId: testUserId,
+        title: 'Synced Task',
+        description: 'Original description',
+        reference: 'IST-888',
+        position: 1,
+        isActive: true,
+      },
+    })
+    testTaskWithIssue = task.id
+
+    // Create linked GitHub issue with sync hash
+    const syncHash = calculateSyncHash('Synced Task', 'Original description', 'open')
+    await prisma.gitHubIssue.create({
+      data: {
+        repositoryId: testRepositoryId,
+        taskId: task.id,
+        issueNumber: 500,
+        issueId: BigInt(500000),
+        title: 'Synced Task',
+        state: 'open',
+        syncDirection: 'bidirectional',
+        syncHash,
+        lastSyncAt: new Date(),
+      },
+    })
+  })
+
+  it('should detect no change when content is same', async () => {
+    const result = await hasTaskChangedSinceSync(testTaskWithIssue)
+    expect(result.changed).toBe(false)
+    expect(result.lastHash).toBe(result.currentHash)
+  })
+
+  it('should detect change when title is modified', async () => {
+    // Update task title
+    await prisma.task.update({
+      where: { id: testTaskWithIssue },
+      data: { title: 'Modified Title' },
+    })
+
+    const result = await hasTaskChangedSinceSync(testTaskWithIssue)
+    expect(result.changed).toBe(true)
+    expect(result.lastHash).not.toBe(result.currentHash)
+  })
+
+  it('should detect change when description is modified', async () => {
+    // Update task description
+    await prisma.task.update({
+      where: { id: testTaskWithIssue },
+      data: { description: 'Modified description' },
+    })
+
+    const result = await hasTaskChangedSinceSync(testTaskWithIssue)
+    expect(result.changed).toBe(true)
+  })
+
+  it('should detect change when task is closed', async () => {
+    // Close the task
+    await prisma.task.update({
+      where: { id: testTaskWithIssue },
+      data: { isActive: false },
+    })
+
+    const result = await hasTaskChangedSinceSync(testTaskWithIssue)
+    expect(result.changed).toBe(true)
+  })
+
+  it('should return null lastHash for task without GitHub issue', async () => {
+    // Create task without linked issue
+    const task = await prisma.task.create({
+      data: {
+        projectId: testProjectId,
+        columnId: firstColumnId,
+        creatorId: testUserId,
+        title: 'Unlinked Task',
+        reference: 'IST-777',
+        position: 2,
+        isActive: true,
+      },
+    })
+
+    const result = await hasTaskChangedSinceSync(task.id)
+    expect(result.lastHash).toBeNull()
+    expect(result.changed).toBe(true)
+  })
+
+  it('should throw error for non-existent task', async () => {
+    await expect(hasTaskChangedSinceSync(99999))
+      .rejects.toThrow('Task 99999 not found')
   })
 })
