@@ -86,6 +86,12 @@ export const AUDIT_ACTIONS = {
   API_KEY_REVOKED: 'api:key:revoked',
   API_KEY_USED: 'api:key:used',
   API_REQUEST_DENIED: 'api:request:denied',
+
+  // Bulk Operations (Fase 9.4)
+  ACL_BULK_GRANTED: 'acl:bulk:granted',
+  ACL_BULK_REVOKED: 'acl:bulk:revoked',
+  ACL_COPIED: 'acl:copied',
+  ACL_TEMPLATE_APPLIED: 'acl:template:applied',
 } as const
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS]

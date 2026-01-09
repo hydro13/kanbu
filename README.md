@@ -35,6 +35,7 @@ A modern, self-hostable project management tool with Kanban boards, real-time co
 - **User Management** - Create, edit, disable users
 - **Group Management** - Create security groups, manage memberships
 - **ACL Manager** - Grant/revoke permissions with presets (Read-Only, Contributor, Editor, Full Control)
+- **Bulk ACL Operations** - Bulk grant/revoke, copy permissions, apply templates
 - **Permission Tree** - Visual permission browser with effective permissions
 - **Audit Logs** - Security audit trail with filtering, export (CSV/JSON), scoped access
 - **Workspace Management** - Create and configure workspaces

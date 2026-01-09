@@ -512,6 +512,280 @@ export class AclService {
     })
   }
 
+  // ===========================================================================
+  // Bulk Operations (Fase 9.4)
+  // ===========================================================================
+
+  /**
+   * Bulk grant permissions to multiple principals on a resource.
+   * Uses Prisma transaction for atomicity.
+   */
+  async bulkGrantPermission(params: {
+    resourceType: AclResourceType
+    resourceId: number | null
+    principals: Array<{ type: AclPrincipalType; id: number }>
+    permissions: number
+    inheritToChildren?: boolean
+    createdById: number
+  }): Promise<{ success: number; failed: number; errors: string[] }> {
+    const { resourceType, resourceId, principals, permissions, inheritToChildren = true, createdById } = params
+
+    // Limit to prevent abuse
+    if (principals.length > 100) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: 'Maximum 100 principals per bulk operation',
+      })
+    }
+
+    return await prisma.$transaction(async (tx) => {
+      let success = 0
+      let failed = 0
+      const errors: string[] = []
+
+      for (const principal of principals) {
+        try {
+          // Find existing entry
+          const existing = await tx.aclEntry.findFirst({
+            where: {
+              resourceType,
+              resourceId,
+              principalType: principal.type,
+              principalId: principal.id,
+              deny: false,
+            }
+          })
+
+          if (existing) {
+            await tx.aclEntry.update({
+              where: { id: existing.id },
+              data: {
+                permissions,
+                inheritToChildren,
+              }
+            })
+          } else {
+            await tx.aclEntry.create({
+              data: {
+                resourceType,
+                resourceId,
+                principalType: principal.type,
+                principalId: principal.id,
+                permissions,
+                deny: false,
+                inherited: false,
+                inheritToChildren,
+                createdById,
+              }
+            })
+          }
+          success++
+        } catch (error) {
+          failed++
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+          errors.push(`${principal.type}:${principal.id}: ${errorMessage}`)
+        }
+      }
+
+      return { success, failed, errors }
+    })
+  }
+
+  /**
+   * Bulk revoke permissions from multiple principals on a resource.
+   * Uses Prisma transaction for atomicity.
+   */
+  async bulkRevokePermission(params: {
+    resourceType: AclResourceType
+    resourceId: number | null
+    principals: Array<{ type: AclPrincipalType; id: number }>
+  }): Promise<{ success: number; failed: number; errors: string[] }> {
+    const { resourceType, resourceId, principals } = params
+
+    // Limit to prevent abuse
+    if (principals.length > 100) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: 'Maximum 100 principals per bulk operation',
+      })
+    }
+
+    return await prisma.$transaction(async (tx) => {
+      let success = 0
+      let failed = 0
+      const errors: string[] = []
+
+      for (const principal of principals) {
+        try {
+          const result = await tx.aclEntry.deleteMany({
+            where: {
+              resourceType,
+              resourceId,
+              principalType: principal.type,
+              principalId: principal.id,
+            }
+          })
+          if (result.count > 0) {
+            success++
+          } else {
+            // No entries found is not a failure, just nothing to delete
+            success++
+          }
+        } catch (error) {
+          failed++
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+          errors.push(`${principal.type}:${principal.id}: ${errorMessage}`)
+        }
+      }
+
+      return { success, failed, errors }
+    })
+  }
+
+  /**
+   * Copy ACL entries from one resource to other resources.
+   * Uses Prisma transaction for atomicity.
+   *
+   * @param overwrite - If true, delete existing entries on target before copy.
+   *                   If false, merge (skip existing principal entries).
+   */
+  async copyAclEntries(params: {
+    sourceResourceType: AclResourceType
+    sourceResourceId: number | null
+    targetResources: Array<{ type: AclResourceType; id: number | null }>
+    overwrite: boolean
+    createdById: number
+  }): Promise<{ copiedCount: number; skippedCount: number }> {
+    const { sourceResourceType, sourceResourceId, targetResources, overwrite, createdById } = params
+
+    // Limit to prevent abuse
+    if (targetResources.length > 50) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: 'Maximum 50 target resources per copy operation',
+      })
+    }
+
+    // Get source ACL entries
+    const sourceEntries = await prisma.aclEntry.findMany({
+      where: {
+        resourceType: sourceResourceType,
+        resourceId: sourceResourceId,
+        inherited: false, // Only copy direct entries, not inherited
+      }
+    })
+
+    if (sourceEntries.length === 0) {
+      return { copiedCount: 0, skippedCount: 0 }
+    }
+
+    return await prisma.$transaction(async (tx) => {
+      let copiedCount = 0
+      let skippedCount = 0
+
+      for (const target of targetResources) {
+        // Skip if source equals target
+        if (target.type === sourceResourceType && target.id === sourceResourceId) {
+          skippedCount += sourceEntries.length
+          continue
+        }
+
+        if (overwrite) {
+          // Delete existing entries on target
+          await tx.aclEntry.deleteMany({
+            where: {
+              resourceType: target.type,
+              resourceId: target.id,
+              inherited: false,
+            }
+          })
+        }
+
+        for (const entry of sourceEntries) {
+          try {
+            if (!overwrite) {
+              // Check if entry already exists
+              const existing = await tx.aclEntry.findFirst({
+                where: {
+                  resourceType: target.type,
+                  resourceId: target.id,
+                  principalType: entry.principalType,
+                  principalId: entry.principalId,
+                  deny: entry.deny,
+                }
+              })
+              if (existing) {
+                skippedCount++
+                continue
+              }
+            }
+
+            await tx.aclEntry.create({
+              data: {
+                resourceType: target.type,
+                resourceId: target.id,
+                principalType: entry.principalType,
+                principalId: entry.principalId,
+                permissions: entry.permissions,
+                deny: entry.deny,
+                inherited: false,
+                inheritToChildren: entry.inheritToChildren,
+                createdById,
+              }
+            })
+            copiedCount++
+          } catch {
+            // Entry might already exist (unique constraint), skip it
+            skippedCount++
+          }
+        }
+      }
+
+      return { copiedCount, skippedCount }
+    })
+  }
+
+  /**
+   * Apply a permission template to multiple principals on a resource.
+   * This is essentially a bulk grant with predefined permission levels.
+   */
+  async applyTemplate(params: {
+    templateName: 'read_only' | 'contributor' | 'editor' | 'full_control'
+    resourceType: AclResourceType
+    resourceId: number | null
+    principals: Array<{ type: AclPrincipalType; id: number }>
+    inheritToChildren?: boolean
+    createdById: number
+  }): Promise<{ success: number; failed: number }> {
+    const { templateName, resourceType, resourceId, principals, inheritToChildren = true, createdById } = params
+
+    // Map template name to permission bitmask
+    const permissions = this.templateToPermissions(templateName)
+
+    const result = await this.bulkGrantPermission({
+      resourceType,
+      resourceId,
+      principals,
+      permissions,
+      inheritToChildren,
+      createdById,
+    })
+
+    return { success: result.success, failed: result.failed }
+  }
+
+  /**
+   * Convert template name to permission bitmask.
+   */
+  private templateToPermissions(templateName: 'read_only' | 'contributor' | 'editor' | 'full_control'): number {
+    switch (templateName) {
+      case 'read_only': return ACL_PRESETS.READ_ONLY
+      case 'contributor': return ACL_PRESETS.CONTRIBUTOR
+      case 'editor': return ACL_PRESETS.EDITOR
+      case 'full_control': return ACL_PRESETS.FULL_CONTROL
+    }
+  }
+
   /**
    * Get all ACL entries for a resource.
    */

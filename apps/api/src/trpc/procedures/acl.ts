@@ -569,6 +569,281 @@ export const aclRouter = router({
       return { success: true }
     }),
 
+  // ===========================================================================
+  // Bulk Operations (Fase 9.4)
+  // ===========================================================================
+
+  /**
+   * Bulk grant permissions to multiple principals on a resource.
+   */
+  bulkGrant: protectedProcedure
+    .input(z.object({
+      resourceType: resourceTypeSchema,
+      resourceId: z.number().nullable(),
+      principals: z.array(z.object({
+        type: principalTypeSchema,
+        id: z.number(),
+      })).min(1).max(100),
+      permissions: z.number().min(0).max(31),
+      inheritToChildren: z.boolean().default(true),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      await requireAclManagement(ctx.user!.id, input.resourceType, input.resourceId, ctx.prisma)
+
+      const result = await aclService.bulkGrantPermission({
+        resourceType: input.resourceType,
+        resourceId: input.resourceId,
+        principals: input.principals,
+        permissions: input.permissions,
+        inheritToChildren: input.inheritToChildren,
+        createdById: ctx.user!.id,
+      })
+
+      // Emit real-time event for each principal
+      for (const principal of input.principals) {
+        emitAclGranted({
+          entryId: 0, // Bulk operation, individual IDs not tracked
+          resourceType: input.resourceType,
+          resourceId: input.resourceId,
+          principalType: principal.type,
+          principalId: principal.id,
+          permissions: input.permissions,
+          deny: false,
+          triggeredBy: {
+            id: ctx.user!.id,
+            username: ctx.user!.username,
+          },
+          timestamp: new Date().toISOString(),
+        })
+      }
+
+      // Audit logging - single entry for bulk operation
+      const resourceInfo = await getResourceInfo(input.resourceType, input.resourceId, ctx.prisma)
+      await auditService.logAclEvent({
+        action: AUDIT_ACTIONS.ACL_BULK_GRANTED,
+        resourceType: input.resourceType,
+        resourceId: input.resourceId,
+        resourceName: resourceInfo.name,
+        changes: {
+          principalCount: input.principals.length,
+          permissions: input.permissions,
+          inheritToChildren: input.inheritToChildren,
+        },
+        metadata: {
+          success: result.success,
+          failed: result.failed,
+          principals: input.principals,
+        },
+        userId: ctx.user!.id,
+        workspaceId: resourceInfo.workspaceId,
+        ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
+      })
+
+      return result
+    }),
+
+  /**
+   * Bulk revoke permissions from multiple principals on a resource.
+   */
+  bulkRevoke: protectedProcedure
+    .input(z.object({
+      resourceType: resourceTypeSchema,
+      resourceId: z.number().nullable(),
+      principals: z.array(z.object({
+        type: principalTypeSchema,
+        id: z.number(),
+      })).min(1).max(100),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      await requireAclManagement(ctx.user!.id, input.resourceType, input.resourceId, ctx.prisma)
+
+      const result = await aclService.bulkRevokePermission({
+        resourceType: input.resourceType,
+        resourceId: input.resourceId,
+        principals: input.principals,
+      })
+
+      // Emit real-time event for each principal
+      for (const principal of input.principals) {
+        emitAclDeleted({
+          entryId: 0, // Bulk operation, individual IDs not tracked
+          resourceType: input.resourceType,
+          resourceId: input.resourceId,
+          principalType: principal.type,
+          principalId: principal.id,
+          triggeredBy: {
+            id: ctx.user!.id,
+            username: ctx.user!.username,
+          },
+          timestamp: new Date().toISOString(),
+        })
+      }
+
+      // Audit logging - single entry for bulk operation
+      const resourceInfo = await getResourceInfo(input.resourceType, input.resourceId, ctx.prisma)
+      await auditService.logAclEvent({
+        action: AUDIT_ACTIONS.ACL_BULK_REVOKED,
+        resourceType: input.resourceType,
+        resourceId: input.resourceId,
+        resourceName: resourceInfo.name,
+        changes: {
+          principalCount: input.principals.length,
+        },
+        metadata: {
+          success: result.success,
+          failed: result.failed,
+          principals: input.principals,
+        },
+        userId: ctx.user!.id,
+        workspaceId: resourceInfo.workspaceId,
+        ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
+      })
+
+      return result
+    }),
+
+  /**
+   * Copy ACL entries from one resource to other resources.
+   */
+  copyPermissions: protectedProcedure
+    .input(z.object({
+      sourceResourceType: resourceTypeSchema,
+      sourceResourceId: z.number().nullable(),
+      targetResources: z.array(z.object({
+        type: resourceTypeSchema,
+        id: z.number().nullable(),
+      })).min(1).max(50),
+      overwrite: z.boolean().default(false),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      // Check permission on source
+      await requireAclManagement(ctx.user!.id, input.sourceResourceType, input.sourceResourceId, ctx.prisma)
+
+      // Check permission on each target
+      for (const target of input.targetResources) {
+        await requireAclManagement(ctx.user!.id, target.type, target.id, ctx.prisma)
+      }
+
+      const result = await aclService.copyAclEntries({
+        sourceResourceType: input.sourceResourceType,
+        sourceResourceId: input.sourceResourceId,
+        targetResources: input.targetResources,
+        overwrite: input.overwrite,
+        createdById: ctx.user!.id,
+      })
+
+      // Emit real-time events for each target
+      for (const target of input.targetResources) {
+        emitAclGranted({
+          entryId: 0, // Copy operation
+          resourceType: target.type,
+          resourceId: target.id,
+          principalType: 'user', // Placeholder
+          principalId: 0, // Placeholder
+          permissions: 0, // Placeholder
+          deny: false,
+          triggeredBy: {
+            id: ctx.user!.id,
+            username: ctx.user!.username,
+          },
+          timestamp: new Date().toISOString(),
+        })
+      }
+
+      // Audit logging
+      const [sourceInfo] = await Promise.all([
+        getResourceInfo(input.sourceResourceType, input.sourceResourceId, ctx.prisma),
+      ])
+      await auditService.logAclEvent({
+        action: AUDIT_ACTIONS.ACL_COPIED,
+        resourceType: input.sourceResourceType,
+        resourceId: input.sourceResourceId,
+        resourceName: sourceInfo.name,
+        changes: {
+          copiedCount: result.copiedCount,
+          skippedCount: result.skippedCount,
+          overwrite: input.overwrite,
+        },
+        metadata: {
+          targetResources: input.targetResources,
+        },
+        userId: ctx.user!.id,
+        workspaceId: sourceInfo.workspaceId,
+        ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
+      })
+
+      return result
+    }),
+
+  /**
+   * Apply a permission template to multiple principals on a resource.
+   */
+  applyTemplate: protectedProcedure
+    .input(z.object({
+      templateName: z.enum(['read_only', 'contributor', 'editor', 'full_control']),
+      resourceType: resourceTypeSchema,
+      resourceId: z.number().nullable(),
+      principals: z.array(z.object({
+        type: principalTypeSchema,
+        id: z.number(),
+      })).min(1).max(100),
+      inheritToChildren: z.boolean().default(true),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      await requireAclManagement(ctx.user!.id, input.resourceType, input.resourceId, ctx.prisma)
+
+      const result = await aclService.applyTemplate({
+        templateName: input.templateName,
+        resourceType: input.resourceType,
+        resourceId: input.resourceId,
+        principals: input.principals,
+        inheritToChildren: input.inheritToChildren,
+        createdById: ctx.user!.id,
+      })
+
+      // Emit real-time events
+      for (const principal of input.principals) {
+        emitAclGranted({
+          entryId: 0, // Template operation
+          resourceType: input.resourceType,
+          resourceId: input.resourceId,
+          principalType: principal.type,
+          principalId: principal.id,
+          permissions: 0, // Template applied, exact value depends on template
+          deny: false,
+          triggeredBy: {
+            id: ctx.user!.id,
+            username: ctx.user!.username,
+          },
+          timestamp: new Date().toISOString(),
+        })
+      }
+
+      // Audit logging
+      const resourceInfo = await getResourceInfo(input.resourceType, input.resourceId, ctx.prisma)
+      await auditService.logAclEvent({
+        action: AUDIT_ACTIONS.ACL_TEMPLATE_APPLIED,
+        resourceType: input.resourceType,
+        resourceId: input.resourceId,
+        resourceName: resourceInfo.name,
+        changes: {
+          templateName: input.templateName,
+          principalCount: input.principals.length,
+          inheritToChildren: input.inheritToChildren,
+        },
+        metadata: {
+          success: result.success,
+          failed: result.failed,
+          principals: input.principals,
+        },
+        userId: ctx.user!.id,
+        workspaceId: resourceInfo.workspaceId,
+        ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
+      })
+
+      return result
+    }),
+
   /**
    * Get available permission presets.
    */

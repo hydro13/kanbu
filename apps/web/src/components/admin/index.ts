@@ -16,3 +16,7 @@
 
 export { AdminLayout } from './AdminLayout'
 export { AdminSidebar } from './AdminSidebar'
+export { ResourceTree, type SelectedResource, type ResourceType, type TreeState } from './ResourceTree'
+export { GroupMembersPanel } from './GroupMembersPanel'
+export { MultiPrincipalSelector, type SelectedPrincipal, type MultiPrincipalSelectorProps } from './MultiPrincipalSelector'
+export { BulkAclDialog, type BulkAclMode, type AclResourceType, type BulkAclDialogProps } from './BulkAclDialog'

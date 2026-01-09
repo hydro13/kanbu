@@ -14,7 +14,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react'
-import { AdminLayout } from '@/components/admin'
+import { AdminLayout, BulkAclDialog, type BulkAclMode } from '@/components/admin'
 import { ResourceTree, type SelectedResource, type ResourceType, type TreeState } from '@/components/admin/ResourceTree'
 import { GroupMembersPanel } from '@/components/admin/GroupMembersPanel'
 import { trpc } from '@/lib/trpc'
@@ -141,6 +141,7 @@ export function AclPage() {
   const [showGrantDialog, setShowGrantDialog] = useState(false)
   const [showDenyDialog, setShowDenyDialog] = useState(false)
   const [showCreateGroupDialog, setShowCreateGroupDialog] = useState(false)
+  const [bulkDialogMode, setBulkDialogMode] = useState<BulkAclMode | null>(null)
   const [newGroupName, setNewGroupName] = useState('')
   const [newGroupDisplayName, setNewGroupDisplayName] = useState('')
   const [newGroupDescription, setNewGroupDescription] = useState('')
@@ -429,6 +430,47 @@ export function AclPage() {
                 >
                   + Deny
                 </button>
+                {/* Bulk Actions Dropdown */}
+                <div className="relative group">
+                  <button
+                    className="px-3 py-1.5 text-sm bg-gray-600 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors flex items-center gap-1"
+                  >
+                    Bulk
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                      <path d="M6 9l6 6 6-6" />
+                    </svg>
+                  </button>
+                  <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
+                    <button
+                      onClick={() => setBulkDialogMode('grant')}
+                      className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                    >
+                      <span className="w-2 h-2 rounded-full bg-green-500" />
+                      Bulk Grant
+                    </button>
+                    <button
+                      onClick={() => setBulkDialogMode('revoke')}
+                      className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                    >
+                      <span className="w-2 h-2 rounded-full bg-red-500" />
+                      Bulk Revoke
+                    </button>
+                    <button
+                      onClick={() => setBulkDialogMode('copy')}
+                      className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                    >
+                      <span className="w-2 h-2 rounded-full bg-blue-500" />
+                      Copy Permissions
+                    </button>
+                    <button
+                      onClick={() => setBulkDialogMode('template')}
+                      className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                    >
+                      <span className="w-2 h-2 rounded-full bg-purple-500" />
+                      Apply Template
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -763,6 +805,18 @@ export function AclPage() {
           onClose={() => { setShowDenyDialog(false); resetForm() }}
           onSubmit={handleDeny}
           isLoading={denyMutation.isPending}
+        />
+      )}
+
+      {/* Bulk ACL Dialog */}
+      {bulkDialogMode && selectedResource && isAclResourceType(selectedResource.type) && (
+        <BulkAclDialog
+          open={!!bulkDialogMode}
+          onClose={() => setBulkDialogMode(null)}
+          mode={bulkDialogMode}
+          resourceType={selectedResource.type}
+          resourceId={selectedResource.id}
+          resourceName={selectedResource.path ?? selectedResource.name}
         />
       )}
 

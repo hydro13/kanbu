@@ -256,16 +256,16 @@ Het systeem draait nu in **pure ACL modus** (Fase 3B voltooid):
 - `admin` (9): users, create-user, acl, permission-tree, invites, workspaces, settings-general, settings-security, backup
 - `project` (11): board, list, calendar, timeline, sprints, milestones, analytics, members, settings, import-export, webhooks
 
-### Voltooid (Fase 9.1, 9.6)
+### Voltooid (Fase 9.1, 9.4, 9.6)
 
 - [x] **Fase 9.1**: Audit Logging - Security audit trail voor alle kritieke events
+- [x] **Fase 9.4**: Bulk Operations - bulkGrant, bulkRevoke, copyPermissions, applyTemplate
 - [x] **Fase 9.6**: API Keys & Service Accounts - Scoped API keys (USER/WORKSPACE/PROJECT), service accounts, dual auth (JWT + API key)
 
-### Gepland (Fase 9.2-9.5)
+### Gepland (Fase 9.2, 9.3, 9.5)
 
 - [ ] **Fase 9.2**: LDAP/AD Sync
 - [ ] **Fase 9.3**: Task-level ACL
-- [ ] **Fase 9.4**: Bulk Operations
 - [ ] **Fase 9.5**: Advanced UI (Permission matrix, What-if simulator)
 
 Zie [ROADMAP.md](./ROADMAP.md) voor de volledige planning.
