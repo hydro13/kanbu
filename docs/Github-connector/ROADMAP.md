@@ -1764,7 +1764,7 @@ aiService = {
 | Fase 11 | Geavanceerde Sync (Milestones, Releases) + 30 tests | Project | ⚡ Deels Compleet |
 | Fase 12 | Code Review Integratie (Reviews, CODEOWNERS) | Project | ✅ Compleet |
 | Fase 13 | Analytics & Insights (Cycle Time, Stats) | Project | ✅ Compleet |
-| Fase 14 | Developer Experience (Bot + CLI) + 24 tests | Tools | ⚡ Deels Compleet |
+| Fase 14 | Developer Experience (Bot + CLI + Git Hooks) + 53 tests | Tools | ⚡ Deels Compleet |
 | Fase 15 | Multi-Repo Support (Monorepo, Cross-repo) | Project | 🚧 Gepland |
 | Fase 16 | AI/Claude Integratie (PR Summary, Review AI) + 26 tests | MCP/AI | ✅ Compleet |
 
@@ -1915,7 +1915,13 @@ aiService = {
 | `apps/api/src/services/github/botService.ts` | **Nieuw** - Bot slash commands ✅ |
 | `apps/api/src/services/github/__tests__/botService.test.ts` | **Nieuw** - 24 tests |
 | `apps/api/src/routes/webhooks/github.ts` | Issue comment handler toegevoegd |
-| `packages/git-hooks/` | 🚧 Gepland voor Fase 14B |
+| `packages/git-hooks/` | **Nieuw** - Git hooks package ✅ |
+| `packages/git-hooks/src/cli.ts` | CLI: install, uninstall, status, config, run |
+| `packages/git-hooks/src/utils.ts` | Utilities voor task extraction, hook management |
+| `packages/git-hooks/src/hooks/prepare-commit-msg.ts` | Auto-add task ref to commits |
+| `packages/git-hooks/src/hooks/commit-msg.ts` | Validate task reference |
+| `packages/git-hooks/src/hooks/post-commit.ts` | Link commit to task in Kanbu |
+| `packages/git-hooks/src/__tests__/utils.test.ts` | **Nieuw** - 29 tests |
 | `packages/vscode-extension/` | 🚧 Gepland voor Fase 14B |
 
 #### Multi-Repo (Fase 15)
