@@ -52,6 +52,14 @@ A modern, self-hostable project management tool with Kanban boards, real-time co
 - **Dual Authentication** - Both JWT sessions and API keys supported
 - **Audit Logging** - All API key events logged (create, use, revoke)
 
+### AI Assistant (Claude Code Integration)
+- **MCP Server** - Model Context Protocol server for Claude Code
+- **One-time Setup Code** - Secure pairing flow (KNB-XXXX-XXXX format, 5-min TTL)
+- **Permission Inheritance** - Claude inherits your ACL permissions
+- **Multi-machine Support** - Connect from multiple workstations
+- **Machine Binding** - Tokens bound to specific machines for security
+- **Audit Trail** - All Claude actions logged with "via Claude Code" marker
+
 ## Quick Start
 
 ```bash
@@ -101,11 +109,18 @@ kanbu/
 │           └── store/          # Redux slices
 │
 ├── packages/
-│   └── shared/                 # Shared code
-│       ├── prisma/
-│       │   ├── schema.prisma   # Database schema
-│       │   └── seed-permissions.ts
-│       └── src/                # Shared types
+│   ├── shared/                 # Shared code
+│   │   ├── prisma/
+│   │   │   ├── schema.prisma   # Database schema
+│   │   │   └── seed-permissions.ts
+│   │   └── src/                # Shared types
+│   │
+│   └── mcp-server/             # Claude Code MCP integration
+│       └── src/
+│           ├── index.ts        # MCP server entry point
+│           ├── storage.ts      # Token storage
+│           ├── client.ts       # Kanbu API client
+│           └── machine.ts      # Machine ID generation
 │
 ├── docker/                     # Docker deployment
 │   ├── docker-compose.yml      # Development
@@ -273,6 +288,7 @@ The API uses tRPC for type-safe client-server communication. Main routers:
 | `acl` | ACL management (grant, revoke, list permissions) |
 | `auditLog` | Audit log queries (list, stats, export) |
 | `apiKey` | API key management (create, revoke, list with scopes) |
+| `assistant` | AI Assistant pairing and management |
 | `admin` | Admin-only operations (backups, system settings) |
 | `user` | User profile and settings |
 
@@ -328,6 +344,32 @@ FROM "Group" WHERE name = 'Domain Admins';
 ```
 
 The ACL entry grants Full Control (31 = RWXDP) on admin resources.
+
+## AI Assistant Setup (Claude Code)
+
+Connect Claude Code to manage your Kanbu projects:
+
+### 1. Build the MCP Server
+
+```bash
+cd packages/mcp-server
+pnpm install
+pnpm build
+```
+
+### 2. Add to Claude Code
+
+```bash
+claude mcp add kanbu -- node /path/to/kanbu/packages/mcp-server/dist/index.js
+```
+
+### 3. Connect
+
+1. Go to your Kanbu profile page → AI Assistant section
+2. Click "Generate Setup Code"
+3. Tell Claude: "Connect to Kanbu with code KNB-XXXX-XXXX"
+
+For detailed documentation, see [docs/MCP/README.md](docs/MCP/README.md).
 
 ## License
 

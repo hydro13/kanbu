@@ -135,6 +135,16 @@ function CodeIcon({ className }: { className?: string }) {
   )
 }
 
+function BotIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+      <circle cx="9" cy="9" r="1" fill="currentColor" />
+      <circle cx="15" cy="9" r="1" fill="currentColor" />
+    </svg>
+  )
+}
+
 function CurrencyIcon({ className }: { className?: string }) {
   return (
     <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -190,6 +200,7 @@ const navSections: NavSection[] = [
       { label: 'External accounts', path: '/profile/external', icon: LinkIcon },
       { label: 'Integrations', path: '/profile/integrations', icon: PuzzleIcon },
       { label: 'API tokens', path: '/profile/api', icon: CodeIcon },
+      { label: 'AI Assistant', path: '/profile/assistant', icon: BotIcon },
       { label: 'Hourly rate', path: '/profile/hourly-rate', icon: CurrencyIcon },
     ],
   },

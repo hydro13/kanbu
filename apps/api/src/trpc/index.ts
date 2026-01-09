@@ -92,6 +92,9 @@
  *
  * Modified: 2026-01-05
  * Change: Added groupRouter for AD-style group management
+ *
+ * Modified: 2026-01-09
+ * Change: Added assistantRouter for Claude Code MCP integration (Fase 9.7)
  * ═══════════════════════════════════════════════════════════════════
  */
 
@@ -127,6 +130,7 @@ import { roleAssignmentRouter } from './procedures/roleAssignment';
 import { youtubeRouter } from './procedures/youtube';
 import { aclRouter } from './procedures/acl';
 import { auditLogRouter } from './procedures/auditLog';
+import { assistantRouter } from './procedures/assistant';
 
 /**
  * Main app router
@@ -164,6 +168,7 @@ export const appRouter = router({
   youtube: youtubeRouter,
   acl: aclRouter,
   auditLog: auditLogRouter,
+  assistant: assistantRouter,
 });
 
 /**

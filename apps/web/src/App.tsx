@@ -107,6 +107,7 @@ import { NotificationPreferences } from './pages/profile/NotificationPreferences
 import { ExternalAccounts } from './pages/profile/ExternalAccounts'
 import { Integrations } from './pages/profile/Integrations'
 import { ApiTokens } from './pages/profile/ApiTokens'
+import { AiAssistant } from './pages/profile/AiAssistant'
 import { HourlyRate } from './pages/profile/HourlyRate'
 import { ChangePassword } from './pages/profile/ChangePassword'
 // Admin pages
@@ -334,6 +335,14 @@ function App() {
           element={
             <ProtectedRoute>
               <ApiTokens />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile/assistant"
+          element={
+            <ProtectedRoute>
+              <AiAssistant />
             </ProtectedRoute>
           }
         />

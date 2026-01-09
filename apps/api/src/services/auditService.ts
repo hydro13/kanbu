@@ -96,6 +96,10 @@ export const AUDIT_ACTIONS = {
   // Advanced UI (Fase 9.5)
   ACL_EXPORTED: 'acl:exported',
   ACL_IMPORTED: 'acl:imported',
+
+  // AI Assistant (Fase 9.7)
+  ASSISTANT_PAIRED: 'assistant:paired',
+  ASSISTANT_DISCONNECTED: 'assistant:disconnected',
 } as const
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS]
