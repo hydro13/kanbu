@@ -1,16 +1,17 @@
 /*
  * GitHub Webhook Handler
- * Version: 1.0.0
+ * Version: 2.0.0
  *
  * Receives and processes GitHub webhook events.
  * Handles signature verification, event routing, and sync operations.
+ * Now includes auto-linking of PRs and commits to tasks.
  *
  * =============================================================================
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
  * Claude Code: Opus 4.5
  * Host: MAX
  * Date: 2026-01-09
- * Fase: 4 - Webhook Handler
+ * Fase: 7 - PR & Commit Tracking
  * =============================================================================
  */
 
@@ -21,6 +22,11 @@ import {
   createTaskFromGitHubIssue,
   updateTaskFromGitHubIssue,
 } from '../../services/github/issueSyncService'
+import {
+  processNewPR,
+  processNewCommits,
+} from '../../services/github/prCommitLinkService'
+import type { GitHubSyncSettings } from '@kanbu/shared'
 
 // =============================================================================
 // Types
@@ -399,7 +405,13 @@ async function handleIssues(ctx: WebhookContext): Promise<{ processed: boolean; 
 /**
  * Handle pull request events
  */
-async function handlePullRequest(ctx: WebhookContext): Promise<{ processed: boolean; action: string; prNumber?: number }> {
+async function handlePullRequest(ctx: WebhookContext): Promise<{
+  processed: boolean
+  action: string
+  prNumber?: number
+  taskLinked?: boolean
+  linkMethod?: string
+}> {
   const { action, payload } = ctx
   const pr = payload.pull_request
   const repo = payload.repository
@@ -425,7 +437,7 @@ async function handlePullRequest(ctx: WebhookContext): Promise<{ processed: bool
   }
 
   // Check sync settings
-  const syncSettings = linkedRepo.syncSettings as { pullRequests?: { enabled: boolean } } | null
+  const syncSettings = linkedRepo.syncSettings as GitHubSyncSettings | null
   if (!syncSettings?.pullRequests?.enabled) {
     return { processed: false, action: action || 'unknown', prNumber: pr.number }
   }
@@ -434,6 +446,102 @@ async function handlePullRequest(ctx: WebhookContext): Promise<{ processed: bool
   let prState: 'open' | 'closed' | 'merged' = pr.state
   if (pr.merged) {
     prState = 'merged'
+  }
+
+  // Process PR with auto-linking for opened/ready_for_review events
+  let taskLinked = false
+  let linkMethod = 'none'
+
+  if (action === 'opened' || action === 'ready_for_review') {
+    try {
+      const result = await processNewPR(linkedRepo.id, {
+        prNumber: pr.number,
+        prId: BigInt(pr.id),
+        title: pr.title,
+        body: pr.body,
+        state: prState,
+        headBranch: pr.head.ref,
+        baseBranch: pr.base.ref,
+        authorLogin: pr.user.login,
+        mergedAt: pr.merged_at ? new Date(pr.merged_at) : null,
+        closedAt: pr.closed_at ? new Date(pr.closed_at) : null,
+      })
+
+      taskLinked = result.linked
+      linkMethod = result.method
+
+      if (result.linked) {
+        console.log(`[GitHub Webhook] PR #${pr.number} auto-linked to task ${result.taskId} via ${result.method}`)
+      }
+    } catch (error) {
+      console.error(`[GitHub Webhook] Error processing PR #${pr.number}:`, error)
+    }
+  } else {
+    // For other actions, just update the existing record
+    const existingPR = await prisma.gitHubPullRequest.findUnique({
+      where: {
+        repositoryId_prNumber: {
+          repositoryId: linkedRepo.id,
+          prNumber: pr.number,
+        },
+      },
+    })
+
+    switch (action) {
+      case 'edited':
+      case 'synchronize':
+        if (existingPR) {
+          await prisma.gitHubPullRequest.update({
+            where: { id: existingPR.id },
+            data: {
+              title: pr.title,
+              state: prState,
+              headBranch: pr.head.ref,
+            },
+          })
+        } else {
+          // PR not tracked yet, create and auto-link
+          const result = await processNewPR(linkedRepo.id, {
+            prNumber: pr.number,
+            prId: BigInt(pr.id),
+            title: pr.title,
+            body: pr.body,
+            state: prState,
+            headBranch: pr.head.ref,
+            baseBranch: pr.base.ref,
+            authorLogin: pr.user.login,
+          })
+          taskLinked = result.linked
+          linkMethod = result.method
+        }
+        break
+
+      case 'closed':
+        if (existingPR) {
+          await prisma.gitHubPullRequest.update({
+            where: { id: existingPR.id },
+            data: {
+              state: prState,
+              mergedAt: pr.merged_at ? new Date(pr.merged_at) : null,
+              closedAt: pr.closed_at ? new Date(pr.closed_at) : null,
+            },
+          })
+        }
+        break
+
+      case 'reopened':
+        if (existingPR) {
+          await prisma.gitHubPullRequest.update({
+            where: { id: existingPR.id },
+            data: {
+              state: 'open',
+              mergedAt: null,
+              closedAt: null,
+            },
+          })
+        }
+        break
+    }
   }
 
   // Log sync operation
@@ -449,96 +557,37 @@ async function handlePullRequest(ctx: WebhookContext): Promise<{ processed: bool
         state: prState,
         headBranch: pr.head.ref,
         baseBranch: pr.base.ref,
+        taskLinked,
+        linkMethod,
       },
       status: 'success',
     },
   })
 
-  // Find or create GitHubPullRequest record
-  const existingPR = await prisma.gitHubPullRequest.findUnique({
-    where: {
-      repositoryId_prNumber: {
-        repositoryId: linkedRepo.id,
-        prNumber: pr.number,
-      },
-    },
-  })
-
-  switch (action) {
-    case 'opened':
-    case 'ready_for_review':
-      if (!existingPR) {
-        await prisma.gitHubPullRequest.create({
-          data: {
-            repositoryId: linkedRepo.id,
-            prNumber: pr.number,
-            prId: BigInt(pr.id),
-            title: pr.title,
-            state: prState,
-            headBranch: pr.head.ref,
-            baseBranch: pr.base.ref,
-            authorLogin: pr.user.login,
-          },
-        })
-        console.log(`[GitHub Webhook] Created GitHubPullRequest record for #${pr.number}`)
-      }
-      break
-
-    case 'edited':
-    case 'synchronize':
-      if (existingPR) {
-        await prisma.gitHubPullRequest.update({
-          where: { id: existingPR.id },
-          data: {
-            title: pr.title,
-            state: prState,
-            headBranch: pr.head.ref,
-          },
-        })
-      }
-      break
-
-    case 'closed':
-      if (existingPR) {
-        await prisma.gitHubPullRequest.update({
-          where: { id: existingPR.id },
-          data: {
-            state: prState,
-            mergedAt: pr.merged_at ? new Date(pr.merged_at) : null,
-            closedAt: pr.closed_at ? new Date(pr.closed_at) : null,
-          },
-        })
-      }
-      break
-
-    case 'reopened':
-      if (existingPR) {
-        await prisma.gitHubPullRequest.update({
-          where: { id: existingPR.id },
-          data: {
-            state: 'open',
-            mergedAt: null,
-            closedAt: null,
-          },
-        })
-      }
-      break
+  return {
+    processed: true,
+    action: action || 'unknown',
+    prNumber: pr.number,
+    taskLinked,
+    linkMethod,
   }
-
-  return { processed: true, action: action || 'unknown', prNumber: pr.number }
 }
 
 /**
  * Handle push events (commits)
  */
-async function handlePush(ctx: WebhookContext): Promise<{ processed: boolean; commitCount: number }> {
+async function handlePush(ctx: WebhookContext): Promise<{
+  processed: boolean
+  commitCount: number
+  linkedCount: number
+}> {
   const { payload } = ctx
   const commits = payload.commits || []
   const repo = payload.repository
   const ref = payload.ref
 
   if (!repo || commits.length === 0) {
-    return { processed: false, commitCount: 0 }
+    return { processed: false, commitCount: 0, linkedCount: 0 }
   }
 
   console.log(`[GitHub Webhook] Push to ${repo.full_name} (${ref}): ${commits.length} commits`)
@@ -554,42 +603,32 @@ async function handlePush(ctx: WebhookContext): Promise<{ processed: boolean; co
   })
 
   if (!linkedRepo || !linkedRepo.syncEnabled) {
-    return { processed: false, commitCount: commits.length }
+    return { processed: false, commitCount: commits.length, linkedCount: 0 }
   }
 
   // Check sync settings
-  const syncSettings = linkedRepo.syncSettings as { commits?: { enabled: boolean } } | null
+  const syncSettings = linkedRepo.syncSettings as GitHubSyncSettings | null
   if (!syncSettings?.commits?.enabled) {
-    return { processed: false, commitCount: commits.length }
+    return { processed: false, commitCount: commits.length, linkedCount: 0 }
   }
 
-  // Process each commit
-  let processedCount = 0
-  for (const commit of commits) {
-    // Check if commit already exists
-    const existingCommit = await prisma.gitHubCommit.findUnique({
-      where: {
-        repositoryId_sha: {
-          repositoryId: linkedRepo.id,
-          sha: commit.id,
-        },
-      },
-    })
+  // Process commits with auto-linking
+  const commitData = commits.map(commit => ({
+    sha: commit.id,
+    message: commit.message,
+    authorName: commit.author.name,
+    authorEmail: commit.author.email,
+    authorLogin: commit.author.username || null,
+    committedAt: new Date(commit.timestamp),
+  }))
 
-    if (!existingCommit) {
-      await prisma.gitHubCommit.create({
-        data: {
-          repositoryId: linkedRepo.id,
-          sha: commit.id,
-          message: commit.message,
-          authorName: commit.author.name,
-          authorEmail: commit.author.email,
-          authorLogin: commit.author.username || null,
-          committedAt: new Date(commit.timestamp),
-        },
-      })
-      processedCount++
-    }
+  const results = await processNewCommits(linkedRepo.id, commitData)
+
+  const processedCount = results.length
+  const linkedCount = results.filter(r => r.linked).length
+
+  if (linkedCount > 0) {
+    console.log(`[GitHub Webhook] ${linkedCount}/${processedCount} commits auto-linked to tasks`)
   }
 
   if (processedCount > 0 && commits[0]) {
@@ -605,14 +644,15 @@ async function handlePush(ctx: WebhookContext): Promise<{ processed: boolean; co
           branch: ref,
           count: processedCount,
           total: commits.length,
+          linkedCount,
         },
         status: 'success',
       },
     })
   }
 
-  console.log(`[GitHub Webhook] Processed ${processedCount}/${commits.length} commits`)
-  return { processed: true, commitCount: processedCount }
+  console.log(`[GitHub Webhook] Processed ${processedCount}/${commits.length} commits (${linkedCount} linked)`)
+  return { processed: true, commitCount: processedCount, linkedCount }
 }
 
 // =============================================================================

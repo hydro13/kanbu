@@ -1,6 +1,6 @@
 /*
  * GitHub Services Index
- * Version: 1.0.0
+ * Version: 2.0.0
  *
  * Central export for all GitHub-related services.
  *
@@ -9,7 +9,7 @@
  * Claude Code: Opus 4.5
  * Host: MAX
  * Date: 2026-01-09
- * Fase: 2 - GitHub App & OAuth
+ * Fase: 7 - PR & Commit Tracking
  * =============================================================================
  */
 
@@ -51,3 +51,35 @@ export {
   updateGitHubIssueFromTask,
   syncTaskToGitHub,
 } from './issueSyncService'
+
+export {
+  prCommitLinkService,
+  // Reference extraction
+  extractTaskReferences,
+  extractTaskFromBranch,
+  findTaskByReference,
+  findTaskFromReferences,
+  // PR linking
+  autoLinkPRToTask,
+  autoLinkPRToTaskWithBody,
+  linkPRToTask,
+  unlinkPRFromTask,
+  // Commit linking
+  autoLinkCommitToTask,
+  linkCommitToTask,
+  unlinkCommitFromTask,
+  // Batch processing
+  getLinkingOptionsFromSettings,
+  processNewPR,
+  processNewCommits,
+  // Queries
+  getTaskPRs,
+  getTaskCommits,
+  getPRByNumber,
+  getCommitBySha,
+  // Types
+  type TaskReference,
+  type PRLinkResult,
+  type CommitLinkResult,
+  type LinkingOptions,
+} from './prCommitLinkService'

@@ -1,16 +1,16 @@
 /*
  * GitHub Project Procedures
- * Version: 1.0.0
+ * Version: 2.0.0
  *
  * tRPC procedures for GitHub repository management at project level.
- * Handles repository linking, sync settings, and sync operations.
+ * Handles repository linking, sync settings, sync operations, and PR/commit tracking.
  *
  * =============================================================================
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
  * Claude Code: Opus 4.5
  * Host: MAX
  * Date: 2026-01-09
- * Fase: 3 - Repository Linking
+ * Fase: 7 - PR & Commit Tracking
  * =============================================================================
  */
 
@@ -26,6 +26,14 @@ import {
   updateGitHubIssueFromTask,
   syncTaskToGitHub,
 } from '../../services/github/issueSyncService'
+import {
+  getTaskPRs,
+  getTaskCommits,
+  linkPRToTask,
+  unlinkPRFromTask,
+  linkCommitToTask,
+  unlinkCommitFromTask,
+} from '../../services/github/prCommitLinkService'
 import type { GitHubSyncSettings } from '@kanbu/shared'
 
 // =============================================================================
@@ -96,6 +104,37 @@ const taskIdSchema = z.object({
 const syncTaskSchema = z.object({
   taskId: z.number(),
   force: z.boolean().optional().default(false),
+})
+
+const prIdSchema = z.object({
+  prId: z.number(),
+})
+
+const linkPRSchema = z.object({
+  prId: z.number(),
+  taskId: z.number(),
+})
+
+const commitIdSchema = z.object({
+  commitId: z.number(),
+})
+
+const linkCommitSchema = z.object({
+  commitId: z.number(),
+  taskId: z.number(),
+})
+
+const projectPRsSchema = z.object({
+  projectId: z.number(),
+  state: z.enum(['open', 'closed', 'merged', 'all']).optional().default('all'),
+  limit: z.number().min(1).max(100).optional().default(20),
+  offset: z.number().min(0).optional().default(0),
+})
+
+const projectCommitsSchema = z.object({
+  projectId: z.number(),
+  limit: z.number().min(1).max(100).optional().default(20),
+  offset: z.number().min(0).optional().default(0),
 })
 
 // =============================================================================
@@ -1068,6 +1107,485 @@ export const githubRouter = router({
         updated: result.updated,
         issueNumber: result.issueNumber,
         issueUrl: `https://github.com/${repository.fullName}/issues/${result.issueNumber}`,
+      }
+    }),
+
+  // ===========================================================================
+  // PR & Commit Tracking - Fase 7
+  // ===========================================================================
+
+  /**
+   * Get PRs linked to a task
+   * Requires project READ permission
+   */
+  getTaskPRs: protectedProcedure
+    .input(taskIdSchema)
+    .query(async ({ ctx, input }) => {
+      const { taskId } = input
+
+      // Get task
+      const task = await ctx.prisma.task.findUnique({
+        where: { id: taskId },
+        select: { id: true, projectId: true },
+      })
+
+      if (!task) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Task not found',
+        })
+      }
+
+      // Check project read permission
+      await checkProjectReadAccess(ctx.user.id, task.projectId)
+
+      // Get PRs
+      const prs = await getTaskPRs(taskId)
+
+      return {
+        prs: prs.map(pr => ({
+          id: pr.id,
+          prNumber: pr.prNumber,
+          title: pr.title,
+          state: pr.state,
+          headBranch: pr.headBranch,
+          baseBranch: pr.baseBranch,
+          authorLogin: pr.authorLogin,
+          mergedAt: pr.mergedAt,
+          closedAt: pr.closedAt,
+          createdAt: pr.createdAt,
+          repository: {
+            owner: pr.repository.owner,
+            name: pr.repository.name,
+            fullName: pr.repository.fullName,
+          },
+          url: `https://github.com/${pr.repository.fullName}/pull/${pr.prNumber}`,
+        })),
+      }
+    }),
+
+  /**
+   * Get commits linked to a task
+   * Requires project READ permission
+   */
+  getTaskCommits: protectedProcedure
+    .input(taskIdSchema)
+    .query(async ({ ctx, input }) => {
+      const { taskId } = input
+
+      // Get task
+      const task = await ctx.prisma.task.findUnique({
+        where: { id: taskId },
+        select: { id: true, projectId: true },
+      })
+
+      if (!task) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Task not found',
+        })
+      }
+
+      // Check project read permission
+      await checkProjectReadAccess(ctx.user.id, task.projectId)
+
+      // Get commits
+      const commits = await getTaskCommits(taskId)
+
+      return {
+        commits: commits.map(commit => ({
+          id: commit.id,
+          sha: commit.sha,
+          message: commit.message,
+          authorName: commit.authorName,
+          authorEmail: commit.authorEmail,
+          authorLogin: commit.authorLogin,
+          committedAt: commit.committedAt,
+          createdAt: commit.createdAt,
+          repository: {
+            owner: commit.repository.owner,
+            name: commit.repository.name,
+            fullName: commit.repository.fullName,
+          },
+          url: `https://github.com/${commit.repository.fullName}/commit/${commit.sha}`,
+        })),
+      }
+    }),
+
+  /**
+   * List all PRs in a project
+   * Requires project READ permission
+   */
+  listProjectPRs: protectedProcedure
+    .input(projectPRsSchema)
+    .query(async ({ ctx, input }) => {
+      const { projectId, state, limit, offset } = input
+
+      // Check project read permission
+      await checkProjectReadAccess(ctx.user.id, projectId)
+
+      // Get repository
+      const repository = await ctx.prisma.gitHubRepository.findUnique({
+        where: { projectId },
+        select: { id: true, owner: true, name: true, fullName: true },
+      })
+
+      if (!repository) {
+        return { prs: [], total: 0, hasMore: false }
+      }
+
+      // Build state filter
+      const stateFilter = state === 'all' ? {} : { state }
+
+      const [prs, total] = await Promise.all([
+        ctx.prisma.gitHubPullRequest.findMany({
+          where: {
+            repositoryId: repository.id,
+            ...stateFilter,
+          },
+          orderBy: { createdAt: 'desc' },
+          take: limit,
+          skip: offset,
+          include: {
+            task: {
+              select: { id: true, reference: true, title: true },
+            },
+          },
+        }),
+        ctx.prisma.gitHubPullRequest.count({
+          where: {
+            repositoryId: repository.id,
+            ...stateFilter,
+          },
+        }),
+      ])
+
+      return {
+        prs: prs.map(pr => ({
+          id: pr.id,
+          prNumber: pr.prNumber,
+          title: pr.title,
+          state: pr.state,
+          headBranch: pr.headBranch,
+          baseBranch: pr.baseBranch,
+          authorLogin: pr.authorLogin,
+          mergedAt: pr.mergedAt,
+          closedAt: pr.closedAt,
+          createdAt: pr.createdAt,
+          task: pr.task,
+          url: `https://github.com/${repository.fullName}/pull/${pr.prNumber}`,
+        })),
+        total,
+        hasMore: offset + prs.length < total,
+      }
+    }),
+
+  /**
+   * List all commits in a project
+   * Requires project READ permission
+   */
+  listProjectCommits: protectedProcedure
+    .input(projectCommitsSchema)
+    .query(async ({ ctx, input }) => {
+      const { projectId, limit, offset } = input
+
+      // Check project read permission
+      await checkProjectReadAccess(ctx.user.id, projectId)
+
+      // Get repository
+      const repository = await ctx.prisma.gitHubRepository.findUnique({
+        where: { projectId },
+        select: { id: true, owner: true, name: true, fullName: true },
+      })
+
+      if (!repository) {
+        return { commits: [], total: 0, hasMore: false }
+      }
+
+      const [commits, total] = await Promise.all([
+        ctx.prisma.gitHubCommit.findMany({
+          where: { repositoryId: repository.id },
+          orderBy: { committedAt: 'desc' },
+          take: limit,
+          skip: offset,
+          include: {
+            task: {
+              select: { id: true, reference: true, title: true },
+            },
+          },
+        }),
+        ctx.prisma.gitHubCommit.count({
+          where: { repositoryId: repository.id },
+        }),
+      ])
+
+      return {
+        commits: commits.map(commit => ({
+          id: commit.id,
+          sha: commit.sha,
+          message: commit.message,
+          authorName: commit.authorName,
+          authorEmail: commit.authorEmail,
+          authorLogin: commit.authorLogin,
+          committedAt: commit.committedAt,
+          createdAt: commit.createdAt,
+          task: commit.task,
+          url: `https://github.com/${repository.fullName}/commit/${commit.sha}`,
+        })),
+        total,
+        hasMore: offset + commits.length < total,
+      }
+    }),
+
+  /**
+   * Manually link a PR to a task
+   * Requires project WRITE permission
+   */
+  linkPRToTask: protectedProcedure
+    .input(linkPRSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { prId, taskId } = input
+
+      // Get task and check access
+      const { task, projectId } = await getTaskWithProjectAccess(
+        ctx.prisma,
+        ctx.user.id,
+        taskId
+      )
+
+      // Get PR and verify it belongs to the same project
+      const pr = await ctx.prisma.gitHubPullRequest.findUnique({
+        where: { id: prId },
+        include: {
+          repository: {
+            select: { projectId: true, fullName: true },
+          },
+        },
+      })
+
+      if (!pr) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Pull request not found',
+        })
+      }
+
+      if (pr.repository.projectId !== projectId) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Pull request belongs to a different project',
+        })
+      }
+
+      // Link PR to task
+      const result = await linkPRToTask(prId, taskId)
+
+      // Audit log
+      await auditService.log({
+        userId: ctx.user.id,
+        action: 'GITHUB_PR_LINKED' as keyof typeof AUDIT_ACTIONS,
+        category: 'WORKSPACE',
+        resourceType: 'task',
+        resourceId: taskId,
+        resourceName: task.reference,
+        metadata: {
+          prId,
+          prNumber: pr.prNumber,
+          prTitle: pr.title,
+        },
+      })
+
+      return {
+        success: true,
+        linked: result.linked,
+        prUrl: `https://github.com/${pr.repository.fullName}/pull/${pr.prNumber}`,
+      }
+    }),
+
+  /**
+   * Unlink a PR from a task
+   * Requires project WRITE permission
+   */
+  unlinkPRFromTask: protectedProcedure
+    .input(prIdSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { prId } = input
+
+      // Get PR with task info
+      const pr = await ctx.prisma.gitHubPullRequest.findUnique({
+        where: { id: prId },
+        include: {
+          repository: {
+            select: { projectId: true, fullName: true },
+          },
+          task: {
+            select: { id: true, reference: true },
+          },
+        },
+      })
+
+      if (!pr) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Pull request not found',
+        })
+      }
+
+      if (!pr.task) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Pull request is not linked to any task',
+        })
+      }
+
+      // Check project write permission
+      await checkProjectWriteAccess(ctx.user.id, pr.repository.projectId)
+
+      // Unlink PR
+      const result = await unlinkPRFromTask(prId)
+
+      // Audit log
+      await auditService.log({
+        userId: ctx.user.id,
+        action: 'GITHUB_PR_UNLINKED' as keyof typeof AUDIT_ACTIONS,
+        category: 'WORKSPACE',
+        resourceType: 'task',
+        resourceId: pr.task.id,
+        resourceName: pr.task.reference,
+        metadata: {
+          prId,
+          prNumber: pr.prNumber,
+        },
+      })
+
+      return {
+        success: result,
+      }
+    }),
+
+  /**
+   * Manually link a commit to a task
+   * Requires project WRITE permission
+   */
+  linkCommitToTask: protectedProcedure
+    .input(linkCommitSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { commitId, taskId } = input
+
+      // Get task and check access
+      const { task, projectId } = await getTaskWithProjectAccess(
+        ctx.prisma,
+        ctx.user.id,
+        taskId
+      )
+
+      // Get commit and verify it belongs to the same project
+      const commit = await ctx.prisma.gitHubCommit.findUnique({
+        where: { id: commitId },
+        include: {
+          repository: {
+            select: { projectId: true, fullName: true },
+          },
+        },
+      })
+
+      if (!commit) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Commit not found',
+        })
+      }
+
+      if (commit.repository.projectId !== projectId) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Commit belongs to a different project',
+        })
+      }
+
+      // Link commit to task
+      const result = await linkCommitToTask(commitId, taskId)
+
+      // Audit log
+      await auditService.log({
+        userId: ctx.user.id,
+        action: 'GITHUB_COMMIT_LINKED' as keyof typeof AUDIT_ACTIONS,
+        category: 'WORKSPACE',
+        resourceType: 'task',
+        resourceId: taskId,
+        resourceName: task.reference,
+        metadata: {
+          commitId,
+          sha: commit.sha,
+          message: commit.message.substring(0, 100),
+        },
+      })
+
+      return {
+        success: true,
+        linked: result.linked,
+        commitUrl: `https://github.com/${commit.repository.fullName}/commit/${commit.sha}`,
+      }
+    }),
+
+  /**
+   * Unlink a commit from a task
+   * Requires project WRITE permission
+   */
+  unlinkCommitFromTask: protectedProcedure
+    .input(commitIdSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { commitId } = input
+
+      // Get commit with task info
+      const commit = await ctx.prisma.gitHubCommit.findUnique({
+        where: { id: commitId },
+        include: {
+          repository: {
+            select: { projectId: true, fullName: true },
+          },
+          task: {
+            select: { id: true, reference: true },
+          },
+        },
+      })
+
+      if (!commit) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Commit not found',
+        })
+      }
+
+      if (!commit.task) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Commit is not linked to any task',
+        })
+      }
+
+      // Check project write permission
+      await checkProjectWriteAccess(ctx.user.id, commit.repository.projectId)
+
+      // Unlink commit
+      const result = await unlinkCommitFromTask(commitId)
+
+      // Audit log
+      await auditService.log({
+        userId: ctx.user.id,
+        action: 'GITHUB_COMMIT_UNLINKED' as keyof typeof AUDIT_ACTIONS,
+        category: 'WORKSPACE',
+        resourceType: 'task',
+        resourceId: commit.task.id,
+        resourceName: commit.task.reference,
+        metadata: {
+          commitId,
+          sha: commit.sha,
+        },
+      })
+
+      return {
+        success: result,
       }
     }),
 })
