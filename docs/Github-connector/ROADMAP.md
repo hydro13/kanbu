@@ -784,44 +784,91 @@ Backend API is complete and ready for frontend integration.
 
 ---
 
-### Fase 8: Automation 🚧 GEPLAND
+### Fase 8: Automation ✅ COMPLEET
 
 **Doel:** Automatische acties op basis van GitHub events.
 
-**Status:** Gepland.
+**Status:** Compleet (2026-01-09). Notifications deferred naar toekomstige fase.
 
 #### 8.1 Branch Automation
 
-- [ ] Auto-create feature branch from task
-- [ ] Branch naming based on task reference
-- [ ] Quick "Start Working" button
+- [x] Auto-create feature branch from task
+- [x] Branch naming based on task reference (configurable pattern)
+- [x] Preview branch name before creation
+
+**Service:** `apps/api/src/services/github/automationService.ts`
+
+Key functions:
+- `createBranchForTask()` - Create feature branch on GitHub
+- `generateBranchName()` - Generate branch name from task reference and title
+- `branchExists()` - Check if branch exists on GitHub
+- `slugify()` - Convert text to URL-safe slug
 
 #### 8.2 Task Status Automation
 
-- [ ] Move task to "In Progress" when PR opened
-- [ ] Move task to "Review" when PR ready for review
-- [ ] Move task to "Done" when PR merged
-- [ ] Close task when issue closed
+- [x] Move task to "In Progress" when PR opened
+- [x] Move task to "Review" when PR ready for review
+- [x] Move task to "Done" when PR merged
+- [x] Close task when issue closed
+
+Event handlers:
+- `onPROpened()` - Move task to In Progress column
+- `onPRReadyForReview()` - Move task to Review column
+- `onPRMerged()` - Move task to Done column
+- `onIssueClosed()` - Close task (set isActive=false)
+
+Helper functions:
+- `findColumnByName()` - Find column by exact name (case-insensitive)
+- `findColumnByNameFuzzy()` - Find column by partial match or aliases
+- `moveTaskToColumn()` - Move task to specified column
+- `closeTask()` - Close a task
 
 #### 8.3 Notification Integration
 
-- [ ] Notify on PR status changes
-- [ ] Notify on review requests
-- [ ] Notify on CI/CD status changes
+- [ ] Notify on PR status changes (deferred)
+- [ ] Notify on review requests (deferred)
+- [ ] Notify on CI/CD status changes (deferred)
+
+**Note:** Notifications deferred to future phase - requires notification system infrastructure.
+
+#### 8.4 Sync Settings Extension
+
+**Type:** `GitHubSyncSettings.automation` (in `packages/shared/src/types/github.ts`)
+
+```typescript
+automation?: {
+  enabled: boolean
+  moveToInProgressOnPROpen?: boolean      // default: true
+  moveToReviewOnPRReady?: boolean         // default: true
+  moveToDoneOnPRMerge?: boolean           // default: true
+  closeTaskOnIssueClosed?: boolean        // default: true
+  inProgressColumn?: string               // default: "In Progress"
+  reviewColumn?: string                   // default: "Review"
+  doneColumn?: string                     // default: "Done"
+}
+```
+
+#### 8.5 tRPC Procedures
+
+**Bestand:** `apps/api/src/trpc/procedures/github.ts` (3 new procedures)
+
+- `github.createBranch` - Create feature branch for task (W)
+- `github.previewBranchName` - Preview generated branch name (R)
+- `github.getAutomationSettings` - Get automation settings for project (R)
 
 **Deliverables Fase 8:**
-- [ ] Branch creation automation
-- [ ] Task status automation
-- [ ] GitHub event notifications
+- [x] Branch creation automation (via API)
+- [x] Task status automation (via webhooks)
+- [ ] GitHub event notifications (deferred)
 
 #### Fase 8 Completion Checklist
-- [ ] **Code**: Automations werkend, notifications actief
-- [ ] **Tests**: Branch creation tests, task status automation tests, notification trigger tests
-- [ ] **ACL**: N.v.t. (configuratie via sync settings)
-- [ ] **MCP**: Automation acties audit loggen (`GITHUB_BRANCH_CREATED`, task status changes). MCP tool `kanbu_create_github_branch` komt in Fase 9
-- [ ] **Docs**: Automation rules gedocumenteerd
-- [ ] **CLAUDE.md**: Automation patterns
-- [ ] **Commit**: `feat(github): Fase 8 - Automation`
+- [x] **Code**: Branch creation en task status automation werkend
+- [x] **Tests**: 33 tests (slugify, branch generation, settings, column finding, task movement, task closing)
+- [x] **ACL**: Reuses existing Project R/W permissions
+- [x] **MCP**: Automation acties audit loggen (`GITHUB_BRANCH_CREATED`). MCP tool `kanbu_create_github_branch` komt in Fase 9
+- [x] **Docs**: ROADMAP.md bijgewerkt met finale status
+- [x] **CLAUDE.md**: N.v.t. (service internals)
+- [x] **Commit**: `feat(github): Fase 8 - Automation`
 
 ---
 
@@ -1485,7 +1532,7 @@ class AIReviewService {
 | Fase 5 | Issue sync GitHub→Kanbu (sync service + 2 procedures) + 18 tests | Project | ✅ Compleet |
 | Fase 6 | Issue sync Kanbu→GitHub (outbound service + 3 procedures) + 17 tests | Project | ✅ Compleet |
 | Fase 7 | PR & Commit tracking (10 procedures) + 38 tests | Project | ✅ Compleet |
-| Fase 8 | Automation rules | Project | 🚧 Gepland |
+| Fase 8 | Automation (branch creation, task status) + 33 tests | Project | ✅ Compleet |
 | Fase 9 | MCP tools (9 tools) | MCP | 🚧 Gepland |
 | Fase 10 | CI/CD Integratie (Actions, Deploy, Tests) | Project | 🚧 Gepland |
 | Fase 11 | Geavanceerde Sync (Milestones, Releases, Wiki) | Project | 🚧 Gepland |
@@ -1803,8 +1850,11 @@ GITHUB_BRANCH_CREATED = 'github:branch_created'
 - [x] Manual linking/unlinking werkt
 - [x] Task reference patterns correct geëxtraheerd
 
-### Fase 8
-- [ ] Automations triggeren correct
+### Fase 8 ✅
+- [x] Branch creation via API werkt
+- [x] Task status automation via webhooks werkt
+- [x] Column matching (exact + fuzzy) correct
+- [x] Automation settings configurable via sync settings
 
 ### Fase 9
 - [ ] MCP tools typecheck
@@ -1856,6 +1906,7 @@ GITHUB_BRANCH_CREATED = 'github:branch_created'
 
 | Datum | Wijziging |
 |-------|-----------|
+| 2026-01-09 | **Fase 8 COMPLEET**: Automation - automationService.ts met branch creation, task status automation via webhooks, column fuzzy matching, sync settings extension, 3 tRPC procedures, 33 tests |
 | 2026-01-09 | **Fase 7 COMPLEET**: PR & Commit Tracking - prCommitLinkService.ts met task reference extraction, auto-linking via webhook, 10 tRPC procedures, 38 tests |
 | 2026-01-09 | **Fase 6 COMPLEET**: Outbound sync (createGitHubIssueFromTask, updateGitHubIssueFromTask, syncTaskToGitHub), reverse user mapping, sync hash conflict detection, 17 tests, 3 tRPC procedures |
 | 2026-01-09 | **Fase 5 COMPLEET**: Issue sync service (issueSyncService.ts), bulk import, real-time webhook sync, user mapping integration, tag creation from labels, 18 tests |

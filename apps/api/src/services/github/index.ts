@@ -1,6 +1,6 @@
 /*
  * GitHub Services Index
- * Version: 2.0.0
+ * Version: 3.0.0
  *
  * Central export for all GitHub-related services.
  *
@@ -9,7 +9,7 @@
  * Claude Code: Opus 4.5
  * Host: MAX
  * Date: 2026-01-09
- * Fase: 7 - PR & Commit Tracking
+ * Fase: 8 - Automation
  * =============================================================================
  */
 
@@ -83,3 +83,29 @@ export {
   type CommitLinkResult,
   type LinkingOptions,
 } from './prCommitLinkService'
+
+export {
+  automationService,
+  // Settings
+  getAutomationSettings,
+  // Branch creation
+  createBranchForTask,
+  branchExists,
+  generateBranchName,
+  slugify,
+  // Column helpers
+  findColumnByName,
+  findColumnByNameFuzzy,
+  // Task automation
+  moveTaskToColumn,
+  closeTask,
+  // Event handlers
+  onPROpened,
+  onPRReadyForReview,
+  onPRMerged,
+  onIssueClosed,
+  // Types
+  type BranchCreationResult,
+  type TaskStatusAutomationResult,
+  type AutomationSettings,
+} from './automationService'

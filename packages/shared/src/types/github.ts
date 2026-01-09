@@ -51,6 +51,18 @@ export interface GitHubSyncSettings {
     enabled: boolean
     pattern: string    // Branch name pattern, e.g., "feature/{reference}"
   }
+  automation?: {
+    enabled: boolean
+    // Task status automation
+    moveToInProgressOnPROpen?: boolean      // Move task when PR opened
+    moveToReviewOnPRReady?: boolean         // Move task when PR ready for review
+    moveToDoneOnPRMerge?: boolean           // Move task when PR merged
+    closeTaskOnIssueClosed?: boolean        // Close task when GitHub issue closed
+    // Column names for automation
+    inProgressColumn?: string               // Column name for "In Progress"
+    reviewColumn?: string                   // Column name for "Review"
+    doneColumn?: string                     // Column name for "Done"
+  }
 }
 
 // =============================================================================

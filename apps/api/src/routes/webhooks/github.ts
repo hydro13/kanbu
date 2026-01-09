@@ -1,17 +1,17 @@
 /*
  * GitHub Webhook Handler
- * Version: 2.0.0
+ * Version: 3.0.0
  *
  * Receives and processes GitHub webhook events.
  * Handles signature verification, event routing, and sync operations.
- * Now includes auto-linking of PRs and commits to tasks.
+ * Includes auto-linking of PRs/commits and task status automation.
  *
  * =============================================================================
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
  * Claude Code: Opus 4.5
  * Host: MAX
  * Date: 2026-01-09
- * Fase: 7 - PR & Commit Tracking
+ * Fase: 8 - Automation
  * =============================================================================
  */
 
@@ -26,6 +26,12 @@ import {
   processNewPR,
   processNewCommits,
 } from '../../services/github/prCommitLinkService'
+import {
+  onPROpened,
+  onPRReadyForReview,
+  onPRMerged,
+  onIssueClosed,
+} from '../../services/github/automationService'
 import type { GitHubSyncSettings } from '@kanbu/shared'
 
 // =============================================================================
@@ -378,6 +384,26 @@ async function handleIssues(ctx: WebhookContext): Promise<{ processed: boolean; 
       break
 
     case 'closed':
+      if (existingIssue) {
+        // Update task state via sync service
+        const { updated, taskId } = await updateTaskFromGitHubIssue(issue.id, issueData)
+        if (updated) {
+          console.log(`[GitHub Webhook] Updated task ${taskId} state to ${issue.state}`)
+        }
+        // Trigger automation to close task if enabled
+        if (existingIssue.taskId) {
+          try {
+            const result = await onIssueClosed(linkedRepo.id, existingIssue.taskId)
+            if (result.action === 'closed') {
+              console.log(`[GitHub Webhook] Task ${existingIssue.taskId} closed via automation`)
+            }
+          } catch (error) {
+            console.error(`[GitHub Webhook] Automation error closing task:`, error)
+          }
+        }
+      }
+      break
+
     case 'reopened':
       if (existingIssue) {
         // Update task state via sync service
@@ -411,6 +437,7 @@ async function handlePullRequest(ctx: WebhookContext): Promise<{
   prNumber?: number
   taskLinked?: boolean
   linkMethod?: string
+  automationTriggered?: string
 }> {
   const { action, payload } = ctx
   const pr = payload.pull_request
@@ -451,6 +478,8 @@ async function handlePullRequest(ctx: WebhookContext): Promise<{
   // Process PR with auto-linking for opened/ready_for_review events
   let taskLinked = false
   let linkMethod = 'none'
+  let linkedTaskId: number | null = null
+  let automationTriggered: string | undefined
 
   if (action === 'opened' || action === 'ready_for_review') {
     try {
@@ -469,6 +498,7 @@ async function handlePullRequest(ctx: WebhookContext): Promise<{
 
       taskLinked = result.linked
       linkMethod = result.method
+      linkedTaskId = result.taskId || null
 
       if (result.linked) {
         console.log(`[GitHub Webhook] PR #${pr.number} auto-linked to task ${result.taskId} via ${result.method}`)
@@ -486,6 +516,10 @@ async function handlePullRequest(ctx: WebhookContext): Promise<{
         },
       },
     })
+
+    if (existingPR?.taskId) {
+      linkedTaskId = existingPR.taskId
+    }
 
     switch (action) {
       case 'edited':
@@ -513,6 +547,7 @@ async function handlePullRequest(ctx: WebhookContext): Promise<{
           })
           taskLinked = result.linked
           linkMethod = result.method
+          linkedTaskId = result.taskId || null
         }
         break
 
@@ -544,6 +579,33 @@ async function handlePullRequest(ctx: WebhookContext): Promise<{
     }
   }
 
+  // Trigger task status automation if PR is linked to a task
+  if (linkedTaskId) {
+    try {
+      if (action === 'opened') {
+        const result = await onPROpened(linkedRepo.id, linkedTaskId)
+        if (result.action === 'moved') {
+          automationTriggered = 'moved_to_in_progress'
+          console.log(`[GitHub Webhook] Task ${linkedTaskId} moved to In Progress`)
+        }
+      } else if (action === 'ready_for_review') {
+        const result = await onPRReadyForReview(linkedRepo.id, linkedTaskId)
+        if (result.action === 'moved') {
+          automationTriggered = 'moved_to_review'
+          console.log(`[GitHub Webhook] Task ${linkedTaskId} moved to Review`)
+        }
+      } else if (action === 'closed' && pr.merged) {
+        const result = await onPRMerged(linkedRepo.id, linkedTaskId)
+        if (result.action === 'moved') {
+          automationTriggered = 'moved_to_done'
+          console.log(`[GitHub Webhook] Task ${linkedTaskId} moved to Done`)
+        }
+      }
+    } catch (error) {
+      console.error(`[GitHub Webhook] Automation error for task ${linkedTaskId}:`, error)
+    }
+  }
+
   // Log sync operation
   await prisma.gitHubSyncLog.create({
     data: {
@@ -559,6 +621,7 @@ async function handlePullRequest(ctx: WebhookContext): Promise<{
         baseBranch: pr.base.ref,
         taskLinked,
         linkMethod,
+        automationTriggered,
       },
       status: 'success',
     },
@@ -570,6 +633,7 @@ async function handlePullRequest(ctx: WebhookContext): Promise<{
     prNumber: pr.number,
     taskLinked,
     linkMethod,
+    automationTriggered,
   }
 }
 

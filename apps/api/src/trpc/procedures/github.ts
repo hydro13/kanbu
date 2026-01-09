@@ -1,16 +1,16 @@
 /*
  * GitHub Project Procedures
- * Version: 2.0.0
+ * Version: 3.0.0
  *
  * tRPC procedures for GitHub repository management at project level.
- * Handles repository linking, sync settings, sync operations, and PR/commit tracking.
+ * Handles repository linking, sync settings, sync operations, PR/commit tracking, and automation.
  *
  * =============================================================================
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
  * Claude Code: Opus 4.5
  * Host: MAX
  * Date: 2026-01-09
- * Fase: 7 - PR & Commit Tracking
+ * Fase: 8 - Automation
  * =============================================================================
  */
 
@@ -34,6 +34,12 @@ import {
   linkCommitToTask,
   unlinkCommitFromTask,
 } from '../../services/github/prCommitLinkService'
+import {
+  createBranchForTask,
+  branchExists,
+  generateBranchName,
+  getAutomationSettings,
+} from '../../services/github/automationService'
 import type { GitHubSyncSettings } from '@kanbu/shared'
 
 // =============================================================================
@@ -135,6 +141,15 @@ const projectCommitsSchema = z.object({
   projectId: z.number(),
   limit: z.number().min(1).max(100).optional().default(20),
   offset: z.number().min(0).optional().default(0),
+})
+
+const createBranchSchema = z.object({
+  taskId: z.number(),
+  customBranchName: z.string().optional(),
+})
+
+const previewBranchNameSchema = z.object({
+  taskId: z.number(),
 })
 
 // =============================================================================
@@ -1586,6 +1601,196 @@ export const githubRouter = router({
 
       return {
         success: result,
+      }
+    }),
+
+  // ===========================================================================
+  // Automation - Fase 8
+  // ===========================================================================
+
+  /**
+   * Create a feature branch for a task on GitHub
+   * Requires project WRITE permission
+   */
+  createBranch: protectedProcedure
+    .input(createBranchSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { taskId, customBranchName } = input
+
+      // Get task and check access
+      const task = await ctx.prisma.task.findUnique({
+        where: { id: taskId },
+        include: {
+          project: {
+            include: {
+              githubRepository: {
+                select: {
+                  id: true,
+                  fullName: true,
+                  syncSettings: true,
+                },
+              },
+            },
+          },
+        },
+      })
+
+      if (!task) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Task not found',
+        })
+      }
+
+      // Check project write permission
+      await checkProjectWriteAccess(ctx.user.id, task.projectId)
+
+      const repository = task.project.githubRepository
+      if (!repository) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Project has no linked GitHub repository',
+        })
+      }
+
+      // Check if task already has a branch
+      if (task.githubBranch) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: `Task already has a branch: ${task.githubBranch}`,
+        })
+      }
+
+      // Create the branch
+      const result = await createBranchForTask(taskId, customBranchName)
+
+      if (!result.success) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: result.error || 'Failed to create branch',
+        })
+      }
+
+      // Audit log
+      await auditService.log({
+        userId: ctx.user.id,
+        action: 'GITHUB_BRANCH_CREATED' as keyof typeof AUDIT_ACTIONS,
+        category: 'WORKSPACE',
+        resourceType: 'task',
+        resourceId: taskId,
+        resourceName: task.reference,
+        metadata: {
+          branchName: result.branchName,
+          repositoryFullName: repository.fullName,
+        },
+      })
+
+      return {
+        success: true,
+        branchName: result.branchName,
+        branchUrl: result.branchUrl,
+      }
+    }),
+
+  /**
+   * Preview what branch name would be generated for a task
+   * Requires project READ permission
+   */
+  previewBranchName: protectedProcedure
+    .input(previewBranchNameSchema)
+    .query(async ({ ctx, input }) => {
+      const { taskId } = input
+
+      // Get task
+      const task = await ctx.prisma.task.findUnique({
+        where: { id: taskId },
+        include: {
+          project: {
+            include: {
+              githubRepository: {
+                select: {
+                  id: true,
+                  fullName: true,
+                  syncSettings: true,
+                },
+              },
+            },
+          },
+        },
+      })
+
+      if (!task) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Task not found',
+        })
+      }
+
+      // Check project read permission
+      await checkProjectReadAccess(ctx.user.id, task.projectId)
+
+      const repository = task.project.githubRepository
+      if (!repository) {
+        return {
+          available: false,
+          reason: 'Project has no linked GitHub repository',
+          branchName: null,
+          existingBranch: task.githubBranch,
+        }
+      }
+
+      // Check if task already has a branch
+      if (task.githubBranch) {
+        return {
+          available: false,
+          reason: 'Task already has a branch',
+          branchName: task.githubBranch,
+          existingBranch: task.githubBranch,
+        }
+      }
+
+      // Generate preview branch name
+      const syncSettings = repository.syncSettings as GitHubSyncSettings | null
+      const branchPattern = syncSettings?.branches?.pattern || 'feature/{reference}-{slug}'
+      const branchName = generateBranchName(task.reference, task.title, branchPattern)
+
+      return {
+        available: true,
+        branchName,
+        existingBranch: null,
+      }
+    }),
+
+  /**
+   * Get automation settings for a project
+   * Requires project READ permission
+   */
+  getAutomationSettings: protectedProcedure
+    .input(projectIdSchema)
+    .query(async ({ ctx, input }) => {
+      const { projectId } = input
+
+      // Check project read permission
+      await checkProjectReadAccess(ctx.user.id, projectId)
+
+      // Get repository
+      const repository = await ctx.prisma.gitHubRepository.findUnique({
+        where: { projectId },
+        select: { syncSettings: true },
+      })
+
+      if (!repository) {
+        return {
+          hasRepository: false,
+          settings: null,
+        }
+      }
+
+      const settings = getAutomationSettings(repository.syncSettings as GitHubSyncSettings | null)
+
+      return {
+        hasRepository: true,
+        settings,
       }
     }),
 })
