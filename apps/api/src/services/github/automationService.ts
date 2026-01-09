@@ -338,7 +338,7 @@ export async function branchExists(
   repositoryId: number,
   branchName: string
 ): Promise<boolean> {
-  const repository = await prisma.gitHubRepository.findUnique({
+  const repository = await prisma.gitHubRepository.findFirst({
     where: { id: repositoryId },
     include: { installation: true },
   })
@@ -481,7 +481,7 @@ export async function onPROpened(
   repositoryId: number,
   taskId: number
 ): Promise<TaskStatusAutomationResult> {
-  const repository = await prisma.gitHubRepository.findUnique({
+  const repository = await prisma.gitHubRepository.findFirst({
     where: { id: repositoryId },
     select: { syncSettings: true },
   })
@@ -514,7 +514,7 @@ export async function onPRReadyForReview(
   repositoryId: number,
   taskId: number
 ): Promise<TaskStatusAutomationResult> {
-  const repository = await prisma.gitHubRepository.findUnique({
+  const repository = await prisma.gitHubRepository.findFirst({
     where: { id: repositoryId },
     select: { syncSettings: true },
   })
@@ -547,7 +547,7 @@ export async function onPRMerged(
   repositoryId: number,
   taskId: number
 ): Promise<TaskStatusAutomationResult> {
-  const repository = await prisma.gitHubRepository.findUnique({
+  const repository = await prisma.gitHubRepository.findFirst({
     where: { id: repositoryId },
     select: { syncSettings: true },
   })
@@ -580,7 +580,7 @@ export async function onIssueClosed(
   repositoryId: number,
   taskId: number
 ): Promise<TaskStatusAutomationResult> {
-  const repository = await prisma.gitHubRepository.findUnique({
+  const repository = await prisma.gitHubRepository.findFirst({
     where: { id: repositoryId },
     select: { syncSettings: true },
   })

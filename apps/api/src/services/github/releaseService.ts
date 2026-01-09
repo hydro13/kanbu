@@ -187,7 +187,7 @@ export async function getProjectReleases(
     limit?: number
   }
 ): Promise<ReleaseInfo[]> {
-  const repo = await prisma.gitHubRepository.findUnique({
+  const repo = await prisma.gitHubRepository.findFirst({
     where: { projectId },
     select: { id: true },
   })
@@ -201,7 +201,7 @@ export async function getProjectReleases(
  * Get release statistics for a project
  */
 export async function getReleaseStats(projectId: number): Promise<ReleaseStats> {
-  const repo = await prisma.gitHubRepository.findUnique({
+  const repo = await prisma.gitHubRepository.findFirst({
     where: { projectId },
     select: { id: true },
   })
@@ -305,7 +305,7 @@ export async function generateReleaseNotes(
     includeTaskLinks?: boolean
   }
 ): Promise<string> {
-  const repo = await prisma.gitHubRepository.findUnique({
+  const repo = await prisma.gitHubRepository.findFirst({
     where: { projectId },
     select: { id: true, fullName: true },
   })

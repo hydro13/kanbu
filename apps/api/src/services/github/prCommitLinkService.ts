@@ -561,7 +561,7 @@ export async function processNewPR(
   }
 ): Promise<PRLinkResult & { prRecordId: number }> {
   // Get repository with project info
-  const repo = await prisma.gitHubRepository.findUnique({
+  const repo = await prisma.gitHubRepository.findFirst({
     where: { id: repositoryId },
     select: {
       id: true,
@@ -651,7 +651,7 @@ export async function processNewCommits(
   }>
 ): Promise<Array<CommitLinkResult & { commitRecordId: number }>> {
   // Get repository with project info
-  const repo = await prisma.gitHubRepository.findUnique({
+  const repo = await prisma.gitHubRepository.findFirst({
     where: { id: repositoryId },
     select: {
       id: true,

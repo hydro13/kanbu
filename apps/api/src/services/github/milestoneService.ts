@@ -161,7 +161,7 @@ export async function getProjectMilestones(
     limit?: number
   }
 ): Promise<MilestoneInfo[]> {
-  const repo = await prisma.gitHubRepository.findUnique({
+  const repo = await prisma.gitHubRepository.findFirst({
     where: { projectId },
     select: { id: true },
   })
@@ -181,7 +181,7 @@ export async function getMilestoneStats(projectId: number): Promise<{
   overdue: number
   upcomingDue: number
 }> {
-  const repo = await prisma.gitHubRepository.findUnique({
+  const repo = await prisma.gitHubRepository.findFirst({
     where: { projectId },
     select: { id: true },
   })

@@ -141,7 +141,7 @@ const TEMPLATES: Record<CICDNotificationType, {
 export async function getCICDSettings(
   repositoryId: number
 ): Promise<CICDNotificationSettings> {
-  const repo = await prisma.gitHubRepository.findUnique({
+  const repo = await prisma.gitHubRepository.findFirst({
     where: { id: repositoryId },
     select: { syncSettings: true },
   })
@@ -170,7 +170,7 @@ export async function updateCICDSettings(
   repositoryId: number,
   settings: Partial<CICDNotificationSettings>
 ): Promise<CICDNotificationSettings> {
-  const repo = await prisma.gitHubRepository.findUnique({
+  const repo = await prisma.gitHubRepository.findFirst({
     where: { id: repositoryId },
     select: { syncSettings: true },
   })
@@ -214,7 +214,7 @@ async function getUsersToNotify(
   const userIds = new Set<number>()
 
   // Get repository with project info
-  const repo = await prisma.gitHubRepository.findUnique({
+  const repo = await prisma.gitHubRepository.findFirst({
     where: { id: repositoryId },
     include: {
       project: {
@@ -374,7 +374,7 @@ export async function notifyWorkflowRun(
   if (userIds.length === 0) return 0
 
   // Get project info for link
-  const repo = await prisma.gitHubRepository.findUnique({
+  const repo = await prisma.gitHubRepository.findFirst({
     where: { id: data.repositoryId },
     select: { projectId: true },
   })
@@ -446,7 +446,7 @@ export async function notifyDeployment(
   if (userIds.length === 0) return 0
 
   // Get project info for link
-  const repo = await prisma.gitHubRepository.findUnique({
+  const repo = await prisma.gitHubRepository.findFirst({
     where: { id: data.repositoryId },
     select: { projectId: true },
   })
@@ -511,7 +511,7 @@ export async function notifyCheckRun(
   if (userIds.length === 0) return 0
 
   // Get project info for link
-  const repo = await prisma.gitHubRepository.findUnique({
+  const repo = await prisma.gitHubRepository.findFirst({
     where: { id: data.repositoryId },
     select: { projectId: true },
   })

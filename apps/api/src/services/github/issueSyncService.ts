@@ -328,7 +328,7 @@ export async function createTaskFromGitHubIssue(
   const { syncDirection = 'github_to_kanbu', skipExisting = true } = options
 
   // Get repository with project info
-  const repository = await prisma.gitHubRepository.findUnique({
+  const repository = await prisma.gitHubRepository.findFirst({
     where: { id: repositoryId },
     include: {
       project: {
@@ -573,7 +573,7 @@ export async function importIssuesFromGitHub(
   const { state = 'all', since, limit = 1000 } = options
 
   // Get repository with installation info
-  const repository = await prisma.gitHubRepository.findUnique({
+  const repository = await prisma.gitHubRepository.findFirst({
     where: { id: repositoryId },
     include: {
       installation: true,

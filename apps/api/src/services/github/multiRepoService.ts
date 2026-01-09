@@ -166,7 +166,7 @@ export async function linkRepository(
 export async function unlinkRepository(
   repositoryId: number
 ): Promise<void> {
-  const repo = await prisma.gitHubRepository.findUnique({
+  const repo = await prisma.gitHubRepository.findFirst({
     where: { id: repositoryId },
     select: { projectId: true, isPrimary: true },
   })
@@ -204,7 +204,7 @@ export async function setPrimaryRepository(
   repositoryId: number
 ): Promise<void> {
   // Verify repository belongs to project
-  const repo = await prisma.gitHubRepository.findUnique({
+  const repo = await prisma.gitHubRepository.findFirst({
     where: { id: repositoryId },
     select: { projectId: true },
   })

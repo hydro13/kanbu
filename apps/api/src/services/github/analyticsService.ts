@@ -120,7 +120,7 @@ export async function getCycleTimeStats(
   projectId: number,
   dateRange?: DateRange
 ): Promise<CycleTimeStats> {
-  const repo = await prisma.gitHubRepository.findUnique({
+  const repo = await prisma.gitHubRepository.findFirst({
     where: { projectId },
   })
 
@@ -234,7 +234,7 @@ export async function getReviewTimeStats(
   projectId: number,
   dateRange?: DateRange
 ): Promise<ReviewTimeStats> {
-  const repo = await prisma.gitHubRepository.findUnique({
+  const repo = await prisma.gitHubRepository.findFirst({
     where: { projectId },
   })
 
@@ -352,7 +352,7 @@ export async function getContributorStats(
   projectId: number,
   dateRange?: DateRange
 ): Promise<ContributorStats[]> {
-  const repo = await prisma.gitHubRepository.findUnique({
+  const repo = await prisma.gitHubRepository.findFirst({
     where: { projectId },
   })
 
@@ -486,7 +486,7 @@ export async function getThroughputStats(
   periodType: 'week' | 'month' = 'week',
   dateRange?: DateRange
 ): Promise<ThroughputStats[]> {
-  const repo = await prisma.gitHubRepository.findUnique({
+  const repo = await prisma.gitHubRepository.findFirst({
     where: { projectId },
   })
 

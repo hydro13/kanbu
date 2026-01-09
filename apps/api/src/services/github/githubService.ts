@@ -16,6 +16,7 @@
 
 import { App } from '@octokit/app'
 import { Octokit } from '@octokit/rest'
+import { readFileSync } from 'fs'
 import { prisma } from '../../lib/prisma'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -49,8 +50,7 @@ function getConfig(): GitHubConfig {
 
   if (privateKeyPath && !privateKey) {
     try {
-      const fs = require('fs')
-      privateKey = fs.readFileSync(privateKeyPath, 'utf8')
+      privateKey = readFileSync(privateKeyPath, 'utf8')
     } catch {
       // Will be validated below
     }

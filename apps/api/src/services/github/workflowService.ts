@@ -74,7 +74,7 @@ export async function upsertWorkflowRun(data: WorkflowRunData): Promise<{ id: nu
   }
 
   // Find PR by branch name
-  const repo = await prisma.gitHubRepository.findUnique({
+  const repo = await prisma.gitHubRepository.findFirst({
     where: { id: data.repositoryId },
     select: { id: true },
   })

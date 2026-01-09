@@ -343,7 +343,7 @@ export const githubRouter = router({
       }
 
       // Check if project already has a linked repository
-      const existingRepo = await ctx.prisma.gitHubRepository.findUnique({
+      const existingRepo = await ctx.prisma.gitHubRepository.findFirst({
         where: { projectId },
       })
 
@@ -427,7 +427,7 @@ export const githubRouter = router({
       await checkProjectWriteAccess(ctx.user.id, projectId)
 
       // Get the linked repository
-      const repository = await ctx.prisma.gitHubRepository.findUnique({
+      const repository = await ctx.prisma.gitHubRepository.findFirst({
         where: { projectId },
       })
 
@@ -473,7 +473,7 @@ export const githubRouter = router({
       // Check project read permission
       await checkProjectReadAccess(ctx.user.id, projectId)
 
-      const repository = await ctx.prisma.gitHubRepository.findUnique({
+      const repository = await ctx.prisma.gitHubRepository.findFirst({
         where: { projectId },
         include: {
           installation: {
@@ -530,7 +530,7 @@ export const githubRouter = router({
       await checkProjectWriteAccess(ctx.user.id, projectId)
 
       // Get the linked repository
-      const repository = await ctx.prisma.gitHubRepository.findUnique({
+      const repository = await ctx.prisma.gitHubRepository.findFirst({
         where: { projectId },
       })
 
@@ -591,7 +591,7 @@ export const githubRouter = router({
       await checkProjectWriteAccess(ctx.user.id, projectId)
 
       // Get the linked repository
-      const repository = await ctx.prisma.gitHubRepository.findUnique({
+      const repository = await ctx.prisma.gitHubRepository.findFirst({
         where: { projectId },
       })
 
@@ -664,7 +664,7 @@ export const githubRouter = router({
       // Check project read permission
       await checkProjectReadAccess(ctx.user.id, projectId)
 
-      const repository = await ctx.prisma.gitHubRepository.findUnique({
+      const repository = await ctx.prisma.gitHubRepository.findFirst({
         where: { projectId },
         select: {
           id: true,
@@ -717,7 +717,7 @@ export const githubRouter = router({
       // Check project read permission
       await checkProjectReadAccess(ctx.user.id, projectId)
 
-      const repository = await ctx.prisma.gitHubRepository.findUnique({
+      const repository = await ctx.prisma.gitHubRepository.findFirst({
         where: { projectId },
         select: { id: true },
       })
@@ -836,7 +836,7 @@ export const githubRouter = router({
       await checkProjectWriteAccess(ctx.user.id, projectId)
 
       // Get the linked repository
-      const repository = await ctx.prisma.gitHubRepository.findUnique({
+      const repository = await ctx.prisma.gitHubRepository.findFirst({
         where: { projectId },
       })
 
@@ -908,7 +908,7 @@ export const githubRouter = router({
       await checkProjectReadAccess(ctx.user.id, projectId)
 
       // Get the linked repository
-      const repository = await ctx.prisma.gitHubRepository.findUnique({
+      const repository = await ctx.prisma.gitHubRepository.findFirst({
         where: { projectId },
         select: { id: true },
       })
@@ -948,7 +948,7 @@ export const githubRouter = router({
       )
 
       // Get the linked repository
-      const repository = await ctx.prisma.gitHubRepository.findUnique({
+      const repository = await ctx.prisma.gitHubRepository.findFirst({
         where: { projectId },
         select: { id: true, fullName: true, syncEnabled: true, syncSettings: true },
       })
@@ -1029,7 +1029,7 @@ export const githubRouter = router({
       )
 
       // Get the linked repository
-      const repository = await ctx.prisma.gitHubRepository.findUnique({
+      const repository = await ctx.prisma.gitHubRepository.findFirst({
         where: { projectId },
         select: { id: true, fullName: true, syncEnabled: true, syncSettings: true },
       })
@@ -1105,7 +1105,7 @@ export const githubRouter = router({
       )
 
       // Get the linked repository
-      const repository = await ctx.prisma.gitHubRepository.findUnique({
+      const repository = await ctx.prisma.gitHubRepository.findFirst({
         where: { projectId },
         select: { id: true, fullName: true, syncEnabled: true, syncSettings: true },
       })
@@ -1291,7 +1291,7 @@ export const githubRouter = router({
       await checkProjectReadAccess(ctx.user.id, projectId)
 
       // Get repository
-      const repository = await ctx.prisma.gitHubRepository.findUnique({
+      const repository = await ctx.prisma.gitHubRepository.findFirst({
         where: { projectId },
         select: { id: true, owner: true, name: true, fullName: true },
       })
@@ -1359,7 +1359,7 @@ export const githubRouter = router({
       await checkProjectReadAccess(ctx.user.id, projectId)
 
       // Get repository
-      const repository = await ctx.prisma.gitHubRepository.findUnique({
+      const repository = await ctx.prisma.gitHubRepository.findFirst({
         where: { projectId },
         select: { id: true, owner: true, name: true, fullName: true },
       })
@@ -1825,7 +1825,7 @@ export const githubRouter = router({
       await checkProjectReadAccess(ctx.user.id, projectId)
 
       // Get repository
-      const repository = await ctx.prisma.gitHubRepository.findUnique({
+      const repository = await ctx.prisma.gitHubRepository.findFirst({
         where: { projectId },
         select: { syncSettings: true },
       })
@@ -1870,7 +1870,7 @@ export const githubRouter = router({
       await checkProjectReadAccess(ctx.user.id, projectId)
 
       // Get repository
-      const repository = await ctx.prisma.gitHubRepository.findUnique({
+      const repository = await ctx.prisma.gitHubRepository.findFirst({
         where: { projectId },
         select: { id: true },
       })
@@ -1906,7 +1906,7 @@ export const githubRouter = router({
       }
 
       // Get project ID from repository
-      const repository = await ctx.prisma.gitHubRepository.findUnique({
+      const repository = await ctx.prisma.gitHubRepository.findFirst({
         where: { id: run.repositoryId },
         select: { projectId: true },
       })
@@ -2009,7 +2009,7 @@ export const githubRouter = router({
       await checkProjectReadAccess(ctx.user.id, projectId)
 
       // Get repository
-      const repository = await ctx.prisma.gitHubRepository.findUnique({
+      const repository = await ctx.prisma.gitHubRepository.findFirst({
         where: { projectId },
         select: { id: true },
       })
@@ -2787,7 +2787,7 @@ export const githubRouter = router({
       }
 
       // Get repository ID from project
-      const repo = await ctx.prisma.gitHubRepository.findUnique({
+      const repo = await ctx.prisma.gitHubRepository.findFirst({
         where: { projectId: input.projectId },
         select: { id: true },
       })
@@ -2901,7 +2901,7 @@ export const githubRouter = router({
       }
 
       // Get repository ID from project
-      const repo = await ctx.prisma.gitHubRepository.findUnique({
+      const repo = await ctx.prisma.gitHubRepository.findFirst({
         where: { projectId: input.projectId },
         select: { id: true },
       })
@@ -2942,7 +2942,7 @@ export const githubRouter = router({
       }
 
       // Get repository ID from project
-      const repo = await ctx.prisma.gitHubRepository.findUnique({
+      const repo = await ctx.prisma.gitHubRepository.findFirst({
         where: { projectId: input.projectId },
         select: { id: true },
       })

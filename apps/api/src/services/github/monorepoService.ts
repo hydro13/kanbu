@@ -76,7 +76,7 @@ const DEFAULT_MONOREPO_SETTINGS: MonorepoSettings = {
 export async function getMonorepoSettings(
   repositoryId: number
 ): Promise<MonorepoSettings> {
-  const repo = await prisma.gitHubRepository.findUnique({
+  const repo = await prisma.gitHubRepository.findFirst({
     where: { id: repositoryId },
     select: { syncSettings: true },
   })
@@ -105,7 +105,7 @@ export async function updateMonorepoSettings(
   repositoryId: number,
   settings: Partial<MonorepoSettings>
 ): Promise<MonorepoSettings> {
-  const repo = await prisma.gitHubRepository.findUnique({
+  const repo = await prisma.gitHubRepository.findFirst({
     where: { id: repositoryId },
     select: { syncSettings: true },
   })

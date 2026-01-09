@@ -220,10 +220,14 @@ interface WorkspaceSelectorProps {
 }
 
 function WorkspaceSelector({ selectedId, onSelect }: WorkspaceSelectorProps) {
-  const { data: workspaces, isLoading } = trpc.admin.listAllWorkspaces.useQuery({})
+  const { data: workspaces, isLoading, error } = trpc.admin.listAllWorkspaces.useQuery({})
 
   if (isLoading) {
     return <div className="text-sm text-gray-500">Loading workspaces...</div>
+  }
+
+  if (error) {
+    return <div className="text-sm text-red-500">Error: {error.message}</div>
   }
 
   return (

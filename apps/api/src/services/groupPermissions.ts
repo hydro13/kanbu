@@ -150,11 +150,11 @@ export class GroupPermissionService {
   // ===========================================================================
 
   /**
-   * Check if a user is a Domain Admin (member of "Domain Admins" group).
+   * Check if a user is a Domain Admin (member of "domain-admins" group).
    * Domain Admins have full access to all workspaces and projects.
    */
   async isDomainAdmin(userId: number): Promise<boolean> {
-    return this.isMemberOfGroup(userId, 'Domain Admins')
+    return this.isMemberOfGroup(userId, 'domain-admins')
   }
 
   /**
@@ -171,7 +171,7 @@ export class GroupPermissionService {
       where: {
         userId: { in: userIds },
         group: {
-          name: 'Domain Admins',
+          name: 'domain-admins',
           isActive: true,
         },
       },

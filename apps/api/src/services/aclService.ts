@@ -383,6 +383,26 @@ export class AclService {
   }
 
   // ===========================================================================
+  // Resource-Specific Permission Helpers
+  // ===========================================================================
+
+  /**
+   * Check if user has permission on a project.
+   * Convenience method for project permission checks.
+   */
+  async hasProjectPermission(userId: number, projectId: number, permission: number): Promise<boolean> {
+    return this.hasPermission(userId, 'project', projectId, permission)
+  }
+
+  /**
+   * Check if user has permission on a workspace.
+   * Convenience method for workspace permission checks.
+   */
+  async hasWorkspacePermission(userId: number, workspaceId: number, permission: number): Promise<boolean> {
+    return this.hasPermission(userId, 'workspace', workspaceId, permission)
+  }
+
+  // ===========================================================================
   // ACL Management
   // ===========================================================================
 
