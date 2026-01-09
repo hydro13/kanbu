@@ -57,3 +57,6 @@ CLAUDE.md
 
 # SSL/TLS Certificates (generated locally)
 certs/
+
+# GitHub App Private Keys
+*.private-key.pem
