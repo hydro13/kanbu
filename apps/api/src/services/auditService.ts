@@ -92,6 +92,10 @@ export const AUDIT_ACTIONS = {
   ACL_BULK_REVOKED: 'acl:bulk:revoked',
   ACL_COPIED: 'acl:copied',
   ACL_TEMPLATE_APPLIED: 'acl:template:applied',
+
+  // Advanced UI (Fase 9.5)
+  ACL_EXPORTED: 'acl:exported',
+  ACL_IMPORTED: 'acl:imported',
 } as const
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS]

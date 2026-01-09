@@ -6,7 +6,7 @@ Dit document beschrijft de architectuur voor het **Scoped Permission Model** van
 Het systeem is geïnspireerd op Active Directory en biedt enterprise-grade toegangscontrole
 met workspace-level isolatie en gedelegeerde administratie.
 
-**Document versie:** 2.3.0
+**Document versie:** 2.4.0
 **Datum:** 2026-01-09
 **Status:** Goedgekeurd voor implementatie
 
@@ -397,10 +397,18 @@ Het admin panel toont verschillende secties per scope:
 - [x] BulkAclDialog met 4 modes (grant, revoke, copy, template)
 - [x] AclPage toolbar integratie
 
+### Fase 9.5: Advanced ACL UI (VOLTOOID)
+- [x] Permission Matrix View - Grid principals × resources met effectieve permissies
+- [x] Effective Permissions Calculator - Debug tool voor permission breakdown
+- [x] What-If Simulator - Preview ACL wijzigingen voor implementatie
+- [x] Import/Export ACL - Backup/restore in JSON/CSV format
+- [x] 6 nieuwe tRPC procedures (getPermissionMatrix, calculateEffective, simulateChange, exportAcl, importPreview, importExecute)
+- [x] 5 nieuwe frontend components (PermissionMatrixPage, EffectivePermissionsPanel, WhatIfSimulator, AclExportDialog, AclImportDialog)
+- [x] Tools dropdown in AclPage toolbar
+
 ### Fase 9.2+: Advanced Features (PLANNED)
 - [ ] LDAP/AD Sync
 - [ ] Task-level ACL
-- [ ] Advanced UI (Permission matrix, What-if simulator)
 
 ---
 
@@ -529,6 +537,7 @@ Week 9+: Advanced features
 
 | Versie | Datum | Wijziging |
 |--------|-------|-----------|
+| 2.4.0 | 2026-01-09 | Fase 9.5 VOLTOOID: Advanced ACL UI (Permission Matrix, Effective Permissions Calculator, What-If Simulator, Import/Export) |
 | 2.3.0 | 2026-01-09 | Fase 9.4 VOLTOOID: Bulk Operations (bulkGrant, bulkRevoke, copy, template) |
 | 2.2.0 | 2026-01-09 | Fase 9.6 VOLTOOID: API Keys & Service Accounts met scoped access |
 | 2.1.0 | 2026-01-09 | Fase 9.1 VOLTOOID: Security Audit Logging met scope-based access |

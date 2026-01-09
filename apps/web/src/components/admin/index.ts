@@ -20,3 +20,9 @@ export { ResourceTree, type SelectedResource, type ResourceType, type TreeState 
 export { GroupMembersPanel } from './GroupMembersPanel'
 export { MultiPrincipalSelector, type SelectedPrincipal, type MultiPrincipalSelectorProps } from './MultiPrincipalSelector'
 export { BulkAclDialog, type BulkAclMode, type AclResourceType, type BulkAclDialogProps } from './BulkAclDialog'
+
+// Fase 9.5: Advanced ACL UI
+export { EffectivePermissionsPanel, type EffectivePermissionsPanelProps } from './EffectivePermissionsPanel'
+export { WhatIfSimulator, type WhatIfSimulatorProps } from './WhatIfSimulator'
+export { AclExportDialog, type AclExportDialogProps } from './AclExportDialog'
+export { AclImportDialog, type AclImportDialogProps } from './AclImportDialog'

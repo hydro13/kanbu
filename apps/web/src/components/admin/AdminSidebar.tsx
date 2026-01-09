@@ -113,6 +113,14 @@ function ClipboardListIcon({ className }: { className?: string }) {
   )
 }
 
+function TableIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+    </svg>
+  )
+}
+
 // =============================================================================
 // Types
 // =============================================================================
@@ -157,6 +165,7 @@ const navSections: NavSection[] = [
       { label: 'All Users', path: '/admin/users', icon: UsersIcon, requiredScope: 'workspaceAdmin' },
       { label: 'Create User', path: '/admin/users/create', icon: UserPlusIcon, requiredScope: 'domainAdmin' },
       { label: 'ACL Manager', path: '/admin/acl', icon: KeyIcon, requiredScope: 'workspaceAdmin' },
+      { label: 'Permission Matrix', path: '/admin/permission-matrix', icon: TableIcon, requiredScope: 'domainAdmin' },
       { label: 'Permission Tree', path: '/admin/permissions', icon: TreeIcon, requiredScope: 'domainAdmin' },
       { label: 'Invites', path: '/admin/invites', icon: MailIcon, requiredScope: 'domainAdmin' },
     ],

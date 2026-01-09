@@ -1058,6 +1058,936 @@ export const aclRouter = router({
       }
     }),
 
+// ===========================================================================
+  // Advanced UI (Fase 9.5)
+  // ===========================================================================
+
+  /**
+   * Get permission matrix - grid of principals × resources with effective permissions.
+   * Used for the Permission Matrix page.
+   */
+  getPermissionMatrix: protectedProcedure
+    .input(z.object({
+      resourceTypes: z.array(resourceTypeSchema).optional(),
+      workspaceId: z.number().optional(),
+      includeInherited: z.boolean().default(true),
+      principalTypes: z.array(principalTypeSchema).optional(),
+      limit: z.number().max(100).default(50),
+      offset: z.number().default(0),
+    }))
+    .query(async ({ ctx, input }) => {
+      // Require admin access
+      const userScope = await scopeService.getUserScope(ctx.user!.id)
+      if (!userScope.isDomainAdmin && !userScope.permissions.canManageAcl) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Je hebt geen rechten om de permission matrix te bekijken',
+        })
+      }
+
+      // Build resource filter
+      const resourceWhere: Record<string, unknown> = {}
+      if (input.resourceTypes && input.resourceTypes.length > 0) {
+        resourceWhere.resourceType = { in: input.resourceTypes }
+      }
+      if (input.workspaceId) {
+        // Filter to workspace and its projects
+        resourceWhere.OR = [
+          { resourceType: 'workspace', resourceId: input.workspaceId },
+          { resourceType: 'project', resourceId: { in: await ctx.prisma.project.findMany({
+            where: { workspaceId: input.workspaceId },
+            select: { id: true },
+          }).then(p => p.map(x => x.id)) } },
+        ]
+      }
+
+      // Get principals based on filter
+      const principalFilter = input.principalTypes && input.principalTypes.length > 0
+        ? { principalType: { in: input.principalTypes } }
+        : {}
+
+      // Get distinct ACL entries for principals
+      const aclEntries = await ctx.prisma.aclEntry.findMany({
+        where: { ...resourceWhere, ...principalFilter },
+        select: {
+          resourceType: true,
+          resourceId: true,
+          principalType: true,
+          principalId: true,
+          permissions: true,
+          deny: true,
+          inheritToChildren: true,
+        },
+        orderBy: [
+          { principalType: 'asc' },
+          { principalId: 'asc' },
+          { resourceType: 'asc' },
+          { resourceId: 'asc' },
+        ],
+      })
+
+      // Get unique principals
+      const principalSet = new Set<string>()
+      aclEntries.forEach(e => principalSet.add(`${e.principalType}:${e.principalId}`))
+      const principalKeys = Array.from(principalSet).slice(input.offset, input.offset + input.limit)
+
+      // Fetch principal details
+      const userIds = principalKeys.filter(k => k.startsWith('user:')).map(k => parseInt(k.split(':')[1] ?? '0'))
+      const groupIds = principalKeys.filter(k => k.startsWith('group:')).map(k => parseInt(k.split(':')[1] ?? '0'))
+
+      const [users, groups] = await Promise.all([
+        ctx.prisma.user.findMany({
+          where: { id: { in: userIds } },
+          select: { id: true, username: true, name: true },
+        }),
+        ctx.prisma.group.findMany({
+          where: { id: { in: groupIds } },
+          select: { id: true, name: true, displayName: true },
+        }),
+      ])
+
+      const principals = [
+        ...users.map(u => ({ type: 'user' as const, id: u.id, name: u.username, displayName: u.name })),
+        ...groups.map(g => ({ type: 'group' as const, id: g.id, name: g.name, displayName: g.displayName })),
+      ]
+
+      // Get unique resources
+      const resourceSet = new Set<string>()
+      aclEntries.forEach(e => resourceSet.add(`${e.resourceType}:${e.resourceId ?? 'null'}`))
+
+      // Fetch resource details
+      const workspaceIds = Array.from(resourceSet)
+        .filter(k => k.startsWith('workspace:') && !k.endsWith(':null'))
+        .map(k => parseInt(k.split(':')[1] ?? '0'))
+      const projectIds = Array.from(resourceSet)
+        .filter(k => k.startsWith('project:') && !k.endsWith(':null'))
+        .map(k => parseInt(k.split(':')[1] ?? '0'))
+
+      const [workspaces, projects] = await Promise.all([
+        ctx.prisma.workspace.findMany({
+          where: { id: { in: workspaceIds } },
+          select: { id: true, name: true },
+        }),
+        ctx.prisma.project.findMany({
+          where: { id: { in: projectIds } },
+          select: { id: true, name: true, workspace: { select: { name: true } } },
+        }),
+      ])
+
+      const resources = Array.from(resourceSet).map(key => {
+        const parts = key.split(':')
+        const type = parts[0] ?? ''
+        const idStr = parts[1] ?? 'null'
+        const id = idStr === 'null' ? null : parseInt(idStr)
+        let name = type
+        let path = type
+
+        if (type === 'workspace' && id) {
+          const ws = workspaces.find(w => w.id === id)
+          name = ws?.name ?? `Workspace #${id}`
+          path = name
+        } else if (type === 'project' && id) {
+          const proj = projects.find(p => p.id === id)
+          name = proj?.name ?? `Project #${id}`
+          path = `${proj?.workspace?.name ?? 'Unknown'} > ${name}`
+        } else if (id === null) {
+          name = `All ${type}s`
+          path = `${type} (root)`
+        }
+
+        return { type, id, name, path }
+      })
+
+      // Build cells - each principal × resource combination
+      const cells = aclEntries
+        .filter(e => principalKeys.includes(`${e.principalType}:${e.principalId}`))
+        .map(e => ({
+          principalType: e.principalType,
+          principalId: e.principalId,
+          resourceType: e.resourceType,
+          resourceId: e.resourceId,
+          effectivePermissions: e.deny ? 0 : e.permissions,
+          isDirect: true,
+          isDenied: e.deny,
+          inheritedFrom: undefined,
+        }))
+
+      return {
+        principals,
+        resources,
+        cells,
+        totals: {
+          principals: principalSet.size,
+          resources: resourceSet.size,
+        },
+      }
+    }),
+
+  /**
+   * Calculate effective permissions with detailed breakdown.
+   * Shows exactly why a user has certain permissions.
+   */
+  calculateEffective: protectedProcedure
+    .input(z.object({
+      userId: z.number(),
+      resourceType: resourceTypeSchema,
+      resourceId: z.number().nullable(),
+    }))
+    .query(async ({ ctx, input }) => {
+      // Only admins can check other users' permissions
+      const user = await ctx.prisma.user.findUnique({
+        where: { id: ctx.user!.id },
+        select: { role: true },
+      })
+
+      if (user?.role !== 'ADMIN' && input.userId !== ctx.user!.id) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Je kunt alleen je eigen permissies bekijken',
+        })
+      }
+
+      // Get target user info
+      const targetUser = await ctx.prisma.user.findUnique({
+        where: { id: input.userId },
+        select: { id: true, username: true, name: true, email: true },
+      })
+      if (!targetUser) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Gebruiker niet gevonden' })
+      }
+
+      // Get resource info
+      const resourceInfo = await getResourceInfo(input.resourceType, input.resourceId, ctx.prisma)
+
+      // Get user's group memberships
+      const groupMemberships = await ctx.prisma.groupMember.findMany({
+        where: { userId: input.userId },
+        include: { group: { select: { id: true, name: true, displayName: true } } },
+      })
+      const groupIds = groupMemberships.map(gm => gm.groupId)
+
+      // Get direct user entries for this resource
+      const directEntries = await ctx.prisma.aclEntry.findMany({
+        where: {
+          resourceType: input.resourceType,
+          resourceId: input.resourceId,
+          principalType: 'user',
+          principalId: input.userId,
+        },
+        select: {
+          id: true,
+          permissions: true,
+          deny: true,
+          inheritToChildren: true,
+        },
+      })
+
+      // Get group entries for this resource
+      const groupEntries = groupIds.length > 0 ? await ctx.prisma.aclEntry.findMany({
+        where: {
+          resourceType: input.resourceType,
+          resourceId: input.resourceId,
+          principalType: 'group',
+          principalId: { in: groupIds },
+        },
+        select: {
+          principalId: true,
+          permissions: true,
+          deny: true,
+        },
+      }) : []
+
+      // Get inherited entries from parent resources
+      const inheritedEntries: Array<{
+        fromResourceType: string
+        fromResourceId: number | null
+        fromResourceName: string
+        permissions: number
+        presetName: string | null
+        deny: boolean
+        source: 'user' | 'group'
+        groupName?: string
+      }> = []
+
+      // Check parent resources for inherited permissions
+      if (input.resourceType === 'project' && input.resourceId) {
+        const project = await ctx.prisma.project.findUnique({
+          where: { id: input.resourceId },
+          select: { workspaceId: true, workspace: { select: { name: true } } },
+        })
+        if (project) {
+          // Check workspace-level entries
+          const workspaceEntries = await ctx.prisma.aclEntry.findMany({
+            where: {
+              resourceType: 'workspace',
+              resourceId: project.workspaceId,
+              inheritToChildren: true,
+              OR: [
+                { principalType: 'user', principalId: input.userId },
+                { principalType: 'group', principalId: { in: groupIds } },
+              ],
+            },
+            select: {
+              principalType: true,
+              principalId: true,
+              permissions: true,
+              deny: true,
+            },
+          })
+          for (const entry of workspaceEntries) {
+            const groupName = entry.principalType === 'group'
+              ? groupMemberships.find(gm => gm.groupId === entry.principalId)?.group.displayName
+              : undefined
+            inheritedEntries.push({
+              fromResourceType: 'workspace',
+              fromResourceId: project.workspaceId,
+              fromResourceName: project.workspace.name,
+              permissions: entry.permissions,
+              presetName: aclService.getPresetName(entry.permissions),
+              deny: entry.deny,
+              source: entry.principalType as 'user' | 'group',
+              groupName,
+            })
+          }
+        }
+      }
+
+      // Calculate effective permissions
+      let allowedBits = 0
+      let deniedBits = 0
+
+      // Process direct entries
+      for (const entry of directEntries) {
+        if (entry.deny) {
+          deniedBits |= entry.permissions
+        } else {
+          allowedBits |= entry.permissions
+        }
+      }
+
+      // Process group entries
+      for (const entry of groupEntries) {
+        if (entry.deny) {
+          deniedBits |= entry.permissions
+        } else {
+          allowedBits |= entry.permissions
+        }
+      }
+
+      // Process inherited entries
+      for (const entry of inheritedEntries) {
+        if (entry.deny) {
+          deniedBits |= entry.permissions
+        } else {
+          allowedBits |= entry.permissions
+        }
+      }
+
+      const finalBits = allowedBits & ~deniedBits
+
+      return {
+        user: targetUser,
+        resource: {
+          type: input.resourceType,
+          id: input.resourceId,
+          name: resourceInfo.name,
+          path: resourceInfo.name,
+        },
+        effectivePermissions: finalBits,
+        effectivePreset: aclService.getPresetName(finalBits),
+        directEntries: directEntries.map(e => ({
+          ...e,
+          presetName: aclService.getPresetName(e.permissions),
+        })),
+        groupEntries: groupEntries.map(e => {
+          const group = groupMemberships.find(gm => gm.groupId === e.principalId)
+          return {
+            groupId: e.principalId,
+            groupName: group?.group.displayName ?? `Group #${e.principalId}`,
+            permissions: e.permissions,
+            presetName: aclService.getPresetName(e.permissions),
+            deny: e.deny,
+          }
+        }),
+        inheritedEntries,
+        calculation: {
+          allowedBits,
+          deniedBits,
+          finalBits,
+          formula: `${allowedBits} & ~${deniedBits} = ${finalBits}`,
+        },
+      }
+    }),
+
+  /**
+   * Simulate an ACL change without persisting it.
+   * Used for the What-If Simulator.
+   */
+  simulateChange: protectedProcedure
+    .input(z.object({
+      action: z.enum(['grant', 'deny', 'revoke', 'template']),
+      resourceType: resourceTypeSchema,
+      resourceId: z.number().nullable(),
+      principals: z.array(z.object({
+        type: principalTypeSchema,
+        id: z.number(),
+      })).min(1).max(100),
+      permissions: z.number().optional(),
+      templateName: z.enum(['read_only', 'contributor', 'editor', 'full_control']).optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      await requireAclManagement(ctx.user!.id, input.resourceType, input.resourceId, ctx.prisma)
+
+      // Map template to permissions
+      const targetPermissions = input.templateName
+        ? ACL_PRESETS[input.templateName.toUpperCase() as keyof typeof ACL_PRESETS]
+        : input.permissions ?? 0
+
+      // Get current entries for each principal
+      const currentEntries = await ctx.prisma.aclEntry.findMany({
+        where: {
+          resourceType: input.resourceType,
+          resourceId: input.resourceId,
+          OR: input.principals.map(p => ({
+            principalType: p.type,
+            principalId: p.id,
+          })),
+        },
+        select: {
+          principalType: true,
+          principalId: true,
+          permissions: true,
+          deny: true,
+        },
+      })
+
+      // Get principal names
+      const userIds = input.principals.filter(p => p.type === 'user').map(p => p.id)
+      const groupIds = input.principals.filter(p => p.type === 'group').map(p => p.id)
+      const [users, groups] = await Promise.all([
+        ctx.prisma.user.findMany({
+          where: { id: { in: userIds } },
+          select: { id: true, name: true, username: true },
+        }),
+        ctx.prisma.group.findMany({
+          where: { id: { in: groupIds } },
+          select: { id: true, name: true, displayName: true },
+        }),
+      ])
+
+      // Build changes preview
+      const changes = input.principals.map(principal => {
+        const current = currentEntries.find(
+          e => e.principalType === principal.type && e.principalId === principal.id && !e.deny
+        )
+        const currentDeny = currentEntries.find(
+          e => e.principalType === principal.type && e.principalId === principal.id && e.deny
+        )
+
+        // Get name
+        const name = principal.type === 'user'
+          ? users.find(u => u.id === principal.id)?.name ?? `User #${principal.id}`
+          : groups.find(g => g.id === principal.id)?.displayName ?? `Group #${principal.id}`
+
+        const before = current ? {
+          permissions: current.permissions,
+          presetName: aclService.getPresetName(current.permissions),
+          deny: false,
+        } : currentDeny ? {
+          permissions: currentDeny.permissions,
+          presetName: aclService.getPresetName(currentDeny.permissions),
+          deny: true,
+        } : null
+
+        let after: { permissions: number; presetName: string | null; deny: boolean } | null = null
+        let impact: 'new' | 'upgraded' | 'downgraded' | 'unchanged' | 'removed' = 'unchanged'
+        let bitsDiff = 0
+
+        if (input.action === 'revoke') {
+          after = null
+          impact = before ? 'removed' : 'unchanged'
+          bitsDiff = before ? -before.permissions : 0
+        } else if (input.action === 'deny') {
+          after = { permissions: targetPermissions, presetName: aclService.getPresetName(targetPermissions), deny: true }
+          impact = before ? (before.deny ? 'unchanged' : 'downgraded') : 'new'
+          bitsDiff = before ? -before.permissions : 0
+        } else {
+          // grant or template
+          after = { permissions: targetPermissions, presetName: aclService.getPresetName(targetPermissions), deny: false }
+          if (!before) {
+            impact = 'new'
+            bitsDiff = targetPermissions
+          } else if (before.deny) {
+            impact = 'upgraded'
+            bitsDiff = targetPermissions
+          } else if (targetPermissions > before.permissions) {
+            impact = 'upgraded'
+            bitsDiff = targetPermissions - before.permissions
+          } else if (targetPermissions < before.permissions) {
+            impact = 'downgraded'
+            bitsDiff = targetPermissions - before.permissions
+          } else {
+            impact = 'unchanged'
+            bitsDiff = 0
+          }
+        }
+
+        return {
+          principal: { type: principal.type, id: principal.id, name },
+          before,
+          after,
+          impact,
+          bitsDiff,
+        }
+      })
+
+      // Build summary
+      const summary = {
+        new: changes.filter(c => c.impact === 'new').length,
+        upgraded: changes.filter(c => c.impact === 'upgraded').length,
+        downgraded: changes.filter(c => c.impact === 'downgraded').length,
+        unchanged: changes.filter(c => c.impact === 'unchanged').length,
+        removed: changes.filter(c => c.impact === 'removed').length,
+      }
+
+      // Generate warnings
+      const warnings: string[] = []
+      if (targetPermissions === ACL_PRESETS.FULL_CONTROL && summary.new + summary.upgraded > 0) {
+        warnings.push(`Dit geeft Full Control aan ${summary.new + summary.upgraded} principal(s)`)
+      }
+      if (input.resourceType === 'admin' || input.resourceType === 'system' || input.resourceType === 'root') {
+        warnings.push(`Let op: Dit is een systeem-level resource`)
+      }
+
+      return { changes, summary, warnings }
+    }),
+
+  /**
+   * Export ACL configuration.
+   * Returns ACL entries in JSON or CSV format.
+   */
+  exportAcl: protectedProcedure
+    .input(z.object({
+      resourceType: resourceTypeSchema.optional(),
+      resourceId: z.number().nullable().optional(),
+      format: z.enum(['json', 'csv']),
+      includeChildren: z.boolean().default(true),
+    }))
+    .query(async ({ ctx, input }) => {
+      // Require admin access
+      const userScope = await scopeService.getUserScope(ctx.user!.id)
+      if (!userScope.isDomainAdmin && !userScope.permissions.canManageAcl) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Je hebt geen rechten om ACL te exporteren',
+        })
+      }
+
+      // Build where clause
+      const where: Record<string, unknown> = {}
+      if (input.resourceType) {
+        if (input.includeChildren && input.resourceId) {
+          // Include children (e.g., workspace + its projects)
+          if (input.resourceType === 'workspace') {
+            const projects = await ctx.prisma.project.findMany({
+              where: { workspaceId: input.resourceId },
+              select: { id: true },
+            })
+            where.OR = [
+              { resourceType: 'workspace', resourceId: input.resourceId },
+              { resourceType: 'project', resourceId: { in: projects.map(p => p.id) } },
+            ]
+          } else {
+            where.resourceType = input.resourceType
+            where.resourceId = input.resourceId
+          }
+        } else {
+          where.resourceType = input.resourceType
+          if (input.resourceId !== undefined) {
+            where.resourceId = input.resourceId
+          }
+        }
+      }
+
+      // Get entries with principal info
+      const entries = await ctx.prisma.aclEntry.findMany({
+        where,
+        orderBy: [
+          { resourceType: 'asc' },
+          { resourceId: 'asc' },
+          { principalType: 'asc' },
+          { principalId: 'asc' },
+        ],
+      })
+
+      // Enrich with names
+      const userIds = [...new Set(entries.filter(e => e.principalType === 'user').map(e => e.principalId))]
+      const groupIds = [...new Set(entries.filter(e => e.principalType === 'group').map(e => e.principalId))]
+      const workspaceIds = [...new Set(entries.filter(e => e.resourceType === 'workspace' && e.resourceId).map(e => e.resourceId as number))]
+      const projectIds = [...new Set(entries.filter(e => e.resourceType === 'project' && e.resourceId).map(e => e.resourceId as number))]
+
+      const [users, groups, workspaces, projects] = await Promise.all([
+        ctx.prisma.user.findMany({ where: { id: { in: userIds } }, select: { id: true, username: true } }),
+        ctx.prisma.group.findMany({ where: { id: { in: groupIds } }, select: { id: true, name: true } }),
+        ctx.prisma.workspace.findMany({ where: { id: { in: workspaceIds } }, select: { id: true, name: true } }),
+        ctx.prisma.project.findMany({ where: { id: { in: projectIds } }, select: { id: true, name: true } }),
+      ])
+
+      const enrichedEntries = entries.map(e => {
+        const principalName = e.principalType === 'user'
+          ? users.find(u => u.id === e.principalId)?.username ?? `user#${e.principalId}`
+          : groups.find(g => g.id === e.principalId)?.name ?? `group#${e.principalId}`
+
+        let resourceName = e.resourceType
+        if (e.resourceId) {
+          if (e.resourceType === 'workspace') {
+            resourceName = workspaces.find(w => w.id === e.resourceId)?.name ?? `workspace#${e.resourceId}`
+          } else if (e.resourceType === 'project') {
+            resourceName = projects.find(p => p.id === e.resourceId)?.name ?? `project#${e.resourceId}`
+          }
+        }
+
+        return {
+          resourceType: e.resourceType,
+          resourceId: e.resourceId,
+          resourceName,
+          principalType: e.principalType,
+          principalId: e.principalId,
+          principalName,
+          permissions: e.permissions,
+          permissionNames: aclService.permissionToArray(e.permissions),
+          presetName: aclService.getPresetName(e.permissions),
+          deny: e.deny,
+          inheritToChildren: e.inheritToChildren,
+        }
+      })
+
+      // Build scope info
+      const scopeInfo = input.resourceType && input.resourceId
+        ? await getResourceInfo(input.resourceType, input.resourceId, ctx.prisma)
+        : { name: 'All resources', workspaceId: null }
+
+      // Audit log
+      await auditService.logAclEvent({
+        action: AUDIT_ACTIONS.ACL_EXPORTED,
+        resourceType: input.resourceType ?? 'all',
+        resourceId: input.resourceId ?? null,
+        resourceName: scopeInfo.name,
+        metadata: {
+          format: input.format,
+          includeChildren: input.includeChildren,
+          entryCount: entries.length,
+        },
+        userId: ctx.user!.id,
+        workspaceId: scopeInfo.workspaceId,
+        ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
+      })
+
+      if (input.format === 'json') {
+        return {
+          format: 'json' as const,
+          data: JSON.stringify({
+            version: '1.0',
+            exportedAt: new Date().toISOString(),
+            exportedBy: ctx.user!.username,
+            scope: {
+              type: input.resourceType ?? 'all',
+              id: input.resourceId ?? null,
+              name: scopeInfo.name,
+            },
+            entries: enrichedEntries,
+            metadata: {
+              totalEntries: entries.length,
+              userCount: new Set(entries.filter(e => e.principalType === 'user').map(e => e.principalId)).size,
+              groupCount: new Set(entries.filter(e => e.principalType === 'group').map(e => e.principalId)).size,
+            },
+          }, null, 2),
+        }
+      } else {
+        // CSV format
+        const header = 'resource_type,resource_id,resource_name,principal_type,principal_id,principal_name,permissions,preset,deny,inherit'
+        const rows = enrichedEntries.map(e =>
+          `${e.resourceType},${e.resourceId ?? ''},${e.resourceName},${e.principalType},${e.principalId},${e.principalName},${e.permissions},${e.presetName ?? ''},${e.deny},${e.inheritToChildren}`
+        )
+        return {
+          format: 'csv' as const,
+          data: [header, ...rows].join('\n'),
+        }
+      }
+    }),
+
+  /**
+   * Preview ACL import (dry run).
+   * Parses input and shows what will be imported.
+   */
+  importPreview: protectedProcedure
+    .input(z.object({
+      data: z.string(),
+      format: z.enum(['json', 'csv']),
+      mode: z.enum(['skip', 'overwrite', 'merge']),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      // Require admin access
+      const userScope = await scopeService.getUserScope(ctx.user!.id)
+      if (!userScope.isDomainAdmin) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Alleen Domain Admins kunnen ACL importeren',
+        })
+      }
+
+      // Parse input
+      const entries: Array<{
+        resourceType: string
+        resourceId: number | null
+        principalType: string
+        principalId: number
+        principalName?: string
+        permissions: number
+        deny: boolean
+        inheritToChildren: boolean
+      }> = []
+
+      if (input.format === 'json') {
+        try {
+          const parsed = JSON.parse(input.data)
+          if (!parsed.entries || !Array.isArray(parsed.entries)) {
+            throw new Error('Invalid JSON format: missing entries array')
+          }
+          for (const e of parsed.entries) {
+            entries.push({
+              resourceType: e.resourceType,
+              resourceId: e.resourceId ?? null,
+              principalType: e.principalType,
+              principalId: e.principalId,
+              principalName: e.principalName,
+              permissions: e.permissions,
+              deny: e.deny ?? false,
+              inheritToChildren: e.inheritToChildren ?? true,
+            })
+          }
+        } catch (err) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: `JSON parse error: ${err instanceof Error ? err.message : 'Unknown error'}`,
+          })
+        }
+      } else {
+        // CSV format
+        const lines = input.data.trim().split('\n')
+        if (lines.length < 2) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'CSV must have header and at least one data row' })
+        }
+        // Skip header
+        for (let i = 1; i < lines.length; i++) {
+          const line = lines[i]
+          if (!line) continue
+          const cols = line.split(',')
+          if (cols.length < 10) continue
+          entries.push({
+            resourceType: cols[0] ?? '',
+            resourceId: cols[1] ? parseInt(cols[1]) : null,
+            principalType: cols[3] ?? '',
+            principalId: parseInt(cols[4] ?? '0'),
+            principalName: cols[5] ?? '',
+            permissions: parseInt(cols[6] ?? '0'),
+            deny: cols[8] === 'true',
+            inheritToChildren: cols[9] !== 'false',
+          })
+        }
+      }
+
+      // Check existing entries
+      const existingEntries = await ctx.prisma.aclEntry.findMany({
+        where: {
+          OR: entries.map(e => ({
+            resourceType: e.resourceType,
+            resourceId: e.resourceId,
+            principalType: e.principalType,
+            principalId: e.principalId,
+          })),
+        },
+        select: {
+          resourceType: true,
+          resourceId: true,
+          principalType: true,
+          principalId: true,
+          permissions: true,
+          deny: true,
+        },
+      })
+
+      // Build preview
+      const preview = entries.map(e => {
+        const existing = existingEntries.find(
+          ex => ex.resourceType === e.resourceType &&
+                ex.resourceId === e.resourceId &&
+                ex.principalType === e.principalType &&
+                ex.principalId === e.principalId
+        )
+
+        let action: 'create' | 'update' | 'skip' = 'create'
+        if (existing) {
+          if (input.mode === 'skip') {
+            action = 'skip'
+          } else if (input.mode === 'overwrite') {
+            action = 'update'
+          } else {
+            // merge - only update if new permissions are different
+            action = e.permissions !== existing.permissions ? 'update' : 'skip'
+          }
+        }
+
+        return {
+          ...e,
+          action,
+          existing: existing ? { permissions: existing.permissions, deny: existing.deny } : null,
+        }
+      })
+
+      return {
+        totalEntries: entries.length,
+        toCreate: preview.filter(p => p.action === 'create').length,
+        toUpdate: preview.filter(p => p.action === 'update').length,
+        toSkip: preview.filter(p => p.action === 'skip').length,
+        entries: preview,
+      }
+    }),
+
+  /**
+   * Execute ACL import.
+   */
+  importExecute: protectedProcedure
+    .input(z.object({
+      data: z.string(),
+      format: z.enum(['json', 'csv']),
+      mode: z.enum(['skip', 'overwrite', 'merge']),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      // Require admin access
+      const userScope = await scopeService.getUserScope(ctx.user!.id)
+      if (!userScope.isDomainAdmin) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Alleen Domain Admins kunnen ACL importeren',
+        })
+      }
+
+      // Parse input (same as preview)
+      const entries: Array<{
+        resourceType: string
+        resourceId: number | null
+        principalType: string
+        principalId: number
+        permissions: number
+        deny: boolean
+        inheritToChildren: boolean
+      }> = []
+
+      if (input.format === 'json') {
+        const parsed = JSON.parse(input.data)
+        for (const e of parsed.entries) {
+          entries.push({
+            resourceType: e.resourceType,
+            resourceId: e.resourceId ?? null,
+            principalType: e.principalType,
+            principalId: e.principalId,
+            permissions: e.permissions,
+            deny: e.deny ?? false,
+            inheritToChildren: e.inheritToChildren ?? true,
+          })
+        }
+      } else {
+        const lines = input.data.trim().split('\n')
+        for (let i = 1; i < lines.length; i++) {
+          const line = lines[i]
+          if (!line) continue
+          const cols = line.split(',')
+          if (cols.length < 10) continue
+          entries.push({
+            resourceType: cols[0] ?? '',
+            resourceId: cols[1] ? parseInt(cols[1]) : null,
+            principalType: cols[3] ?? '',
+            principalId: parseInt(cols[4] ?? '0'),
+            permissions: parseInt(cols[6] ?? '0'),
+            deny: cols[8] === 'true',
+            inheritToChildren: cols[9] !== 'false',
+          })
+        }
+      }
+
+      // Execute import in transaction
+      let created = 0
+      let updated = 0
+      let skipped = 0
+
+      await ctx.prisma.$transaction(async (tx) => {
+        for (const e of entries) {
+          const existing = await tx.aclEntry.findFirst({
+            where: {
+              resourceType: e.resourceType,
+              resourceId: e.resourceId,
+              principalType: e.principalType,
+              principalId: e.principalId,
+            },
+          })
+
+          if (existing) {
+            if (input.mode === 'skip') {
+              skipped++
+            } else if (input.mode === 'overwrite' || (input.mode === 'merge' && e.permissions !== existing.permissions)) {
+              await tx.aclEntry.update({
+                where: { id: existing.id },
+                data: {
+                  permissions: e.permissions,
+                  deny: e.deny,
+                  inheritToChildren: e.inheritToChildren,
+                },
+              })
+              updated++
+            } else {
+              skipped++
+            }
+          } else {
+            await tx.aclEntry.create({
+              data: {
+                resourceType: e.resourceType,
+                resourceId: e.resourceId,
+                principalType: e.principalType,
+                principalId: e.principalId,
+                permissions: e.permissions,
+                deny: e.deny,
+                inheritToChildren: e.inheritToChildren,
+                createdById: ctx.user!.id,
+              },
+            })
+            created++
+          }
+        }
+      })
+
+      // Audit log
+      await auditService.logAclEvent({
+        action: AUDIT_ACTIONS.ACL_IMPORTED,
+        resourceType: 'all',
+        resourceId: null,
+        resourceName: 'ACL Import',
+        metadata: {
+          format: input.format,
+          mode: input.mode,
+          created,
+          updated,
+          skipped,
+          totalEntries: entries.length,
+        },
+        userId: ctx.user!.id,
+        workspaceId: null,
+        ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
+      })
+
+      return { created, updated, skipped }
+    }),
+
   /**
    * Get ACL statistics.
    */

@@ -36,6 +36,10 @@ A modern, self-hostable project management tool with Kanban boards, real-time co
 - **Group Management** - Create security groups, manage memberships
 - **ACL Manager** - Grant/revoke permissions with presets (Read-Only, Contributor, Editor, Full Control)
 - **Bulk ACL Operations** - Bulk grant/revoke, copy permissions, apply templates
+- **Permission Matrix** - Grid view of principals × resources with effective permissions
+- **Effective Permissions Calculator** - Debug tool showing why a user has specific permissions
+- **What-If Simulator** - Preview ACL changes before applying them
+- **ACL Import/Export** - Backup and restore ACL configuration (JSON/CSV)
 - **Permission Tree** - Visual permission browser with effective permissions
 - **Audit Logs** - Security audit trail with filtering, export (CSV/JSON), scoped access
 - **Workspace Management** - Create and configure workspaces

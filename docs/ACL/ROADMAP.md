@@ -19,7 +19,8 @@
 │ FASE 9.1: Audit Logging                             [██████████] ✓  │
 │ FASE 9.6: API Keys & Service Accounts               [██████████] ✓  │
 │ FASE 9.4: Bulk Operations                           [██████████] ✓  │
-│ FASE 9.2, 9.3, 9.5: Advanced Features               [──────────] ○  │
+│ FASE 9.5: Advanced ACL UI                           [██████████] ✓  │
+│ FASE 9.2, 9.3: Advanced Features                    [──────────] ○  │
 │                                                                     │
 │ ⚠️ SECURITY FIX 2026-01-08: Admin access vulnerability gefixt       │
 └─────────────────────────────────────────────────────────────────────┘
@@ -1061,7 +1062,150 @@ Nieuwe audit actions in `auditService.ts`:
 
 ---
 
-## GEPLAND: Fase 9.2, 9.3, 9.5 - Advanced Features
+## VOLTOOID: Fase 9.5 - Advanced ACL UI
+
+> **Doel:** Geavanceerde UI tools voor ACL beheer en analyse.
+> **Status:** ✅ Voltooid op 2026-01-09
+
+<details>
+<summary>Klik om voltooide fase te bekijken</summary>
+
+### 9.5.1 Permission Matrix View
+
+Een grid-based overzicht van principals × resources met effectieve permissies.
+
+#### Backend: `getPermissionMatrix` procedure
+- [x] Input: resourceTypes filter, workspaceId, includeInherited, principalTypes, pagination
+- [x] Output: principals[], resources[], cells[] met effectivePermissions
+- [x] Kleurcodering: direct (groen), inherited (blauw), denied (rood), none (grijs)
+
+#### Frontend: `PermissionMatrixPage.tsx`
+- [x] Grid view met principals als rijen, resources als kolommen
+- [x] Filters: resource type, principal type, workspace, include inherited
+- [x] Cell click toont detail popup met permission breakdown
+- [x] CSV export van matrix data
+- [x] Route: `/admin/permission-matrix`
+- [x] AdminSidebar link met TableIcon
+
+### 9.5.2 Effective Permissions Calculator
+
+Debug tool die uitlegt WAAROM een user bepaalde permissies heeft.
+
+#### Backend: `calculateEffective` procedure
+- [x] Input: userId, resourceType, resourceId
+- [x] Output: finalPermissions, breakdown[] (per source met allow/deny bits)
+- [x] Sources: direct ACL, group memberships, inheritance chain
+- [x] Security: alleen admins kunnen andere users checken
+
+#### Frontend: `EffectivePermissionsPanel.tsx`
+- [x] User selector dropdown
+- [x] Resource type/id selector
+- [x] Breakdown tabel: source → allow bits → deny bits
+- [x] Final effective permissions met bitmask visualisatie (RWXDP)
+- [x] Integratie via "Tools" dropdown in AclPage
+
+### 9.5.3 What-If Simulator
+
+Preview wat er zou veranderen als je een ACL wijziging doorvoert.
+
+#### Backend: `simulateChange` procedure
+- [x] Input: changes[] met add/modify/remove operations
+- [x] Output: per change: before state, after state, affectedUsers[]
+- [x] Dry-run: geen database wijzigingen
+- [x] Shows cascade effects door inheritance
+
+#### Frontend: `WhatIfSimulator.tsx`
+- [x] Principal selector (user of group)
+- [x] Resource selector (type + id)
+- [x] Operation: Grant / Revoke
+- [x] Permission preset selector
+- [x] "Simulate" button toont preview
+- [x] Diff view: before → after permissions
+- [x] Affected users lijst
+- [x] "Apply Changes" button om door te voeren
+- [x] Integratie via "Tools" dropdown in AclPage
+
+### 9.5.4 Import/Export ACL Configuration
+
+Backup en restore van volledige ACL configuratie.
+
+#### Backend: `exportAcl` procedure
+- [x] Input: format (json/csv), filters (resourceTypes, workspaceId)
+- [x] Output: ACL entries in gekozen formaat
+- [x] JSON: volledige objecten met metadata
+- [x] CSV: platte structuur voor spreadsheet analyse
+- [x] Audit logging: `acl:exported`
+
+#### Backend: `importPreview` procedure
+- [x] Input: content (json/csv string), mode (skip/overwrite/merge)
+- [x] Output: toCreate, toUpdate, toSkip counts + entries preview
+- [x] Validatie van entries zonder database wijzigingen
+
+#### Backend: `importExecute` procedure
+- [x] Input: entries[], mode
+- [x] Output: created, updated, skipped counts
+- [x] Prisma transaction voor atomiciteit
+- [x] Audit logging: `acl:imported`
+
+#### Frontend: `AclExportDialog.tsx`
+- [x] Format selector (JSON/CSV)
+- [x] Resource type filter
+- [x] Workspace filter
+- [x] Download button
+- [x] Integratie via "Tools" dropdown in AclPage
+
+#### Frontend: `AclImportDialog.tsx`
+- [x] File upload (JSON/CSV)
+- [x] Mode selector: Skip existing / Overwrite / Merge (OR)
+- [x] Preview stap met counts (to create, to update, to skip)
+- [x] Entries preview tabel
+- [x] Execute button met confirmatie
+- [x] Success/error feedback
+- [x] Integratie via "Tools" dropdown in AclPage
+
+### 9.5.5 AclPage Toolbar Integration
+
+- [x] "Tools" dropdown menu toegevoegd aan AclPage toolbar
+- [x] Menu items: Effective Permissions, What-If Simulator, Export, Import
+- [x] State management voor dialogs (showEffectivePanel, showWhatIfSimulator, showExportDialog, showImportDialog)
+
+### 9.5.6 Verificatie
+
+- [x] TypeCheck passed
+- [x] Permission Matrix toont correct grid
+- [x] Effective calculator breakdown correct
+- [x] What-If simulator toont accurate preview
+- [x] Export werkt in beide formaten
+- [x] Import met preview en execute werkt
+- [x] Audit logs voor export/import
+
+### Nieuwe Bestanden
+
+| Bestand | Beschrijving |
+|---------|--------------|
+| `apps/web/src/pages/admin/PermissionMatrixPage.tsx` | Grid view principals × resources |
+| `apps/web/src/components/admin/EffectivePermissionsPanel.tsx` | Permission breakdown debug tool |
+| `apps/web/src/components/admin/WhatIfSimulator.tsx` | ACL change preview simulator |
+| `apps/web/src/components/admin/AclExportDialog.tsx` | Export dialog (JSON/CSV) |
+| `apps/web/src/components/admin/AclImportDialog.tsx` | Import dialog met preview |
+
+### Gewijzigde Bestanden
+
+| Bestand | Wijziging |
+|---------|-----------|
+| `apps/api/src/trpc/procedures/acl.ts` | 6 nieuwe procedures (getPermissionMatrix, calculateEffective, simulateChange, exportAcl, importPreview, importExecute) |
+| `apps/api/src/services/auditService.ts` | ACL_EXPORTED en ACL_IMPORTED actions |
+| `apps/web/src/components/admin/AdminSidebar.tsx` | Permission Matrix link + TableIcon |
+| `apps/web/src/components/admin/index.ts` | Exports voor nieuwe components |
+| `apps/web/src/pages/admin/index.ts` | Export voor PermissionMatrixPage |
+| `apps/web/src/pages/admin/AclPage.tsx` | Tools dropdown + dialog integrations |
+| `apps/web/src/App.tsx` | Route /admin/permission-matrix |
+
+</details>
+
+---
+
+## GEPLAND: Fase 9.2, 9.3 - Advanced Features
 
 > **Doel:** Enterprise-grade features toevoegen.
 >
@@ -1087,16 +1231,6 @@ Nieuwe audit actions in `auditService.ts`:
 - [ ] ACL support voor individuele tasks
 - [ ] Private tasks (alleen assignee + creator)
 - [ ] Task visibility inheritance van project
-
-### 9.5 Advanced UI
-- [ ] Permission matrix view (users x resources)
-- [ ] Effective permissions calculator
-- [ ] "What-if" simulatie voor nieuwe permissies
-- [ ] Import/export van ACL configuratie
-- [ ] **⚠️ SECURITY:** Matrix moet ALLE 4 admin access paden tonen
-- [ ] **⚠️ SECURITY:** Calculator moet `scopeService.checkPermissionFlags()` logica gebruiken
-- [ ] **⚠️ SECURITY:** What-if moet waarschuwen als wijziging admin toegang geeft
-- [ ] **⚠️ SECURITY:** Import moet valideren dat ACL geen security holes creëert
 
 ---
 
@@ -1245,6 +1379,7 @@ Nieuwe audit actions in `auditService.ts`:
 
 | Datum | Wijziging |
 |-------|-----------|
+| 2026-01-09 | **Fase 9.5 VOLTOOID**: Advanced ACL UI - Permission Matrix view, Effective Permissions Calculator, What-If Simulator, Import/Export ACL. 6 nieuwe tRPC procedures, 5 nieuwe frontend components. |
 | 2026-01-09 | **Fase 9.4 VOLTOOID**: Bulk Operations - bulkGrant, bulkRevoke, copyPermissions, applyTemplate. MultiPrincipalSelector en BulkAclDialog components. |
 | 2026-01-09 | **Fase 9.6 VOLTOOID**: API Keys & Service Accounts - Scoped API keys (USER/WORKSPACE/PROJECT), service accounts, dual auth (JWT + API key), audit logging |
 | 2026-01-08 | **Fase 8 VOLTOOID**: Database Cleanup - WorkspaceUser en ProjectMember modellen verwijderd. Alle code gemigreerd naar ACL-based queries (10+ bestanden). Legacy test files verwijderd. |
