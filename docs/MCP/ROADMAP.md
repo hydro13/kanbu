@@ -501,6 +501,241 @@ model AssistantBinding {
 
 ---
 
+### Fase 13: MCP Audit Infrastructure ✅ COMPLEET (2026-01-09)
+
+**Doel:** Audit logging infrastructuur uitbreiden zodat ALLE MCP acties namens de gebruiker gelogd worden met "via Claude Code" marker.
+
+**Status:** Volledig geïmplementeerd en werkend.
+
+**Probleem:** De MCP server voert acties uit namens de gebruiker, maar deze worden NIET gelogd in de audit logs. Alleen security events (ACL, GROUP, USER, etc.) worden gelogd. Task/project operaties zijn onzichtbaar.
+
+#### 13.1 Nieuwe Audit Categorieën
+
+Toevoegen aan `auditService.ts`:
+
+```typescript
+export const AUDIT_CATEGORIES = {
+  // Bestaande
+  ACL: 'ACL',
+  GROUP: 'GROUP',
+  USER: 'USER',
+  WORKSPACE: 'WORKSPACE',
+  SETTINGS: 'SETTINGS',
+  API: 'API',
+  // Nieuw voor MCP
+  PROJECT: 'PROJECT',
+  TASK: 'TASK',
+  SUBTASK: 'SUBTASK',
+  COMMENT: 'COMMENT',
+} as const
+```
+
+#### 13.2 Nieuwe Audit Actions
+
+```typescript
+export const AUDIT_ACTIONS = {
+  // ...bestaande actions...
+
+  // PROJECT
+  PROJECT_CREATED: 'project:created',
+  PROJECT_UPDATED: 'project:updated',
+  PROJECT_ARCHIVED: 'project:archived',
+  PROJECT_RESTORED: 'project:restored',
+
+  // TASK
+  TASK_CREATED: 'task:created',
+  TASK_UPDATED: 'task:updated',
+  TASK_MOVED: 'task:moved',
+  TASK_DELETED: 'task:deleted',
+  TASK_ASSIGNED: 'task:assigned',
+  TASK_UNASSIGNED: 'task:unassigned',
+
+  // SUBTASK
+  SUBTASK_CREATED: 'subtask:created',
+  SUBTASK_UPDATED: 'subtask:updated',
+  SUBTASK_TOGGLED: 'subtask:toggled',
+  SUBTASK_DELETED: 'subtask:deleted',
+
+  // COMMENT
+  COMMENT_CREATED: 'comment:created',
+  COMMENT_UPDATED: 'comment:updated',
+  COMMENT_DELETED: 'comment:deleted',
+} as const
+```
+
+#### 13.3 AssistantContext Metadata
+
+Alle audit logs via MCP krijgen extra metadata:
+
+```typescript
+metadata: {
+  via: 'assistant',           // Marker dat actie via Claude Code kwam
+  machineId: string,          // Hash van machine identifier
+  machineName: string | null, // "MAX (Linux)"
+  bindingId: number,          // AssistantBinding ID
+}
+```
+
+#### 13.4 Helper Functies
+
+```typescript
+// In auditService.ts
+async logTaskEvent(params: Omit<AuditLogParams, 'category'>): Promise<{ id: number }> {
+  return this.log({ ...params, category: 'TASK' })
+}
+
+async logProjectEvent(params: Omit<AuditLogParams, 'category'>): Promise<{ id: number }> {
+  return this.log({ ...params, category: 'PROJECT' })
+}
+
+async logSubtaskEvent(params: Omit<AuditLogParams, 'category'>): Promise<{ id: number }> {
+  return this.log({ ...params, category: 'SUBTASK' })
+}
+
+async logCommentEvent(params: Omit<AuditLogParams, 'category'>): Promise<{ id: number }> {
+  return this.log({ ...params, category: 'COMMENT' })
+}
+```
+
+**Deliverables Fase 13:**
+- [x] 4 nieuwe audit categorieën (PROJECT, TASK, SUBTASK, COMMENT)
+- [x] 17 nieuwe audit actions
+- [x] Helper functies voor elke categorie
+- [x] AssistantContext metadata schema
+
+---
+
+### Fase 14: MCP Task & Project Logging ✅ COMPLEET (2026-01-09)
+
+**Doel:** Audit logging implementeren in task.ts en project.ts procedures.
+
+**Status:** Volledig geïmplementeerd en werkend.
+
+#### 14.1 Task Procedures Logging
+
+| Procedure | Action | Wat loggen |
+|-----------|--------|------------|
+| `task.create` | `task:created` | projectId, title, assignees |
+| `task.update` | `task:updated` | taskId, changed fields (before/after) |
+| `task.move` | `task:moved` | taskId, fromColumn, toColumn |
+| `task.delete` | `task:deleted` | taskId, title |
+| `task.assign` | `task:assigned` | taskId, userId |
+| `task.unassign` | `task:unassigned` | taskId, userId |
+
+Voorbeeld implementatie:
+```typescript
+// In task.ts create procedure
+await auditService.logTaskEvent({
+  action: AUDIT_ACTIONS.TASK_CREATED,
+  resourceType: 'task',
+  resourceId: task.id,
+  resourceName: `${task.ref}: ${task.title}`,
+  userId: ctx.user.id,
+  workspaceId: project.workspaceId,
+  changes: { title: task.title, column: task.columnId },
+  metadata: ctx.assistantContext ? {
+    via: 'assistant',
+    machineId: ctx.assistantContext.machineId,
+    machineName: ctx.assistantContext.machineName,
+    bindingId: ctx.assistantContext.bindingId,
+  } : undefined,
+})
+```
+
+#### 14.2 Project Procedures Logging
+
+| Procedure | Action | Wat loggen |
+|-----------|--------|------------|
+| `project.create` | `project:created` | workspaceId, name, prefix |
+| `project.update` | `project:updated` | projectId, changed fields |
+| `project.archive` | `project:archived` | projectId, name |
+| `project.restore` | `project:restored` | projectId, name |
+
+**Deliverables Fase 14:**
+- [x] Audit logging in alle task procedures (create, update, move, delete, assign)
+- [ ] Audit logging in alle project procedures (niet nodig voor MCP - geen project mutations)
+- [x] Before/after change tracking voor updates
+- [x] AssistantContext metadata in alle logs
+
+---
+
+### Fase 15: MCP Subtask & Comment Logging ✅ COMPLEET (2026-01-09)
+
+**Doel:** Audit logging implementeren in subtask.ts en comment.ts procedures.
+
+**Status:** Volledig geïmplementeerd en werkend.
+
+#### 15.1 Subtask Procedures Logging
+
+| Procedure | Action | Wat loggen |
+|-----------|--------|------------|
+| `subtask.create` | `subtask:created` | taskId, title |
+| `subtask.update` | `subtask:updated` | subtaskId, changed fields |
+| `subtask.toggle` | `subtask:toggled` | subtaskId, newStatus (TODO/DONE) |
+| `subtask.delete` | `subtask:deleted` | subtaskId, title |
+
+#### 15.2 Comment Procedures Logging
+
+| Procedure | Action | Wat loggen |
+|-----------|--------|------------|
+| `comment.create` | `comment:created` | taskId, content preview (truncated) |
+| `comment.update` | `comment:updated` | commentId, before/after |
+| `comment.delete` | `comment:deleted` | commentId, content preview |
+
+**Deliverables Fase 15:**
+- [x] Audit logging in alle subtask procedures (create, update, delete)
+- [x] Audit logging in alle comment procedures (create, update, delete)
+- [x] Content preview truncation (max 100 chars)
+
+---
+
+### Fase 16: Audit UI Updates ✅ COMPLEET (2026-01-09)
+
+**Doel:** Audit logs UI aanpassen om MCP acties duidelijk te tonen.
+
+**Status:** Volledig geïmplementeerd en werkend.
+
+#### 16.1 Nieuwe Category Filters
+
+UI uitbreiden met filters voor:
+- PROJECT
+- TASK
+- SUBTASK
+- COMMENT
+
+#### 16.2 "Via Claude Code" Indicator
+
+In audit logs tabel tonen:
+```
+[USER_AVATAR] Robin Waslander
+              via Claude Code (MAX)
+```
+
+Of als badge:
+```
+Robin Waslander [🤖 Claude]
+```
+
+#### 16.3 Machine Details in Log Detail View
+
+Bij klikken op audit entry:
+```
+Action: task:created
+User: Robin Waslander
+Via: Claude Code
+  Machine: MAX (Linux)
+  Binding ID: 42
+  Connected since: 2026-01-09
+```
+
+**Deliverables Fase 16:** ✅ ALLEMAAL OPGELEVERD
+- [x] Category filters voor PROJECT, TASK, SUBTASK, COMMENT
+- [x] "Via Claude Code" badge/indicator in tabel
+- [x] Machine details in detail view (MCP panel met machine name, ID, binding)
+- [x] Filter op "via: assistant" om alleen MCP acties te zien
+
+---
+
 ## Tool Overzicht
 
 | Fase | Tools | Cumulatief | Status |
@@ -517,6 +752,10 @@ model AssistantBinding {
 | Fase 10 | 5 (audit) | 83 | ✅ Compleet |
 | Fase 11 | 12 (system) | 95 | ✅ Compleet |
 | Fase 12 | 36 (profile) | 131 | ✅ Compleet |
+| Fase 13 | - (audit infrastructure) | 131 | ✅ Compleet |
+| Fase 14 | - (task/project logging) | 131 | ✅ Compleet |
+| Fase 15 | - (subtask/comment logging) | 131 | ✅ Compleet |
+| Fase 16 | - (audit UI updates) | 131 | ✅ COMPLEET |
 
 ## Prioriteit Matrix
 
@@ -552,9 +791,12 @@ model AssistantBinding {
 - [x] Revokable per machine
 
 ### Audit Trail
-- [x] Alle acties gelogd (ASSISTANT_PAIRED, ASSISTANT_DISCONNECTED)
-- [ ] viaAssistant flag (gepland voor Fase 2)
+- [x] Pairing acties gelogd (ASSISTANT_PAIRED, ASSISTANT_DISCONNECTED)
+- [x] Task/Project acties gelogd (Fase 14) ✅
+- [x] Subtask/Comment acties gelogd (Fase 15) ✅
+- [x] `via: assistant` metadata in logs (Fase 13-15) ✅
 - [x] Machine identifier in logs
+- [x] "Via Claude Code" indicator in UI (Fase 16)
 
 ## UI/UX Flow
 
@@ -596,6 +838,9 @@ model AssistantBinding {
 
 | Datum | Wijziging |
 |-------|-----------|
+| 2026-01-09 | **Fase 16 COMPLEET** - Audit UI Updates: nieuwe category filters (PROJECT, TASK, SUBTASK, COMMENT), "Via Claude Code" badge in audit logs tabel, machine details in detail view, MCP-only filter |
+| 2026-01-09 | **Fase 13-15 COMPLEET** - MCP Audit Logging: infrastructure, task logging, subtask/comment logging - alle MCP acties worden nu gelogd met `via: assistant` metadata |
+| 2026-01-09 | **Fase 13-16 TOEGEVOEGD** - MCP Audit Logging roadmap: infrastructure, task/project/subtask/comment logging, UI updates |
 | 2026-01-09 | **Fase 12 COMPLEET** - 36 tools voor profile management (info, 2FA, notifications, API tokens, sessions, hourly rate) |
 | 2026-01-09 | **ALL 12 PHASES COMPLETE!** - 131 MCP tools geïmplementeerd across 12 phases |
 | 2026-01-09 | **Fase 11 COMPLEET** - 12 tools voor system settings & backup (settings, backup, admin workspaces) |

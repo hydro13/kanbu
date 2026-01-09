@@ -32,6 +32,7 @@ import { z } from 'zod'
 import { TRPCError } from '@trpc/server'
 import { router, protectedProcedure } from '../router'
 import { permissionService } from '../../services'
+import { auditService, AUDIT_ACTIONS } from '../../services/auditService'
 import { generateTaskReference } from '../../lib/project'
 import {
   getTaskWithRelations,
@@ -388,6 +389,31 @@ export const taskRouter = router({
         timestamp: new Date().toISOString(),
       })
 
+      // Audit logging (Fase 14 - MCP Activity Logging)
+      const project = await ctx.prisma.project.findUnique({
+        where: { id: input.projectId },
+        select: { workspaceId: true },
+      })
+      await auditService.logTaskEvent({
+        action: AUDIT_ACTIONS.TASK_CREATED,
+        resourceType: 'task',
+        resourceId: task.id,
+        resourceName: `${task.reference}: ${task.title}`,
+        userId: ctx.user.id,
+        workspaceId: project?.workspaceId,
+        changes: {
+          title: task.title,
+          columnId: task.columnId,
+          assigneeIds: input.assigneeIds,
+        },
+        metadata: ctx.assistantContext ? {
+          via: 'assistant',
+          machineId: ctx.assistantContext.machineId,
+          machineName: ctx.assistantContext.machineName,
+          bindingId: ctx.assistantContext.bindingId,
+        } : undefined,
+      })
+
       return task
     }),
 
@@ -475,6 +501,27 @@ export const taskRouter = router({
         timestamp: new Date().toISOString(),
       })
 
+      // Audit logging (Fase 14 - MCP Activity Logging)
+      const project = await ctx.prisma.project.findUnique({
+        where: { id: task.projectId },
+        select: { workspaceId: true },
+      })
+      await auditService.logTaskEvent({
+        action: AUDIT_ACTIONS.TASK_UPDATED,
+        resourceType: 'task',
+        resourceId: input.taskId,
+        resourceName: `${updated.reference}: ${updated.title}`,
+        userId: ctx.user.id,
+        workspaceId: project?.workspaceId,
+        changes: updateData,
+        metadata: ctx.assistantContext ? {
+          via: 'assistant',
+          machineId: ctx.assistantContext.machineId,
+          machineName: ctx.assistantContext.machineName,
+          bindingId: ctx.assistantContext.bindingId,
+        } : undefined,
+      })
+
       return updated
     }),
 
@@ -542,6 +589,36 @@ export const taskRouter = router({
           username: ctx.user.username,
         },
         timestamp: new Date().toISOString(),
+      })
+
+      // Audit logging (Fase 14 - MCP Activity Logging)
+      const project = await ctx.prisma.project.findUnique({
+        where: { id: task.projectId },
+        select: { workspaceId: true },
+      })
+      const taskInfo = await ctx.prisma.task.findUnique({
+        where: { id: input.taskId },
+        select: { reference: true, title: true },
+      })
+      await auditService.logTaskEvent({
+        action: AUDIT_ACTIONS.TASK_MOVED,
+        resourceType: 'task',
+        resourceId: input.taskId,
+        resourceName: taskInfo ? `${taskInfo.reference}: ${taskInfo.title}` : `Task #${input.taskId}`,
+        userId: ctx.user.id,
+        workspaceId: project?.workspaceId,
+        changes: {
+          fromColumnId: task.columnId,
+          toColumnId: input.columnId,
+          fromSwimlaneId: task.swimlaneId,
+          toSwimlaneId: input.swimlaneId ?? null,
+        },
+        metadata: ctx.assistantContext ? {
+          via: 'assistant',
+          machineId: ctx.assistantContext.machineId,
+          machineName: ctx.assistantContext.machineName,
+          bindingId: ctx.assistantContext.bindingId,
+        } : undefined,
       })
 
       return updated
@@ -725,6 +802,30 @@ export const taskRouter = router({
         timestamp: new Date().toISOString(),
       })
 
+      // Audit logging (Fase 14 - MCP Activity Logging)
+      const project = await ctx.prisma.project.findUnique({
+        where: { id: task.projectId },
+        select: { workspaceId: true },
+      })
+      const taskInfo = await ctx.prisma.task.findUnique({
+        where: { id: input.taskId },
+        select: { reference: true, title: true },
+      })
+      await auditService.logTaskEvent({
+        action: AUDIT_ACTIONS.TASK_DELETED,
+        resourceType: 'task',
+        resourceId: input.taskId,
+        resourceName: taskInfo ? `${taskInfo.reference}: ${taskInfo.title}` : `Task #${input.taskId}`,
+        userId: ctx.user.id,
+        workspaceId: project?.workspaceId,
+        metadata: ctx.assistantContext ? {
+          via: 'assistant',
+          machineId: ctx.assistantContext.machineId,
+          machineName: ctx.assistantContext.machineName,
+          bindingId: ctx.assistantContext.bindingId,
+        } : undefined,
+      })
+
       return { success: true }
     }),
 
@@ -789,6 +890,33 @@ export const taskRouter = router({
           username: ctx.user.username,
         },
         timestamp: new Date().toISOString(),
+      })
+
+      // Audit logging (Fase 14 - MCP Activity Logging)
+      const project = await ctx.prisma.project.findUnique({
+        where: { id: task.projectId },
+        select: { workspaceId: true },
+      })
+      const taskInfo = await ctx.prisma.task.findUnique({
+        where: { id: input.taskId },
+        select: { reference: true, title: true },
+      })
+      await auditService.logTaskEvent({
+        action: AUDIT_ACTIONS.TASK_ASSIGNED,
+        resourceType: 'task',
+        resourceId: input.taskId,
+        resourceName: taskInfo ? `${taskInfo.reference}: ${taskInfo.title}` : `Task #${input.taskId}`,
+        userId: ctx.user.id,
+        workspaceId: project?.workspaceId,
+        changes: {
+          assigneeIds: input.assigneeIds,
+        },
+        metadata: ctx.assistantContext ? {
+          via: 'assistant',
+          machineId: ctx.assistantContext.machineId,
+          machineName: ctx.assistantContext.machineName,
+          bindingId: ctx.assistantContext.bindingId,
+        } : undefined,
       })
 
       return { success: true }
@@ -976,6 +1104,75 @@ export const taskRouter = router({
       return tasks.map((t) => ({
         ...t,
         assignees: t.assignees.map((a) => a.user),
+      }))
+    }),
+
+  /**
+   * Get tasks assigned to the current user
+   * Returns tasks across all accessible projects
+   */
+  getAssignedToMe: protectedProcedure
+    .input(
+      z.object({
+        status: z.enum(['open', 'closed', 'all']).optional().default('open'),
+        limit: z.number().min(1).max(100).optional().default(20),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      // Build where clause based on status
+      const statusFilter =
+        input.status === 'open'
+          ? { dateCompleted: null }
+          : input.status === 'closed'
+            ? { dateCompleted: { not: null } }
+            : {}
+
+      const tasks = await ctx.prisma.task.findMany({
+        where: {
+          isActive: true,
+          assignees: {
+            some: {
+              userId: ctx.user.id,
+            },
+          },
+          ...statusFilter,
+        },
+        include: {
+          column: true,
+          project: true,
+          creator: true,
+          assignees: {
+            include: {
+              user: true,
+            },
+          },
+          tags: {
+            include: {
+              tag: true,
+            },
+          },
+        },
+        orderBy: [{ dateDue: 'asc' }, { priority: 'desc' }, { createdAt: 'desc' }],
+        take: input.limit,
+      })
+
+      return tasks.map((t) => ({
+        id: t.id,
+        title: t.title,
+        ref: t.reference,
+        description: t.description,
+        priority: t.priority,
+        dateStarted: t.dateStarted,
+        dueDate: t.dateDue,
+        dateCompleted: t.dateCompleted,
+        progress: t.progress,
+        createdAt: t.createdAt,
+        updatedAt: t.updatedAt,
+        column: t.column ? { id: t.column.id, name: t.column.title } : null,
+        project: t.project ? { id: t.project.id, name: t.project.name, identifier: t.project.identifier } : null,
+        creator: t.creator ? { id: t.creator.id, name: t.creator.name } : null,
+        assignees: t.assignees.map((a) => ({ id: a.user.id, name: a.user.name, username: a.user.username })),
+        tags: t.tags.map((tt) => ({ id: tt.tag.id, name: tt.tag.name, color: tt.tag.color })),
       }))
     }),
 })

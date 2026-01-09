@@ -2,7 +2,7 @@
  * tRPC Context
  *
  * Creates the context that is passed to all tRPC procedures.
- * Supports dual authentication: JWT (session) and API keys (kb_ prefix).
+ * Supports triple authentication: JWT (session), API keys (kb_), and Assistant tokens (ast_).
  *
  * ═══════════════════════════════════════════════════════════════════
  * Modified by:
@@ -13,11 +13,17 @@
  * Modified: 2026-01-09
  * Fase: 9.6 - API Keys & Service Accounts
  * Change: Added API key authentication support (dual auth)
+ *
+ * Modified: 2026-01-09
+ * Fase: MCP Integration
+ * Change: Added assistant token (ast_) authentication support
  * ═══════════════════════════════════════════════════════════════════
  */
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import type { AppRole } from '@prisma/client';
+import { createHash } from 'crypto';
+import * as argon2 from 'argon2';
 import { prisma } from '../lib/prisma';
 import { extractBearerToken, verifyToken } from '../lib/auth';
 import { apiKeyService, type ApiKeyContext } from '../services/apiKeyService';
@@ -35,7 +41,22 @@ export interface AuthUser {
 }
 
 /** Authentication source type */
-export type AuthSource = 'jwt' | 'apiKey';
+export type AuthSource = 'jwt' | 'apiKey' | 'assistant';
+
+/** Assistant binding context */
+export interface AssistantContext {
+  bindingId: number;
+  machineId: string;
+  machineName: string | null;
+}
+
+/**
+ * Verify an assistant token against its stored hash
+ */
+async function verifyAssistantToken(token: string, hash: string): Promise<boolean> {
+  const sha256 = createHash('sha256').update(token).digest('hex');
+  return argon2.verify(hash, sha256);
+}
 
 export async function createContext({ req, res }: CreateContextOptions) {
   let user: AuthUser | null = null;
@@ -96,12 +117,71 @@ export async function createContext({ req, res }: CreateContextOptions) {
     }
   }
 
+  // If no JWT or API key auth, try assistant token (ast_ prefix)
+  let assistantContext: AssistantContext | null = null;
+  if (!user && authHeader) {
+    const assistantToken = authHeader.startsWith('Bearer ast_')
+      ? authHeader.slice(7)
+      : null;
+
+    if (assistantToken) {
+      const tokenPrefix = assistantToken.substring(0, 12);
+
+      // Find binding by token prefix
+      const binding = await prisma.assistantBinding.findFirst({
+        where: {
+          tokenPrefix,
+          revokedAt: null,
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              username: true,
+              role: true,
+              isActive: true,
+            },
+          },
+        },
+      });
+
+      if (binding && binding.user.isActive) {
+        // Verify full token hash
+        const isValid = await verifyAssistantToken(assistantToken, binding.tokenHash);
+        if (isValid) {
+          user = {
+            id: binding.user.id,
+            email: binding.user.email,
+            username: binding.user.username,
+            role: binding.user.role,
+          };
+          authSource = 'assistant';
+          assistantContext = {
+            bindingId: binding.id,
+            machineId: binding.machineId,
+            machineName: binding.machineName,
+          };
+
+          // Update last used timestamp (fire and forget)
+          prisma.assistantBinding.update({
+            where: { id: binding.id },
+            data: { lastUsedAt: new Date() },
+          }).catch(() => {
+            // Ignore errors - this is just for tracking
+          });
+        }
+      }
+    }
+  }
+
   return {
     req,
     res,
     prisma,
     user,
     apiKeyContext,
+    assistantContext,
     authSource,
   };
 }

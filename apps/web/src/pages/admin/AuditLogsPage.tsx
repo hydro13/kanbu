@@ -24,7 +24,7 @@ import { cn } from '@/lib/utils'
 // Types
 // =============================================================================
 
-type AuditCategory = 'ACL' | 'GROUP' | 'USER' | 'WORKSPACE' | 'SETTINGS'
+type AuditCategory = 'ACL' | 'GROUP' | 'USER' | 'WORKSPACE' | 'SETTINGS' | 'PROJECT' | 'TASK' | 'SUBTASK' | 'COMMENT'
 
 interface FilterState {
   category?: AuditCategory
@@ -33,6 +33,7 @@ interface FilterState {
   search?: string
   dateFrom?: Date
   dateTo?: Date
+  mcpOnly?: boolean  // Filter for MCP/Claude Code actions only
 }
 
 // Simple types to avoid TS2589 with deep tRPC/Prisma types
@@ -79,6 +80,11 @@ const CATEGORY_STYLES: Record<AuditCategory, { bg: string; text: string }> = {
   USER: { bg: 'bg-green-100 dark:bg-green-900/30', text: 'text-green-800 dark:text-green-200' },
   WORKSPACE: { bg: 'bg-orange-100 dark:bg-orange-900/30', text: 'text-orange-800 dark:text-orange-200' },
   SETTINGS: { bg: 'bg-gray-100 dark:bg-gray-700', text: 'text-gray-800 dark:text-gray-200' },
+  // Fase 16 - MCP Activity categories
+  PROJECT: { bg: 'bg-indigo-100 dark:bg-indigo-900/30', text: 'text-indigo-800 dark:text-indigo-200' },
+  TASK: { bg: 'bg-cyan-100 dark:bg-cyan-900/30', text: 'text-cyan-800 dark:text-cyan-200' },
+  SUBTASK: { bg: 'bg-teal-100 dark:bg-teal-900/30', text: 'text-teal-800 dark:text-teal-200' },
+  COMMENT: { bg: 'bg-pink-100 dark:bg-pink-900/30', text: 'text-pink-800 dark:text-pink-200' },
 }
 
 // =============================================================================
@@ -260,7 +266,7 @@ export function AuditLogsPage() {
 
         {/* Filters */}
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {/* Search */}
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -286,11 +292,19 @@ export function AuditLogsPage() {
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">All Categories</option>
-                <option value="ACL">ACL</option>
-                <option value="GROUP">GROUP</option>
-                <option value="USER">USER</option>
-                <option value="WORKSPACE">WORKSPACE</option>
-                <option value="SETTINGS">SETTINGS</option>
+                <optgroup label="Security">
+                  <option value="ACL">ACL</option>
+                  <option value="GROUP">GROUP</option>
+                  <option value="USER">USER</option>
+                  <option value="WORKSPACE">WORKSPACE</option>
+                  <option value="SETTINGS">SETTINGS</option>
+                </optgroup>
+                <optgroup label="Project Management">
+                  <option value="PROJECT">PROJECT</option>
+                  <option value="TASK">TASK</option>
+                  <option value="SUBTASK">SUBTASK</option>
+                  <option value="COMMENT">COMMENT</option>
+                </optgroup>
               </select>
             </div>
 
@@ -311,6 +325,21 @@ export function AuditLogsPage() {
                   </option>
                 ))}
               </select>
+            </div>
+
+            {/* MCP Only Filter */}
+            <div className="flex items-end">
+              <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors w-full">
+                <input
+                  type="checkbox"
+                  checked={filters.mcpOnly || false}
+                  onChange={(e) => handleFilterChange('mcpOnly', e.target.checked ? true : undefined)}
+                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                  Claude Code only
+                </span>
+              </label>
             </div>
 
             {/* Clear Filters */}
@@ -354,6 +383,9 @@ export function AuditLogsPage() {
                         Action
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Source
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                         Resource
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -393,6 +425,18 @@ export function AuditLogsPage() {
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-900 dark:text-white font-mono">
                           {log.action}
+                        </td>
+                        <td className="px-4 py-3">
+                          {(log.metadata as Record<string, unknown> | null)?.via === 'assistant' ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full bg-violet-100 dark:bg-violet-900/40 text-violet-800 dark:text-violet-200">
+                              <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
+                              </svg>
+                              Claude Code
+                            </span>
+                          ) : (
+                            <span className="text-gray-400 dark:text-gray-500 text-xs">Web UI</span>
+                          )}
                         </td>
                         <td className="px-4 py-3">
                           <div className="text-sm text-gray-900 dark:text-white">
@@ -458,7 +502,40 @@ export function AuditLogsPage() {
                       )}
                     </div>
                     {renderChanges(expandedLogData.changes)}
-                    {expandedLogData.metadata && Object.keys(expandedLogData.metadata).length > 0 && (
+                    {/* Claude Code / MCP Details */}
+                    {(expandedLogData.metadata as Record<string, unknown> | null)?.via === 'assistant' && (
+                      <div className="p-3 bg-violet-50 dark:bg-violet-900/20 rounded-lg text-sm border border-violet-200 dark:border-violet-800">
+                        <div className="flex items-center gap-2 font-medium text-violet-800 dark:text-violet-200 mb-2">
+                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
+                          </svg>
+                          Via Claude Code (MCP)
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                          <div>
+                            <span className="text-violet-600 dark:text-violet-400">Machine:</span>{' '}
+                            <span className="text-gray-900 dark:text-white font-mono">
+                              {String((expandedLogData.metadata as Record<string, unknown>)?.machineName || 'Unknown')}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-violet-600 dark:text-violet-400">Machine ID:</span>{' '}
+                            <span className="text-gray-900 dark:text-white font-mono text-xs">
+                              {String((expandedLogData.metadata as Record<string, unknown>)?.machineId || 'Unknown')}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-violet-600 dark:text-violet-400">Binding ID:</span>{' '}
+                            <span className="text-gray-900 dark:text-white font-mono">
+                              {String((expandedLogData.metadata as Record<string, unknown>)?.bindingId || 'Unknown')}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {/* Other Metadata */}
+                    {expandedLogData.metadata && Object.keys(expandedLogData.metadata).length > 0 &&
+                     (expandedLogData.metadata as Record<string, unknown>)?.via !== 'assistant' && (
                       <div className="p-3 bg-white dark:bg-gray-800 rounded-lg text-sm">
                         <div className="font-medium text-gray-700 dark:text-gray-300 mb-2">Metadata:</div>
                         <pre className="text-xs text-gray-600 dark:text-gray-400 whitespace-pre-wrap">

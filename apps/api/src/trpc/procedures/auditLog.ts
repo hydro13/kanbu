@@ -24,7 +24,7 @@ import { scopeService, AUDIT_CATEGORIES } from '../../services'
 // =============================================================================
 
 const listAuditLogsSchema = z.object({
-  category: z.enum(['ACL', 'GROUP', 'USER', 'WORKSPACE', 'SETTINGS']).optional(),
+  category: z.enum(['ACL', 'GROUP', 'USER', 'WORKSPACE', 'SETTINGS', 'PROJECT', 'TASK', 'SUBTASK', 'COMMENT']).optional(),
   action: z.string().optional(),
   resourceType: z.string().optional(),
   resourceId: z.number().optional(),
@@ -33,6 +33,7 @@ const listAuditLogsSchema = z.object({
   dateFrom: z.date().optional(),
   dateTo: z.date().optional(),
   search: z.string().optional(),
+  mcpOnly: z.boolean().optional(), // Fase 16: Filter for Claude Code/MCP actions only
   limit: z.number().min(1).max(100).default(50),
   offset: z.number().min(0).default(0),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
@@ -49,10 +50,11 @@ const getAuditStatsSchema = z.object({
 })
 
 const exportAuditLogsSchema = z.object({
-  category: z.enum(['ACL', 'GROUP', 'USER', 'WORKSPACE', 'SETTINGS']).optional(),
+  category: z.enum(['ACL', 'GROUP', 'USER', 'WORKSPACE', 'SETTINGS', 'PROJECT', 'TASK', 'SUBTASK', 'COMMENT']).optional(),
   dateFrom: z.date().optional(),
   dateTo: z.date().optional(),
   workspaceId: z.number().optional(),
+  mcpOnly: z.boolean().optional(), // Fase 16: Filter for Claude Code/MCP actions only
   format: z.enum(['csv', 'json']).default('csv'),
 })
 
@@ -70,7 +72,7 @@ export const auditLogRouter = router({
   list: adminProcedure
     .input(listAuditLogsSchema)
     .query(async ({ ctx, input }) => {
-      const { category, action, resourceType, resourceId, userId, workspaceId, dateFrom, dateTo, search, limit, offset, sortOrder } = input
+      const { category, action, resourceType, resourceId, userId, workspaceId, dateFrom, dateTo, search, mcpOnly, limit, offset, sortOrder } = input
 
       // Get user's scope to determine what they can see
       const userScope = await scopeService.getUserScope(ctx.user!.id)
@@ -142,6 +144,19 @@ export const auditLogRouter = router({
               { targetName: { contains: search, mode: 'insensitive' } },
               { action: { contains: search, mode: 'insensitive' } },
             ],
+          },
+        ]
+      }
+
+      // Fase 16: MCP/Claude Code only filter
+      if (mcpOnly) {
+        where.AND = [
+          ...(where.AND || []),
+          {
+            metadata: {
+              path: ['via'],
+              equals: 'assistant',
+            },
           },
         ]
       }

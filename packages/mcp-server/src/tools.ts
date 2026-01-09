@@ -148,7 +148,8 @@ export interface Project {
 
 export interface Column {
   id: number
-  name: string
+  title: string  // Note: API returns 'title', not 'name'
+  name?: string  // Alias for backwards compatibility
   position: number
   color: string | null
   projectId: number

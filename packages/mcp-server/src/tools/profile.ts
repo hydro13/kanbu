@@ -415,8 +415,8 @@ export const profileToolDefinitions = [
     },
   },
   {
-    name: 'kanbu_disable_2fa',
-    description: 'Disable 2FA (requires password confirmation).',
+    name: 'kanbu_disable_own_2fa',
+    description: 'Disable your own 2FA (requires password confirmation).',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1128,7 +1128,7 @@ export async function handleRegenerateBackupCodes(_args: unknown) {
 
   try {
     // This requires re-verification, inform user
-    return success('To regenerate backup codes, you need to:\n1. Disable 2FA (kanbu_disable_2fa)\n2. Re-setup 2FA (kanbu_setup_2fa)\n3. Verify with new code (kanbu_verify_2fa)\n\nNew backup codes will be provided after verification.')
+    return success('To regenerate backup codes, you need to:\n1. Disable 2FA (kanbu_disable_own_2fa)\n2. Re-setup 2FA (kanbu_setup_2fa)\n3. Verify with new code (kanbu_verify_2fa)\n\nNew backup codes will be provided after verification.')
   } catch (err) {
     return error(`Failed: ${err instanceof Error ? err.message : 'Unknown error'}`)
   }

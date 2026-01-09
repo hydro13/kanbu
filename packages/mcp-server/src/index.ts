@@ -561,7 +561,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return await handleSetup2FA(args)
       case 'kanbu_verify_2fa':
         return await handleVerify2FA(args)
-      case 'kanbu_disable_2fa':
+      case 'kanbu_disable_own_2fa':
         return await handleDisableOwn2FA(args)
       case 'kanbu_regenerate_backup_codes':
         return await handleRegenerateBackupCodes(args)

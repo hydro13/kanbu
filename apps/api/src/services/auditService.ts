@@ -40,6 +40,11 @@ export const AUDIT_CATEGORIES = {
   WORKSPACE: 'WORKSPACE',
   SETTINGS: 'SETTINGS',
   API: 'API',
+  // MCP Activity Logging (Fase 13)
+  PROJECT: 'PROJECT',
+  TASK: 'TASK',
+  SUBTASK: 'SUBTASK',
+  COMMENT: 'COMMENT',
 } as const
 
 export type AuditCategory = keyof typeof AUDIT_CATEGORIES
@@ -100,6 +105,31 @@ export const AUDIT_ACTIONS = {
   // AI Assistant (Fase 9.7)
   ASSISTANT_PAIRED: 'assistant:paired',
   ASSISTANT_DISCONNECTED: 'assistant:disconnected',
+
+  // PROJECT (Fase 13 - MCP Activity Logging)
+  PROJECT_CREATED: 'project:created',
+  PROJECT_UPDATED: 'project:updated',
+  PROJECT_ARCHIVED: 'project:archived',
+  PROJECT_RESTORED: 'project:restored',
+
+  // TASK (Fase 13 - MCP Activity Logging)
+  TASK_CREATED: 'task:created',
+  TASK_UPDATED: 'task:updated',
+  TASK_MOVED: 'task:moved',
+  TASK_DELETED: 'task:deleted',
+  TASK_ASSIGNED: 'task:assigned',
+  TASK_UNASSIGNED: 'task:unassigned',
+
+  // SUBTASK (Fase 13 - MCP Activity Logging)
+  SUBTASK_CREATED: 'subtask:created',
+  SUBTASK_UPDATED: 'subtask:updated',
+  SUBTASK_TOGGLED: 'subtask:toggled',
+  SUBTASK_DELETED: 'subtask:deleted',
+
+  // COMMENT (Fase 13 - MCP Activity Logging)
+  COMMENT_CREATED: 'comment:created',
+  COMMENT_UPDATED: 'comment:updated',
+  COMMENT_DELETED: 'comment:deleted',
 } as const
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS]
@@ -255,6 +285,42 @@ export class AuditService {
     params: Omit<AuditLogParams, 'category'>
   ): Promise<{ id: number }> {
     return this.log({ ...params, category: 'API' })
+  }
+
+  /**
+   * Log a project event (Fase 13 - MCP Activity Logging).
+   */
+  async logProjectEvent(
+    params: Omit<AuditLogParams, 'category'>
+  ): Promise<{ id: number }> {
+    return this.log({ ...params, category: 'PROJECT' })
+  }
+
+  /**
+   * Log a task event (Fase 13 - MCP Activity Logging).
+   */
+  async logTaskEvent(
+    params: Omit<AuditLogParams, 'category'>
+  ): Promise<{ id: number }> {
+    return this.log({ ...params, category: 'TASK' })
+  }
+
+  /**
+   * Log a subtask event (Fase 13 - MCP Activity Logging).
+   */
+  async logSubtaskEvent(
+    params: Omit<AuditLogParams, 'category'>
+  ): Promise<{ id: number }> {
+    return this.log({ ...params, category: 'SUBTASK' })
+  }
+
+  /**
+   * Log a comment event (Fase 13 - MCP Activity Logging).
+   */
+  async logCommentEvent(
+    params: Omit<AuditLogParams, 'category'>
+  ): Promise<{ id: number }> {
+    return this.log({ ...params, category: 'COMMENT' })
   }
 
   /**

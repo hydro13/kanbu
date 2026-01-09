@@ -17,6 +17,34 @@ import { z } from 'zod'
 import { requireAuth, client, success, formatDate, truncate, Task } from '../tools.js'
 
 // =============================================================================
+// Priority Mapping (MCP uses strings, API uses numbers)
+// =============================================================================
+
+const PRIORITY_MAP: Record<string, number> = {
+  LOW: 0,
+  MEDIUM: 1,
+  HIGH: 2,
+  URGENT: 3,
+}
+
+const PRIORITY_NAMES: Record<number, string> = {
+  0: 'LOW',
+  1: 'MEDIUM',
+  2: 'HIGH',
+  3: 'URGENT',
+}
+
+function mapPriorityToNumber(priority: string | undefined): number | undefined {
+  if (!priority) return undefined
+  return PRIORITY_MAP[priority]
+}
+
+function mapPriorityToString(priority: number | undefined): string {
+  if (priority === undefined) return 'MEDIUM'
+  return PRIORITY_NAMES[priority] || 'MEDIUM'
+}
+
+// =============================================================================
 // Schemas
 // =============================================================================
 
@@ -265,7 +293,7 @@ export async function handleListTasks(args: unknown) {
   // Group by column for better readability
   const byColumn = new Map<string, Task[]>()
   tasks.forEach((task) => {
-    const columnName = task.column?.name || 'Unknown'
+    const columnName = task.column?.title || 'Unknown'
     if (!byColumn.has(columnName)) {
       byColumn.set(columnName, [])
     }
@@ -317,7 +345,7 @@ export async function handleGetTask(args: unknown) {
     config.kanbuUrl,
     config.token,
     'task.get',
-    { id }
+    { taskId: id }
   )
 
   const lines: string[] = [
@@ -325,7 +353,7 @@ export async function handleGetTask(args: unknown) {
     `ID: ${task.id}`,
     '',
     `Project: ${task.project?.name || 'Unknown'}`,
-    `Column: ${task.column?.name || 'Unknown'}`,
+    `Column: ${task.column?.title || 'Unknown'}`,
     `Status: ${task.status}`,
     `Priority: ${task.priority}`,
     '',
@@ -393,11 +421,18 @@ export async function handleCreateTask(args: unknown) {
   const input = CreateTaskSchema.parse(args)
   const config = requireAuth()
 
+  // Convert priority string to number for API
+  const { priority, ...rest } = input
+  const apiInput: Record<string, unknown> = { ...rest }
+  if (priority !== undefined) {
+    apiInput.priority = mapPriorityToNumber(priority)
+  }
+
   const task = await client.call<Task>(
     config.kanbuUrl,
     config.token,
     'task.create',
-    input,
+    apiInput,
     'POST'
   )
 
@@ -406,8 +441,8 @@ export async function handleCreateTask(args: unknown) {
     '',
     `${task.ref}: ${task.title}`,
     `ID: ${task.id}`,
-    `Column: ${task.column?.name || 'Unknown'}`,
-    `Priority: ${task.priority}`,
+    `Column: ${task.column?.title || 'Unknown'}`,
+    `Priority: ${mapPriorityToString(task.priority as unknown as number)}`,
   ]
 
   if (task.dueDate) {
@@ -428,11 +463,18 @@ export async function handleUpdateTask(args: unknown) {
   const input = UpdateTaskSchema.parse(args)
   const config = requireAuth()
 
+  // Map 'id' to 'taskId' and convert priority string to number for API
+  const { id, priority, ...rest } = input
+  const apiInput: Record<string, unknown> = { taskId: id, ...rest }
+  if (priority !== undefined) {
+    apiInput.priority = mapPriorityToNumber(priority)
+  }
+
   const task = await client.call<Task>(
     config.kanbuUrl,
     config.token,
     'task.update',
-    input,
+    apiInput,
     'POST'
   )
 
@@ -441,7 +483,7 @@ export async function handleUpdateTask(args: unknown) {
     '',
     `${task.ref}: ${task.title}`,
     `ID: ${task.id}`,
-    `Priority: ${task.priority}`,
+    `Priority: ${mapPriorityToString(task.priority as unknown as number)}`,
   ]
 
   if (task.dueDate) {
@@ -463,25 +505,35 @@ export async function handleMoveTask(args: unknown) {
     config.kanbuUrl,
     config.token,
     'task.get',
-    { id: input.id }
+    { taskId: input.id }
   )
 
-  const fromColumn = beforeTask.column?.name || 'Unknown'
+  const fromColumn = beforeTask.column?.title || 'Unknown'
 
-  const task = await client.call<Task>(
+  // Map 'id' to 'taskId' for API
+  const { id, ...moveParams } = input
+  await client.call<Task>(
     config.kanbuUrl,
     config.token,
     'task.move',
-    input,
+    { taskId: id, ...moveParams },
     'POST'
   )
 
-  const toColumn = task.column?.name || 'Unknown'
+  // Fetch task again to get complete column info
+  const afterTask = await client.call<Task>(
+    config.kanbuUrl,
+    config.token,
+    'task.get',
+    { taskId: id }
+  )
+
+  const toColumn = afterTask.column?.title || 'Unknown'
 
   return success(
     `Task moved:
 
-${task.ref}: ${task.title}
+${afterTask.ref}: ${afterTask.title}
 From: ${fromColumn} → ${toColumn}`
   )
 }
@@ -522,7 +574,7 @@ export async function handleMyTasks(args: unknown) {
   byProject.forEach((projectTasks, projectName) => {
     lines.push(`== ${projectName} ==`)
     projectTasks.forEach((task) => {
-      const column = task.column?.name || 'Unknown'
+      const column = task.column?.title || 'Unknown'
       const priority = task.priority !== 'MEDIUM' ? ` [${task.priority}]` : ''
       const due = task.dueDate ? ` | Due: ${formatDate(task.dueDate)}` : ''
 

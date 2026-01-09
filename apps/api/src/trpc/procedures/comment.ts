@@ -17,6 +17,7 @@ import { z } from 'zod'
 import { TRPCError } from '@trpc/server'
 import { router, protectedProcedure } from '../router'
 import { permissionService } from '../../services'
+import { auditService, AUDIT_ACTIONS } from '../../services/auditService'
 import {
   emitCommentCreated,
   emitCommentUpdated,
@@ -200,6 +201,36 @@ export const commentRouter = router({
         timestamp: new Date().toISOString(),
       })
 
+      // Audit logging (Fase 15 - MCP Activity Logging)
+      const project = await ctx.prisma.project.findUnique({
+        where: { id: projectId },
+        select: { workspaceId: true },
+      })
+      const taskInfo = await ctx.prisma.task.findUnique({
+        where: { id: input.taskId },
+        select: { reference: true, title: true },
+      })
+      await auditService.logCommentEvent({
+        action: AUDIT_ACTIONS.COMMENT_CREATED,
+        resourceType: 'comment',
+        resourceId: comment.id,
+        resourceName: `Comment on ${taskInfo?.reference ?? `Task #${input.taskId}`}`,
+        targetType: 'task',
+        targetId: input.taskId,
+        targetName: taskInfo ? `${taskInfo.reference}: ${taskInfo.title}` : `Task #${input.taskId}`,
+        userId: ctx.user.id,
+        workspaceId: project?.workspaceId,
+        changes: {
+          contentPreview: input.content.substring(0, 100),
+        },
+        metadata: ctx.assistantContext ? {
+          via: 'assistant',
+          machineId: ctx.assistantContext.machineId,
+          machineName: ctx.assistantContext.machineName,
+          bindingId: ctx.assistantContext.bindingId,
+        } : undefined,
+      })
+
       return comment
     }),
 
@@ -284,6 +315,36 @@ export const commentRouter = router({
           },
           timestamp: new Date().toISOString(),
         })
+
+        // Audit logging (Fase 15 - MCP Activity Logging)
+        const project = await ctx.prisma.project.findUnique({
+          where: { id: projectId },
+          select: { workspaceId: true },
+        })
+        const taskInfo = await ctx.prisma.task.findUnique({
+          where: { id: commentInfo.taskId },
+          select: { reference: true, title: true },
+        })
+        await auditService.logCommentEvent({
+          action: AUDIT_ACTIONS.COMMENT_UPDATED,
+          resourceType: 'comment',
+          resourceId: input.commentId,
+          resourceName: `Comment on ${taskInfo?.reference ?? `Task #${commentInfo.taskId}`}`,
+          targetType: 'task',
+          targetId: commentInfo.taskId,
+          targetName: taskInfo ? `${taskInfo.reference}: ${taskInfo.title}` : `Task #${commentInfo.taskId}`,
+          userId: ctx.user.id,
+          workspaceId: project?.workspaceId,
+          changes: {
+            contentPreview: input.content.substring(0, 100),
+          },
+          metadata: ctx.assistantContext ? {
+            via: 'assistant',
+            machineId: ctx.assistantContext.machineId,
+            machineName: ctx.assistantContext.machineName,
+            bindingId: ctx.assistantContext.bindingId,
+          } : undefined,
+        })
       }
 
       return updated
@@ -333,6 +394,33 @@ export const commentRouter = router({
             username: ctx.user.username,
           },
           timestamp: new Date().toISOString(),
+        })
+
+        // Audit logging (Fase 15 - MCP Activity Logging)
+        const project = await ctx.prisma.project.findUnique({
+          where: { id: projectId },
+          select: { workspaceId: true },
+        })
+        const taskInfo = await ctx.prisma.task.findUnique({
+          where: { id: comment.taskId },
+          select: { reference: true, title: true },
+        })
+        await auditService.logCommentEvent({
+          action: AUDIT_ACTIONS.COMMENT_DELETED,
+          resourceType: 'comment',
+          resourceId: input.commentId,
+          resourceName: `Comment on ${taskInfo?.reference ?? `Task #${comment.taskId}`}`,
+          targetType: 'task',
+          targetId: comment.taskId,
+          targetName: taskInfo ? `${taskInfo.reference}: ${taskInfo.title}` : `Task #${comment.taskId}`,
+          userId: ctx.user.id,
+          workspaceId: project?.workspaceId,
+          metadata: ctx.assistantContext ? {
+            via: 'assistant',
+            machineId: ctx.assistantContext.machineId,
+            machineName: ctx.assistantContext.machineName,
+            bindingId: ctx.assistantContext.bindingId,
+          } : undefined,
         })
       }
 

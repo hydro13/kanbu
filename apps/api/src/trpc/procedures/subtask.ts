@@ -22,6 +22,7 @@ import { z } from 'zod'
 import { TRPCError } from '@trpc/server'
 import { router, protectedProcedure } from '../router'
 import { permissionService } from '../../services'
+import { auditService, AUDIT_ACTIONS } from '../../services/auditService'
 import { updateTaskProgress } from '../../lib/task'
 import { calculateNewPositions } from '../../lib/board'
 import { addTime, formatTimeDisplay } from '../../lib/timeTracking'
@@ -214,6 +215,37 @@ export const subtaskRouter = router({
         timestamp: new Date().toISOString(),
       })
 
+      // Audit logging (Fase 15 - MCP Activity Logging)
+      const project = await ctx.prisma.project.findUnique({
+        where: { id: projectId },
+        select: { workspaceId: true },
+      })
+      const taskInfo = await ctx.prisma.task.findUnique({
+        where: { id: input.taskId },
+        select: { reference: true, title: true },
+      })
+      await auditService.logSubtaskEvent({
+        action: AUDIT_ACTIONS.SUBTASK_CREATED,
+        resourceType: 'subtask',
+        resourceId: subtask.id,
+        resourceName: subtask.title,
+        targetType: 'task',
+        targetId: input.taskId,
+        targetName: taskInfo ? `${taskInfo.reference}: ${taskInfo.title}` : `Task #${input.taskId}`,
+        userId: ctx.user.id,
+        workspaceId: project?.workspaceId,
+        changes: {
+          title: subtask.title,
+          assigneeId: input.assigneeId,
+        },
+        metadata: ctx.assistantContext ? {
+          via: 'assistant',
+          machineId: ctx.assistantContext.machineId,
+          machineName: ctx.assistantContext.machineName,
+          bindingId: ctx.assistantContext.bindingId,
+        } : undefined,
+      })
+
       return subtask
     }),
 
@@ -307,6 +339,34 @@ export const subtaskRouter = router({
         timestamp: new Date().toISOString(),
       })
 
+      // Audit logging (Fase 15 - MCP Activity Logging)
+      const project = await ctx.prisma.project.findUnique({
+        where: { id: projectId },
+        select: { workspaceId: true },
+      })
+      const taskInfo = await ctx.prisma.task.findUnique({
+        where: { id: taskId },
+        select: { reference: true, title: true },
+      })
+      await auditService.logSubtaskEvent({
+        action: AUDIT_ACTIONS.SUBTASK_UPDATED,
+        resourceType: 'subtask',
+        resourceId: input.subtaskId,
+        resourceName: updated.title,
+        targetType: 'task',
+        targetId: taskId,
+        targetName: taskInfo ? `${taskInfo.reference}: ${taskInfo.title}` : `Task #${taskId}`,
+        userId: ctx.user.id,
+        workspaceId: project?.workspaceId,
+        changes: updateData,
+        metadata: ctx.assistantContext ? {
+          via: 'assistant',
+          machineId: ctx.assistantContext.machineId,
+          machineName: ctx.assistantContext.machineName,
+          bindingId: ctx.assistantContext.bindingId,
+        } : undefined,
+      })
+
       return updated
     }),
 
@@ -319,6 +379,12 @@ export const subtaskRouter = router({
     .mutation(async ({ ctx, input }) => {
       const { taskId, projectId } = await getSubtaskTaskId(ctx.prisma, input.subtaskId)
       await permissionService.requireProjectAccess(ctx.user.id, projectId, 'MEMBER')
+
+      // Get subtask info before deleting for audit log
+      const subtaskInfo = await ctx.prisma.subtask.findUnique({
+        where: { id: input.subtaskId },
+        select: { title: true },
+      })
 
       await ctx.prisma.subtask.delete({
         where: { id: input.subtaskId },
@@ -337,6 +403,33 @@ export const subtaskRouter = router({
           username: ctx.user.username,
         },
         timestamp: new Date().toISOString(),
+      })
+
+      // Audit logging (Fase 15 - MCP Activity Logging)
+      const project = await ctx.prisma.project.findUnique({
+        where: { id: projectId },
+        select: { workspaceId: true },
+      })
+      const taskInfo = await ctx.prisma.task.findUnique({
+        where: { id: taskId },
+        select: { reference: true, title: true },
+      })
+      await auditService.logSubtaskEvent({
+        action: AUDIT_ACTIONS.SUBTASK_DELETED,
+        resourceType: 'subtask',
+        resourceId: input.subtaskId,
+        resourceName: subtaskInfo?.title ?? `Subtask #${input.subtaskId}`,
+        targetType: 'task',
+        targetId: taskId,
+        targetName: taskInfo ? `${taskInfo.reference}: ${taskInfo.title}` : `Task #${taskId}`,
+        userId: ctx.user.id,
+        workspaceId: project?.workspaceId,
+        metadata: ctx.assistantContext ? {
+          via: 'assistant',
+          machineId: ctx.assistantContext.machineId,
+          machineName: ctx.assistantContext.machineName,
+          bindingId: ctx.assistantContext.bindingId,
+        } : undefined,
       })
 
       return { success: true }

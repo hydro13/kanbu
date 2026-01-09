@@ -124,7 +124,7 @@ export async function handleGetWorkspace(args: unknown) {
     config.kanbuUrl,
     config.token,
     'workspace.get',
-    { id }
+    { workspaceId: id }
   )
 
   const lines: string[] = [

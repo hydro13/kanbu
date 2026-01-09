@@ -155,7 +155,7 @@ export async function handleGetProject(args: unknown) {
     config.kanbuUrl,
     config.token,
     'project.get',
-    { id }
+    { projectId: id }
   )
 
   const lines: string[] = [
@@ -181,7 +181,7 @@ export async function handleGetProject(args: unknown) {
       .sort((a, b) => a.position - b.position)
       .forEach((column) => {
         const taskCount = column._count?.tasks ?? 0
-        lines.push(`  ${column.position + 1}. ${column.name} - ${taskCount} tasks`)
+        lines.push(`  ${column.position + 1}. ${column.title} - ${taskCount} tasks`)
       })
     lines.push('')
   }
