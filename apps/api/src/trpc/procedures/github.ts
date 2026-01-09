@@ -609,28 +609,33 @@ export const githubRouter = router({
         })
       }
 
-      // TODO: Fase 5-6 - Actually trigger sync process
-      // For now, just log that sync was requested and update lastSyncAt
-
-      await ctx.prisma.gitHubRepository.update({
-        where: { id: repository.id },
-        data: { lastSyncAt: new Date() },
-      })
-
-      // Create sync log entry
-      await ctx.prisma.gitHubSyncLog.create({
-        data: {
-          repositoryId: repository.id,
-          action: 'manual_sync_triggered',
-          direction: 'bidirectional',
-          entityType: 'task',
-          status: 'success',
-          details: {
-            triggeredBy: ctx.user.id,
-            message: 'Manual sync triggered (sync implementation pending Fase 5-6)',
+      // Perform the actual issue sync from GitHub to Kanbu
+      let syncResult
+      try {
+        syncResult = await importIssuesFromGitHub(repository.id, {
+          state: 'all', // Sync both open and closed issues
+        })
+      } catch (error) {
+        // Log failed sync attempt
+        await ctx.prisma.gitHubSyncLog.create({
+          data: {
+            repositoryId: repository.id,
+            action: 'manual_sync_triggered',
+            direction: 'github_to_kanbu',
+            entityType: 'issue',
+            status: 'failed',
+            errorMessage: error instanceof Error ? error.message : String(error),
+            details: {
+              triggeredBy: ctx.user.id,
+            },
           },
-        },
-      })
+        })
+
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: `Sync failed: ${error instanceof Error ? error.message : String(error)}`,
+        })
+      }
 
       // Audit log
       await auditService.log({
@@ -642,13 +647,17 @@ export const githubRouter = router({
         resourceName: repository.fullName,
         metadata: {
           repositoryId: repository.id,
+          imported: syncResult.imported,
+          skipped: syncResult.skipped,
+          failed: syncResult.failed,
         },
       })
 
       return {
         success: true,
-        message: 'Sync triggered successfully (full sync implementation pending Fase 5-6)',
+        message: `Sync completed: ${syncResult.imported} imported, ${syncResult.skipped} skipped, ${syncResult.failed} failed`,
         lastSyncAt: new Date(),
+        result: syncResult,
       }
     }),
 

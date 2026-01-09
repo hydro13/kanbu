@@ -19,8 +19,7 @@ import { Octokit } from '@octokit/rest'
 import { readFileSync } from 'fs'
 import { prisma } from '../../lib/prisma'
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type OctokitWithRest = { rest: InstanceType<typeof Octokit> } & Record<string, any>
+// Type is now just Octokit from @octokit/rest which has .rest property built-in
 
 // =============================================================================
 // Configuration
@@ -104,6 +103,7 @@ export function getGitHubApp(): App {
     _app = new App({
       appId: config.appId,
       privateKey: config.privateKey,
+      Octokit: Octokit, // Use @octokit/rest for full .rest namespace support
       webhooks: {
         secret: config.webhookSecret,
       },
@@ -123,11 +123,12 @@ export function getGitHubApp(): App {
 
 /**
  * Get Octokit instance for a specific installation
- * Returns the Octokit instance from the App, which has .rest methods
+ * Uses the App's built-in method which now uses @octokit/rest
  */
-export async function getInstallationOctokit(installationId: number | bigint): Promise<OctokitWithRest> {
+export async function getInstallationOctokit(installationId: number | bigint): Promise<Octokit> {
   const app = getGitHubApp()
-  return app.getInstallationOctokit(Number(installationId)) as unknown as OctokitWithRest
+  // The App is configured to use @octokit/rest, so this returns an instance with .rest
+  return await app.getInstallationOctokit(Number(installationId)) as unknown as Octokit
 }
 
 /**
@@ -154,23 +155,19 @@ export async function getInstallationToken(installationDbId: number): Promise<st
   }
 
   // Generate new token via App instance
-  const octokit = await getInstallationOctokit(installation.installationId)
-
-  // Get a fresh token by making an API call
-  // The App instance handles token refresh internally
-  const response = await octokit.rest.apps.createInstallationAccessToken({
+  const app = getGitHubApp()
+  const response = await app.octokit.request('POST /app/installations/{installation_id}/access_tokens', {
     installation_id: Number(installation.installationId),
   })
-
   const token = response.data.token
-  const expiresAt = response.data.expires_at
+  const expires_at = response.data.expires_at
 
   // Store new token
   await prisma.gitHubInstallation.update({
     where: { id: installationDbId },
     data: {
       accessToken: token,
-      tokenExpiresAt: expiresAt ? new Date(expiresAt) : null,
+      tokenExpiresAt: expires_at ? new Date(expires_at) : null,
     },
   })
 
