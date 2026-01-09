@@ -27,6 +27,7 @@ import { appRouter, createContext } from './trpc';
 import { registerPublicApiRoutes } from './routes/publicApi';
 import { registerAvatarRoutes } from './routes/avatar';
 import { registerWorkspaceLogoRoutes } from './routes/workspaceLogo';
+import { registerGitHubWebhookRoutes } from './routes/webhooks/github';
 import { initializeSocketServer } from './socket';
 import { isRedisHealthy } from './lib/redis';
 
@@ -141,6 +142,9 @@ export async function createServer() {
 
   // Register workspace logo serving routes
   await registerWorkspaceLogoRoutes(server);
+
+  // Register GitHub webhook routes
+  await registerGitHubWebhookRoutes(server);
 
   return server;
 }
