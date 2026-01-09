@@ -1,8 +1,10 @@
-# Kanbu Rich Text Editor Roadmap
+# Kanbu Rich Text Editor
 
 ## Overzicht
 
-Dit document beschrijft de strategie voor het implementeren van een krachtige rich text editor in Kanbu, gebaseerd op **Lexical** (Meta's editor framework). De editor zal worden gebruikt voor alle tekstvelden die rijke content ondersteunen, inclusief media, links, en cross-referenties naar wiki pagina's.
+Dit document beschrijft de architectuur en strategie voor de rich text editor in Kanbu, gebaseerd op **Lexical** (Meta's editor framework). De editor wordt gebruikt voor alle tekstvelden die rijke content ondersteunen, inclusief media, links, en cross-referenties naar wiki pagina's.
+
+> **Implementatie Tracking:** Zie [TODO.md](./TODO.md) voor de huidige status en voortgang.
 
 ## Gekozen Editor: Lexical
 
@@ -283,7 +285,7 @@ interface RichTextEditorProps {
 - [ ] Workspace description editor
 - [ ] Project description editor
 - [ ] Task context editor
-- [ ] Sticky notes editor
+- [x] Sticky notes editor
 - [ ] Database migration voor rich text velden
 
 ### Sprint 4: Wiki Foundation

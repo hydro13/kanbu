@@ -1,11 +1,11 @@
 /*
  * TaskDescription Component
- * Version: 1.0.0
+ * Version: 2.0.0
  *
- * Markdown description editor with view/edit modes.
- * Supports auto-save on blur and live editing presence.
+ * Rich text description editor with view/edit modes.
+ * Now uses Lexical RichTextEditor for full rich text support.
  *
- * ═══════════════════════════════════════════════════════════════════
+ * ===================================================================
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
  * Session: 73a280f4-f735-47a2-9803-e570fa6a86f7
  * Claude Code: v2.0.70 (Opus 4.5)
@@ -13,19 +13,16 @@
  * Signed: 2025-12-28T17:30 CET
  *
  * Modified by:
- * Session: realtime-editing-presence
- * Signed: 2026-01-04T00:00 CET
- * Change: Added live editing presence with visual feedback when another user is editing
- *
- * Session: realtime-editing-presence
- * Signed: 2026-01-04T00:00 CET
- * Change: Added auto-save every 30 seconds to prevent data loss on crash
- * ═══════════════════════════════════════════════════════════════════
+ * Session: MAX-2026-01-09
+ * Change: Upgraded to RichTextEditor (Lexical) for rich text support
+ * ===================================================================
  */
 
-import { useState, useCallback, useRef, useEffect } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { Pencil, Check, X, AlertCircle, Save } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { RichTextEditor, getDisplayContent, isLexicalContent, lexicalToPlainText } from '@/components/editor'
+import type { EditorState, LexicalEditor } from 'lexical'
 import type { EditingUser } from '@/hooks/useEditingPresence'
 
 // =============================================================================
@@ -64,26 +61,20 @@ export function TaskDescription({
   onEditStop,
 }: TaskDescriptionProps) {
   const [isEditing, setIsEditing] = useState(false)
-  const [editedDescription, setEditedDescription] = useState(description)
-  const [lastSavedDescription, setLastSavedDescription] = useState(description)
+  const [editedContent, setEditedContent] = useState('')
+  const [lastSavedContent, setLastSavedContent] = useState('')
   const [lastAutoSaveTime, setLastAutoSaveTime] = useState<Date | null>(null)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const [editorKey, setEditorKey] = useState(0)
+  const hasUnsavedChanges = useRef(false)
 
-  // Reset edited description when prop changes
+  // Initialize content when description prop changes or editing starts
   useEffect(() => {
     if (!isEditing) {
-      setEditedDescription(description)
-      setLastSavedDescription(description)
+      const displayContent = getDisplayContent(description)
+      setEditedContent(displayContent)
+      setLastSavedContent(displayContent)
     }
   }, [description, isEditing])
-
-  // Focus and resize textarea when editing starts
-  useEffect(() => {
-    if (isEditing && textareaRef.current) {
-      textareaRef.current.focus()
-      resizeTextarea()
-    }
-  }, [isEditing])
 
   // Notify when editing state changes
   useEffect(() => {
@@ -100,12 +91,13 @@ export function TaskDescription({
 
     const interval = setInterval(async () => {
       // Only auto-save if there are unsaved changes
-      if (editedDescription !== lastSavedDescription && !isUpdating) {
+      if (hasUnsavedChanges.current && !isUpdating) {
         console.log('[TaskDescription] Auto-saving...')
         try {
-          await onUpdate(editedDescription)
-          setLastSavedDescription(editedDescription)
+          await onUpdate(editedContent)
+          setLastSavedContent(editedContent)
           setLastAutoSaveTime(new Date())
+          hasUnsavedChanges.current = false
         } catch (error) {
           console.error('[TaskDescription] Auto-save failed:', error)
         }
@@ -113,51 +105,55 @@ export function TaskDescription({
     }, AUTO_SAVE_INTERVAL_MS)
 
     return () => clearInterval(interval)
-  }, [isEditing, editedDescription, lastSavedDescription, isUpdating, onUpdate])
+  }, [isEditing, editedContent, isUpdating, onUpdate])
 
-  const resizeTextarea = useCallback(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto'
-      textareaRef.current.style.height = `${Math.max(200, textareaRef.current.scrollHeight)}px`
-    }
-  }, [])
+  // Handle editor content changes
+  const handleEditorChange = useCallback(
+    (_editorState: EditorState, _editor: LexicalEditor, jsonString: string) => {
+      setEditedContent(jsonString)
+      hasUnsavedChanges.current = jsonString !== lastSavedContent
+    },
+    [lastSavedContent]
+  )
 
   const handleStartEditing = useCallback(() => {
     // Don't allow editing if someone else is editing
     if (editingUser) return
+    setEditorKey((k) => k + 1) // Force re-mount for clean editor state
     setIsEditing(true)
   }, [editingUser])
 
   const handleSave = useCallback(async () => {
-    if (editedDescription !== lastSavedDescription) {
-      await onUpdate(editedDescription)
-      setLastSavedDescription(editedDescription)
+    if (editedContent !== lastSavedContent) {
+      await onUpdate(editedContent)
+      setLastSavedContent(editedContent)
+      hasUnsavedChanges.current = false
     }
     setLastAutoSaveTime(null)
     setIsEditing(false)
-  }, [editedDescription, lastSavedDescription, onUpdate])
+  }, [editedContent, lastSavedContent, onUpdate])
 
   const handleCancel = useCallback(() => {
-    setEditedDescription(description)
+    setEditedContent(getDisplayContent(description))
+    hasUnsavedChanges.current = false
     setIsEditing(false)
   }, [description])
-
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        handleCancel()
-      } else if (e.key === 's' && (e.ctrlKey || e.metaKey)) {
-        e.preventDefault()
-        handleSave()
-      }
-    },
-    [handleCancel, handleSave]
-  )
 
   // Editing user display name
   const editorDisplayName = editingUser
     ? editingUser.name || editingUser.username
     : null
+
+  // Check if content is empty
+  const isContentEmpty = useCallback(() => {
+    if (!description) return true
+    if (!isLexicalContent(description)) return !description.trim()
+    const plainText = lexicalToPlainText(description)
+    return !plainText.trim()
+  }, [description])
+
+  // Someone else is editing - show locked state
+  const isLockedByOther = !!editingUser
 
   if (isEditing) {
     return (
@@ -186,27 +182,28 @@ export function TaskDescription({
             </Button>
           </div>
         </div>
-        <textarea
-          ref={textareaRef}
-          value={editedDescription}
-          onChange={(e) => {
-            setEditedDescription(e.target.value)
-            resizeTextarea()
-          }}
-          onKeyDown={handleKeyDown}
-          className="w-full min-h-[200px] p-3 text-sm font-mono bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-          placeholder="Add a description... (Markdown supported)"
-          disabled={isUpdating}
+
+        {/* Rich Text Editor */}
+        <RichTextEditor
+          key={editorKey}
+          initialContent={editedContent || undefined}
+          onChange={handleEditorChange}
+          placeholder="Add a description... Use **bold**, *italic*, # headings, lists, and more!"
+          minHeight="200px"
+          maxHeight="500px"
+          namespace={`task-description-${editorKey}`}
+          autoFocus
         />
+
         <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-          <span>Ctrl+S to save, Escape to cancel</span>
+          <span>Rich text formatting supported</span>
           {lastAutoSaveTime && (
             <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
               <Save className="h-3 w-3" />
               Auto-saved {lastAutoSaveTime.toLocaleTimeString()}
             </span>
           )}
-          {editedDescription !== lastSavedDescription && !lastAutoSaveTime && (
+          {hasUnsavedChanges.current && !lastAutoSaveTime && (
             <span className="text-amber-600 dark:text-amber-400">
               Unsaved changes (auto-save in 30s)
             </span>
@@ -215,9 +212,6 @@ export function TaskDescription({
       </div>
     )
   }
-
-  // Someone else is editing - show locked state
-  const isLockedByOther = !!editingUser
 
   return (
     <div className="space-y-3">
@@ -250,9 +244,9 @@ export function TaskDescription({
         </div>
       </div>
 
-      {description ? (
+      {!isContentEmpty() ? (
         <div
-          className={`prose prose-sm dark:prose-invert max-w-none p-3 rounded-lg transition-all ${
+          className={`rounded-lg transition-all ${
             isLockedByOther
               ? 'bg-red-50 dark:bg-red-900/20 border-2 border-red-300 dark:border-red-700 cursor-not-allowed'
               : 'bg-gray-50 dark:bg-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-750'
@@ -262,7 +256,7 @@ export function TaskDescription({
         >
           {/* Editing indicator banner */}
           {isLockedByOther && (
-            <div className="flex items-center gap-2 mb-3 pb-2 border-b border-red-200 dark:border-red-800">
+            <div className="flex items-center gap-2 p-3 border-b border-red-200 dark:border-red-800">
               <div className="flex items-center justify-center h-6 w-6 rounded-full bg-red-100 dark:bg-red-900/50">
                 <Pencil className="h-3 w-3 text-red-600 dark:text-red-400" />
               </div>
@@ -271,25 +265,17 @@ export function TaskDescription({
               </span>
             </div>
           )}
-          {/* Simple markdown-like rendering */}
-          {description.split('\n').map((line, i) => {
-            if (line.startsWith('# ')) {
-              return <h1 key={i} className="text-lg font-bold">{line.slice(2)}</h1>
-            }
-            if (line.startsWith('## ')) {
-              return <h2 key={i} className="text-base font-semibold">{line.slice(3)}</h2>
-            }
-            if (line.startsWith('- ')) {
-              return <li key={i} className="ml-4">{line.slice(2)}</li>
-            }
-            if (line.startsWith('* ')) {
-              return <li key={i} className="ml-4">{line.slice(2)}</li>
-            }
-            if (line.trim() === '') {
-              return <br key={i} />
-            }
-            return <p key={i}>{line}</p>
-          })}
+          {/* Read-only Rich Text Display */}
+          <div className="p-1">
+            <RichTextEditor
+              initialContent={getDisplayContent(description)}
+              readOnly={true}
+              showToolbar={false}
+              minHeight="auto"
+              maxHeight="none"
+              namespace="task-description-view"
+            />
+          </div>
         </div>
       ) : (
         <div

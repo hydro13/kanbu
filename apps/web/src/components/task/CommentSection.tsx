@@ -1,24 +1,31 @@
 /*
  * CommentSection Component
- * Version: 1.0.0
+ * Version: 2.0.0
  *
  * Comment list with add, edit, and delete functionality.
+ * Now uses RichTextEditor for rich content support.
  *
- * ═══════════════════════════════════════════════════════════════════
+ * ===================================================================
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
  * Session: 73a280f4-f735-47a2-9803-e570fa6a86f7
  * Claude Code: v2.0.70 (Opus 4.5)
  * Host: linux-dev
  * Signed: 2025-12-28T17:40 CET
- * ═══════════════════════════════════════════════════════════════════
+ *
+ * Modified by:
+ * Session: MAX-2026-01-09
+ * Change: Upgraded to RichTextEditor (Lexical) for rich text support
+ * ===================================================================
  */
 
 import { useState, useCallback } from 'react'
 import { Send, Pencil, Trash2, MoreVertical } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { RichTextEditor, getDisplayContent, isLexicalContent, lexicalToPlainText } from '@/components/editor'
 import { useTypingIndicator } from '@/hooks/useTypingIndicator'
 import { useAppSelector } from '@/store'
 import { selectUser } from '@/store/authSlice'
+import type { EditorState, LexicalEditor } from 'lexical'
 
 // =============================================================================
 // Types
@@ -71,6 +78,14 @@ function formatTimestamp(dateString: string): string {
   })
 }
 
+/** Check if content is empty (works for both plain text and Lexical JSON) */
+function isContentEmpty(content: string): boolean {
+  if (!content) return true
+  if (!isLexicalContent(content)) return !content.trim()
+  const plainText = lexicalToPlainText(content)
+  return !plainText.trim()
+}
+
 // =============================================================================
 // CommentItem Component
 // =============================================================================
@@ -85,15 +100,35 @@ function CommentItem({
   onDelete: (data: { commentId: number }) => Promise<unknown>
 }) {
   const [isEditing, setIsEditing] = useState(false)
-  const [editedContent, setEditedContent] = useState(comment.content)
+  const [editedContent, setEditedContent] = useState('')
   const [showMenu, setShowMenu] = useState(false)
+  const [editorKey, setEditorKey] = useState(0)
+
+  const handleStartEdit = useCallback(() => {
+    setEditedContent(getDisplayContent(comment.content))
+    setEditorKey((k) => k + 1)
+    setIsEditing(true)
+    setShowMenu(false)
+  }, [comment.content])
+
+  const handleEditorChange = useCallback(
+    (_editorState: EditorState, _editor: LexicalEditor, jsonString: string) => {
+      setEditedContent(jsonString)
+    },
+    []
+  )
 
   const handleSave = useCallback(async () => {
-    if (editedContent.trim() && editedContent !== comment.content) {
-      await onUpdate({ commentId: comment.id, content: editedContent.trim() })
+    if (!isContentEmpty(editedContent) && editedContent !== comment.content) {
+      await onUpdate({ commentId: comment.id, content: editedContent })
     }
     setIsEditing(false)
   }, [comment.id, comment.content, editedContent, onUpdate])
+
+  const handleCancel = useCallback(() => {
+    setEditedContent(getDisplayContent(comment.content))
+    setIsEditing(false)
+  }, [comment.content])
 
   const handleDelete = useCallback(async () => {
     if (confirm('Delete this comment?')) {
@@ -101,18 +136,6 @@ function CommentItem({
     }
     setShowMenu(false)
   }, [comment.id, onDelete])
-
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setEditedContent(comment.content)
-        setIsEditing(false)
-      } else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-        handleSave()
-      }
-    },
-    [comment.content, handleSave]
-  )
 
   const initials = (comment.user.name ?? comment.user.username)
     .split(' ')
@@ -130,10 +153,10 @@ function CommentItem({
         <img
           src={comment.user.avatarUrl}
           alt={comment.user.name ?? comment.user.username}
-          className="w-8 h-8 rounded-full"
+          className="w-8 h-8 rounded-full flex-shrink-0"
         />
       ) : (
-        <div className="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center text-xs font-medium text-gray-700 dark:text-gray-300">
+        <div className="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center text-xs font-medium text-gray-700 dark:text-gray-300 flex-shrink-0">
           {initials}
         </div>
       )}
@@ -164,10 +187,7 @@ function CommentItem({
             {showMenu && (
               <div className="absolute right-0 z-10 mt-1 w-32 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700">
                 <button
-                  onClick={() => {
-                    setIsEditing(true)
-                    setShowMenu(false)
-                  }}
+                  onClick={handleStartEdit}
                   className="w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
                 >
                   <Pencil className="w-4 h-4" />
@@ -188,33 +208,35 @@ function CommentItem({
         {/* Body */}
         {isEditing ? (
           <div className="space-y-2">
-            <textarea
-              value={editedContent}
-              onChange={(e) => setEditedContent(e.target.value)}
-              onKeyDown={handleKeyDown}
-              className="w-full p-2 text-sm bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-              rows={3}
+            <RichTextEditor
+              key={editorKey}
+              initialContent={editedContent || undefined}
+              onChange={handleEditorChange}
+              placeholder="Edit your comment..."
+              minHeight="80px"
+              maxHeight="300px"
+              namespace={`comment-edit-${comment.id}-${editorKey}`}
               autoFocus
             />
             <div className="flex items-center gap-2">
-              <Button size="sm" onClick={handleSave}>
+              <Button size="sm" onClick={handleSave} disabled={isContentEmpty(editedContent)}>
                 Save
               </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => {
-                  setEditedContent(comment.content)
-                  setIsEditing(false)
-                }}
-              >
+              <Button size="sm" variant="ghost" onClick={handleCancel}>
                 Cancel
               </Button>
             </div>
           </div>
         ) : (
-          <div className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-            {comment.content}
+          <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-1">
+            <RichTextEditor
+              initialContent={getDisplayContent(comment.content)}
+              readOnly={true}
+              showToolbar={false}
+              minHeight="auto"
+              maxHeight="none"
+              namespace={`comment-view-${comment.id}`}
+            />
           </div>
         )}
       </div>
@@ -240,28 +262,16 @@ function AddCommentForm({
   onStopTyping: () => void
 }) {
   const [content, setContent] = useState('')
+  const [editorKey, setEditorKey] = useState(0)
+  const [hasContent, setHasContent] = useState(false)
 
-  const handleSubmit = useCallback(async () => {
-    if (content.trim()) {
-      onStopTyping()
-      await onCreate({ taskId, content: content.trim() })
-      setContent('')
-    }
-  }, [taskId, content, onCreate, onStopTyping])
+  const handleEditorChange = useCallback(
+    (_editorState: EditorState, _editor: LexicalEditor, jsonString: string) => {
+      setContent(jsonString)
+      const isEmpty = isContentEmpty(jsonString)
+      setHasContent(!isEmpty)
 
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
-        handleSubmit()
-      }
-    },
-    [handleSubmit]
-  )
-
-  const handleChange = useCallback(
-    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      setContent(e.target.value)
-      if (e.target.value.trim()) {
+      if (!isEmpty) {
         onTyping()
       } else {
         onStopTyping()
@@ -270,30 +280,39 @@ function AddCommentForm({
     [onTyping, onStopTyping]
   )
 
+  const handleSubmit = useCallback(async () => {
+    if (!isContentEmpty(content)) {
+      onStopTyping()
+      await onCreate({ taskId, content })
+      setContent('')
+      setHasContent(false)
+      setEditorKey((k) => k + 1) // Reset editor
+    }
+  }, [taskId, content, onCreate, onStopTyping])
+
   return (
     <div className="flex gap-3">
-      <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-xs font-medium text-white">
+      <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-xs font-medium text-white flex-shrink-0">
         You
       </div>
       <div className="flex-1 space-y-2">
-        <textarea
-          value={content}
-          onChange={handleChange}
-          onKeyDown={handleKeyDown}
-          onBlur={onStopTyping}
-          placeholder="Add a comment..."
-          className="w-full p-3 text-sm bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-          rows={3}
-          disabled={isCreating}
+        <RichTextEditor
+          key={editorKey}
+          initialContent={undefined}
+          onChange={handleEditorChange}
+          placeholder="Add a comment... Use **bold**, *italic*, and more!"
+          minHeight="80px"
+          maxHeight="300px"
+          namespace={`comment-add-${taskId}-${editorKey}`}
         />
         <div className="flex items-center justify-between">
           <span className="text-xs text-gray-500 dark:text-gray-400">
-            Ctrl+Enter to submit
+            Rich text formatting supported
           </span>
           <Button
             size="sm"
             onClick={handleSubmit}
-            disabled={isCreating || !content.trim()}
+            disabled={isCreating || !hasContent}
           >
             <Send className="w-4 h-4 mr-1" />
             Send
