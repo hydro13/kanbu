@@ -669,7 +669,7 @@ describe('Cascade Delete Logic', () => {
       )
 
       expect(remainingMappings.length).toBe(1)
-      expect(remainingMappings[0].workspaceId).toBe(2)
+      expect(remainingMappings[0]!.workspaceId).toBe(2)
     })
   })
 
@@ -727,9 +727,9 @@ describe('Cascade Delete Logic', () => {
         c.taskId === task.id ? { ...c, taskId: null } : c
       )
 
-      expect(updatedIssues[0].taskId).toBeNull()
-      expect(updatedPRs[0].taskId).toBeNull()
-      expect(updatedCommits[0].taskId).toBeNull()
+      expect(updatedIssues[0]!.taskId).toBeNull()
+      expect(updatedPRs[0]!.taskId).toBeNull()
+      expect(updatedCommits[0]!.taskId).toBeNull()
     })
   })
 })

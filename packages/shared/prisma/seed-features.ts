@@ -318,6 +318,16 @@ const ADMIN_FEATURES: FeatureDefinition[] = [
     icon: 'database',
     sortOrder: 220,
   },
+
+  // Integrations section
+  {
+    scope: 'admin',
+    slug: 'github',
+    name: 'GitHub',
+    description: 'Manage GitHub App installations and user mappings',
+    icon: 'github',
+    sortOrder: 300,
+  },
 ]
 
 /**

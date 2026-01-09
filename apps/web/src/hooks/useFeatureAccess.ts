@@ -85,6 +85,8 @@ export type AdminFeatureSlug =
   | 'settings-general'
   | 'settings-security'
   | 'backup'
+  // Integrations section
+  | 'github'
 
 // Union of all feature slugs
 export type SystemFeatureSlug = DashboardFeatureSlug | ProfileFeatureSlug | AdminFeatureSlug
@@ -108,7 +110,7 @@ const PROFILE_EXECUTE_FEATURES: ProfileFeatureSlug[] = [
 ]
 
 // Admin features: different permission levels
-const ADMIN_READ_FEATURES: AdminFeatureSlug[] = ['users', 'workspaces']
+const ADMIN_READ_FEATURES: AdminFeatureSlug[] = ['users', 'workspaces', 'github']
 const ADMIN_EXECUTE_FEATURES: AdminFeatureSlug[] = ['create-user', 'invites']
 const ADMIN_PERMISSIONS_FEATURES: AdminFeatureSlug[] = ['acl', 'permission-tree', 'settings-general', 'settings-security', 'backup']
 

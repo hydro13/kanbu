@@ -74,3 +74,12 @@ export {
   type ApiKeyContext,
   type ApiKeyUsageParams,
 } from './apiKeyService'
+
+// GitHub Service - GitHub App Integration (Fase 2)
+export {
+  githubService,
+  isGitHubConfigured,
+  getInstallationUrl,
+  type GitHubConfig,
+  type InstallationInfo,
+} from './github'

@@ -317,21 +317,21 @@ model GitHubUserMapping {
 
 ---
 
-### Fase 2: GitHub App & OAuth 🚧 GEPLAND
+### Fase 2: GitHub App & OAuth ✅ COMPLEET
 
 **Doel:** GitHub App installatie en OAuth flow op **Admin (Workspace) niveau**.
 
-**Status:** Gepland.
+**Status:** Compleet (2026-01-09).
 
 #### 2.1 GitHub App Setup
 
-- [ ] GitHub App registreren (manifest flow)
-- [ ] App permissions configureren:
+- [x] GitHub App configuratie in `.env` (APP_ID, CLIENT_ID, CLIENT_SECRET, PRIVATE_KEY)
+- [x] App permissions configureren:
   - `issues: read/write`
   - `pull_requests: read`
   - `contents: read`
   - `metadata: read`
-- [ ] Webhook events selecteren:
+- [x] Webhook events selecteren:
   - `issues`
   - `pull_request`
   - `push`
@@ -341,24 +341,25 @@ model GitHubUserMapping {
 **Bestand:** `apps/api/src/trpc/procedures/githubAdmin.ts`
 
 Installatie management (Workspace niveau):
-- [ ] `githubAdmin.getInstallationUrl` - Generate GitHub App installation URL
-- [ ] `githubAdmin.handleCallback` - Handle OAuth callback from GitHub
-- [ ] `githubAdmin.listInstallations` - List workspace's GitHub installations
-- [ ] `githubAdmin.listRepositories` - List repositories for installation
-- [ ] `githubAdmin.removeInstallation` - Verwijder installatie uit workspace
-- [ ] `githubAdmin.refreshToken` - Refresh installation access token
+- [x] `githubAdmin.isConfigured` - Check of GitHub App is geconfigureerd
+- [x] `githubAdmin.getInstallationUrl` - Generate GitHub App installation URL
+- [x] `githubAdmin.handleCallback` - Handle OAuth callback from GitHub
+- [x] `githubAdmin.listInstallations` - List workspace's GitHub installations
+- [x] `githubAdmin.listRepositories` - List repositories for installation
+- [x] `githubAdmin.removeInstallation` - Verwijder installatie uit workspace
+- [x] `githubAdmin.refreshToken` - Refresh installation access token
 
 User mapping (Workspace niveau):
-- [ ] `githubAdmin.listUserMappings` - Lijst van user mappings in workspace
-- [ ] `githubAdmin.createUserMapping` - Koppel GitHub login aan Kanbu user
-- [ ] `githubAdmin.updateUserMapping` - Wijzig mapping
-- [ ] `githubAdmin.deleteUserMapping` - Verwijder mapping
-- [ ] `githubAdmin.autoMatchUsers` - Auto-match op basis van email
-- [ ] `githubAdmin.suggestMappings` - Suggesties voor unmapped GitHub users
+- [x] `githubAdmin.listUserMappings` - Lijst van user mappings in workspace
+- [x] `githubAdmin.createUserMapping` - Koppel GitHub login aan Kanbu user
+- [x] `githubAdmin.updateUserMapping` - Wijzig mapping
+- [x] `githubAdmin.deleteUserMapping` - Verwijder mapping
+- [x] `githubAdmin.autoMatchUsers` - Auto-match op basis van email
+- [x] `githubAdmin.suggestMappings` - Suggesties voor unmapped GitHub users
 
 Overview (Workspace niveau):
-- [ ] `githubAdmin.getWorkspaceOverview` - Stats van alle GitHub repos in workspace
-- [ ] `githubAdmin.listLinkedRepositories` - Alle gekoppelde repos in workspace
+- [x] `githubAdmin.getWorkspaceOverview` - Stats van alle GitHub repos in workspace
+- [x] `githubAdmin.listLinkedRepositories` - Alle gekoppelde repos in workspace
 
 #### 2.3 Frontend: Admin GitHub Settings Page
 
@@ -366,43 +367,43 @@ Overview (Workspace niveau):
 
 Tabs:
 1. **Installations** - Beheer GitHub App installaties
-   - [ ] "Connect to GitHub" button
-   - [ ] Installatie lijst met status
-   - [ ] Beschikbare repositories per installatie
-   - [ ] Disconnect button
+   - [x] "Connect to GitHub" button
+   - [x] Installatie lijst met status
+   - [x] Beschikbare repositories per installatie
+   - [x] Disconnect button
 
 2. **User Mapping** - Koppel GitHub users aan Kanbu users
-   - [ ] Mapping tabel (GitHub login ↔ Kanbu user)
-   - [ ] "Auto Match" button (match op email)
-   - [ ] Manual mapping dropdown
-   - [ ] Unmapped users indicator
+   - [x] Mapping tabel (GitHub login ↔ Kanbu user)
+   - [x] "Auto Match" button (match op email)
+   - [x] Manual mapping dropdown
+   - [x] Unmapped users indicator
 
 3. **Overview** - Overzicht alle gekoppelde repos
-   - [ ] Lijst van projecten met GitHub koppeling
-   - [ ] Sync status per project
-   - [ ] Quick link naar project settings
+   - [x] Lijst van projecten met GitHub koppeling
+   - [x] Sync status per project
+   - [x] Quick link naar project settings
 
 #### 2.4 Admin Sidebar Menu Item
 
 **Bestand:** `apps/web/src/pages/admin/AdminSidebar.tsx`
 
-- [ ] Add "GitHub" menu item onder INTEGRATIONS sectie
-- [ ] GitHubIcon component
+- [x] Add "GitHub" menu item onder INTEGRATIONS sectie
+- [x] GitHubIcon component
 
 **Deliverables Fase 2:**
-- [ ] GitHub App configuratie
-- [ ] OAuth flow (install → callback → token storage)
-- [ ] Admin-level installation management
-- [ ] User mapping UI en API
-- [ ] Workspace overview dashboard
+- [x] GitHub App configuratie
+- [x] OAuth flow (install → callback → token storage)
+- [x] Admin-level installation management
+- [x] User mapping UI en API
+- [x] Workspace overview dashboard
 
 #### Fase 2 Completion Checklist
-- [ ] **Code**: OAuth flow werkend, installaties beheerbaar
-- [ ] **Tests**: OAuth callback tests, installation CRUD tests, user mapping tests
-- [ ] **ACL**: `github-admin` feature geregistreerd, Workspace R/P permissions
-- [ ] **MCP**: Audit logging voor installation/mapping acties (`GITHUB_INSTALLATION_*`, `GITHUB_USER_MAPPING_*`). Admin MCP tools overwegen voor Fase 9+
-- [ ] **Docs**: OAuth flow gedocumenteerd in ARCHITECTURE
-- [ ] **CLAUDE.md**: Admin GitHub Settings page gedocumenteerd
+- [x] **Code**: OAuth flow werkend, installaties beheerbaar
+- [x] **Tests**: OAuth callback tests, installation CRUD tests, user mapping tests (19 tests in `githubAdmin.test.ts`)
+- [x] **ACL**: `github-admin` feature geregistreerd, Workspace R/P permissions
+- [x] **MCP**: Audit logging voor installation/mapping acties (`GITHUB_INSTALLATION_*`, `GITHUB_USER_MAPPING_*`). Admin MCP tools overwegen voor Fase 9+
+- [x] **Docs**: OAuth flow gedocumenteerd in ARCHITECTURE
+- [x] **CLAUDE.md**: Admin GitHub Settings page gedocumenteerd
 - [ ] **Commit**: `feat(github): Fase 2 - GitHub App & OAuth`
 
 ---
@@ -1388,7 +1389,7 @@ class AIReviewService {
 | Fase | Tools/Features | Niveau | Status |
 |------|----------------|--------|--------|
 | Fase 1 | Database schema (7 models incl. UserMapping) + 114 tests | - | ✅ Compleet |
-| Fase 2 | OAuth + Installation + User Mapping (14 procedures) | Admin/Workspace | 🚧 Gepland |
+| Fase 2 | OAuth + Installation + User Mapping (15 procedures) + 19 tests | Admin/Workspace | ✅ Compleet |
 | Fase 3 | Repository linking + Settings UI (7 procedures) | Project | 🚧 Gepland |
 | Fase 4 | Webhook handler (9 event types) | System | 🚧 Gepland |
 | Fase 5 | Issue sync GitHub→Kanbu | Project | 🚧 Gepland |
@@ -1677,10 +1678,12 @@ GITHUB_BRANCH_CREATED = 'github:branch_created'
 - [x] Relations werken correct (7 models geïmplementeerd)
 - [x] Tests passing (114 tests)
 
-### Fase 2
-- [ ] GitHub App installeerbaar
-- [ ] OAuth callback werkt
-- [ ] Token refresh automatisch
+### Fase 2 ✅
+- [x] GitHub App installeerbaar
+- [x] OAuth callback werkt
+- [x] Token refresh automatisch
+- [x] User mapping CRUD werkt
+- [x] Admin UI functioneel
 
 ### Fase 3
 - [ ] Repository linken werkt
@@ -1752,6 +1755,7 @@ GITHUB_BRANCH_CREATED = 'github:branch_created'
 
 | Datum | Wijziging |
 |-------|-----------|
+| 2026-01-09 | **Fase 2 COMPLEET**: GitHub service layer, 15 tRPC procedures, Admin UI met 3 tabs, 19 tests |
 | 2026-01-09 | **MCP correcties**: Fase 2-8 "MCP: N.v.t." gecorrigeerd naar audit logging + MCP tool referenties naar Fase 9 |
 | 2026-01-09 | **Tests verplicht**: Fase Completion Protocol uitgebreid met verplichte tests sectie, alle fases (2-16) bijgewerkt |
 | 2026-01-09 | **Fase 1 COMPLEET**: Database schema (7 models), TypeScript types, 114 tests |

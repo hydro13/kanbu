@@ -45,6 +45,8 @@ export const AUDIT_CATEGORIES = {
   TASK: 'TASK',
   SUBTASK: 'SUBTASK',
   COMMENT: 'COMMENT',
+  // GitHub Connector (Fase 2)
+  GITHUB: 'GITHUB',
 } as const
 
 export type AuditCategory = keyof typeof AUDIT_CATEGORIES
@@ -130,6 +132,30 @@ export const AUDIT_ACTIONS = {
   COMMENT_CREATED: 'comment:created',
   COMMENT_UPDATED: 'comment:updated',
   COMMENT_DELETED: 'comment:deleted',
+
+  // GITHUB (Fase 2 - GitHub Connector)
+  // Installation management (Admin/Workspace niveau)
+  GITHUB_INSTALLATION_ADDED: 'github:installation:added',
+  GITHUB_INSTALLATION_REMOVED: 'github:installation:removed',
+  GITHUB_INSTALLATION_REFRESHED: 'github:installation:refreshed',
+  // User mapping (Admin/Workspace niveau)
+  GITHUB_USER_MAPPING_CREATED: 'github:user_mapping:created',
+  GITHUB_USER_MAPPING_UPDATED: 'github:user_mapping:updated',
+  GITHUB_USER_MAPPING_DELETED: 'github:user_mapping:deleted',
+  GITHUB_USER_MAPPING_AUTO_MATCHED: 'github:user_mapping:auto_matched',
+  // Repository linking (Project niveau)
+  GITHUB_REPO_LINKED: 'github:repo:linked',
+  GITHUB_REPO_UNLINKED: 'github:repo:unlinked',
+  GITHUB_SETTINGS_UPDATED: 'github:settings:updated',
+  GITHUB_SYNC_TRIGGERED: 'github:sync:triggered',
+  // Issue sync
+  GITHUB_ISSUE_IMPORTED: 'github:issue:imported',
+  GITHUB_ISSUE_EXPORTED: 'github:issue:exported',
+  // PR/Commit linking
+  GITHUB_PR_LINKED: 'github:pr:linked',
+  GITHUB_COMMIT_LINKED: 'github:commit:linked',
+  // Automation
+  GITHUB_BRANCH_CREATED: 'github:branch:created',
 } as const
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS]
