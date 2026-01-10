@@ -19,7 +19,7 @@
 
 import { useState, useEffect } from 'react'
 import { useSearchParams, Link, useNavigate } from 'react-router-dom'
-import { DashboardLayout } from '@/components/dashboard'
+import { DashboardLayout, useDashboardTreeInvalidation } from '@/components/dashboard'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
@@ -399,9 +399,11 @@ function CreateProjectModal({ workspaceId, onClose, onCreated }: CreateProjectMo
   const [name, setName] = useState('')
   const [identifier, setIdentifier] = useState('')
   const [description, setDescription] = useState('')
+  const invalidateDashboardTree = useDashboardTreeInvalidation()
 
   const createMutation = trpc.project.create.useMutation({
     onSuccess: () => {
+      invalidateDashboardTree()
       onCreated()
     },
   })
@@ -601,9 +603,11 @@ interface CreateWorkspaceModalProps {
 function CreateWorkspaceModal({ onClose, onCreated }: CreateWorkspaceModalProps) {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
+  const invalidateDashboardTree = useDashboardTreeInvalidation()
 
   const createMutation = trpc.workspace.create.useMutation({
     onSuccess: () => {
+      invalidateDashboardTree()
       onCreated()
     },
   })
@@ -675,9 +679,11 @@ interface EditWorkspaceModalProps {
 function EditWorkspaceModal({ workspace, onClose, onUpdated }: EditWorkspaceModalProps) {
   const [name, setName] = useState(workspace.name)
   const [description, setDescription] = useState(workspace.description || '')
+  const invalidateDashboardTree = useDashboardTreeInvalidation()
 
   const updateMutation = trpc.workspace.update.useMutation({
     onSuccess: () => {
+      invalidateDashboardTree()
       onUpdated()
     },
   })

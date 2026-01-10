@@ -1,6 +1,6 @@
 /*
  * WorkspaceTree Component
- * Version: 1.0.0
+ * Version: 1.1.0
  *
  * A collapsible workspace node in the dashboard sidebar tree.
  * Contains sections for Kanbu projects, GitHub repos, and Project Groups.
@@ -9,10 +9,13 @@
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
  * Signed: 2026-01-10
  * Change: Initial implementation - Fase 1.3 of Dashboard Roadmap
+ *
+ * Modified: 2026-01-10
+ * Change: Added smooth expand/collapse animations - Fase 2.3
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { ChevronDown, ChevronRight, Building2 } from 'lucide-react'
+import { ChevronRight, Building2 } from 'lucide-react'
 import { useDashboardTreeStore } from '@/stores/dashboardTreeStore'
 import { TreeSection } from './TreeSection'
 import { ProjectNode } from './ProjectNode'
@@ -89,11 +92,12 @@ export function WorkspaceTree({ workspace, collapsed = false }: WorkspaceTreePro
         aria-expanded={isExpanded}
         aria-label={`${workspace.name} workspace, ${totalItems} items`}
       >
-        {isExpanded ? (
-          <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
-        ) : (
-          <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-        )}
+        <ChevronRight
+          className={cn(
+            'h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-150',
+            isExpanded && 'rotate-90'
+          )}
+        />
         <Building2 className="h-4 w-4 shrink-0 text-muted-foreground" />
         {!collapsed && (
           <span className="truncate">{workspace.name}</span>
@@ -103,9 +107,15 @@ export function WorkspaceTree({ workspace, collapsed = false }: WorkspaceTreePro
         )}
       </button>
 
-      {/* Children - only show when expanded and not collapsed */}
-      {isExpanded && !collapsed && (
-        <div className="ml-4 border-l border-border pl-2">
+      {/* Children - animated expand/collapse using CSS Grid */}
+      {!collapsed && (
+        <div
+          className={cn(
+            'grid transition-[grid-template-rows] duration-150 ease-out',
+            isExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+          )}
+        >
+          <div className="overflow-hidden min-h-0 ml-4 border-l border-border pl-2">
           {/* Kanbu Projects Section */}
           {workspace.kanbuProjects.length > 0 && (
             <TreeSection
@@ -165,6 +175,7 @@ export function WorkspaceTree({ workspace, collapsed = false }: WorkspaceTreePro
                 No projects yet
               </div>
             )}
+          </div>
         </div>
       )}
     </div>

@@ -22,6 +22,31 @@ import { WorkspaceTree } from './WorkspaceTree'
 import { cn } from '@/lib/utils'
 
 // =============================================================================
+// Query Key Export (for invalidation from other components)
+// =============================================================================
+
+/**
+ * Export the tRPC utils for dashboard tree invalidation.
+ * Usage in mutations:
+ *
+ * ```typescript
+ * import { useDashboardTreeInvalidation } from '@/components/dashboard/DashboardSidebar'
+ *
+ * const invalidateTree = useDashboardTreeInvalidation()
+ *
+ * const createMutation = trpc.project.create.useMutation({
+ *   onSuccess: () => {
+ *     invalidateTree()
+ *   }
+ * })
+ * ```
+ */
+export function useDashboardTreeInvalidation() {
+  const utils = trpc.useUtils()
+  return () => utils.dashboard.getHierarchy.invalidate()
+}
+
+// =============================================================================
 // Types
 // =============================================================================
 
@@ -55,7 +80,14 @@ export function DashboardSidebar({ collapsed = false }: DashboardSidebarProps) {
   const location = useLocation()
 
   // Fetch hierarchy data for tree
-  const { data, isLoading, error } = trpc.dashboard.getHierarchy.useQuery()
+  // - staleTime: 30s (data considered fresh for 30 seconds)
+  // - refetchOnWindowFocus: true (refetch when user returns to tab)
+  // - refetchInterval: 60s (light polling for multi-tab/device sync)
+  const { data, isLoading, error } = trpc.dashboard.getHierarchy.useQuery(undefined, {
+    staleTime: 30 * 1000,
+    refetchOnWindowFocus: true,
+    refetchInterval: 60 * 1000,
+  })
 
   const isActive = (item: NavItem) => {
     if (item.exact) {

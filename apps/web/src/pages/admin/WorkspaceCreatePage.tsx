@@ -11,6 +11,7 @@ import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { AdminLayout } from '@/components/admin'
 import { trpc } from '@/lib/trpc'
+import { useDashboardTreeInvalidation } from '@/components/dashboard'
 
 // =============================================================================
 // Constants
@@ -59,6 +60,7 @@ export function WorkspaceCreatePage() {
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const [selectedLogo, setSelectedLogo] = useState<{ base64: string; mimeType: string } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const invalidateDashboardTree = useDashboardTreeInvalidation()
 
   const createMutation = trpc.workspace.create.useMutation({
     onSuccess: async (workspace) => {
@@ -74,6 +76,7 @@ export function WorkspaceCreatePage() {
           // Continue even if logo upload fails - workspace was created
         }
       }
+      invalidateDashboardTree()
       navigate(`/admin/workspaces`)
     },
     onError: (err) => {

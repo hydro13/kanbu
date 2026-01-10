@@ -1,6 +1,6 @@
 /*
  * TreeSection Component
- * Version: 1.0.0
+ * Version: 1.1.0
  *
  * Collapsible section header within a workspace tree node.
  * Used for KANBU, GITHUB, and GROUPS sections.
@@ -9,10 +9,13 @@
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
  * Signed: 2026-01-10
  * Change: Initial implementation - Fase 1.3 of Dashboard Roadmap
+ *
+ * Modified: 2026-01-10
+ * Change: Added smooth expand/collapse animations - Fase 2.3
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { ChevronDown, ChevronRight } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 import { useDashboardTreeStore } from '@/stores/dashboardTreeStore'
 import { cn } from '@/lib/utils'
 
@@ -60,16 +63,27 @@ export function TreeSection({
         aria-expanded={isExpanded}
         aria-label={`${label} section, ${count} items`}
       >
-        {isExpanded ? (
-          <ChevronDown className="h-3 w-3 shrink-0" />
-        ) : (
-          <ChevronRight className="h-3 w-3 shrink-0" />
-        )}
+        <ChevronRight
+          className={cn(
+            'h-3 w-3 shrink-0 transition-transform duration-150',
+            isExpanded && 'rotate-90'
+          )}
+        />
         <span>{label}</span>
         <span className="ml-auto text-muted-foreground/70">({count})</span>
       </button>
 
-      {isExpanded && <div className="mt-0.5">{children}</div>}
+      {/* Animated content using CSS Grid */}
+      <div
+        className={cn(
+          'grid transition-[grid-template-rows] duration-150 ease-out',
+          isExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+        )}
+      >
+        <div className="overflow-hidden min-h-0 mt-0.5">
+          {children}
+        </div>
+      </div>
     </div>
   )
 }

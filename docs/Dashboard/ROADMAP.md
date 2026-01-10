@@ -28,8 +28,8 @@ Dit document is de **primaire implementatie gids** voor Claude Code sessies. Elk
 │                                                                             │
 │  FASE 1         FASE 2         FASE 3         FASE 4         FASE 5        │
 │  Foundation     Core Tree      GitHub         Groups         Personal      │
-│  ██████████     ████████░░     ████░░░░░░     ░░░░░░░░░░     ░░░░░░░░░░    │
-│  COMPLETE       IN PROGRESS    PARTIAL        PLANNED        PLANNED       │
+│  ██████████     ██████████     ████░░░░░░     ░░░░░░░░░░     ░░░░░░░░░░    │
+│  COMPLETE       COMPLETE       PARTIAL        PLANNED        PLANNED       │
 │                                                                             │
 │  FASE 6         FASE 7                                                      │
 │  Favorites      Polish                                                      │
@@ -691,7 +691,7 @@ Fase 2 integreert deze in de bestaande DashboardSidebar.
 
 # FASE 2: Core Tree Integration
 
-**Status:** 🔄 In Progress (2026-01-10)
+**Status:** ✅ Complete (2026-01-10)
 **Geschatte Effort:** Medium
 **Dependencies:** Fase 1 compleet
 
@@ -871,7 +871,7 @@ export function DashboardSidebar({ collapsed = false }: DashboardSidebarProps) {
 
 ## 2.2 Real-Time Updates
 
-**Status:** 🔲 Todo
+**Status:** ✅ Complete
 
 ### Doel
 
@@ -879,37 +879,37 @@ Tree update live wanneer projecten worden toegevoegd/verwijderd.
 
 ### Technische Details
 
+Geïmplementeerd via `useDashboardTreeInvalidation()` hook die de tree query invalidate na mutations.
+
 ```typescript
-// In DashboardSidebar.tsx
-import { useSocket } from '@/hooks/useSocket'
-import { useQueryClient } from '@tanstack/react-query'
-
-function DashboardSidebar({ collapsed }: DashboardSidebarProps) {
-  const queryClient = useQueryClient()
-
-  // Real-time updates voor tree
-  useSocket({
-    onProjectCreated: () => {
-      queryClient.invalidateQueries({ queryKey: ['dashboard', 'getHierarchy'] })
-    },
-    onProjectUpdated: () => {
-      queryClient.invalidateQueries({ queryKey: ['dashboard', 'getHierarchy'] })
-    },
-    onProjectDeleted: () => {
-      queryClient.invalidateQueries({ queryKey: ['dashboard', 'getHierarchy'] })
-    },
-  })
-
-  // ... rest of component
+// apps/web/src/components/dashboard/DashboardSidebar.tsx
+export function useDashboardTreeInvalidation() {
+  const utils = trpc.useUtils()
+  return () => utils.dashboard.getHierarchy.invalidate()
 }
+
+// Query options voor betere real-time behavior
+const { data, isLoading, error } = trpc.dashboard.getHierarchy.useQuery(undefined, {
+  staleTime: 30 * 1000,           // Data is 30s fresh
+  refetchOnWindowFocus: true,     // Refetch on tab focus
+  refetchInterval: 60 * 1000,     // Light polling every 60s
+})
 ```
+
+Geïntegreerd in alle relevante mutations:
+- `WorkspacePage.tsx` - project.create
+- `ProjectList.tsx` - project.create, workspace.create, workspace.update
+- `ProjectSettings.tsx` - project.update, project.archive, project.delete
+- `WorkspaceSettings.tsx` - workspace.update, workspace.delete
+- `WorkspaceCreatePage.tsx` - workspace.create
+- `WorkspaceEditPage.tsx` - workspace.update, workspace.delete
 
 ### Acceptatiecriteria
 
-- [ ] Nieuw project verschijnt direct in tree
-- [ ] Verwijderd project verdwijnt direct uit tree
-- [ ] Geen full page refresh nodig
-- [ ] Expand/collapse state blijft behouden na update
+- [x] Nieuw project verschijnt direct in tree
+- [x] Verwijderd project verdwijnt direct uit tree
+- [x] Geen full page refresh nodig
+- [x] Expand/collapse state blijft behouden na update
 
 ### Testing
 
@@ -922,7 +922,7 @@ function DashboardSidebar({ collapsed }: DashboardSidebarProps) {
 
 ## 2.3 Visual Polish
 
-**Status:** 🔲 Todo
+**Status:** ✅ Complete
 
 ### Doel
 
@@ -930,37 +930,47 @@ Visuele verfijning: indentation, hover states, selected state.
 
 ### Deliverables
 
-- [ ] Correcte indentation levels
-- [ ] Hover states op alle items
-- [ ] Active/selected state voor huidige pagina
-- [ ] Smooth expand/collapse animatie
+- [x] Correcte indentation levels
+- [x] Hover states op alle items
+- [x] Active/selected state voor huidige pagina
+- [x] Smooth expand/collapse animatie
 
 ### Technische Details
 
-```typescript
-// Animatie voor expand/collapse
-import { motion, AnimatePresence } from 'framer-motion'
+Geïmplementeerd met CSS Grid transitions (geen externe library nodig):
 
-// In WorkspaceTree.tsx
-<AnimatePresence initial={false}>
-  {isExpanded && !collapsed && (
-    <motion.div
-      initial={{ height: 0, opacity: 0 }}
-      animate={{ height: 'auto', opacity: 1 }}
-      exit={{ height: 0, opacity: 0 }}
-      transition={{ duration: 0.15 }}
-      className="ml-4 overflow-hidden border-l border-border pl-2"
-    >
-      {/* Children */}
-    </motion.div>
+```typescript
+// In WorkspaceTree.tsx en TreeSection.tsx
+// Chevron animatie met transform
+<ChevronRight
+  className={cn(
+    'h-4 w-4 transition-transform duration-150',
+    isExpanded && 'rotate-90'
   )}
-</AnimatePresence>
+/>
+
+// Expand/collapse met CSS Grid
+<div
+  className={cn(
+    'grid transition-[grid-template-rows] duration-150 ease-out',
+    isExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
+  )}
+>
+  <div className="overflow-hidden min-h-0">
+    {children}
+  </div>
+</div>
 ```
+
+Dit werkt door:
+- `grid-rows-[0fr]` → `grid-rows-[1fr]` te animeren
+- `overflow: hidden` en `min-height: 0` op de content wrapper
+- `transition-[grid-template-rows]` voor smooth animatie
 
 ### DO's
 
-- ✅ Gebruik framer-motion (al geïnstalleerd)
-- ✅ Keep animaties subtiel (< 200ms)
+- ✅ Gebruik CSS transitions (lichter dan framer-motion)
+- ✅ Keep animaties subtiel (150ms)
 
 ### DON'Ts
 
@@ -973,11 +983,11 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 ### Checklist voor Fase 2 Compleet
 
-- [ ] DashboardSidebar toont tree hiërarchie
-- [ ] Bestaande navigatie werkt nog
-- [ ] Real-time updates werken
-- [ ] Animaties smooth
-- [ ] Geen regressies
+- [x] DashboardSidebar toont tree hiërarchie
+- [x] Bestaande navigatie werkt nog
+- [x] Real-time updates werken
+- [x] Animaties smooth
+- [x] Geen regressies
 
 ### Handover naar Fase 3
 

@@ -8,7 +8,7 @@
  */
 
 export { DashboardLayout } from './DashboardLayout'
-export { DashboardSidebar } from './DashboardSidebar'
+export { DashboardSidebar, useDashboardTreeInvalidation } from './DashboardSidebar'
 export { WorkspaceTree } from './WorkspaceTree'
 export { ProjectNode } from './ProjectNode'
 export { GitHubRepoNode } from './GitHubRepoNode'

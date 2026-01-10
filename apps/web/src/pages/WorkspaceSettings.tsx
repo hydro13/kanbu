@@ -33,6 +33,7 @@ import {
 import { useAppSelector } from '../store'
 import { selectCurrentWorkspace } from '../store/workspaceSlice'
 import { trpc, getApiHost } from '../lib/trpc'
+import { useDashboardTreeInvalidation } from '../components/dashboard'
 import { useNavigate } from 'react-router-dom'
 import { UserSearchDropdown } from '../components/workspace/UserSearchDropdown'
 import { AddMembersModal } from '../components/workspace/AddMembersModal'
@@ -105,6 +106,7 @@ export function WorkspaceSettingsPage() {
   const navigate = useNavigate()
   const currentWorkspace = useAppSelector(selectCurrentWorkspace)
   const utils = trpc.useUtils()
+  const invalidateDashboardTree = useDashboardTreeInvalidation()
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Form states
@@ -164,6 +166,7 @@ export function WorkspaceSettingsPage() {
   // Mutations
   const updateMutation = trpc.workspace.update.useMutation({
     onSuccess: () => {
+      invalidateDashboardTree()
       utils.workspace.list.invalidate()
     },
   })
@@ -195,6 +198,7 @@ export function WorkspaceSettingsPage() {
 
   const deleteMutation = trpc.workspace.delete.useMutation({
     onSuccess: () => {
+      invalidateDashboardTree()
       navigate('/')
     },
   })
