@@ -16,10 +16,14 @@
  *
  * Modified: 2026-01-07
  * Change: Complete rewrite for hierarchical navigation structure
+ *
+ * Modified: 2026-01-10
+ * Change: Added support for workspace query parameter (?workspace=123)
+ *         to show proper breadcrumbs: Workspaces > GenX > Projects
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useLocation, useParams } from 'react-router-dom'
+import { useLocation, useParams, useSearchParams } from 'react-router-dom'
 import { trpc } from '@/lib/trpc'
 
 // =============================================================================
@@ -85,6 +89,7 @@ const PROFILE_LABELS: Record<string, string> = {
 
 export function useBreadcrumbs(): BreadcrumbItem[] {
   const location = useLocation()
+  const [searchParams] = useSearchParams()
   const params = useParams<{
     projectId?: string
     projectIdentifier?: string
@@ -99,10 +104,19 @@ export function useBreadcrumbs(): BreadcrumbItem[] {
   // Get workspace slug from URL params
   const workspaceSlug = params.workspaceSlug || params.slug
 
+  // Get workspace ID from query parameter (for /workspaces?workspace=123)
+  const workspaceIdFromQuery = searchParams.get('workspace')
+
   // Fetch workspace by slug if we have one
   const workspaceBySlugQuery = trpc.workspace.getBySlug.useQuery(
     { slug: workspaceSlug! },
     { enabled: !!workspaceSlug }
+  )
+
+  // Fetch workspace by ID if we have a query parameter
+  const workspaceByIdQuery = trpc.workspace.get.useQuery(
+    { workspaceId: Number(workspaceIdFromQuery) },
+    { enabled: !!workspaceIdFromQuery && !isNaN(Number(workspaceIdFromQuery)) }
   )
 
   // Fetch project by identifier if we have one
@@ -170,17 +184,36 @@ export function useBreadcrumbs(): BreadcrumbItem[] {
   }
 
   // ==========================================================================
-  // Workspaces list: /workspaces
+  // Workspaces list: /workspaces or /workspaces?workspace=123
   // ==========================================================================
   if (firstSegment === 'workspaces') {
     breadcrumbs.push({
       label: 'Dashboard',
       href: '/dashboard',
     })
-    breadcrumbs.push({
-      label: 'Workspaces',
-      href: undefined,
-    })
+
+    // Check if we're viewing a specific workspace's projects
+    if (workspaceIdFromQuery && workspaceByIdQuery.data) {
+      // Viewing workspace projects: Dashboard > Workspaces > GenX > Projects
+      breadcrumbs.push({
+        label: 'Workspaces',
+        href: '/workspaces',
+      })
+      breadcrumbs.push({
+        label: workspaceByIdQuery.data.name,
+        href: undefined, // Current page shows this workspace
+      })
+      breadcrumbs.push({
+        label: 'Projects',
+        href: undefined,
+      })
+    } else {
+      // Just viewing workspaces list
+      breadcrumbs.push({
+        label: 'Workspaces',
+        href: undefined,
+      })
+    }
     return breadcrumbs
   }
 
@@ -206,6 +239,12 @@ export function useBreadcrumbs(): BreadcrumbItem[] {
     // Add workspace name (e.g., "Develop")
     breadcrumbs.push({
       label: workspaceName || workspaceSlug,
+      href: `/workspace/${workspaceSlug}`,
+    })
+
+    // Add "Projects" - this is the workspace homepage showing projects list
+    breadcrumbs.push({
+      label: 'Projects',
       href: hasProject ? `/workspace/${workspaceSlug}` : undefined,
     })
 
@@ -214,12 +253,6 @@ export function useBreadcrumbs(): BreadcrumbItem[] {
       // Find what comes after the project identifier
       const projectIndex = pathSegments.indexOf('project')
       const viewSegment = pathSegments[projectIndex + 2] // Skip 'project' and identifier
-
-      // Add "Projects" container - links back to workspace (which shows projects)
-      breadcrumbs.push({
-        label: 'Projects',
-        href: `/workspace/${workspaceSlug}`,
-      })
 
       // Add project name (e.g., "KANBU" or "Genx-Vector-Index")
       breadcrumbs.push({
