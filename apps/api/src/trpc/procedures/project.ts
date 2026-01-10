@@ -212,6 +212,17 @@ export const projectRouter = router({
           tasks: {
             select: { isActive: true },
           },
+          // GitHub repository info
+          githubRepositories: {
+            select: {
+              id: true,
+              fullName: true,
+              syncEnabled: true,
+              lastSyncAt: true,
+              isPrimary: true,
+            },
+            orderBy: { isPrimary: 'desc' },
+          },
           // Check if user is member via PROJECT groups
           groups: {
             where: {
@@ -274,6 +285,10 @@ export const projectRouter = router({
           else if (aclPerms & ACL_PERMISSIONS.READ) userRole = 'VIEWER'
         }
 
+        // Get primary GitHub repo (first one, which is primary due to orderBy)
+        const primaryRepo = p.githubRepositories[0]
+        const hasGitHub = p.githubRepositories.length > 0
+
         return {
           id: p.id,
           name: p.name,
@@ -290,6 +305,16 @@ export const projectRouter = router({
           completedTaskCount,
           memberCount: memberCountMap.get(p.id) ?? 0,
           userRole,
+          // GitHub integration info
+          hasGitHub,
+          github: hasGitHub ? {
+            repoCount: p.githubRepositories.length,
+            primaryRepo: primaryRepo ? {
+              fullName: primaryRepo.fullName,
+              syncEnabled: primaryRepo.syncEnabled,
+              lastSyncAt: primaryRepo.lastSyncAt,
+            } : null,
+          } : null,
         }
       })
     }),

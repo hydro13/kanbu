@@ -26,6 +26,15 @@ import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
 
 export type ProjectRole = 'OWNER' | 'MANAGER' | 'MEMBER' | 'VIEWER'
 
+export interface ProjectGitHubInfo {
+  repoCount: number
+  primaryRepo: {
+    fullName: string
+    syncEnabled: boolean
+    lastSyncAt: string | null
+  } | null
+}
+
 export interface Project {
   id: number
   name: string
@@ -40,6 +49,9 @@ export interface Project {
   taskCount: number
   memberCount: number
   userRole: ProjectRole | null
+  // GitHub integration info
+  hasGitHub?: boolean
+  github?: ProjectGitHubInfo | null
 }
 
 export interface ProjectDetail extends Project {

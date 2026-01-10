@@ -14,3 +14,4 @@
  */
 
 export { GitHubProjectSettings } from './GitHubProjectSettings'
+export { ProjectDetailsPage } from './ProjectDetailsPage'

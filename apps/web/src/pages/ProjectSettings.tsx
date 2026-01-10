@@ -34,7 +34,6 @@ import {
 import { useAppSelector } from '@/store'
 import { selectCurrentWorkspace } from '@/store/workspaceSlice'
 import { trpc } from '@/lib/trpc'
-import { useDashboardTreeInvalidation } from '@/components/dashboard'
 import { RichTextEditor, getDisplayContent, isLexicalContent, lexicalToPlainText } from '@/components/editor'
 import type { EditorState, LexicalEditor } from 'lexical'
 
@@ -54,7 +53,6 @@ export function ProjectSettingsPage() {
   const location = useLocation()
   const currentWorkspace = useAppSelector(selectCurrentWorkspace)
   const utils = trpc.useUtils()
-  const invalidateDashboardTree = useDashboardTreeInvalidation()
 
   // Form states
   const [name, setName] = useState('')
@@ -128,7 +126,6 @@ export function ProjectSettingsPage() {
   // Mutations
   const updateMutation = trpc.project.update.useMutation({
     onSuccess: () => {
-      invalidateDashboardTree()
       utils.project.get.invalidate({ projectId })
       utils.project.list.invalidate()
     },
@@ -155,14 +152,12 @@ export function ProjectSettingsPage() {
 
   const archiveMutation = trpc.project.archive.useMutation({
     onSuccess: () => {
-      invalidateDashboardTree()
       navigate('/workspaces')
     },
   })
 
   const deleteMutation = trpc.project.delete.useMutation({
     onSuccess: () => {
-      invalidateDashboardTree()
       navigate('/workspaces')
     },
   })

@@ -1,9 +1,9 @@
 /*
  * DashboardSidebar Component
- * Version: 2.0.0
+ * Version: 3.0.0
  *
- * Sidebar navigation for dashboard pages with collapsible workspace tree.
- * Shows Personal section and hierarchical Workspaces section.
+ * Simple context-aware sidebar navigation.
+ * Shows Personal section, Workspaces link, and context-aware Projects link.
  *
  * ═══════════════════════════════════════════════════════════════════
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
@@ -11,40 +11,13 @@
  * Signed: 2025-12-30T00:50 CET
  *
  * Modified: 2026-01-10
- * Change: Fase 2 - Integrated collapsible WorkspaceTree hierarchy
+ * Change: Simplified sidebar - removed tree, added context-aware navigation
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { Link, useLocation } from 'react-router-dom'
-import { Home, CheckSquare, ListChecks, Loader2, StickyNote } from 'lucide-react'
-import { trpc } from '@/lib/trpc'
-import { WorkspaceTree } from './WorkspaceTree'
+import { Link, useLocation, useParams } from 'react-router-dom'
+import { Home, CheckSquare, ListChecks, StickyNote, Building2, LayoutGrid } from 'lucide-react'
 import { cn } from '@/lib/utils'
-
-// =============================================================================
-// Query Key Export (for invalidation from other components)
-// =============================================================================
-
-/**
- * Export the tRPC utils for dashboard tree invalidation.
- * Usage in mutations:
- *
- * ```typescript
- * import { useDashboardTreeInvalidation } from '@/components/dashboard/DashboardSidebar'
- *
- * const invalidateTree = useDashboardTreeInvalidation()
- *
- * const createMutation = trpc.project.create.useMutation({
- *   onSuccess: () => {
- *     invalidateTree()
- *   }
- * })
- * ```
- */
-export function useDashboardTreeInvalidation() {
-  const utils = trpc.useUtils()
-  return () => utils.dashboard.getHierarchy.invalidate()
-}
 
 // =============================================================================
 // Types
@@ -78,16 +51,12 @@ const personalItems: NavItem[] = [
 
 export function DashboardSidebar({ collapsed = false }: DashboardSidebarProps) {
   const location = useLocation()
+  const params = useParams<{ workspaceSlug?: string; slug?: string }>()
 
-  // Fetch hierarchy data for tree
-  // - staleTime: 30s (data considered fresh for 30 seconds)
-  // - refetchOnWindowFocus: true (refetch when user returns to tab)
-  // - refetchInterval: 60s (light polling for multi-tab/device sync)
-  const { data, isLoading, error } = trpc.dashboard.getHierarchy.useQuery(undefined, {
-    staleTime: 30 * 1000,
-    refetchOnWindowFocus: true,
-    refetchInterval: 60 * 1000,
-  })
+  // Determine active workspace from URL
+  // Can be either /workspace/:workspaceSlug/project/... or /workspace/:slug
+  const workspaceSlug = params.workspaceSlug || params.slug
+  const isInWorkspace = !!workspaceSlug
 
   const isActive = (item: NavItem) => {
     if (item.exact) {
@@ -95,6 +64,9 @@ export function DashboardSidebar({ collapsed = false }: DashboardSidebarProps) {
     }
     return location.pathname.startsWith(item.path)
   }
+
+  const isWorkspacesActive = location.pathname === '/workspaces'
+  const isProjectsActive = isInWorkspace && location.pathname.includes(`/workspace/${workspaceSlug}`)
 
   return (
     <aside className="flex flex-col h-full">
@@ -135,45 +107,50 @@ export function DashboardSidebar({ collapsed = false }: DashboardSidebarProps) {
         {/* Divider */}
         <div className="my-2 mx-3 border-t border-border" />
 
-        {/* WORKSPACES Section */}
-        <div className="flex-1">
+        {/* NAVIGATION Section */}
+        <div className="mb-2">
           {!collapsed && (
             <div className="px-3 py-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Workspaces
+              Navigation
             </div>
           )}
+          <ul className="space-y-0.5 px-2">
+            {/* Workspaces - always visible */}
+            <li>
+              <Link
+                to="/workspaces"
+                className={cn(
+                  'flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors',
+                  isWorkspacesActive
+                    ? 'bg-accent text-accent-foreground font-medium'
+                    : 'text-foreground/80 hover:bg-accent/50'
+                )}
+                title={collapsed ? 'Workspaces' : undefined}
+              >
+                <Building2 className="h-4 w-4 flex-shrink-0" />
+                {!collapsed && <span>Workspaces</span>}
+              </Link>
+            </li>
 
-          <div className="px-2">
-            {/* Loading state */}
-            {isLoading && (
-              <div className="flex items-center justify-center py-4">
-                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-              </div>
+            {/* Projects - only visible when in a workspace context */}
+            {isInWorkspace && (
+              <li>
+                <Link
+                  to={`/workspace/${workspaceSlug}`}
+                  className={cn(
+                    'flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors',
+                    isProjectsActive
+                      ? 'bg-accent text-accent-foreground font-medium'
+                      : 'text-foreground/80 hover:bg-accent/50'
+                  )}
+                  title={collapsed ? 'Projects' : undefined}
+                >
+                  <LayoutGrid className="h-4 w-4 flex-shrink-0" />
+                  {!collapsed && <span>Projects</span>}
+                </Link>
+              </li>
             )}
-
-            {/* Error state */}
-            {error && (
-              <div className="px-3 py-2 text-sm text-destructive">
-                Failed to load workspaces
-              </div>
-            )}
-
-            {/* Workspace tree */}
-            {data?.workspaces.map((workspace) => (
-              <WorkspaceTree
-                key={workspace.id}
-                workspace={workspace}
-                collapsed={collapsed}
-              />
-            ))}
-
-            {/* Empty state */}
-            {data?.workspaces.length === 0 && !isLoading && (
-              <div className="px-3 py-2 text-sm text-muted-foreground italic">
-                No workspaces yet
-              </div>
-            )}
-          </div>
+          </ul>
         </div>
 
         {/* Divider */}

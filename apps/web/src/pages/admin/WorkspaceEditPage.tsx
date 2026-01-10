@@ -24,7 +24,6 @@ import {
   CardFooter,
 } from '@/components/ui/card'
 import { trpc, getApiHost } from '@/lib/trpc'
-import { useDashboardTreeInvalidation } from '@/components/dashboard'
 import {
   MemberFilters,
   filterAndSortMembers,
@@ -140,7 +139,6 @@ export function WorkspaceEditPage() {
   const [success, setSuccess] = useState<string | null>(null)
 
   const utils = trpc.useUtils()
-  const invalidateDashboardTree = useDashboardTreeInvalidation()
 
   // Fetch workspace data
   const { data: workspace, isLoading: loadingWorkspace } = trpc.workspace.get.useQuery(
@@ -169,7 +167,6 @@ export function WorkspaceEditPage() {
   // Mutations
   const updateMutation = trpc.workspace.update.useMutation({
     onSuccess: () => {
-      invalidateDashboardTree()
       utils.workspace.get.invalidate({ workspaceId })
       utils.admin.listAllWorkspaces.invalidate()
       setSuccess('Workspace updated successfully')
@@ -182,7 +179,6 @@ export function WorkspaceEditPage() {
 
   const deleteMutation = trpc.workspace.delete.useMutation({
     onSuccess: () => {
-      invalidateDashboardTree()
       navigate('/admin/workspaces')
     },
     onError: (err: { message: string }) => {

@@ -33,6 +33,7 @@ export type FeatureSlug =
   | 'sprints'
   | 'milestones'
   | 'analytics'
+  | 'details'
   | 'members'
   | 'settings'
   | 'import-export'
@@ -42,7 +43,7 @@ export type FeatureSlug =
 // Feature categories based on permission requirements
 const BASIC_FEATURES: FeatureSlug[] = ['board', 'list', 'calendar', 'timeline']
 const PLANNING_FEATURES: FeatureSlug[] = ['sprints', 'milestones', 'analytics']
-const MANAGEMENT_FEATURES: FeatureSlug[] = ['members', 'settings', 'import-export', 'webhooks', 'github']
+const MANAGEMENT_FEATURES: FeatureSlug[] = ['details', 'members', 'settings', 'import-export', 'webhooks', 'github']
 
 export interface UseProjectFeatureAccessResult {
   /** Whether any features are accessible */

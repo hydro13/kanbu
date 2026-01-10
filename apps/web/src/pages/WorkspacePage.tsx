@@ -15,7 +15,7 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { DashboardLayout, useDashboardTreeInvalidation } from '@/components/dashboard'
+import { DashboardLayout } from '@/components/dashboard'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
@@ -300,11 +300,9 @@ function CreateProjectModal({ workspaceId, onClose, onCreated }: CreateProjectMo
   const [name, setName] = useState('')
   const [identifier, setIdentifier] = useState('')
   const [description, setDescription] = useState('')
-  const invalidateDashboardTree = useDashboardTreeInvalidation()
 
   const createMutation = trpc.project.create.useMutation({
     onSuccess: () => {
-      invalidateDashboardTree()
       onCreated()
     },
   })

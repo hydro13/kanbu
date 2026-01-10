@@ -115,7 +115,7 @@ import { UserListPage, UserCreatePage, UserEditPage, InvitesPage, SystemSettings
 // Dashboard pages
 import { DashboardOverview, MyTasks, MySubtasks } from './pages/dashboard'
 // Project pages
-import { GitHubProjectSettings } from './pages/project'
+import { GitHubProjectSettings, ProjectDetailsPage } from './pages/project'
 import { AcceptInvitePage } from './pages/AcceptInvite'
 // Demo pages
 import { EditorDemoPage } from './pages/EditorDemo'
@@ -435,6 +435,14 @@ function App() {
           element={
             <ProtectedRoute>
               <GitHubProjectSettings />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/workspace/:workspaceSlug/project/:projectIdentifier/details"
+          element={
+            <ProtectedRoute>
+              <ProjectDetailsPage />
             </ProtectedRoute>
           }
         />

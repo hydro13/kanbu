@@ -1,8 +1,8 @@
 /*
  * Board Settings Page
- * Version: 1.0.0
+ * Version: 1.1.0
  *
- * Manage board structure: columns, swimlanes, WIP limits.
+ * Board configuration: columns, swimlanes, WIP limits.
  *
  * ═══════════════════════════════════════════════════════════════════
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
@@ -53,7 +53,10 @@ interface SwimlaneFormData {
 // =============================================================================
 
 export function BoardSettingsPage() {
-  const { projectIdentifier } = useParams<{ projectIdentifier: string }>()
+  const { projectIdentifier, workspaceSlug } = useParams<{
+    projectIdentifier: string
+    workspaceSlug: string
+  }>()
   const utils = trpc.useUtils()
 
   // Form states
@@ -289,11 +292,11 @@ export function BoardSettingsPage() {
         {/* Header */}
         <div className="mb-6">
           <nav className="text-sm text-muted-foreground mb-2">
-            <Link to={`/project/${projectId}`} className="hover:text-primary">
+            <Link to={`/workspace/${workspaceSlug}/project/${projectIdentifier}/board`} className="hover:text-primary">
               {project?.name}
             </Link>
             {' / '}
-            <span>Board Settings</span>
+            <span>Settings</span>
           </nav>
           <h1 className="text-2xl font-bold">Board Settings</h1>
           <p className="text-muted-foreground mt-1">

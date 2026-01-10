@@ -115,7 +115,7 @@ export function WorkspaceTree({ workspace, collapsed = false }: WorkspaceTreePro
             isExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'
           )}
         >
-          <div className="overflow-hidden min-h-0 ml-4 border-l border-border pl-2">
+          <div className="overflow-hidden min-h-0 ml-6">
           {/* Kanbu Projects Section */}
           {workspace.kanbuProjects.length > 0 && (
             <TreeSection
