@@ -1,70 +1,128 @@
 # Dashboard Documentatie
 
-Deze map bevat de visie en implementatie documentatie voor het Kanbu Dashboard.
+Deze map bevat de complete visie, architectuur en implementatie roadmap voor het Kanbu Dashboard.
+
+**Doelstelling:** Implementatie van "Claude's Planner" - een ideaal dashboard ontwerp gebaseerd op best practices van 9 PM tools, aangepast aan Kanbu's real-time multi-user architectuur.
+
+---
 
 ## Documenten
 
-| Document | Beschrijving |
-|----------|--------------|
-| [VISIE.md](./VISIE.md) | De overkoepelende visie voor het dashboard - **LEES DIT EERST** |
-| [CONCURRENTIE-ANALYSE.md](./CONCURRENTIE-ANALYSE.md) | Analyse van 9 PM tools (Jira, Linear, Notion, etc.) |
-| [HUIDIGE-STAAT.md](./HUIDIGE-STAAT.md) | Analyse van de huidige implementatie |
-| [ROADMAP.md](./ROADMAP.md) | Fasering en deliverables per fase |
+| Document | Beschrijving | Leesvolgorde |
+|----------|--------------|--------------|
+| [VISIE.md](./VISIE.md) | Overkoepelende visie en design principes | 1. Eerst lezen |
+| [IDEAAL-DASHBOARD-ONTWERP.md](./IDEAAL-DASHBOARD-ONTWERP.md) | Claude's Planner - het volledige ideale ontwerp | 2. Referentie |
+| [HUIDIGE-STAAT.md](./HUIDIGE-STAAT.md) | Analyse van bestaande implementatie | 3. Begrip huidige staat |
+| [CONCURRENTIE-ANALYSE.md](./CONCURRENTIE-ANALYSE.md) | Analyse van 10 PM tools (incl. Claude's Planner) | 4. Achtergrond |
+| [ROADMAP.md](./ROADMAP.md) | **IMPLEMENTATIE GIDS** - Gedetailleerde fases | 5. **Werk hiermee** |
+
+---
 
 ## Kernboodschap
 
-> **Het Dashboard is de cockpit van de gebruiker.**
+> **Het Dashboard is de cockpit van de gebruiker - gebouwd voor real-time multi-user samenwerking.**
 
-- Eén plek voor al je workspaces, projecten en taken
-- Hiërarchische navigatie zoals een file systeem
-- Duidelijk onderscheid tussen Kanbu projecten en GitHub projecten
-- Project Groepen voor gecombineerde overzichten
-
----
-
-## Gewenste Structuur
+### Wat We Bouwen
 
 ```
-Dashboard
-├── 📊 Overview (persoonlijke stats)
+Dashboard Sidebar (Claude's Planner model)
+├── 🏠 Home (widget-based, personaliseerbaar)
+├── 📥 Inbox (notificaties + mentions)
+├── ✅ My Tasks (smart grouping: Today/Upcoming/Overdue)
+├── 📅 Today (focus view)
 │
-├── 📁 Workspaces (collapsible tree)
-│   │
+├── ⭐ FAVORITES
+│   └── Gepinde projecten (cross-workspace)
+│
+├── 📁 WORKSPACES (collapsible tree)
 │   ├── 🏢 Workspace A ▼
-│   │   ├── 📋 Kanbu Projects
-│   │   │   └── 📋 Internal Planning
-│   │   ├── 🐙 GitHub Projects
-│   │   │   └── 🐙 webapp-frontend
-│   │   └── 📂 Project Groups
-│   │       └── 📂 Frontend Team
+│   │   ├── 📋 KANBU
+│   │   │   └── Project 1
+│   │   ├── 🐙 GITHUB
+│   │   │   └── repo-name
+│   │   └── 📂 GROUPS
+│   │       └── Team Alpha
 │   │
 │   └── 🏢 Workspace B ▶ (collapsed)
 │
-├── ✅ My Tasks
-├── ✅ My Subtasks
-│
-└── 📝 Sticky Notes
+├── 📝 Notes
+└── ⚙️ Settings
 ```
-
-## Belangrijke Concepten
-
-### Collapsible Hiërarchie
-Net zoals folders in een file systeem kunnen workspaces, project categorieën en projecten open/dicht geklapt worden.
-
-### Visueel Onderscheid
-- 📋 Kanbu projecten - blauw/standaard icoon
-- 🐙 GitHub projecten - GitHub icoon, aparte kleur
-- 📂 Project Groepen - folder icoon
-
-### Project Groepen
-Verzamelingen van projecten (zowel Kanbu als GitHub) voor gecombineerde statistieken en overzichten.
 
 ---
 
-## Context
+## Architectuur Constraints
 
-Kanbu is 1 week oud en in actieve ontwikkeling. Het huidige dashboard is functioneel maar basis. Deze documentatie beschrijft waar we naartoe werken.
+### MOET Respecteren
+
+| Constraint | Reden |
+|------------|-------|
+| **Real-time multi-user** | Socket.io + Redis adapter, GEEN offline-first |
+| **ACL overal** | Elk menu item, elke actie via RWXDP permissions |
+| **BaseLayout pattern** | Bestaande collapsible/resizable sidebar |
+| **tRPC procedures** | Consistente API patterns |
+| **Docker + SaaS** | Multi-server deployment met Redis |
+| **LDAP sync (gepland)** | ACL is voorbereid op externe identity providers |
+
+### MAG NIET Doen
+
+| Verboden | Waarom |
+|----------|--------|
+| Offline-first implementeren | Conflicteert met real-time multi-user |
+| ACL bypassen | Security en audit trail |
+| Nieuwe state management library | Redux + Zustand al in gebruik |
+| Hardcoded permissions | Alles via ACL service |
+
+---
+
+## Voor Claude Code Sessies
+
+### Voor Je Begint
+
+1. **Lees [ROADMAP.md](./ROADMAP.md)** - Vind je specifieke fase/taak
+2. **Check dependencies** - Zijn vorige fases compleet?
+3. **Begrijp de ACL** - Gebruik `useAclPermission`, `useFeatureAccess` hooks
+4. **Ken de real-time patterns** - `useSocket` hook voor live updates
+
+### Tijdens Ontwikkeling
+
+1. **Volg bestaande patterns** - Kijk naar `ProjectSidebar.tsx`, `AdminSidebar.tsx`
+2. **Test met Robin** - Visuele + functionele validatie
+3. **ACL integratie** - Menu items MOETEN permissions respecteren
+4. **Geen over-engineering** - Focus op de specifieke taak
+
+### Na Afronding
+
+1. **Mark fase als ✅ Done** in ROADMAP.md
+2. **Document eventuele afwijkingen**
+3. **Update dependencies** voor volgende fase
+
+---
+
+## Status Legenda
+
+| Status | Betekenis |
+|--------|-----------|
+| 📋 Planned | Nog niet gestart |
+| 🔶 In Progress | Actief in ontwikkeling |
+| ✅ Done | Compleet en getest |
+| 🔲 Todo | Specifiek item nog te doen |
+| ⚠️ Blocked | Wacht op dependency |
+
+---
+
+## Quick Links
+
+- **Frontend code:** `/apps/web/src/components/dashboard/`
+- **Backend code:** `/apps/api/src/trpc/procedures/`
+- **ACL hooks:** `/apps/web/src/hooks/useAclPermission.ts`
+- **Socket hooks:** `/apps/web/src/hooks/useSocket.ts`
+- **Base layout:** `/apps/web/src/components/layout/BaseLayout.tsx`
+
+---
 
 ## Contact
 
 Bij vragen over de visie of implementatie, overleg met Robin Waslander.
+
+**Let op:** Dit is een iteratief project. Documentatie wordt bijgewerkt naarmate fases vorderen.

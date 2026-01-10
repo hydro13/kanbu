@@ -1,6 +1,6 @@
 # Dashboard Visie
 
-## Versie: 1.0.0
+## Versie: 2.0.0
 ## Datum: 2026-01-10
 ## Auteur: Robin Waslander
 
@@ -8,236 +8,235 @@
 
 ## Kernvisie
 
-> **Het Dashboard is de cockpit van de gebruiker - één plek voor alles.**
+> **Het Dashboard is de cockpit van de gebruiker - real-time, ACL-aware, en schaalbaar van 1 tot 100.000+ gebruikers.**
 
-Een gebruiker opent Kanbu en ziet direct:
-- Alle workspaces waar hij lid van is
-- Alle projecten (Kanbu én GitHub) in die workspaces
-- Project groepen voor gecombineerde overzichten
-- Zijn persoonlijke taken en notities
+We implementeren "Claude's Planner" - een ideaal dashboard ontwerp gebaseerd op best practices van 10 PM tools - aangepast aan Kanbu's unieke architectuur:
 
----
-
-## Het File System Paradigma
-
-De navigatie werkt zoals een file systeem:
-
-```
-📁 Mijn Computer
-├── 📁 Documents ▼ (open)
-│   ├── 📄 file1.txt
-│   └── 📄 file2.txt
-├── 📁 Pictures ▶ (dicht)
-└── 📁 Downloads ▶ (dicht)
-```
-
-Vertaald naar Kanbu:
-
-```
-📁 Dashboard
-├── 🏢 Workspace A ▼ (open)
-│   ├── 📋 Kanbu Projects
-│   │   └── 📋 Internal Planning
-│   ├── 🐙 GitHub Projects
-│   │   └── 🐙 webapp-frontend
-│   └── 📂 Project Groups
-│       └── 📂 Frontend Team
-├── 🏢 Workspace B ▶ (dicht)
-└── 🏢 Workspace C ▶ (dicht)
-```
-
-### Voordelen
-
-1. **Vertrouwd** - Iedereen kent file explorers
-2. **Schaalbaar** - Werkt voor 1 of 100 workspaces
-3. **Overzichtelijk** - Open wat je nodig hebt, sluit de rest
-4. **Snel** - Direct naar elk project zonder clicks
+- **Real-time multi-user** (geen offline-first)
+- **ACL-first** (elke actie, elk menu item)
+- **Docker + SaaS ready** (multi-server met Redis)
+- **LDAP-ready** (toekomstige identity federation)
 
 ---
 
-## Drie Soorten Projecten
+## Design Principes
 
-### 1. Kanbu Projecten (📋)
+### 1. Progressive Disclosure
+Toon alleen wat nodig is, wanneer nodig:
+- Collapsed workspaces verbergen projecten
+- Sections expanden on-demand
+- Context menus onthullen advanced acties
 
-- Interne projecten zonder externe sync
-- Eigen structuur en velden
-- Volledig Kanbu-beheerd
+### 2. ACL-First Design
+Elk UI element respecteert permissions:
+```typescript
+// Pattern voor ALLE menu items
+const { canSeeFeature, isLoading } = useDashboardFeatureAccess()
 
-**Icoon:** Blauw kanban icoon
-**Route:** `/workspace/:slug/project/:id/board`
+const filteredItems = items.filter(item =>
+  isLoading || canSeeFeature(item.slug)
+)
+```
 
-### 2. GitHub Projecten (🐙)
+### 3. Real-Time by Default
+Alle data updates zijn live:
+- Task wijzigingen via Socket.io events
+- Presence indicators (wie is online)
+- Typing/editing indicators
+- Cursor sharing in boards
 
-- Gekoppeld aan GitHub repository
-- 1-op-1 feature parity met GitHub Projects
-- Bi-directionele sync
+### 4. Keyboard-First
+Alles bereikbaar via toetsenbord:
+- `Ctrl+K` - Command palette (al aanwezig)
+- `Ctrl+/` - Toggle sidebar (al aanwezig)
+- Pijltjes - Tree navigatie (te bouwen)
+- `Enter` - Open geselecteerd item
 
-**Icoon:** GitHub Octocat icoon
-**Route:** `/workspace/:slug/github/:repoId/board`
-
-### 3. Project Groepen (📂)
-
-- Verzameling van projecten (beide types)
-- Gecombineerde statistieken
-- Cross-project overzicht
-
-**Icoon:** Folder icoon
-**Route:** `/workspace/:slug/groups/:groupId`
+### 5. 60-30-10 Regel
+- **60% Content** - Het echte werk (tasks, boards)
+- **30% Navigatie** - Sidebar, breadcrumbs
+- **10% Chrome** - Header, controls
 
 ---
 
 ## Dashboard Structuur
 
-### Sidebar (Navigatie)
+### Sidebar Hiërarchie (Claude's Planner Model)
 
 ```
-┌────────────────────────┐
-│ Menu              [«]  │
-├────────────────────────┤
-│                        │
-│ 🏠 Overview            │
-│ ✅ My Tasks            │
-│ ✅ My Subtasks         │
-│                        │
-│ ─────────────────────  │
-│                        │
-│ 📁 WORKSPACES          │
-│                        │
-│ ▼ 🏢 Webhook Test...   │
-│   │                    │
-│   ├─ 📋 KANBU          │
-│   │  └─ 📋 test-temp   │
-│   │                    │
-│   ├─ 🐙 GITHUB         │
-│   │  └─ 🐙 kanbu-repo  │
-│   │                    │
-│   └─ 📂 GROUPS         │
-│      └─ (geen)         │
-│                        │
-│ ▶ 🏢 Andere Workspace  │
-│                        │
-│ ─────────────────────  │
-│                        │
-│ 📝 Sticky Notes        │
-│                        │
-└────────────────────────┘
+┌────────────────────────────┐
+│ Workspace Switcher    [▼]  │  ← Snel wisselen (future)
+│ ─────────────────────────  │
+│ 🔍 Search         (⌘K)    │  ← Al aanwezig
+├────────────────────────────┤
+│ PERSONAL                   │
+│ ├─ 🏠 Home                 │  ← Widget-based dashboard
+│ ├─ 📥 Inbox           (3) │  ← Notificaties + mentions
+│ ├─ ✅ My Tasks       (12) │  ← Smart grouping
+│ ├─ 📅 Today           (5) │  ← Focus view
+│ └─ ⏰ Upcoming        (8) │  ← Coming up
+├────────────────────────────┤
+│ FAVORITES                  │
+│ ├─ ⭐ Project Alpha       │  ← Gepinde projecten
+│ └─ ⭐ Sprint Board        │  ← Cross-workspace
+├────────────────────────────┤
+│ WORKSPACES                 │
+│ ▼ 🏢 Acme Corp            │  ← Collapsible
+│   ├─ 📋 KANBU             │
+│   │   ├─ 📋 Website       │
+│   │   └─ 📋 API           │
+│   ├─ 🐙 GITHUB            │
+│   │   └─ 🐙 api-backend   │
+│   └─ 📂 GROUPS            │
+│       └─ 📂 Frontend Team │
+│ ▶ 🏢 Side Projects        │  ← Collapsed
+├────────────────────────────┤
+│ 📝 Notes                   │  ← Sticky notes (aanwezig)
+│ ⚙️ Settings                │  ← Profile link
+└────────────────────────────┘
 ```
 
-### Content Area
+### Het File System Paradigma
+
+De navigatie werkt zoals een file systeem - vertrouwd voor iedereen:
+
+```
+📁 Mijn Computer           →   📁 Dashboard
+├── 📁 Documents ▼         →   ├── 🏢 Workspace A ▼
+│   ├── 📄 file1.txt       →   │   ├── 📋 Project 1
+│   └── 📄 file2.txt       →   │   └── 📋 Project 2
+├── 📁 Pictures ▶          →   ├── 🏢 Workspace B ▶
+└── 📁 Downloads ▶         →   └── 🏢 Workspace C ▶
+```
+
+### Visueel Onderscheid
+
+| Element | Icoon | Kleur | ACL Vereist |
+|---------|-------|-------|-------------|
+| Workspace | 🏢 Building | Neutraal | R op workspace |
+| Kanbu Project | 📋 Kanban | Blauw | R op project |
+| GitHub Project | 🐙 Octocat | Grijs | R op project + GitHub feature |
+| Project Group | 📂 Folder | Oranje/Geel | R op group |
+| Favorite | ⭐ Star | Goud | User-level (geen ACL) |
+
+---
+
+## Drie Project Types
+
+### 1. Kanbu Projecten (📋)
+
+Interne projecten zonder externe sync:
+- Eigen structuur en velden
+- Volledig Kanbu-beheerd
+- Real-time collaboration
+
+**Route:** `/workspace/:slug/project/:id/board`
+
+### 2. GitHub Projecten (🐙)
+
+Gekoppeld aan GitHub repository:
+- Bi-directionele issue sync
+- PR/Commit tracking
+- Milestone sync
+- CI/CD status indicators
+
+**Route:** `/workspace/:slug/github/:repoId/board`
+
+### 3. Project Groepen (📂)
+
+Verzameling van projecten (beide types):
+- Gecombineerde statistieken
+- Cross-project overzicht
+- Portfolio management
+
+**Route:** `/workspace/:slug/groups/:groupId`
+
+---
+
+## Content Areas
 
 De content area past zich aan op basis van selectie:
 
-| Selectie | Content |
-|----------|---------|
-| Overview | Stats, quick actions, recent activity |
-| Workspace | Workspace overzicht met alle projecten |
-| Kanbu Project | Project board/list/calendar |
-| GitHub Project | GitHub board (1-op-1 met GitHub) |
-| Project Group | Gecombineerde statistieken |
+| Selectie | Content | Features |
+|----------|---------|----------|
+| **Home** | Widget-based dashboard | Personaliseerbaar, drag-drop widgets |
+| **Inbox** | Notificaties + mentions | Filters, mark read, bulk actions |
+| **My Tasks** | Task lijst | Smart grouping, filters |
+| **Today** | Focus view | Alleen vandaag + overdue |
+| **Workspace** | Overview + stats | Recent activity, quick actions |
+| **Kanbu Project** | Board/List/Calendar | Real-time, presence |
+| **GitHub Project** | GitHub board | Sync status, CI indicators |
+| **Project Group** | Gecombineerde stats | Portfolio view |
 
 ---
 
-## Interactie Patronen
+## State Management
 
-### Collapse/Expand
+### Expand/Collapse State
 
-```
-▼ Workspace A (klik = toggle)
-  └── projecten zichtbaar
+Opgeslagen in localStorage via Zustand store:
 
-▶ Workspace B (klik = toggle)
-   projecten verborgen
-```
+```typescript
+// stores/dashboardTreeStore.ts
+interface DashboardTreeState {
+  expandedWorkspaces: Set<number>
+  expandedSections: Map<number, Set<'kanbu' | 'github' | 'groups'>>
+  favorites: number[] // project IDs
 
-### Context Menu
-
-Rechtermuisklik op items toont acties:
-
-**Workspace:**
-- New Kanbu Project
-- Link GitHub Repository
-- New Project Group
-- Settings
-
-**Project:**
-- Open Board
-- Open in new tab
-- Settings
-- Archive
-
-### Drag & Drop (future)
-
-- Projecten tussen groepen slepen
-- Projecten ordenen
-- Workspaces ordenen
-
----
-
-## Visuele Hiërarchie
-
-### Kleuren
-
-| Element | Kleur |
-|---------|-------|
-| Workspace header | Donkergrijs |
-| Kanbu section | Blauw accent |
-| GitHub section | Wit/grijs (GitHub kleuren) |
-| Groups section | Geel/oranje accent |
-| Selected item | Primary kleur met highlight |
-
-### Iconen
-
-| Element | Icoon |
-|---------|-------|
-| Workspace | 🏢 Building |
-| Kanbu Project | 📋 Kanban board |
-| GitHub Project | 🐙 GitHub Octocat |
-| Project Group | 📂 Folder |
-| Collapse/Expand | ▶/▼ Chevron |
-
-### Badges
-
-| Badge | Betekenis |
-|-------|-----------|
-| 🟢 | Active/Synced |
-| 🟡 | Pending sync |
-| 🔴 | Error/Attention |
-| (3) | Aantal items |
-
----
-
-## Data Flow
-
-### Laden van Dashboard
-
-```
-1. User opent /dashboard
-2. Fetch workspaces waar user lid van is
-3. Per workspace: fetch projects, groups, github repos
-4. Render tree met collapsed state uit localStorage
-5. User interactie: expand/collapse opslaan
-```
-
-### Collapsed State
-
-De expand/collapse staat wordt opgeslagen in localStorage:
-
-```json
-{
-  "dashboard_tree_state": {
-    "workspace_534": {
-      "expanded": true,
-      "sections": {
-        "kanbu": true,
-        "github": false,
-        "groups": false
-      }
-    },
-    "workspace_535": {
-      "expanded": false
-    }
-  }
+  toggleWorkspace: (id: number) => void
+  toggleSection: (workspaceId: number, section: string) => void
+  toggleFavorite: (projectId: number) => void
 }
+
+// localStorage key
+const STORAGE_KEY = 'kanbu_dashboard_tree_state'
+```
+
+### Real-Time Sync
+
+Tree state is user-local, maar project data is real-time:
+
+```typescript
+// Project changes via Socket.io
+useSocket({
+  onProjectCreated: (payload) => invalidateQueries(['workspace.getHierarchy']),
+  onProjectUpdated: (payload) => updateProjectInCache(payload),
+  onProjectDeleted: (payload) => removeProjectFromCache(payload),
+})
+```
+
+---
+
+## ACL Integratie
+
+### Dashboard Features
+
+Elk sidebar item heeft een feature slug:
+
+```typescript
+// Dashboard feature slugs
+const DASHBOARD_FEATURES = {
+  home: 'dashboard:home',           // R on dashboard
+  inbox: 'dashboard:inbox',         // R on dashboard
+  myTasks: 'dashboard:my-tasks',    // R on dashboard (al aanwezig)
+  today: 'dashboard:today',         // R on dashboard
+  upcoming: 'dashboard:upcoming',   // R on dashboard
+  favorites: 'dashboard:favorites', // User-level (altijd toegankelijk)
+  notes: 'dashboard:notes',         // R on dashboard (al aanwezig)
+}
+```
+
+### Workspace/Project Visibility
+
+Alleen tonen wat user mag zien:
+
+```typescript
+// Sidebar filtering
+const workspaces = await trpc.workspace.list.query()
+// ^ Backend filtert al op ACL - alleen workspaces met R permission
+
+const projects = await trpc.project.list.query({ workspaceId })
+// ^ Backend filtert al op ACL - alleen projecten met R permission
 ```
 
 ---
@@ -246,32 +245,23 @@ De expand/collapse staat wordt opgeslagen in localStorage:
 
 ### Nieuwe Endpoints
 
-```typescript
-// Workspace met volledige hiërarchie
-workspace.getHierarchy(workspaceId: number) => {
-  workspace: Workspace
-  kanbuProjects: Project[]
-  githubProjects: GitHubRepository[]
-  projectGroups: ProjectGroup[]
-}
+| Endpoint | Beschrijving | ACL |
+|----------|--------------|-----|
+| `dashboard.getHierarchy` | Alle workspaces + projecten + groups | R per resource |
+| `dashboard.getStats` | Persoonlijke statistieken | R on dashboard |
+| `favorites.list` | Gebruiker favorites | User-level |
+| `favorites.add` | Add favorite | User-level |
+| `favorites.remove` | Remove favorite | User-level |
+| `projectGroup.list` | Groups in workspace | R on workspace |
+| `projectGroup.getStats` | Gecombineerde stats | R on group |
 
-// Dashboard data in één call
-dashboard.getOverview() => {
-  workspaces: WorkspaceHierarchy[]
-  stats: UserStats
-  recentActivity: Activity[]
-}
-```
+### Bestaande Endpoints (Uitbreiden)
 
-### Bestaande Endpoints Uitbreiden
-
-```typescript
-// Project list met type indicator
-project.list(workspaceId) => Project[] // add: hasGitHub flag
-
-// GitHub repos direct per workspace
-github.listWorkspaceRepos(workspaceId) => GitHubRepository[]
-```
+| Endpoint | Wijziging |
+|----------|-----------|
+| `workspace.list` | Al correct - returns visible workspaces |
+| `project.list` | Al correct - filters op ACL |
+| `github.listWorkspaceRepos` | Nodig voor GitHub sectie |
 
 ---
 
@@ -282,76 +272,179 @@ github.listWorkspaceRepos(workspaceId) => GitHubRepository[]
 ```
 components/
 ├── dashboard/
-│   ├── DashboardSidebar.tsx      # Nieuwe tree-based sidebar
-│   ├── WorkspaceTree.tsx         # Collapsible workspace node
-│   ├── ProjectNode.tsx           # Project item in tree
-│   ├── ProjectGroupNode.tsx      # Group item in tree
-│   └── TreeSection.tsx           # Kanbu/GitHub/Groups section
+│   ├── DashboardSidebar.tsx        # REFACTOR: Huidige naar tree-based
+│   ├── WorkspaceTree.tsx           # Collapsible workspace node
+│   ├── ProjectNode.tsx             # Project item in tree
+│   ├── GitHubProjectNode.tsx       # GitHub project item
+│   ├── ProjectGroupNode.tsx        # Group item
+│   ├── TreeSection.tsx             # KANBU/GITHUB/GROUPS section
+│   ├── FavoritesSection.tsx        # Starred projects
+│   ├── PersonalSection.tsx         # Home/Inbox/My Tasks
+│   └── TreeContextMenu.tsx         # Right-click menu
 │
 ├── shared/
-│   ├── CollapsiblePanel.tsx      # Generiek collapse component
-│   ├── ProjectTypeIcon.tsx       # Kanbu vs GitHub icoon
-│   └── TreeView.tsx              # Generieke tree component
+│   ├── CollapsiblePanel.tsx        # Generiek expand/collapse
+│   ├── ProjectTypeIcon.tsx         # Kanbu vs GitHub icoon
+│   └── TreeView.tsx                # Generieke tree component
+│
+└── stores/
+    └── dashboardTreeStore.ts       # Zustand store voor tree state
 ```
 
-### State Management
+### Pattern: ACL-Aware Sidebar Item
 
 ```typescript
-// Zustand store voor tree state
-interface DashboardTreeState {
-  expandedWorkspaces: Set<number>
-  expandedSections: Map<number, Set<'kanbu' | 'github' | 'groups'>>
-  toggleWorkspace: (id: number) => void
-  toggleSection: (workspaceId: number, section: string) => void
+interface SidebarItem {
+  label: string
+  path: string
+  icon: React.ComponentType
+  slug?: FeatureSlug  // Voor ACL check
+  badge?: number      // Notification count
+}
+
+function SidebarNavItem({ item, collapsed }: Props) {
+  const { canSeeFeature, isLoading } = useDashboardFeatureAccess()
+
+  // Verberg als geen toegang
+  if (!isLoading && item.slug && !canSeeFeature(item.slug)) {
+    return null
+  }
+
+  return (
+    <NavLink to={item.path}>
+      <item.icon />
+      {!collapsed && <span>{item.label}</span>}
+      {item.badge && <Badge>{item.badge}</Badge>}
+    </NavLink>
+  )
 }
 ```
 
 ---
 
-## Implementatie Prioriteiten
+## Keyboard Shortcuts
 
-### Fase 1: Basis Tree
-- Collapsible workspaces in sidebar
-- Projecten per workspace (alleen Kanbu eerst)
-- localStorage persistence
+### Bestaand (in ontwikkeling)
 
-### Fase 2: GitHub Integratie
-- GitHub sectie per workspace
-- GitHub project icoon/onderscheid
-- Route naar GitHub board
+| Shortcut | Actie | Status |
+|----------|-------|--------|
+| `Ctrl+K` | Command palette | 🔶 Basis |
+| `Ctrl+/` | Toggle sidebar | 🔶 Werkend |
+| `?` | Shortcuts modal | 🔶 Basis |
 
-### Fase 3: Project Groups
-- Groups sectie per workspace
-- Group CRUD operaties
-- Gecombineerde stats
+### Toe te Voegen (Tree-specifiek)
 
-### Fase 4: Polish
-- Drag & drop ordering
-- Context menus
-- Tree-specifieke keyboard navigatie (basis shortcuts bestaan al)
-- Search/filter in tree
-
----
-
-## Bestaande Features (in ontwikkeling)
-
-Kanbu heeft de volgende features in verschillende stadia (🔶 = in ontwikkeling):
-- 🔶 **Collapsible sidebar** - `Ctrl + /` (basis)
-- 🔶 **Command palette** - `Ctrl + K` (basis)
-- 🔶 **Keyboard shortcuts** - Niet compleet
-- 🔶 **Sticky Notes** - Basis
-
-*Deze features bestaan maar zijn nog niet allemaal gepolished of MVP-klaar.*
+| Shortcut | Actie | Fase |
+|----------|-------|------|
+| `↑` / `↓` | Navigeer items | 4 |
+| `←` / `→` | Collapse / Expand | 4 |
+| `Enter` | Open geselecteerd | 4 |
+| `Space` | Toggle expand | 4 |
+| `/` | Focus search | 4 |
+| `g h` | Go to Home | 4 |
+| `g t` | Go to My Tasks | 4 |
 
 ---
 
-## Samenvatting
+## Context Menus
 
-Het nieuwe dashboard biedt:
+### Workspace Context Menu
 
-1. **Hiërarchische navigatie** - Zoals een file systeem
-2. **Duidelijk onderscheid** - Kanbu vs GitHub vs Groups
-3. **Schaalbaarheid** - Werkt voor kleine en grote organisaties
-4. **Snelle toegang** - Alles bereikbaar vanuit één sidebar
+| Actie | ACL Vereist |
+|-------|-------------|
+| New Kanbu Project | W on workspace |
+| Link GitHub Repository | W + GitHub feature |
+| New Project Group | W on workspace |
+| Workspace Settings | P on workspace |
 
-De implementatie volgt de bestaande patronen van Kanbu en bouwt voort op de database modellen die al bestaan.
+### Project Context Menu
+
+| Actie | ACL Vereist |
+|-------|-------------|
+| Open Board | R on project |
+| Open in new tab | R on project |
+| Add to Favorites | User-level |
+| Add to Group | W on group |
+| Settings | P on project |
+| Archive | D on project |
+
+---
+
+## Implementatie Fasering
+
+Zie [ROADMAP.md](./ROADMAP.md) voor de complete, gedetailleerde implementatie gids.
+
+### Overzicht
+
+```
+FASE 1: Foundation
+├── 1.1 Tree Data API
+├── 1.2 Zustand Store
+└── 1.3 Basic Tree Rendering
+
+FASE 2: Core Tree
+├── 2.1 Workspace Nodes
+├── 2.2 Project Nodes (Kanbu)
+└── 2.3 Section Collapse
+
+FASE 3: GitHub Integration
+├── 3.1 GitHub Section
+├── 3.2 GitHub Project Nodes
+└── 3.3 Sync Status Indicators
+
+FASE 4: Project Groups
+├── 4.1 Groups API
+├── 4.2 Groups Section
+└── 4.3 Group Stats
+
+FASE 5: Personal Section
+├── 5.1 Home (Widgets)
+├── 5.2 Inbox (Notifications)
+├── 5.3 Smart Task Grouping
+└── 5.4 Today/Upcoming
+
+FASE 6: Favorites
+├── 6.1 Favorites API
+├── 6.2 Star/Unstar UI
+└── 6.3 Favorites Section
+
+FASE 7: Polish & UX
+├── 7.1 Keyboard Navigation
+├── 7.2 Context Menus
+├── 7.3 Search/Filter
+└── 7.4 Drag & Drop
+```
+
+---
+
+## Wat We NIET Doen
+
+| Feature | Reden |
+|---------|-------|
+| Offline-first | Conflicteert met real-time multi-user |
+| Local-first data | Redis adapter voor multi-server SaaS |
+| Custom icon library | Lucide/Heroicons al in gebruik |
+| Nieuwe router | React Router al geïntegreerd |
+| GraphQL | tRPC is de standaard |
+
+---
+
+## Success Metrics
+
+| Metric | Target |
+|--------|--------|
+| Navigatie naar project | < 2 clicks |
+| Sidebar initial load | < 500ms |
+| Expand/collapse | < 100ms perceived |
+| Tree keyboard navigatie | 100% items bereikbaar |
+| ACL response tijd | < 50ms (cached) |
+
+---
+
+## Referenties
+
+- [IDEAAL-DASHBOARD-ONTWERP.md](./IDEAAL-DASHBOARD-ONTWERP.md) - Claude's Planner volledig ontwerp
+- [CONCURRENTIE-ANALYSE.md](./CONCURRENTIE-ANALYSE.md) - Analyse van 10 PM tools
+- [HUIDIGE-STAAT.md](./HUIDIGE-STAAT.md) - Huidige implementatie analyse
+- [ROADMAP.md](./ROADMAP.md) - Gedetailleerde implementatie fases
+- [../Github-projects/VISIE.md](../Github-projects/VISIE.md) - GitHub integratie visie
