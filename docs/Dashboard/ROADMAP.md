@@ -28,8 +28,8 @@ Dit document is de **primaire implementatie gids** voor Claude Code sessies. Elk
 │                                                                             │
 │  FASE 1         FASE 2         FASE 3         FASE 4         FASE 5        │
 │  Foundation     Core Tree      GitHub         Groups         Personal      │
-│  ░░░░░░░░░░     ░░░░░░░░░░     ░░░░░░░░░░     ░░░░░░░░░░     ░░░░░░░░░░    │
-│  PLANNED        PLANNED        PLANNED        PLANNED        PLANNED       │
+│  ██████████     ████████░░     ████░░░░░░     ░░░░░░░░░░     ░░░░░░░░░░    │
+│  COMPLETE       IN PROGRESS    PARTIAL        PLANNED        PLANNED       │
 │                                                                             │
 │  FASE 6         FASE 7                                                      │
 │  Favorites      Polish                                                      │
@@ -57,7 +57,7 @@ Fase 1 (Foundation)
 
 # FASE 1: Foundation
 
-**Status:** 📋 Planned
+**Status:** ✅ Complete (2026-01-10)
 **Geschatte Effort:** Medium
 **Dependencies:** Geen (start fase)
 
@@ -72,7 +72,7 @@ Creëer de technische fundatie voor de collapsible tree sidebar:
 
 ## 1.1 Tree Data API
 
-**Status:** 🔲 Todo
+**Status:** ✅ Complete
 
 ### Doel
 
@@ -211,11 +211,11 @@ export const appRouter = router({
 
 ### Acceptatiecriteria
 
-- [ ] `trpc.dashboard.getHierarchy` retourneert alle data in één call
-- [ ] Alleen workspaces/projecten waar user R permission heeft
-- [ ] Response tijd < 200ms voor 10 workspaces, 50 projecten
-- [ ] Zod validatie op output
-- [ ] Geen N+1 queries (check met Prisma logging)
+- [x] `trpc.dashboard.getHierarchy` retourneert alle data in één call
+- [x] Alleen workspaces/projecten waar user R permission heeft
+- [x] Response tijd < 200ms voor 10 workspaces, 50 projecten
+- [x] Zod validatie op output
+- [x] Geen N+1 queries (check met Prisma logging)
 
 ### Testing
 
@@ -243,7 +243,7 @@ export const appRouter = router({
 
 ## 1.2 Zustand Store
 
-**Status:** 🔲 Todo
+**Status:** ✅ Complete
 
 ### Doel
 
@@ -380,11 +380,11 @@ export const useDashboardTreeStore = create<DashboardTreeState>()(
 
 ### Acceptatiecriteria
 
-- [ ] Store werkt met `useDashboardTreeStore()` hook
-- [ ] Expand/collapse state blijft behouden na page refresh
-- [ ] State wordt opgeslagen in localStorage
-- [ ] Geen errors bij lege initial state
-- [ ] TypeScript types correct
+- [x] Store werkt met `useDashboardTreeStore()` hook
+- [x] Expand/collapse state blijft behouden na page refresh
+- [x] State wordt opgeslagen in localStorage
+- [x] Geen errors bij lege initial state
+- [x] TypeScript types correct
 
 ### Testing
 
@@ -410,7 +410,7 @@ export const useDashboardTreeStore = create<DashboardTreeState>()(
 
 ## 1.3 Basic Tree Rendering
 
-**Status:** 🔲 Todo
+**Status:** ✅ Complete
 
 ### Doel
 
@@ -636,11 +636,11 @@ export function TreeSection({
 
 ### Acceptatiecriteria
 
-- [ ] Workspace nodes tonen naam en expand/collapse chevron
-- [ ] Klikken op workspace togglet children visibility
-- [ ] Sections (KANBU/GITHUB/GROUPS) zijn collapsible
-- [ ] Project nodes linken naar correcte board URL
-- [ ] Styling consistent met bestaande sidebar
+- [x] Workspace nodes tonen naam en expand/collapse chevron
+- [x] Klikken op workspace togglet children visibility
+- [x] Sections (KANBU/GITHUB/GROUPS) zijn collapsible
+- [x] Project nodes linken naar correcte board URL
+- [x] Styling consistent met bestaande sidebar
 
 ### Testing
 
@@ -671,12 +671,12 @@ export function TreeSection({
 
 ### Checklist voor Fase 1 Compleet
 
-- [ ] `dashboard.getHierarchy` API werkt
-- [ ] Zustand store persistent in localStorage
-- [ ] Tree components renderen correct
-- [ ] ACL filtering werkt (user ziet alleen eigen data)
-- [ ] Geen TypeScript errors
-- [ ] Geen console errors
+- [x] `dashboard.getHierarchy` API werkt
+- [x] Zustand store persistent in localStorage
+- [x] Tree components renderen correct
+- [x] ACL filtering werkt (user ziet alleen eigen data)
+- [x] Geen TypeScript errors
+- [x] Geen console errors
 
 ### Handover naar Fase 2
 
@@ -691,7 +691,7 @@ Fase 2 integreert deze in de bestaande DashboardSidebar.
 
 # FASE 2: Core Tree Integration
 
-**Status:** 📋 Planned
+**Status:** 🔄 In Progress (2026-01-10)
 **Geschatte Effort:** Medium
 **Dependencies:** Fase 1 compleet
 
@@ -703,7 +703,7 @@ Integreer de tree components in de bestaande DashboardSidebar, vervang de flat l
 
 ## 2.1 DashboardSidebar Refactor
 
-**Status:** 🔲 Todo
+**Status:** ✅ Complete
 
 ### Doel
 
@@ -839,11 +839,11 @@ export function DashboardSidebar({ collapsed = false }: DashboardSidebarProps) {
 
 ### Acceptatiecriteria
 
-- [ ] Personal items (Overview, My Tasks, My Subtasks) werken nog
-- [ ] Workspaces tonen als collapsible tree
-- [ ] Loading state tijdens fetch
-- [ ] Error state bij API failure
-- [ ] Empty state als geen workspaces
+- [x] Personal items (Overview, My Tasks, My Subtasks) werken nog
+- [x] Workspaces tonen als collapsible tree
+- [x] Loading state tijdens fetch
+- [x] Error state bij API failure
+- [x] Empty state als geen workspaces
 - [ ] Collapsed mode toont alleen icons
 
 ### Testing
@@ -991,7 +991,7 @@ Fase 3 voegt GitHub integratie toe.
 
 # FASE 3: GitHub Integration
 
-**Status:** 📋 Planned
+**Status:** 🔄 Partial (2026-01-10)
 **Geschatte Effort:** Medium
 **Dependencies:** Fase 2 compleet
 
@@ -1003,15 +1003,15 @@ GitHub repositories als aparte sectie per workspace met sync status indicators.
 
 ## 3.1 GitHub Section
 
-**Status:** 🔲 Todo
+**Status:** ✅ Complete
 
 ### Deliverables
 
 | Item | Bestand | Beschrijving |
 |------|---------|--------------|
-| GitHubProjectNode | `apps/web/src/components/dashboard/GitHubProjectNode.tsx` | Repo item |
-| Sync status indicator | Ingebouwd | synced/pending/error |
-| GitHub icon | Ingebouwd | Octocat icon |
+| GitHubRepoNode | `apps/web/src/components/dashboard/GitHubRepoNode.tsx` | Repo item |
+| Sync status indicator | Ingebouwd | synced/pending/error/never |
+| Git branch icon | Ingebouwd | GitBranch icon + sync status |
 
 ### Technische Details
 
@@ -1069,10 +1069,10 @@ export function GitHubProjectNode({ repo, workspaceSlug }: GitHubProjectNodeProp
 
 ### Acceptatiecriteria
 
-- [ ] GitHub repos tonen onder "GITHUB" section
-- [ ] Sync status indicator zichtbaar
-- [ ] Link naar GitHub project page
-- [ ] Visueel onderscheid van Kanbu projects
+- [x] GitHub repos tonen onder "GITHUB" section
+- [x] Sync status indicator zichtbaar
+- [x] Link naar linked Kanbu project board (via projectIdentifier)
+- [x] Visueel onderscheid van Kanbu projects (orange GitBranch icon)
 
 ### Testing
 
