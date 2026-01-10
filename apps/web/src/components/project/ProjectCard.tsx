@@ -26,6 +26,12 @@
  * Date: 2026-01-10
  * Change: Added edit button and GitHub indicator with sync status,
  *         changed edit link to /details for project details page
+ *
+ * Modified by:
+ * Host: MAX
+ * Date: 2026-01-11
+ * Change: Horizontal full-width layout for list view,
+ *         name prominent with identifier badge, stats and badges on right
  * ═══════════════════════════════════════════════════════════════════
  */
 
@@ -168,63 +174,64 @@ export function ProjectCard({ project, workspaceSlug, className }: ProjectCardPr
             className
           )}
         >
-          {/* Horizontal layout - single row */}
-          <div className="flex items-center gap-4 p-4">
-            {/* Left: Name and identifier */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <CardTitle className="text-base truncate">{project.name}</CardTitle>
+          <div className="p-5">
+            {/* Row 1: Header - Name, identifier, and role badge */}
+            <div className="flex items-start justify-between gap-4 mb-3">
+              <div className="flex items-center gap-3">
+                <CardTitle className="text-lg font-semibold">
+                  {project.name}
+                </CardTitle>
                 {project.identifier && (
-                  <span className="text-xs font-mono text-muted-foreground shrink-0">
+                  <span className="text-xs font-mono text-muted-foreground bg-muted px-2 py-1 rounded">
                     {project.identifier}
                   </span>
                 )}
               </div>
-              {project.description && (
-                <p className="text-sm text-muted-foreground truncate mt-0.5">
-                  {project.description}
-                </p>
-              )}
+              <div className="flex items-center gap-2 shrink-0">
+                {/* GitHub indicator */}
+                {project.hasGitHub && project.github && (
+                  <div
+                    className="flex items-center gap-1 px-2 py-1 rounded bg-gray-100 dark:bg-gray-800"
+                    title={getGitHubTooltip(project, syncStatus)}
+                  >
+                    <Github className="h-4 w-4" />
+                    {getSyncStatusIcon()}
+                  </div>
+                )}
+                {/* Role badge */}
+                {project.userRole && (
+                  <span
+                    className={cn(
+                      'px-3 py-1 text-xs font-medium rounded-full capitalize',
+                      getRoleBadgeColor(project.userRole)
+                    )}
+                  >
+                    {project.userRole.toLowerCase()}
+                  </span>
+                )}
+              </div>
             </div>
 
-            {/* Center: Stats */}
-            <div className="flex items-center gap-4 text-sm text-muted-foreground shrink-0">
-              <span className="flex items-center gap-1">
+            {/* Row 2: Description */}
+            {project.description && (
+              <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                {project.description}
+              </p>
+            )}
+
+            {/* Row 3: Stats */}
+            <div className="flex items-center gap-6 text-sm text-muted-foreground pt-3 border-t">
+              <span className="flex items-center gap-2">
                 <TaskIcon className="h-4 w-4" />
-                {project.taskCount}
+                <span>{project.taskCount} tasks</span>
               </span>
-              <span className="flex items-center gap-1">
+              <span className="flex items-center gap-2">
                 <UsersIcon className="h-4 w-4" />
-                {project.memberCount}
+                <span>{project.memberCount} members</span>
               </span>
               {project.lastActivityAt && (
-                <span className="text-xs hidden sm:inline">
-                  {formatDate(project.lastActivityAt)}
-                </span>
-              )}
-            </div>
-
-            {/* Right: Badges */}
-            <div className="flex items-center gap-2 shrink-0">
-              {/* GitHub indicator */}
-              {project.hasGitHub && project.github && (
-                <div
-                  className="flex items-center gap-1 px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800"
-                  title={getGitHubTooltip(project, syncStatus)}
-                >
-                  <Github className="h-3.5 w-3.5" />
-                  {getSyncStatusIcon()}
-                </div>
-              )}
-              {/* Role badge */}
-              {project.userRole && (
-                <span
-                  className={cn(
-                    'px-2 py-0.5 text-xs rounded-full capitalize',
-                    getRoleBadgeColor(project.userRole)
-                  )}
-                >
-                  {project.userRole.toLowerCase()}
+                <span className="ml-auto text-xs">
+                  Last activity: {formatDate(project.lastActivityAt)}
                 </span>
               )}
             </div>

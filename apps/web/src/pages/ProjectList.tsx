@@ -58,7 +58,7 @@ export function ProjectListPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
 
-  const [viewMode, setViewMode] = useState<ViewMode>('grid')
+  const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [showArchived, setShowArchived] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showCreateWorkspaceModal, setShowCreateWorkspaceModal] = useState(false)
