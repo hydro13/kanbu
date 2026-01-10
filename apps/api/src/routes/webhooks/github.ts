@@ -61,6 +61,9 @@ import {
   notifyDeployment,
   notifyCheckRun,
 } from '../../services/github/cicdNotificationService'
+import {
+  syncMilestoneFromWebhook,
+} from '../../services/github/milestoneService'
 import type { GitHubSyncSettings } from '@kanbu/shared'
 
 // =============================================================================
@@ -158,6 +161,18 @@ interface WebhookPayload {
     html_url: string | null
     submitted_at: string | null
   }
+  milestone?: {
+    number: number
+    id: number
+    title: string
+    description: string | null
+    state: 'open' | 'closed'
+    due_on: string | null
+    closed_at: string | null
+    open_issues: number
+    closed_issues: number
+    html_url: string
+  }
 }
 
 type GitHubEventType =
@@ -170,6 +185,7 @@ type GitHubEventType =
   | 'deployment'
   | 'deployment_status'
   | 'check_run'
+  | 'milestone'
   | 'installation'
   | 'installation_repositories'
   | 'ping'
@@ -1345,6 +1361,77 @@ async function handleCheckRun(ctx: WebhookContext): Promise<{
 }
 
 // =============================================================================
+// Milestone Handler
+// =============================================================================
+
+/**
+ * Handle milestone events (created, edited, closed, opened, deleted)
+ */
+async function handleMilestone(ctx: WebhookContext): Promise<{
+  processed: boolean
+  action: string | undefined
+  milestoneNumber: number | null
+}> {
+  const { action, payload } = ctx
+  const repo = payload.repository
+  const milestone = payload.milestone
+
+  if (!repo || !milestone) {
+    return { processed: false, action, milestoneNumber: null }
+  }
+
+  console.log(`[GitHub Webhook] Milestone ${action}: ${repo.full_name} - ${milestone.title}`)
+
+  // Find the linked repository in Kanbu
+  const linkedRepo = await prisma.gitHubRepository.findUnique({
+    where: {
+      owner_name: {
+        owner: repo.owner.login,
+        name: repo.name,
+      },
+    },
+  })
+
+  if (!linkedRepo || !linkedRepo.syncEnabled) {
+    return { processed: false, action, milestoneNumber: milestone.number }
+  }
+
+  // Sync the milestone
+  const result = await syncMilestoneFromWebhook(linkedRepo.id, action || 'unknown', {
+    number: milestone.number,
+    id: milestone.id,
+    title: milestone.title,
+    description: milestone.description,
+    state: milestone.state,
+    due_on: milestone.due_on,
+    closed_at: milestone.closed_at,
+    open_issues: milestone.open_issues,
+    closed_issues: milestone.closed_issues,
+    html_url: milestone.html_url,
+  })
+
+  // Log sync operation
+  await prisma.gitHubSyncLog.create({
+    data: {
+      repositoryId: linkedRepo.id,
+      action: `milestone_${action}`,
+      direction: 'github_to_kanbu',
+      entityType: 'milestone',
+      entityId: String(milestone.number),
+      details: {
+        title: milestone.title,
+        state: milestone.state,
+        dueOn: milestone.due_on,
+      },
+      status: 'success',
+    },
+  })
+
+  console.log(`[GitHub Webhook] Milestone ${action}: ${milestone.title} (${result ? 'synced' : 'deleted'})`)
+  return { processed: true, action, milestoneNumber: milestone.number }
+}
+
+// =============================================================================
 // Main Webhook Handler
 // =============================================================================
 
@@ -1448,6 +1535,10 @@ async function webhookHandler(
 
       case 'check_run':
         result = await handleCheckRun(ctx)
+        break
+
+      case 'milestone':
+        result = await handleMilestone(ctx)
         break
 
       default:

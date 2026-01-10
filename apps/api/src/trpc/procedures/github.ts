@@ -74,6 +74,7 @@ import {
   getMilestoneByNumber,
   getProjectMilestones,
   getMilestoneStats,
+  importMilestonesFromGitHub,
 } from '../../services/github/milestoneService'
 import {
   getReleases,
@@ -400,6 +401,15 @@ export const githubRouter = router({
           installationId,
         },
       })
+
+      // Initial sync: import milestones from GitHub
+      try {
+        await importMilestonesFromGitHub(repository.id, { state: 'all' })
+        console.log(`[GitHub] Initial milestone sync completed for ${fullName}`)
+      } catch (error) {
+        // Don't fail the link operation if milestone sync fails
+        console.error(`[GitHub] Initial milestone sync failed for ${fullName}:`, error)
+      }
 
       return {
         id: repository.id,
@@ -2818,6 +2828,66 @@ export const githubRouter = router({
       }
 
       return milestone
+    }),
+
+  /**
+   * Sync milestones from GitHub.
+   * Fetches all milestones from the linked repository and imports them.
+   */
+  syncMilestones: protectedProcedure
+    .input(
+      z.object({
+        projectId: z.number(),
+        state: z.enum(['open', 'closed', 'all']).default('all'),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      // Check project write permission
+      const hasAccess = await aclService.hasProjectPermission(
+        ctx.user.id,
+        input.projectId,
+        ACL_PERMISSIONS.WRITE
+      )
+
+      if (!hasAccess) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'You do not have write access to this project',
+        })
+      }
+
+      // Get repository ID from project
+      const repo = await ctx.prisma.gitHubRepository.findFirst({
+        where: { projectId: input.projectId },
+        select: { id: true },
+      })
+
+      if (!repo) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'No GitHub repository linked to this project',
+        })
+      }
+
+      // Import milestones from GitHub
+      const result = await importMilestonesFromGitHub(repo.id, {
+        state: input.state,
+      })
+
+      // Log audit
+      await auditService.log({
+        userId: ctx.user.id,
+        action: AUDIT_ACTIONS.GITHUB_MILESTONES_SYNCED,
+        resourceType: 'project',
+        resourceId: input.projectId,
+        details: {
+          imported: result.imported,
+          updated: result.updated,
+          failed: result.failed,
+        },
+      })
+
+      return result
     }),
 
   // ===========================================================================

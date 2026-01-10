@@ -14,6 +14,7 @@
  */
 
 import { prisma } from '../../lib/prisma'
+import { getInstallationOctokit } from './githubService'
 
 // =============================================================================
 // Types
@@ -37,7 +38,7 @@ export interface MilestoneInfo {
   id: number
   repositoryId: number
   milestoneNumber: number
-  milestoneId: bigint
+  milestoneId: string  // Converted from BigInt for JSON serialization
   title: string
   description: string | null
   state: string
@@ -119,6 +120,7 @@ export async function getMilestones(
 
   return milestones.map((m) => ({
     ...m,
+    milestoneId: m.milestoneId.toString(),  // Convert BigInt to string for JSON
     progress: m.openIssues + m.closedIssues > 0
       ? Math.round((m.closedIssues / (m.openIssues + m.closedIssues)) * 100)
       : 0,
@@ -145,6 +147,7 @@ export async function getMilestoneByNumber(
 
   return {
     ...milestone,
+    milestoneId: milestone.milestoneId.toString(),  // Convert BigInt to string for JSON
     progress: milestone.openIssues + milestone.closedIssues > 0
       ? Math.round((milestone.closedIssues / (milestone.openIssues + milestone.closedIssues)) * 100)
       : 0,
@@ -273,6 +276,134 @@ export async function syncMilestoneFromWebhook(
 }
 
 // =============================================================================
+// Bulk Import from GitHub
+// =============================================================================
+
+interface MilestoneImportResult {
+  imported: number
+  updated: number
+  failed: number
+  errors: Array<{ milestoneNumber: number; error: string }>
+}
+
+/**
+ * Import all milestones from a GitHub repository
+ */
+export async function importMilestonesFromGitHub(
+  repositoryId: number,
+  options: {
+    state?: 'open' | 'closed' | 'all'
+  } = {}
+): Promise<MilestoneImportResult> {
+  const { state = 'all' } = options
+
+  // Get repository with installation info
+  const repository = await prisma.gitHubRepository.findFirst({
+    where: { id: repositoryId },
+    include: {
+      installation: true,
+    },
+  })
+
+  if (!repository) {
+    throw new Error(`Repository ${repositoryId} not found`)
+  }
+
+  if (!repository.installation) {
+    throw new Error(`Repository ${repositoryId} has no GitHub installation`)
+  }
+
+  const result: MilestoneImportResult = {
+    imported: 0,
+    updated: 0,
+    failed: 0,
+    errors: [],
+  }
+
+  try {
+    // Get Octokit client for installation
+    const octokit = await getInstallationOctokit(repository.installation.installationId)
+
+    // Fetch milestones from GitHub
+    const milestones = await octokit.rest.issues.listMilestones({
+      owner: repository.owner,
+      repo: repository.name,
+      state: state === 'all' ? 'all' : state,
+      per_page: 100,
+      sort: 'created',
+      direction: 'asc',
+    })
+
+    console.log(`[MilestoneService] Fetched ${milestones.data.length} milestones from GitHub`)
+
+    // Import each milestone
+    for (const milestone of milestones.data) {
+      try {
+        // Check if milestone already exists
+        const existing = await prisma.gitHubMilestone.findUnique({
+          where: {
+            repositoryId_milestoneNumber: {
+              repositoryId,
+              milestoneNumber: milestone.number,
+            },
+          },
+        })
+
+        await upsertMilestone({
+          repositoryId,
+          milestoneNumber: milestone.number,
+          milestoneId: BigInt(milestone.id),
+          title: milestone.title,
+          description: milestone.description,
+          state: milestone.state as 'open' | 'closed',
+          dueOn: milestone.due_on ? new Date(milestone.due_on) : null,
+          closedAt: milestone.closed_at ? new Date(milestone.closed_at) : null,
+          openIssues: milestone.open_issues,
+          closedIssues: milestone.closed_issues,
+          htmlUrl: milestone.html_url,
+        })
+
+        if (existing) {
+          result.updated++
+        } else {
+          result.imported++
+        }
+      } catch (error) {
+        result.failed++
+        result.errors.push({
+          milestoneNumber: milestone.number,
+          error: error instanceof Error ? error.message : String(error),
+        })
+      }
+    }
+
+    // Log bulk import
+    await prisma.gitHubSyncLog.create({
+      data: {
+        repositoryId,
+        action: 'milestones_bulk_import',
+        direction: 'github_to_kanbu',
+        entityType: 'milestone',
+        status: result.failed > 0 ? 'failed' : 'success',
+        details: {
+          imported: result.imported,
+          updated: result.updated,
+          failed: result.failed,
+          totalMilestones: milestones.data.length,
+        },
+      },
+    })
+
+    console.log(`[MilestoneService] Import complete: ${result.imported} new, ${result.updated} updated, ${result.failed} failed`)
+
+    return result
+  } catch (error) {
+    console.error('[MilestoneService] Import failed:', error)
+    throw error
+  }
+}
+
+// =============================================================================
 // Export namespace for grouped imports
 // =============================================================================
 
@@ -284,4 +415,5 @@ export const milestoneService = {
   getMilestoneStats,
   deleteMilestone,
   syncMilestoneFromWebhook,
+  importMilestonesFromGitHub,
 }

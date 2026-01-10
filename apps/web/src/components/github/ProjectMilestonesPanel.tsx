@@ -217,7 +217,7 @@ function ErrorState({ message, onRetry }: { message: string; onRetry: () => void
 // =============================================================================
 
 export function ProjectMilestonesPanel({ projectId }: ProjectMilestonesPanelProps) {
-  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [isSyncing, setIsSyncing] = useState(false)
   const [stateFilter, setStateFilter] = useState<'all' | 'open' | 'closed'>('all')
 
   const milestonesQuery = trpc.github.getProjectMilestones.useQuery(
@@ -230,12 +230,23 @@ export function ProjectMilestonesPanel({ projectId }: ProjectMilestonesPanelProp
     { enabled: !!projectId }
   )
 
-  const handleRefresh = async () => {
-    setIsRefreshing(true)
+  const syncMilestonesMutation = trpc.github.syncMilestones.useMutation({
+    onSuccess: () => {
+      // Refetch local data after sync
+      milestonesQuery.refetch()
+      statsQuery.refetch()
+    },
+  })
+
+  const handleSync = async () => {
+    setIsSyncing(true)
     try {
-      await Promise.all([milestonesQuery.refetch(), statsQuery.refetch()])
+      // Sync from GitHub first, then refetch local data
+      await syncMilestonesMutation.mutateAsync({ projectId, state: stateFilter })
+    } catch (error) {
+      console.error('Failed to sync milestones:', error)
     } finally {
-      setIsRefreshing(false)
+      setIsSyncing(false)
     }
   }
 
@@ -247,7 +258,7 @@ export function ProjectMilestonesPanel({ projectId }: ProjectMilestonesPanelProp
     return (
       <ErrorState
         message={milestonesQuery.error?.message ?? 'Unknown error'}
-        onRetry={handleRefresh}
+        onRetry={handleSync}
       />
     )
   }
@@ -280,10 +291,11 @@ export function ProjectMilestonesPanel({ projectId }: ProjectMilestonesPanelProp
           <Button
             variant="ghost"
             size="sm"
-            onClick={handleRefresh}
-            disabled={isRefreshing}
+            onClick={handleSync}
+            disabled={isSyncing}
+            title="Sync milestones from GitHub"
           >
-            {isRefreshing ? (
+            {isSyncing ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <RefreshCw className="w-4 h-4" />

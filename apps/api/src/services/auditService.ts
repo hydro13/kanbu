@@ -156,6 +156,8 @@ export const AUDIT_ACTIONS = {
   GITHUB_COMMIT_LINKED: 'github:commit:linked',
   // Automation
   GITHUB_BRANCH_CREATED: 'github:branch:created',
+  // Milestone sync
+  GITHUB_MILESTONES_SYNCED: 'github:milestones:synced',
 } as const
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[keyof typeof AUDIT_ACTIONS]
