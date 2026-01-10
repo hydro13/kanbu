@@ -862,39 +862,33 @@ async function handleWorkflowRun(ctx: WebhookContext): Promise<{
 }
 
 // =============================================================================
-// Issue Comment Handler (Bot Commands)
+// Issue Comment Handler (Bot Commands + Comment Sync)
 // =============================================================================
 
 async function handleIssueComment(ctx: WebhookContext): Promise<{
   processed: boolean
   action: string | undefined
   commandsProcessed: number
+  commentSynced: boolean
 }> {
   const { action, payload } = ctx
   const repo = payload.repository
   const issue = payload.issue
   const comment = payload.comment
 
-  // Only process created comments (not edited/deleted)
+  // Only process created comments (not edited/deleted for now)
   if (action !== 'created') {
-    return { processed: false, action, commandsProcessed: 0 }
+    return { processed: false, action, commandsProcessed: 0, commentSynced: false }
   }
 
   if (!repo || !issue || !comment) {
-    return { processed: false, action, commandsProcessed: 0 }
+    return { processed: false, action, commandsProcessed: 0, commentSynced: false }
   }
 
   // Skip comments from bots to prevent loops
   if (comment.user.login.endsWith('[bot]')) {
-    return { processed: false, action, commandsProcessed: 0 }
+    return { processed: false, action, commandsProcessed: 0, commentSynced: false }
   }
-
-  // Check if comment contains any bot commands
-  if (!comment.body.includes('/kanbu')) {
-    return { processed: false, action, commandsProcessed: 0 }
-  }
-
-  console.log(`[GitHub Webhook] Issue comment with /kanbu command: ${repo.full_name}#${issue.number}`)
 
   // Find the linked repository in Kanbu
   const linkedRepo = await prisma.gitHubRepository.findUnique({
@@ -906,55 +900,227 @@ async function handleIssueComment(ctx: WebhookContext): Promise<{
     },
     include: {
       installation: true,
+      project: {
+        select: {
+          id: true,
+          workspaceId: true,
+        },
+      },
     },
   })
 
   if (!linkedRepo || !linkedRepo.syncEnabled) {
-    return { processed: false, action, commandsProcessed: 0 }
+    return { processed: false, action, commandsProcessed: 0, commentSynced: false }
   }
 
   // Determine if this is a PR or issue
   // GitHub sends issue_comment for both issues and PRs
   const isPullRequest = !!payload.pull_request || issue.state === 'open' && 'pull_request' in (issue as unknown as Record<string, unknown>)
 
-  // Process bot commands
-  const commentCtx: CommentContext = {
-    repositoryId: linkedRepo.id,
-    owner: repo.owner.login,
-    repo: repo.name,
-    issueNumber: issue.number,
-    isPullRequest,
-    commentId: comment.id,
-    commentBody: comment.body,
-    commentAuthor: comment.user.login,
-    installationId: Number(linkedRepo.installation.installationId),
+  let commandsProcessed = 0
+  let commentSynced = false
+
+  // Process bot commands if present
+  if (comment.body.includes('/kanbu')) {
+    console.log(`[GitHub Webhook] Issue comment with /kanbu command: ${repo.full_name}#${issue.number}`)
+
+    const commentCtx: CommentContext = {
+      repositoryId: linkedRepo.id,
+      owner: repo.owner.login,
+      repo: repo.name,
+      issueNumber: issue.number,
+      isPullRequest,
+      commentId: comment.id,
+      commentBody: comment.body,
+      commentAuthor: comment.user.login,
+      installationId: Number(linkedRepo.installation.installationId),
+    }
+
+    const responses = await processComment(commentCtx)
+    commandsProcessed = responses.length
+
+    if (responses.length > 0) {
+      await prisma.gitHubSyncLog.create({
+        data: {
+          repositoryId: linkedRepo.id,
+          action: 'bot_commands_processed',
+          direction: 'github_to_kanbu',
+          entityType: isPullRequest ? 'pr' : 'issue',
+          entityId: String(issue.number),
+          details: {
+            commandCount: responses.length,
+            commands: responses.map(r => r.command),
+            author: comment.user.login,
+          },
+          status: 'success',
+        },
+      })
+    }
   }
 
-  const responses = await processComment(commentCtx)
-
-  // Log sync operation
-  if (responses.length > 0) {
-    await prisma.gitHubSyncLog.create({
-      data: {
-        repositoryId: linkedRepo.id,
-        action: 'bot_commands_processed',
-        direction: 'github_to_kanbu',
-        entityType: isPullRequest ? 'pr' : 'issue',
-        entityId: String(issue.number),
-        details: {
-          commandCount: responses.length,
-          commands: responses.map(r => r.command),
-          author: comment.user.login,
-        },
-        status: 'success',
-      },
+  // Sync comment to Kanbu task (only for issues, not PRs for now)
+  if (!isPullRequest) {
+    commentSynced = await syncGitHubCommentToKanbu({
+      repositoryId: linkedRepo.id,
+      workspaceId: linkedRepo.project.workspaceId,
+      issueNumber: issue.number,
+      commentId: comment.id,
+      commentBody: comment.body,
+      authorLogin: comment.user.login,
+      createdAt: comment.created_at,
     })
   }
 
   return {
     processed: true,
     action,
-    commandsProcessed: responses.length,
+    commandsProcessed,
+    commentSynced,
+  }
+}
+
+/**
+ * Sync a GitHub issue comment to the linked Kanbu task
+ */
+async function syncGitHubCommentToKanbu(params: {
+  repositoryId: number
+  workspaceId: number
+  issueNumber: number
+  commentId: number
+  commentBody: string
+  authorLogin: string
+  createdAt: string
+}): Promise<boolean> {
+  const { repositoryId, workspaceId, issueNumber, commentId, commentBody, authorLogin, createdAt } = params
+
+  try {
+    // Check if comment already exists (idempotency)
+    const existingComment = await prisma.comment.findUnique({
+      where: { githubCommentId: BigInt(commentId) },
+    })
+
+    if (existingComment) {
+      console.log(`[GitHub Webhook] Comment ${commentId} already synced, skipping`)
+      return false
+    }
+
+    // Find the linked task via GitHubIssue
+    const githubIssue = await prisma.gitHubIssue.findUnique({
+      where: {
+        repositoryId_issueNumber: {
+          repositoryId,
+          issueNumber,
+        },
+      },
+      select: { taskId: true },
+    })
+
+    if (!githubIssue?.taskId) {
+      console.log(`[GitHub Webhook] No linked task for issue #${issueNumber}, skipping comment sync`)
+      return false
+    }
+
+    // Map GitHub user to Kanbu user
+    const userMapping = await prisma.gitHubUserMapping.findUnique({
+      where: {
+        workspaceId_githubLogin: {
+          workspaceId,
+          githubLogin: authorLogin,
+        },
+      },
+      select: { userId: true },
+    })
+
+    // Fallback chain: user mapping → workspace creator → first workspace admin → user 1
+    let userId = userMapping?.userId
+
+    if (!userId) {
+      // Try workspace creator
+      const workspace = await prisma.workspace.findUnique({
+        where: { id: workspaceId },
+        select: { createdBy: true },
+      })
+      userId = workspace?.createdBy ?? undefined
+    }
+
+    if (!userId) {
+      // Try to find any user with admin access to this workspace
+      const workspaceAdmin = await prisma.aclEntry.findFirst({
+        where: {
+          resourceType: 'workspace',
+          resourceId: workspaceId,
+          principalType: 'user',
+          deny: false,
+        },
+        select: { principalId: true },
+      })
+      userId = workspaceAdmin?.principalId
+    }
+
+    if (!userId) {
+      // Ultimate fallback: first admin user in the system
+      const adminUser = await prisma.user.findFirst({
+        where: { role: 'ADMIN', isActive: true },
+        select: { id: true },
+      })
+      userId = adminUser?.id
+    }
+
+    if (!userId) {
+      console.log(`[GitHub Webhook] No user found for comment sync, skipping`)
+      return false
+    }
+
+    console.log(`[GitHub Webhook] Using user ${userId} for comment by ${authorLogin} (mapping: ${!!userMapping})`)
+
+    // Create the comment in Kanbu
+    await prisma.comment.create({
+      data: {
+        taskId: githubIssue.taskId,
+        userId,
+        content: commentBody,
+        githubCommentId: BigInt(commentId),
+        githubAuthorLogin: authorLogin,
+        createdAt: new Date(createdAt),
+      },
+    })
+
+    // Log sync operation
+    await prisma.gitHubSyncLog.create({
+      data: {
+        repositoryId,
+        action: 'comment_synced',
+        direction: 'github_to_kanbu',
+        entityType: 'comment',
+        entityId: String(commentId),
+        details: {
+          issueNumber,
+          taskId: githubIssue.taskId,
+          author: authorLogin,
+          mappedToUser: userMapping ? true : false,
+        },
+        status: 'success',
+      },
+    })
+
+    console.log(`[GitHub Webhook] Synced comment ${commentId} to task ${githubIssue.taskId}`)
+    return true
+  } catch (error) {
+    console.error(`[GitHub Webhook] Failed to sync comment ${commentId}:`, error)
+
+    await prisma.gitHubSyncLog.create({
+      data: {
+        repositoryId,
+        action: 'comment_synced',
+        direction: 'github_to_kanbu',
+        entityType: 'comment',
+        entityId: String(commentId),
+        status: 'failed',
+        errorMessage: error instanceof Error ? error.message : String(error),
+      },
+    })
+
+    return false
   }
 }
 

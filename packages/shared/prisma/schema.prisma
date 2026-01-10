@@ -347,15 +347,18 @@ model Subtask {
 }
 
 model Comment {
-  id        Int      @id @default(autoincrement())
-  taskId    Int      @map("task_id")
-  userId    Int      @map("user_id")
-  content   String
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id])
+  id                Int      @id @default(autoincrement())
+  taskId            Int      @map("task_id")
+  userId            Int      @map("user_id")
+  content           String
+  githubCommentId   BigInt?  @unique @map("github_comment_id")
+  githubAuthorLogin String?  @db.VarChar(255) @map("github_author_login")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  task              Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user              User     @relation(fields: [userId], references: [id])
 
+  @@index([githubCommentId])
   @@map("comments")
 }
 
