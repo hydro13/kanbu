@@ -358,3 +358,8 @@ export {
   type CrossRepoStats,
   type CrossRepoSearchResult,
 } from './multiRepoService'
+
+export {
+  githubImageService,
+  processGitHubImages,
+} from './githubImageService'

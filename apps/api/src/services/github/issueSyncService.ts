@@ -19,6 +19,7 @@ import { prisma } from '../../lib/prisma'
 import { getInstallationOctokit } from './githubService'
 import { generateTaskReference } from '../../lib/project'
 import { getNextTaskPosition } from '../../lib/task'
+import { processGitHubImages } from './githubImageService'
 import type { SyncDirection } from '@kanbu/shared'
 
 // =============================================================================
@@ -30,6 +31,7 @@ interface GitHubIssueData {
   id: number
   title: string
   body: string | null
+  body_html?: string | null // HTML rendered body with JWT-embedded image URLs
   state: 'open' | 'closed'
   labels: Array<{ name: string; color?: string }>
   assignees: Array<{ login: string; id: number }>
@@ -327,7 +329,7 @@ export async function createTaskFromGitHubIssue(
 ): Promise<{ taskId: number; created: boolean; skipped: boolean }> {
   const { syncDirection = 'github_to_kanbu', skipExisting = true } = options
 
-  // Get repository with project info
+  // Get repository with project info and installation (for image downloads)
   const repository = await prisma.gitHubRepository.findFirst({
     where: { id: repositoryId },
     include: {
@@ -336,6 +338,7 @@ export async function createTaskFromGitHubIssue(
           workspace: true,
         },
       },
+      installation: true,
     },
   })
 
@@ -401,6 +404,34 @@ export async function createTaskFromGitHubIssue(
     throw new Error('No user available to act as task creator')
   }
 
+  // Process GitHub images in the issue body - download and store locally
+  // Uses body_html (if available) to get JWT-embedded URLs for user-attachments
+  let processedDescription = issue.body || undefined
+  if (issue.body && repository.installation) {
+    try {
+      const imageResult = await processGitHubImages(
+        issue.body,
+        repository.installation.installationId,
+        issue.body_html // Contains JWT-embedded URLs for downloading
+      )
+      processedDescription = imageResult.content || undefined
+
+      if (imageResult.imagesDownloaded > 0) {
+        console.log(
+          `[IssueSyncService] Downloaded ${imageResult.imagesDownloaded} images for issue #${issue.number}`
+        )
+      }
+      if (imageResult.imagesFailed > 0) {
+        console.warn(
+          `[IssueSyncService] Failed to download ${imageResult.imagesFailed} images for issue #${issue.number}`
+        )
+      }
+    } catch (error) {
+      console.warn('[IssueSyncService] Failed to process images, using original body:', error)
+      // Continue with original body if image processing fails
+    }
+  }
+
   // Create task
   const task = await prisma.task.create({
     data: {
@@ -408,7 +439,7 @@ export async function createTaskFromGitHubIssue(
       columnId,
       creatorId,
       title: issue.title,
-      description: issue.body || undefined,
+      description: processedDescription,
       reference,
       position,
       isActive: issue.state === 'open',
@@ -498,6 +529,7 @@ export async function updateTaskFromGitHubIssue(
       repository: {
         include: {
           project: true,
+          installation: true,
         },
       },
     },
@@ -513,12 +545,34 @@ export async function updateTaskFromGitHubIssue(
   // Get column for current state (may have changed)
   const columnId = await getColumnForIssueState(project.id, issue.state)
 
+  // Process GitHub images in the issue body - download and store locally
+  // Uses body_html (if available) to get JWT-embedded URLs for user-attachments
+  let processedDescription = issue.body || undefined
+  if (issue.body && repository.installation) {
+    try {
+      const imageResult = await processGitHubImages(
+        issue.body,
+        repository.installation.installationId,
+        issue.body_html // Contains JWT-embedded URLs for downloading
+      )
+      processedDescription = imageResult.content || undefined
+
+      if (imageResult.imagesDownloaded > 0) {
+        console.log(
+          `[IssueSyncService] Downloaded ${imageResult.imagesDownloaded} images for issue update #${issue.number}`
+        )
+      }
+    } catch (error) {
+      console.warn('[IssueSyncService] Failed to process images on update, using original body:', error)
+    }
+  }
+
   // Update task
   await prisma.task.update({
     where: { id: task.id },
     data: {
       title: issue.title,
-      description: issue.body || undefined,
+      description: processedDescription,
       columnId,
       isActive: issue.state === 'open',
       updatedAt: new Date(),
@@ -602,7 +656,8 @@ export async function importIssuesFromGitHub(
     // Get Octokit client for installation
     const octokit = await getInstallationOctokit(repository.installation.installationId)
 
-    // Fetch issues from GitHub
+    // Fetch issues from GitHub with full media type to get body_html
+    // body_html contains JWT-embedded image URLs that allow downloading user-attachments
     const issues = await octokit.rest.issues.listForRepo({
       owner: repository.owner,
       repo: repository.name,
@@ -611,6 +666,7 @@ export async function importIssuesFromGitHub(
       per_page: Math.min(limit, 100),
       sort: 'created',
       direction: 'asc',
+      mediaType: { format: 'full' },
     })
 
     // Filter out pull requests (GitHub API returns PRs in issues endpoint)
@@ -629,6 +685,7 @@ export async function importIssuesFromGitHub(
           id: issue.id,
           title: issue.title,
           body: issue.body,
+          body_html: (issue as { body_html?: string }).body_html || null,
           state: issue.state as 'open' | 'closed',
           labels: issue.labels
             .filter((label: string | { name: string; color?: string }): label is { name: string; color?: string } =>

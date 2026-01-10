@@ -361,7 +361,10 @@ function parseInlineContent(text: string): LexicalInlineNode[] {
       break
     } else if (nextSpecial === 0) {
       // Special char at start but didn't match any pattern, treat as text
-      nodes.push(createTextNode(remaining[0]))
+      const char = remaining[0]
+      if (char) {
+        nodes.push(createTextNode(char))
+      }
       remaining = remaining.slice(1)
     } else {
       // Add plain text before next special

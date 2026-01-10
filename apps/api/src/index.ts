@@ -8,13 +8,14 @@
  */
 
 import 'dotenv/config';
-import { createServer } from './server';
+import { createServer, isHttpsEnabled } from './server';
 
 const PORT = parseInt(process.env.PORT ?? '3001', 10);
 const HOST = process.env.HOST ?? '0.0.0.0';
 
 async function main() {
   const server = await createServer();
+  const protocol = isHttpsEnabled ? 'https' : 'http';
 
   try {
     await server.listen({ port: PORT, host: HOST });
@@ -23,9 +24,10 @@ async function main() {
 ║                     Kanbu API Server                         ║
 ╠══════════════════════════════════════════════════════════════╣
 ║  Status:    Running                                          ║
-║  URL:       http://${HOST}:${PORT}                              ║
-║  Health:    http://${HOST}:${PORT}/health                       ║
-║  tRPC:      http://${HOST}:${PORT}/trpc                         ║
+║  Protocol:  ${(isHttpsEnabled ? 'HTTPS (TLS enabled)' : 'HTTP').padEnd(48)}║
+║  URL:       ${protocol}://${HOST}:${PORT}                              ║
+║  Health:    ${protocol}://${HOST}:${PORT}/health                       ║
+║  tRPC:      ${protocol}://${HOST}:${PORT}/trpc                         ║
 ║  Env:       ${(process.env.NODE_ENV ?? 'development').padEnd(48)}║
 ╚══════════════════════════════════════════════════════════════╝
     `);

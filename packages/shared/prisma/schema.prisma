@@ -1083,7 +1083,7 @@ model GitHubIssue {
   createdAt     DateTime         @default(now()) @map("created_at")
   updatedAt     DateTime         @updatedAt @map("updated_at")
   repository    GitHubRepository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
-  task          Task?            @relation(fields: [taskId], references: [id])
+  task          Task?            @relation(fields: [taskId], references: [id], onDelete: SetNull)
 
   @@unique([repositoryId, issueNumber])
   @@map("github_issues")
@@ -1106,7 +1106,7 @@ model GitHubPullRequest {
   createdAt    DateTime            @default(now()) @map("created_at")
   updatedAt    DateTime            @updatedAt @map("updated_at")
   repository   GitHubRepository    @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
-  task         Task?               @relation(fields: [taskId], references: [id])
+  task         Task?               @relation(fields: [taskId], references: [id], onDelete: SetNull)
   workflowRuns GitHubWorkflowRun[]
   reviews      GitHubReview[]
   checkRuns    GitHubCheckRun[]
@@ -1129,7 +1129,7 @@ model GitHubCommit {
   committedAt  DateTime         @map("committed_at")
   createdAt    DateTime         @default(now()) @map("created_at")
   repository   GitHubRepository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
-  task         Task?            @relation(fields: [taskId], references: [id])
+  task         Task?            @relation(fields: [taskId], references: [id], onDelete: SetNull)
 
   @@unique([repositoryId, sha])
   @@index([taskId])

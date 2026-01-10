@@ -15,6 +15,7 @@
  */
 
 import { HoverPopover, PopoverHeader, PopoverContent } from '@/components/ui/HoverPopover'
+import DOMPurify from 'dompurify'
 
 // =============================================================================
 // Types
@@ -30,8 +31,19 @@ interface DescriptionPopoverProps {
 // =============================================================================
 
 function DescriptionContent({ description }: { description: string }) {
-  // Truncate and format description for preview
-  const formatDescription = (text: string) => {
+  // Check if description contains HTML (from GitHub sync)
+  const containsHtml = /<[^>]+>/.test(description)
+
+  // Sanitize HTML to prevent XSS, allow img tags with src/alt/width/height
+  const sanitizeHtml = (html: string) => {
+    return DOMPurify.sanitize(html, {
+      ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'a', 'img', 'ul', 'ol', 'li', 'code', 'pre', 'blockquote', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
+      ALLOWED_ATTR: ['href', 'src', 'alt', 'width', 'height', 'class', 'target', 'rel'],
+    })
+  }
+
+  // Format plain text description for preview
+  const formatPlainText = (text: string) => {
     const lines = text.split('\n').slice(0, 20)
     return lines.map((line, i) => (
       <p key={i} className={`${line === '' ? 'h-3' : ''}`}>
@@ -61,10 +73,17 @@ function DescriptionContent({ description }: { description: string }) {
         title="Description"
       />
       <PopoverContent className="px-3 py-3 max-h-[340px]">
-        <div className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words">
-          {formatDescription(description)}
-        </div>
-        {description.split('\n').length > 20 && (
+        {containsHtml ? (
+          <div
+            className="text-sm text-gray-700 dark:text-gray-300 prose prose-sm dark:prose-invert max-w-none [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded"
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(description) }}
+          />
+        ) : (
+          <div className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words">
+            {formatPlainText(description)}
+          </div>
+        )}
+        {!containsHtml && description.split('\n').length > 20 && (
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 italic">
             ... (click to see full description)
           </p>

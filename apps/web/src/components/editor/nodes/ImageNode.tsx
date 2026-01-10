@@ -24,7 +24,7 @@ import type {
 } from 'lexical'
 import type { JSX } from 'react'
 import { $applyNodeReplacement, DecoratorNode } from 'lexical'
-import { Suspense, useCallback } from 'react'
+import React, { Suspense, useCallback } from 'react'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { ResizableMediaWrapper, type MediaAlignment } from '../ResizableMediaWrapper'
 
@@ -53,6 +53,44 @@ export type SerializedImageNode = Spread<
 >
 
 // =============================================================================
+// GitHub Image URL Detection
+// =============================================================================
+
+const GITHUB_IMAGE_DOMAINS = [
+  'user-images.githubusercontent.com',
+  'raw.githubusercontent.com',
+  'avatars.githubusercontent.com',
+  'camo.githubusercontent.com',
+  'private-user-images.githubusercontent.com',
+  'github.com', // For user-attachments/assets URLs
+]
+
+/**
+ * Check if a URL is a GitHub image that should be proxied
+ */
+function isGitHubImageUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url)
+    return GITHUB_IMAGE_DOMAINS.some(domain =>
+      parsed.hostname === domain || parsed.hostname.endsWith('.' + domain)
+    )
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Get the proxied URL for a GitHub image
+ */
+function getProxiedImageUrl(src: string): string {
+  if (!isGitHubImageUrl(src)) {
+    return src
+  }
+  // Route through our backend proxy
+  return `/api/github/image-proxy?url=${encodeURIComponent(src)}`
+}
+
+// =============================================================================
 // Image Component
 // =============================================================================
 
@@ -74,6 +112,11 @@ function ImageComponent({
   readOnly: boolean
 }) {
   const [editor] = useLexicalComposerContext()
+  const [hasError, setHasError] = React.useState(false)
+  const [isLoading, setIsLoading] = React.useState(true)
+
+  // Use proxied URL for GitHub images
+  const imageSrc = getProxiedImageUrl(src)
 
   const handleResize = useCallback(
     (newWidth: number, newHeight: number) => {
@@ -118,6 +161,62 @@ function ImageComponent({
     [editor, nodeKey]
   )
 
+  // Show error state with clickable link to image URL
+  if (hasError) {
+    return (
+      <ResizableMediaWrapper
+        nodeKey={nodeKey}
+        width={width || 300}
+        height={height || 100}
+        alignment={alignment}
+        onResize={handleResize}
+        onAlignmentChange={handleAlignmentChange}
+        maintainAspectRatio={false}
+        minWidth={50}
+        maxWidth={1200}
+        readOnly={readOnly}
+      >
+        <div
+          className="lexical-image-error"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.5rem',
+            padding: '1rem',
+            backgroundColor: 'hsl(var(--muted) / 0.3)',
+            border: '1px dashed hsl(var(--destructive) / 0.5)',
+            borderRadius: '0.5rem',
+            color: 'hsl(var(--muted-foreground))',
+            fontSize: '0.875rem',
+            width: '100%',
+            height: '100%',
+            minHeight: '80px',
+          }}
+        >
+          <span>⚠️ Image could not be loaded</span>
+          <a
+            href={src}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              color: 'hsl(var(--primary))',
+              textDecoration: 'underline',
+              fontSize: '0.75rem',
+              wordBreak: 'break-all',
+              maxWidth: '100%',
+              textAlign: 'center',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            Open image in new tab →
+          </a>
+        </div>
+      </ResizableMediaWrapper>
+    )
+  }
+
   return (
     <ResizableMediaWrapper
       nodeKey={nodeKey}
@@ -131,15 +230,42 @@ function ImageComponent({
       maxWidth={1200}
       readOnly={readOnly}
     >
+      {isLoading && (
+        <div
+          className="lexical-image-loading"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'hsl(var(--muted) / 0.3)',
+            borderRadius: '0.5rem',
+          }}
+        >
+          Loading...
+        </div>
+      )}
       <img
-        src={src}
+        src={imageSrc}
         alt={altText}
         className="lexical-image"
         draggable={false}
+        referrerPolicy="no-referrer"
         style={{
           width: '100%',
           height: 'auto',
-          display: 'block',
+          display: isLoading ? 'none' : 'block',
+        }}
+        onLoad={() => {
+          setIsLoading(false)
+        }}
+        onError={(e) => {
+          console.error('[ImageNode] Failed to load image:', src)
+          console.error('[ImageNode] Attempted URL:', imageSrc)
+          console.error('[ImageNode] Error event:', e)
+          setHasError(true)
+          setIsLoading(false)
         }}
       />
     </ResizableMediaWrapper>

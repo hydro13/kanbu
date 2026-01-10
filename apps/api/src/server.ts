@@ -23,13 +23,23 @@
 
 import Fastify from 'fastify';
 import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
+import fastifyStatic from '@fastify/static';
+import fs from 'fs';
+import path from 'path';
 import { appRouter, createContext } from './trpc';
 import { registerPublicApiRoutes } from './routes/publicApi';
 import { registerAvatarRoutes } from './routes/avatar';
 import { registerWorkspaceLogoRoutes } from './routes/workspaceLogo';
 import { registerGitHubWebhookRoutes } from './routes/webhooks/github';
+import { registerGitHubImageProxyRoutes } from './routes/githubImageProxy';
 import { initializeSocketServer } from './socket';
 import { isRedisHealthy } from './lib/redis';
+
+// HTTPS disabled for API - use HTTP for Vite proxy compatibility
+// External HTTPS is handled by the Vite dev server which proxies to this HTTP API
+// Socket.io connects directly but can use HTTP in dev (same-origin policy is relaxed)
+export const isHttpsEnabled = false;
+const httpsConfig = undefined;
 
 /**
  * Create and configure Fastify server
@@ -51,6 +61,8 @@ export async function createServer() {
     },
     // Increase body limit to 10MB for avatar uploads (base64 encoded images)
     bodyLimit: 10 * 1024 * 1024,
+    // Enable HTTPS if certificates are available
+    https: httpsConfig,
   });
 
   // Handle CORS manually for preflight requests (before tRPC can intercept them)
@@ -96,6 +108,23 @@ export async function createServer() {
         .header('Access-Control-Allow-Origin', allowedOrigin)
         .header('Access-Control-Allow-Credentials', 'true');
     }
+  });
+
+  // Serve static files from uploads directory
+  const uploadsPath = process.env.UPLOAD_PATH || './uploads';
+  const absoluteUploadsPath = path.isAbsolute(uploadsPath)
+    ? uploadsPath
+    : path.join(process.cwd(), uploadsPath);
+
+  // Ensure uploads directory exists
+  if (!fs.existsSync(absoluteUploadsPath)) {
+    fs.mkdirSync(absoluteUploadsPath, { recursive: true });
+  }
+
+  await server.register(fastifyStatic, {
+    root: absoluteUploadsPath,
+    prefix: '/uploads/',
+    decorateReply: false, // Don't override reply.sendFile if already decorated
   });
 
   // Register tRPC
@@ -145,6 +174,9 @@ export async function createServer() {
 
   // Register GitHub webhook routes
   await registerGitHubWebhookRoutes(server);
+
+  // Register GitHub image proxy routes (for private repo images)
+  await registerGitHubImageProxyRoutes(server);
 
   return server;
 }

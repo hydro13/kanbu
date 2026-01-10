@@ -21,20 +21,18 @@ import { io, type Socket } from 'socket.io-client';
 
 const TOKEN_KEY = 'kanbu_token';
 
-// Get socket URL - uses same hostname as frontend but on port 3001
-// Socket.io needs direct connection (cannot use Vite proxy), so we always use HTTP
-// for the API server connection since it doesn't have HTTPS configured
+// Get socket URL - in dev, use Vite proxy to avoid mixed content issues
+// In production, use the API URL directly
 function getSocketUrl(): string {
   const apiUrl = import.meta.env.VITE_API_URL;
   if (apiUrl) {
     // Remove /trpc suffix if present and use the base URL
     return apiUrl.replace(/\/trpc$/, '');
   }
-  // In development, use same hostname but port 3001
-  // Always use HTTP since API server doesn't have HTTPS
+  // In development, use empty string to connect through Vite proxy
+  // This avoids mixed content (HTTPS page -> HTTP socket) issues
   if (import.meta.env.DEV) {
-    const { hostname } = window.location;
-    return `http://${hostname}:3001`;
+    return '';
   }
   // Default: same origin (for production)
   return '';

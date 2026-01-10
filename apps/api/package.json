@@ -18,6 +18,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.71.2",
     "@fastify/cors": "^11.2.0",
+    "@fastify/static": "^9.0.0",
     "@kanbu/shared": "workspace:*",
     "@octokit/app": "^16.1.2",
     "@octokit/rest": "^22.0.1",
