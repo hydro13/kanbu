@@ -2,15 +2,11 @@
  * Dashboard Components Index
  *
  * ═══════════════════════════════════════════════════════════════════
- * Session: ff2f815e-190c-4f7e-ada7-0c0a74177ac4
- * Signed: 2025-12-30T00:50 CET
+ * AI Architect: Robin Waslander <R.Waslander@gmail.com>
+ * Modified: 2026-01-10
+ * Change: Removed deprecated tree components (WorkspaceTree, ProjectNode, etc.)
  * ═══════════════════════════════════════════════════════════════════
  */
 
 export { DashboardLayout } from './DashboardLayout'
 export { DashboardSidebar } from './DashboardSidebar'
-// Tree components - for use on pages (not sidebar)
-export { WorkspaceTree } from './WorkspaceTree'
-export { ProjectNode } from './ProjectNode'
-export { GitHubRepoNode } from './GitHubRepoNode'
-export { TreeSection } from './TreeSection'

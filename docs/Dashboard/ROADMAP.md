@@ -1,6 +1,6 @@
 # Dashboard Roadmap
 
-## Versie: 2.0.0
+## Versie: 3.0.0
 ## Datum: 2026-01-10
 ## Status: Active
 
@@ -8,16 +8,60 @@
 
 ## Leeswijzer
 
-Dit document is de **primaire implementatie gids** voor Claude Code sessies. Elke fase en sub-fase bevat:
+Dit document is de **primaire implementatie gids** voor Claude Code sessies.
 
-- **Doel** - Wat we bereiken
-- **Dependencies** - Wat moet eerst af zijn
-- **Deliverables** - Concrete output
-- **Technische Details** - Code voorbeelden en patterns
-- **Acceptatiecriteria** - Wanneer is het klaar
-- **Testing** - Wat en hoe te testen
-- **DO's** - Wat je MOET doen
-- **DON'Ts** - Wat je NIET mag doen
+---
+
+## Architectuur: Container Hiërarchie
+
+Kanbu volgt een **geneste container structuur** (vergelijkbaar met AD Forest → Domain → OU):
+
+```
+Kanbu (Root)
+├── Global user pool (alle users)
+│
+└── Workspaces (containers)
+    ├── Members (users lid van deze workspace)
+    ├── Modules (Wiki, Statistics, Settings, etc.)
+    │
+    └── Projects (sub-containers)
+        ├── Members (users lid van dit project)
+        └── Modules (Board, List, Calendar, Settings, etc.)
+```
+
+### Kern Principes
+
+1. **Elke container heeft eigen members** - Users kunnen lid zijn op workspace én project niveau
+2. **Elke container heeft eigen modules** - Workspace heeft Wiki/Stats, Project heeft Board/List/etc.
+3. **Geneste permissies** - Workspace-level permissions kunnen overerven naar projects
+
+### URL Structuur
+
+```
+/dashboard                              → Personal overview
+/workspaces                             → Lijst van workspaces
+/workspace/:slug                        → Workspace homepage (projects)
+/workspace/:slug/wiki                   → Workspace wiki
+/workspace/:slug/members                → Workspace members
+/workspace/:slug/project/:id            → Project homepage (board)
+/workspace/:slug/project/:id/members    → Project members
+/workspace/:slug/project/:id/settings   → Project settings
+```
+
+### Sidebar per Container Level
+
+| Container | Sidebar | Inhoud |
+|-----------|---------|--------|
+| Dashboard | DashboardSidebar | Personal items + Workspaces link |
+| Workspaces | (toekomst) | Workspace modules + workspaces lijst |
+| Workspace | (toekomst) | Projects + workspace modules |
+| Project | ProjectSidebar | Project features (Board, List, Settings, etc.) |
+
+### Belangrijke Principes
+
+1. **Context-aware navigation** - Sidebar past zich aan op basis van huidige container
+2. **Geen tree in sidebar** - Workspaces/projects worden op hun eigen pagina's getoond
+3. **Modulair** - Elke container kan eigen modules hebben (Projects, Wiki, Members, etc.)
 
 ---
 
@@ -26,47 +70,73 @@ Dit document is de **primaire implementatie gids** voor Claude Code sessies. Elk
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                                                                             │
-│  FASE 1         FASE 2         FASE 3         FASE 4         FASE 5        │
-│  Foundation     Core Tree      GitHub         Groups         Personal      │
-│  ██████████     ██████████     ████░░░░░░     ░░░░░░░░░░     ░░░░░░░░░░    │
-│  COMPLETE       COMPLETE       PARTIAL        PLANNED        PLANNED       │
+│  FASE 1-2       FASE 3         FASE 4         FASE 5         FASE 6        │
+│  [DEPRECATED]   GitHub         Groups         Personal       Favorites     │
+│  ░░░░░░░░░░     ████░░░░░░     ░░░░░░░░░░     ░░░░░░░░░░     ░░░░░░░░░░    │
+│  DEPRECATED     PARTIAL        PLANNED        PLANNED        PLANNED       │
 │                                                                             │
-│  FASE 6         FASE 7                                                      │
-│  Favorites      Polish                                                      │
+│  FASE 7         FASE 8                                                      │
+│  Polish         Workspace Nav                                               │
 │  ░░░░░░░░░░     ░░░░░░░░░░                                                  │
 │  PLANNED        PLANNED                                                     │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Dependency Graph
+### Nieuwe Fase Structuur
 
-```
-Fase 1 (Foundation)
-    │
-    ├──► Fase 2 (Core Tree) ──► Fase 3 (GitHub) ──► Fase 4 (Groups)
-    │                                                      │
-    │                                                      ▼
-    └──► Fase 5 (Personal) ◄────────────────────────── Fase 6 (Favorites)
-                │
-                ▼
-           Fase 7 (Polish)
-```
+| Fase | Onderwerp | Status |
+|------|-----------|--------|
+| 1-2 | Tree Sidebar (DEPRECATED) | Vervangen door context-aware links |
+| 3 | GitHub Integration | Partial - indicator op ProjectCard |
+| 4 | Project Groups | Planned |
+| 5 | Personal Section | Planned |
+| 6 | Favorites | Planned |
+| 7 | Polish & UX | Planned |
+| 8 | Workspace Navigation | Planned - sidebar per container level |
 
 ---
 
-# FASE 1: Foundation
+# FASE 1-2: Tree Sidebar (DEPRECATED)
 
-**Status:** ✅ Complete (2026-01-10)
-**Geschatte Effort:** Medium
-**Dependencies:** Geen (start fase)
+**Status:** ⚠️ DEPRECATED (2026-01-10)
+**Reden:** Vervangen door context-aware navigatie
 
-## Doel
+## Wat was het?
 
-Creëer de technische fundatie voor de collapsible tree sidebar:
-- Backend API voor hiërarchische data
-- Zustand store voor UI state
-- Basis tree rendering component
+Fase 1-2 implementeerde een collapsible tree sidebar met:
+- `dashboard.getHierarchy` API
+- Zustand store voor expand/collapse state
+- WorkspaceTree, ProjectNode, TreeSection components
+
+## Waarom deprecated?
+
+De tree-aanpak is vervangen door een **container-hiërarchie** waarbij:
+- Elke container (Dashboard, Workspaces, Workspace, Project) een eigen pagina heeft
+- Navigatie gebeurt via de content area, niet via een complexe tree
+- Sidebar toont alleen relevante links voor de huidige container
+
+## Deprecated Components (kunnen worden verwijderd)
+
+| Component | Locatie |
+|-----------|---------|
+| WorkspaceTree | `components/dashboard/WorkspaceTree.tsx` |
+| ProjectNode | `components/dashboard/ProjectNode.tsx` |
+| GitHubRepoNode | `components/dashboard/GitHubRepoNode.tsx` |
+| TreeSection | `components/dashboard/TreeSection.tsx` |
+| dashboardTreeStore | `stores/dashboardTreeStore.ts` |
+
+## Huidige Implementatie
+
+De huidige `DashboardSidebar.tsx` bevat simpele context-aware links:
+- Personal items (Overview, My Tasks, My Subtasks)
+- Workspaces link
+- Conditional Projects link (alleen als in workspace context)
+- Notes link
+
+---
+
+# FASE 1-2 Oude Documentatie (Referentie)
 
 ---
 
@@ -689,13 +759,12 @@ Fase 2 integreert deze in de bestaande DashboardSidebar.
 
 ---
 
-# FASE 2: Core Tree Integration
+## FASE 2: Core Tree Integration (DEPRECATED)
 
-**Status:** ✅ Complete (2026-01-10)
-**Geschatte Effort:** Medium
-**Dependencies:** Fase 1 compleet
+**Status:** ⚠️ DEPRECATED - Zie Fase 1-2 sectie hierboven
+**Oorspronkelijke status:** ✅ Complete (2026-01-10)
 
-## Doel
+### Oorspronkelijk Doel (niet meer actief)
 
 Integreer de tree components in de bestaande DashboardSidebar, vervang de flat list met de collapsible hiërarchie.
 
@@ -1531,6 +1600,132 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 
 - ❌ Geen drag & drop voor workspace ordering (te complex, low value)
 - ❌ Geen cross-workspace drag (niet logisch)
+
+---
+
+# FASE 8: Workspace Navigation
+
+**Status:** 📋 Planned
+**Geschatte Effort:** Medium
+**Dependencies:** Huidige DashboardSidebar werkt
+
+## Doel
+
+Implementeer context-aware sidebars voor elke container level in de hiërarchie.
+
+---
+
+## 8.1 WorkspaceSidebar
+
+**Status:** 🔲 Todo
+
+### Doel
+
+Sidebar voor individuele workspace pagina's met workspace-level modules.
+
+### Deliverables
+
+| Item | Bestand | Beschrijving |
+|------|---------|--------------|
+| WorkspaceSidebar | `components/layout/WorkspaceSidebar.tsx` | Workspace navigatie |
+| Modules | Ingebouwd | Projects, Wiki, Members, Statistics links |
+
+### Technische Details
+
+```typescript
+// apps/web/src/components/layout/WorkspaceSidebar.tsx
+interface WorkspaceSidebarProps {
+  workspaceSlug: string
+  collapsed?: boolean
+}
+
+const workspaceModules = [
+  { label: 'Projects', path: '', icon: LayoutGrid, exact: true },
+  { label: 'Wiki', path: '/wiki', icon: BookOpen },
+  { label: 'Members', path: '/members', icon: Users },
+  { label: 'Statistics', path: '/stats', icon: BarChart },
+  { label: 'Settings', path: '/settings', icon: Settings },
+]
+
+export function WorkspaceSidebar({ workspaceSlug, collapsed }: WorkspaceSidebarProps) {
+  const basePath = `/workspace/${workspaceSlug}`
+
+  return (
+    <aside>
+      {workspaceModules.map(module => (
+        <NavLink to={`${basePath}${module.path}`}>
+          <module.icon />
+          {!collapsed && module.label}
+        </NavLink>
+      ))}
+    </aside>
+  )
+}
+```
+
+### Acceptatiecriteria
+
+- [ ] WorkspaceSidebar toont workspace modules
+- [ ] Active state op huidige module
+- [ ] Collapsed mode werkt
+- [ ] Back link naar Workspaces overzicht
+
+---
+
+## 8.2 WorkspacesPage Sidebar
+
+**Status:** 🔲 Todo
+
+### Doel
+
+Sidebar voor `/workspaces` pagina met globale workspace-level features.
+
+### Technische Details
+
+De workspaces overview pagina kan een minimale sidebar hebben of de content area gebruiken voor navigatie.
+
+Opties:
+1. Geen sidebar - alleen content area met workspace cards
+2. Minimale sidebar met "All Workspaces" + eventuele filters
+
+---
+
+## 8.3 Layout Integration
+
+**Status:** 🔲 Todo
+
+### Doel
+
+DashboardLayout slim maken zodat het juiste sidebar component wordt gekozen.
+
+### Technische Details
+
+```typescript
+// Route-based sidebar selection
+function getSidebarComponent(pathname: string) {
+  if (pathname.match(/^\/workspace\/[^/]+\/project\//)) {
+    return ProjectSidebar
+  }
+  if (pathname.match(/^\/workspace\/[^/]+/)) {
+    return WorkspaceSidebar
+  }
+  if (pathname === '/workspaces') {
+    return null // of WorkspacesSidebar
+  }
+  return DashboardSidebar
+}
+```
+
+---
+
+## Fase 8 Afronding
+
+### Checklist voor Fase 8 Compleet
+
+- [ ] WorkspaceSidebar component
+- [ ] Correcte sidebar per route
+- [ ] Alle module links werken
+- [ ] Collapsed mode werkt overal
 
 ---
 
