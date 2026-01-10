@@ -16,6 +16,7 @@ import { ChevronDown, ChevronRight, Building2 } from 'lucide-react'
 import { useDashboardTreeStore } from '@/stores/dashboardTreeStore'
 import { TreeSection } from './TreeSection'
 import { ProjectNode } from './ProjectNode'
+import { GitHubRepoNode } from './GitHubRepoNode'
 import { cn } from '@/lib/utils'
 
 // =============================================================================
@@ -26,7 +27,6 @@ interface KanbuProject {
   id: number
   name: string
   identifier: string
-  prefix: string
   taskCount: number
   hasGitHub: boolean
 }
@@ -39,6 +39,7 @@ interface GitHubRepo {
   syncStatus: 'synced' | 'pending' | 'error' | 'never'
   lastSyncAt: string | null
   projectId: number | null
+  projectIdentifier: string | null
 }
 
 interface ProjectGroup {
@@ -123,7 +124,7 @@ export function WorkspaceTree({ workspace, collapsed = false }: WorkspaceTreePro
             </TreeSection>
           )}
 
-          {/* GitHub Section - Placeholder for Fase 3 */}
+          {/* GitHub Section */}
           {workspace.githubRepos.length > 0 && (
             <TreeSection
               workspaceId={workspace.id}
@@ -131,10 +132,13 @@ export function WorkspaceTree({ workspace, collapsed = false }: WorkspaceTreePro
               label="GITHUB"
               count={workspace.githubRepos.length}
             >
-              {/* GitHub nodes will be added in Fase 3 */}
-              <div className="px-2 py-1 text-xs text-muted-foreground italic">
-                {workspace.githubRepos.length} repositories
-              </div>
+              {workspace.githubRepos.map((repo) => (
+                <GitHubRepoNode
+                  key={repo.id}
+                  repo={repo}
+                  workspaceSlug={workspace.slug}
+                />
+              ))}
             </TreeSection>
           )}
 

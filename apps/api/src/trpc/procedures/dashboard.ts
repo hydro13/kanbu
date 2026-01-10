@@ -24,7 +24,6 @@ const kanbuProjectSchema = z.object({
   id: z.number(),
   name: z.string(),
   identifier: z.string(),
-  prefix: z.string(),
   taskCount: z.number(),
   hasGitHub: z.boolean(),
 })
@@ -37,6 +36,7 @@ const githubRepoSchema = z.object({
   syncStatus: z.enum(['synced', 'pending', 'error', 'never']),
   lastSyncAt: z.string().nullable(),
   projectId: z.number().nullable(),
+  projectIdentifier: z.string().nullable(),
 })
 
 const projectGroupSchema = z.object({
@@ -106,13 +106,13 @@ export const dashboardRouter = router({
               id: true,
               name: true,
               identifier: true,
-              prefix: true,
               _count: {
                 select: { tasks: true },
               },
               // Check if project has GitHub repo linked
-              githubRepository: {
+              githubRepositories: {
                 select: { id: true },
+                take: 1,
               },
             },
             orderBy: { name: 'asc' },
@@ -129,6 +129,13 @@ export const dashboardRouter = router({
                   lastSyncAt: true,
                   projectId: true,
                   syncEnabled: true,
+                  // Include linked project's identifier for navigation
+                  project: {
+                    select: {
+                      identifier: true,
+                      name: true,
+                    },
+                  },
                 },
                 orderBy: { name: 'asc' },
               },
@@ -164,12 +171,11 @@ export const dashboardRouter = router({
           // Kanbu projects: only projects WITHOUT a primary GitHub link
           // Projects with GitHub are shown in the GitHub section
           kanbuProjects: ws.projects
-            .filter((p) => !p.githubRepository)
+            .filter((p) => p.githubRepositories.length === 0)
             .map((p) => ({
               id: p.id,
               name: p.name,
-              identifier: p.identifier,
-              prefix: p.prefix ?? p.identifier,
+              identifier: p.identifier ?? p.name.substring(0, 10).toUpperCase(),
               taskCount: p._count.tasks,
               hasGitHub: false,
             })),
@@ -184,6 +190,7 @@ export const dashboardRouter = router({
               syncStatus: determineSyncStatus(repo.lastSyncAt, repo.syncEnabled),
               lastSyncAt: repo.lastSyncAt?.toISOString() ?? null,
               projectId: repo.projectId,
+              projectIdentifier: repo.project?.identifier ?? null,
             }))
           ),
 
