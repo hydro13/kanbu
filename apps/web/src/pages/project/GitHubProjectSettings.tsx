@@ -18,9 +18,11 @@ import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { trpc } from '@/lib/trpc'
+import { ProjectLayout } from '@/components/layout/ProjectLayout'
 import { ProjectAnalyticsPanel } from '@/components/github/ProjectAnalyticsPanel'
 import { ProjectMilestonesPanel } from '@/components/github/ProjectMilestonesPanel'
 import { ProjectReleasesPanel } from '@/components/github/ProjectReleasesPanel'
+import type { GitHubSyncSettings } from '@kanbu/shared'
 
 // =============================================================================
 // Icons
@@ -187,110 +189,116 @@ export function GitHubProjectSettings() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
+      <ProjectLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      </ProjectLayout>
     )
   }
 
   if (!project) {
     return (
-      <div className="p-6">
-        <div className="text-center text-gray-500">Project not found</div>
-      </div>
+      <ProjectLayout>
+        <div className="p-6">
+          <div className="text-center text-gray-500">Project not found</div>
+        </div>
+      </ProjectLayout>
     )
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center gap-3 mb-2">
-          <GitHubIcon className="h-8 w-8" />
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">GitHub Integration</h1>
+    <ProjectLayout>
+      <div className="p-6 max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="mb-4">
+          <div className="flex items-center gap-3 mb-1">
+            <GitHubIcon className="h-6 w-6" />
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white">GitHub Integration</h1>
+          </div>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Link a GitHub repository to sync issues, pull requests, and commits.
+          </p>
         </div>
-        <p className="text-gray-600 dark:text-gray-400">
-          Link a GitHub repository to sync issues, pull requests, and commits.
-        </p>
+
+        {/* Tabs */}
+        <div className="border-b border-gray-200 dark:border-gray-700 mb-4">
+          <nav className="flex gap-2">
+            {TABS.map((tab) => {
+              const Icon = tab.icon
+              const isActive = activeTab === tab.id
+              const isDisabled = !linkedRepo && tab.id !== 'repository'
+
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => !isDisabled && setActiveTab(tab.id)}
+                  disabled={isDisabled}
+                  className={`
+                    flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors
+                    ${isActive
+                      ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                      : isDisabled
+                      ? 'border-transparent text-gray-400 cursor-not-allowed'
+                      : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-300'
+                    }
+                  `}
+                >
+                  <Icon className="h-4 w-4" />
+                  {tab.label}
+                </button>
+              )
+            })}
+          </nav>
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === 'repository' && (
+          <RepositoryTab
+            projectId={project.id}
+            linkedRepo={linkedRepo}
+            syncStatus={syncStatus}
+            workspaceSlug={workspaceSlug || ''}
+            onUnlink={() => unlinkMutation.mutate({ projectId: project.id })}
+            onTriggerSync={() => triggerSyncMutation.mutate({ projectId: project.id })}
+            isUnlinking={unlinkMutation.isPending}
+            isSyncing={triggerSyncMutation.isPending}
+          />
+        )}
+
+        {activeTab === 'settings' && linkedRepo && (
+          <SettingsTab
+            projectId={project.id}
+            linkedRepo={linkedRepo}
+            onSave={(settings) => updateSettingsMutation.mutate({
+              projectId: project.id,
+              syncSettings: settings,
+            })}
+            onToggleSync={(enabled) => updateSettingsMutation.mutate({
+              projectId: project.id,
+              syncEnabled: enabled,
+            })}
+            isSaving={updateSettingsMutation.isPending}
+          />
+        )}
+
+        {activeTab === 'logs' && linkedRepo && (
+          <LogsTab logs={syncLogs?.logs || []} total={syncLogs?.total || 0} />
+        )}
+
+        {activeTab === 'milestones' && linkedRepo && project && (
+          <ProjectMilestonesPanel projectId={project.id} />
+        )}
+
+        {activeTab === 'releases' && linkedRepo && project && (
+          <ProjectReleasesPanel projectId={project.id} />
+        )}
+
+        {activeTab === 'analytics' && linkedRepo && project && (
+          <ProjectAnalyticsPanel projectId={project.id} />
+        )}
       </div>
-
-      {/* Tabs */}
-      <div className="border-b border-gray-200 dark:border-gray-700 mb-6">
-        <nav className="flex gap-4">
-          {TABS.map((tab) => {
-            const Icon = tab.icon
-            const isActive = activeTab === tab.id
-            const isDisabled = !linkedRepo && tab.id !== 'repository'
-
-            return (
-              <button
-                key={tab.id}
-                onClick={() => !isDisabled && setActiveTab(tab.id)}
-                disabled={isDisabled}
-                className={`
-                  flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 -mb-px transition-colors
-                  ${isActive
-                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                    : isDisabled
-                    ? 'border-transparent text-gray-400 cursor-not-allowed'
-                    : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-300'
-                  }
-                `}
-              >
-                <Icon className="h-4 w-4" />
-                {tab.label}
-              </button>
-            )
-          })}
-        </nav>
-      </div>
-
-      {/* Tab Content */}
-      {activeTab === 'repository' && (
-        <RepositoryTab
-          projectId={project.id}
-          linkedRepo={linkedRepo}
-          syncStatus={syncStatus}
-          workspaceSlug={workspaceSlug || ''}
-          onUnlink={() => unlinkMutation.mutate({ projectId: project.id })}
-          onTriggerSync={() => triggerSyncMutation.mutate({ projectId: project.id })}
-          isUnlinking={unlinkMutation.isPending}
-          isSyncing={triggerSyncMutation.isPending}
-        />
-      )}
-
-      {activeTab === 'settings' && linkedRepo && (
-        <SettingsTab
-          projectId={project.id}
-          linkedRepo={linkedRepo}
-          onSave={(settings) => updateSettingsMutation.mutate({
-            projectId: project.id,
-            syncSettings: settings,
-          })}
-          onToggleSync={(enabled) => updateSettingsMutation.mutate({
-            projectId: project.id,
-            syncEnabled: enabled,
-          })}
-          isSaving={updateSettingsMutation.isPending}
-        />
-      )}
-
-      {activeTab === 'logs' && linkedRepo && (
-        <LogsTab logs={syncLogs?.logs || []} total={syncLogs?.total || 0} />
-      )}
-
-      {activeTab === 'milestones' && linkedRepo && project && (
-        <ProjectMilestonesPanel projectId={project.id} />
-      )}
-
-      {activeTab === 'releases' && linkedRepo && project && (
-        <ProjectReleasesPanel projectId={project.id} />
-      )}
-
-      {activeTab === 'analytics' && linkedRepo && project && (
-        <ProjectAnalyticsPanel projectId={project.id} />
-      )}
-    </div>
+    </ProjectLayout>
   )
 }
 
@@ -495,79 +503,273 @@ interface SettingsTabProps {
   projectId: number
   linkedRepo: {
     syncEnabled: boolean
-    syncSettings: {
-      issues?: {
-        enabled: boolean
-        direction: string
-      }
-      pullRequests?: {
-        enabled: boolean
-        autoLink: boolean
-      }
-      commits?: {
-        enabled: boolean
-        autoLink: boolean
-      }
-    }
+    syncSettings: GitHubSyncSettings
   }
-  onSave: (settings: object) => void
+  onSave: (settings: GitHubSyncSettings) => void
   onToggleSync: (enabled: boolean) => void
   isSaving: boolean
 }
 
-function SettingsTab({ linkedRepo, onToggleSync, isSaving }: SettingsTabProps) {
+function Toggle({
+  enabled,
+  onChange,
+  disabled = false,
+}: {
+  enabled: boolean
+  onChange: (enabled: boolean) => void
+  disabled?: boolean
+}) {
   return (
-    <div className="space-y-6">
+    <button
+      onClick={() => onChange(!enabled)}
+      disabled={disabled}
+      className={`
+        relative inline-flex h-6 w-11 items-center rounded-full transition-colors
+        ${enabled ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'}
+        ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+      `}
+    >
+      <span
+        className={`
+          inline-block h-4 w-4 transform rounded-full bg-white transition-transform
+          ${enabled ? 'translate-x-6' : 'translate-x-1'}
+        `}
+      />
+    </button>
+  )
+}
+
+function SettingRow({
+  label,
+  description,
+  children,
+}: {
+  label: string
+  description?: string
+  children: React.ReactNode
+}) {
+  return (
+    <div className="flex items-center justify-between py-2">
+      <div>
+        <div className="text-sm font-medium text-gray-900 dark:text-white">{label}</div>
+        {description && (
+          <div className="text-xs text-gray-500 dark:text-gray-400">{description}</div>
+        )}
+      </div>
+      {children}
+    </div>
+  )
+}
+
+function SettingsTab({ linkedRepo, onSave, onToggleSync, isSaving }: SettingsTabProps) {
+  const settings: GitHubSyncSettings = linkedRepo.syncSettings || {}
+
+  const updateIssueSettings = (key: keyof NonNullable<GitHubSyncSettings['issues']>, value: boolean | string) => {
+    const newSettings: GitHubSyncSettings = {
+      ...settings,
+      issues: {
+        enabled: settings.issues?.enabled ?? true,
+        direction: settings.issues?.direction ?? 'bidirectional',
+        ...settings.issues,
+        [key]: value,
+      },
+    }
+    onSave(newSettings)
+  }
+
+  const updatePRSettings = (key: keyof NonNullable<GitHubSyncSettings['pullRequests']>, value: boolean) => {
+    const newSettings: GitHubSyncSettings = {
+      ...settings,
+      pullRequests: {
+        enabled: settings.pullRequests?.enabled ?? true,
+        autoLink: settings.pullRequests?.autoLink ?? true,
+        ...settings.pullRequests,
+        [key]: value,
+      },
+    }
+    onSave(newSettings)
+  }
+
+  const updateCommitSettings = (key: keyof NonNullable<GitHubSyncSettings['commits']>, value: boolean) => {
+    const newSettings: GitHubSyncSettings = {
+      ...settings,
+      commits: {
+        enabled: settings.commits?.enabled ?? true,
+        autoLink: settings.commits?.autoLink ?? true,
+        ...settings.commits,
+        [key]: value,
+      },
+    }
+    onSave(newSettings)
+  }
+
+  const updateAutomationSettings = (key: keyof NonNullable<GitHubSyncSettings['automation']>, value: boolean) => {
+    const newSettings: GitHubSyncSettings = {
+      ...settings,
+      automation: {
+        enabled: settings.automation?.enabled ?? false,
+        ...settings.automation,
+        [key]: value,
+      },
+    }
+    onSave(newSettings)
+  }
+
+  return (
+    <div className="space-y-3">
       {/* Global Sync Toggle */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-2">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white">Sync Enabled</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <h3 className="text-sm font-medium text-gray-900 dark:text-white">Sync Enabled</h3>
+            <p className="text-xs text-gray-600 dark:text-gray-400">
               Enable or disable all sync operations for this repository
             </p>
           </div>
-          <button
-            onClick={() => onToggleSync(!linkedRepo.syncEnabled)}
+          <Toggle
+            enabled={linkedRepo.syncEnabled}
+            onChange={onToggleSync}
             disabled={isSaving}
-            className={`
-              relative inline-flex h-6 w-11 items-center rounded-full transition-colors
-              ${linkedRepo.syncEnabled ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'}
-              ${isSaving ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-            `}
-          >
-            <span
-              className={`
-                inline-block h-4 w-4 transform rounded-full bg-white transition-transform
-                ${linkedRepo.syncEnabled ? 'translate-x-6' : 'translate-x-1'}
-              `}
-            />
-          </button>
+          />
         </div>
       </div>
 
       {/* Issue Sync Settings */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Issue Sync</h3>
-        <p className="text-sm text-amber-600 dark:text-amber-400">
-          Full sync settings UI coming in Fase 5-6. Current settings: {JSON.stringify(linkedRepo.syncSettings.issues || {})}
-        </p>
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-2">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-sm font-medium text-gray-900 dark:text-white">Issue Sync</h3>
+          <Toggle
+            enabled={settings.issues?.enabled ?? true}
+            onChange={(v) => updateIssueSettings('enabled', v)}
+            disabled={isSaving}
+          />
+        </div>
+
+        <div className="space-y-1 divide-y divide-gray-100 dark:divide-gray-700">
+          <SettingRow
+            label="Sync Direction"
+            description="How issues are synced between GitHub and Kanbu"
+          >
+            <select
+              value={settings.issues?.direction ?? 'bidirectional'}
+              onChange={(e) => updateIssueSettings('direction', e.target.value as 'bidirectional' | 'github_to_kanbu' | 'kanbu_to_github')}
+              disabled={isSaving || !(settings.issues?.enabled ?? true)}
+              className="block w-40 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-1.5 text-sm text-gray-900 dark:text-white focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50"
+            >
+              <option value="bidirectional">Bidirectional</option>
+              <option value="github_to_kanbu">GitHub → Kanbu</option>
+              <option value="kanbu_to_github">Kanbu → GitHub</option>
+            </select>
+          </SettingRow>
+        </div>
       </div>
 
       {/* PR Tracking Settings */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Pull Request Tracking</h3>
-        <p className="text-sm text-amber-600 dark:text-amber-400">
-          PR tracking settings coming in Fase 7. Current settings: {JSON.stringify(linkedRepo.syncSettings.pullRequests || {})}
-        </p>
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-2">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-sm font-medium text-gray-900 dark:text-white">Pull Request Tracking</h3>
+          <Toggle
+            enabled={settings.pullRequests?.enabled ?? true}
+            onChange={(v) => updatePRSettings('enabled', v)}
+            disabled={isSaving}
+          />
+        </div>
+
+        <div className="space-y-1 divide-y divide-gray-100 dark:divide-gray-700">
+          <SettingRow
+            label="Auto-link PRs to Tasks"
+            description="Automatically link PRs to tasks based on branch name or PR title"
+          >
+            <Toggle
+              enabled={settings.pullRequests?.autoLink ?? true}
+              onChange={(v) => updatePRSettings('autoLink', v)}
+              disabled={isSaving || !(settings.pullRequests?.enabled ?? true)}
+            />
+          </SettingRow>
+        </div>
       </div>
 
       {/* Commit Tracking Settings */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Commit Tracking</h3>
-        <p className="text-sm text-amber-600 dark:text-amber-400">
-          Commit tracking settings coming in Fase 7. Current settings: {JSON.stringify(linkedRepo.syncSettings.commits || {})}
-        </p>
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-2">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-sm font-medium text-gray-900 dark:text-white">Commit Tracking</h3>
+          <Toggle
+            enabled={settings.commits?.enabled ?? true}
+            onChange={(v) => updateCommitSettings('enabled', v)}
+            disabled={isSaving}
+          />
+        </div>
+
+        <div className="space-y-1 divide-y divide-gray-100 dark:divide-gray-700">
+          <SettingRow
+            label="Auto-link Commits to Tasks"
+            description="Automatically link commits to tasks based on commit message"
+          >
+            <Toggle
+              enabled={settings.commits?.autoLink ?? true}
+              onChange={(v) => updateCommitSettings('autoLink', v)}
+              disabled={isSaving || !(settings.commits?.enabled ?? true)}
+            />
+          </SettingRow>
+        </div>
+      </div>
+
+      {/* Automation Settings */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-2">
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-sm font-medium text-gray-900 dark:text-white">Automation</h3>
+          <Toggle
+            enabled={settings.automation?.enabled ?? false}
+            onChange={(v) => updateAutomationSettings('enabled', v)}
+            disabled={isSaving}
+          />
+        </div>
+
+        <div className="space-y-1 divide-y divide-gray-100 dark:divide-gray-700">
+          <SettingRow
+            label="Move to In Progress on PR Open"
+            description="Move linked task to 'In Progress' when a PR is opened"
+          >
+            <Toggle
+              enabled={settings.automation?.moveToInProgressOnPROpen ?? false}
+              onChange={(v) => updateAutomationSettings('moveToInProgressOnPROpen', v)}
+              disabled={isSaving || !(settings.automation?.enabled ?? false)}
+            />
+          </SettingRow>
+
+          <SettingRow
+            label="Move to Review on PR Ready"
+            description="Move linked task to 'Review' when PR is ready for review"
+          >
+            <Toggle
+              enabled={settings.automation?.moveToReviewOnPRReady ?? false}
+              onChange={(v) => updateAutomationSettings('moveToReviewOnPRReady', v)}
+              disabled={isSaving || !(settings.automation?.enabled ?? false)}
+            />
+          </SettingRow>
+
+          <SettingRow
+            label="Move to Done on PR Merge"
+            description="Move linked task to 'Done' when PR is merged"
+          >
+            <Toggle
+              enabled={settings.automation?.moveToDoneOnPRMerge ?? false}
+              onChange={(v) => updateAutomationSettings('moveToDoneOnPRMerge', v)}
+              disabled={isSaving || !(settings.automation?.enabled ?? false)}
+            />
+          </SettingRow>
+
+          <SettingRow
+            label="Close Task on Issue Closed"
+            description="Close linked Kanbu task when GitHub issue is closed"
+          >
+            <Toggle
+              enabled={settings.automation?.closeTaskOnIssueClosed ?? false}
+              onChange={(v) => updateAutomationSettings('closeTaskOnIssueClosed', v)}
+              disabled={isSaving || !(settings.automation?.enabled ?? false)}
+            />
+          </SettingRow>
+        </div>
       </div>
     </div>
   )

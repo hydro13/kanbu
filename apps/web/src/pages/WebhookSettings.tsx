@@ -14,7 +14,7 @@
  */
 
 import { useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useParams } from 'react-router-dom'
 import {
   Webhook,
   Plus,
@@ -22,7 +22,6 @@ import {
   Edit2,
   Copy,
   Check,
-  ArrowLeft,
   Loader2,
   AlertCircle,
   CheckCircle,
@@ -35,6 +34,7 @@ import {
   Activity,
 } from 'lucide-react'
 import { trpc } from '../lib/trpc'
+import { ProjectLayout } from '@/components/layout/ProjectLayout'
 
 // =============================================================================
 // Types
@@ -102,7 +102,6 @@ const EVENT_GROUPS = [
 // =============================================================================
 
 export function WebhookSettings() {
-  const navigate = useNavigate()
   const { projectIdentifier } = useParams<{ projectIdentifier: string }>()
 
   const [showModal, setShowModal] = useState(false)
@@ -245,38 +244,27 @@ export function WebhookSettings() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => navigate(-1)}
-                className="p-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
-              <div className="flex items-center gap-3">
-                <Webhook className="w-6 h-6 text-gray-700 dark:text-gray-300" />
-                <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
-                  Webhooks
-                </h1>
-              </div>
-            </div>
-            <button
-              onClick={handleOpenCreate}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              Add Webhook
-            </button>
+    <ProjectLayout>
+      <div className="p-6 max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <Webhook className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+              Webhooks
+            </h1>
           </div>
+          <button
+            onClick={handleOpenCreate}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Add Webhook
+          </button>
         </div>
-      </div>
 
-      {/* Content */}
-      <div className="max-w-4xl mx-auto px-4 py-6">
+        {/* Content */}
+        <div>
         {/* Info Banner */}
         <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
           <div className="flex gap-3">
@@ -619,7 +607,8 @@ export function WebhookSettings() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </ProjectLayout>
   )
 }
 

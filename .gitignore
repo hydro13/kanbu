@@ -60,3 +60,6 @@ certs/
 
 # GitHub App Private Keys
 *.private-key.pem
+
+# Upload directories
+**/uploads
