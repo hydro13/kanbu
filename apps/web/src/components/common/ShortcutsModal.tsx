@@ -1,20 +1,18 @@
 /*
  * ShortcutsModal Component
- * Version: 1.0.0
+ * Version: 2.0.0
  *
  * Modal displaying all available keyboard shortcuts.
  * Triggered by pressing the ? key.
+ * Updated to show new navigation and context-aware shortcuts.
  *
  * ═══════════════════════════════════════════════════════════════════
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
- * Session: 73a280f4-f735-47a2-9803-e570fa6a86f7
- * Claude Code: v2.0.70 (Opus 4.5)
- * Host: linux-dev
- * Signed: 2025-12-28T21:10 CET
+ * Session: MAX-2026-01-11
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useMemo } from 'react'
 import { SHORTCUT_GROUPS, formatShortcut, isMac } from '@/lib/shortcuts'
 import { cn } from '@/lib/utils'
 
@@ -74,6 +72,11 @@ function KeyboardIcon() {
 // =============================================================================
 
 export function ShortcutsModal({ isOpen, onClose }: ShortcutsModalProps) {
+  // Filter out empty groups
+  const activeGroups = useMemo(() => {
+    return SHORTCUT_GROUPS.filter(group => group.shortcuts.length > 0)
+  }, [])
+
   // Close on Escape
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -130,7 +133,7 @@ export function ShortcutsModal({ isOpen, onClose }: ShortcutsModalProps) {
         {/* Content */}
         <div className="overflow-y-auto max-h-[calc(80vh-120px)] p-6">
           <div className="space-y-8">
-            {SHORTCUT_GROUPS.map((group) => (
+            {activeGroups.map((group) => (
               <div key={group.category}>
                 <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
                   {group.label}

@@ -1,6 +1,6 @@
 # Dashboard Roadmap V2
 
-## Versie: 2.4.0
+## Versie: 2.5.0
 ## Datum: 2026-01-11
 ## Gebaseerd op: IDEAAL-DASHBOARD-ONTWERP-V2.md
 
@@ -28,7 +28,7 @@ Gebaseerd op het ontwerp in [IDEAAL-DASHBOARD-ONTWERP-V2.md](./IDEAAL-DASHBOARD-
 | **Fase 1** | ✅ COMPLEET | 6/6 items compleet |
 | **Fase 2** | ✅ COMPLEET | 2/3 items (My Tasks al goed) |
 | **Fase 3** | ✅ COMPLEET | 2/2 items compleet |
-| **Fase 4** | 📋 Planned | Polish & UX |
+| **Fase 4** | 🟡 IN PROGRESS | 2/4 items compleet |
 
 ### Wat is er al?
 
@@ -53,6 +53,9 @@ Gebaseerd op het ontwerp in [IDEAAL-DASHBOARD-ONTWERP-V2.md](./IDEAAL-DASHBOARD-
 | **Workspace Wiki** | ✅ Volledig | Hierarchische paginas, CRUD |
 | **Workspace Groups** | ✅ Volledig | Project categorisatie |
 | **ProductivityWidget** | ✅ Volledig | Velocity chart, top projects |
+| **CommandPalette** | ✅ Volledig | Context-aware, global search |
+| **ShortcutsModal** | ✅ Volledig | Navigation shortcuts toegevoegd |
+| **useNavigationContext** | ✅ Volledig | Context detection hook |
 
 ---
 
@@ -100,12 +103,12 @@ Gebaseerd op het ontwerp in [IDEAAL-DASHBOARD-ONTWERP-V2.md](./IDEAAL-DASHBOARD-
 │                                                                             │
 │  FASE 0          FASE 1          FASE 2          FASE 3          FASE 4    │
 │  Foundation      Workspace       Personal        Enhanced        Polish    │
-│  ██████████      ██████████      ██████████      ██████████      ░░░░░░░░░░│
-│  COMPLEET        COMPLEET        COMPLEET        COMPLEET        PLANNED   │
+│  ██████████      ██████████      ██████████      ██████████      █████░░░░░│
+│  COMPLEET        COMPLEET        COMPLEET        COMPLEET        IN PROG   │
 │                                                                             │
-│  ✅ Fix bugs     ✅ Workspace    ✅ Favorites    ✅ Inbox        - Keyboard│
+│  ✅ Fix bugs     ✅ Workspace    ✅ Favorites    ✅ Inbox        ✅ Keyboard│
 │  ✅ Notes route    Sidebar       ✅ Dashboard    ✅ Advanced     - Context │
-│  ✅ Layout       ✅ Wiki           Overview        Statistics    - Search  │
+│  ✅ Layout       ✅ Wiki           Overview        Statistics    ✅ Search  │
 │    switching     ✅ Members      ✅ My Tasks                     - DnD     │
 │  ✅ Breadcrumbs  ✅ Statistics     (al goed)                               │
 │                  ✅ Settings                                               │
@@ -120,7 +123,7 @@ Gebaseerd op het ontwerp in [IDEAAL-DASHBOARD-ONTWERP-V2.md](./IDEAAL-DASHBOARD-
 | 1 | Workspace Navigation | High | ✅ COMPLEET | 6/6 |
 | 2 | Personal Enhancements | Medium | ✅ COMPLEET | 2/3 |
 | 3 | Enhanced Features | High | ✅ COMPLEET | 2/2 |
-| 4 | Polish & UX | Medium | 📋 Planned | 0/4 |
+| 4 | Polish & UX | Medium | 🟡 IN PROGRESS | 2/4 |
 
 ---
 
@@ -544,7 +547,8 @@ My Tasks pagina werkte al correct met filters en grouping. Geen wijzigingen nodi
 
 # FASE 4: Polish & UX
 
-**Status:** 📋 Planned
+**Status:** 🟡 IN PROGRESS
+**Voortgang:** 2/4 items compleet
 **Effort:** Medium (2-3 dagen)
 **Dependencies:** Fase 1-3 compleet
 
@@ -552,7 +556,29 @@ My Tasks pagina werkte al correct met filters en grouping. Geen wijzigingen nodi
 
 ## 4.1 Keyboard Navigation
 
-**Status:** ❌ Todo
+**Status:** ✅ Compleet
+
+### Wat is gedaan
+
+- `shortcuts.ts` uitgebreid met nieuwe categorieën:
+  - `navigation` - Quick navigation shortcuts (G+key pattern)
+  - `dashboard` - Dashboard-specifieke shortcuts
+  - `workspace` - Workspace-specifieke shortcuts
+- Nieuwe navigation shortcuts toegevoegd:
+  - `G D` - Go to Dashboard
+  - `G T` - Go to My Tasks
+  - `G I` - Go to Inbox
+  - `G W` - Go to Workspaces
+  - `G N` - Go to Notes
+- `formatShortcut()` functie uitgebreid voor chord-style shortcuts
+- `ShortcutsModal` toont nu alle nieuwe categorieën (filtert lege groepen)
+
+### Bestanden
+
+| Bestand | Actie |
+|---------|-------|
+| `lib/shortcuts.ts` | Uitgebreid met nieuwe categorieën |
+| `components/common/ShortcutsModal.tsx` | Filtert lege groepen |
 
 ---
 
@@ -564,7 +590,35 @@ My Tasks pagina werkte al correct met filters en grouping. Geen wijzigingen nodi
 
 ## 4.3 Global Search
 
-**Status:** ❌ Todo
+**Status:** ✅ Compleet
+
+### Wat is gedaan
+
+- `useNavigationContext` hook aangemaakt:
+  - Detecteert huidige navigation level (dashboard/workspace/project)
+  - Extraheert workspaceSlug en projectIdentifier uit URL
+  - Bepaalt currentPage voor context-aware behavior
+- `CommandPalette` volledig herontworpen (v2.0.0):
+  - **Context-aware commands:**
+    - Navigation: Altijd beschikbaar (Dashboard, Tasks, Inbox, etc.)
+    - Workspace: Alleen in workspace context (Members, Stats, Wiki, Settings)
+    - Project: Alleen in project context (Board, List, Calendar, Analytics)
+  - **Global search:**
+    - Workspaces zoeken via `trpc.workspace.list`
+    - Tasks zoeken via `trpc.user.getMyTasks`
+    - Project tasks zoeken (in project context)
+  - **Verbeterde UX:**
+    - Grouped results met section headers
+    - Type-specifieke iconen
+    - Keyboard navigation over alle groepen
+    - Keywords voor betere search matches
+
+### Bestanden
+
+| Bestand | Actie |
+|---------|-------|
+| `hooks/useNavigationContext.ts` | Nieuw - context detection |
+| `components/command/CommandPalette.tsx` | Volledig herontworpen |
 
 ---
 
@@ -575,6 +629,39 @@ My Tasks pagina werkte al correct met filters en grouping. Geen wijzigingen nodi
 ---
 
 # Changelog
+
+## 2026-01-11 (v2.5.0)
+
+### Compleet
+
+- **Fase 4.1: Keyboard Navigation** - Volledig geïmplementeerd
+- **Fase 4.3: Global Search** - Volledig geïmplementeerd
+
+### Nieuwe Features
+
+- **shortcuts.ts** uitgebreid met navigation/dashboard/workspace categorieën
+- **useNavigationContext** hook voor context-aware behavior
+- **CommandPalette v2.0** met:
+  - Context-aware navigation commands
+  - Global search over workspaces en tasks
+  - Grouped results met section headers
+  - Type-specifieke iconen
+
+### Nieuwe Bestanden
+
+| Bestand | Beschrijving |
+|---------|--------------|
+| `hooks/useNavigationContext.ts` | Context detection hook |
+
+### Gewijzigde Bestanden
+
+| Bestand | Wijziging |
+|---------|-----------|
+| `lib/shortcuts.ts` | Nieuwe categorieën, chord shortcuts |
+| `components/command/CommandPalette.tsx` | Volledig herontworpen |
+| `components/common/ShortcutsModal.tsx` | Filtert lege groepen |
+
+---
 
 ## 2026-01-11 (v2.4.0)
 

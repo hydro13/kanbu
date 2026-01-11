@@ -44,7 +44,7 @@ export function getModifierKeyName(): string {
 // Types
 // =============================================================================
 
-export type ShortcutCategory = 'global' | 'board' | 'task'
+export type ShortcutCategory = 'global' | 'navigation' | 'dashboard' | 'workspace' | 'board' | 'task'
 
 export interface ShortcutDefinition {
   id: string
@@ -99,6 +99,38 @@ export const SHORTCUTS: ShortcutDefinition[] = [
     description: 'Close modal / deselect',
     category: 'global',
     allowInInputs: true,
+  },
+
+  // Navigation shortcuts (via Command Palette)
+  {
+    id: 'goto-dashboard',
+    key: 'g d',
+    description: 'Go to Dashboard',
+    category: 'navigation',
+  },
+  {
+    id: 'goto-tasks',
+    key: 'g t',
+    description: 'Go to My Tasks',
+    category: 'navigation',
+  },
+  {
+    id: 'goto-inbox',
+    key: 'g i',
+    description: 'Go to Inbox',
+    category: 'navigation',
+  },
+  {
+    id: 'goto-workspaces',
+    key: 'g w',
+    description: 'Go to Workspaces',
+    category: 'navigation',
+  },
+  {
+    id: 'goto-notes',
+    key: 'g n',
+    description: 'Go to Notes',
+    category: 'navigation',
   },
 
   // Board shortcuts
@@ -219,6 +251,21 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
     shortcuts: SHORTCUTS.filter((s) => s.category === 'global'),
   },
   {
+    category: 'navigation',
+    label: 'Quick Navigation',
+    shortcuts: SHORTCUTS.filter((s) => s.category === 'navigation'),
+  },
+  {
+    category: 'dashboard',
+    label: 'Dashboard',
+    shortcuts: SHORTCUTS.filter((s) => s.category === 'dashboard'),
+  },
+  {
+    category: 'workspace',
+    label: 'Workspace',
+    shortcuts: SHORTCUTS.filter((s) => s.category === 'workspace'),
+  },
+  {
     category: 'board',
     label: 'Board Navigation',
     shortcuts: SHORTCUTS.filter((s) => s.category === 'board'),
@@ -252,6 +299,15 @@ export function formatShortcut(shortcut: ShortcutDefinition): string {
 
   // Format the key
   let displayKey = shortcut.key
+
+  // Handle chord shortcuts (e.g., "g d" -> "G then D")
+  if (displayKey.includes(' ')) {
+    const chordParts = displayKey.split(' ')
+    displayKey = chordParts.map(k => k.toUpperCase()).join(' then ')
+    parts.push(displayKey)
+    return parts.join(isMac() ? '' : '+')
+  }
+
   if (displayKey === 'ArrowUp') displayKey = '↑'
   else if (displayKey === 'ArrowDown') displayKey = '↓'
   else if (displayKey === 'ArrowLeft') displayKey = '←'
