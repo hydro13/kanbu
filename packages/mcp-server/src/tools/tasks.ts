@@ -276,13 +276,18 @@ export async function handleListTasks(args: unknown) {
   const input = ListTasksSchema.parse(args)
   const config = requireAuth()
 
+  // Map MCP status to API isActive filter
+  // API uses: isActive=true (open), isActive=false (closed), undefined (all)
+  const status = input.status || 'open'
+  const isActive = status === 'open' ? true : status === 'closed' ? false : undefined
+
   const tasks = await client.call<Task[]>(
     config.kanbuUrl,
     config.token,
     'task.list',
     {
       projectId: input.projectId,
-      status: input.status || 'open',
+      isActive,
       columnId: input.columnId,
       limit: input.limit || 50,
     }
