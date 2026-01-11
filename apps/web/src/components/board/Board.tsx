@@ -354,6 +354,7 @@ export function Board({ columns, swimlanes, tasks, projectId }: BoardProps) {
                 tasks={groupedTasks}
                 projectId={projectId}
                 width={effectiveWidth}
+                isCompact={isEmpty}
                 isOverLimit={isOverLimit}
                 taskCount={taskCount}
                 onTaskClick={handleTaskClick}

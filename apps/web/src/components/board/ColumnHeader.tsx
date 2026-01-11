@@ -49,6 +49,8 @@ interface ColumnHeaderProps {
   onDeleteColumn?: (columnId: number) => void
   onToggleCollapse?: (columnId: number) => void
   isEditable?: boolean
+  /** Compact mode for narrow/empty columns */
+  isCompact?: boolean
   className?: string
 }
 
@@ -67,6 +69,7 @@ export function ColumnHeader({
   onDeleteColumn,
   onToggleCollapse,
   isEditable = true,
+  isCompact = false,
   className,
 }: ColumnHeaderProps) {
   const [isEditing, setIsEditing] = useState(false)
@@ -111,6 +114,34 @@ export function ColumnHeader({
       setEditValue(column.title)
       setIsEditing(false)
     }
+  }
+
+  // Compact mode for empty columns - vertical layout with title and add button
+  if (isCompact && taskCount === 0) {
+    return (
+      <div
+        className={cn(
+          'flex flex-col items-center justify-center p-2 bg-muted/50 rounded-t-lg border-b min-h-[60px]',
+          column.isCollapsed && 'opacity-75',
+          className
+        )}
+        title={column.title}
+      >
+        <span className="font-semibold text-xs text-center leading-tight text-muted-foreground line-clamp-2">
+          {column.title}
+        </span>
+        {/* Add task button for compact empty columns */}
+        {onAddTask && (
+          <button
+            onClick={() => onAddTask(column.id)}
+            className="mt-1 p-1 rounded hover:bg-muted transition-colors text-muted-foreground/60 hover:text-muted-foreground"
+            title="Add task"
+          >
+            <PlusIcon className="h-4 w-4" />
+          </button>
+        )}
+      </div>
+    )
   }
 
   return (

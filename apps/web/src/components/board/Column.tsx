@@ -31,6 +31,7 @@ import { useState } from 'react'
 import { ColumnHeader } from './ColumnHeader'
 import { TaskList } from './TaskList'
 import { QuickAddTask } from './QuickAddTask'
+import { cn } from '@/lib/utils'
 import type { BoardColumn, BoardSwimlane, BoardTask } from './Board'
 
 // =============================================================================
@@ -43,6 +44,8 @@ export interface ColumnProps {
   tasks: Record<string, BoardTask[]>
   projectId: number
   width: number
+  /** Whether this column is in compact mode (narrow width for empty columns) */
+  isCompact?: boolean
   isOverLimit: boolean
   taskCount: number
   onTaskClick?: (taskId: number) => void
@@ -59,6 +62,7 @@ export function Column({
   tasks,
   projectId,
   width,
+  isCompact = false,
   isOverLimit,
   taskCount,
   onTaskClick,
@@ -84,11 +88,15 @@ export function Column({
         taskCount={taskCount}
         isOverLimit={isOverLimit}
         projectId={projectId}
+        isCompact={isCompact}
         onAddTask={isArchive ? undefined : () => setShowQuickAdd(true)}
       />
 
-      {/* Column Content */}
-      <div className="flex-1 overflow-y-auto min-h-0 p-2">
+      {/* Column Content - hidden for compact empty columns */}
+      <div className={cn(
+        'flex-1 overflow-y-auto min-h-0 p-2',
+        isCompact && taskCount === 0 && 'hidden'
+      )}>
         {hasMultipleSwimlanes ? (
           // Render tasks grouped by swimlane
           <div className="space-y-4">
