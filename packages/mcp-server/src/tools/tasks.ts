@@ -1,6 +1,6 @@
 /*
  * Task Tools
- * Version: 1.0.0
+ * Version: 1.1.0
  *
  * MCP tools for task management.
  *
@@ -10,6 +10,10 @@
  * Host: MAX
  * Date: 2026-01-09
  * Fase: MCP Fase 2 - Core Kanbu Tools
+ *
+ * Modified: 2026-01-11
+ * Change: Added column IDs to task output (get, move) for easier
+ *         task manipulation without needing to look up IDs separately
  * ═══════════════════════════════════════════════════════════════════
  */
 
@@ -348,12 +352,16 @@ export async function handleGetTask(args: unknown) {
     { taskId: id }
   )
 
+  const columnInfo = task.column
+    ? `${task.column.title} (ID: ${task.column.id})`
+    : 'Unknown'
+
   const lines: string[] = [
     `${task.ref}: ${task.title}`,
     `ID: ${task.id}`,
     '',
-    `Project: ${task.project?.name || 'Unknown'}`,
-    `Column: ${task.column?.title || 'Unknown'}`,
+    `Project: ${task.project?.name || 'Unknown'} (ID: ${task.project?.id || 'Unknown'})`,
+    `Column: ${columnInfo}`,
     `Status: ${task.status}`,
     `Priority: ${task.priority}`,
     '',
@@ -366,7 +374,7 @@ export async function handleGetTask(args: unknown) {
   }
 
   if (task.assignees && task.assignees.length > 0) {
-    lines.push(`Assignees: ${task.assignees.map((a) => a.name).join(', ')}`)
+    lines.push(`Assignees: ${task.assignees.map((a) => a.name || 'Unknown').join(', ')}`)
   } else {
     lines.push('Assignees: (none)')
   }
@@ -376,7 +384,7 @@ export async function handleGetTask(args: unknown) {
   }
 
   if (task.tags && task.tags.length > 0) {
-    lines.push(`Tags: ${task.tags.map((t) => t.name).join(', ')}`)
+    lines.push(`Tags: ${task.tags.map((t) => t.name || 'Unnamed').join(', ')}`)
   }
 
   lines.push(`Created: ${formatDate(task.createdAt)} by ${task.creator?.name || 'Unknown'}`)
@@ -394,7 +402,7 @@ export async function handleGetTask(args: unknown) {
     lines.push(`Subtasks (${completed}/${task.subtasks.length}):`)
     task.subtasks.forEach((subtask) => {
       const check = subtask.completed ? '[x]' : '[ ]'
-      lines.push(`  ${check} ${subtask.title}`)
+      lines.push(`  ${check} ${subtask.title || 'Untitled'}`)
     })
     lines.push('')
   }
@@ -403,8 +411,9 @@ export async function handleGetTask(args: unknown) {
   if (task.comments && task.comments.length > 0) {
     lines.push(`Comments (${task.comments.length}):`)
     task.comments.slice(0, 3).forEach((comment) => {
-      lines.push(`  ${comment.author.name} (${formatDate(comment.createdAt)}):`)
-      lines.push(`    ${truncate(comment.content, 100)}`)
+      const authorName = comment.author?.name || 'Unknown'
+      lines.push(`  ${authorName} (${formatDate(comment.createdAt)}):`)
+      lines.push(`    ${truncate(comment.content || '', 100)}`)
     })
     if (task.comments.length > 3) {
       lines.push(`  ... and ${task.comments.length - 3} more`)
@@ -508,7 +517,9 @@ export async function handleMoveTask(args: unknown) {
     { taskId: input.id }
   )
 
-  const fromColumn = beforeTask.column?.title || 'Unknown'
+  const fromColumn = beforeTask.column
+    ? `${beforeTask.column.title} (ID: ${beforeTask.column.id})`
+    : 'Unknown'
 
   // Map 'id' to 'taskId' for API
   const { id, ...moveParams } = input
@@ -528,7 +539,9 @@ export async function handleMoveTask(args: unknown) {
     { taskId: id }
   )
 
-  const toColumn = afterTask.column?.title || 'Unknown'
+  const toColumn = afterTask.column
+    ? `${afterTask.column.title} (ID: ${afterTask.column.id})`
+    : 'Unknown'
 
   return success(
     `Task moved:

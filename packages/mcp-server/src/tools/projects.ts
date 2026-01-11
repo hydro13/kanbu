@@ -1,6 +1,6 @@
 /*
  * Project Tools
- * Version: 1.0.0
+ * Version: 1.1.0
  *
  * MCP tools for project management.
  *
@@ -10,6 +10,10 @@
  * Host: MAX
  * Date: 2026-01-09
  * Fase: MCP Fase 2 - Core Kanbu Tools
+ *
+ * Modified: 2026-01-11
+ * Change: Fixed column ID display - now shows actual database IDs
+ *         instead of position numbers in kanbu_get_project output
  * ═══════════════════════════════════════════════════════════════════
  */
 
@@ -181,7 +185,7 @@ export async function handleGetProject(args: unknown) {
       .sort((a, b) => a.position - b.position)
       .forEach((column) => {
         const taskCount = column._count?.tasks ?? 0
-        lines.push(`  ${column.position + 1}. ${column.title} - ${taskCount} tasks`)
+        lines.push(`  ${column.position + 1}. ${column.title} (ID: ${column.id}) - ${taskCount} tasks`)
       })
     lines.push('')
   }
