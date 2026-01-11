@@ -691,13 +691,14 @@ export const taskRouter = router({
   /**
    * Close a task
    * Requires at least MEMBER access
+   * Automatically moves the task to the Archive column
    */
   close: protectedProcedure
     .input(taskIdSchema)
     .mutation(async ({ ctx, input }) => {
       const task = await ctx.prisma.task.findUnique({
         where: { id: input.taskId },
-        select: { projectId: true, isActive: true },
+        select: { projectId: true, columnId: true, isActive: true },
       })
 
       if (!task) {
@@ -716,14 +717,40 @@ export const taskRouter = router({
         })
       }
 
+      // Find the Archive column for this project
+      const archiveColumn = await ctx.prisma.column.findFirst({
+        where: { projectId: task.projectId, isArchive: true },
+        select: { id: true },
+      })
+
+      const updateData: {
+        isActive: boolean
+        dateCompleted: Date
+        columnId?: number
+        position?: number
+      } = {
+        isActive: false,
+        dateCompleted: new Date(),
+      }
+
+      // Move to Archive column if it exists and task isn't already there
+      if (archiveColumn && task.columnId !== archiveColumn.id) {
+        // Get next position in Archive column
+        const lastArchiveTask = await ctx.prisma.task.findFirst({
+          where: { columnId: archiveColumn.id },
+          orderBy: { position: 'desc' },
+          select: { position: true },
+        })
+        updateData.columnId = archiveColumn.id
+        updateData.position = (lastArchiveTask?.position ?? 0) + 1
+      }
+
       const updated = await ctx.prisma.task.update({
         where: { id: input.taskId },
-        data: {
-          isActive: false,
-          dateCompleted: new Date(),
-        },
+        data: updateData,
         select: {
           id: true,
+          columnId: true,
           isActive: true,
           dateCompleted: true,
           updatedAt: true,
@@ -736,13 +763,19 @@ export const taskRouter = router({
   /**
    * Reopen a closed task
    * Requires at least MEMBER access
+   * If task is in Archive column, moves it to the first non-archive column (Backlog)
    */
   reopen: protectedProcedure
     .input(taskIdSchema)
     .mutation(async ({ ctx, input }) => {
       const task = await ctx.prisma.task.findUnique({
         where: { id: input.taskId },
-        select: { projectId: true, isActive: true },
+        select: {
+          projectId: true,
+          columnId: true,
+          isActive: true,
+          column: { select: { isArchive: true } },
+        },
       })
 
       if (!task) {
@@ -761,14 +794,42 @@ export const taskRouter = router({
         })
       }
 
+      const updateData: {
+        isActive: boolean
+        dateCompleted: null
+        columnId?: number
+        position?: number
+      } = {
+        isActive: true,
+        dateCompleted: null,
+      }
+
+      // If task is in Archive column, move to first non-archive column (Backlog)
+      if (task.column?.isArchive) {
+        const firstColumn = await ctx.prisma.column.findFirst({
+          where: { projectId: task.projectId, isArchive: false },
+          orderBy: { position: 'asc' },
+          select: { id: true },
+        })
+
+        if (firstColumn) {
+          // Get next position in target column
+          const lastTask = await ctx.prisma.task.findFirst({
+            where: { columnId: firstColumn.id },
+            orderBy: { position: 'desc' },
+            select: { position: true },
+          })
+          updateData.columnId = firstColumn.id
+          updateData.position = (lastTask?.position ?? 0) + 1
+        }
+      }
+
       const updated = await ctx.prisma.task.update({
         where: { id: input.taskId },
-        data: {
-          isActive: true,
-          dateCompleted: null,
-        },
+        data: updateData,
         select: {
           id: true,
+          columnId: true,
           isActive: true,
           dateCompleted: true,
           updatedAt: true,

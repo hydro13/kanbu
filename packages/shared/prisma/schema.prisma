@@ -238,6 +238,7 @@ model Column {
   taskLimit   Int      @default(0) @map("task_limit")
   isCollapsed Boolean  @default(false) @map("is_collapsed")
   showClosed  Boolean  @default(false) @map("show_closed")
+  isArchive   Boolean  @default(false) @map("is_archive")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
   project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)

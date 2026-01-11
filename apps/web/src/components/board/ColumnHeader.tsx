@@ -35,6 +35,7 @@ export interface Column {
   taskLimit: number
   isCollapsed: boolean
   showClosed: boolean
+  isArchive?: boolean
 }
 
 interface ColumnHeaderProps {

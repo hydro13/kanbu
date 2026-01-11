@@ -67,6 +67,9 @@ export function Column({
   const [showQuickAdd, setShowQuickAdd] = useState(false)
   const hasMultipleSwimlanes = swimlanes.length > 1
 
+  // Archive columns don't allow task creation
+  const isArchive = column.isArchive ?? false
+
   // Default swimlane ID for quick add (first swimlane or null)
   const defaultSwimlaneId = hasMultipleSwimlanes ? swimlanes[0]?.id ?? null : null
 
@@ -81,7 +84,7 @@ export function Column({
         taskCount={taskCount}
         isOverLimit={isOverLimit}
         projectId={projectId}
-        onAddTask={() => setShowQuickAdd(true)}
+        onAddTask={isArchive ? undefined : () => setShowQuickAdd(true)}
       />
 
       {/* Column Content */}
@@ -137,8 +140,8 @@ export function Column({
           />
         )}
 
-        {/* Quick Add Task */}
-        {showQuickAdd && (
+        {/* Quick Add Task - not available for Archive columns */}
+        {showQuickAdd && !isArchive && (
           <QuickAddTask
             projectId={projectId}
             columnId={column.id}

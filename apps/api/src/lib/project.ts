@@ -53,11 +53,12 @@ const PROJECT_ROLE_HIERARCHY: Record<ProjectRole, number> = {
 
 // Default columns for new projects
 const DEFAULT_COLUMNS = [
-  { title: 'Backlog', position: 1 },
-  { title: 'Ready', position: 2 },
-  { title: 'WIP', position: 3 },
-  { title: 'Review', position: 4 },
-  { title: 'Done', position: 5 },
+  { title: 'Backlog', position: 1, isArchive: false },
+  { title: 'Ready', position: 2, isArchive: false },
+  { title: 'WIP', position: 3, isArchive: false },
+  { title: 'Review', position: 4, isArchive: false },
+  { title: 'Done', position: 5, isArchive: false },
+  { title: 'Archive', position: 6, isArchive: true },
 ]
 
 // =============================================================================
@@ -132,24 +133,26 @@ export function hasMinProjectRole(userRole: ProjectRole, minRole: ProjectRole): 
 
 /**
  * Create default columns for a new project.
- * Creates: Backlog, Ready, WIP, Review, Done
+ * Creates: Backlog, Ready, WIP, Review, Done, Archive
  *
  * @param projectId - The project ID to create columns for
  * @returns Array of created columns
  */
 export async function createDefaultColumns(
   projectId: number
-): Promise<Array<{ id: number; title: string; position: number }>> {
+): Promise<Array<{ id: number; title: string; position: number; isArchive: boolean }>> {
   const columns = await prisma.column.createManyAndReturn({
     data: DEFAULT_COLUMNS.map((col) => ({
       projectId,
       title: col.title,
       position: col.position,
+      isArchive: col.isArchive,
     })),
     select: {
       id: true,
       title: true,
       position: true,
+      isArchive: true,
     },
   })
 

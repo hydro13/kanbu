@@ -281,15 +281,16 @@ export const analyticsRouter = router({
 
   /**
    * Get cycle time - average time tasks spend in each column
+   * Excludes Archive columns from analysis
    */
   getCycleTime: protectedProcedure
     .input(projectIdSchema)
     .query(async ({ ctx, input }) => {
       await permissionService.requireProjectAccess(ctx.user.id, input.projectId, 'VIEWER')
 
-      // Get columns for the project
+      // Get columns for the project (exclude Archive for cycle time analysis)
       const columns = await ctx.prisma.column.findMany({
-        where: { projectId: input.projectId },
+        where: { projectId: input.projectId, isArchive: false },
         select: { id: true, title: true, position: true },
         orderBy: { position: 'asc' },
       })

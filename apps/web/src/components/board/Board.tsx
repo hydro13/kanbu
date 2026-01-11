@@ -46,6 +46,7 @@ export interface BoardColumn {
   taskLimit: number
   isCollapsed: boolean
   showClosed: boolean
+  isArchive: boolean
 }
 
 export interface BoardSwimlane {

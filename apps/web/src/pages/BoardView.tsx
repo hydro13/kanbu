@@ -424,12 +424,21 @@ export function BoardViewPage() {
   // Tag filter state
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([])
 
-  // Fetch tasks for the project
+  // Fetch active tasks for the project
   const tasksQuery = trpc.task.list.useQuery(
     { projectId: projectIdNum!, isActive: true, limit: 500 },
     {
       enabled: !!projectIdNum,
       staleTime: 30 * 1000, // 30 seconds - tasks change more frequently
+    }
+  )
+
+  // Also fetch closed/archived tasks (for the Archive column)
+  const archivedTasksQuery = trpc.task.list.useQuery(
+    { projectId: projectIdNum!, isActive: false, limit: 500 },
+    {
+      enabled: !!projectIdNum,
+      staleTime: 30 * 1000,
     }
   )
 
@@ -456,15 +465,32 @@ export function BoardViewPage() {
     setSelectedTagIds([])
   }
 
-  // Filter tasks by selected tags
+  // Combine active and archived tasks, then filter by selected tags
   const filteredTasks = useMemo(() => {
-    const tasks = tasksQuery.data ?? []
-    if (selectedTagIds.length === 0) return tasks
+    const activeTasks = tasksQuery.data ?? []
+    const archivedTasks = archivedTasksQuery.data ?? []
+    const allTasks = [...activeTasks, ...archivedTasks]
 
-    return tasks.filter((task) =>
+    if (selectedTagIds.length === 0) return allTasks
+
+    return allTasks.filter((task) =>
       selectedTagIds.some((tagId) => task.tags?.some((t) => t.id === tagId))
     )
-  }, [tasksQuery.data, selectedTagIds])
+  }, [tasksQuery.data, archivedTasksQuery.data, selectedTagIds])
+
+  // Get showArchiveColumn setting from project settings (default: false)
+  // Cast to unknown first to avoid deep type instantiation with Prisma JsonValue
+  // NOTE: Must be computed before early returns to maintain hook order
+  const projectSettings = (projectQuery.data?.settings ?? {}) as unknown as Record<string, unknown>
+  const showArchiveColumn = Boolean(projectSettings?.showArchiveColumn)
+
+  // Filter columns - hide Archive column unless showArchiveColumn is enabled
+  // NOTE: This useMemo MUST be before early returns to maintain consistent hook order
+  const columns = useMemo(() => {
+    const allColumns = projectQuery.data?.columns ?? []
+    if (showArchiveColumn) return allColumns
+    return allColumns.filter((col) => !col.isArchive)
+  }, [projectQuery.data?.columns, showArchiveColumn])
 
   // Handle invalid project identifier
   if (!projectIdentifier) {
@@ -523,7 +549,6 @@ export function BoardViewPage() {
   }
 
   const project = projectQuery.data
-  const columns = project.columns ?? []
   const swimlanes = project.swimlanes ?? []
   const tags = tagsQuery.data ?? []
 

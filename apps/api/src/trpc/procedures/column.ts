@@ -90,6 +90,7 @@ export const columnRouter = router({
           taskLimit: true,
           isCollapsed: true,
           showClosed: true,
+          isArchive: true,
           createdAt: true,
           _count: {
             select: {
@@ -109,6 +110,7 @@ export const columnRouter = router({
         taskLimit: col.taskLimit,
         isCollapsed: col.isCollapsed,
         showClosed: col.showClosed,
+        isArchive: col.isArchive,
         createdAt: col.createdAt,
         taskCount: col._count.tasks,
         isOverLimit: col.taskLimit > 0 && col._count.tasks >= col.taskLimit,

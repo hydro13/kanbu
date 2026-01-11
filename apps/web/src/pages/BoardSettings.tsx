@@ -305,6 +305,31 @@ export function BoardSettingsPage() {
         </div>
 
         <div className="space-y-8">
+          {/* Archive Settings Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Archive Column</CardTitle>
+              <CardDescription>
+                Closed tasks are automatically moved to the Archive column.
+                Toggle visibility to show or hide archived tasks on the board.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between py-2">
+                <div>
+                  <p className="font-medium">Show Archive Column</p>
+                  <p className="text-sm text-muted-foreground">
+                    When enabled, the Archive column is visible on the board
+                  </p>
+                </div>
+                <ArchiveToggle
+                  projectId={projectId}
+                  initialValue={Boolean((projectQuery.data?.settings as { showArchiveColumn?: boolean } | null)?.showArchiveColumn)}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Columns Section */}
           <Card>
             <CardHeader>
@@ -381,7 +406,7 @@ export function BoardSettingsPage() {
                     No columns yet
                   </p>
                 ) : (
-                  columns.map((column, index) => (
+                  columns.filter(col => !col.isArchive).map((column, index, filteredCols) => (
                     <div
                       key={column.id}
                       className="flex items-center justify-between p-3 border rounded-lg"
@@ -397,7 +422,7 @@ export function BoardSettingsPage() {
                           </button>
                           <button
                             onClick={() => handleMoveColumn(column.id, 'down')}
-                            disabled={index === columns.length - 1}
+                            disabled={index === filteredCols.length - 1}
                             className="p-0.5 hover:bg-muted rounded disabled:opacity-30"
                           >
                             <ChevronDownIcon className="h-3 w-3" />
@@ -567,6 +592,49 @@ export function BoardSettingsPage() {
         </div>
       </div>
     </ProjectLayout>
+  )
+}
+
+// =============================================================================
+// Archive Toggle Component
+// =============================================================================
+
+function ArchiveToggle({ projectId, initialValue }: { projectId: number; initialValue: boolean }) {
+  const [isEnabled, setIsEnabled] = useState(initialValue)
+  const utils = trpc.useUtils()
+
+  const updateSettingsMutation = trpc.project.updateSettings.useMutation({
+    onSuccess: () => {
+      utils.project.getByIdentifier.invalidate()
+    },
+  })
+
+  const handleToggle = () => {
+    const newValue = !isEnabled
+    setIsEnabled(newValue)
+    updateSettingsMutation.mutate({
+      projectId,
+      settings: { showArchiveColumn: newValue },
+    })
+  }
+
+  return (
+    <button
+      onClick={handleToggle}
+      disabled={updateSettingsMutation.isPending}
+      className={cn(
+        'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
+        isEnabled ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600',
+        updateSettingsMutation.isPending && 'opacity-50 cursor-wait'
+      )}
+    >
+      <span
+        className={cn(
+          'inline-block h-4 w-4 transform rounded-full bg-white transition-transform',
+          isEnabled ? 'translate-x-6' : 'translate-x-1'
+        )}
+      />
+    </button>
   )
 }
 

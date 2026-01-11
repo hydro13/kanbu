@@ -20,6 +20,7 @@
 
 import { z } from 'zod'
 import { TRPCError } from '@trpc/server'
+import { Prisma } from '@prisma/client'
 import { router, protectedProcedure } from '../router'
 import {
   createDefaultColumns,
@@ -361,6 +362,7 @@ export const projectRouter = router({
               taskLimit: true,
               isCollapsed: true,
               showClosed: true,
+              isArchive: true,
             },
           },
           swimlanes: {
@@ -463,6 +465,7 @@ export const projectRouter = router({
               taskLimit: true,
               isCollapsed: true,
               showClosed: true,
+              isArchive: true,
             },
           },
           swimlanes: {
@@ -539,6 +542,50 @@ export const projectRouter = router({
       })
 
       return project
+    }),
+
+  /**
+   * Update project settings JSON
+   * Requires MANAGER or OWNER access
+   */
+  updateSettings: protectedProcedure
+    .input(z.object({
+      projectId: z.number(),
+      settings: z.object({
+        showArchiveColumn: z.boolean().optional(),
+      }).passthrough(), // Allow other settings
+    }))
+    .mutation(async ({ ctx, input }) => {
+      await permissionService.requireProjectAccess(ctx.user.id, input.projectId, 'MANAGER')
+
+      // Get current settings
+      const project = await ctx.prisma.project.findUnique({
+        where: { id: input.projectId },
+        select: { settings: true },
+      })
+
+      if (!project) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Project not found',
+        })
+      }
+
+      // Merge new settings with existing
+      const currentSettings = (project.settings ?? {}) as Record<string, unknown>
+      const newSettings = { ...currentSettings, ...input.settings }
+
+      const updated = await ctx.prisma.project.update({
+        where: { id: input.projectId },
+        data: { settings: newSettings as Prisma.InputJsonValue },
+        select: {
+          id: true,
+          settings: true,
+          updatedAt: true,
+        },
+      })
+
+      return updated
     }),
 
   /**
