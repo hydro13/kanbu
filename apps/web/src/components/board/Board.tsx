@@ -295,6 +295,18 @@ export function Board({ columns, swimlanes, tasks, projectId }: BoardProps) {
     return baseWidth * zoomScale
   }, [columns.length, zoomScale])
 
+  // Empty column width is 30% of normal (70% smaller)
+  const emptyColumnWidth = columnWidth * 0.3
+
+  // Calculate task counts per column for width determination
+  const columnTaskCounts = useMemo(() => {
+    const counts: Record<number, number> = {}
+    sortedColumns.forEach((col) => {
+      counts[col.id] = localTasks.filter((t) => t.columnId === col.id).length
+    })
+    return counts
+  }, [sortedColumns, localTasks])
+
   // Check if we have swimlanes (more than just default)
   const hasMultipleSwimlanes = sortedSwimlanes.length > 1
 
@@ -325,12 +337,14 @@ export function Board({ columns, swimlanes, tasks, projectId }: BoardProps) {
       >
         <div
           className="flex h-full p-4 gap-4"
-          style={{ minWidth: `${sortedColumns.length * (columnWidth + 16)}px` }}
         >
           {sortedColumns.map((column) => {
             // Get task count for this column
-            const columnTasks = localTasks.filter((t) => t.columnId === column.id)
-            const isOverLimit = column.taskLimit > 0 && columnTasks.length >= column.taskLimit
+            const taskCount = columnTaskCounts[column.id] ?? 0
+            const isOverLimit = column.taskLimit > 0 && taskCount >= column.taskLimit
+            // Empty columns are 70% smaller (30% of normal width)
+            const isEmpty = taskCount === 0
+            const effectiveWidth = isEmpty ? emptyColumnWidth : columnWidth
 
             return (
               <Column
@@ -339,9 +353,9 @@ export function Board({ columns, swimlanes, tasks, projectId }: BoardProps) {
                 swimlanes={hasMultipleSwimlanes ? sortedSwimlanes : []}
                 tasks={groupedTasks}
                 projectId={projectId}
-                width={columnWidth}
+                width={effectiveWidth}
                 isOverLimit={isOverLimit}
-                taskCount={columnTasks.length}
+                taskCount={taskCount}
                 onTaskClick={handleTaskClick}
                 onTaskContextMenu={handleTaskContextMenu}
               />

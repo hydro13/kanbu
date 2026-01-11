@@ -75,7 +75,7 @@ export function Column({
 
   return (
     <div
-      className="flex-shrink-0 flex flex-col bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden"
+      className="flex-shrink-0 flex flex-col bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden transition-[width] duration-300 ease-in-out"
       style={{ width }}
     >
       {/* Column Header */}
