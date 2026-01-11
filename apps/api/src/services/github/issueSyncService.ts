@@ -15,6 +15,7 @@
  * =============================================================================
  */
 
+import crypto from 'crypto'
 import { prisma } from '../../lib/prisma'
 import { getInstallationOctokit } from './githubService'
 import { generateTaskReference } from '../../lib/project'
@@ -168,7 +169,6 @@ export function calculateSyncHash(
   description: string | null,
   state: 'open' | 'closed'
 ): string {
-  const crypto = require('crypto')
   const content = JSON.stringify({
     title: title.trim(),
     description: (description || '').trim(),
@@ -276,6 +276,54 @@ export async function getLabelsFromTags(
 }
 
 // =============================================================================
+// Milestone Mapping
+// =============================================================================
+
+/**
+ * Get Kanbu milestone ID from GitHub milestone number (inbound sync)
+ * Returns null if no matching milestone found
+ */
+export async function getKanbuMilestoneFromGitHub(
+  repositoryId: number,
+  githubMilestoneNumber: number
+): Promise<number | null> {
+  // Find the GitHub milestone by number
+  const githubMilestone = await prisma.gitHubMilestone.findUnique({
+    where: {
+      repositoryId_milestoneNumber: {
+        repositoryId,
+        milestoneNumber: githubMilestoneNumber,
+      },
+    },
+    include: {
+      kanbuMilestone: true,
+    },
+  })
+
+  // Return linked Kanbu milestone ID if exists
+  return githubMilestone?.kanbuMilestone?.id ?? null
+}
+
+/**
+ * Get GitHub milestone number from Kanbu milestone (outbound sync)
+ * Returns null if no linked GitHub milestone
+ */
+export async function getGitHubMilestoneFromKanbu(
+  milestoneId: number | null
+): Promise<number | null> {
+  if (!milestoneId) return null
+
+  const milestone = await prisma.milestone.findUnique({
+    where: { id: milestoneId },
+    include: {
+      githubMilestone: true,
+    },
+  })
+
+  return milestone?.githubMilestone?.milestoneNumber ?? null
+}
+
+// =============================================================================
 // Column Mapping
 // =============================================================================
 
@@ -353,7 +401,21 @@ export async function createTaskFromGitHubIssue(
     include: { task: true },
   })
 
+  // Get Kanbu milestone from GitHub milestone (if set)
+  let milestoneId: number | null = null
+  if (issue.milestone?.number) {
+    milestoneId = await getKanbuMilestoneFromGitHub(repositoryId, issue.milestone.number)
+  }
+
   if (existingIssue?.task && skipExisting) {
+    // Even when skipping, update the milestone if it changed
+    if (existingIssue.task.milestoneId !== milestoneId) {
+      await prisma.task.update({
+        where: { id: existingIssue.task.id },
+        data: { milestoneId },
+      })
+      console.log(`[IssueSyncService] Updated milestone for existing task ${existingIssue.task.id} (issue #${issue.number})`)
+    }
     return { taskId: existingIssue.task.id, created: false, skipped: true }
   }
 
@@ -437,6 +499,7 @@ export async function createTaskFromGitHubIssue(
       position,
       isActive: issue.state === 'open',
       createdAt: new Date(issue.created_at),
+      milestoneId, // Link to Kanbu milestone if GitHub issue has one
       ...(assigneeIds.length > 0 && {
         assignees: {
           createMany: {
@@ -538,6 +601,12 @@ export async function updateTaskFromGitHubIssue(
   // Get column for current state (may have changed)
   const columnId = await getColumnForIssueState(project.id, issue.state)
 
+  // Get Kanbu milestone from GitHub milestone (may have changed)
+  let milestoneId: number | null = null
+  if (issue.milestone?.number) {
+    milestoneId = await getKanbuMilestoneFromGitHub(repository.id, issue.milestone.number)
+  }
+
   // Process GitHub images in the issue body - download and store locally
   // Uses body_html (if available) to get JWT-embedded URLs for user-attachments
   let processedDescription = issue.body || undefined
@@ -567,6 +636,7 @@ export async function updateTaskFromGitHubIssue(
       title: issue.title,
       description: processedDescription,
       columnId,
+      milestoneId, // Update milestone assignment from GitHub
       isActive: issue.state === 'open',
       updatedAt: new Date(),
     },
@@ -958,6 +1028,11 @@ export async function updateGitHubIssueFromTask(
         },
       },
       githubIssue: true,
+      milestone: {
+        include: {
+          githubMilestone: true,
+        },
+      },
     },
   })
 
@@ -1007,6 +1082,9 @@ export async function updateGitHubIssueFromTask(
   // Get labels from tags
   const labels = await getLabelsFromTags(taskId)
 
+  // Get GitHub milestone number from Kanbu milestone
+  const milestoneNumber = task.milestone?.githubMilestone?.milestoneNumber ?? null
+
   // Determine state
   const state: 'open' | 'closed' = task.isActive ? 'open' : 'closed'
 
@@ -1020,6 +1098,7 @@ export async function updateGitHubIssueFromTask(
     labels,
     assignees: assigneeLogins,
     state,
+    milestone: milestoneNumber, // Sync milestone assignment to GitHub
   })
 
   // Calculate new sync hash
@@ -1101,6 +1180,7 @@ export const issueSyncService = {
   mapGitHubUserToKanbu,
   mapGitHubAssignees,
   getOrCreateTagsFromLabels,
+  getKanbuMilestoneFromGitHub,
   getColumnForIssueState,
   createTaskFromGitHubIssue,
   updateTaskFromGitHubIssue,
@@ -1111,6 +1191,7 @@ export const issueSyncService = {
   mapKanbuUserToGitHub,
   mapKanbuAssigneesToGitHub,
   getLabelsFromTags,
+  getGitHubMilestoneFromKanbu,
   calculateSyncHash,
   hasTaskChangedSinceSync,
   createGitHubIssueFromTask,

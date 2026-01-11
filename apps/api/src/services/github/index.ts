@@ -191,6 +191,20 @@ export {
 } from './milestoneService'
 
 export {
+  milestoneSyncService,
+  // Sync hash
+  calculateMilestoneSyncHash,
+  hasMilestoneChangedSinceSync,
+  // GitHub → Kanbu
+  syncGitHubToKanbu,
+  syncAllGitHubToKanbu,
+  // Kanbu → GitHub
+  syncKanbuToGitHub,
+  deleteGitHubMilestone,
+  deleteKanbuMilestoneFromGitHub,
+} from './milestoneSyncService'
+
+export {
   releaseService,
   // Release CRUD
   upsertRelease,
@@ -363,3 +377,9 @@ export {
   githubImageService,
   processGitHubImages,
 } from './githubImageService'
+
+export {
+  commentSyncService,
+  syncCommentToGitHub,
+  deleteGitHubComment,
+} from './commentSyncService'

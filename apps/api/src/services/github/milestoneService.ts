@@ -15,6 +15,7 @@
 
 import { prisma } from '../../lib/prisma'
 import { getInstallationOctokit } from './githubService'
+import { syncGitHubToKanbu, deleteKanbuMilestoneFromGitHub } from './milestoneSyncService'
 
 // =============================================================================
 // Types
@@ -238,6 +239,7 @@ export async function deleteMilestone(
 
 /**
  * Sync milestones from GitHub webhook data
+ * Also syncs to linked Kanbu milestone (bi-directional)
  */
 export async function syncMilestoneFromWebhook(
   repositoryId: number,
@@ -255,12 +257,34 @@ export async function syncMilestoneFromWebhook(
     html_url: string
   }
 ): Promise<{ id: number } | null> {
+  // Get repository to find projectId
+  const repository = await prisma.gitHubRepository.findUnique({
+    where: { id: repositoryId },
+    select: { projectId: true },
+  })
+
   if (action === 'deleted') {
+    // First get the GitHub milestone to check for linked Kanbu milestone
+    const ghMilestone = await prisma.gitHubMilestone.findUnique({
+      where: {
+        repositoryId_milestoneNumber: {
+          repositoryId,
+          milestoneNumber: milestoneData.number,
+        },
+      },
+    })
+
+    if (ghMilestone) {
+      // Delete linked Kanbu milestone (if any)
+      await deleteKanbuMilestoneFromGitHub(ghMilestone.id)
+    }
+
     await deleteMilestone(repositoryId, milestoneData.number)
     return null
   }
 
-  return upsertMilestone({
+  // Upsert the GitHub milestone
+  const result = await upsertMilestone({
     repositoryId,
     milestoneNumber: milestoneData.number,
     milestoneId: BigInt(milestoneData.id),
@@ -273,6 +297,18 @@ export async function syncMilestoneFromWebhook(
     closedIssues: milestoneData.closed_issues,
     htmlUrl: milestoneData.html_url,
   })
+
+  // Sync to Kanbu milestone (creates or updates)
+  if (repository?.projectId) {
+    try {
+      await syncGitHubToKanbu(result.id, repository.projectId)
+    } catch (error) {
+      console.error('[MilestoneService] Failed to sync to Kanbu milestone:', error)
+      // Don't throw - the GitHub milestone was saved successfully
+    }
+  }
+
+  return result
 }
 
 // =============================================================================
@@ -349,7 +385,7 @@ export async function importMilestonesFromGitHub(
           },
         })
 
-        await upsertMilestone({
+        const ghMilestone = await upsertMilestone({
           repositoryId,
           milestoneNumber: milestone.number,
           milestoneId: BigInt(milestone.id),
@@ -362,6 +398,11 @@ export async function importMilestonesFromGitHub(
           closedIssues: milestone.closed_issues,
           htmlUrl: milestone.html_url,
         })
+
+        // Sync to Kanbu milestone (creates or updates)
+        if (repository.projectId) {
+          await syncGitHubToKanbu(ghMilestone.id, repository.projectId)
+        }
 
         if (existing) {
           result.updated++

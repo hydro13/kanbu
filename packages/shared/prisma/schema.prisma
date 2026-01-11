@@ -493,16 +493,23 @@ model Module {
 }
 
 model Milestone {
-  id          Int       @id @default(autoincrement())
-  projectId   Int       @map("project_id")
-  name        String    @db.VarChar(255)
-  description String?
-  dateDue     DateTime? @map("date_due") @db.Date
-  isCompleted Boolean   @default(false) @map("is_completed")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
-  project     Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  tasks       Task[]
+  id                Int              @id @default(autoincrement())
+  projectId         Int              @map("project_id")
+  name              String           @db.VarChar(255)
+  description       String?
+  dateDue           DateTime?        @map("date_due") @db.Date
+  isCompleted       Boolean          @default(false) @map("is_completed")
+  createdAt         DateTime         @default(now()) @map("created_at")
+  updatedAt         DateTime         @updatedAt @map("updated_at")
+
+  // GitHub Sync Fields
+  githubMilestoneId Int?             @unique @map("github_milestone_id")
+  syncHash          String?          @map("sync_hash") @db.VarChar(64)
+
+  // Relations
+  project           Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  githubMilestone   GitHubMilestone? @relation(fields: [githubMilestoneId], references: [id], onDelete: SetNull)
+  tasks             Task[]
 
   @@map("milestones")
 }
@@ -1235,7 +1242,7 @@ model GitHubReviewComment {
 }
 
 /// GitHub Milestones
-/// Synced from GitHub, can be linked to Kanbu milestones
+/// Synced from GitHub, bi-directionally linked to Kanbu milestones
 model GitHubMilestone {
   id              Int              @id @default(autoincrement())
   repositoryId    Int              @map("repository_id")
@@ -1251,7 +1258,10 @@ model GitHubMilestone {
   htmlUrl         String?          @map("html_url") @db.VarChar(512)
   createdAt       DateTime         @default(now()) @map("created_at")
   updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  // Relations
   repository      GitHubRepository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  kanbuMilestone  Milestone?       // Linked Kanbu milestone (1:1)
 
   @@unique([repositoryId, milestoneNumber])
   @@index([state])

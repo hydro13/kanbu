@@ -23,6 +23,7 @@ import {
   emitCommentUpdated,
   emitCommentDeleted,
 } from '../../socket'
+import { syncCommentToGitHub, deleteGitHubComment } from '../../services/github/commentSyncService'
 
 // =============================================================================
 // Input Schemas
@@ -231,6 +232,14 @@ export const commentRouter = router({
         } : undefined,
       })
 
+      // Sync comment to GitHub if task is linked to a GitHub issue
+      try {
+        await syncCommentToGitHub(comment.id)
+      } catch (error) {
+        // Log but don't fail - the Kanbu comment was created successfully
+        console.error('[CommentRouter] Failed to sync comment to GitHub:', error)
+      }
+
       return comment
     }),
 
@@ -347,6 +356,14 @@ export const commentRouter = router({
         })
       }
 
+      // Sync comment update to GitHub if linked
+      try {
+        await syncCommentToGitHub(input.commentId)
+      } catch (error) {
+        // Log but don't fail - the Kanbu comment was updated successfully
+        console.error('[CommentRouter] Failed to sync comment update to GitHub:', error)
+      }
+
       return updated
     }),
 
@@ -373,11 +390,21 @@ export const commentRouter = router({
         })
       }
 
-      // Get taskId before deleting
+      // Get taskId and githubCommentId before deleting
       const comment = await ctx.prisma.comment.findUnique({
         where: { id: input.commentId },
-        select: { taskId: true },
+        select: { taskId: true, githubCommentId: true },
       })
+
+      // Delete GitHub comment first (if linked)
+      if (comment?.githubCommentId) {
+        try {
+          await deleteGitHubComment(input.commentId, comment.githubCommentId, comment.taskId)
+        } catch (error) {
+          // Log but don't fail - continue with Kanbu comment deletion
+          console.error('[CommentRouter] Failed to delete GitHub comment:', error)
+        }
+      }
 
       await ctx.prisma.comment.delete({
         where: { id: input.commentId },

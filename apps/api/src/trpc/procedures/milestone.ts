@@ -17,6 +17,8 @@ import { z } from 'zod'
 import { TRPCError } from '@trpc/server'
 import { router, protectedProcedure } from '../router'
 import { permissionService } from '../../services'
+import { syncKanbuToGitHub, deleteGitHubMilestone } from '../../services/github/milestoneSyncService'
+import { syncTaskToGitHub } from '../../services/github/issueSyncService'
 
 // =============================================================================
 // Input Schemas
@@ -208,6 +210,7 @@ export const milestoneRouter = router({
 
   /**
    * Create a new milestone
+   * For GitHub-linked projects, also creates a GitHub milestone
    */
   create: protectedProcedure.input(createMilestoneSchema).mutation(async ({ ctx, input }) => {
     await permissionService.requireProjectAccess(ctx.user.id, input.projectId, 'MEMBER')
@@ -221,11 +224,20 @@ export const milestoneRouter = router({
       },
     })
 
+    // Sync to GitHub if project has a linked repository
+    try {
+      await syncKanbuToGitHub(milestone.id)
+    } catch (error) {
+      // Log but don't fail - the Kanbu milestone was created successfully
+      console.error('[MilestoneRouter] Failed to sync milestone to GitHub:', error)
+    }
+
     return milestone
   }),
 
   /**
    * Update a milestone
+   * For GitHub-linked projects, also updates the GitHub milestone
    */
   update: protectedProcedure.input(updateMilestoneSchema).mutation(async ({ ctx, input }) => {
     const { milestoneId, ...updates } = input
@@ -255,11 +267,20 @@ export const milestoneRouter = router({
       },
     })
 
+    // Sync to GitHub if project has a linked repository
+    try {
+      await syncKanbuToGitHub(updated.id)
+    } catch (error) {
+      // Log but don't fail - the Kanbu milestone was updated successfully
+      console.error('[MilestoneRouter] Failed to sync milestone to GitHub:', error)
+    }
+
     return updated
   }),
 
   /**
    * Delete a milestone
+   * For GitHub-linked projects, also deletes the GitHub milestone
    */
   delete: protectedProcedure.input(milestoneIdSchema).mutation(async ({ ctx, input }) => {
     const milestone = await ctx.prisma.milestone.findUnique({
@@ -274,6 +295,14 @@ export const milestoneRouter = router({
     }
 
     await permissionService.requireProjectAccess(ctx.user.id, milestone.projectId, 'MEMBER')
+
+    // Delete linked GitHub milestone first (before Kanbu milestone is deleted)
+    try {
+      await deleteGitHubMilestone(input.milestoneId)
+    } catch (error) {
+      // Log but don't fail - continue with Kanbu milestone deletion
+      console.error('[MilestoneRouter] Failed to delete GitHub milestone:', error)
+    }
 
     // Remove milestone assignment from all tasks first
     await ctx.prisma.task.updateMany({
@@ -330,6 +359,14 @@ export const milestoneRouter = router({
       where: { id: input.taskId },
       data: { milestoneId: input.milestoneId },
     })
+
+    // Sync milestone assignment to GitHub if task is linked to a GitHub issue
+    try {
+      await syncTaskToGitHub(input.taskId)
+    } catch (error) {
+      // Log but don't fail - the Kanbu task was updated successfully
+      console.error('[MilestoneRouter] Failed to sync task milestone to GitHub:', error)
+    }
 
     return updated
   }),
