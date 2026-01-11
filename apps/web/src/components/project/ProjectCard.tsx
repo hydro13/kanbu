@@ -1,45 +1,24 @@
 /*
  * ProjectCard Component
- * Version: 1.2.0
+ * Version: 1.3.0
  *
  * Card component for displaying project overview in grid/list view.
  *
- * ═══════════════════════════════════════════════════════════════════
+ * ===================================================================
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
- * Session: 22f325f5-4611-4a4e-b7d1-fb1e422742de
- * Claude Code: v2.0.70 (Opus 4.5)
- * Host: linux-dev
- * Signed: 2025-12-28T13:XX CET
+ * Signed: 2025-12-28
  *
- * Modified by:
- * Session: 73a280f4-f735-47a2-9803-e570fa6a86f7
- * Signed: 2025-12-28T18:25 CET
- * Change: Fixed link to navigate to /project/:id/board instead of /project/:id
- *
- * Modified by:
- * Host: MAX
- * Date: 2026-01-07
- * Change: Updated links to include workspace slug for SEO-friendly URLs
- *
- * Modified by:
- * Host: MAX
- * Date: 2026-01-10
- * Change: Added edit button and GitHub indicator with sync status,
- *         changed edit link to /details for project details page
- *
- * Modified by:
- * Host: MAX
- * Date: 2026-01-11
- * Change: Horizontal full-width layout for list view,
- *         name prominent with identifier badge, stats and badges on right
- * ═══════════════════════════════════════════════════════════════════
+ * Modified: 2026-01-11
+ * Change: Added favorite toggle button (Fase 2.1)
+ * ===================================================================
  */
 
 import { Link } from 'react-router-dom'
-import { Github, Settings, RefreshCw, CheckCircle2, XCircle } from 'lucide-react'
+import { Github, Settings, RefreshCw, CheckCircle2, XCircle, Star } from 'lucide-react'
 import { Card, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { trpc } from '@/lib/trpc'
 import type { Project } from '@/store/projectSlice'
 
 // =============================================================================
@@ -149,6 +128,20 @@ function getGitHubTooltip(project: Project, syncStatus: SyncStatus): string {
 export function ProjectCard({ project, workspaceSlug, className }: ProjectCardProps) {
   const syncStatus = getGitHubSyncStatus(project)
   const canEdit = project.userRole === 'OWNER' || project.userRole === 'MANAGER'
+  const utils = trpc.useUtils()
+
+  // Favorite state
+  const { data: isFavorite = false } = trpc.favorite.isFavorite.useQuery(
+    { projectId: project.id },
+    { staleTime: 30000 }
+  )
+
+  const toggleFavorite = trpc.favorite.toggle.useMutation({
+    onSuccess: () => {
+      utils.favorite.list.invalidate()
+      utils.favorite.isFavorite.invalidate({ projectId: project.id })
+    },
+  })
 
   // Get sync status icon and color
   const getSyncStatusIcon = () => {
@@ -239,23 +232,52 @@ export function ProjectCard({ project, workspaceSlug, className }: ProjectCardPr
         </Card>
       </Link>
 
-      {/* Edit button - positioned absolutely, visible on hover */}
-      {canEdit && (
-        <Link
-          to={`/workspace/${workspaceSlug}/project/${project.identifier}/details`}
-          onClick={(e) => e.stopPropagation()}
-          className="absolute top-1/2 -translate-y-1/2 right-3 opacity-0 group-hover:opacity-100 transition-opacity"
+      {/* Action buttons - positioned absolutely, visible on hover */}
+      <div className="absolute top-1/2 -translate-y-1/2 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        {/* Favorite button */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className={cn(
+            'h-7 w-7 bg-background/80 hover:bg-background shadow-sm',
+            isFavorite && 'opacity-100'
+          )}
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            toggleFavorite.mutate({ projectId: project.id })
+          }}
+          disabled={toggleFavorite.isPending}
+          title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
         >
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 bg-background/80 hover:bg-background shadow-sm"
+          <Star
+            className={cn(
+              'h-4 w-4',
+              isFavorite ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'
+            )}
+          />
+          <span className="sr-only">
+            {isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+          </span>
+        </Button>
+
+        {/* Edit button */}
+        {canEdit && (
+          <Link
+            to={`/workspace/${workspaceSlug}/project/${project.identifier}/details`}
+            onClick={(e) => e.stopPropagation()}
           >
-            <Settings className="h-4 w-4" />
-            <span className="sr-only">Edit project</span>
-          </Button>
-        </Link>
-      )}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 bg-background/80 hover:bg-background shadow-sm"
+            >
+              <Settings className="h-4 w-4" />
+              <span className="sr-only">Edit project</span>
+            </Button>
+          </Link>
+        )}
+      </div>
     </div>
   )
 }

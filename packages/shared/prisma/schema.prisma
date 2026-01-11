@@ -118,6 +118,7 @@ model User {
   pagePreferences      UserPagePreference[]
   invitationsCreated   WorkspaceInvitation[]
   workspacesCreated    Workspace[]               @relation("WorkspaceCreator")
+  favorites            UserFavorite[]
 
   @@map("users")
 }
@@ -203,6 +204,7 @@ model Project {
   tasks            Task[]
   webhooks         Webhook[]
   wikiPages        WikiPage[]
+  favoritedBy      UserFavorite[]
 
   @@unique([workspaceId, identifier])
   @@map("projects")
@@ -819,6 +821,20 @@ model UserPagePreference {
   @@unique([userId, deviceId, pagePath])
   @@index([userId, deviceId])
   @@map("user_page_preferences")
+}
+
+model UserFavorite {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  projectId Int      @map("project_id")
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, projectId])
+  @@index([userId])
+  @@map("user_favorites")
 }
 
 model Group {

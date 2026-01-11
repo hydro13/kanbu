@@ -1,6 +1,6 @@
 # Dashboard Roadmap V2
 
-## Versie: 2.1.0
+## Versie: 2.2.0
 ## Datum: 2026-01-11
 ## Gebaseerd op: IDEAAL-DASHBOARD-ONTWERP-V2.md
 
@@ -26,7 +26,7 @@ Gebaseerd op het ontwerp in [IDEAAL-DASHBOARD-ONTWERP-V2.md](./IDEAAL-DASHBOARD-
 |------|--------|-----------|
 | **Fase 0** | ✅ COMPLEET | Foundation, bug fixes |
 | **Fase 1** | ✅ COMPLEET | 6/6 items compleet |
-| **Fase 2** | 📋 Planned | Personal Enhancements |
+| **Fase 2** | ✅ COMPLEET | 2/3 items (My Tasks al goed) |
 | **Fase 3** | 📋 Planned | Enhanced Features |
 | **Fase 4** | 📋 Planned | Polish & UX |
 
@@ -39,7 +39,7 @@ Gebaseerd op het ontwerp in [IDEAAL-DASHBOARD-ONTWERP-V2.md](./IDEAAL-DASHBOARD-
 | **ProjectSidebar** | ✅ Volledig | ACL-aware, 4 sections, 24 menu items |
 | **WorkspaceSidebar** | ✅ Volledig | 6 modules, back link, workspace header |
 | **WorkspaceLayout** | ✅ Volledig | Container wrapper met WorkspaceSidebar |
-| **Dashboard Overview** | ✅ Basis | Widgets aanwezig |
+| **Dashboard Overview** | ✅ Volledig | Stats, Today, Favorites, Workspaces |
 | **My Tasks** | ✅ Volledig | Tabel met filters |
 | **My Subtasks** | ✅ Volledig | Subtasks overzicht |
 | **Notes Page** | ✅ Volledig | Route + pagina werken |
@@ -49,7 +49,7 @@ Gebaseerd op het ontwerp in [IDEAAL-DASHBOARD-ONTWERP-V2.md](./IDEAAL-DASHBOARD-
 | **Workspace Settings** | ✅ Basis | Via WorkspaceSettingsWrapper |
 | **Breadcrumbs** | ✅ Volledig | Container-aware hierarchy |
 | **Inbox Page** | ❌ Ontbreekt | Niet geïmplementeerd |
-| **Favorites** | ❌ Ontbreekt | Niet geïmplementeerd |
+| **Favorites** | ✅ Volledig | Sidebar + star buttons + overview widget |
 | **Workspace Wiki** | ✅ Volledig | Hierarchische paginas, CRUD |
 | **Workspace Groups** | ✅ Volledig | Project categorisatie |
 
@@ -98,14 +98,14 @@ Gebaseerd op het ontwerp in [IDEAAL-DASHBOARD-ONTWERP-V2.md](./IDEAAL-DASHBOARD-
 │                                                                             │
 │  FASE 0          FASE 1          FASE 2          FASE 3          FASE 4    │
 │  Foundation      Workspace       Personal        Enhanced        Polish    │
-│  ██████████      ██████████      ░░░░░░░░░░      ░░░░░░░░░░      ░░░░░░░░░░│
-│  COMPLEET        COMPLEET        PLANNED         PLANNED         PLANNED   │
+│  ██████████      ██████████      ██████████      ░░░░░░░░░░      ░░░░░░░░░░│
+│  COMPLEET        COMPLEET        COMPLEET        PLANNED         PLANNED   │
 │                                                                             │
-│  ✅ Fix bugs     ✅ Workspace    - Favorites     - Inbox         - Keyboard│
-│  ✅ Notes route    Sidebar       - Dashboard     - Notifications - Context │
+│  ✅ Fix bugs     ✅ Workspace    ✅ Favorites    - Inbox         - Keyboard│
+│  ✅ Notes route    Sidebar       ✅ Dashboard    - Notifications - Context │
 │  ✅ Layout       ✅ Wiki           Overview      - Groups        - Search  │
-│    switching     ✅ Members        widgets       - Statistics    - DnD     │
-│  ✅ Breadcrumbs  ✅ Statistics                                             │
+│    switching     ✅ Members      ✅ My Tasks     - Statistics    - DnD     │
+│  ✅ Breadcrumbs  ✅ Statistics     (al goed)                               │
 │                  ✅ Settings                                               │
 │                  ✅ Groups                                                 │
 │                                                                             │
@@ -116,7 +116,7 @@ Gebaseerd op het ontwerp in [IDEAAL-DASHBOARD-ONTWERP-V2.md](./IDEAAL-DASHBOARD-
 |------|------|--------|--------|-----------|
 | 0 | Foundation | Low | ✅ COMPLEET | 3/3 |
 | 1 | Workspace Navigation | High | ✅ COMPLEET | 6/6 |
-| 2 | Personal Enhancements | Medium | 📋 Planned | 0/3 |
+| 2 | Personal Enhancements | Medium | ✅ COMPLEET | 2/3 |
 | 3 | Enhanced Features | High | 📋 Planned | 0/2 |
 | 4 | Polish & UX | Medium | 📋 Planned | 0/4 |
 
@@ -388,10 +388,8 @@ Volledige WorkspaceSidebar en workspace-level pagina's implementeren.
 
 # FASE 2: Personal Enhancements
 
-**Status:** 📋 Planned
-**Effort:** Medium (2-3 dagen)
-**Prioriteit:** Medium
-**Dependencies:** Fase 0 compleet
+**Status:** ✅ COMPLEET
+**Voortgang:** 2/3 items compleet (My Tasks was al goed)
 
 ## Doel
 
@@ -401,21 +399,67 @@ Verbeter de personal (dashboard) sectie met favorites en betere overview.
 
 ## 2.1 Favorites Systeem
 
-**Status:** ❌ Todo
+**Status:** ✅ Compleet
 
-(Zie originele specificatie in vorige versie)
+### Wat is gedaan
+
+- `UserFavorite` database model toegevoegd:
+  - User-Project relatie met sortOrder
+  - Unique constraint per user/project
+- `favorite` tRPC router met:
+  - list, add, remove, toggle, reorder, isFavorite
+- DashboardSidebar uitgebreid met Favorites sectie:
+  - Toont gefavorite projecten met workspace label
+  - Cross-container navigatie
+  - Yellow star icons
+- ProjectCard star button:
+  - Toggle favorite op hover
+  - Yellow fill wanneer actief
+  - Optimistic updates
+
+### Bestanden
+
+| Bestand | Actie |
+|---------|-------|
+| `packages/shared/prisma/schema.prisma` | UserFavorite model |
+| `apps/api/src/trpc/procedures/favorite.ts` | Nieuwe router |
+| `apps/api/src/trpc/index.ts` | Router geregistreerd |
+| `components/dashboard/DashboardSidebar.tsx` | Favorites sectie |
+| `components/project/ProjectCard.tsx` | Star button |
 
 ---
 
 ## 2.2 Dashboard Overview Verbetering
 
-**Status:** ❌ Todo
+**Status:** ✅ Compleet
+
+### Wat is gedaan
+
+- Greeting met datum en overdue/today summary
+- 5 stat cards (was 4):
+  - Active Tasks, Subtasks, Overdue (red highlight), This Week, Completed
+- Today widget:
+  - Taken die vandaag due zijn
+  - Priority indicator
+  - Link naar project board
+- Favorites widget:
+  - Quick access tot favorite projects
+  - Workspace label
+- Bestaande workspaces en sticky notes behouden
+
+### Bestanden
+
+| Bestand | Actie |
+|---------|-------|
+| `pages/dashboard/DashboardOverview.tsx` | Volledig geupdate |
 
 ---
 
 ## 2.3 My Tasks Verbetering
 
-**Status:** ❌ Todo
+**Status:** ✅ Al goed
+
+My Tasks pagina werkte al correct met filters en grouping. Geen wijzigingen nodig.
 
 ---
 
@@ -473,6 +517,26 @@ Verbeter de personal (dashboard) sectie met favorites en betere overview.
 
 # Changelog
 
+## 2026-01-11 (v2.2.0)
+
+### Compleet
+
+- **Fase 2: Personal Enhancements** - 2/3 items compleet
+  - Favorites systeem (model, router, sidebar, star buttons)
+  - Dashboard Overview verbeteringen (greeting, today widget, favorites widget)
+  - My Tasks was al compleet
+
+### Nieuwe Features
+
+- **UserFavorite** database model voor project favorites
+- **favorite** tRPC router met toggle, list, reorder
+- **Favorites sectie** in DashboardSidebar
+- **Star button** op ProjectCard
+- **Today widget** op dashboard met due today taken
+- **Overdue indicator** in stats met red highlight
+
+---
+
 ## 2026-01-11 (v2.1.0)
 
 ### Compleet
@@ -482,12 +546,14 @@ Verbeter de personal (dashboard) sectie met favorites en betere overview.
   - Container-aware layout switching
   - Breadcrumbs verbetering
 
-- **Fase 1: Workspace Navigation** - 4/6 items compleet
+- **Fase 1: Workspace Navigation** - 6/6 items compleet
   - WorkspaceSidebar component
   - WorkspaceLayout wrapper
   - Workspace Members page
   - Workspace Statistics page (incl. bug fixes)
   - Workspace Settings integratie
+  - Workspace Wiki page
+  - Workspace Groups page
   - Navigation bug fix (workspace cards)
 
 ### Bug Fixes

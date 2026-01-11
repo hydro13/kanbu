@@ -1,22 +1,17 @@
 /*
  * Dashboard Overview Page
- * Version: 1.0.0
+ * Version: 2.0.0
  *
- * Main dashboard overview with quick stats, workspace info, and recent projects.
- * Uses DashboardLayout with sidebar navigation.
+ * Main dashboard overview with quick stats, today's tasks, favorites,
+ * workspace info, and sticky notes. Uses DashboardLayout with sidebar navigation.
  *
- * ═══════════════════════════════════════════════════════════════════
+ * ===================================================================
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
- * Session: ff2f815e-190c-4f7e-ada7-0c0a74177ac4
- * Claude Code: v2.0.70 (Opus 4.5)
- * Host: linux-dev
- * Signed: 2025-12-30T00:55 CET
+ * Signed: 2025-12-30
  *
- * Modified by:
- * Session: ff2f815e-190c-4f7e-ada7-0c0a74177ac4
- * Signed: 2025-12-30T03:15 CET
- * Change: Added StickyNoteList integration (USER-03)
- * ═══════════════════════════════════════════════════════════════════
+ * Modified: 2026-01-11
+ * Change: Added Today's Tasks, Favorites section, improved stats (Fase 2.2)
+ * ===================================================================
  */
 
 import { Link } from 'react-router-dom'
@@ -26,6 +21,8 @@ import { StickyNoteList } from '@/components/sticky'
 import { useAppSelector } from '@/store'
 import { selectUser } from '@/store/authSlice'
 import { trpc } from '@/lib/trpc'
+import { Star, Clock, AlertTriangle, CheckCircle2 } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 // =============================================================================
 // Icons
@@ -75,6 +72,37 @@ function WorkspaceIcon({ className }: { className?: string }) {
   )
 }
 
+// Helper to format date
+function formatTaskDate(dateString: string): string {
+  const date = new Date(dateString)
+  const today = new Date()
+  const tomorrow = new Date(today)
+  tomorrow.setDate(tomorrow.getDate() + 1)
+
+  if (date.toDateString() === today.toDateString()) return 'Today'
+  if (date.toDateString() === tomorrow.toDateString()) return 'Tomorrow'
+
+  return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+}
+
+// Get greeting based on time of day
+function getGreeting(): string {
+  const hour = new Date().getHours()
+  if (hour < 12) return 'Good morning'
+  if (hour < 18) return 'Good afternoon'
+  return 'Good evening'
+}
+
+// Get today's date formatted
+function getTodayFormatted(): string {
+  return new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric'
+  })
+}
+
 export function DashboardOverview() {
   const user = useAppSelector(selectUser)
 
@@ -86,35 +114,75 @@ export function DashboardOverview() {
   const myTasksQuery = trpc.user.getMyTasks.useQuery()
   const mySubtasksQuery = trpc.user.getMySubtasks.useQuery()
 
+  // Fetch favorites
+  const favoritesQuery = trpc.favorite.list.useQuery()
+  const favorites = favoritesQuery.data ?? []
+
   // Calculate quick stats
   const activeTasks = myTasksQuery.data?.filter((t) => t.isActive).length ?? 0
   const activeSubtasks = mySubtasksQuery.data?.filter((s) => s.status !== 'DONE').length ?? 0
   const completedSubtasks = mySubtasksQuery.data?.filter((s) => s.status === 'DONE').length ?? 0
 
-  // Tasks due within 7 days
+  // Date calculations
   const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const tomorrow = new Date(today)
+  tomorrow.setDate(tomorrow.getDate() + 1)
   const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+
+  // Tasks due today
+  const tasksDueToday = myTasksQuery.data?.filter((t) => {
+    if (!t.dateDue || !t.isActive) return false
+    const dueDate = new Date(t.dateDue)
+    return dueDate >= today && dueDate < tomorrow
+  }) ?? []
+
+  // Overdue tasks
+  const overdueTasks = myTasksQuery.data?.filter((t) => {
+    if (!t.dateDue || !t.isActive) return false
+    const dueDate = new Date(t.dateDue)
+    return dueDate < today
+  }) ?? []
+
+  // Tasks due within 7 days (excluding today and overdue)
   const tasksDueSoon = myTasksQuery.data?.filter((t) => {
     if (!t.dateDue || !t.isActive) return false
     const dueDate = new Date(t.dateDue)
-    return dueDate <= weekFromNow
+    return dueDate >= tomorrow && dueDate <= weekFromNow
   }).length ?? 0
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Welcome, {user?.name || user?.username}!
-          </h1>
-          <p className="text-muted-foreground">
-            Your personal dashboard
-          </p>
+        {/* Header with greeting */}
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">
+              {getGreeting()}, {user?.name || user?.username}!
+            </h1>
+            <p className="text-muted-foreground">
+              {getTodayFormatted()}
+              {(tasksDueToday.length > 0 || overdueTasks.length > 0) && (
+                <span className="ml-2">
+                  {overdueTasks.length > 0 && (
+                    <span className="text-destructive font-medium">
+                      {overdueTasks.length} overdue
+                    </span>
+                  )}
+                  {overdueTasks.length > 0 && tasksDueToday.length > 0 && ', '}
+                  {tasksDueToday.length > 0 && (
+                    <span className="text-amber-600 dark:text-amber-400 font-medium">
+                      {tasksDueToday.length} due today
+                    </span>
+                  )}
+                </span>
+              )}
+            </p>
+          </div>
         </div>
 
         {/* Quick Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <Link to="/dashboard/tasks" className="block">
             <Card className="hover:bg-accent/50 transition-colors cursor-pointer">
               <CardContent className="pt-6">
@@ -140,22 +208,51 @@ export function DashboardOverview() {
                   </div>
                   <div>
                     <p className="text-2xl font-bold">{activeSubtasks}</p>
-                    <p className="text-sm text-muted-foreground">Active Subtasks</p>
+                    <p className="text-sm text-muted-foreground">Subtasks</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
           </Link>
 
+          <Card className={cn(overdueTasks.length > 0 && 'border-destructive/50')}>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-3">
+                <div className={cn(
+                  'h-10 w-10 rounded-md flex items-center justify-center',
+                  overdueTasks.length > 0
+                    ? 'bg-destructive/10'
+                    : 'bg-gray-100 dark:bg-gray-800'
+                )}>
+                  <AlertTriangle className={cn(
+                    'h-5 w-5',
+                    overdueTasks.length > 0
+                      ? 'text-destructive'
+                      : 'text-gray-500'
+                  )} />
+                </div>
+                <div>
+                  <p className={cn(
+                    'text-2xl font-bold',
+                    overdueTasks.length > 0 && 'text-destructive'
+                  )}>
+                    {overdueTasks.length}
+                  </p>
+                  <p className="text-sm text-muted-foreground">Overdue</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-md bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                  <AlertIcon className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                  <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{tasksDueSoon}</p>
-                  <p className="text-sm text-muted-foreground">Due This Week</p>
+                  <p className="text-sm text-muted-foreground">This Week</p>
                 </div>
               </div>
             </CardContent>
@@ -165,13 +262,102 @@ export function DashboardOverview() {
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-md bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                  <CheckCircleIcon className="h-5 w-5 text-green-600 dark:text-green-400" />
+                  <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{completedSubtasks}</p>
                   <p className="text-sm text-muted-foreground">Completed</p>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Today's Tasks and Favorites Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Today's Tasks */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Clock className="h-5 w-5 text-amber-500" />
+                Today
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {tasksDueToday.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No tasks due today
+                </p>
+              ) : (
+                <ul className="space-y-2">
+                  {tasksDueToday.slice(0, 5).map((task) => (
+                    <li key={task.id}>
+                      <Link
+                        to={`/workspace/${task.workspaceSlug}/project/${task.projectIdentifier}/board?task=${task.id}`}
+                        className="flex items-center gap-3 p-2 rounded hover:bg-accent/50 transition-colors"
+                      >
+                        <span className={cn(
+                          'w-2 h-2 rounded-full',
+                          task.priority === 'URGENT' || task.priority === 'HIGH'
+                            ? 'bg-red-500'
+                            : task.priority === 'MEDIUM'
+                            ? 'bg-yellow-500'
+                            : 'bg-green-500'
+                        )} />
+                        <span className="flex-1 truncate text-sm">{task.title}</span>
+                        <span className="text-xs text-muted-foreground">{task.projectName}</span>
+                      </Link>
+                    </li>
+                  ))}
+                  {tasksDueToday.length > 5 && (
+                    <li className="text-center">
+                      <Link
+                        to="/dashboard/tasks"
+                        className="text-sm text-primary hover:underline"
+                      >
+                        +{tasksDueToday.length - 5} more tasks
+                      </Link>
+                    </li>
+                  )}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Favorites */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Star className="h-5 w-5 text-yellow-500" />
+                Favorites
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {favorites.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No favorite projects yet. Star a project to add it here.
+                </p>
+              ) : (
+                <ul className="space-y-2">
+                  {favorites.slice(0, 5).map((fav) => (
+                    <li key={fav.id}>
+                      <Link
+                        to={`/workspace/${fav.workspaceSlug}/project/${fav.projectIdentifier}/board`}
+                        className="flex items-center gap-3 p-2 rounded hover:bg-accent/50 transition-colors"
+                      >
+                        <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+                        <span className="flex-1 truncate text-sm font-medium">{fav.projectName}</span>
+                        <span className="text-xs text-muted-foreground">{fav.workspaceName}</span>
+                      </Link>
+                    </li>
+                  ))}
+                  {favorites.length > 5 && (
+                    <li className="text-center text-sm text-muted-foreground">
+                      +{favorites.length - 5} more in sidebar
+                    </li>
+                  )}
+                </ul>
+              )}
             </CardContent>
           </Card>
         </div>

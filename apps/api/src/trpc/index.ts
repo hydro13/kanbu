@@ -136,6 +136,7 @@ import { githubRouter } from './procedures/github';
 import { dashboardRouter } from './procedures/dashboard';
 import { workspaceWikiRouter } from './procedures/workspaceWiki';
 import { projectGroupRouter } from './procedures/projectGroup';
+import { favoriteRouter } from './procedures/favorite';
 
 /**
  * Main app router
@@ -179,6 +180,7 @@ export const appRouter = router({
   dashboard: dashboardRouter,
   workspaceWiki: workspaceWikiRouter,
   projectGroup: projectGroupRouter,
+  favorite: favoriteRouter,
 });
 
 /**
