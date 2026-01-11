@@ -1,6 +1,6 @@
 /*
  * Project Members Page
- * Version: 1.0.0
+ * Version: 1.1.0
  *
  * Manage project members: add, remove, change roles.
  *
@@ -10,6 +10,9 @@
  * Claude Code: v2.0.70 (Opus 4.5)
  * Host: MAX
  * Signed: 2026-01-04T12:00 CET
+ *
+ * Modified: 2026-01-11
+ * Change: Fixed avatar rendering using getMediaUrl() helper
  * ═══════════════════════════════════════════════════════════════════
  */
 
@@ -27,13 +30,32 @@ import {
 } from '@/components/ui/card'
 import { useAppSelector } from '@/store'
 import { selectCurrentWorkspace } from '@/store/workspaceSlice'
-import { trpc } from '@/lib/trpc'
+import { trpc, getMediaUrl } from '@/lib/trpc'
 
 // =============================================================================
 // Types
 // =============================================================================
 
 type ProjectMemberRole = 'MANAGER' | 'MEMBER' | 'VIEWER'
+
+// =============================================================================
+// Helpers
+// =============================================================================
+
+/**
+ * Get initials from a name (first letter of first and last word)
+ */
+function getInitials(name: string | null | undefined): string {
+  if (!name) return '?'
+  const parts = name.trim().split(/\s+/).filter(p => p.length > 0)
+  if (parts.length === 0) return '?'
+  const first = parts[0]
+  if (parts.length === 1 || !first) {
+    return first ? first.charAt(0).toUpperCase() : '?'
+  }
+  const last = parts[parts.length - 1]
+  return (first.charAt(0) + (last ? last.charAt(0) : '')).toUpperCase()
+}
 
 // =============================================================================
 // Component
@@ -180,15 +202,15 @@ export function ProjectMembersPage() {
                   >
                     <div className="flex items-center gap-3">
                       {/* Avatar */}
-                      <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-sm font-medium">
-                        {member.avatarUrl ? (
+                      <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-sm font-medium overflow-hidden">
+                        {getMediaUrl(member.avatarUrl) ? (
                           <img
-                            src={member.avatarUrl}
+                            src={getMediaUrl(member.avatarUrl)}
                             alt={member.name ?? member.username}
-                            className="h-10 w-10 rounded-full"
+                            className="h-10 w-10 rounded-full object-cover"
                           />
                         ) : (
-                          (member.name ?? member.username).charAt(0).toUpperCase()
+                          getInitials(member.name ?? member.username)
                         )}
                       </div>
                       <div>
