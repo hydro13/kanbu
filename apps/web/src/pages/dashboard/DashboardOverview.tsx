@@ -1,9 +1,10 @@
 /*
  * Dashboard Overview Page
- * Version: 2.0.0
+ * Version: 2.1.0
  *
  * Main dashboard overview with quick stats, today's tasks, favorites,
- * workspace info, and sticky notes. Uses DashboardLayout with sidebar navigation.
+ * productivity widget, workspace info, and sticky notes.
+ * Uses DashboardLayout with sidebar navigation.
  *
  * ===================================================================
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
@@ -11,11 +12,14 @@
  *
  * Modified: 2026-01-11
  * Change: Added Today's Tasks, Favorites section, improved stats (Fase 2.2)
+ *
+ * Modified: 2026-01-11
+ * Change: Added Productivity Widget with velocity chart (Fase 3.2)
  * ===================================================================
  */
 
 import { Link } from 'react-router-dom'
-import { DashboardLayout } from '@/components/dashboard'
+import { DashboardLayout, ProductivityWidget } from '@/components/dashboard'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
 import { StickyNoteList } from '@/components/sticky'
 import { useAppSelector } from '@/store'
@@ -273,8 +277,8 @@ export function DashboardOverview() {
           </Card>
         </div>
 
-        {/* Today's Tasks and Favorites Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Today's Tasks, Favorites, and Productivity Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Today's Tasks */}
           <Card>
             <CardHeader className="pb-3">
@@ -360,6 +364,9 @@ export function DashboardOverview() {
               )}
             </CardContent>
           </Card>
+
+          {/* Productivity Widget */}
+          <ProductivityWidget />
         </div>
 
         {/* Your Workspaces */}

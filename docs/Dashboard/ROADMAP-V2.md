@@ -1,6 +1,6 @@
 # Dashboard Roadmap V2
 
-## Versie: 2.3.0
+## Versie: 2.4.0
 ## Datum: 2026-01-11
 ## Gebaseerd op: IDEAAL-DASHBOARD-ONTWERP-V2.md
 
@@ -27,7 +27,7 @@ Gebaseerd op het ontwerp in [IDEAAL-DASHBOARD-ONTWERP-V2.md](./IDEAAL-DASHBOARD-
 | **Fase 0** | ✅ COMPLEET | Foundation, bug fixes |
 | **Fase 1** | ✅ COMPLEET | 6/6 items compleet |
 | **Fase 2** | ✅ COMPLEET | 2/3 items (My Tasks al goed) |
-| **Fase 3** | 🔄 In Progress | 1/2 items (Inbox compleet) |
+| **Fase 3** | ✅ COMPLEET | 2/2 items compleet |
 | **Fase 4** | 📋 Planned | Polish & UX |
 
 ### Wat is er al?
@@ -52,6 +52,7 @@ Gebaseerd op het ontwerp in [IDEAAL-DASHBOARD-ONTWERP-V2.md](./IDEAAL-DASHBOARD-
 | **Favorites** | ✅ Volledig | Sidebar + star buttons + overview widget |
 | **Workspace Wiki** | ✅ Volledig | Hierarchische paginas, CRUD |
 | **Workspace Groups** | ✅ Volledig | Project categorisatie |
+| **ProductivityWidget** | ✅ Volledig | Velocity chart, top projects |
 
 ---
 
@@ -99,11 +100,11 @@ Gebaseerd op het ontwerp in [IDEAAL-DASHBOARD-ONTWERP-V2.md](./IDEAAL-DASHBOARD-
 │                                                                             │
 │  FASE 0          FASE 1          FASE 2          FASE 3          FASE 4    │
 │  Foundation      Workspace       Personal        Enhanced        Polish    │
-│  ██████████      ██████████      ██████████      █████░░░░░      ░░░░░░░░░░│
-│  COMPLEET        COMPLEET        COMPLEET        IN PROGRESS     PLANNED   │
+│  ██████████      ██████████      ██████████      ██████████      ░░░░░░░░░░│
+│  COMPLEET        COMPLEET        COMPLEET        COMPLEET        PLANNED   │
 │                                                                             │
 │  ✅ Fix bugs     ✅ Workspace    ✅ Favorites    ✅ Inbox        - Keyboard│
-│  ✅ Notes route    Sidebar       ✅ Dashboard    - Advanced      - Context │
+│  ✅ Notes route    Sidebar       ✅ Dashboard    ✅ Advanced     - Context │
 │  ✅ Layout       ✅ Wiki           Overview        Statistics    - Search  │
 │    switching     ✅ Members      ✅ My Tasks                     - DnD     │
 │  ✅ Breadcrumbs  ✅ Statistics     (al goed)                               │
@@ -118,7 +119,7 @@ Gebaseerd op het ontwerp in [IDEAAL-DASHBOARD-ONTWERP-V2.md](./IDEAAL-DASHBOARD-
 | 0 | Foundation | Low | ✅ COMPLEET | 3/3 |
 | 1 | Workspace Navigation | High | ✅ COMPLEET | 6/6 |
 | 2 | Personal Enhancements | Medium | ✅ COMPLEET | 2/3 |
-| 3 | Enhanced Features | High | 🔄 In Progress | 1/2 |
+| 3 | Enhanced Features | High | ✅ COMPLEET | 2/2 |
 | 4 | Polish & UX | Medium | 📋 Planned | 0/4 |
 
 ---
@@ -466,8 +467,9 @@ My Tasks pagina werkte al correct met filters en grouping. Geen wijzigingen nodi
 
 # FASE 3: Enhanced Features
 
-**Status:** 🔄 In Progress
-**Voortgang:** 1/2 items compleet
+**Status:** ✅ COMPLEET
+**Voortgang:** 2/2 items compleet
+**Voltooid:** 2026-01-11
 **Dependencies:** Fase 1 en 2 compleet
 
 ---
@@ -508,7 +510,35 @@ My Tasks pagina werkte al correct met filters en grouping. Geen wijzigingen nodi
 
 ## 3.2 Advanced Statistics
 
-**Status:** ❌ Todo
+**Status:** ✅ Compleet
+
+### Wat is gedaan
+
+- `getMyProductivity` tRPC endpoint aangemaakt:
+  - Taken voltooid deze week vs vorige week
+  - Velocity trend over laatste N weken
+  - Top projecten per aantal voltooide taken
+  - Gemiddelde velocity berekening
+- `ProductivityWidget` component voor Dashboard Overview:
+  - "Completed this week" met trend indicator
+  - Velocity bar chart (visuele weergave)
+  - Top projects lijst
+  - Empty state handling
+
+### Bestanden
+
+| Bestand | Actie |
+|---------|-------|
+| `api/src/trpc/procedures/user.ts` | getMyProductivity endpoint toegevoegd |
+| `components/dashboard/ProductivityWidget.tsx` | Aangemaakt |
+| `components/dashboard/index.ts` | Export toegevoegd |
+| `pages/dashboard/DashboardOverview.tsx` | Widget toegevoegd in 3-kolom grid |
+
+### Bestaande Infra (hergebruikt)
+
+- Analytics router was al aanwezig met velocity/cycleTime endpoints (project level)
+- Task model met dateCompleted field
+- TaskAssignee relatie voor persoonlijke queries
 
 ---
 
@@ -545,6 +575,22 @@ My Tasks pagina werkte al correct met filters en grouping. Geen wijzigingen nodi
 ---
 
 # Changelog
+
+## 2026-01-11 (v2.4.0)
+
+### Compleet
+
+- **Fase 3: Enhanced Features** - Volledig afgerond (2/2 items)
+  - Fase 3.1: Inbox / Notifications
+  - Fase 3.2: Advanced Statistics
+
+### Nieuwe Features
+
+- **getMyProductivity** tRPC endpoint voor persoonlijke statistieken
+- **ProductivityWidget** component met velocity chart en top projects
+- Dashboard Overview nu met 3-kolom layout (Today, Favorites, Productivity)
+
+---
 
 ## 2026-01-11 (v2.3.0)
 

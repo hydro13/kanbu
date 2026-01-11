@@ -1371,6 +1371,127 @@ export const userRouter = router({
     }))
   }),
 
+  /**
+   * Get personal productivity statistics for dashboard
+   * Returns tasks completed, velocity trend, top projects
+   */
+  getMyProductivity: protectedProcedure
+    .input(z.object({
+      weeks: z.number().min(1).max(12).default(4),
+    }).optional())
+    .query(async ({ ctx, input }) => {
+      const weeks = input?.weeks ?? 4
+      const now = new Date()
+
+      // Helper: get week start (Monday)
+      const getWeekStart = (date: Date): Date => {
+        const d = new Date(date)
+        const day = d.getDay()
+        const diff = d.getDate() - day + (day === 0 ? -6 : 1)
+        d.setDate(diff)
+        d.setHours(0, 0, 0, 0)
+        return d
+      }
+
+      // Calculate date ranges
+      const thisWeekStart = getWeekStart(now)
+      const lastWeekStart = new Date(thisWeekStart)
+      lastWeekStart.setDate(lastWeekStart.getDate() - 7)
+      const weeksAgo = new Date(now)
+      weeksAgo.setDate(weeksAgo.getDate() - weeks * 7)
+
+      // Tasks completed this week
+      const completedThisWeek = await ctx.prisma.task.count({
+        where: {
+          assignees: { some: { userId: ctx.user.id } },
+          isActive: false,
+          dateCompleted: { gte: thisWeekStart },
+        },
+      })
+
+      // Tasks completed last week
+      const completedLastWeek = await ctx.prisma.task.count({
+        where: {
+          assignees: { some: { userId: ctx.user.id } },
+          isActive: false,
+          dateCompleted: { gte: lastWeekStart, lt: thisWeekStart },
+        },
+      })
+
+      // All completed tasks in range for velocity
+      const completedTasks = await ctx.prisma.task.findMany({
+        where: {
+          assignees: { some: { userId: ctx.user.id } },
+          isActive: false,
+          dateCompleted: { gte: weeksAgo },
+        },
+        select: {
+          id: true,
+          dateCompleted: true,
+          projectId: true,
+          project: { select: { id: true, name: true, identifier: true } },
+        },
+      })
+
+      // Group by week for velocity chart
+      const weeklyData = new Map<string, number>()
+      for (let i = 0; i < weeks; i++) {
+        const weekStart = new Date(now)
+        weekStart.setDate(weekStart.getDate() - i * 7)
+        const key = getWeekStart(weekStart).toISOString().split('T')[0]!
+        weeklyData.set(key, 0)
+      }
+
+      for (const task of completedTasks) {
+        if (task.dateCompleted) {
+          const key = getWeekStart(task.dateCompleted).toISOString().split('T')[0]!
+          const current = weeklyData.get(key) ?? 0
+          weeklyData.set(key, current + 1)
+        }
+      }
+
+      // Convert to array sorted by date
+      const velocityData = Array.from(weeklyData.entries())
+        .map(([weekStart, count]) => ({ weekStart, tasksCompleted: count }))
+        .sort((a, b) => a.weekStart.localeCompare(b.weekStart))
+
+      // Calculate trend (this week vs last week)
+      const trend = completedThisWeek - completedLastWeek
+
+      // Top projects by completed tasks
+      const projectCounts = new Map<number, { name: string; identifier: string; count: number }>()
+      for (const task of completedTasks) {
+        if (task.project) {
+          const existing = projectCounts.get(task.projectId) ?? {
+            name: task.project.name,
+            identifier: task.project.identifier ?? '',
+            count: 0,
+          }
+          projectCounts.set(task.projectId, { ...existing, count: existing.count + 1 })
+        }
+      }
+
+      const topProjects = Array.from(projectCounts.entries())
+        .map(([projectId, data]) => ({ projectId, ...data }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5)
+
+      // Calculate average velocity
+      const avgVelocity = velocityData.length > 0
+        ? Math.round((velocityData.reduce((sum, w) => sum + w.tasksCompleted, 0) / velocityData.length) * 10) / 10
+        : 0
+
+      return {
+        thisWeek: completedThisWeek,
+        lastWeek: completedLastWeek,
+        trend,
+        avgVelocity,
+        velocityData,
+        topProjects,
+        totalCompleted: completedTasks.length,
+      }
+    }),
+
   // ===========================================================================
   // PAGE WIDTH PREFERENCES (Per-Device)
   // ===========================================================================
