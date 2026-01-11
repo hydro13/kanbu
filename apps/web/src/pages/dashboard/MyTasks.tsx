@@ -203,10 +203,15 @@ interface TaskRowProps {
     dateDue: string | null
     isActive: boolean
     createdAt: string
-    project: { id: number; name: string; identifier: string | null }
+    project: {
+      id: number
+      name: string
+      identifier: string | null
+      workspace: { id: number; slug: string }
+    }
     column: { id: number; title: string }
   }
-  onTaskClick: (projectId: number, taskId: number) => void
+  onTaskClick: (workspaceSlug: string, projectIdentifier: string, taskId: number) => void
 }
 
 function TaskRow({ task, onTaskClick }: TaskRowProps) {
@@ -215,7 +220,7 @@ function TaskRow({ task, onTaskClick }: TaskRowProps) {
       className={`border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer ${
         !task.isActive ? 'opacity-50' : ''
       }`}
-      onClick={() => onTaskClick(task.project.id, task.id)}
+      onClick={() => onTaskClick(task.project.workspace.slug, task.project.identifier ?? String(task.project.id), task.id)}
     >
       <td className="px-4 py-3">
         <span className={`text-sm font-medium ${task.isActive ? 'text-gray-900 dark:text-white' : 'line-through text-gray-500'}`}>
@@ -302,8 +307,8 @@ export function MyTasks() {
   }
 
   // Task click handler
-  const handleTaskClick = (projectId: number, taskId: number) => {
-    navigate(`/project/${projectId}/board?task=${taskId}`)
+  const handleTaskClick = (workspaceSlug: string, projectIdentifier: string, taskId: number) => {
+    navigate(`/workspace/${workspaceSlug}/project/${projectIdentifier}/board?task=${taskId}`)
   }
 
   // Loading state

@@ -226,10 +226,15 @@ interface SubtaskRowProps {
     task: {
       id: number
       title: string
-      project: { id: number; name: string; identifier: string | null }
+      project: {
+        id: number
+        name: string
+        identifier: string | null
+        workspace: { id: number; slug: string }
+      }
     }
   }
-  onTaskClick: (projectId: number, taskId: number) => void
+  onTaskClick: (workspaceSlug: string, projectIdentifier: string, taskId: number) => void
 }
 
 function formatHours(hours: number | null): string {
@@ -244,7 +249,11 @@ function SubtaskRow({ subtask, onTaskClick }: SubtaskRowProps) {
       className={`border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer ${
         subtask.status === 'DONE' ? 'opacity-50' : ''
       }`}
-      onClick={() => onTaskClick(subtask.task.project.id, subtask.task.id)}
+      onClick={() => onTaskClick(
+        subtask.task.project.workspace.slug,
+        subtask.task.project.identifier ?? String(subtask.task.project.id),
+        subtask.task.id
+      )}
     >
       <td className="px-4 py-3">
         <span className={`text-sm font-medium ${subtask.status === 'DONE' ? 'line-through text-gray-500' : 'text-gray-900 dark:text-white'}`}>
@@ -333,8 +342,8 @@ export function MySubtasks() {
   }
 
   // Task click handler
-  const handleTaskClick = (projectId: number, taskId: number) => {
-    navigate(`/project/${projectId}/board?task=${taskId}`)
+  const handleTaskClick = (workspaceSlug: string, projectIdentifier: string, taskId: number) => {
+    navigate(`/workspace/${workspaceSlug}/project/${projectIdentifier}/board?task=${taskId}`)
   }
 
   // Loading state

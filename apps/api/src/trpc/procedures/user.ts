@@ -1291,6 +1291,12 @@ export const userRouter = router({
             id: true,
             name: true,
             identifier: true,
+            workspace: {
+              select: {
+                id: true,
+                slug: true,
+              },
+            },
           },
         },
         column: {
@@ -1343,6 +1349,12 @@ export const userRouter = router({
                 id: true,
                 name: true,
                 identifier: true,
+                workspace: {
+                  select: {
+                    id: true,
+                    slug: true,
+                  },
+                },
               },
             },
           },

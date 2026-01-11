@@ -297,19 +297,19 @@ export function DashboardOverview() {
                   {tasksDueToday.slice(0, 5).map((task) => (
                     <li key={task.id}>
                       <Link
-                        to={`/workspace/${task.workspaceSlug}/project/${task.projectIdentifier}/board?task=${task.id}`}
+                        to={`/workspace/${task.project.workspace.slug}/project/${task.project.identifier}/board?task=${task.id}`}
                         className="flex items-center gap-3 p-2 rounded hover:bg-accent/50 transition-colors"
                       >
                         <span className={cn(
                           'w-2 h-2 rounded-full',
-                          task.priority === 'URGENT' || task.priority === 'HIGH'
+                          task.priority >= 2
                             ? 'bg-red-500'
-                            : task.priority === 'MEDIUM'
+                            : task.priority === 1
                             ? 'bg-yellow-500'
                             : 'bg-green-500'
                         )} />
                         <span className="flex-1 truncate text-sm">{task.title}</span>
-                        <span className="text-xs text-muted-foreground">{task.projectName}</span>
+                        <span className="text-xs text-muted-foreground">{task.project.name}</span>
                       </Link>
                     </li>
                   ))}

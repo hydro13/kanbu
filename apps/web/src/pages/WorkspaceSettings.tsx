@@ -19,7 +19,7 @@
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { Layout } from '../components/layout/Layout'
+import { WorkspaceLayout } from '../components/layout/WorkspaceLayout'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import {
@@ -357,11 +357,11 @@ export function WorkspaceSettingsPage() {
   // Loading/error states
   if (!currentWorkspace) {
     return (
-      <Layout>
+      <WorkspaceLayout>
         <div className="text-center py-12">
           <p className="text-muted-foreground">No workspace selected</p>
         </div>
-      </Layout>
+      </WorkspaceLayout>
     )
   }
 
@@ -369,7 +369,7 @@ export function WorkspaceSettingsPage() {
   const isOwner = currentWorkspace.role === 'OWNER'
 
   return (
-    <Layout>
+    <WorkspaceLayout>
       <div className="space-y-6 max-w-4xl">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Workspace Settings</h1>
@@ -778,6 +778,6 @@ export function WorkspaceSettingsPage() {
           utils.workspace.getMembers.invalidate({ workspaceId: currentWorkspace.id })
         }}
       />
-    </Layout>
+    </WorkspaceLayout>
   )
 }

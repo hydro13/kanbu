@@ -81,7 +81,7 @@ export function WorkspaceSettingsWrapper() {
     )
   }
 
-  // Render the settings page (it uses Redux for current workspace)
+  // Render the settings page (it uses Redux for current workspace and has its own WorkspaceLayout)
   return <WorkspaceSettingsPage />
 }
 

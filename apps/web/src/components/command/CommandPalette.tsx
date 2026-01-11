@@ -524,9 +524,9 @@ export function CommandPalette({ projectId: propProjectId, onOpenTaskDetail }: C
             onSelect: () => {
               if (onOpenTaskDetail) {
                 onOpenTaskDetail(task.id)
+              } else if (task.project?.workspace?.slug && task.project?.identifier) {
+                navigate(`/workspace/${task.project.workspace.slug}/project/${task.project.identifier}/board?task=${task.id}`)
               }
-              // Note: Can't navigate without workspace info in myTasks response
-              // The task detail modal should be opened instead
               close()
             },
           })
