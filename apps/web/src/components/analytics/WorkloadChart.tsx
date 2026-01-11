@@ -14,6 +14,7 @@
  */
 
 import { Loader2, Info, AlertCircle, User } from 'lucide-react'
+import { getMediaUrl } from '@/lib/trpc'
 
 // =============================================================================
 // Types
@@ -125,11 +126,11 @@ export function WorkloadChart({ data, isLoading }: WorkloadChartProps) {
             >
               {/* Member Header */}
               <div className="flex items-center gap-3 mb-3">
-                {member.avatarUrl ? (
+                {getMediaUrl(member.avatarUrl) ? (
                   <img
-                    src={member.avatarUrl}
+                    src={getMediaUrl(member.avatarUrl)}
                     alt={member.name}
-                    className="w-10 h-10 rounded-full"
+                    className="w-10 h-10 rounded-full object-cover"
                   />
                 ) : (
                   <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
