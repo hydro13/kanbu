@@ -113,7 +113,7 @@ import { ChangePassword } from './pages/profile/ChangePassword'
 // Admin pages
 import { UserListPage, UserCreatePage, UserEditPage, InvitesPage, SystemSettingsPage, WorkspaceListPage, WorkspaceCreatePage, WorkspaceEditPage, BackupPage, PermissionTreePage, AclPage, AuditLogsPage, PermissionMatrixPage, GitHubAdminPage } from './pages/admin'
 // Dashboard pages
-import { DashboardOverview, MyTasks, MySubtasks, NotesPage } from './pages/dashboard'
+import { DashboardOverview, MyTasks, MySubtasks, NotesPage, InboxPage } from './pages/dashboard'
 // Workspace pages
 import { WorkspaceMembersPage, WorkspaceStatisticsPage, WorkspaceSettingsWrapper, WorkspaceWikiPage, WorkspaceGroupsPage } from './pages/workspace'
 // Project pages
@@ -217,6 +217,14 @@ function App() {
           element={
             <ProtectedRoute>
               <NotesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/inbox"
+          element={
+            <ProtectedRoute>
+              <InboxPage />
             </ProtectedRoute>
           }
         />

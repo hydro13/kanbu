@@ -1,6 +1,6 @@
 # Dashboard Roadmap V2
 
-## Versie: 2.2.0
+## Versie: 2.3.0
 ## Datum: 2026-01-11
 ## Gebaseerd op: IDEAAL-DASHBOARD-ONTWERP-V2.md
 
@@ -27,7 +27,7 @@ Gebaseerd op het ontwerp in [IDEAAL-DASHBOARD-ONTWERP-V2.md](./IDEAAL-DASHBOARD-
 | **Fase 0** | ✅ COMPLEET | Foundation, bug fixes |
 | **Fase 1** | ✅ COMPLEET | 6/6 items compleet |
 | **Fase 2** | ✅ COMPLEET | 2/3 items (My Tasks al goed) |
-| **Fase 3** | 📋 Planned | Enhanced Features |
+| **Fase 3** | 🔄 In Progress | 1/2 items (Inbox compleet) |
 | **Fase 4** | 📋 Planned | Polish & UX |
 
 ### Wat is er al?
@@ -48,7 +48,7 @@ Gebaseerd op het ontwerp in [IDEAAL-DASHBOARD-ONTWERP-V2.md](./IDEAAL-DASHBOARD-
 | **Workspace Statistics** | ✅ Volledig | Aggregated stats, per-project breakdown |
 | **Workspace Settings** | ✅ Basis | Via WorkspaceSettingsWrapper |
 | **Breadcrumbs** | ✅ Volledig | Container-aware hierarchy |
-| **Inbox Page** | ❌ Ontbreekt | Niet geïmplementeerd |
+| **Inbox Page** | ✅ Volledig | Notifications pagina met grouping |
 | **Favorites** | ✅ Volledig | Sidebar + star buttons + overview widget |
 | **Workspace Wiki** | ✅ Volledig | Hierarchische paginas, CRUD |
 | **Workspace Groups** | ✅ Volledig | Project categorisatie |
@@ -66,7 +66,8 @@ Gebaseerd op het ontwerp in [IDEAAL-DASHBOARD-ONTWERP-V2.md](./IDEAAL-DASHBOARD-
 │  Personal                 DashboardSidebar       /dashboard/*               │
 │  (cross-container)        - Overview             ✅ Werkt                   │
 │                           - My Tasks             ✅ Werkt                   │
-│                           - Favorites            ❌ TODO                    │
+│                           - Inbox                ✅ Werkt                   │
+│                           - Favorites            ✅ Werkt                   │
 │                           - Notes                ✅ Werkt                   │
 │                           - Workspaces link      ✅ Werkt                   │
 │                                                                             │
@@ -98,13 +99,13 @@ Gebaseerd op het ontwerp in [IDEAAL-DASHBOARD-ONTWERP-V2.md](./IDEAAL-DASHBOARD-
 │                                                                             │
 │  FASE 0          FASE 1          FASE 2          FASE 3          FASE 4    │
 │  Foundation      Workspace       Personal        Enhanced        Polish    │
-│  ██████████      ██████████      ██████████      ░░░░░░░░░░      ░░░░░░░░░░│
-│  COMPLEET        COMPLEET        COMPLEET        PLANNED         PLANNED   │
+│  ██████████      ██████████      ██████████      █████░░░░░      ░░░░░░░░░░│
+│  COMPLEET        COMPLEET        COMPLEET        IN PROGRESS     PLANNED   │
 │                                                                             │
-│  ✅ Fix bugs     ✅ Workspace    ✅ Favorites    - Inbox         - Keyboard│
-│  ✅ Notes route    Sidebar       ✅ Dashboard    - Notifications - Context │
-│  ✅ Layout       ✅ Wiki           Overview      - Groups        - Search  │
-│    switching     ✅ Members      ✅ My Tasks     - Statistics    - DnD     │
+│  ✅ Fix bugs     ✅ Workspace    ✅ Favorites    ✅ Inbox        - Keyboard│
+│  ✅ Notes route    Sidebar       ✅ Dashboard    - Advanced      - Context │
+│  ✅ Layout       ✅ Wiki           Overview        Statistics    - Search  │
+│    switching     ✅ Members      ✅ My Tasks                     - DnD     │
 │  ✅ Breadcrumbs  ✅ Statistics     (al goed)                               │
 │                  ✅ Settings                                               │
 │                  ✅ Groups                                                 │
@@ -117,7 +118,7 @@ Gebaseerd op het ontwerp in [IDEAAL-DASHBOARD-ONTWERP-V2.md](./IDEAAL-DASHBOARD-
 | 0 | Foundation | Low | ✅ COMPLEET | 3/3 |
 | 1 | Workspace Navigation | High | ✅ COMPLEET | 6/6 |
 | 2 | Personal Enhancements | Medium | ✅ COMPLEET | 2/3 |
-| 3 | Enhanced Features | High | 📋 Planned | 0/2 |
+| 3 | Enhanced Features | High | 🔄 In Progress | 1/2 |
 | 4 | Polish & UX | Medium | 📋 Planned | 0/4 |
 
 ---
@@ -465,15 +466,43 @@ My Tasks pagina werkte al correct met filters en grouping. Geen wijzigingen nodi
 
 # FASE 3: Enhanced Features
 
-**Status:** 📋 Planned
-**Effort:** High (4-6 dagen)
+**Status:** 🔄 In Progress
+**Voortgang:** 1/2 items compleet
 **Dependencies:** Fase 1 en 2 compleet
 
 ---
 
 ## 3.1 Inbox / Notifications
 
-**Status:** ❌ Todo
+**Status:** ✅ Compleet
+
+### Wat is gedaan
+
+- `InboxPage.tsx` component aangemaakt met:
+  - Notificaties gegroepeerd per datum (Today, Yesterday, Older)
+  - Unread count badge in sidebar
+  - Mark as read / Mark all read functionaliteit
+  - Delete / Delete all read functionaliteit
+  - Type-specifieke iconen (task, comment, deployment, etc.)
+  - Link naar gerelateerde entiteit per notificatie
+- DashboardSidebar uitgebreid met:
+  - Inbox link in Personal sectie
+  - Unread count badge met notificatie telling
+- Route `/dashboard/inbox` toegevoegd
+
+### Bestanden
+
+| Bestand | Actie |
+|---------|-------|
+| `pages/dashboard/InboxPage.tsx` | Aangemaakt |
+| `pages/dashboard/index.ts` | Export toegevoegd |
+| `components/dashboard/DashboardSidebar.tsx` | Inbox link + badge toegevoegd |
+| `App.tsx` | Route toegevoegd |
+
+### Bestaande Infra (hergebruikt)
+
+- `Notification` model was al aanwezig in schema
+- `notification` tRPC router was al volledig met list, markRead, markAllRead, delete
 
 ---
 
@@ -516,6 +545,23 @@ My Tasks pagina werkte al correct met filters en grouping. Geen wijzigingen nodi
 ---
 
 # Changelog
+
+## 2026-01-11 (v2.3.0)
+
+### Compleet
+
+- **Fase 3.1: Inbox / Notifications** - Volledig geïmplementeerd
+  - InboxPage component met date grouping
+  - Unread count badge in sidebar
+  - Mark read / delete functionaliteit
+
+### Nieuwe Features
+
+- **InboxPage** component op `/dashboard/inbox`
+- **Unread badge** in DashboardSidebar naast Inbox link
+- Hergebruik van bestaande `notification` tRPC router
+
+---
 
 ## 2026-01-11 (v2.2.0)
 

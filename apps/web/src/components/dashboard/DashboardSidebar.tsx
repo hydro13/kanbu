@@ -1,6 +1,6 @@
 /*
  * DashboardSidebar Component
- * Version: 3.1.0
+ * Version: 3.2.0
  *
  * Simple context-aware sidebar navigation.
  * Shows Personal section, Favorites, Workspaces link, and context-aware Projects link.
@@ -14,11 +14,14 @@
  *
  * Modified: 2026-01-11
  * Change: Added Favorites section (Fase 2.1)
+ *
+ * Modified: 2026-01-11
+ * Change: Added Inbox with unread count badge (Fase 3.1)
  * ===================================================================
  */
 
 import { Link, useLocation, useParams } from 'react-router-dom'
-import { Home, CheckSquare, ListChecks, StickyNote, Building2, LayoutGrid, Star } from 'lucide-react'
+import { Home, CheckSquare, ListChecks, StickyNote, Building2, LayoutGrid, Star, Inbox } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { trpc } from '@/lib/trpc'
 
@@ -46,6 +49,7 @@ const personalItems: NavItem[] = [
   { label: 'Overview', path: '/dashboard', icon: Home, exact: true },
   { label: 'My Tasks', path: '/dashboard/tasks', icon: CheckSquare },
   { label: 'My Subtasks', path: '/dashboard/subtasks', icon: ListChecks },
+  { label: 'Inbox', path: '/dashboard/inbox', icon: Inbox },
 ]
 
 // =============================================================================
@@ -59,6 +63,10 @@ export function DashboardSidebar({ collapsed = false }: DashboardSidebarProps) {
   // Fetch favorites
   const favoritesQuery = trpc.favorite.list.useQuery()
   const favorites = favoritesQuery.data ?? []
+
+  // Fetch unread notification count
+  const unreadCountQuery = trpc.notification.getUnreadCount.useQuery()
+  const unreadCount = unreadCountQuery.data?.count ?? 0
 
   // Determine active workspace from URL
   // Can be either /workspace/:workspaceSlug/project/... or /workspace/:slug
@@ -89,6 +97,8 @@ export function DashboardSidebar({ collapsed = false }: DashboardSidebarProps) {
             {personalItems.map((item) => {
               const Icon = item.icon
               const active = isActive(item)
+              const isInbox = item.path === '/dashboard/inbox'
+              const showBadge = isInbox && unreadCount > 0
 
               return (
                 <li key={item.path}>
@@ -103,7 +113,17 @@ export function DashboardSidebar({ collapsed = false }: DashboardSidebarProps) {
                     title={collapsed ? item.label : undefined}
                   >
                     <Icon className="h-4 w-4 flex-shrink-0" />
-                    {!collapsed && <span>{item.label}</span>}
+                    {!collapsed && (
+                      <span className="flex-1">{item.label}</span>
+                    )}
+                    {showBadge && (
+                      <span className={cn(
+                        'inline-flex items-center justify-center min-w-5 h-5 px-1.5 text-xs font-medium rounded-full',
+                        'bg-primary text-primary-foreground'
+                      )}>
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                      </span>
+                    )}
                   </Link>
                 </li>
               )
