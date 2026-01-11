@@ -61,15 +61,22 @@ export function usePresence({
 
   // Fetch current presence
   const refreshPresence = useCallback(() => {
-    if (!socket || !isConnected) return;
+    if (!socket || !isConnected) {
+      console.log('[Presence] refreshPresence skipped - not connected');
+      return;
+    }
 
     const roomName = `project:${projectId}`;
+    console.log(`[Presence] Requesting presence for ${roomName}...`);
     socket.emit(
       'presence:request',
       roomName,
       (users: { id: number; username: string; name: string | null; avatarUrl: string | null }[]) => {
+        console.log(`[Presence] Got ${users?.length ?? 0} users in ${roomName}:`, users);
         // Filter out current user
-        setOnlineUsers(users.filter((u) => u.id !== currentUserId));
+        const filtered = users?.filter((u) => u.id !== currentUserId) ?? [];
+        console.log(`[Presence] After filtering self (id=${currentUserId}): ${filtered.length} other users`);
+        setOnlineUsers(filtered);
       }
     );
   }, [socket, isConnected, projectId, currentUserId]);
@@ -78,23 +85,41 @@ export function usePresence({
   useEffect(() => {
     if (!socket || !isConnected || !projectId) return;
 
-    // Join project room
-    void joinProjectRoom(projectId);
-
-    // Initial presence fetch
-    refreshPresence();
+    // Join project room, then fetch initial presence
+    // Must await join to ensure we're in the room before requesting presence
+    const initPresence = async () => {
+      const joined = await joinProjectRoom(projectId);
+      if (joined) {
+        console.log(`[Presence] Joined project:${projectId}, fetching presence...`);
+        refreshPresence();
+      } else {
+        console.warn(`[Presence] Failed to join project:${projectId}`);
+      }
+    };
+    void initPresence();
 
     // Handle user joined
     const handleJoined = (payload: {
       user: PresenceUser;
       roomName: string;
     }) => {
-      if (payload.roomName !== `project:${projectId}`) return;
-      if (payload.user.id === currentUserId) return;
+      console.log('[Presence] presence:joined event:', payload);
+      if (payload.roomName !== `project:${projectId}`) {
+        console.log(`[Presence] Ignoring join for different room: ${payload.roomName}`);
+        return;
+      }
+      if (payload.user.id === currentUserId) {
+        console.log('[Presence] Ignoring own join event');
+        return;
+      }
 
       setOnlineUsers((prev) => {
         // Avoid duplicates
-        if (prev.some((u) => u.id === payload.user.id)) return prev;
+        if (prev.some((u) => u.id === payload.user.id)) {
+          console.log(`[Presence] User ${payload.user.username} already in list`);
+          return prev;
+        }
+        console.log(`[Presence] Adding user ${payload.user.username} to online list`);
         return [...prev, payload.user];
       });
     };
@@ -104,6 +129,7 @@ export function usePresence({
       user: { id: number };
       roomName: string;
     }) => {
+      console.log('[Presence] presence:left event:', payload);
       if (payload.roomName !== `project:${projectId}`) return;
 
       setOnlineUsers((prev) => prev.filter((u) => u.id !== payload.user.id));

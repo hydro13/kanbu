@@ -19,7 +19,7 @@
 
 import { MessageCircle, Linkedin, Github, Video, Users } from 'lucide-react'
 import { HoverPopover } from '@/components/ui/HoverPopover'
-import { trpc } from '@/lib/trpc'
+import { trpc, getMediaUrl } from '@/lib/trpc'
 import { useTaskContext, generateWhatsAppUrl } from '@/contexts/TaskContext'
 
 // =============================================================================
@@ -259,7 +259,7 @@ function UserContent({ user, onUserClick }: { user: UserInfo; onUserClick?: (use
         {/* Avatar */}
         {user.avatarUrl ? (
           <img
-            src={user.avatarUrl}
+            src={getMediaUrl(user.avatarUrl)}
             alt={user.name ?? user.username}
             className="h-12 w-12 rounded-full ring-2 ring-gray-200 dark:ring-gray-600"
           />

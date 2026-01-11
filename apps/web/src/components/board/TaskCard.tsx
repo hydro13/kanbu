@@ -27,6 +27,7 @@ import { DescriptionPopover } from './DescriptionPopover'
 import { CommentPopover } from './CommentPopover'
 import { UserPopover } from './UserPopover'
 import { TaskContextProvider } from '@/contexts/TaskContext'
+import { getMediaUrl } from '@/lib/trpc'
 import type { BoardTask } from './Board'
 
 // =============================================================================
@@ -102,7 +103,7 @@ function AssigneeAvatar({
   if (assignee.avatarUrl) {
     return (
       <img
-        src={assignee.avatarUrl}
+        src={getMediaUrl(assignee.avatarUrl)}
         alt={assignee.name ?? assignee.username}
         className="h-6 w-6 rounded-full ring-2 ring-white dark:ring-gray-800"
       />

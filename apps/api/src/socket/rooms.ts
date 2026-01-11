@@ -101,8 +101,16 @@ export function registerRoomHandlers(
       }
 
       await socket.join(roomName);
+
+      // Log current room members for debugging
+      const socketsInRoom = await _io.in(roomName).fetchSockets();
+      const otherMembers = socketsInRoom
+        .filter(s => s.id !== socket.id)
+        .map(s => (s as unknown as AuthenticatedSocket).data?.user?.username)
+        .filter(Boolean);
+
       console.log(
-        `[Socket] User ${socket.data.user.username} joined ${roomName}`
+        `[Socket] User ${socket.data.user.username} joined ${roomName} (${otherMembers.length} others: ${otherMembers.join(', ') || 'none'})`
       );
       callback?.({ success: true });
 
@@ -112,6 +120,7 @@ export function registerRoomHandlers(
         roomName,
         timestamp: new Date().toISOString(),
       });
+      console.log(`[Socket] Emitted presence:joined to ${otherMembers.length} other users`);
     } catch (error) {
       console.error('[Socket] Error joining room:', error);
       callback?.({ success: false, error: 'Failed to join room' });

@@ -26,7 +26,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { ProjectCard } from '@/components/project/ProjectCard'
 import { useAppDispatch } from '@/store'
 import { setProjects, setLoading, setError } from '@/store/projectSlice'
-import { trpc } from '@/lib/trpc'
+import { trpc, getMediaUrl } from '@/lib/trpc'
 import { lexicalToPlainText, isLexicalContent } from '@/components/editor'
 
 // =============================================================================
@@ -176,7 +176,7 @@ export function ProjectListPage() {
                       <CardTitle className="flex items-center gap-2">
                         {workspace.logoUrl ? (
                           <img
-                            src={workspace.logoUrl}
+                            src={getMediaUrl(workspace.logoUrl)}
                             alt={workspace.name}
                             className="h-6 w-6 rounded object-cover"
                           />

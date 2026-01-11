@@ -7,6 +7,20 @@ import type { AppRouter } from '../../../../apps/api/src/trpc'
 const TOKEN_KEY = 'kanbu_token';
 
 /**
+ * Get full URL for media/uploads (avatars, logos, attachments)
+ * Prefixes relative paths with API host in development
+ */
+export function getMediaUrl(path: string | null | undefined): string | undefined {
+  if (!path) return undefined;
+  // If already absolute URL, return as-is
+  if (path.startsWith('http://') || path.startsWith('https://')) {
+    return path;
+  }
+  // Prefix relative paths with API host
+  return `${getApiHost()}${path}`;
+}
+
+/**
  * tRPC React client
  * Explicit type annotation to avoid fastify type inference issues
  */

@@ -23,7 +23,7 @@ import {
   CardContent,
   CardFooter,
 } from '@/components/ui/card'
-import { trpc, getApiHost } from '@/lib/trpc'
+import { trpc, getMediaUrl } from '@/lib/trpc'
 import {
   MemberFilters,
   filterAndSortMembers,
@@ -373,7 +373,7 @@ export function WorkspaceEditPage() {
                 <div className="h-20 w-20 rounded-lg bg-muted flex items-center justify-center overflow-hidden">
                   {logoPreview || currentLogoUrl ? (
                     <img
-                      src={logoPreview || `${getApiHost()}${currentLogoUrl}?t=${logoTimestamp}`}
+                      src={logoPreview || `${getMediaUrl(currentLogoUrl)}?t=${logoTimestamp}`}
                       alt="Logo"
                       className="h-20 w-20 rounded-lg object-cover"
                     />

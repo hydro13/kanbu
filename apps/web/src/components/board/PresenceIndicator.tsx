@@ -15,6 +15,7 @@
 
 import { useState } from 'react';
 import { usePresence, type PresenceUser } from '@/hooks/usePresence';
+import { getMediaUrl } from '@/lib/trpc';
 
 // =============================================================================
 // Types
@@ -71,7 +72,7 @@ function UserAvatar({
   if (user.avatarUrl) {
     return (
       <img
-        src={user.avatarUrl}
+        src={getMediaUrl(user.avatarUrl)}
         alt={user.name ?? user.username}
         className={`${sizeClasses[size]} rounded-full object-cover ring-2 ring-white dark:ring-gray-800 ${className}`}
       />

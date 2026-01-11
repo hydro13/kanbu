@@ -22,7 +22,7 @@ import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useBreadcrumbs } from '@/hooks/useBreadcrumbs'
 import { useAppSelector, useAppDispatch } from '@/store'
 import { selectUser, logout, updateUser } from '@/store/authSlice'
-import { queryClient, trpc } from '@/lib/trpc'
+import { queryClient, trpc, getMediaUrl } from '@/lib/trpc'
 
 // =============================================================================
 // Icons
@@ -331,7 +331,7 @@ export function BaseLayout({
                 >
                   {user?.avatarUrl ? (
                     <img
-                      src={user.avatarUrl}
+                      src={getMediaUrl(user.avatarUrl)}
                       alt={user.name ?? user.username ?? 'User'}
                       className="h-8 w-8 rounded-full object-cover"
                     />

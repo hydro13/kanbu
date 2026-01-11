@@ -22,7 +22,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { ProjectCard } from '@/components/project/ProjectCard'
 import { useAppDispatch } from '@/store'
 import { setProjects, setLoading, setError } from '@/store/projectSlice'
-import { trpc } from '@/lib/trpc'
+import { trpc, getMediaUrl } from '@/lib/trpc'
 import { lexicalToPlainText, isLexicalContent } from '@/components/editor'
 
 // =============================================================================
@@ -137,7 +137,7 @@ export function WorkspacePage() {
           <div className="flex items-center gap-4">
             {workspace.logoUrl ? (
               <img
-                src={workspace.logoUrl}
+                src={getMediaUrl(workspace.logoUrl)}
                 alt={workspace.name}
                 className="h-12 w-12 rounded-lg object-cover"
               />

@@ -32,7 +32,7 @@ import {
 } from '../components/ui/card'
 import { useAppSelector } from '../store'
 import { selectCurrentWorkspace } from '../store/workspaceSlice'
-import { trpc, getApiHost } from '../lib/trpc'
+import { trpc, getMediaUrl } from '../lib/trpc'
 import { useNavigate } from 'react-router-dom'
 import { UserSearchDropdown } from '../components/workspace/UserSearchDropdown'
 import { AddMembersModal } from '../components/workspace/AddMembersModal'
@@ -392,7 +392,7 @@ export function WorkspaceSettingsPage() {
                   <div className="h-20 w-20 rounded-lg bg-muted flex items-center justify-center overflow-hidden">
                     {logoPreview || currentLogoUrl ? (
                       <img
-                        src={logoPreview || `${getApiHost()}${currentLogoUrl}?t=${logoTimestamp}`}
+                        src={logoPreview || `${getMediaUrl(currentLogoUrl)}?t=${logoTimestamp}`}
                         alt="Logo"
                         className="h-20 w-20 rounded-lg object-cover"
                       />

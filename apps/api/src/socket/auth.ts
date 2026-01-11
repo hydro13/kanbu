@@ -95,8 +95,9 @@ export async function authenticateSocket(
     }
 
     // Check if user is a Domain Admin via group membership
+    // Group name is 'domain-admins' (lowercase with hyphen)
     const isDomainAdmin = user.groupMemberships.some(
-      (gm) => gm.group.name === 'Domain Admins' && gm.group.isActive
+      (gm) => gm.group.name === 'domain-admins' && gm.group.isActive
     );
 
     // Get workspace IDs from ACL entries
@@ -157,6 +158,7 @@ export function canAccessWorkspace(
 /**
  * Check if user can access a project
  * Checks:
+ * 0. Domain Admins have access to all projects
  * 1. Direct workspace membership (via socket.data.workspaceIds which includes GROUP-based)
  * 2. Direct project ACL entry
  * 3. GROUP-based project membership (via PROJECT groups)
@@ -165,6 +167,11 @@ export async function canAccessProject(
   socket: AuthenticatedSocket,
   projectId: number
 ): Promise<boolean> {
+  // Domain Admins have access to all projects
+  if (socket.data.isDomainAdmin) {
+    return true;
+  }
+
   const userId = socket.data.user.id;
 
   const project = await prisma.project.findUnique({

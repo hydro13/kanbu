@@ -15,6 +15,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useSocketContext } from '@/contexts/SocketContext';
+import { joinProjectRoom, leaveProjectRoom } from '@/lib/socket';
 import type { CursorMovePayload, PresenceUser } from '@/lib/socket';
 
 // =============================================================================
@@ -48,7 +49,7 @@ export interface UseCursorsReturn {
 // =============================================================================
 
 const THROTTLE_MS = 33; // ~30fps
-const DEFAULT_CURSOR_TIMEOUT = 5000; // 5 seconds
+const DEFAULT_CURSOR_TIMEOUT = 30000; // 30 seconds - cursors stay visible longer
 
 // =============================================================================
 // Hook
@@ -121,6 +122,23 @@ export function useCursors({
     },
     [socket, isConnected, enabled, roomName, containerRef]
   );
+
+  // Join project room for cursor broadcasting
+  // This ensures users appear in presence and can receive cursor events
+  useEffect(() => {
+    if (!socket || !isConnected || !enabled || !projectId) return;
+
+    // Join the room so we're visible in presence
+    void joinProjectRoom(projectId).then((joined) => {
+      if (joined) {
+        console.log(`[Cursors] Joined project:${projectId} for cursor sharing`);
+      }
+    });
+
+    return () => {
+      leaveProjectRoom(projectId);
+    };
+  }, [socket, isConnected, enabled, projectId]);
 
   // Listen for cursor updates
   useEffect(() => {

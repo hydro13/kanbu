@@ -11,7 +11,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { AdminLayout } from '@/components/admin'
-import { trpc, getApiHost } from '@/lib/trpc'
+import { trpc, getMediaUrl } from '@/lib/trpc'
 
 // =============================================================================
 // Types
@@ -233,7 +233,7 @@ export function WorkspaceListPage() {
                         {/* Logo */}
                         {workspace.logoUrl ? (
                           <img
-                            src={`${getApiHost()}${workspace.logoUrl}?t=${new Date(workspace.updatedAt).getTime()}`}
+                            src={`${getMediaUrl(workspace.logoUrl)}?t=${new Date(workspace.updatedAt).getTime()}`}
                             alt=""
                             className="h-8 w-8 rounded object-cover"
                           />

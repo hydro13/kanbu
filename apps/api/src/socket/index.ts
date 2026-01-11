@@ -113,8 +113,14 @@ export async function initializeSocketServer(
 
     // Handle presence request (get users in room)
     socket.on('presence:request', async (roomName: string, callback: (users: unknown[]) => void) => {
+      console.log(`[Socket.io] presence:request from ${user.username} for room ${roomName}`);
       const users = await getRoomUsers(io, roomName);
-      callback(users);
+      console.log(`[Socket.io] Returning ${users.length} users for ${roomName}:`, users.map(u => u.username));
+      if (callback) {
+        callback(users);
+      } else {
+        console.warn(`[Socket.io] No callback provided for presence:request from ${user.username}`);
+      }
     });
 
     // Handle typing indicators

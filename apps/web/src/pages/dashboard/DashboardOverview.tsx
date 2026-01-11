@@ -24,7 +24,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/com
 import { StickyNoteList } from '@/components/sticky'
 import { useAppSelector } from '@/store'
 import { selectUser } from '@/store/authSlice'
-import { trpc } from '@/lib/trpc'
+import { trpc, getMediaUrl } from '@/lib/trpc'
 import { Star, Clock, AlertTriangle, CheckCircle2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -414,7 +414,7 @@ export function DashboardOverview() {
                       <CardTitle className="flex items-center gap-2">
                         {workspace.logoUrl ? (
                           <img
-                            src={workspace.logoUrl}
+                            src={getMediaUrl(workspace.logoUrl)}
                             alt={workspace.name}
                             className="h-6 w-6 rounded object-cover"
                           />
