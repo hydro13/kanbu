@@ -21,6 +21,7 @@
 import { useState, useCallback } from 'react'
 import { Plus, Trash2, Clock, Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { getMediaUrl } from '@/lib/trpc'
 
 // =============================================================================
 // Types
@@ -217,9 +218,9 @@ function SubtaskItem({
           className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0 overflow-hidden"
           title={subtask.assignee.name ?? subtask.assignee.username}
         >
-          {subtask.assignee.avatarUrl ? (
+          {getMediaUrl(subtask.assignee.avatarUrl) ? (
             <img
-              src={subtask.assignee.avatarUrl}
+              src={getMediaUrl(subtask.assignee.avatarUrl)}
               alt={subtask.assignee.name ?? subtask.assignee.username}
               className="w-full h-full object-cover"
             />

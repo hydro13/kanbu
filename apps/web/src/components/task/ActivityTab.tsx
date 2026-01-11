@@ -25,6 +25,7 @@ import {
   XCircle,
   Filter,
 } from 'lucide-react'
+import { getMediaUrl } from '@/lib/trpc'
 
 // =============================================================================
 // Types
@@ -191,10 +192,10 @@ function ActivityItem({ activity }: { activity: Activity }) {
       <div className="flex-1 min-w-0 pb-4">
         <div className="flex items-center gap-2 flex-wrap">
           {/* User avatar */}
-          {user?.avatarUrl ? (
+          {getMediaUrl(user?.avatarUrl) ? (
             <img
-              src={user.avatarUrl}
-              alt={user.name ?? user.username}
+              src={getMediaUrl(user?.avatarUrl)}
+              alt={user?.name ?? user?.username ?? 'User'}
               className="w-5 h-5 rounded-full"
             />
           ) : (

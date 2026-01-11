@@ -21,6 +21,7 @@
 import { useState, useCallback } from 'react'
 import { Send, Pencil, Trash2, MoreVertical } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { getMediaUrl } from '@/lib/trpc'
 import { RichTextEditor, getDisplayContent, isLexicalContent, lexicalToPlainText } from '@/components/editor'
 import { useTypingIndicator } from '@/hooks/useTypingIndicator'
 import { useAppSelector } from '@/store'
@@ -149,9 +150,9 @@ function CommentItem({
   return (
     <div className="flex gap-3">
       {/* Avatar */}
-      {comment.user.avatarUrl ? (
+      {getMediaUrl(comment.user.avatarUrl) ? (
         <img
-          src={comment.user.avatarUrl}
+          src={getMediaUrl(comment.user.avatarUrl)}
           alt={comment.user.name ?? comment.user.username}
           className="w-8 h-8 rounded-full flex-shrink-0"
         />

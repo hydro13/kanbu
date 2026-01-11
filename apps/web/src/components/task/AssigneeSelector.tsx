@@ -15,7 +15,7 @@
  */
 
 import { useState, useRef, useEffect } from 'react'
-import { trpc } from '@/lib/trpc'
+import { trpc, getMediaUrl } from '@/lib/trpc'
 import { Check, X, Loader2, UserPlus } from 'lucide-react'
 
 // =============================================================================
@@ -44,10 +44,11 @@ export interface AssigneeSelectorProps {
 function UserAvatar({ user, size = 'sm' }: { user: User; size?: 'sm' | 'md' }) {
   const sizeClass = size === 'sm' ? 'w-6 h-6 text-xs' : 'w-8 h-8 text-sm'
 
-  if (user.avatarUrl) {
+  const avatarSrc = getMediaUrl(user.avatarUrl)
+  if (avatarSrc) {
     return (
       <img
-        src={user.avatarUrl}
+        src={avatarSrc}
         alt={user.name ?? user.username}
         className={`${sizeClass} rounded-full`}
       />

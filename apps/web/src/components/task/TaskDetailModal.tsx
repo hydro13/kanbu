@@ -36,6 +36,7 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useTaskDetail } from '@/hooks/useTaskDetail'
@@ -263,6 +264,10 @@ export function TaskDetailModal({
           >
             {/* Header */}
             <DialogHeader className="flex-shrink-0">
+              {/* Visually hidden title for accessibility */}
+              <DialogTitle className="sr-only">
+                {task.reference ? `${task.reference}: ` : ''}{task.title}
+              </DialogTitle>
               <TaskDetailHeader
                 task={task}
                 onTitleUpdate={handleTitleUpdate}
