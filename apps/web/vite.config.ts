@@ -1,19 +1,9 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
-import fs from 'fs'
 
-// Check if HTTPS certificates exist
-const certsPath = path.resolve(__dirname, '../../certs')
-const httpsConfig = fs.existsSync(path.join(certsPath, 'localhost+4.pem'))
-  ? {
-      key: fs.readFileSync(path.join(certsPath, 'localhost+4-key.pem')),
-      cert: fs.readFileSync(path.join(certsPath, 'localhost+4.pem')),
-    }
-  : undefined
-
-// API target - always HTTP, API runs on HTTP for Vite proxy compatibility
-const apiTarget = 'http://localhost:3001'
+// API target - HTTPS with self-signed certificate
+const apiTarget = 'https://127.0.0.1:3001'
 
 export default defineConfig({
   plugins: [react()],
@@ -26,23 +16,34 @@ export default defineConfig({
     port: 5173,
     host: true, // Listen on all interfaces (0.0.0.0) for Tailscale access
     allowedHosts: true, // Allow all hosts (dev server accessible via any hostname)
-    https: httpsConfig, // Use HTTPS if certificates are available
     proxy: {
       '/api': {
         target: apiTarget,
         changeOrigin: true,
+        secure: false, // Allow self-signed certificates
+        configure: (proxy) => {
+          proxy.on('error', (err, req, res) => {
+            console.log('Proxy error:', err.message);
+          });
+        },
       },
       '/trpc': {
         target: apiTarget,
         changeOrigin: true,
+        secure: false, // Allow self-signed certificates
+        configure: (proxy) => {
+          proxy.on('error', (err, req, res) => {
+            console.log('Proxy error:', err.message);
+          });
+        },
       },
-      // Note: /uploads is served directly from public/uploads symlink → API uploads folder
-      // Proxy Socket.io through Vite to avoid mixed content issues
       '/socket.io': {
         target: apiTarget,
         changeOrigin: true,
+        secure: false, // Allow self-signed certificates
         ws: true,
       },
+      // Note: /uploads is served directly from public/uploads symlink → API uploads folder
     },
   },
   build: {

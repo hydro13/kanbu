@@ -26,6 +26,7 @@ import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
 import fastifyStatic from '@fastify/static';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { appRouter, createContext } from './trpc';
 import { registerPublicApiRoutes } from './routes/publicApi';
 import { registerAvatarRoutes } from './routes/avatar';
@@ -35,10 +36,20 @@ import { registerGitHubImageProxyRoutes } from './routes/githubImageProxy';
 import { initializeSocketServer } from './socket';
 import { isRedisHealthy } from './lib/redis';
 
-// HTTPS disabled for API - use HTTP for Vite proxy compatibility
-// External HTTPS is handled by the Vite dev server which proxies to this HTTP API
-// Socket.io connects directly but can use HTTP in dev (same-origin policy is relaxed)
-export const isHttpsEnabled = false;
+// ESM equivalent of __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Check if HTTPS certificates exist (shared with web app)
+const certsPath = path.resolve(__dirname, '../../../certs');
+const httpsOptions = fs.existsSync(path.join(certsPath, 'localhost+4.pem'))
+  ? {
+      key: fs.readFileSync(path.join(certsPath, 'localhost+4-key.pem')),
+      cert: fs.readFileSync(path.join(certsPath, 'localhost+4.pem')),
+    }
+  : null;
+
+export const isHttpsEnabled = !!httpsOptions;
 
 /**
  * Create and configure Fastify server
@@ -60,6 +71,8 @@ export async function createServer() {
     },
     // Increase body limit to 10MB for avatar uploads (base64 encoded images)
     bodyLimit: 10 * 1024 * 1024,
+    // Enable HTTPS if certificates are available
+    ...(httpsOptions ? { https: httpsOptions } : {}),
   });
 
   // Handle CORS manually for preflight requests (before tRPC can intercept them)

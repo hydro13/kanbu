@@ -25,30 +25,35 @@ export const queryClient = new QueryClient({
 })
 
 /**
- * Get API host - uses Vite proxy in development, direct API URL in production
- * In dev mode, we use relative URLs so Vite's proxy handles the request
- * This avoids HTTPS/HTTP mismatch issues when using HTTPS dev server
+ * Get API host - connects directly to API server in development
+ * Both frontend and API use HTTPS via shared certificates
  */
 export function getApiHost(): string {
   // If explicitly set, use that
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
-  // In development, use empty string (relative URL) to use Vite proxy
-  // This ensures HTTPS frontend -> Vite proxy -> HTTP API works correctly
+  // In development, connect directly to the API server on port 3001
+  // Bypasses Vite proxy which has issues with HTTPS WebSocket upgrade
   if (import.meta.env.DEV) {
-    return '';
+    const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+    return `${protocol}//${window.location.hostname}:3001`;
   }
   // In production, use empty string (same origin or proxy)
   return '';
 }
 
 /**
- * Get API URL - uses Vite proxy in development
- * Relative path lets Vite handle proxying to the API server
+ * Get API URL - connects directly to API server in development
+ * Uses HTTPS when frontend is on HTTPS (shared certificates)
  */
 function getApiUrl(): string {
-  // Always use relative URL - Vite proxy or production reverse proxy handles it
+  if (import.meta.env.DEV) {
+    // Connect directly to API server, bypassing Vite proxy
+    const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+    return `${protocol}//${window.location.hostname}:3001/trpc`;
+  }
+  // Production: relative URL for reverse proxy
   return '/trpc';
 }
 

@@ -21,19 +21,24 @@ import { io, type Socket } from 'socket.io-client';
 
 const TOKEN_KEY = 'kanbu_token';
 
-// Get socket URL - in dev, use Vite proxy to avoid mixed content issues
-// In production, use the API URL directly
+// Get socket URL - connect directly to the API server
+// Both frontend (Vite) and API now support HTTPS, so we can connect directly
+// This bypasses the Vite proxy which has issues with WebSocket upgrade
 function getSocketUrl(): string {
   const apiUrl = import.meta.env.VITE_API_URL;
   if (apiUrl) {
     // Remove /trpc suffix if present and use the base URL
     return apiUrl.replace(/\/trpc$/, '');
   }
-  // In development, use empty string to connect through Vite proxy
-  // This avoids mixed content (HTTPS page -> HTTP socket) issues
+
+  // In development, connect directly to the API server on port 3001
+  // Both Vite and API use HTTPS via shared certificates, so no mixed content issues
   if (import.meta.env.DEV) {
-    return '';
+    // Use current hostname (works for localhost, max, tailscale hostnames, etc.)
+    const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
+    return `${protocol}//${window.location.hostname}:3001`;
   }
+
   // Default: same origin (for production)
   return '';
 }
