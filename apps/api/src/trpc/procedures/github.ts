@@ -37,7 +37,6 @@ import {
 } from '../../services/github/prCommitLinkService'
 import {
   createBranchForTask,
-  branchExists,
   generateBranchName,
   getAutomationSettings,
 } from '../../services/github/automationService'
@@ -45,7 +44,6 @@ import {
   getWorkflowRuns,
   getWorkflowRunDetails,
   getTaskWorkflowRuns,
-  getPRWorkflowRuns,
   getWorkflowJobs,
   getWorkflowStats,
   rerunWorkflow,
@@ -70,14 +68,12 @@ import {
   getProjectAnalytics,
 } from '../../services/github/analyticsService'
 import {
-  getMilestones,
   getMilestoneByNumber,
   getProjectMilestones,
   getMilestoneStats,
   importMilestonesFromGitHub,
 } from '../../services/github/milestoneService'
 import {
-  getReleases,
   getReleaseByTag,
   getLatestRelease,
   getProjectReleases,
@@ -260,7 +256,7 @@ async function getTaskWithProjectAccess(
   userId: number,
   taskId: number
 ): Promise<{
-  task: { id: number; projectId: number; title: string; reference: string }
+  task: { id: number; projectId: number; title: string; reference: string | null }
   projectId: number
 }> {
   const task = await prisma.task.findUnique({
@@ -1016,7 +1012,7 @@ export const githubRouter = router({
         category: 'WORKSPACE',
         resourceType: 'task',
         resourceId: taskId,
-        resourceName: task.reference,
+        resourceName: task.reference ?? undefined,
         metadata: {
           repositoryId: repository.id,
           issueNumber: result.issueNumber,
@@ -1090,7 +1086,7 @@ export const githubRouter = router({
           category: 'WORKSPACE',
           resourceType: 'task',
           resourceId: taskId,
-          resourceName: task.reference,
+          resourceName: task.reference ?? undefined,
           metadata: {
             repositoryId: repository.id,
             issueNumber: result.issueNumber,
@@ -1175,7 +1171,7 @@ export const githubRouter = router({
           category: 'WORKSPACE',
           resourceType: 'task',
           resourceId: taskId,
-          resourceName: task.reference,
+          resourceName: task.reference ?? undefined,
           metadata: {
             repositoryId: repository.id,
             issueNumber: result.issueNumber,
@@ -1472,7 +1468,7 @@ export const githubRouter = router({
         category: 'WORKSPACE',
         resourceType: 'task',
         resourceId: taskId,
-        resourceName: task.reference,
+        resourceName: task.reference ?? undefined,
         metadata: {
           prId,
           prNumber: pr.prNumber,
@@ -1536,7 +1532,7 @@ export const githubRouter = router({
         category: 'WORKSPACE',
         resourceType: 'task',
         resourceId: pr.task.id,
-        resourceName: pr.task.reference,
+        resourceName: pr.task.reference ?? undefined,
         metadata: {
           prId,
           prNumber: pr.prNumber,
@@ -1598,7 +1594,7 @@ export const githubRouter = router({
         category: 'WORKSPACE',
         resourceType: 'task',
         resourceId: taskId,
-        resourceName: task.reference,
+        resourceName: task.reference ?? undefined,
         metadata: {
           commitId,
           sha: commit.sha,
@@ -1662,7 +1658,7 @@ export const githubRouter = router({
         category: 'WORKSPACE',
         resourceType: 'task',
         resourceId: commit.task.id,
-        resourceName: commit.task.reference,
+        resourceName: commit.task.reference ?? undefined,
         metadata: {
           commitId,
           sha: commit.sha,
@@ -1693,11 +1689,12 @@ export const githubRouter = router({
         include: {
           project: {
             include: {
-              githubRepository: {
+              githubRepositories: {
                 select: {
                   id: true,
                   fullName: true,
                   syncSettings: true,
+                  isPrimary: true,
                 },
               },
             },
@@ -1715,7 +1712,7 @@ export const githubRouter = router({
       // Check project write permission
       await checkProjectWriteAccess(ctx.user.id, task.projectId)
 
-      const repository = task.project.githubRepository
+      const repository = task.project.githubRepositories.find(r => r.isPrimary) || task.project.githubRepositories[0]
       if (!repository) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
@@ -1748,7 +1745,7 @@ export const githubRouter = router({
         category: 'WORKSPACE',
         resourceType: 'task',
         resourceId: taskId,
-        resourceName: task.reference,
+        resourceName: task.reference ?? undefined,
         metadata: {
           branchName: result.branchName,
           repositoryFullName: repository.fullName,
@@ -1777,11 +1774,12 @@ export const githubRouter = router({
         include: {
           project: {
             include: {
-              githubRepository: {
+              githubRepositories: {
                 select: {
                   id: true,
                   fullName: true,
                   syncSettings: true,
+                  isPrimary: true,
                 },
               },
             },
@@ -1799,7 +1797,7 @@ export const githubRouter = router({
       // Check project read permission
       await checkProjectReadAccess(ctx.user.id, task.projectId)
 
-      const repository = task.project.githubRepository
+      const repository = task.project.githubRepositories.find(r => r.isPrimary) || task.project.githubRepositories[0]
       if (!repository) {
         return {
           available: false,
@@ -1822,7 +1820,8 @@ export const githubRouter = router({
       // Generate preview branch name
       const syncSettings = repository.syncSettings as GitHubSyncSettings | null
       const branchPattern = syncSettings?.branches?.pattern || 'feature/{reference}-{slug}'
-      const branchName = generateBranchName(task.reference, task.title, branchPattern)
+      const taskRef = task.reference ?? `task-${taskId}`
+      const branchName = generateBranchName(taskRef, task.title, branchPattern)
 
       return {
         available: true,
@@ -2878,9 +2877,10 @@ export const githubRouter = router({
       await auditService.log({
         userId: ctx.user.id,
         action: AUDIT_ACTIONS.GITHUB_MILESTONES_SYNCED,
+        category: 'WORKSPACE',
         resourceType: 'project',
         resourceId: input.projectId,
-        details: {
+        metadata: {
           imported: result.imported,
           updated: result.updated,
           failed: result.failed,
@@ -3252,7 +3252,7 @@ export const githubRouter = router({
       const project = await ctx.prisma.project.findUnique({
         where: { id: input.projectId },
         include: {
-          githubRepository: true,
+          githubRepositories: true,
         },
       })
 
@@ -3263,7 +3263,8 @@ export const githubRouter = router({
         })
       }
 
-      if (!project.githubRepository) {
+      const primaryRepo = project.githubRepositories.find(r => r.isPrimary) || project.githubRepositories[0]
+      if (!primaryRepo) {
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: 'No GitHub repository linked to this project',
@@ -3273,7 +3274,7 @@ export const githubRouter = router({
       // Get merged PRs
       const prs = await ctx.prisma.gitHubPullRequest.findMany({
         where: {
-          repositoryId: project.githubRepository.id,
+          repositoryId: primaryRepo.id,
           mergedAt: {
             not: null,
             ...(input.fromDate && { gte: new Date(input.fromDate) }),

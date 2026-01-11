@@ -118,7 +118,7 @@ describe('milestoneService', () => {
       const result = await getMilestones(1)
 
       expect(result).toHaveLength(1)
-      expect(result[0].progress).toBe(70) // 7/(3+7) * 100 = 70%
+      expect(result[0]!.progress).toBe(70) // 7/(3+7) * 100 = 70%
     })
 
     it('should filter by state', async () => {
@@ -155,7 +155,7 @@ describe('milestoneService', () => {
 
       const result = await getMilestones(1)
 
-      expect(result[0].progress).toBe(0)
+      expect(result[0]!.progress).toBe(0)
     })
   })
 
@@ -235,7 +235,7 @@ describe('milestoneService', () => {
       const result = await getProjectMilestones(1)
 
       expect(result).toHaveLength(1)
-      expect(result[0].progress).toBe(50)
+      expect(result[0]!.progress).toBe(50)
     })
   })
 

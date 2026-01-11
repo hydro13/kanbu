@@ -78,7 +78,7 @@ export async function registerGitHubImageProxyRoutes(server: FastifyInstance) {
         const project = await prisma.project.findUnique({
           where: { id: parseInt(projectId, 10) },
           include: {
-            githubRepository: {
+            githubRepositories: {
               include: {
                 installation: true,
               },
@@ -86,10 +86,14 @@ export async function registerGitHubImageProxyRoutes(server: FastifyInstance) {
           },
         })
 
-        if (project?.githubRepository?.installation) {
+        // Find the primary repo or first available
+        const githubRepo = project?.githubRepositories?.find(r => r.isPrimary)
+          ?? project?.githubRepositories?.[0]
+
+        if (githubRepo?.installation) {
           try {
             const octokit = await getInstallationOctokit(
-              project.githubRepository.installation.installationId
+              githubRepo.installation.installationId
             )
 
             // Get the token from octokit

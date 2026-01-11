@@ -279,7 +279,7 @@ export async function syncMilestoneFromWebhook(
 // Bulk Import from GitHub
 // =============================================================================
 
-interface MilestoneImportResult {
+export interface MilestoneImportResult {
   imported: number
   updated: number
   failed: number
@@ -330,7 +330,7 @@ export async function importMilestonesFromGitHub(
       repo: repository.name,
       state: state === 'all' ? 'all' : state,
       per_page: 100,
-      sort: 'created',
+      sort: 'due_on',
       direction: 'asc',
     })
 

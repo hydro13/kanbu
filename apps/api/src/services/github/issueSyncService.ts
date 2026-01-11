@@ -41,14 +41,14 @@ interface GitHubIssueData {
   closed_at?: string | null
 }
 
-interface ImportResult {
+export interface ImportResult {
   imported: number
   skipped: number
   failed: number
   errors: Array<{ issueNumber: number; error: string }>
 }
 
-interface ImportProgress {
+export interface ImportProgress {
   total: number
   processed: number
   status: 'pending' | 'running' | 'completed' | 'failed'
@@ -63,14 +63,6 @@ interface OutboundSyncResult {
   updated: boolean
 }
 
-interface TaskData {
-  id: number
-  title: string
-  description: string | null
-  isActive: boolean
-  tags?: Array<{ tag: { id: number; name: string; color: string } }>
-  assignees?: Array<{ user: { id: number } }>
-}
 
 // In-memory import progress tracking
 const importProgress = new Map<number, ImportProgress>()
@@ -307,7 +299,8 @@ export async function getColumnForIssueState(
   }
 
   // Open issues go to first column, closed to last
-  const column = state === 'open' ? columns[0] : columns[columns.length - 1]
+  // columns is guaranteed to have at least one element due to check above
+  const column = state === 'open' ? columns[0]! : columns[columns.length - 1]!
   return column.id
 }
 
@@ -383,7 +376,7 @@ export async function createTaskFromGitHubIssue(
   const reference = await generateTaskReference(project.id)
 
   // Determine creator: use first assignee, workspace creator, or any active user
-  let creatorId: number | null = assigneeIds.length > 0 ? assigneeIds[0] : null
+  let creatorId: number | null = assigneeIds.length > 0 ? assigneeIds[0]! : null
 
   if (!creatorId && project.workspace.createdById) {
     creatorId = project.workspace.createdById
@@ -684,14 +677,14 @@ export async function importIssuesFromGitHub(
           number: issue.number,
           id: issue.id,
           title: issue.title,
-          body: issue.body,
-          body_html: (issue as { body_html?: string }).body_html || null,
+          body: issue.body ?? null,
+          body_html: (issue as { body_html?: string }).body_html ?? null,
           state: issue.state as 'open' | 'closed',
-          labels: issue.labels
-            .filter((label: string | { name: string; color?: string }): label is { name: string; color?: string } =>
-              typeof label === 'object' && label !== null && 'name' in label
+          labels: (issue.labels as Array<{ name?: string; color?: string } | string>)
+            .filter((label): label is { name: string; color?: string } =>
+              typeof label === 'object' && label !== null && 'name' in label && typeof label.name === 'string'
             )
-            .map((label: { name: string; color?: string }) => ({
+            .map((label) => ({
               name: label.name,
               color: label.color,
             })),
@@ -806,7 +799,7 @@ export async function createGitHubIssueFromTask(
       project: {
         include: {
           workspace: true,
-          githubRepository: {
+          githubRepositories: {
             include: {
               installation: true,
             },
@@ -831,7 +824,8 @@ export async function createGitHubIssueFromTask(
     throw new Error(`Task ${taskId} not found`)
   }
 
-  const repository = task.project.githubRepository
+  // Get primary repository or first available
+  const repository = task.project.githubRepositories.find(r => r.isPrimary) || task.project.githubRepositories[0]
   if (!repository) {
     throw new Error(`Project ${task.project.id} has no linked GitHub repository`)
   }
@@ -946,7 +940,7 @@ export async function updateGitHubIssueFromTask(
       project: {
         include: {
           workspace: true,
-          githubRepository: {
+          githubRepositories: {
             include: {
               installation: true,
             },
@@ -971,7 +965,8 @@ export async function updateGitHubIssueFromTask(
     throw new Error(`Task ${taskId} not found`)
   }
 
-  const repository = task.project.githubRepository
+  // Get primary repository or first available
+  const repository = task.project.githubRepositories.find(r => r.isPrimary) || task.project.githubRepositories[0]
   if (!repository) {
     throw new Error(`Project ${task.project.id} has no linked GitHub repository`)
   }

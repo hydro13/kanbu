@@ -242,7 +242,7 @@ describe('aiService', () => {
           },
         ],
       }
-      expect(input.prs[0].labels).toContain('feature')
+      expect(input.prs[0]!.labels).toContain('feature')
     })
   })
 
@@ -286,7 +286,7 @@ describe('aiService', () => {
           },
         ],
       }
-      expect(input.files[0].diff).toBeDefined()
+      expect(input.files[0]!.diff).toBeDefined()
     })
 
     it('should accept context parameter', () => {

@@ -207,9 +207,9 @@ describe('multiRepoService', () => {
       const refs = findCrossRepoReferences(text)
 
       expect(refs).toHaveLength(1)
-      expect(refs[0].owner).toBe('hydro13')
-      expect(refs[0].repo).toBe('kanbu')
-      expect(refs[0].number).toBe(42)
+      expect(refs[0]!.owner).toBe('hydro13')
+      expect(refs[0]!.repo).toBe('kanbu')
+      expect(refs[0]!.number).toBe(42)
     })
 
     it('should handle PR body with multiple repos', () => {
@@ -236,14 +236,14 @@ describe('multiRepoService', () => {
       const refs = findCrossRepoReferences('org/repo#1 is the first issue')
 
       expect(refs).toHaveLength(1)
-      expect(refs[0].number).toBe(1)
+      expect(refs[0]!.number).toBe(1)
     })
 
     it('should handle references at end of string', () => {
       const refs = findCrossRepoReferences('See issue hydro13/kanbu#999')
 
       expect(refs).toHaveLength(1)
-      expect(refs[0].number).toBe(999)
+      expect(refs[0]!.number).toBe(999)
     })
 
     it('should handle repo names with dashes', () => {

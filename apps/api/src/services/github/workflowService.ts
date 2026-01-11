@@ -492,11 +492,12 @@ export async function getWorkflowStats(repositoryId: number, days: number = 30) 
     if (!byWorkflow[run.workflowName]) {
       byWorkflow[run.workflowName] = { total: 0, success: 0, failure: 0 }
     }
-    byWorkflow[run.workflowName].total++
+    const workflowStats = byWorkflow[run.workflowName]!
+    workflowStats.total++
     if (run.conclusion === 'success') {
-      byWorkflow[run.workflowName].success++
+      workflowStats.success++
     } else if (run.conclusion === 'failure') {
-      byWorkflow[run.workflowName].failure++
+      workflowStats.failure++
     }
 
     // Calculate duration

@@ -15,7 +15,7 @@
  */
 
 import { prisma } from '../../lib/prisma'
-import type { SyncDirection, GitHubSyncSettings } from '@kanbu/shared'
+import type { GitHubSyncSettings } from '@kanbu/shared'
 
 // =============================================================================
 // Types
@@ -199,19 +199,19 @@ export async function findTaskByReference(
   projectId: number,
   reference: TaskReference
 ): Promise<{ taskId: number; reference: string } | null> {
-  // Get project to check prefix
+  // Get project to check identifier (prefix)
   const project = await prisma.project.findUnique({
     where: { id: projectId },
-    select: { id: true, prefix: true },
+    select: { id: true, identifier: true },
   })
 
   if (!project) {
     return null
   }
 
-  // If reference has a prefix, it should match the project prefix
+  // If reference has a prefix, it should match the project identifier
   if (reference.prefix) {
-    if (project.prefix?.toUpperCase() !== reference.prefix) {
+    if (project.identifier?.toUpperCase() !== reference.prefix) {
       // Prefix doesn't match this project
       return null
     }
@@ -225,22 +225,22 @@ export async function findTaskByReference(
       select: { id: true, reference: true },
     })
 
-    if (task) {
+    if (task?.reference) {
       return { taskId: task.id, reference: task.reference }
     }
   } else {
     // No prefix - try to find by number (less reliable)
-    // First, try to find a task with reference matching project prefix + number
-    if (project.prefix) {
+    // First, try to find a task with reference matching project identifier + number
+    if (project.identifier) {
       const task = await prisma.task.findFirst({
         where: {
           projectId,
-          reference: `${project.prefix}-${reference.number}`,
+          reference: `${project.identifier}-${reference.number}`,
         },
         select: { id: true, reference: true },
       })
 
-      if (task) {
+      if (task?.reference) {
         return { taskId: task.id, reference: task.reference }
       }
     }
@@ -258,8 +258,9 @@ export async function findTaskByReference(
       take: 1,
     })
 
-    if (tasks.length > 0) {
-      return { taskId: tasks[0].id, reference: tasks[0].reference }
+    const firstTask = tasks[0]
+    if (firstTask?.reference) {
+      return { taskId: firstTask.id, reference: firstTask.reference }
     }
   }
 

@@ -31,6 +31,14 @@ export type NotificationType =
   | 'subtask_completed'
   | 'project_invited'
   | 'project_role_changed'
+  // CI/CD notification types
+  | 'workflow_failed'
+  | 'workflow_succeeded'
+  | 'deployment_failed'
+  | 'deployment_succeeded'
+  | 'deployment_pending'
+  | 'check_run_failed'
+  | 'check_run_succeeded'
 
 export interface NotificationData {
   taskId?: number
@@ -112,6 +120,35 @@ const NOTIFICATION_TEMPLATES: Record<NotificationType, { title: (data: Notificat
   },
   project_role_changed: {
     title: (d) => `Your role changed in project "${d.projectName || 'unknown'}"`,
+  },
+  // CI/CD notification templates
+  workflow_failed: {
+    title: (d) => `Workflow failed: ${(d as Record<string, unknown>).workflowName || 'unknown'}`,
+    content: (d) => `Repository: ${(d as Record<string, unknown>).repository || 'unknown'}`,
+  },
+  workflow_succeeded: {
+    title: (d) => `Workflow succeeded: ${(d as Record<string, unknown>).workflowName || 'unknown'}`,
+    content: (d) => `Repository: ${(d as Record<string, unknown>).repository || 'unknown'}`,
+  },
+  deployment_failed: {
+    title: (d) => `Deployment failed to ${(d as Record<string, unknown>).environment || 'unknown'}`,
+    content: (d) => `Repository: ${(d as Record<string, unknown>).repository || 'unknown'}`,
+  },
+  deployment_succeeded: {
+    title: (d) => `Deployment succeeded to ${(d as Record<string, unknown>).environment || 'unknown'}`,
+    content: (d) => `Repository: ${(d as Record<string, unknown>).repository || 'unknown'}`,
+  },
+  deployment_pending: {
+    title: (d) => `Deployment pending to ${(d as Record<string, unknown>).environment || 'unknown'}`,
+    content: (d) => `Repository: ${(d as Record<string, unknown>).repository || 'unknown'}`,
+  },
+  check_run_failed: {
+    title: (d) => `Check run failed: ${(d as Record<string, unknown>).checkName || 'unknown'}`,
+    content: (d) => `Repository: ${(d as Record<string, unknown>).repository || 'unknown'}`,
+  },
+  check_run_succeeded: {
+    title: (d) => `Check run succeeded: ${(d as Record<string, unknown>).checkName || 'unknown'}`,
+    content: (d) => `Repository: ${(d as Record<string, unknown>).repository || 'unknown'}`,
   },
 }
 

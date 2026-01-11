@@ -14,7 +14,7 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import { parseCommands, type BotCommand } from '../botService'
+import { parseCommands } from '../botService'
 
 describe('botService', () => {
   // ===========================================================================

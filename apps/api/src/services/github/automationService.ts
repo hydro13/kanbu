@@ -211,7 +211,7 @@ export async function createBranchForTask(
     include: {
       project: {
         include: {
-          githubRepository: {
+          githubRepositories: {
             include: {
               installation: true,
             },
@@ -229,7 +229,9 @@ export async function createBranchForTask(
     }
   }
 
-  const repository = task.project.githubRepository
+  // Find the primary repo or first available
+  const repository = task.project.githubRepositories.find(r => r.isPrimary)
+    ?? task.project.githubRepositories[0]
   if (!repository) {
     return {
       success: false,
@@ -249,7 +251,8 @@ export async function createBranchForTask(
   // Get branch name
   const syncSettings = repository.syncSettings as GitHubSyncSettings | null
   const branchPattern = syncSettings?.branches?.pattern || DEFAULT_BRANCH_PATTERN
-  const branchName = customBranchName || generateBranchName(task.reference, task.title, branchPattern)
+  const taskRef = task.reference ?? `task-${task.id}`
+  const branchName = customBranchName || generateBranchName(taskRef, task.title, branchPattern)
 
   try {
     // Get Octokit for the installation

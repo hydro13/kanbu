@@ -18,7 +18,7 @@
 
 import { prisma } from '../../lib/prisma'
 import { getInstallationOctokit } from './githubService'
-import { linkPRToTask, findTaskByReference } from './prCommitLinkService'
+import { linkPRToTask, extractTaskReferences, findTaskFromReferences } from './prCommitLinkService'
 import { generatePRSummary, isAIConfigured, type PRSummaryInput } from './aiService'
 
 // =============================================================================
@@ -192,10 +192,33 @@ async function handleLinkCommand(
     }
   }
 
-  const taskRef = args[0]
+  const taskRef = args[0]!
 
-  // Find the task
-  const task = await findTaskByReference(ctx.repositoryId, taskRef)
+  // Get the repository's project ID
+  const repo = await prisma.gitHubRepository.findUnique({
+    where: { id: ctx.repositoryId },
+    select: { projectId: true },
+  })
+
+  if (!repo) {
+    return {
+      processed: true,
+      command: 'link',
+      error: 'Repository not found.',
+    }
+  }
+
+  // Parse task reference and find the task
+  const references = extractTaskReferences(taskRef)
+  if (references.length === 0) {
+    return {
+      processed: true,
+      command: 'link',
+      error: `Invalid task reference: \`${taskRef}\`. Use format like PROJ-123 or #123.`,
+    }
+  }
+
+  const task = await findTaskFromReferences(repo.projectId, references)
   if (!task) {
     return {
       processed: true,
@@ -203,6 +226,12 @@ async function handleLinkCommand(
       error: `Task \`${taskRef}\` not found. Make sure the task exists and belongs to this project.`,
     }
   }
+
+  // Get task title for the response
+  const taskDetails = await prisma.task.findUnique({
+    where: { id: task.taskId },
+    select: { title: true },
+  })
 
   // Find the PR record
   const pr = await prisma.gitHubPullRequest.findUnique({
@@ -223,19 +252,19 @@ async function handleLinkCommand(
   }
 
   // Link the PR to the task
-  const result = await linkPRToTask(pr.id, task.id)
-  if (!result.success) {
+  const result = await linkPRToTask(pr.id, task.taskId)
+  if (!result.linked) {
     return {
       processed: true,
       command: 'link',
-      error: result.error || 'Failed to link PR to task.',
+      error: 'Failed to link PR to task.',
     }
   }
 
   return {
     processed: true,
     command: 'link',
-    message: `✅ Linked this PR to task **${taskRef}**: ${task.title}`,
+    message: `✅ Linked this PR to task **${task.reference}**: ${taskDetails?.title ?? 'Unknown'}`,
   }
 }
 
@@ -342,7 +371,7 @@ async function handleStatusCommand(
 | PR State | \`${pr.state}\` |
 | Linked Task | **${task.reference}** |
 | Task Title | ${task.title} |
-| Task Status | \`${task.column?.name || 'Unknown'}\` |
+| Task Status | \`${task.column?.title || 'Unknown'}\` |
 | Priority | \`${task.priority}\` |`,
     }
   } else {
@@ -381,7 +410,7 @@ async function handleStatusCommand(
 |----------|-------|
 | Task | **${task.reference}** |
 | Title | ${task.title} |
-| Status | \`${task.column?.name || 'Unknown'}\` |
+| Status | \`${task.column?.title || 'Unknown'}\` |
 | Priority | \`${task.priority}\` |`,
     }
   }
@@ -609,7 +638,7 @@ export async function postTaskInfoComment(
 | **Task** | **${task.reference}** |
 | **Title** | ${task.title} |
 | **Project** | ${task.project.name} |
-| **Status** | \`${task.column?.name || 'Backlog'}\` |
+| **Status** | \`${task.column?.title || 'Backlog'}\` |
 | **Priority** | \`${task.priority}\` |
 | **Assignees** | ${assigneesList} |
 

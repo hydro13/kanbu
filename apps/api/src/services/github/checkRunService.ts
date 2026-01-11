@@ -240,10 +240,11 @@ export async function getCheckRunStats(
     if (!byName[run.name]) {
       byName[run.name] = { total: 0, passed: 0, failed: 0 }
     }
-    byName[run.name].total++
-    if (run.conclusion === 'success') byName[run.name].passed++
+    const nameStats = byName[run.name]!
+    nameStats.total++
+    if (run.conclusion === 'success') nameStats.passed++
     if (['failure', 'timed_out'].includes(run.conclusion || '')) {
-      byName[run.name].failed++
+      nameStats.failed++
     }
 
     if (run.startedAt && run.completedAt) {
@@ -369,8 +370,9 @@ export async function processCheckRunWebhook(
 
   // Find associated PR if any
   let pullRequestId: number | null = null
-  if (payload.check_run.pull_requests.length > 0) {
-    const prNumber = payload.check_run.pull_requests[0].number
+  const firstPR = payload.check_run.pull_requests[0]
+  if (firstPR) {
+    const prNumber = firstPR.number
     const pr = await prisma.gitHubPullRequest.findUnique({
       where: {
         repositoryId_prNumber: {

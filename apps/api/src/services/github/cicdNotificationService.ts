@@ -190,10 +190,10 @@ export async function updateCICDSettings(
   await prisma.gitHubRepository.update({
     where: { id: repositoryId },
     data: {
-      syncSettings: {
+      syncSettings: JSON.parse(JSON.stringify({
         ...currentSettings,
         notifications: newCICDSettings,
-      },
+      })),
     },
   })
 
@@ -236,7 +236,7 @@ async function getUsersToNotify(
   if (settings.notifyRoles && settings.notifyRoles.length > 0) {
     // Get workspace members who have access to this project
     // For simplicity, we get users with ACL access to the project
-    const projectAcls = await prisma.acl.findMany({
+    const projectAcls = await prisma.aclEntry.findMany({
       where: {
         resourceType: 'project',
         resourceId: projectId,

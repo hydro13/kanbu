@@ -353,7 +353,7 @@ describe('monorepoService', () => {
       ]
       const result = getAffectedPackages(['src/index.ts'], packages)
       expect(result.hasChanges).toBe(true)
-      expect(result.packages[0].name).toBe('Source')
+      expect(result.packages[0]!.name).toBe('Source')
     })
   })
 })

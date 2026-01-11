@@ -126,10 +126,10 @@ export async function updateMonorepoSettings(
   await prisma.gitHubRepository.update({
     where: { id: repositoryId },
     data: {
-      syncSettings: {
+      syncSettings: JSON.parse(JSON.stringify({
         ...currentSettings,
         monorepo: newMonorepoSettings,
-      },
+      })),
     },
   })
 

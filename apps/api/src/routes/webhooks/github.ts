@@ -42,8 +42,6 @@ import {
 } from '../../services/github/reviewService'
 import {
   processComment,
-  autoPostPRSummary,
-  postTaskInfoComment,
   type CommentContext,
 } from '../../services/github/botService'
 import {
@@ -216,7 +214,7 @@ function verifySignature(
 
   // GitHub sends signature as "sha256=<hash>"
   const parts = signature.split('=')
-  if (parts.length !== 2 || parts[0] !== 'sha256') {
+  if (parts.length !== 2 || parts[0] !== 'sha256' || !parts[1]) {
     return false
   }
 
@@ -963,11 +961,11 @@ async function handleIssueComment(ctx: WebhookContext): Promise<{
           direction: 'github_to_kanbu',
           entityType: isPullRequest ? 'pr' : 'issue',
           entityId: String(issue.number),
-          details: {
+          details: JSON.stringify({
             commandCount: responses.length,
-            commands: responses.map(r => r.command),
+            commands: responses.map(r => r.command).filter(Boolean),
             author: comment.user.login,
-          },
+          }),
           status: 'success',
         },
       })
@@ -1054,9 +1052,9 @@ async function syncGitHubCommentToKanbu(params: {
       // Try workspace creator
       const workspace = await prisma.workspace.findUnique({
         where: { id: workspaceId },
-        select: { createdBy: true },
+        select: { createdById: true },
       })
-      userId = workspace?.createdBy ?? undefined
+      userId = workspace?.createdById ?? undefined
     }
 
     if (!userId) {

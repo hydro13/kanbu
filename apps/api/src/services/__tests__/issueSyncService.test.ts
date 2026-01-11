@@ -401,7 +401,7 @@ describe('Task Creation from GitHub Issue', () => {
     expect(task?.description).toBe('This is a test issue body')
     expect(task?.columnId).toBe(firstColumnId)
     expect(task?.tags).toHaveLength(1)
-    expect(task?.tags[0].tag.name).toBe('bug')
+    expect(task?.tags[0]!.tag.name).toBe('bug')
 
     // Verify GitHubIssue record was created
     const githubIssue = await prisma.gitHubIssue.findUnique({

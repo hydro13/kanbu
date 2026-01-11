@@ -36,22 +36,6 @@ interface ProjectAnalyticsPanelProps {
   projectId: number
 }
 
-interface CycleTimeStats {
-  averageDays: number
-  medianDays: number
-  minDays: number
-  maxDays: number
-  totalCompleted: number
-}
-
-interface ReviewTimeStats {
-  averageHoursToFirstReview: number
-  averageHoursToApproval: number
-  averageReviewsPerPR: number
-  averageCommentsPerReview: number
-  totalPRsReviewed: number
-}
-
 interface ContributorStats {
   login: string
   commits: number
@@ -122,12 +106,6 @@ function MetricCard({
 // =============================================================================
 
 function ContributorRow({ contributor }: { contributor: ContributorStats }) {
-  const totalActivity =
-    contributor.commits +
-    contributor.prsOpened +
-    contributor.prsMerged +
-    contributor.reviewsGiven
-
   return (
     <div className="flex items-center justify-between py-2 border-b border-gray-100 dark:border-gray-700 last:border-0">
       <div className="flex items-center gap-3">

@@ -220,7 +220,8 @@ describe('reviewService', () => {
         { ...mockReview, comments: [mockReviewComment] },
         { ...mockReview, id: 2, reviewId: BigInt(12346), authorLogin: 'reviewer2', state: 'CHANGES_REQUESTED' },
       ]
-      vi.mocked(prisma.gitHubReview.findMany).mockResolvedValue(reviews)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(prisma.gitHubReview.findMany).mockResolvedValue(reviews as any)
 
       const result = await getReviewsForPR(1)
 
@@ -247,7 +248,8 @@ describe('reviewService', () => {
         { authorLogin: 'reviewer1', state: 'APPROVED', submittedAt: new Date('2026-01-09T10:00:00Z') },
         { authorLogin: 'reviewer2', state: 'APPROVED', submittedAt: new Date('2026-01-09T11:00:00Z') },
       ]
-      vi.mocked(prisma.gitHubReview.findMany).mockResolvedValue(reviews)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(prisma.gitHubReview.findMany).mockResolvedValue(reviews as any)
       vi.mocked(prisma.gitHubReview.count).mockResolvedValue(0)
 
       const result = await getPRReviewSummary(1)
@@ -263,7 +265,8 @@ describe('reviewService', () => {
         { authorLogin: 'reviewer1', state: 'APPROVED', submittedAt: new Date('2026-01-09T10:00:00Z') },
         { authorLogin: 'reviewer2', state: 'CHANGES_REQUESTED', submittedAt: new Date('2026-01-09T11:00:00Z') },
       ]
-      vi.mocked(prisma.gitHubReview.findMany).mockResolvedValue(reviews)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(prisma.gitHubReview.findMany).mockResolvedValue(reviews as any)
       vi.mocked(prisma.gitHubReview.count).mockResolvedValue(0)
 
       const result = await getPRReviewSummary(1)
@@ -278,7 +281,8 @@ describe('reviewService', () => {
         { authorLogin: 'reviewer1', state: 'CHANGES_REQUESTED', submittedAt: new Date('2026-01-09T10:00:00Z') },
         { authorLogin: 'reviewer1', state: 'APPROVED', submittedAt: new Date('2026-01-09T12:00:00Z') },
       ]
-      vi.mocked(prisma.gitHubReview.findMany).mockResolvedValue(reviews)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(prisma.gitHubReview.findMany).mockResolvedValue(reviews as any)
       vi.mocked(prisma.gitHubReview.count).mockResolvedValue(0)
 
       const result = await getPRReviewSummary(1)
@@ -317,13 +321,13 @@ describe('reviewService', () => {
           reviews: [{ ...mockReview, id: 2, authorLogin: 'reviewer2' }],
         },
       ]
-      vi.mocked(prisma.gitHubPullRequest.findMany).mockResolvedValue(prs)
+      vi.mocked(prisma.gitHubPullRequest.findMany).mockResolvedValue(prs as any)
 
       const result = await getReviewsForTask(123)
 
       expect(result).toHaveLength(2)
-      expect(result[0].prNumber).toBe(1)
-      expect(result[1].prNumber).toBe(2)
+      expect(result[0]!.prNumber).toBe(1)
+      expect(result[1]!.prNumber).toBe(2)
     })
 
     it('should return empty array for task without PRs', async () => {
@@ -344,11 +348,11 @@ describe('reviewService', () => {
       vi.mocked(prisma.gitHubPullRequest.findMany).mockResolvedValue([
         { id: 1 },
         { id: 2 },
-      ])
+      ] as any)
       vi.mocked(prisma.gitHubReview.findMany).mockResolvedValue([
         { authorLogin: 'reviewer1', state: 'APPROVED', submittedAt: new Date() },
         { authorLogin: 'reviewer2', state: 'CHANGES_REQUESTED', submittedAt: new Date() },
-      ])
+      ] as any)
       vi.mocked(prisma.gitHubReview.count).mockResolvedValue(0)
 
       const result = await getTaskReviewSummary(123)
@@ -457,8 +461,8 @@ describe('reviewService', () => {
       const result = await getPendingReviewRequests(1, 'owner', 'repo', 42)
 
       expect(result).toHaveLength(2)
-      expect(result[0].login).toBe('reviewer1')
-      expect(result[1].login).toBe('reviewer2')
+      expect(result[0]!.login).toBe('reviewer1')
+      expect(result[1]!.login).toBe('reviewer2')
     })
   })
 

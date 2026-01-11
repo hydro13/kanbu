@@ -478,7 +478,7 @@ export function parseCrossRepoReference(
 ): { owner: string; repo: string; number: number; type: 'issue' | 'pr' } | null {
   // Match owner/repo#123 format
   const match = reference.match(/^([^/]+)\/([^#]+)#(\d+)$/)
-  if (!match) return null
+  if (!match?.[1] || !match[2] || !match[3]) return null
 
   return {
     owner: match[1],
@@ -501,11 +501,16 @@ export function findCrossRepoReferences(
   let match
 
   while ((match = regex.exec(text)) !== null) {
-    references.push({
-      owner: match[1],
-      repo: match[2],
-      number: parseInt(match[3], 10),
-    })
+    const owner = match[1]
+    const repo = match[2]
+    const num = match[3]
+    if (owner && repo && num) {
+      references.push({
+        owner,
+        repo,
+        number: parseInt(num, 10),
+      })
+    }
   }
 
   return references

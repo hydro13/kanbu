@@ -39,7 +39,6 @@ import { isRedisHealthy } from './lib/redis';
 // External HTTPS is handled by the Vite dev server which proxies to this HTTP API
 // Socket.io connects directly but can use HTTP in dev (same-origin policy is relaxed)
 export const isHttpsEnabled = false;
-const httpsConfig = undefined;
 
 /**
  * Create and configure Fastify server
@@ -61,8 +60,6 @@ export async function createServer() {
     },
     // Increase body limit to 10MB for avatar uploads (base64 encoded images)
     bodyLimit: 10 * 1024 * 1024,
-    // Enable HTTPS if certificates are available
-    https: httpsConfig,
   });
 
   // Handle CORS manually for preflight requests (before tRPC can intercept them)

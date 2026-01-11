@@ -60,7 +60,7 @@ describe('extractTaskReferences', () => {
     it('should handle lowercase prefixes (converts to uppercase)', () => {
       const result = extractTaskReferences('fix proj-123')
       expect(result).toHaveLength(1)
-      expect(result[0].prefix).toBe('PROJ')
+      expect(result[0]!.prefix).toBe('PROJ')
     })
 
     it('should handle bracketed format [PREFIX-123]', () => {
@@ -99,8 +99,8 @@ describe('extractTaskReferences', () => {
     it('should handle both formats in same text', () => {
       const result = extractTaskReferences('PROJ-123 fixes #456')
       expect(result).toHaveLength(2)
-      expect(result[0].fullReference).toBe('PROJ-123')
-      expect(result[1].fullReference).toBe('#456')
+      expect(result[0]!.fullReference).toBe('PROJ-123')
+      expect(result[1]!.fullReference).toBe('#456')
     })
   })
 
@@ -125,7 +125,7 @@ describe('extractTaskReferences', () => {
       // Test with 8-character prefix (within 2-10 range)
       const result = extractTaskReferences('LONGPREF-123')
       expect(result).toHaveLength(1)
-      expect(result[0].prefix).toBe('LONGPREF')
+      expect(result[0]!.prefix).toBe('LONGPREF')
     })
   })
 
@@ -134,7 +134,7 @@ describe('extractTaskReferences', () => {
       const customPattern = 'TASK-(\\d+)'
       const result = extractTaskReferences('Working on TASK-42', customPattern)
       expect(result).toHaveLength(1)
-      expect(result[0].number).toBe(42)
+      expect(result[0]!.number).toBe(42)
     })
   })
 })
@@ -254,13 +254,13 @@ describe('extractTaskReferences - commit messages', () => {
   it('should extract from conventional commit with scope', () => {
     const result = extractTaskReferences('feat(PROJ-123): Add new feature')
     expect(result).toHaveLength(1)
-    expect(result[0].fullReference).toBe('PROJ-123')
+    expect(result[0]!.fullReference).toBe('PROJ-123')
   })
 
   it('should extract from conventional commit without scope', () => {
     const result = extractTaskReferences('fix: Fix bug #456')
     expect(result).toHaveLength(1)
-    expect(result[0].fullReference).toBe('#456')
+    expect(result[0]!.fullReference).toBe('#456')
   })
 
   it('should extract from footer references', () => {
@@ -278,19 +278,19 @@ Related-to: PROJ-456`
   it('should extract from "Fixes #X" format', () => {
     const result = extractTaskReferences('Fixes #123')
     expect(result).toHaveLength(1)
-    expect(result[0].number).toBe(123)
+    expect(result[0]!.number).toBe(123)
   })
 
   it('should extract from "Closes #X" format', () => {
     const result = extractTaskReferences('Closes #789')
     expect(result).toHaveLength(1)
-    expect(result[0].number).toBe(789)
+    expect(result[0]!.number).toBe(789)
   })
 
   it('should extract from "Resolves #X" format', () => {
     const result = extractTaskReferences('Resolves #42')
     expect(result).toHaveLength(1)
-    expect(result[0].number).toBe(42)
+    expect(result[0]!.number).toBe(42)
   })
 })
 
@@ -302,13 +302,13 @@ describe('extractTaskReferences - PR titles', () => {
   it('should extract from PR title with prefix at start', () => {
     const result = extractTaskReferences('PROJ-123: Add new feature')
     expect(result).toHaveLength(1)
-    expect(result[0].fullReference).toBe('PROJ-123')
+    expect(result[0]!.fullReference).toBe('PROJ-123')
   })
 
   it('should extract from PR title with bracketed prefix', () => {
     const result = extractTaskReferences('[KANBU-456] Fix authentication bug')
     expect(result).toHaveLength(1)
-    expect(result[0].fullReference).toBe('KANBU-456')
+    expect(result[0]!.fullReference).toBe('KANBU-456')
   })
 
   it('should extract from PR title with multiple references', () => {
@@ -319,6 +319,6 @@ describe('extractTaskReferences - PR titles', () => {
   it('should extract from PR title with "Fixes" keyword', () => {
     const result = extractTaskReferences('Fix login bug (Fixes #99)')
     expect(result).toHaveLength(1)
-    expect(result[0].fullReference).toBe('#99')
+    expect(result[0]!.fullReference).toBe('#99')
   })
 })

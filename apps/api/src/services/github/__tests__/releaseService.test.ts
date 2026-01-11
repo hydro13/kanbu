@@ -123,7 +123,7 @@ describe('releaseService', () => {
       const result = await getReleases(1)
 
       expect(result).toHaveLength(1)
-      expect(result[0].tagName).toBe('v1.1.0')
+      expect(result[0]!.tagName).toBe('v1.1.0')
     })
 
     it('should filter out drafts by default', async () => {

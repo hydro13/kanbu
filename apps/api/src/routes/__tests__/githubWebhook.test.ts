@@ -37,7 +37,7 @@ function verifySignature(payload: string, signature: string, secret: string): bo
   if (!signature) return false
 
   const parts = signature.split('=')
-  if (parts.length !== 2 || parts[0] !== 'sha256') return false
+  if (parts.length !== 2 || parts[0] !== 'sha256' || !parts[1]) return false
 
   const expectedSignature = parts[1]
   const hmac = crypto.createHmac('sha256', secret)

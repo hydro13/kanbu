@@ -13,7 +13,7 @@
  * =============================================================================
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 // Mock prisma
 vi.mock('../../../lib/prisma', () => ({
@@ -142,7 +142,7 @@ describe('upsertWorkflowRun', () => {
   })
 
   it('should link to task when branch matches', async () => {
-    vi.mocked(prisma.task.findFirst).mockResolvedValue({ id: 42 })
+    vi.mocked(prisma.task.findFirst).mockResolvedValue({ id: 42 } as any)
     vi.mocked(prisma.gitHubRepository.findUnique).mockResolvedValue(null)
     vi.mocked(prisma.gitHubWorkflowRun.upsert).mockResolvedValue({ id: 1 } as any)
 
@@ -159,8 +159,8 @@ describe('upsertWorkflowRun', () => {
 
   it('should link to PR when branch matches', async () => {
     vi.mocked(prisma.task.findFirst).mockResolvedValue(null)
-    vi.mocked(prisma.gitHubRepository.findUnique).mockResolvedValue({ id: 1 })
-    vi.mocked(prisma.gitHubPullRequest.findFirst).mockResolvedValue({ id: 99 })
+    vi.mocked(prisma.gitHubRepository.findUnique).mockResolvedValue({ id: 1 } as any)
+    vi.mocked(prisma.gitHubPullRequest.findFirst).mockResolvedValue({ id: 99 } as any)
     vi.mocked(prisma.gitHubWorkflowRun.upsert).mockResolvedValue({ id: 1 } as any)
 
     await upsertWorkflowRun(mockWorkflowRunData)
@@ -509,8 +509,8 @@ describe('getWorkflowJobs', () => {
     const result = await getWorkflowJobs(1)
 
     expect(result.jobs).toHaveLength(1)
-    expect(result.jobs[0].name).toBe('build')
-    expect(result.jobs[0].steps).toHaveLength(1)
+    expect(result.jobs[0]!.name).toBe('build')
+    expect(result.jobs[0]!.steps).toHaveLength(1)
   })
 })
 
@@ -533,9 +533,9 @@ describe('getWorkflowStats', () => {
     expect(result.byConclusion).toHaveProperty('success', 2)
     expect(result.byConclusion).toHaveProperty('failure', 1)
     expect(result.byWorkflow).toHaveProperty('CI')
-    expect(result.byWorkflow['CI'].total).toBe(2)
-    expect(result.byWorkflow['CI'].success).toBe(1)
-    expect(result.byWorkflow['CI'].failure).toBe(1)
+    expect(result.byWorkflow['CI']!.total).toBe(2)
+    expect(result.byWorkflow['CI']!.success).toBe(1)
+    expect(result.byWorkflow['CI']!.failure).toBe(1)
     expect(result.successRate).toBeCloseTo(66.7, 0)
   })
 

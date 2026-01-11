@@ -22,7 +22,8 @@
   "devDependencies": {
     "@types/node": "^22.19.3",
     "tsx": "^4.19.0",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "vitest": "^4.0.16"
   },
   "engines": {
     "node": ">=18.0.0"

@@ -86,21 +86,21 @@ function extractImageUrls(content: string): Array<{ alt: string; url: string; is
   // Extract markdown images: ![alt](url)
   MARKDOWN_IMAGE_REGEX.lastIndex = 0
   while ((match = MARKDOWN_IMAGE_REGEX.exec(content)) !== null) {
-    images.push({
-      alt: match[1],
-      url: match[2],
-      isHtml: false,
-    })
+    const alt = match[1] ?? ''
+    const url = match[2]
+    if (url) {
+      images.push({ alt, url, isHtml: false })
+    }
   }
 
   // Extract HTML img tags: <img src="url" alt="alt" />
   HTML_IMG_REGEX.lastIndex = 0
   while ((match = HTML_IMG_REGEX.exec(content)) !== null) {
-    images.push({
-      alt: match[2] || '', // alt might be in different position or missing
-      url: match[1],
-      isHtml: true,
-    })
+    const url = match[1]
+    const alt = match[2] ?? ''
+    if (url) {
+      images.push({ alt, url, isHtml: true })
+    }
   }
 
   return images
@@ -120,7 +120,7 @@ function generateImageFilename(originalUrl: string): string {
     const url = new URL(originalUrl)
     const pathname = url.pathname
     const extMatch = pathname.match(/\.(png|jpg|jpeg|gif|webp|svg|bmp)(\?|$)/i)
-    if (extMatch) {
+    if (extMatch?.[1]) {
       extension = '.' + extMatch[1].toLowerCase()
     }
   } catch {
@@ -233,7 +233,7 @@ async function storeImage(
  */
 function extractAssetUuid(url: string): string | null {
   const match = url.match(/user-attachments\/assets\/([a-f0-9-]+)/i)
-  return match ? match[1] : null
+  return match?.[1] ?? null
 }
 
 /**
@@ -251,13 +251,15 @@ function buildJwtUrlMap(bodyHtml: string): Map<string, string> {
 
   while ((match = imgRegex.exec(bodyHtml)) !== null) {
     const url = match[1]
+    if (!url) continue
     // Look for private-user-images URLs with JWT tokens
     if (url.includes('private-user-images.githubusercontent.com') && url.includes('jwt=')) {
       // Extract the UUID from the URL - it's in format: prefix-UUID.ext
       // UUID format: 8-4-4-4-12 hex chars
       const uuidMatch = url.match(/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i)
-      if (uuidMatch) {
-        map.set(uuidMatch[1].toLowerCase(), url)
+      const uuid = uuidMatch?.[1]
+      if (uuid) {
+        map.set(uuid.toLowerCase(), url)
       }
     }
   }

@@ -37,7 +37,7 @@
 
 import { Link } from 'react-router-dom'
 import { Github, Settings, RefreshCw, CheckCircle2, XCircle } from 'lucide-react'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
+import { Card, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import type { Project } from '@/store/projectSlice'

@@ -257,7 +257,7 @@ describe('GitHub Project Procedures', () => {
         },
       })
 
-      const repository = await prisma.gitHubRepository.findUnique({
+      const repository = await prisma.gitHubRepository.findFirst({
         where: { projectId: testProjectId },
         include: {
           installation: {
@@ -271,7 +271,7 @@ describe('GitHub Project Procedures', () => {
       })
 
       expect(repository).toBeDefined()
-      expect(repository!.installation.accountLogin).toBe('test-org')
+      expect(repository!.installation!.accountLogin).toBe('test-org')
       expect(repository!.defaultBranch).toBe('develop')
       expect(repository!.isPrivate).toBe(true)
     })
