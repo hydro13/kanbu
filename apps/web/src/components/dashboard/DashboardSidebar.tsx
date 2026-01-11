@@ -1,6 +1,6 @@
 /*
  * DashboardSidebar Component
- * Version: 3.2.0
+ * Version: 3.3.0
  *
  * Simple context-aware sidebar navigation.
  * Shows Personal section, Favorites, Workspaces link, and context-aware Projects link.
@@ -17,13 +17,18 @@
  *
  * Modified: 2026-01-11
  * Change: Added Inbox with unread count badge (Fase 3.1)
+ *
+ * Modified: 2026-01-11
+ * Change: Added right-click context menu for favorites (Fase 4.2)
  * ===================================================================
  */
 
+import { useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import { Home, CheckSquare, ListChecks, StickyNote, Building2, LayoutGrid, Star, Inbox } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { trpc } from '@/lib/trpc'
+import { FavoriteContextMenu } from './FavoriteContextMenu'
 
 // =============================================================================
 // Types
@@ -67,6 +72,31 @@ export function DashboardSidebar({ collapsed = false }: DashboardSidebarProps) {
   // Fetch unread notification count
   const unreadCountQuery = trpc.notification.getUnreadCount.useQuery()
   const unreadCount = unreadCountQuery.data?.count ?? 0
+
+  // Context menu state for favorites
+  const [contextMenu, setContextMenu] = useState<{
+    isOpen: boolean
+    position: { x: number; y: number }
+    favorite: typeof favorites[0] | null
+  }>({
+    isOpen: false,
+    position: { x: 0, y: 0 },
+    favorite: null,
+  })
+
+  const openContextMenu = (e: React.MouseEvent, favorite: typeof favorites[0]) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setContextMenu({
+      isOpen: true,
+      position: { x: e.clientX, y: e.clientY },
+      favorite,
+    })
+  }
+
+  const closeContextMenu = () => {
+    setContextMenu((prev) => ({ ...prev, isOpen: false }))
+  }
 
   // Determine active workspace from URL
   // Can be either /workspace/:workspaceSlug/project/... or /workspace/:slug
@@ -158,6 +188,7 @@ export function DashboardSidebar({ collapsed = false }: DashboardSidebarProps) {
                           : 'text-foreground/80 hover:bg-accent/50'
                       )}
                       title={collapsed ? `${fav.projectName} (${fav.workspaceName})` : undefined}
+                      onContextMenu={(e) => openContextMenu(e, fav)}
                     >
                       <Star className="h-4 w-4 flex-shrink-0 text-yellow-500" />
                       {!collapsed && (
@@ -174,6 +205,19 @@ export function DashboardSidebar({ collapsed = false }: DashboardSidebarProps) {
               })}
             </ul>
           </div>
+        )}
+
+        {/* Favorite Context Menu */}
+        {contextMenu.favorite && (
+          <FavoriteContextMenu
+            favoriteId={contextMenu.favorite.id}
+            projectId={contextMenu.favorite.projectId}
+            projectName={contextMenu.favorite.projectName}
+            projectPath={`/workspace/${contextMenu.favorite.workspaceSlug}/project/${contextMenu.favorite.projectIdentifier}`}
+            isOpen={contextMenu.isOpen}
+            position={contextMenu.position}
+            onClose={closeContextMenu}
+          />
         )}
 
         {/* Divider (only if favorites exist) */}

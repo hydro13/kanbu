@@ -1,6 +1,6 @@
 /*
  * ProjectCard Component
- * Version: 1.3.0
+ * Version: 1.4.0
  *
  * Card component for displaying project overview in grid/list view.
  *
@@ -9,7 +9,7 @@
  * Signed: 2025-12-28
  *
  * Modified: 2026-01-11
- * Change: Added favorite toggle button (Fase 2.1)
+ * Change: Added right-click context menu (Fase 4.2)
  * ===================================================================
  */
 
@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { trpc } from '@/lib/trpc'
 import type { Project } from '@/store/projectSlice'
+import { ProjectContextMenu, useContextMenu } from './ProjectContextMenu'
 
 // =============================================================================
 // Types
@@ -128,7 +129,11 @@ function getGitHubTooltip(project: Project, syncStatus: SyncStatus): string {
 export function ProjectCard({ project, workspaceSlug, className }: ProjectCardProps) {
   const syncStatus = getGitHubSyncStatus(project)
   const canEdit = project.userRole === 'OWNER' || project.userRole === 'MANAGER'
+  const canDelete = project.userRole === 'OWNER'
   const utils = trpc.useUtils()
+
+  // Context menu state
+  const contextMenu = useContextMenu()
 
   // Favorite state
   const { data: isFavorite = false } = trpc.favorite.isFavorite.useQuery(
@@ -158,7 +163,7 @@ export function ProjectCard({ project, workspaceSlug, className }: ProjectCardPr
   }
 
   return (
-    <div className="relative group">
+    <div className="relative group" onContextMenu={contextMenu.open}>
       <Link to={`/workspace/${workspaceSlug}/project/${project.identifier}/board`}>
         <Card
           className={cn(
@@ -278,6 +283,21 @@ export function ProjectCard({ project, workspaceSlug, className }: ProjectCardPr
           </Link>
         )}
       </div>
+
+      {/* Context Menu */}
+      <ProjectContextMenu
+        projectId={project.id}
+        projectIdentifier={project.identifier || String(project.id)}
+        projectName={project.name}
+        workspaceSlug={workspaceSlug}
+        isFavorite={isFavorite}
+        isArchived={!project.isActive}
+        canEdit={canEdit}
+        canDelete={canDelete}
+        isOpen={contextMenu.isOpen}
+        position={contextMenu.position}
+        onClose={contextMenu.close}
+      />
     </div>
   )
 }

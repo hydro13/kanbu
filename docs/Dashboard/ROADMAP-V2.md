@@ -1,6 +1,6 @@
 # Dashboard Roadmap V2
 
-## Versie: 2.5.0
+## Versie: 2.6.0
 ## Datum: 2026-01-11
 ## Gebaseerd op: IDEAAL-DASHBOARD-ONTWERP-V2.md
 
@@ -28,7 +28,7 @@ Gebaseerd op het ontwerp in [IDEAAL-DASHBOARD-ONTWERP-V2.md](./IDEAAL-DASHBOARD-
 | **Fase 1** | ✅ COMPLEET | 6/6 items compleet |
 | **Fase 2** | ✅ COMPLEET | 2/3 items (My Tasks al goed) |
 | **Fase 3** | ✅ COMPLEET | 2/2 items compleet |
-| **Fase 4** | 🟡 IN PROGRESS | 2/4 items compleet |
+| **Fase 4** | 🟡 IN PROGRESS | 3/4 items compleet |
 
 ### Wat is er al?
 
@@ -56,6 +56,7 @@ Gebaseerd op het ontwerp in [IDEAAL-DASHBOARD-ONTWERP-V2.md](./IDEAAL-DASHBOARD-
 | **CommandPalette** | ✅ Volledig | Context-aware, global search |
 | **ShortcutsModal** | ✅ Volledig | Navigation shortcuts toegevoegd |
 | **useNavigationContext** | ✅ Volledig | Context detection hook |
+| **ContextMenu** | ✅ Volledig | Reusable base + Project + Favorite menus |
 
 ---
 
@@ -103,11 +104,11 @@ Gebaseerd op het ontwerp in [IDEAAL-DASHBOARD-ONTWERP-V2.md](./IDEAAL-DASHBOARD-
 │                                                                             │
 │  FASE 0          FASE 1          FASE 2          FASE 3          FASE 4    │
 │  Foundation      Workspace       Personal        Enhanced        Polish    │
-│  ██████████      ██████████      ██████████      ██████████      █████░░░░░│
+│  ██████████      ██████████      ██████████      ██████████      ███████░░░│
 │  COMPLEET        COMPLEET        COMPLEET        COMPLEET        IN PROG   │
 │                                                                             │
 │  ✅ Fix bugs     ✅ Workspace    ✅ Favorites    ✅ Inbox        ✅ Keyboard│
-│  ✅ Notes route    Sidebar       ✅ Dashboard    ✅ Advanced     - Context │
+│  ✅ Notes route    Sidebar       ✅ Dashboard    ✅ Advanced     ✅ Context │
 │  ✅ Layout       ✅ Wiki           Overview        Statistics    ✅ Search  │
 │    switching     ✅ Members      ✅ My Tasks                     - DnD     │
 │  ✅ Breadcrumbs  ✅ Statistics     (al goed)                               │
@@ -123,7 +124,7 @@ Gebaseerd op het ontwerp in [IDEAAL-DASHBOARD-ONTWERP-V2.md](./IDEAAL-DASHBOARD-
 | 1 | Workspace Navigation | High | ✅ COMPLEET | 6/6 |
 | 2 | Personal Enhancements | Medium | ✅ COMPLEET | 2/3 |
 | 3 | Enhanced Features | High | ✅ COMPLEET | 2/2 |
-| 4 | Polish & UX | Medium | 🟡 IN PROGRESS | 2/4 |
+| 4 | Polish & UX | Medium | 🟡 IN PROGRESS | 3/4 |
 
 ---
 
@@ -548,7 +549,7 @@ My Tasks pagina werkte al correct met filters en grouping. Geen wijzigingen nodi
 # FASE 4: Polish & UX
 
 **Status:** 🟡 IN PROGRESS
-**Voortgang:** 2/4 items compleet
+**Voortgang:** 3/4 items compleet
 **Effort:** Medium (2-3 dagen)
 **Dependencies:** Fase 1-3 compleet
 
@@ -584,7 +585,46 @@ My Tasks pagina werkte al correct met filters en grouping. Geen wijzigingen nodi
 
 ## 4.2 Context Menus
 
-**Status:** ❌ Todo
+**Status:** ✅ Compleet
+
+### Wat is gedaan
+
+- **Reusable ContextMenu component:**
+  - Base component met submenu support
+  - Click-outside en Escape key handling
+  - Viewport edge detection
+  - Disabled/danger item styling
+  - Common icons library
+
+- **ProjectContextMenu:**
+  - Open project
+  - Add/remove from favorites
+  - Copy link / Copy project ID
+  - Members (if canEdit)
+  - Project settings (if canEdit)
+  - Archive/unarchive (if canEdit)
+  - Delete project (if canDelete)
+
+- **FavoriteContextMenu:**
+  - Open project
+  - Open in new tab
+  - Copy link
+  - Remove from favorites
+
+### Integraties
+
+- `ProjectCard` - Right-click op project cards
+- `DashboardSidebar` - Right-click op favorites
+
+### Bestanden
+
+| Bestand | Actie |
+|---------|-------|
+| `components/common/ContextMenu.tsx` | Nieuw - reusable base component |
+| `components/project/ProjectContextMenu.tsx` | Nieuw - project-specifiek menu |
+| `components/dashboard/FavoriteContextMenu.tsx` | Nieuw - favorites-specifiek menu |
+| `components/project/ProjectCard.tsx` | Toegevoegd context menu |
+| `components/dashboard/DashboardSidebar.tsx` | Toegevoegd context menu voor favorites |
 
 ---
 
@@ -629,6 +669,48 @@ My Tasks pagina werkte al correct met filters en grouping. Geen wijzigingen nodi
 ---
 
 # Changelog
+
+## 2026-01-11 (v2.6.0)
+
+### Compleet
+
+- **Fase 4.2: Context Menus** - Volledig geïmplementeerd
+
+### Nieuwe Features
+
+- **Reusable ContextMenu** base component met:
+  - Submenu support
+  - Keyboard navigation (Escape to close)
+  - Click-outside handling
+  - Viewport edge detection
+  - Disabled/danger item styling
+- **ProjectContextMenu** voor project cards:
+  - Open, favorite, copy link, settings, archive, delete
+  - Permission-aware (canEdit, canDelete)
+- **FavoriteContextMenu** voor sidebar favorites:
+  - Open, open in new tab, copy link, remove
+
+### Integraties
+
+- ProjectCard met right-click context menu
+- DashboardSidebar favorites met right-click context menu
+
+### Nieuwe Bestanden
+
+| Bestand | Beschrijving |
+|---------|--------------|
+| `components/common/ContextMenu.tsx` | Reusable context menu base |
+| `components/project/ProjectContextMenu.tsx` | Project-specifiek menu |
+| `components/dashboard/FavoriteContextMenu.tsx` | Favorites-specifiek menu |
+
+### Gewijzigde Bestanden
+
+| Bestand | Wijziging |
+|---------|-----------|
+| `components/project/ProjectCard.tsx` | Toegevoegd context menu |
+| `components/dashboard/DashboardSidebar.tsx` | Toegevoegd context menu voor favorites |
+
+---
 
 ## 2026-01-11 (v2.5.0)
 
