@@ -1,6 +1,6 @@
 # Dashboard Roadmap V2
 
-## Versie: 2.6.0
+## Versie: 2.7.0
 ## Datum: 2026-01-11
 ## Gebaseerd op: IDEAAL-DASHBOARD-ONTWERP-V2.md
 
@@ -28,7 +28,7 @@ Gebaseerd op het ontwerp in [IDEAAL-DASHBOARD-ONTWERP-V2.md](./IDEAAL-DASHBOARD-
 | **Fase 1** | ✅ COMPLEET | 6/6 items compleet |
 | **Fase 2** | ✅ COMPLEET | 2/3 items (My Tasks al goed) |
 | **Fase 3** | ✅ COMPLEET | 2/2 items compleet |
-| **Fase 4** | 🟡 IN PROGRESS | 3/4 items compleet |
+| **Fase 4** | ✅ COMPLEET | 5/5 items compleet |
 
 ### Wat is er al?
 
@@ -104,8 +104,8 @@ Gebaseerd op het ontwerp in [IDEAAL-DASHBOARD-ONTWERP-V2.md](./IDEAAL-DASHBOARD-
 │                                                                             │
 │  FASE 0          FASE 1          FASE 2          FASE 3          FASE 4    │
 │  Foundation      Workspace       Personal        Enhanced        Polish    │
-│  ██████████      ██████████      ██████████      ██████████      ███████░░░│
-│  COMPLEET        COMPLEET        COMPLEET        COMPLEET        IN PROG   │
+│  ██████████      ██████████      ██████████      ██████████      ██████████│
+│  COMPLEET        COMPLEET        COMPLEET        COMPLEET        COMPLEET  │
 │                                                                             │
 │  ✅ Fix bugs     ✅ Workspace    ✅ Favorites    ✅ Inbox        ✅ Keyboard│
 │  ✅ Notes route    Sidebar       ✅ Dashboard    ✅ Advanced     ✅ Context │
@@ -664,11 +664,106 @@ My Tasks pagina werkte al correct met filters en grouping. Geen wijzigingen nodi
 
 ## 4.4 Drag & Drop
 
-**Status:** ❌ Todo
+**Status:** ✅ Compleet
+
+### Wat is gedaan
+
+Drag & Drop was al volledig geïmplementeerd vóór dit roadmap item werd toegevoegd. De volledige implementatie omvat:
+
+- **@dnd-kit ecosystem:** core, sortable, utilities libraries
+- **BoardDndContext:** Configureert sensors (pointer, touch, keyboard) en collision detection
+- **DraggableTask:** Wrapper voor draggable taken met visuele feedback
+- **DroppableColumn:** Drop zones per kolom/swimlane met WIP limit highlighting
+- **useDragDrop hook:** Optimistic updates met rollback on error
+- **task.move API:** Server-side validatie, WIP limits, real-time sync via Socket.io
+
+### Features
+
+| Feature | Status |
+|---------|--------|
+| Drag tussen kolommen | ✅ |
+| Drag tussen swimlanes | ✅ |
+| Reorder binnen kolom | ✅ |
+| Visuele feedback (overlay, drop zones) | ✅ |
+| WIP limit enforcement | ✅ |
+| Touch support | ✅ |
+| Keyboard navigation | ✅ |
+| Optimistic updates | ✅ |
+| Error handling met rollback | ✅ |
+| Real-time sync | ✅ |
+
+### Bestanden
+
+| Bestand | Beschrijving |
+|---------|--------------|
+| `components/board/DndContext.tsx` | Drag context, sensors, position calculation |
+| `components/board/DraggableTask.tsx` | Draggable wrapper voor TaskCard |
+| `components/board/DroppableColumn.tsx` | Drop zone met WIP feedback |
+| `hooks/useDragDrop.ts` | API mutation met optimistic updates |
+| `lib/dnd-utils.ts` | Helper functies voor IDs en posities |
+
+---
+
+## 4.5 Sidebar Drag & Drop
+
+**Status:** ✅ Compleet (2/2)
+
+### Doel
+
+Implementeer drag & drop voor het herordenen van items in de sidebar:
+
+1. ✅ **Favorites reordering** - Sleep favorites in DashboardSidebar om volgorde aan te passen
+2. ✅ **Projects in Groups** - Sleep projecten binnen groepen op WorkspaceGroupsPage
+
+### Wat is gedaan
+
+#### Favorites Drag & Drop (Compleet)
+- `@dnd-kit/sortable` geïntegreerd in DashboardSidebar
+- `SortableFavoriteItem` component met drag handle (grip icon)
+- Optimistic updates met rollback bij errors
+- `favorite.reorder` API call bij drag end
+- Visuele feedback: opacity tijdens slepen, cursor-grab op handle
+
+#### Projects in Groups Drag & Drop (Compleet)
+- `@dnd-kit/sortable` geïntegreerd in WorkspaceGroupsPage
+- `SortableProjectItem` component met drag handle (grip icon)
+- Optimistic updates met `isReordering` state voor sync control
+- `projectGroup.reorderProjects` API call bij drag end
+- Visuele feedback: opacity tijdens slepen, cursor-grab op handle
+- Drag handle zichtbaar op hover voor cleane UI
+
+### Bestanden
+
+| Bestand | Status | Wijziging |
+|---------|--------|-----------|
+| `components/dashboard/DashboardSidebar.tsx` | ✅ | Drag & drop voor favorites |
+| `pages/workspace/WorkspaceGroupsPage.tsx` | ✅ | Drag & drop voor projecten in groepen |
 
 ---
 
 # Changelog
+
+## 2026-01-11 (v2.7.0)
+
+### Compleet
+
+- **Fase 4.5: Sidebar Drag & Drop** - Volledig geïmplementeerd
+- **Fase 4: Keyboard Navigation & UX Enhancements** - Alle items afgerond
+
+### Nieuwe Features
+
+- **Projects in Groups Drag & Drop:**
+  - `SortableProjectItem` component met drag handle
+  - Optimistic updates met `isReordering` state
+  - Roept `projectGroup.reorderProjects` API aan
+
+### Gewijzigde Bestanden
+
+| Bestand | Wijziging |
+|---------|-----------|
+| `pages/workspace/WorkspaceGroupsPage.tsx` | Drag & drop voor projecten binnen groepen |
+
+---
 
 ## 2026-01-11 (v2.6.0)
 

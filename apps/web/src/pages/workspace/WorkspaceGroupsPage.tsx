@@ -1,6 +1,6 @@
 /*
  * Workspace Groups Page
- * Version: 1.0.0
+ * Version: 1.1.0
  *
  * Shows project groups within a workspace for organizing projects.
  *
@@ -8,6 +8,9 @@
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
  * Signed: 2026-01-11
  * Change: Initial implementation
+ *
+ * Modified: 2026-01-11
+ * Change: Added drag & drop reordering for projects within groups (Fase 4.5)
  * ===================================================================
  */
 
@@ -33,11 +36,27 @@ import {
   Layers,
   ArrowLeft,
   MoreVertical,
-  Pencil,
   Trash2,
-  X,
+  GripVertical,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
 // =============================================================================
 // Types
@@ -261,6 +280,58 @@ export function WorkspaceGroupsPage() {
 }
 
 // =============================================================================
+// Sortable Project Item
+// =============================================================================
+
+interface SortableProjectItemProps {
+  project: ProjectInfo
+  workspaceSlug: string
+}
+
+function SortableProjectItem({ project, workspaceSlug }: SortableProjectItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: project.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      <div className="flex items-center gap-1 rounded hover:bg-accent/50 transition-colors group">
+        {/* Drag handle */}
+        <button
+          {...attributes}
+          {...listeners}
+          className="p-1 cursor-grab opacity-0 group-hover:opacity-50 hover:!opacity-100 transition-opacity"
+          title="Drag to reorder"
+        >
+          <GripVertical className="h-3 w-3" />
+        </button>
+        <Link
+          to={`/workspace/${workspaceSlug}/project/${project.identifier}`}
+          className="flex items-center gap-2 p-2 flex-1"
+        >
+          <FolderKanban className="h-4 w-4 text-muted-foreground" />
+          <span className="font-medium">{project.name}</span>
+          <span className="text-xs text-muted-foreground">
+            ({project.identifier})
+          </span>
+        </Link>
+      </div>
+    </div>
+  )
+}
+
+// =============================================================================
 // Group Card
 // =============================================================================
 
@@ -274,10 +345,69 @@ interface GroupCardProps {
 
 function GroupCard({ group, workspaceSlug, expanded, onToggle, onRefresh }: GroupCardProps) {
   const [showMenu, setShowMenu] = useState(false)
+  const [localProjects, setLocalProjects] = useState(group.projects)
+  const [isReordering, setIsReordering] = useState(false)
+
+  // Keep local state in sync with server data (only when not actively reordering)
+  if (!isReordering && JSON.stringify(group.projects) !== JSON.stringify(localProjects)) {
+    setLocalProjects(group.projects)
+  }
 
   const deleteMutation = trpc.projectGroup.delete.useMutation({
     onSuccess: () => onRefresh(),
   })
+
+  // Reorder mutation with optimistic updates
+  const reorderMutation = trpc.projectGroup.reorderProjects.useMutation({
+    onMutate: async ({ projectOrders }) => {
+      setIsReordering(true)
+      // Optimistically update local state
+      const reordered = projectOrders
+        .sort((a, b) => a.position - b.position)
+        .map((po) => localProjects.find((p) => p.id === po.projectId))
+        .filter(Boolean) as typeof localProjects
+      setLocalProjects(reordered)
+    },
+    onError: () => {
+      // Rollback on error
+      setLocalProjects(group.projects)
+      setIsReordering(false)
+    },
+    onSettled: () => {
+      setIsReordering(false)
+      onRefresh()
+    },
+  })
+
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // 8px movement before drag starts
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
+
+  // Handle drag end
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    if (over && active.id !== over.id) {
+      const oldIndex = localProjects.findIndex((p) => p.id === active.id)
+      const newIndex = localProjects.findIndex((p) => p.id === over.id)
+      const newOrder = arrayMove(localProjects, oldIndex, newIndex)
+
+      // Create projectOrders array for the API
+      const projectOrders = newOrder.map((p, index) => ({
+        projectId: p.id,
+        position: index,
+      }))
+
+      reorderMutation.mutate({ groupId: group.id, projectOrders })
+    }
+  }
 
   const handleDelete = () => {
     if (confirm(`Delete group "${group.name}"? Projects will not be deleted.`)) {
@@ -341,25 +471,30 @@ function GroupCard({ group, workspaceSlug, expanded, onToggle, onRefresh }: Grou
           </div>
         </div>
 
-        {/* Expanded project list */}
-        {expanded && group.projects.length > 0 && (
+        {/* Expanded project list with drag & drop */}
+        {expanded && localProjects.length > 0 && (
           <div className="mt-3 ml-8 border-l pl-4 space-y-1">
-            {group.projects.map((project) => (
-              <Link
-                key={project.id}
-                to={`/workspace/${workspaceSlug}/project/${project.identifier}`}
-                className="flex items-center gap-2 p-2 rounded hover:bg-accent/50 transition-colors"
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={localProjects.map((p) => p.id)}
+                strategy={verticalListSortingStrategy}
               >
-                <FolderKanban className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium">{project.name}</span>
-                <span className="text-xs text-muted-foreground">
-                  ({project.identifier})
-                </span>
-              </Link>
-            ))}
+                {localProjects.map((project) => (
+                  <SortableProjectItem
+                    key={project.id}
+                    project={project}
+                    workspaceSlug={workspaceSlug}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
           </div>
         )}
-        {expanded && group.projects.length === 0 && (
+        {expanded && localProjects.length === 0 && (
           <div className="mt-3 ml-8 text-sm text-muted-foreground">
             No projects in this group yet.
           </div>

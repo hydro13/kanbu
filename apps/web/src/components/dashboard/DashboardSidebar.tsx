@@ -1,6 +1,6 @@
 /*
  * DashboardSidebar Component
- * Version: 3.3.0
+ * Version: 3.4.0
  *
  * Simple context-aware sidebar navigation.
  * Shows Personal section, Favorites, Workspaces link, and context-aware Projects link.
@@ -20,15 +20,35 @@
  *
  * Modified: 2026-01-11
  * Change: Added right-click context menu for favorites (Fase 4.2)
+ *
+ * Modified: 2026-01-11
+ * Change: Added drag & drop reordering for favorites (Fase 4.5)
  * ===================================================================
  */
 
 import { useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
-import { Home, CheckSquare, ListChecks, StickyNote, Building2, LayoutGrid, Star, Inbox } from 'lucide-react'
+import { Home, CheckSquare, ListChecks, StickyNote, Building2, LayoutGrid, Star, Inbox, GripVertical } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { trpc } from '@/lib/trpc'
 import { FavoriteContextMenu } from './FavoriteContextMenu'
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core'
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
 // =============================================================================
 // Types
@@ -58,6 +78,84 @@ const personalItems: NavItem[] = [
 ]
 
 // =============================================================================
+// Sortable Favorite Item
+// =============================================================================
+
+interface SortableFavoriteItemProps {
+  fav: {
+    id: number
+    projectId: number
+    projectName: string
+    workspaceName: string
+    workspaceSlug: string
+    projectIdentifier: string | null
+  }
+  isActive: boolean
+  collapsed: boolean
+  onContextMenu: (e: React.MouseEvent) => void
+}
+
+function SortableFavoriteItem({ fav, isActive, collapsed, onContextMenu }: SortableFavoriteItemProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: fav.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  const projectPath = `/workspace/${fav.workspaceSlug}/project/${fav.projectIdentifier ?? fav.projectId}`
+
+  return (
+    <li ref={setNodeRef} style={style}>
+      <div
+        className={cn(
+          'flex items-center gap-1 rounded-md text-sm transition-colors group',
+          isActive
+            ? 'bg-accent text-accent-foreground font-medium'
+            : 'text-foreground/80 hover:bg-accent/50'
+        )}
+      >
+        {/* Drag handle */}
+        {!collapsed && (
+          <button
+            {...attributes}
+            {...listeners}
+            className="p-1 cursor-grab opacity-0 group-hover:opacity-50 hover:!opacity-100 transition-opacity"
+            title="Drag to reorder"
+          >
+            <GripVertical className="h-3 w-3" />
+          </button>
+        )}
+        <Link
+          to={projectPath}
+          className="flex items-center gap-3 px-2 py-2 flex-1 min-w-0"
+          title={collapsed ? `${fav.projectName} (${fav.workspaceName})` : undefined}
+          onContextMenu={onContextMenu}
+        >
+          <Star className="h-4 w-4 flex-shrink-0 text-yellow-500" />
+          {!collapsed && (
+            <div className="flex-1 min-w-0">
+              <span className="truncate block">{fav.projectName}</span>
+              <span className="text-xs text-muted-foreground truncate block">
+                {fav.workspaceName}
+              </span>
+            </div>
+          )}
+        </Link>
+      </div>
+    </li>
+  )
+}
+
+// =============================================================================
 // Component
 // =============================================================================
 
@@ -68,6 +166,57 @@ export function DashboardSidebar({ collapsed = false }: DashboardSidebarProps) {
   // Fetch favorites
   const favoritesQuery = trpc.favorite.list.useQuery()
   const favorites = favoritesQuery.data ?? []
+
+  // Reorder mutation
+  const utils = trpc.useUtils()
+  const reorderMutation = trpc.favorite.reorder.useMutation({
+    onMutate: async ({ projectIds }) => {
+      // Cancel outgoing refetches
+      await utils.favorite.list.cancel()
+      // Snapshot previous value
+      const previousFavorites = utils.favorite.list.getData()
+      // Optimistically update to new order
+      if (previousFavorites) {
+        const reorderedFavorites = projectIds
+          .map((id) => previousFavorites.find((f) => f.projectId === id))
+          .filter(Boolean) as typeof previousFavorites
+        utils.favorite.list.setData(undefined, reorderedFavorites)
+      }
+      return { previousFavorites }
+    },
+    onError: (_err, _vars, context) => {
+      // Rollback on error
+      if (context?.previousFavorites) {
+        utils.favorite.list.setData(undefined, context.previousFavorites)
+      }
+    },
+    onSettled: () => {
+      utils.favorite.list.invalidate()
+    },
+  })
+
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // 8px movement before drag starts
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
+
+  // Handle drag end
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+    if (over && active.id !== over.id) {
+      const oldIndex = favorites.findIndex((f) => f.id === active.id)
+      const newIndex = favorites.findIndex((f) => f.id === over.id)
+      const newOrder = arrayMove(favorites, oldIndex, newIndex)
+      reorderMutation.mutate({ projectIds: newOrder.map((f) => f.projectId) })
+    }
+  }
 
   // Fetch unread notification count
   const unreadCountQuery = trpc.notification.getUnreadCount.useQuery()
@@ -164,7 +313,7 @@ export function DashboardSidebar({ collapsed = false }: DashboardSidebarProps) {
         {/* Divider */}
         <div className="my-2 mx-3 border-t border-border" />
 
-        {/* FAVORITES Section */}
+        {/* FAVORITES Section with Drag & Drop */}
         {favorites.length > 0 && (
           <div className="mb-2">
             {!collapsed && (
@@ -172,38 +321,33 @@ export function DashboardSidebar({ collapsed = false }: DashboardSidebarProps) {
                 Favorites
               </div>
             )}
-            <ul className="space-y-0.5 px-2">
-              {favorites.map((fav) => {
-                const projectPath = `/workspace/${fav.workspaceSlug}/project/${fav.projectIdentifier}`
-                const isProjectActive = location.pathname.startsWith(projectPath)
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={favorites.map((f) => f.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <ul className="space-y-0.5 px-2">
+                  {favorites.map((fav) => {
+                    const projectPath = `/workspace/${fav.workspaceSlug}/project/${fav.projectIdentifier}`
+                    const isProjectActive = location.pathname.startsWith(projectPath)
 
-                return (
-                  <li key={fav.id}>
-                    <Link
-                      to={projectPath}
-                      className={cn(
-                        'flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors',
-                        isProjectActive
-                          ? 'bg-accent text-accent-foreground font-medium'
-                          : 'text-foreground/80 hover:bg-accent/50'
-                      )}
-                      title={collapsed ? `${fav.projectName} (${fav.workspaceName})` : undefined}
-                      onContextMenu={(e) => openContextMenu(e, fav)}
-                    >
-                      <Star className="h-4 w-4 flex-shrink-0 text-yellow-500" />
-                      {!collapsed && (
-                        <div className="flex-1 min-w-0">
-                          <span className="truncate block">{fav.projectName}</span>
-                          <span className="text-xs text-muted-foreground truncate block">
-                            {fav.workspaceName}
-                          </span>
-                        </div>
-                      )}
-                    </Link>
-                  </li>
-                )
-              })}
-            </ul>
+                    return (
+                      <SortableFavoriteItem
+                        key={fav.id}
+                        fav={fav}
+                        isActive={isProjectActive}
+                        collapsed={collapsed}
+                        onContextMenu={(e) => openContextMenu(e, fav)}
+                      />
+                    )
+                  })}
+                </ul>
+              </SortableContext>
+            </DndContext>
           </div>
         )}
 
