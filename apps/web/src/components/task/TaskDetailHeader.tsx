@@ -37,6 +37,8 @@ export interface TaskDetailHeaderProps {
   onClose: () => Promise<void>
   onReopen: () => Promise<void>
   isUpdating: boolean
+  /** Auto-focus title field when modal opens (for new tasks) */
+  autoFocusTitle?: boolean
 }
 
 // =============================================================================
@@ -61,11 +63,21 @@ export function TaskDetailHeader({
   onClose,
   onReopen,
   isUpdating,
+  autoFocusTitle = false,
 }: TaskDetailHeaderProps) {
   const [isEditingTitle, setIsEditingTitle] = useState(false)
   const [editedTitle, setEditedTitle] = useState(task.title)
   const [showPriorityDropdown, setShowPriorityDropdown] = useState(false)
   const titleInputRef = useRef<HTMLInputElement>(null)
+  const hasAutoFocused = useRef(false)
+
+  // Auto-focus title when autoFocusTitle is true (for new tasks)
+  useEffect(() => {
+    if (autoFocusTitle && !hasAutoFocused.current) {
+      hasAutoFocused.current = true
+      setIsEditingTitle(true)
+    }
+  }, [autoFocusTitle])
 
   // Focus input when editing starts
   useEffect(() => {

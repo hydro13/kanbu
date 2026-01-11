@@ -275,6 +275,7 @@ export function TaskDetailModal({
                 onClose={handleCloseTask}
                 onReopen={handleReopenTask}
                 isUpdating={isUpdating}
+                autoFocusTitle={task.title === 'New Task'}
               />
             </DialogHeader>
 

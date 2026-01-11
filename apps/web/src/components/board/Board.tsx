@@ -33,6 +33,7 @@ import { BoardDndContext } from './DndContext'
 import { useDragDrop } from '@/hooks/useDragDrop'
 import { TaskDetailModal } from '@/components/task/TaskDetailModal'
 import { TaskContextMenu } from '@/components/task/TaskContextMenu'
+import { trpc } from '@/lib/trpc'
 
 // =============================================================================
 // Types
@@ -224,6 +225,32 @@ export function Board({ columns, swimlanes, tasks, projectId }: BoardProps) {
     setSelectedTaskId(null)
   }, [])
 
+  // tRPC utils for cache invalidation
+  const utils = trpc.useUtils()
+
+  // Create task mutation - creates task and immediately opens modal
+  const createTaskMutation = trpc.task.create.useMutation({
+    onSuccess: (data) => {
+      // Invalidate task list to refresh board
+      utils.task.list.invalidate({ projectId })
+      // Immediately open the task detail modal
+      setSelectedTaskId(data.id)
+    },
+  })
+
+  // Handler for creating a new task and opening modal
+  const handleCreateAndEditTask = useCallback(
+    (columnId: number, swimlaneId?: number | null) => {
+      createTaskMutation.mutate({
+        projectId,
+        columnId,
+        swimlaneId: swimlaneId ?? undefined,
+        title: 'New Task',
+      })
+    },
+    [createTaskMutation, projectId]
+  )
+
   // Handler for task context menu (right-click)
   const handleTaskContextMenu = useCallback(
     (taskId: number, event: React.MouseEvent) => {
@@ -359,6 +386,7 @@ export function Board({ columns, swimlanes, tasks, projectId }: BoardProps) {
                 taskCount={taskCount}
                 onTaskClick={handleTaskClick}
                 onTaskContextMenu={handleTaskContextMenu}
+                onCreateAndEditTask={handleCreateAndEditTask}
               />
             )
           })}

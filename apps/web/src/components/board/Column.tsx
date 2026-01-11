@@ -27,10 +27,8 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState } from 'react'
 import { ColumnHeader } from './ColumnHeader'
 import { TaskList } from './TaskList'
-import { QuickAddTask } from './QuickAddTask'
 import { cn } from '@/lib/utils'
 import type { BoardColumn, BoardSwimlane, BoardTask } from './Board'
 
@@ -50,6 +48,8 @@ export interface ColumnProps {
   taskCount: number
   onTaskClick?: (taskId: number) => void
   onTaskContextMenu?: (taskId: number, event: React.MouseEvent) => void
+  /** Create a new task and immediately open the detail modal */
+  onCreateAndEditTask?: (columnId: number, swimlaneId?: number | null) => void
 }
 
 // =============================================================================
@@ -67,15 +67,22 @@ export function Column({
   taskCount,
   onTaskClick,
   onTaskContextMenu,
+  onCreateAndEditTask,
 }: ColumnProps) {
-  const [showQuickAdd, setShowQuickAdd] = useState(false)
   const hasMultipleSwimlanes = swimlanes.length > 1
 
   // Archive columns don't allow task creation
   const isArchive = column.isArchive ?? false
 
-  // Default swimlane ID for quick add (first swimlane or null)
+  // Default swimlane ID for task creation (first swimlane or null)
   const defaultSwimlaneId = hasMultipleSwimlanes ? swimlanes[0]?.id ?? null : null
+
+  // Handler for add task button - creates task and opens modal
+  const handleAddTask = () => {
+    if (onCreateAndEditTask && !isArchive) {
+      onCreateAndEditTask(column.id, defaultSwimlaneId)
+    }
+  }
 
   return (
     <div
@@ -89,13 +96,13 @@ export function Column({
         isOverLimit={isOverLimit}
         projectId={projectId}
         isCompact={isCompact}
-        onAddTask={isArchive ? undefined : () => setShowQuickAdd(true)}
+        onAddTask={isArchive ? undefined : handleAddTask}
       />
 
-      {/* Column Content - hidden for compact empty columns */}
+      {/* Column Content - always visible for drag-drop support */}
       <div className={cn(
-        'flex-1 overflow-y-auto min-h-0 p-2',
-        isCompact && taskCount === 0 && 'hidden'
+        'flex-1 overflow-y-auto',
+        isCompact && taskCount === 0 ? 'p-1 min-h-[120px]' : 'p-2 min-h-0'
       )}>
         {hasMultipleSwimlanes ? (
           // Render tasks grouped by swimlane
@@ -126,7 +133,7 @@ export function Column({
                     swimlaneId={swimlane.id}
                     projectId={projectId}
                     taskLimit={column.taskLimit}
-                    showEmpty={true}
+                    showEmpty={!(isCompact && taskCount === 0)}
                     onTaskClick={onTaskClick}
                     onTaskContextMenu={onTaskContextMenu}
                   />
@@ -142,23 +149,9 @@ export function Column({
             swimlaneId={null}
             projectId={projectId}
             taskLimit={column.taskLimit}
-            showEmpty={true}
+            showEmpty={!(isCompact && taskCount === 0)}
             onTaskClick={onTaskClick}
             onTaskContextMenu={onTaskContextMenu}
-          />
-        )}
-
-        {/* Quick Add Task - not available for Archive columns */}
-        {showQuickAdd && !isArchive && (
-          <QuickAddTask
-            projectId={projectId}
-            columnId={column.id}
-            swimlaneId={defaultSwimlaneId}
-            onCancel={() => setShowQuickAdd(false)}
-            onCreated={() => {
-              // Keep open for consecutive adds
-            }}
-            className="mt-2"
           />
         )}
       </div>

@@ -22,6 +22,9 @@ import {
   DragEndEvent,
   DragOverEvent,
   closestCorners,
+  pointerWithin,
+  rectIntersection,
+  CollisionDetection,
   KeyboardSensor,
   PointerSensor,
   TouchSensor,
@@ -62,6 +65,36 @@ const MEASURING_CONFIG = {
   droppable: {
     strategy: MeasuringStrategy.Always,
   },
+}
+
+// Custom collision detection that works for both:
+// 1. Sorting tasks between each other (needs closestCorners)
+// 2. Dropping on narrow empty columns (needs pointerWithin as fallback)
+const customCollisionDetection: CollisionDetection = (args) => {
+  // First try closestCorners - best for task sorting and positioning
+  const closestCornersCollisions = closestCorners(args)
+
+  // If we found task collisions, use those (for sorting between tasks)
+  const taskCollisions = closestCornersCollisions.filter(
+    (collision) => !String(collision.id).startsWith('column-')
+  )
+  if (taskCollisions.length > 0) {
+    return closestCornersCollisions
+  }
+
+  // If closestCorners found column collisions, use those
+  if (closestCornersCollisions.length > 0) {
+    return closestCornersCollisions
+  }
+
+  // Fallback to pointerWithin for narrow/empty columns where closestCorners fails
+  const pointerCollisions = pointerWithin(args)
+  if (pointerCollisions.length > 0) {
+    return pointerCollisions
+  }
+
+  // Last resort: rectIntersection
+  return rectIntersection(args)
 }
 
 // =============================================================================
@@ -277,7 +310,7 @@ export function BoardDndContext({ children, tasks, onTaskMove }: DndContextProps
   return (
     <DndKitContext
       sensors={sensors}
-      collisionDetection={closestCorners}
+      collisionDetection={customCollisionDetection}
       measuring={MEASURING_CONFIG}
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}
