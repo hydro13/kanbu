@@ -18,7 +18,7 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import {
   Loader2,
@@ -80,7 +80,8 @@ export function AnalyticsDashboard() {
   const { projectIdentifier } = useParams<{ projectIdentifier: string }>()
 
   const [dateRange, setDateRange] = useState<DateRangePreset>('all')
-  const dateRangeParams = getDateRange(dateRange)
+  // Memoize to prevent new Date() on every render causing infinite refetches
+  const dateRangeParams = useMemo(() => getDateRange(dateRange), [dateRange])
 
   // Fetch project by identifier (SEO-friendly URL)
   const { data: project, isLoading: isProjectLoading } = trpc.project.getByIdentifier.useQuery(
