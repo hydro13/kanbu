@@ -15,6 +15,12 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
+// Allow self-signed certificates for local development
+// This must be set before any fetch calls
+if (process.env.NODE_ENV !== 'production') {
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
+}
+
 import { Server } from '@modelcontextprotocol/sdk/server/index.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import {
@@ -678,7 +684,12 @@ async function handleConnect(args: unknown) {
   const machineName = getMachineName()
 
   // Get Kanbu URL from storage or environment
-  const kanbuUrl = storage.getKanbuUrl() || process.env.KANBU_URL || 'http://localhost:3001'
+  // Default to HTTPS as the API now runs with SSL
+  // Auto-convert http to https for localhost (API uses self-signed cert)
+  let kanbuUrl = storage.getKanbuUrl() || process.env.KANBU_URL || 'https://localhost:3001'
+  if (kanbuUrl.startsWith('http://localhost')) {
+    kanbuUrl = kanbuUrl.replace('http://', 'https://')
+  }
 
   // Exchange setup code for permanent token
   const result = await client.exchangeSetupCode(kanbuUrl, code, machineId, machineName)
