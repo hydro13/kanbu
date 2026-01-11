@@ -113,7 +113,9 @@ import { ChangePassword } from './pages/profile/ChangePassword'
 // Admin pages
 import { UserListPage, UserCreatePage, UserEditPage, InvitesPage, SystemSettingsPage, WorkspaceListPage, WorkspaceCreatePage, WorkspaceEditPage, BackupPage, PermissionTreePage, AclPage, AuditLogsPage, PermissionMatrixPage, GitHubAdminPage } from './pages/admin'
 // Dashboard pages
-import { DashboardOverview, MyTasks, MySubtasks } from './pages/dashboard'
+import { DashboardOverview, MyTasks, MySubtasks, NotesPage } from './pages/dashboard'
+// Workspace pages
+import { WorkspaceMembersPage, WorkspaceStatisticsPage, WorkspaceSettingsWrapper } from './pages/workspace'
 // Project pages
 import { GitHubProjectSettings, ProjectDetailsPage } from './pages/project'
 import { AcceptInvitePage } from './pages/AcceptInvite'
@@ -210,12 +212,45 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/dashboard/notes"
+          element={
+            <ProtectedRoute>
+              <NotesPage />
+            </ProtectedRoute>
+          }
+        />
         {/* Workspace page (SEO-friendly slug URL) */}
         <Route
           path="/workspace/:slug"
           element={
             <ProtectedRoute>
               <WorkspacePage />
+            </ProtectedRoute>
+          }
+        />
+        {/* Workspace module routes */}
+        <Route
+          path="/workspace/:slug/members"
+          element={
+            <ProtectedRoute>
+              <WorkspaceMembersPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/workspace/:slug/stats"
+          element={
+            <ProtectedRoute>
+              <WorkspaceStatisticsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/workspace/:slug/settings"
+          element={
+            <ProtectedRoute>
+              <WorkspaceSettingsWrapper />
             </ProtectedRoute>
           }
         />

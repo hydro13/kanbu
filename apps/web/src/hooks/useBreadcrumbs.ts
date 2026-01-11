@@ -54,6 +54,14 @@ const VIEW_LABELS: Record<string, string> = {
   burndown: 'Burndown',
 }
 
+const WORKSPACE_MODULE_LABELS: Record<string, string> = {
+  wiki: 'Wiki',
+  members: 'Members',
+  stats: 'Statistics',
+  groups: 'Groups',
+  settings: 'Settings',
+}
+
 const ADMIN_LABELS: Record<string, string> = {
   users: 'Users',
   groups: 'Groups',
@@ -146,18 +154,43 @@ export function useBreadcrumbs(): BreadcrumbItem[] {
   const firstSegment = pathSegments[0]
 
   // ==========================================================================
-  // Dashboard routes
+  // Dashboard routes: /dashboard, /dashboard/tasks, /dashboard/subtasks, /dashboard/notes
   // ==========================================================================
   if (firstSegment === 'dashboard') {
+    const subPage = pathSegments[1]
+
+    // Dashboard homepage
+    if (!subPage) {
+      breadcrumbs.push({
+        label: 'Dashboard',
+        href: undefined,
+      })
+      return breadcrumbs
+    }
+
+    // Dashboard subpages
     breadcrumbs.push({
       label: 'Dashboard',
-      href: undefined, // Current page
+      href: '/dashboard',
     })
+
+    const dashboardLabels: Record<string, string> = {
+      tasks: 'My Tasks',
+      subtasks: 'My Subtasks',
+      notes: 'Notes',
+      inbox: 'Inbox',
+    }
+
+    breadcrumbs.push({
+      label: dashboardLabels[subPage] || subPage.charAt(0).toUpperCase() + subPage.slice(1),
+      href: undefined,
+    })
+
     return breadcrumbs
   }
 
   // ==========================================================================
-  // Tasks routes: /tasks, /subtasks
+  // Legacy Tasks routes: /tasks, /subtasks (redirects to dashboard)
   // ==========================================================================
   if (firstSegment === 'tasks') {
     breadcrumbs.push({
@@ -224,6 +257,11 @@ export function useBreadcrumbs(): BreadcrumbItem[] {
     const hasProject = pathSegments.includes('project')
     const projectIdentifier = params.projectIdentifier
 
+    // Get workspace module (wiki, members, stats, groups, settings)
+    // Module is the segment right after the workspace slug, if not 'project'
+    const moduleSegment = pathSegments[2] // 0=workspace, 1=slug, 2=module or project
+    const isWorkspaceModule = moduleSegment && moduleSegment !== 'project' && WORKSPACE_MODULE_LABELS[moduleSegment]
+
     // Always start with Dashboard link
     breadcrumbs.push({
       label: 'Dashboard',
@@ -237,16 +275,29 @@ export function useBreadcrumbs(): BreadcrumbItem[] {
     })
 
     // Add workspace name (e.g., "Develop")
+    // Link to workspace homepage unless we're on the homepage
+    const isWorkspaceHomepage = pathSegments.length === 2 // /workspace/:slug
     breadcrumbs.push({
       label: workspaceName || workspaceSlug,
-      href: `/workspace/${workspaceSlug}`,
+      href: isWorkspaceHomepage ? undefined : `/workspace/${workspaceSlug}`,
     })
 
-    // Add "Projects" - this is the workspace homepage showing projects list
-    breadcrumbs.push({
-      label: 'Projects',
-      href: hasProject ? `/workspace/${workspaceSlug}` : undefined,
-    })
+    // If we're viewing a workspace module (wiki, members, stats, groups, settings)
+    if (isWorkspaceModule && moduleSegment) {
+      breadcrumbs.push({
+        label: WORKSPACE_MODULE_LABELS[moduleSegment] ?? moduleSegment,
+        href: undefined,
+      })
+      return breadcrumbs
+    }
+
+    // If we're on workspace homepage or have a project, show "Projects"
+    if (!isWorkspaceModule) {
+      breadcrumbs.push({
+        label: 'Projects',
+        href: hasProject ? `/workspace/${workspaceSlug}` : undefined,
+      })
+    }
 
     // If we have a project
     if (hasProject && projectIdentifier) {

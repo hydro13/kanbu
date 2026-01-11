@@ -15,7 +15,7 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { DashboardLayout } from '@/components/dashboard'
+import { WorkspaceLayout } from '@/components/layout/WorkspaceLayout'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
@@ -104,33 +104,33 @@ export function WorkspacePage() {
   // Loading state
   if (workspaceQuery.isLoading) {
     return (
-      <DashboardLayout>
+      <WorkspaceLayout>
         <div className="space-y-6">
           <div className="animate-pulse">
             <div className="h-8 w-48 bg-muted rounded mb-2" />
             <div className="h-4 w-64 bg-muted rounded" />
           </div>
         </div>
-      </DashboardLayout>
+      </WorkspaceLayout>
     )
   }
 
   // Workspace not found
   if (!workspace) {
     return (
-      <DashboardLayout>
+      <WorkspaceLayout>
         <div className="flex flex-col items-center justify-center h-64">
           <p className="text-muted-foreground mb-4">Workspace not found</p>
           <Link to="/dashboard">
             <Button variant="outline">Back to Dashboard</Button>
           </Link>
         </div>
-      </DashboardLayout>
+      </WorkspaceLayout>
     )
   }
 
   return (
-    <DashboardLayout>
+    <WorkspaceLayout>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -282,7 +282,7 @@ export function WorkspacePage() {
           />
         )}
       </div>
-    </DashboardLayout>
+    </WorkspaceLayout>
   )
 }
 

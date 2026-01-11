@@ -171,7 +171,7 @@ export function ProjectListPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {workspaces.map((workspace) => (
                 <Card key={workspace.id} className="hover:bg-accent/50 transition-colors h-full group relative">
-                  <Link to={`/workspaces?workspace=${workspace.id}`} className="block">
+                  <Link to={`/workspace/${workspace.slug}`} className="block">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         {workspace.logoUrl ? (
@@ -221,7 +221,7 @@ export function ProjectListPage() {
                         onClick={(e) => {
                           e.preventDefault()
                           e.stopPropagation()
-                          navigate(`/workspace-settings?workspace=${workspace.id}`)
+                          navigate(`/workspace/${workspace.slug}/settings`)
                         }}
                         title="Workspace settings"
                       >
