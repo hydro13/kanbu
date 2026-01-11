@@ -622,6 +622,24 @@ export const taskRouter = router({
         } : undefined,
       })
 
+      // Activity logging for cycle time analytics
+      // Only log if column actually changed
+      if (task.columnId !== input.columnId) {
+        await ctx.prisma.activity.create({
+          data: {
+            projectId: task.projectId,
+            userId: ctx.user.id,
+            eventType: 'task.move_column',
+            entityType: 'task',
+            entityId: input.taskId,
+            changes: {
+              from_column_id: task.columnId,
+              column_id: input.columnId,
+            },
+          },
+        })
+      }
+
       return updated
     }),
 
