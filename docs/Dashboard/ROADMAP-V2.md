@@ -25,7 +25,7 @@ Gebaseerd op het ontwerp in [IDEAAL-DASHBOARD-ONTWERP-V2.md](./IDEAAL-DASHBOARD-
 | Fase | Status | Voortgang |
 |------|--------|-----------|
 | **Fase 0** | ✅ COMPLEET | Foundation, bug fixes |
-| **Fase 1** | 🚧 IN PROGRESS | 4/6 items compleet |
+| **Fase 1** | ✅ COMPLEET | 6/6 items compleet |
 | **Fase 2** | 📋 Planned | Personal Enhancements |
 | **Fase 3** | 📋 Planned | Enhanced Features |
 | **Fase 4** | 📋 Planned | Polish & UX |
@@ -50,8 +50,8 @@ Gebaseerd op het ontwerp in [IDEAAL-DASHBOARD-ONTWERP-V2.md](./IDEAAL-DASHBOARD-
 | **Breadcrumbs** | ✅ Volledig | Container-aware hierarchy |
 | **Inbox Page** | ❌ Ontbreekt | Niet geïmplementeerd |
 | **Favorites** | ❌ Ontbreekt | Niet geïmplementeerd |
-| **Workspace Wiki** | ❌ Ontbreekt | Niet geïmplementeerd |
-| **Workspace Groups** | ❌ Ontbreekt | Niet geïmplementeerd |
+| **Workspace Wiki** | ✅ Volledig | Hierarchische paginas, CRUD |
+| **Workspace Groups** | ✅ Volledig | Project categorisatie |
 
 ---
 
@@ -75,8 +75,8 @@ Gebaseerd op het ontwerp in [IDEAAL-DASHBOARD-ONTWERP-V2.md](./IDEAAL-DASHBOARD-
 │                                                                             │
 │  Workspace                WorkspaceSidebar       /workspace/:slug/*         │
 │                           - Projects             ✅ Werkt                   │
-│                           - Groups               ❌ TODO                    │
-│                           - Wiki                 ❌ TODO                    │
+│                           - Groups               ✅ Werkt                   │
+│                           - Wiki                 ✅ Werkt                   │
 │                           - Members              ✅ Werkt                   │
 │                           - Statistics           ✅ Werkt                   │
 │                           - Settings             ✅ Werkt                   │
@@ -98,16 +98,16 @@ Gebaseerd op het ontwerp in [IDEAAL-DASHBOARD-ONTWERP-V2.md](./IDEAAL-DASHBOARD-
 │                                                                             │
 │  FASE 0          FASE 1          FASE 2          FASE 3          FASE 4    │
 │  Foundation      Workspace       Personal        Enhanced        Polish    │
-│  ██████████      ██████░░░░      ░░░░░░░░░░      ░░░░░░░░░░      ░░░░░░░░░░│
-│  COMPLEET        IN PROGRESS     PLANNED         PLANNED         PLANNED   │
+│  ██████████      ██████████      ░░░░░░░░░░      ░░░░░░░░░░      ░░░░░░░░░░│
+│  COMPLEET        COMPLEET        PLANNED         PLANNED         PLANNED   │
 │                                                                             │
 │  ✅ Fix bugs     ✅ Workspace    - Favorites     - Inbox         - Keyboard│
 │  ✅ Notes route    Sidebar       - Dashboard     - Notifications - Context │
-│  ✅ Layout       ❌ Wiki           Overview      - Groups        - Search  │
+│  ✅ Layout       ✅ Wiki           Overview      - Groups        - Search  │
 │    switching     ✅ Members        widgets       - Statistics    - DnD     │
 │  ✅ Breadcrumbs  ✅ Statistics                                             │
 │                  ✅ Settings                                               │
-│                  ❌ Groups                                                 │
+│                  ✅ Groups                                                 │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -115,7 +115,7 @@ Gebaseerd op het ontwerp in [IDEAAL-DASHBOARD-ONTWERP-V2.md](./IDEAAL-DASHBOARD-
 | Fase | Naam | Effort | Status | Voortgang |
 |------|------|--------|--------|-----------|
 | 0 | Foundation | Low | ✅ COMPLEET | 3/3 |
-| 1 | Workspace Navigation | High | 🚧 IN PROGRESS | 4/6 |
+| 1 | Workspace Navigation | High | ✅ COMPLEET | 6/6 |
 | 2 | Personal Enhancements | Medium | 📋 Planned | 0/3 |
 | 3 | Enhanced Features | High | 📋 Planned | 0/2 |
 | 4 | Polish & UX | Medium | 📋 Planned | 0/4 |
@@ -196,8 +196,8 @@ Fix kritieke bugs en maak de basis klaar voor container-aware navigation.
 
 # FASE 1: Workspace Navigation
 
-**Status:** 🚧 IN PROGRESS
-**Voortgang:** 4/6 items compleet
+**Status:** ✅ COMPLEET
+**Voortgang:** 6/6 items compleet
 
 ## Doel
 
@@ -299,33 +299,63 @@ Volledige WorkspaceSidebar en workspace-level pagina's implementeren.
 
 ## 1.5 Workspace Wiki Page
 
-**Status:** ❌ Todo
+**Status:** ✅ Compleet
 
-### Deliverables
+### Wat is gedaan
 
-| Item | Bestand | Beschrijving |
-|------|---------|--------------|
-| WikiPage | `pages/workspace/WikiPage.tsx` | Wiki module |
-| WikiEditor | `components/wiki/WikiEditor.tsx` | Markdown editor |
-| WikiSidebar | `components/wiki/WikiSidebar.tsx` | Page tree |
+- `WorkspaceWikiPage.tsx` met:
+  - Hierarchische pagina structuur (parent/child)
+  - Create page modal met title, content, publish toggle
+  - Expandable page tree
+  - Draft/published status indicators
+- `WorkspaceWikiPage` database model toegevoegd:
+  - Workspace-level wiki (apart van project wiki)
+  - Hierarchische structuur met parentId
+  - Slug-based URLs
+  - isPublished flag voor draft support
+- tRPC `workspaceWiki` router met CRUD operaties
+- Routes: `/workspace/:slug/wiki` en `/workspace/:slug/wiki/:pageSlug`
 
-Route: `/workspace/:slug/wiki`
+### Bestanden
+
+| Bestand | Actie |
+|---------|-------|
+| `packages/shared/prisma/schema.prisma` | WorkspaceWikiPage model toegevoegd |
+| `apps/api/src/trpc/procedures/workspaceWiki.ts` | Nieuwe router |
+| `apps/api/src/trpc/index.ts` | Router geregistreerd |
+| `pages/workspace/WorkspaceWikiPage.tsx` | Aangemaakt |
+| `pages/workspace/index.ts` | Export toegevoegd |
+| `App.tsx` | Routes toegevoegd |
 
 ---
 
 ## 1.6 Workspace Groups Page
 
-**Status:** ❌ Todo
+**Status:** ✅ Compleet
 
-### Deliverables
+### Wat is gedaan
 
-| Item | Bestand | Beschrijving |
-|------|---------|--------------|
-| GroupsPage | `pages/workspace/GroupsPage.tsx` | Project groups |
-| GroupCard | `components/workspace/GroupCard.tsx` | Group visualisatie |
-| CreateGroupModal | `components/workspace/CreateGroupModal.tsx` | Nieuwe group |
+- `WorkspaceGroupsPage.tsx` met:
+  - Project group listing met expandable cards
+  - Color-coded group badges
+  - Create group modal met naam, beschrijving, kleur
+  - Delete group functionaliteit
+  - Ungrouped projects section
+- `projectGroup` tRPC router met CRUD operaties:
+  - list, get, create, update, delete
+  - addProject, removeProject, reorderProjects
+  - getUngrouped voor projecten zonder groep
+- Route: `/workspace/:slug/groups`
 
-Route: `/workspace/:slug/groups`
+### Bestanden
+
+| Bestand | Actie |
+|---------|-------|
+| `apps/api/src/trpc/procedures/projectGroup.ts` | Nieuwe router |
+| `apps/api/src/trpc/index.ts` | Router geregistreerd |
+| `pages/workspace/WorkspaceGroupsPage.tsx` | Aangemaakt |
+| `pages/workspace/index.ts` | Export toegevoegd |
+| `App.tsx` | Route toegevoegd |
 
 ---
 
@@ -349,8 +379,8 @@ Route: `/workspace/:slug/groups`
 - [x] Members pagina werkt
 - [x] Statistics pagina werkt
 - [x] Settings pagina bereikbaar via sidebar
-- [ ] Wiki module basis werkt
-- [ ] Groups feature werkt
+- [x] Wiki module basis werkt
+- [x] Groups feature werkt
 - [x] Workspace navigation fixed
 - [x] Geen regressies
 

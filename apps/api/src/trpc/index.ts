@@ -134,6 +134,8 @@ import { assistantRouter } from './procedures/assistant';
 import { githubAdminRouter } from './procedures/githubAdmin';
 import { githubRouter } from './procedures/github';
 import { dashboardRouter } from './procedures/dashboard';
+import { workspaceWikiRouter } from './procedures/workspaceWiki';
+import { projectGroupRouter } from './procedures/projectGroup';
 
 /**
  * Main app router
@@ -175,6 +177,8 @@ export const appRouter = router({
   githubAdmin: githubAdminRouter,
   github: githubRouter,
   dashboard: dashboardRouter,
+  workspaceWiki: workspaceWikiRouter,
+  projectGroup: projectGroupRouter,
 });
 
 /**

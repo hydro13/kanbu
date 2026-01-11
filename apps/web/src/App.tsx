@@ -115,7 +115,7 @@ import { UserListPage, UserCreatePage, UserEditPage, InvitesPage, SystemSettings
 // Dashboard pages
 import { DashboardOverview, MyTasks, MySubtasks, NotesPage } from './pages/dashboard'
 // Workspace pages
-import { WorkspaceMembersPage, WorkspaceStatisticsPage, WorkspaceSettingsWrapper } from './pages/workspace'
+import { WorkspaceMembersPage, WorkspaceStatisticsPage, WorkspaceSettingsWrapper, WorkspaceWikiPage, WorkspaceGroupsPage } from './pages/workspace'
 // Project pages
 import { GitHubProjectSettings, ProjectDetailsPage } from './pages/project'
 import { AcceptInvitePage } from './pages/AcceptInvite'
@@ -243,6 +243,30 @@ function App() {
           element={
             <ProtectedRoute>
               <WorkspaceStatisticsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/workspace/:slug/wiki"
+          element={
+            <ProtectedRoute>
+              <WorkspaceWikiPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/workspace/:slug/wiki/:pageSlug"
+          element={
+            <ProtectedRoute>
+              <WorkspaceWikiPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/workspace/:slug/groups"
+          element={
+            <ProtectedRoute>
+              <WorkspaceGroupsPage />
             </ProtectedRoute>
           }
         />

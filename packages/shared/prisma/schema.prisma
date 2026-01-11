@@ -29,6 +29,7 @@ model Workspace {
   invitations         WorkspaceInvitation[]
   logo                WorkspaceLogo?
   createdBy           User?                 @relation("WorkspaceCreator", fields: [createdById], references: [id])
+  wikiPages           WorkspaceWikiPage[]
 
   @@map("workspaces")
 }
@@ -622,6 +623,29 @@ model WikiPage {
   project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@map("wiki_pages")
+}
+
+model WorkspaceWikiPage {
+  id          Int       @id @default(autoincrement())
+  workspaceId Int       @map("workspace_id")
+  parentId    Int?      @map("parent_id")
+  title       String    @db.VarChar(255)
+  slug        String    @db.VarChar(255)
+  content     String
+  isPublished Boolean   @default(false) @map("is_published")
+  sortOrder   Int       @default(0) @map("sort_order")
+  creatorId   Int?      @map("creator_id")
+  modifierId  Int?      @map("modifier_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  parent      WorkspaceWikiPage?  @relation("WikiPageHierarchy", fields: [parentId], references: [id])
+  children    WorkspaceWikiPage[] @relation("WikiPageHierarchy")
+
+  @@unique([workspaceId, slug])
+  @@index([workspaceId])
+  @@index([parentId])
+  @@map("workspace_wiki_pages")
 }
 
 model ApiKey {
