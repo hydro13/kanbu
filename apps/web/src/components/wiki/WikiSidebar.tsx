@@ -1,6 +1,6 @@
 /*
  * Wiki Sidebar Component
- * Version: 1.2.0
+ * Version: 1.4.0
  *
  * Tree-based navigation sidebar for wiki pages.
  * Supports both workspace and project wikis.
@@ -13,6 +13,10 @@
  * Change: Added temporal search button (Fase 9)
  * Modified: 2026-01-12
  * Change: Removed title/icon, repositioned action icons above search
+ * Modified: 2026-01-13
+ * Change: VSCode-style tree: smaller indent (8px), no file icons
+ * Modified: 2026-01-13
+ * Change: Added VSCode-style vertical indent guide lines
  * ===================================================================
  */
 
@@ -144,47 +148,64 @@ function WikiTreeNode({
     <div>
       <div
         className={cn(
-          'group flex items-center gap-1 py-1 px-2 rounded-md text-sm hover:bg-accent/50 transition-colors',
+          'group relative flex items-center gap-0.5 py-0.5 px-1 rounded text-sm hover:bg-accent/50 transition-colors',
           isActive && 'bg-accent text-accent-foreground'
         )}
-        style={{ paddingLeft: `${depth * 16 + 8}px` }}
       >
-        {/* Expand/collapse button */}
-        <button
-          onClick={() => hasChildren && toggleExpanded(page.id)}
-          className={cn(
-            'p-0.5 rounded hover:bg-accent',
-            !hasChildren && 'invisible'
-          )}
-        >
-          <ChevronRight
-            className={cn(
-              'h-3.5 w-3.5 text-muted-foreground transition-transform',
-              isExpanded && 'rotate-90'
-            )}
-          />
-        </button>
+        {/* Indent guides (VSCode-style vertical lines) */}
+        {depth > 0 && (
+          <div className="absolute left-0 top-0 bottom-0 flex" style={{ width: `${depth * 8 + 4}px` }}>
+            {Array.from({ length: depth }).map((_, i) => (
+              <div
+                key={i}
+                className="border-l border-muted-foreground/30 h-full"
+                style={{ marginLeft: `${i === 0 ? 8 : 8}px` }}
+              />
+            ))}
+          </div>
+        )}
 
-        {/* Page icon and link */}
+        {/* Spacer for indent */}
+        <div style={{ width: `${depth * 8}px` }} className="flex-shrink-0" />
+
+        {/* Expand/collapse button or leaf indicator */}
+        {hasChildren ? (
+          <button
+            onClick={() => toggleExpanded(page.id)}
+            className="p-0.5 rounded hover:bg-accent flex-shrink-0"
+          >
+            <ChevronRight
+              className={cn(
+                'h-3 w-3 text-muted-foreground transition-transform',
+                isExpanded && 'rotate-90'
+              )}
+            />
+          </button>
+        ) : (
+          <div className="p-0.5 flex-shrink-0 flex items-center justify-center w-4 h-4">
+            <div className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />
+          </div>
+        )}
+
+        {/* Page link (no icon, like VSCode) */}
         <Link
           to={`${basePath}/${page.slug}`}
           className={cn(
-            'flex-1 flex items-center gap-2 truncate',
+            'flex-1 truncate',
             isActive ? 'font-medium' : 'text-muted-foreground hover:text-foreground'
           )}
         >
-          <FileText className="h-3.5 w-3.5 flex-shrink-0" />
-          <span className="truncate">{page.title}</span>
+          {page.title}
         </Link>
 
         {/* Status badge */}
         {page.status === 'DRAFT' && (
-          <span className="text-[10px] bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-1.5 py-0.5 rounded flex-shrink-0">
+          <span className="text-[9px] bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 px-1 py-0 rounded flex-shrink-0">
             Draft
           </span>
         )}
         {page.status === 'ARCHIVED' && (
-          <span className="text-[10px] bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 px-1.5 py-0.5 rounded flex-shrink-0">
+          <span className="text-[9px] bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 px-1 py-0 rounded flex-shrink-0">
             Archived
           </span>
         )}
@@ -196,10 +217,10 @@ function WikiTreeNode({
               e.preventDefault()
               onCreatePage(page.id)
             }}
-            className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-accent transition-opacity"
+            className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-accent transition-opacity flex-shrink-0"
             title="Add subpage"
           >
-            <Plus className="h-3.5 w-3.5 text-muted-foreground" />
+            <Plus className="h-3 w-3 text-muted-foreground" />
           </button>
         )}
       </div>

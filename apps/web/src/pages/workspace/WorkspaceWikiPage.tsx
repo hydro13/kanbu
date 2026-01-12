@@ -386,6 +386,18 @@ export function WorkspaceWikiPage() {
     [currentPage, updateMutation]
   )
 
+  const handleParentChange = useCallback(
+    async (parentId: number | null) => {
+      if (!currentPage) return
+
+      await updateMutation.mutateAsync({
+        id: currentPage.id,
+        parentId,
+      })
+    },
+    [currentPage, updateMutation]
+  )
+
   const handleDelete = useCallback(async () => {
     if (!currentPage) return
     await deleteMutation.mutateAsync({ id: currentPage.id })
@@ -515,6 +527,8 @@ export function WorkspaceWikiPage() {
               currentUser={currentUser}
               onAskWiki={handleOpenAskWiki}
               onAskAboutPage={handleAskAboutPage}
+              availablePages={pages.map((p) => ({ id: p.id, title: p.title, parentId: p.parentId }))}
+              onParentChange={handleParentChange}
             />
           ) : pageSlug && currentPageQuery.isLoading ? (
             /* Loading page */
@@ -844,8 +858,21 @@ function CreateWikiPageModal({
     })
   }
 
-  // Get root pages for parent selection
-  const rootPages = pages.filter((p) => p.parentId === null)
+  // Build indented page list for parent selection (showing hierarchy)
+  const buildPageOptions = (
+    allPages: PageFromApi[],
+    parentId: number | null = null,
+    depth: number = 0
+  ): Array<{ id: number; title: string; depth: number }> => {
+    const children = allPages.filter((p) => p.parentId === parentId)
+    const result: Array<{ id: number; title: string; depth: number }> = []
+    for (const child of children) {
+      result.push({ id: child.id, title: child.title, depth })
+      result.push(...buildPageOptions(allPages, child.id, depth + 1))
+    }
+    return result
+  }
+  const pageOptions = buildPageOptions(pages)
 
   return (
     <Dialog open onOpenChange={onClose}>
@@ -879,7 +906,7 @@ function CreateWikiPageModal({
             </div>
           </div>
 
-          {rootPages.length > 0 && (
+          {pageOptions.length > 0 && (
             <div className="space-y-2">
               <Label htmlFor="parent">Parent Page (optional)</Label>
               <Select
@@ -891,9 +918,9 @@ function CreateWikiPageModal({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">No parent (root page)</SelectItem>
-                  {rootPages.map((page) => (
+                  {pageOptions.map((page) => (
                     <SelectItem key={page.id} value={page.id.toString()}>
-                      {page.title}
+                      {'—'.repeat(page.depth)}{page.depth > 0 ? ' ' : ''}{page.title}
                     </SelectItem>
                   ))}
                 </SelectContent>

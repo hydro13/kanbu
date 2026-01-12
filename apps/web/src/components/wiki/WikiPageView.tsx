@@ -1,6 +1,6 @@
 /*
  * Wiki Page View Component
- * Version: 1.3.0
+ * Version: 1.4.0
  *
  * Displays a single wiki page with view/edit mode toggle.
  * Integrates Lexical RichTextEditor for content editing.
@@ -20,6 +20,9 @@
  * Modified: 2026-01-12
  * Change: Fix wiki link extraction - preserve [[...]] format in plain text
  *         for backlinks and graph link detection
+ *
+ * Modified: 2026-01-13
+ * Change: Added parent page selector in edit mode
  * ===================================================================
  */
 
@@ -34,6 +37,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { RichTextEditor, type WikiPage as WikiPageForLink, type TaskResult, type MentionResult, type SignatureUser } from '@/components/editor'
 import {
   Edit2,
@@ -49,6 +59,7 @@ import {
   Clock,
   User,
   Sparkles,
+  FolderTree,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { WikiPageStatus } from './WikiSidebar'
@@ -121,6 +132,10 @@ interface WikiPageViewProps {
   onAskWiki?: () => void
   /** Callback when "Ask about this page" is triggered (with page context) */
   onAskAboutPage?: (pageTitle: string, pageContent: string) => void
+  /** Available pages for parent selection (shown in edit mode) */
+  availablePages?: Array<{ id: number; title: string; parentId: number | null }>
+  /** Callback when parent page is changed */
+  onParentChange?: (parentId: number | null) => Promise<void>
 }
 
 // =============================================================================
@@ -210,11 +225,14 @@ export function WikiPageView({
   currentUser,
   onAskWiki,
   onAskAboutPage,
+  availablePages,
+  onParentChange,
 }: WikiPageViewProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [editedTitle, setEditedTitle] = useState(page.title)
   const [editedContent, setEditedContent] = useState(page.content)
   const [editedContentJson, setEditedContentJson] = useState(page.contentJson || '')
+  const [editedParentId, setEditedParentId] = useState<number | null>(page.parentId)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
 
   // Context menu state
@@ -233,10 +251,11 @@ export function WikiPageView({
     setEditedTitle(page.title)
     setEditedContent(page.content)
     setEditedContentJson(page.contentJson || '')
+    setEditedParentId(page.parentId)
     setHasUnsavedChanges(false)
     setIsEditing(false)
     lastSavedRef.current = { title: page.title, contentJson: page.contentJson }
-  }, [page.id])
+  }, [page.id, page.parentId])
 
   // Auto-save logic
   useEffect(() => {
@@ -285,6 +304,50 @@ export function WikiPageView({
       setHasUnsavedChanges(true)
     }
   }
+
+  // Handle parent change
+  const handleParentChange = async (value: string) => {
+    const newParentId = value === 'none' ? null : parseInt(value)
+    setEditedParentId(newParentId)
+    if (onParentChange) {
+      await onParentChange(newParentId)
+    }
+  }
+
+  // Build page options for parent selector (excluding current page and its descendants)
+  const buildParentOptions = () => {
+    if (!availablePages) return []
+
+    // Get all descendant IDs to exclude (can't set a descendant as parent)
+    const getDescendantIds = (pageId: number): number[] => {
+      const children = availablePages.filter((p) => p.parentId === pageId)
+      const descendantIds: number[] = []
+      for (const child of children) {
+        descendantIds.push(child.id)
+        descendantIds.push(...getDescendantIds(child.id))
+      }
+      return descendantIds
+    }
+    const excludeIds = new Set([page.id, ...getDescendantIds(page.id)])
+
+    // Build hierarchical list
+    const buildOptions = (
+      parentId: number | null = null,
+      depth: number = 0
+    ): Array<{ id: number; title: string; depth: number }> => {
+      const children = availablePages.filter(
+        (p) => p.parentId === parentId && !excludeIds.has(p.id)
+      )
+      const result: Array<{ id: number; title: string; depth: number }> = []
+      for (const child of children) {
+        result.push({ id: child.id, title: child.title, depth })
+        result.push(...buildOptions(child.id, depth + 1))
+      }
+      return result
+    }
+    return buildOptions()
+  }
+  const parentOptions = buildParentOptions()
 
   // Save changes
   const handleSave = async () => {
@@ -408,6 +471,30 @@ export function WikiPageView({
               {new Date(page.updatedAt).toLocaleDateString()}
             </span>
           </div>
+
+          {/* Parent selector (edit mode only) */}
+          {isEditing && availablePages && availablePages.length > 0 && (
+            <div className="flex items-center gap-2 mt-3">
+              <FolderTree className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Parent:</span>
+              <Select
+                value={editedParentId?.toString() ?? 'none'}
+                onValueChange={handleParentChange}
+              >
+                <SelectTrigger className="w-[200px] h-8 text-sm">
+                  <SelectValue placeholder="Select parent..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No parent (root page)</SelectItem>
+                  {parentOptions.map((opt) => (
+                    <SelectItem key={opt.id} value={opt.id.toString()}>
+                      {'—'.repeat(opt.depth)}{opt.depth > 0 ? ' ' : ''}{opt.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
 
         {/* Actions */}
