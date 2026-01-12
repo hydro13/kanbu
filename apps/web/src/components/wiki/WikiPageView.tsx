@@ -23,7 +23,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { RichTextEditor } from '@/components/editor'
+import { RichTextEditor, type WikiPage as WikiPageForLink } from '@/components/editor'
 import {
   Edit2,
   Eye,
@@ -94,6 +94,10 @@ interface WikiPageViewProps {
   isSaving?: boolean
   /** Auto-save debounce delay in ms (0 to disable) */
   autoSaveDelay?: number
+  /** Function to search wiki pages for [[ link autocomplete */
+  searchWikiPages?: (query: string) => Promise<WikiPageForLink[]>
+  /** Static list of wiki pages (alternative to searchWikiPages) */
+  wikiPages?: WikiPageForLink[]
 }
 
 // =============================================================================
@@ -176,6 +180,8 @@ export function WikiPageView({
   onViewHistory,
   isSaving = false,
   autoSaveDelay = 2000,
+  searchWikiPages,
+  wikiPages,
 }: WikiPageViewProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [editedTitle, setEditedTitle] = useState(page.title)
@@ -427,6 +433,10 @@ export function WikiPageView({
           maxHeight={isEditing ? '600px' : 'none'}
           namespace={`wiki-page-${page.id}`}
           className={cn(!isEditing && 'wiki-view-mode')}
+          enableWikiLinks={true}
+          searchWikiPages={searchWikiPages}
+          wikiPages={wikiPages}
+          wikiBasePath={basePath}
         />
       </div>
 

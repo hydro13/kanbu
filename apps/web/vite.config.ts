@@ -1,9 +1,24 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
+import fs from 'fs'
+import { fileURLToPath } from 'url'
 
-// API target - HTTPS with self-signed certificate
-const apiTarget = 'https://127.0.0.1:3001'
+// ESM-compatible __dirname
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
+// Check if HTTPS certificates exist (mkcert)
+const certsPath = path.resolve(__dirname, '../../certs')
+const certFile = path.join(certsPath, 'localhost+4.pem')
+const keyFile = path.join(certsPath, 'localhost+4-key.pem')
+
+const httpsConfig = fs.existsSync(certFile) && fs.existsSync(keyFile)
+  ? {
+      key: fs.readFileSync(keyFile),
+      cert: fs.readFileSync(certFile),
+    }
+  : undefined
 
 export default defineConfig({
   plugins: [react()],
@@ -14,36 +29,26 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    host: true, // Listen on all interfaces (0.0.0.0) for Tailscale access
-    allowedHosts: true, // Allow all hosts (dev server accessible via any hostname)
+    host: true,
+    allowedHosts: true,
+    https: httpsConfig,
     proxy: {
       '/api': {
-        target: apiTarget,
+        target: 'https://localhost:3001',
         changeOrigin: true,
-        secure: false, // Allow self-signed certificates
-        configure: (proxy) => {
-          proxy.on('error', (err, req, res) => {
-            console.log('Proxy error:', err.message);
-          });
-        },
+        secure: false,
       },
       '/trpc': {
-        target: apiTarget,
+        target: 'https://localhost:3001',
         changeOrigin: true,
-        secure: false, // Allow self-signed certificates
-        configure: (proxy) => {
-          proxy.on('error', (err, req, res) => {
-            console.log('Proxy error:', err.message);
-          });
-        },
+        secure: false,
       },
       '/socket.io': {
-        target: apiTarget,
+        target: 'https://localhost:3001',
         changeOrigin: true,
-        secure: false, // Allow self-signed certificates
+        secure: false,
         ws: true,
       },
-      // Note: /uploads is served directly from public/uploads symlink → API uploads folder
     },
   },
   build: {

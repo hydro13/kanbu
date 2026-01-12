@@ -37,6 +37,9 @@ export type { MediaPluginProps } from './MediaPlugin'
 
 export { DraggableMediaPlugin } from './DraggableMediaPlugin'
 
+export { WikiLinkPlugin } from './WikiLinkPlugin'
+export type { WikiPage, WikiLinkPluginProps } from './WikiLinkPlugin'
+
 // Nodes
 export {
   ImageNode,
@@ -51,6 +54,9 @@ export {
   $createEmbedNodeFromUrl,
   parseVideoUrl,
   getEmbedUrl,
+  WikiLinkNode,
+  $createWikiLinkNode,
+  $isWikiLinkNode,
 } from './nodes'
 export type {
   ImagePayload,
@@ -60,6 +66,8 @@ export type {
   EmbedPayload,
   SerializedEmbedNode,
   EmbedProvider,
+  WikiLinkPayload,
+  SerializedWikiLinkNode,
 } from './nodes'
 
 export { editorTheme } from './theme'

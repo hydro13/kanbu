@@ -24,3 +24,6 @@ export {
   getEmbedUrl,
 } from './EmbedNode'
 export type { EmbedPayload, SerializedEmbedNode, EmbedProvider, EmbedMetadata } from './EmbedNode'
+
+export { WikiLinkNode, $createWikiLinkNode, $isWikiLinkNode } from './WikiLinkNode'
+export type { WikiLinkPayload, SerializedWikiLinkNode } from './WikiLinkNode'

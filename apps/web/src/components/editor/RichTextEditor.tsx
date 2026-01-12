@@ -32,6 +32,10 @@ import { HeadingNode, QuoteNode } from '@lexical/rich-text'
 import { ListNode, ListItemNode } from '@lexical/list'
 import { LinkNode, AutoLinkNode } from '@lexical/link'
 import { CodeNode, CodeHighlightNode } from '@lexical/code'
+import { TableNode, TableCellNode, TableRowNode } from '@lexical/table'
+
+// Table plugin
+import { TablePlugin } from '@lexical/react/LexicalTablePlugin'
 
 // Local imports
 import { editorTheme } from './theme'
@@ -39,7 +43,8 @@ import { ToolbarPlugin } from './ToolbarPlugin'
 import { MarkdownPastePlugin } from './MarkdownPastePlugin'
 import { MediaPlugin } from './MediaPlugin'
 import { DraggableMediaPlugin } from './DraggableMediaPlugin'
-import { ImageNode, VideoNode, EmbedNode } from './nodes'
+import { WikiLinkPlugin, type WikiPage } from './WikiLinkPlugin'
+import { ImageNode, VideoNode, EmbedNode, WikiLinkNode } from './nodes'
 import './editor.css'
 
 // =============================================================================
@@ -67,6 +72,14 @@ export interface RichTextEditorProps {
   className?: string
   /** Namespace for the editor (should be unique per editor instance) */
   namespace?: string
+  /** Enable wiki link detection with [[ syntax */
+  enableWikiLinks?: boolean
+  /** Function to search for wiki pages (for wiki link autocomplete) */
+  searchWikiPages?: (query: string) => Promise<WikiPage[]>
+  /** Static list of wiki pages (alternative to searchWikiPages) */
+  wikiPages?: WikiPage[]
+  /** Base path for wiki links (e.g., /workspace/slug/wiki) */
+  wikiBasePath?: string
 }
 
 // =============================================================================
@@ -125,6 +138,10 @@ export function RichTextEditor({
   maxHeight = '500px',
   className = '',
   namespace = 'KanbuEditor',
+  enableWikiLinks = false,
+  searchWikiPages,
+  wikiPages,
+  wikiBasePath,
 }: RichTextEditorProps) {
   // Editor configuration
   const initialConfig = {
@@ -141,10 +158,16 @@ export function RichTextEditor({
       AutoLinkNode,
       CodeNode,
       CodeHighlightNode,
+      // Table nodes
+      TableNode,
+      TableCellNode,
+      TableRowNode,
       // Media nodes
       ImageNode,
       VideoNode,
       EmbedNode,
+      // Wiki nodes
+      WikiLinkNode,
     ],
   }
 
@@ -191,10 +214,20 @@ export function RichTextEditor({
           <LinkPlugin />
           <CheckListPlugin />
           <TabIndentationPlugin />
+          <TablePlugin />
           <MarkdownShortcutPlugin transformers={TRANSFORMERS} />
           <MarkdownPastePlugin />
           <MediaPlugin />
           {!readOnly && <DraggableMediaPlugin />}
+
+          {/* Wiki Link Plugin - only in edit mode with enableWikiLinks */}
+          {enableWikiLinks && !readOnly && (
+            <WikiLinkPlugin
+              searchPages={searchWikiPages}
+              pages={wikiPages}
+              basePath={wikiBasePath}
+            />
+          )}
 
           {/* Change handler */}
           {onChange && <OnChangePlugin onChange={handleChange} ignoreSelectionChange />}

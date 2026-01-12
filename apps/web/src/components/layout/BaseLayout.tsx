@@ -225,15 +225,22 @@ export function BaseLayout({
     navigate('/login')
   }, [dispatch, navigate])
 
-  // Global keyboard shortcuts
+  // Global keyboard shortcuts (including G+key navigation chords)
   useKeyboardShortcuts(
     {
+      // Global
       onShowHelp: () => setShortcutsOpen(true),
       onCommandPalette: openCommandPalette,
       onCloseModal: () => setShortcutsOpen(false),
+      // Navigation (G+key chord shortcuts)
+      onGotoDashboard: () => navigate('/dashboard'),
+      onGotoTasks: () => navigate('/dashboard/tasks'),
+      onGotoInbox: () => navigate('/dashboard/inbox'),
+      onGotoWorkspaces: () => navigate('/workspaces'),
+      onGotoNotes: () => navigate('/dashboard/notes'),
     },
     {
-      activeCategories: ['global'],
+      activeCategories: ['global', 'navigation'],
       enabled: true,
     }
   )

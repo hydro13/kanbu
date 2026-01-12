@@ -1,16 +1,14 @@
 /*
  * useKeyboardShortcuts Hook
- * Version: 1.0.0
+ * Version: 2.0.0
  *
  * Global keyboard handler with context-aware shortcuts and conflict prevention.
- * Handles all keyboard shortcuts for the application.
+ * Handles all keyboard shortcuts for the application, including chord sequences.
  *
  * ═══════════════════════════════════════════════════════════════════
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
- * Session: 73a280f4-f735-47a2-9803-e570fa6a86f7
- * Claude Code: v2.0.70 (Opus 4.5)
- * Host: linux-dev
- * Signed: 2025-12-28T21:05 CET
+ * Signed: 2026-01-12
+ * Change: Added chord shortcut support (G+key navigation)
  * ═══════════════════════════════════════════════════════════════════
  */
 
@@ -24,6 +22,23 @@ import {
 } from '@/lib/shortcuts'
 
 // =============================================================================
+// Chord Shortcut Handling
+// =============================================================================
+
+/** Timeout for chord sequence (ms) */
+const CHORD_TIMEOUT = 500
+
+/** Check if a shortcut is a chord (e.g., "g d") */
+function isChordShortcut(shortcut: ShortcutDefinition): boolean {
+  return shortcut.key.includes(' ')
+}
+
+/** Parse chord into parts */
+function parseChord(key: string): string[] {
+  return key.toLowerCase().split(' ')
+}
+
+// =============================================================================
 // Types
 // =============================================================================
 
@@ -35,6 +50,13 @@ export interface ShortcutHandlers {
   onCommandPalette?: () => void
   onToggleSidebar?: () => void
   onCloseModal?: () => void
+
+  // Navigation (chord shortcuts: G+key)
+  onGotoDashboard?: () => void
+  onGotoTasks?: () => void
+  onGotoInbox?: () => void
+  onGotoWorkspaces?: () => void
+  onGotoNotes?: () => void
 
   // Board
   onNewTask?: () => void
@@ -71,7 +93,7 @@ export function useKeyboardShortcuts(
   options: UseKeyboardShortcutsOptions = {}
 ) {
   const {
-    activeCategories = ['global', 'board', 'task'],
+    activeCategories = ['global', 'navigation', 'board', 'task'],
     enabled = true,
     hasSelectedTask = false,
     onShortcut,
@@ -81,22 +103,192 @@ export function useKeyboardShortcuts(
   const handlersRef = useRef(handlers)
   const optionsRef = useRef({ activeCategories, hasSelectedTask, onShortcut })
 
+  // Chord state: track pending first key of chord
+  const pendingChordRef = useRef<{ key: string; timestamp: number } | null>(null)
+  const chordTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
   // Update refs when handlers change
   useEffect(() => {
     handlersRef.current = handlers
     optionsRef.current = { activeCategories, hasSelectedTask, onShortcut }
   }, [handlers, activeCategories, hasSelectedTask, onShortcut])
 
+  // Clear chord timeout
+  const clearChordTimeout = useCallback(() => {
+    if (chordTimeoutRef.current) {
+      clearTimeout(chordTimeoutRef.current)
+      chordTimeoutRef.current = null
+    }
+    pendingChordRef.current = null
+  }, [])
+
+  // Execute shortcut handler
+  const executeShortcut = useCallback((shortcut: ShortcutDefinition, event: KeyboardEvent) => {
+    const h = handlersRef.current
+    const { onShortcut } = optionsRef.current
+
+    // Call custom handler if provided
+    if (onShortcut) {
+      onShortcut(event, shortcut)
+    }
+
+    // Handle the shortcut
+    switch (shortcut.id) {
+      // Global
+      case 'show-help':
+        h.onShowHelp?.()
+        break
+      case 'command-palette':
+        h.onCommandPalette?.()
+        break
+      case 'toggle-sidebar':
+        h.onToggleSidebar?.()
+        break
+      case 'close-modal':
+        h.onCloseModal?.()
+        break
+
+      // Navigation (chord shortcuts)
+      case 'goto-dashboard':
+        h.onGotoDashboard?.()
+        break
+      case 'goto-tasks':
+        h.onGotoTasks?.()
+        break
+      case 'goto-inbox':
+        h.onGotoInbox?.()
+        break
+      case 'goto-workspaces':
+        h.onGotoWorkspaces?.()
+        break
+      case 'goto-notes':
+        h.onGotoNotes?.()
+        break
+
+      // Board
+      case 'new-task':
+        h.onNewTask?.()
+        break
+      case 'focus-filter':
+        h.onFocusFilter?.()
+        break
+      case 'column-1':
+        h.onFocusColumn?.(0)
+        break
+      case 'column-2':
+        h.onFocusColumn?.(1)
+        break
+      case 'column-3':
+        h.onFocusColumn?.(2)
+        break
+      case 'column-4':
+        h.onFocusColumn?.(3)
+        break
+      case 'column-5':
+        h.onFocusColumn?.(4)
+        break
+      case 'navigate-up':
+        h.onNavigate?.('up')
+        break
+      case 'navigate-down':
+        h.onNavigate?.('down')
+        break
+      case 'navigate-left':
+        h.onNavigate?.('left')
+        break
+      case 'navigate-right':
+        h.onNavigate?.('right')
+        break
+
+      // Task
+      case 'open-detail':
+        h.onOpenDetail?.()
+        break
+      case 'edit-title':
+        h.onEditTitle?.()
+        break
+      case 'change-priority':
+        h.onChangePriority?.()
+        break
+      case 'move-task':
+        h.onMoveTask?.()
+        break
+      case 'close-task':
+        h.onCloseTask?.()
+        break
+      case 'delete-task':
+        h.onDeleteTask?.()
+        break
+    }
+  }, [])
+
   // Main keyboard event handler
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    const { activeCategories, hasSelectedTask, onShortcut } = optionsRef.current
-    const h = handlersRef.current
+    const { activeCategories, hasSelectedTask } = optionsRef.current
+    const pressedKey = event.key.toLowerCase()
 
     // Check if we're in an input field
     const inInput = isInputElement(event.target)
 
-    // Find matching shortcut
+    // Handle chord sequences
+    const now = Date.now()
+
+    // Check if we have a pending chord first key
+    if (pendingChordRef.current) {
+      const pending = pendingChordRef.current
+
+      // Check if within timeout
+      if (now - pending.timestamp < CHORD_TIMEOUT) {
+        // Look for matching chord shortcut
+        for (const shortcut of SHORTCUTS) {
+          if (!isChordShortcut(shortcut)) continue
+          if (!activeCategories.includes(shortcut.category)) continue
+          if (inInput && !shortcut.allowInInputs) continue
+
+          const [firstKey, secondKey] = parseChord(shortcut.key)
+
+          if (pending.key === firstKey && pressedKey === secondKey) {
+            event.preventDefault()
+            event.stopPropagation()
+            clearChordTimeout()
+            executeShortcut(shortcut, event)
+            return
+          }
+        }
+      }
+
+      // Chord didn't match, clear it
+      clearChordTimeout()
+    }
+
+    // Check if this is the first key of a chord
+    const chordStartShortcuts = SHORTCUTS.filter(s =>
+      isChordShortcut(s) &&
+      activeCategories.includes(s.category) &&
+      (!inInput || s.allowInInputs)
+    )
+
+    for (const shortcut of chordStartShortcuts) {
+      const [firstKey] = parseChord(shortcut.key)
+      if (pressedKey === firstKey) {
+        // This could be the start of a chord - wait for second key
+        event.preventDefault()
+        pendingChordRef.current = { key: pressedKey, timestamp: now }
+
+        // Set timeout to clear pending chord
+        chordTimeoutRef.current = setTimeout(() => {
+          pendingChordRef.current = null
+        }, CHORD_TIMEOUT)
+
+        return
+      }
+    }
+
+    // Find matching single-key shortcut
     for (const shortcut of SHORTCUTS) {
+      // Skip chord shortcuts (handled above)
+      if (isChordShortcut(shortcut)) continue
+
       // Skip if category not active
       if (!activeCategories.includes(shortcut.category)) continue
 
@@ -113,87 +305,12 @@ export function useKeyboardShortcuts(
       event.preventDefault()
       event.stopPropagation()
 
-      // Call custom handler if provided
-      if (onShortcut) {
-        onShortcut(event, shortcut)
-      }
-
-      // Handle the shortcut
-      switch (shortcut.id) {
-        // Global
-        case 'show-help':
-          h.onShowHelp?.()
-          break
-        case 'command-palette':
-          h.onCommandPalette?.()
-          break
-        case 'toggle-sidebar':
-          h.onToggleSidebar?.()
-          break
-        case 'close-modal':
-          h.onCloseModal?.()
-          break
-
-        // Board
-        case 'new-task':
-          h.onNewTask?.()
-          break
-        case 'focus-filter':
-          h.onFocusFilter?.()
-          break
-        case 'column-1':
-          h.onFocusColumn?.(0)
-          break
-        case 'column-2':
-          h.onFocusColumn?.(1)
-          break
-        case 'column-3':
-          h.onFocusColumn?.(2)
-          break
-        case 'column-4':
-          h.onFocusColumn?.(3)
-          break
-        case 'column-5':
-          h.onFocusColumn?.(4)
-          break
-        case 'navigate-up':
-          h.onNavigate?.('up')
-          break
-        case 'navigate-down':
-          h.onNavigate?.('down')
-          break
-        case 'navigate-left':
-          h.onNavigate?.('left')
-          break
-        case 'navigate-right':
-          h.onNavigate?.('right')
-          break
-
-        // Task
-        case 'open-detail':
-          h.onOpenDetail?.()
-          break
-        case 'edit-title':
-          h.onEditTitle?.()
-          break
-        case 'change-priority':
-          h.onChangePriority?.()
-          break
-        case 'move-task':
-          h.onMoveTask?.()
-          break
-        case 'close-task':
-          h.onCloseTask?.()
-          break
-        case 'delete-task':
-          h.onDeleteTask?.()
-          break
-      }
+      executeShortcut(shortcut, event)
 
       // Only handle one shortcut per keypress
       return
     }
-  }, [])
+  }, [clearChordTimeout, executeShortcut])
 
   // Register global keyboard handler
   useEffect(() => {

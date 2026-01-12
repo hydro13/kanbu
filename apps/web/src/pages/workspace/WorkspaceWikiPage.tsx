@@ -22,7 +22,7 @@
 import { useState, useCallback, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { WorkspaceLayout } from '@/components/layout/WorkspaceLayout'
-import { WikiSidebar, WikiPageView } from '@/components/wiki'
+import { WikiSidebar, WikiPageView, WikiVersionHistory } from '@/components/wiki'
 import type { WikiPageNode, WikiPageStatus, WikiBreadcrumb } from '@/components/wiki'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -43,7 +43,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { RichTextEditor } from '@/components/editor'
+import { RichTextEditor, type WikiPage as WikiPageForLink } from '@/components/editor'
 import { trpc } from '@/lib/trpc'
 import { BookOpen, Plus, ArrowLeft } from 'lucide-react'
 import { Link } from 'react-router-dom'
@@ -106,6 +106,7 @@ export function WorkspaceWikiPage() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [createParentId, setCreateParentId] = useState<number | undefined>()
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [showVersionHistory, setShowVersionHistory] = useState(false)
 
   const utils = trpc.useUtils()
 
@@ -187,6 +188,20 @@ export function WorkspaceWikiPage() {
 
     return trail
   }, [currentPage, pages])
+
+  // Convert pages to WikiPageForLink format for wiki link autocomplete
+  const wikiPagesForLinks: WikiPageForLink[] = useMemo(
+    () =>
+      pages
+        .filter((p) => p.status === 'PUBLISHED' || p.status === 'DRAFT')
+        .map((p) => ({
+          id: p.id,
+          title: p.title,
+          slug: p.slug,
+          exists: true,
+        })),
+    [pages]
+  )
 
   // Handlers
   const handleCreatePage = useCallback((parentId?: number) => {
@@ -309,12 +324,10 @@ export function WorkspaceWikiPage() {
               onSave={handleSavePage}
               onStatusChange={handleStatusChange}
               onDelete={() => setShowDeleteConfirm(true)}
-              onViewHistory={() => {
-                // TODO: Implement version history modal (Fase 7)
-                console.log('View history clicked')
-              }}
+              onViewHistory={() => setShowVersionHistory(true)}
               isSaving={updateMutation.isPending}
               autoSaveDelay={2000}
+              wikiPages={wikiPagesForLinks}
             />
           ) : pageSlug && currentPageQuery.isLoading ? (
             /* Loading page */
@@ -399,6 +412,20 @@ export function WorkspaceWikiPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Version History Modal */}
+      {currentPage && (
+        <WikiVersionHistory
+          pageId={currentPage.id}
+          pageTitle={currentPage.title}
+          open={showVersionHistory}
+          onClose={() => setShowVersionHistory(false)}
+          onRestored={() => {
+            currentPageQuery.refetch()
+            pagesQuery.refetch()
+          }}
+        />
+      )}
     </WorkspaceLayout>
   )
 }
