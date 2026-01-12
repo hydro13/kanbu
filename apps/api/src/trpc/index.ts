@@ -135,6 +135,7 @@ import { githubAdminRouter } from './procedures/githubAdmin';
 import { githubRouter } from './procedures/github';
 import { dashboardRouter } from './procedures/dashboard';
 import { workspaceWikiRouter } from './procedures/workspaceWiki';
+import { projectWikiRouter } from './procedures/projectWiki';
 import { projectGroupRouter } from './procedures/projectGroup';
 import { favoriteRouter } from './procedures/favorite';
 
@@ -179,6 +180,7 @@ export const appRouter = router({
   github: githubRouter,
   dashboard: dashboardRouter,
   workspaceWiki: workspaceWikiRouter,
+  projectWiki: projectWikiRouter,
   projectGroup: projectGroupRouter,
   favorite: favoriteRouter,
 });

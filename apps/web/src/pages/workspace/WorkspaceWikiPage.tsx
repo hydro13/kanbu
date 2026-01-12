@@ -1,20 +1,24 @@
 /*
  * Workspace Wiki Page
- * Version: 1.0.0
+ * Version: 1.1.0
  *
  * Shows the workspace wiki/knowledge base with hierarchical pages.
+ * Supports create, edit, delete, and publish/unpublish operations.
  *
  * ===================================================================
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
  * Signed: 2026-01-11
  * Change: Initial implementation
+ *
+ * Modified: 2026-01-11
+ * Change: Added edit, delete, and toggle publish features
  * ===================================================================
  */
 
 import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { WorkspaceLayout } from '@/components/layout/WorkspaceLayout'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -23,7 +27,15 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from '@/components/ui/dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { trpc } from '@/lib/trpc'
 import {
   BookOpen,
@@ -35,6 +47,7 @@ import {
   Trash2,
   Eye,
   EyeOff,
+  MoreVertical,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -49,8 +62,8 @@ interface WikiPageSummary {
   isPublished: boolean
   sortOrder: number
   parentId: number | null
-  createdAt: Date
-  updatedAt: Date
+  createdAt: string
+  updatedAt: string
   childCount: number
 }
 
@@ -61,7 +74,10 @@ interface WikiPageSummary {
 export function WorkspaceWikiPage() {
   const { slug } = useParams<{ slug: string }>()
   const [showCreateModal, setShowCreateModal] = useState(false)
-  const [selectedPage, setSelectedPage] = useState<WikiPageSummary | null>(null)
+  const [editingPage, setEditingPage] = useState<WikiPageSummary | null>(null)
+  const [deletingPage, setDeletingPage] = useState<WikiPageSummary | null>(null)
+
+  const utils = trpc.useUtils()
 
   // Fetch workspace
   const workspaceQuery = trpc.workspace.getBySlug.useQuery(
@@ -77,11 +93,41 @@ export function WorkspaceWikiPage() {
   )
   const pages = (pagesQuery.data ?? []) as WikiPageSummary[]
 
+  // Toggle publish mutation
+  const togglePublishMutation = trpc.workspaceWiki.update.useMutation({
+    onSuccess: () => {
+      utils.workspaceWiki.list.invalidate()
+    },
+  })
+
+  // Delete mutation
+  const deleteMutation = trpc.workspaceWiki.delete.useMutation({
+    onSuccess: () => {
+      utils.workspaceWiki.list.invalidate()
+      setDeletingPage(null)
+    },
+  })
+
   // Build tree structure
   const rootPages = pages.filter((p) => p.parentId === null)
   const getChildren = (parentId: number) => pages.filter((p) => p.parentId === parentId)
 
   const isLoading = workspaceQuery.isLoading || pagesQuery.isLoading
+
+  // Handle toggle publish
+  const handleTogglePublish = (page: WikiPageSummary) => {
+    togglePublishMutation.mutate({
+      id: page.id,
+      isPublished: !page.isPublished,
+    })
+  }
+
+  // Handle delete
+  const handleDelete = () => {
+    if (deletingPage) {
+      deleteMutation.mutate({ id: deletingPage.id })
+    }
+  }
 
   // Loading state
   if (isLoading) {
@@ -167,8 +213,9 @@ export function WorkspaceWikiPage() {
                 workspaceSlug={slug!}
                 depth={0}
                 getChildren={getChildren}
-                onSelect={setSelectedPage}
-                onRefresh={() => pagesQuery.refetch()}
+                onEdit={setEditingPage}
+                onDelete={setDeletingPage}
+                onTogglePublish={handleTogglePublish}
               />
             ))}
           </div>
@@ -185,6 +232,47 @@ export function WorkspaceWikiPage() {
             }}
           />
         )}
+
+        {/* Edit Modal */}
+        {editingPage && (
+          <EditWikiPageModal
+            page={editingPage}
+            onClose={() => setEditingPage(null)}
+            onSaved={() => {
+              setEditingPage(null)
+              pagesQuery.refetch()
+            }}
+          />
+        )}
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={!!deletingPage} onOpenChange={() => setDeletingPage(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete Wiki Page</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to delete "{deletingPage?.title}"?
+                {deletingPage && deletingPage.childCount > 0 && (
+                  <span className="block mt-2 text-destructive font-medium">
+                    Warning: This will also delete {deletingPage.childCount} child page(s).
+                  </span>
+                )}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDeletingPage(null)}>
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDelete}
+                disabled={deleteMutation.isPending}
+              >
+                {deleteMutation.isPending ? 'Deleting...' : 'Delete'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </WorkspaceLayout>
   )
@@ -199,11 +287,20 @@ interface WikiPageCardProps {
   workspaceSlug: string
   depth: number
   getChildren: (parentId: number) => WikiPageSummary[]
-  onSelect: (page: WikiPageSummary) => void
-  onRefresh: () => void
+  onEdit: (page: WikiPageSummary) => void
+  onDelete: (page: WikiPageSummary) => void
+  onTogglePublish: (page: WikiPageSummary) => void
 }
 
-function WikiPageCard({ page, workspaceSlug, depth, getChildren, onSelect, onRefresh }: WikiPageCardProps) {
+function WikiPageCard({
+  page,
+  workspaceSlug,
+  depth,
+  getChildren,
+  onEdit,
+  onDelete,
+  onTogglePublish,
+}: WikiPageCardProps) {
   const [expanded, setExpanded] = useState(false)
   const children = getChildren(page.id)
   const hasChildren = children.length > 0
@@ -248,6 +345,42 @@ function WikiPageCard({ page, workspaceSlug, depth, getChildren, onSelect, onRef
               <span className="text-xs">
                 {new Date(page.updatedAt).toLocaleDateString()}
               </span>
+
+              {/* Actions Menu */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => onEdit(page)}>
+                    <Edit2 className="h-4 w-4 mr-2" />
+                    Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onTogglePublish(page)}>
+                    {page.isPublished ? (
+                      <>
+                        <EyeOff className="h-4 w-4 mr-2" />
+                        Unpublish
+                      </>
+                    ) : (
+                      <>
+                        <Eye className="h-4 w-4 mr-2" />
+                        Publish
+                      </>
+                    )}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => onDelete(page)}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </CardContent>
@@ -261,8 +394,9 @@ function WikiPageCard({ page, workspaceSlug, depth, getChildren, onSelect, onRef
               workspaceSlug={workspaceSlug}
               depth={depth + 1}
               getChildren={getChildren}
-              onSelect={onSelect}
-              onRefresh={onRefresh}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              onTogglePublish={onTogglePublish}
             />
           ))}
         </div>
@@ -350,6 +484,103 @@ function CreateWikiPageModal({ workspaceId, parentId, onClose, onCreated }: Crea
             </Button>
             <Button type="submit" disabled={!title.trim() || createMutation.isPending}>
               {createMutation.isPending ? 'Creating...' : 'Create Page'}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// =============================================================================
+// Edit Wiki Page Modal
+// =============================================================================
+
+interface EditWikiPageModalProps {
+  page: WikiPageSummary
+  onClose: () => void
+  onSaved: () => void
+}
+
+function EditWikiPageModal({ page, onClose, onSaved }: EditWikiPageModalProps) {
+  const [title, setTitle] = useState(page.title)
+  const [isPublished, setIsPublished] = useState(page.isPublished)
+
+  // Fetch full page content
+  const pageQuery = trpc.workspaceWiki.get.useQuery({ id: page.id })
+  const [content, setContent] = useState('')
+
+  // Set content when loaded
+  if (pageQuery.data && content === '' && pageQuery.data.content) {
+    setContent(pageQuery.data.content)
+  }
+
+  const updateMutation = trpc.workspaceWiki.update.useMutation({
+    onSuccess: () => {
+      onSaved()
+    },
+  })
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!title.trim()) return
+
+    updateMutation.mutate({
+      id: page.id,
+      title: title.trim(),
+      content,
+      isPublished,
+    })
+  }
+
+  return (
+    <Dialog open onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Edit Wiki Page</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="text-sm font-medium">Title</label>
+            <Input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Page title..."
+              autoFocus
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium">Content</label>
+            {pageQuery.isLoading ? (
+              <div className="h-48 bg-muted rounded-md animate-pulse" />
+            ) : (
+              <textarea
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder="Write your content here..."
+                rows={12}
+                className="flex min-h-[200px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              />
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="editIsPublished"
+              checked={isPublished}
+              onChange={(e) => setIsPublished(e.target.checked)}
+              className="rounded"
+            />
+            <label htmlFor="editIsPublished" className="text-sm">
+              Published
+            </label>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={!title.trim() || updateMutation.isPending}>
+              {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
             </Button>
           </DialogFooter>
         </form>

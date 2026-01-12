@@ -615,40 +615,115 @@ model BudgetLine {
 }
 
 model WikiPage {
-  id         Int      @id @default(autoincrement())
-  projectId  Int      @map("project_id")
-  title      String   @db.VarChar(255)
-  content    String
-  creatorId  Int?     @map("creator_id")
-  modifierId Int?     @map("modifier_id")
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
-  project    Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  id              Int            @id @default(autoincrement())
+  projectId       Int            @map("project_id")
+  parentId        Int?           @map("parent_id")
+  title           String         @db.VarChar(255)
+  slug            String         @db.VarChar(255)
+  content         String         // Plain text content for backwards compat
+  contentJson     Json?          @map("content_json") // Lexical editor state
+  status          WikiPageStatus @default(DRAFT)
+  sortOrder       Int            @default(0) @map("sort_order")
+  creatorId       Int?           @map("creator_id")
+  modifierId      Int?           @map("modifier_id")
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+  publishedAt     DateTime?      @map("published_at")
 
+  // Graphiti Knowledge Graph sync
+  graphitiGroupId   String?   @map("graphiti_group_id") @db.VarChar(100)
+  graphitiSynced    Boolean   @default(false) @map("graphiti_synced")
+  graphitiSyncedAt  DateTime? @map("graphiti_synced_at")
+
+  // Relations
+  project    Project             @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  parent     WikiPage?           @relation("ProjectWikiHierarchy", fields: [parentId], references: [id])
+  children   WikiPage[]          @relation("ProjectWikiHierarchy")
+  versions   ProjectWikiVersion[]
+
+  @@unique([projectId, slug])
+  @@index([projectId])
+  @@index([parentId])
+  @@index([graphitiGroupId])
   @@map("wiki_pages")
 }
 
+/// Version history for project wiki pages
+model ProjectWikiVersion {
+  id          Int      @id @default(autoincrement())
+  pageId      Int      @map("page_id")
+  version     Int
+  title       String   @db.VarChar(255)
+  content     String   // Plain text
+  contentJson Json?    @map("content_json") // Lexical editor state
+  changeNote  String?  @map("change_note") @db.VarChar(500)
+  createdById Int      @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Graphiti reference for temporal queries
+  graphitiEpisodeId String? @map("graphiti_episode_id") @db.VarChar(100)
+
+  page WikiPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@unique([pageId, version])
+  @@index([pageId])
+  @@map("project_wiki_versions")
+}
+
 model WorkspaceWikiPage {
-  id          Int       @id @default(autoincrement())
-  workspaceId Int       @map("workspace_id")
-  parentId    Int?      @map("parent_id")
-  title       String    @db.VarChar(255)
-  slug        String    @db.VarChar(255)
-  content     String
-  isPublished Boolean   @default(false) @map("is_published")
-  sortOrder   Int       @default(0) @map("sort_order")
-  creatorId   Int?      @map("creator_id")
-  modifierId  Int?      @map("modifier_id")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  id          Int            @id @default(autoincrement())
+  workspaceId Int            @map("workspace_id")
+  parentId    Int?           @map("parent_id")
+  title       String         @db.VarChar(255)
+  slug        String         @db.VarChar(255)
+  content     String         // Plain text content for backwards compat
+  contentJson Json?          @map("content_json") // Lexical editor state
+  status      WikiPageStatus @default(DRAFT)
+  sortOrder   Int            @default(0) @map("sort_order")
+  creatorId   Int?           @map("creator_id")
+  modifierId  Int?           @map("modifier_id")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+  publishedAt DateTime?      @map("published_at")
+
+  // Graphiti Knowledge Graph sync
+  graphitiGroupId   String?   @map("graphiti_group_id") @db.VarChar(100)
+  graphitiSynced    Boolean   @default(false) @map("graphiti_synced")
+  graphitiSyncedAt  DateTime? @map("graphiti_synced_at")
+
+  // Relations
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   parent      WorkspaceWikiPage?  @relation("WikiPageHierarchy", fields: [parentId], references: [id])
   children    WorkspaceWikiPage[] @relation("WikiPageHierarchy")
+  versions    WorkspaceWikiVersion[]
 
   @@unique([workspaceId, slug])
   @@index([workspaceId])
   @@index([parentId])
+  @@index([graphitiGroupId])
   @@map("workspace_wiki_pages")
+}
+
+/// Version history for workspace wiki pages
+model WorkspaceWikiVersion {
+  id          Int      @id @default(autoincrement())
+  pageId      Int      @map("page_id")
+  version     Int
+  title       String   @db.VarChar(255)
+  content     String   // Plain text
+  contentJson Json?    @map("content_json") // Lexical editor state
+  changeNote  String?  @map("change_note") @db.VarChar(500)
+  createdById Int      @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Graphiti reference for temporal queries
+  graphitiEpisodeId String? @map("graphiti_episode_id") @db.VarChar(100)
+
+  page WorkspaceWikiPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@unique([pageId, version])
+  @@index([pageId])
+  @@map("workspace_wiki_versions")
 }
 
 model ApiKey {
@@ -1528,4 +1603,10 @@ enum AssignmentRole {
   MANAGER
   ADMIN
   OWNER
+}
+
+enum WikiPageStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
 }

@@ -1,19 +1,16 @@
 /*
- * Workspace Wiki Procedures
- * Version: 2.0.0
+ * Project Wiki Procedures
+ * Version: 1.0.0
  *
- * tRPC procedures for workspace-level wiki pages CRUD with:
+ * tRPC procedures for project-level wiki pages CRUD with:
  * - Version control (20 versions per page)
  * - Lexical JSON content support
  * - Graphiti sync status tracking
  *
  * ===================================================================
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
- * Signed: 2026-01-11
- * Change: Initial implementation
- *
- * Modified: 2026-01-12
- * Change: Added version control, Lexical JSON, Graphiti tracking
+ * Signed: 2026-01-12
+ * Change: Initial implementation with version control
  * ===================================================================
  */
 
@@ -30,7 +27,7 @@ const MAX_VERSIONS = 20
 // =============================================================================
 
 const listPagesSchema = z.object({
-  workspaceId: z.number(),
+  projectId: z.number(),
   parentId: z.number().nullable().optional(),
   includeUnpublished: z.boolean().default(false),
 })
@@ -40,12 +37,12 @@ const getPageSchema = z.object({
 })
 
 const getPageBySlugSchema = z.object({
-  workspaceId: z.number(),
+  projectId: z.number(),
   slug: z.string(),
 })
 
 const createPageSchema = z.object({
-  workspaceId: z.number(),
+  projectId: z.number(),
   parentId: z.number().nullable().optional(),
   title: z.string().min(1).max(255),
   content: z.string().default(''),
@@ -69,7 +66,7 @@ const deletePageSchema = z.object({
 })
 
 const reorderPagesSchema = z.object({
-  workspaceId: z.number(),
+  projectId: z.number(),
   pageOrders: z.array(z.object({
     id: z.number(),
     sortOrder: z.number(),
@@ -108,7 +105,7 @@ function generateSlug(title: string): string {
 
 async function ensureUniqueSlug(
   prisma: any,
-  workspaceId: number,
+  projectId: number,
   baseSlug: string,
   excludeId?: number
 ): Promise<string> {
@@ -116,9 +113,9 @@ async function ensureUniqueSlug(
   let counter = 1
 
   while (true) {
-    const existing = await prisma.workspaceWikiPage.findFirst({
+    const existing = await prisma.wikiPage.findFirst({
       where: {
-        workspaceId,
+        projectId,
         slug,
         ...(excludeId ? { NOT: { id: excludeId } } : {}),
       },
@@ -153,7 +150,7 @@ async function createVersion(
   changeNote?: string
 ): Promise<void> {
   // Get current max version
-  const maxVersion = await prisma.workspaceWikiVersion.aggregate({
+  const maxVersion = await prisma.projectWikiVersion.aggregate({
     where: { pageId },
     _max: { version: true },
   })
@@ -161,7 +158,7 @@ async function createVersion(
   const newVersion = (maxVersion._max.version ?? 0) + 1
 
   // Create new version
-  await prisma.workspaceWikiVersion.create({
+  await prisma.projectWikiVersion.create({
     data: {
       pageId,
       version: newVersion,
@@ -174,7 +171,7 @@ async function createVersion(
   })
 
   // Clean up old versions (keep only MAX_VERSIONS)
-  const oldVersions = await prisma.workspaceWikiVersion.findMany({
+  const oldVersions = await prisma.projectWikiVersion.findMany({
     where: { pageId },
     orderBy: { version: 'desc' },
     skip: MAX_VERSIONS,
@@ -182,7 +179,7 @@ async function createVersion(
   })
 
   if (oldVersions.length > 0) {
-    await prisma.workspaceWikiVersion.deleteMany({
+    await prisma.projectWikiVersion.deleteMany({
       where: {
         id: { in: oldVersions.map((v: { id: number }) => v.id) },
       },
@@ -191,20 +188,20 @@ async function createVersion(
 }
 
 // =============================================================================
-// Workspace Wiki Router
+// Project Wiki Router
 // =============================================================================
 
-export const workspaceWikiRouter = router({
+export const projectWikiRouter = router({
   /**
-   * List wiki pages in a workspace
+   * List wiki pages in a project
    * Optionally filter by parent to get children only
    */
   list: protectedProcedure
     .input(listPagesSchema)
     .query(async ({ ctx, input }) => {
-      const pages = await ctx.prisma.workspaceWikiPage.findMany({
+      const pages = await ctx.prisma.wikiPage.findMany({
         where: {
-          workspaceId: input.workspaceId,
+          projectId: input.projectId,
           ...(input.parentId !== undefined ? { parentId: input.parentId } : {}),
           ...(input.includeUnpublished ? {} : { status: 'PUBLISHED' }),
         },
@@ -236,13 +233,13 @@ export const workspaceWikiRouter = router({
     }),
 
   /**
-   * Get full page tree for a workspace
+   * Get full page tree for a project
    */
   getTree: protectedProcedure
-    .input(z.object({ workspaceId: z.number() }))
+    .input(z.object({ projectId: z.number() }))
     .query(async ({ ctx, input }) => {
-      const pages = await ctx.prisma.workspaceWikiPage.findMany({
-        where: { workspaceId: input.workspaceId },
+      const pages = await ctx.prisma.wikiPage.findMany({
+        where: { projectId: input.projectId },
         orderBy: [
           { sortOrder: 'asc' },
           { title: 'asc' },
@@ -266,11 +263,11 @@ export const workspaceWikiRouter = router({
   get: protectedProcedure
     .input(getPageSchema)
     .query(async ({ ctx, input }) => {
-      const page = await ctx.prisma.workspaceWikiPage.findUnique({
+      const page = await ctx.prisma.wikiPage.findUnique({
         where: { id: input.id },
         include: {
-          workspace: {
-            select: { id: true, name: true, slug: true },
+          project: {
+            select: { id: true, name: true, identifier: true },
           },
           parent: {
             select: { id: true, title: true, slug: true },
@@ -304,14 +301,14 @@ export const workspaceWikiRouter = router({
   getBySlug: protectedProcedure
     .input(getPageBySlugSchema)
     .query(async ({ ctx, input }) => {
-      const page = await ctx.prisma.workspaceWikiPage.findFirst({
+      const page = await ctx.prisma.wikiPage.findFirst({
         where: {
-          workspaceId: input.workspaceId,
+          projectId: input.projectId,
           slug: input.slug,
         },
         include: {
-          workspace: {
-            select: { id: true, name: true, slug: true },
+          project: {
+            select: { id: true, name: true, identifier: true },
           },
           parent: {
             select: { id: true, title: true, slug: true },
@@ -346,23 +343,23 @@ export const workspaceWikiRouter = router({
     .input(createPageSchema)
     .mutation(async ({ ctx, input }) => {
       const baseSlug = generateSlug(input.title)
-      const slug = await ensureUniqueSlug(ctx.prisma, input.workspaceId, baseSlug)
+      const slug = await ensureUniqueSlug(ctx.prisma, input.projectId, baseSlug)
 
       // Get max sort order
-      const maxOrder = await ctx.prisma.workspaceWikiPage.aggregate({
+      const maxOrder = await ctx.prisma.wikiPage.aggregate({
         where: {
-          workspaceId: input.workspaceId,
+          projectId: input.projectId,
           parentId: input.parentId ?? null,
         },
         _max: { sortOrder: true },
       })
 
       // Generate Graphiti group ID
-      const graphitiGroupId = `wiki-ws-${input.workspaceId}`
+      const graphitiGroupId = `wiki-proj-${input.projectId}`
 
-      const page = await ctx.prisma.workspaceWikiPage.create({
+      const page = await ctx.prisma.wikiPage.create({
         data: {
-          workspaceId: input.workspaceId,
+          projectId: input.projectId,
           parentId: input.parentId ?? null,
           title: input.title,
           slug,
@@ -396,7 +393,7 @@ export const workspaceWikiRouter = router({
   update: protectedProcedure
     .input(updatePageSchema)
     .mutation(async ({ ctx, input }) => {
-      const existing = await ctx.prisma.workspaceWikiPage.findUnique({
+      const existing = await ctx.prisma.wikiPage.findUnique({
         where: { id: input.id },
       })
 
@@ -417,7 +414,7 @@ export const workspaceWikiRouter = router({
       let slug = existing.slug
       if (input.title && input.title !== existing.title) {
         const baseSlug = generateSlug(input.title)
-        slug = await ensureUniqueSlug(ctx.prisma, existing.workspaceId, baseSlug, input.id)
+        slug = await ensureUniqueSlug(ctx.prisma, existing.projectId, baseSlug, input.id)
       }
 
       // Build update data
@@ -449,7 +446,7 @@ export const workspaceWikiRouter = router({
         updateData.sortOrder = input.sortOrder
       }
 
-      const page = await ctx.prisma.workspaceWikiPage.update({
+      const page = await ctx.prisma.wikiPage.update({
         where: { id: input.id },
         data: updateData,
       })
@@ -476,7 +473,7 @@ export const workspaceWikiRouter = router({
   delete: protectedProcedure
     .input(deletePageSchema)
     .mutation(async ({ ctx, input }) => {
-      const page = await ctx.prisma.workspaceWikiPage.findUnique({
+      const page = await ctx.prisma.wikiPage.findUnique({
         where: { id: input.id },
         include: { _count: { select: { children: true } } },
       })
@@ -489,7 +486,7 @@ export const workspaceWikiRouter = router({
       }
 
       // Delete recursively (children and versions will cascade)
-      await ctx.prisma.workspaceWikiPage.delete({
+      await ctx.prisma.wikiPage.delete({
         where: { id: input.id },
       })
 
@@ -504,7 +501,7 @@ export const workspaceWikiRouter = router({
     .mutation(async ({ ctx, input }) => {
       await ctx.prisma.$transaction(
         input.pageOrders.map((order) =>
-          ctx.prisma.workspaceWikiPage.update({
+          ctx.prisma.wikiPage.update({
             where: { id: order.id },
             data: {
               sortOrder: order.sortOrder,
@@ -527,7 +524,7 @@ export const workspaceWikiRouter = router({
   getVersions: protectedProcedure
     .input(getVersionsSchema)
     .query(async ({ ctx, input }) => {
-      const versions = await ctx.prisma.workspaceWikiVersion.findMany({
+      const versions = await ctx.prisma.projectWikiVersion.findMany({
         where: { pageId: input.pageId },
         orderBy: { version: 'desc' },
         take: input.limit,
@@ -561,7 +558,7 @@ export const workspaceWikiRouter = router({
   getVersion: protectedProcedure
     .input(getVersionSchema)
     .query(async ({ ctx, input }) => {
-      const version = await ctx.prisma.workspaceWikiVersion.findUnique({
+      const version = await ctx.prisma.projectWikiVersion.findUnique({
         where: {
           pageId_version: {
             pageId: input.pageId,
@@ -596,7 +593,7 @@ export const workspaceWikiRouter = router({
     .input(restoreVersionSchema)
     .mutation(async ({ ctx, input }) => {
       // Get the version to restore
-      const version = await ctx.prisma.workspaceWikiVersion.findUnique({
+      const version = await ctx.prisma.projectWikiVersion.findUnique({
         where: {
           pageId_version: {
             pageId: input.pageId,
@@ -613,7 +610,7 @@ export const workspaceWikiRouter = router({
       }
 
       // Get current page
-      const page = await ctx.prisma.workspaceWikiPage.findUnique({
+      const page = await ctx.prisma.wikiPage.findUnique({
         where: { id: input.pageId },
       })
 
@@ -628,11 +625,11 @@ export const workspaceWikiRouter = router({
       let slug = page.slug
       if (version.title !== page.title) {
         const baseSlug = generateSlug(version.title)
-        slug = await ensureUniqueSlug(ctx.prisma, page.workspaceId, baseSlug, page.id)
+        slug = await ensureUniqueSlug(ctx.prisma, page.projectId, baseSlug, page.id)
       }
 
       // Update page with version content
-      const updatedPage = await ctx.prisma.workspaceWikiPage.update({
+      const updatedPage = await ctx.prisma.wikiPage.update({
         where: { id: input.pageId },
         data: {
           title: version.title,
@@ -666,11 +663,11 @@ export const workspaceWikiRouter = router({
    * Get pages that need Graphiti sync
    */
   getPendingSync: protectedProcedure
-    .input(z.object({ workspaceId: z.number(), limit: z.number().default(50) }))
+    .input(z.object({ projectId: z.number(), limit: z.number().default(50) }))
     .query(async ({ ctx, input }) => {
-      const pages = await ctx.prisma.workspaceWikiPage.findMany({
+      const pages = await ctx.prisma.wikiPage.findMany({
         where: {
-          workspaceId: input.workspaceId,
+          projectId: input.projectId,
           graphitiSynced: false,
         },
         take: input.limit,
@@ -694,7 +691,7 @@ export const workspaceWikiRouter = router({
   markSynced: protectedProcedure
     .input(z.object({ pageId: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      await ctx.prisma.workspaceWikiPage.update({
+      await ctx.prisma.wikiPage.update({
         where: { id: input.pageId },
         data: {
           graphitiSynced: true,
