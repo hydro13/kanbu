@@ -2,8 +2,8 @@
 
 > **Laatst bijgewerkt:** 2026-01-12
 > **Huidige fase:** Fase 14 - AI Provider Configuration (multi-environment support)
-> **Sub-fase:** 14.0 Research ✅ | 14.1 Database ✅ | 14.2 Admin UI ✅ COMPLEET
-> **Volgende actie:** Fase 14.3 Provider Abstraction Layer implementatie
+> **Sub-fase:** 14.0 Research ✅ | 14.1 Database ✅ | 14.2 Admin UI ✅ | 14.3 Abstraction ✅ COMPLEET
+> **Volgende actie:** Fase 14.4 Workspace & Project Overrides
 
 ---
 
@@ -691,15 +691,15 @@ export function createVisionProvider(config: AiProviderConfig): VisionProvider |
 
 | Item | Status | Notities |
 |------|--------|----------|
-| AiProvider interface | ❌ | Base interface |
-| EmbeddingProvider interface | ❌ | Vector embeddings voor Wiki search |
-| ReasoningProvider interface | ❌ | Entity extraction voor Graphiti |
-| VisionProvider interface | ❌ | Image understanding (optioneel) |
-| **OpenAiProvider** | ❌ | Bestaande code refactoren |
-| **OllamaProvider** | ❌ | OpenAI-compatible op :11434/v1 |
-| **LmStudioProvider** | ❌ | OpenAI-compatible op :1234/v1 |
-| Provider factory | ❌ | createProvider() functie |
-| Provider registry | ❌ | Singleton met active providers |
+| AiProvider interface | ✅ | Base interface in types.ts |
+| EmbeddingProvider interface | ✅ | embed(), embedBatch(), getDimensions() |
+| ReasoningProvider interface | ✅ | extractEntities(), summarize(), chat(), stream() |
+| VisionProvider interface | ✅ | describeImage(), extractTextFromImage() |
+| **OpenAiProvider** | ✅ | Volledige implementatie met SDK |
+| **OllamaProvider** | ✅ | OpenAI-compatible + native /api/tags fallback |
+| **LmStudioProvider** | ✅ | OpenAI-compatible op :1234/v1 |
+| Provider factory | ✅ | createProvider(), createEmbeddingProvider(), etc. |
+| Provider registry | ✅ | Singleton met scope resolution + caching |
 
 **Provider Implementatie Details:**
 
@@ -919,7 +919,7 @@ jobs:
 | ↳ 14.0.5 LM Studio | ✅ | GUI alternatief voor Ollama → **GESELECTEERD** |
 | **14.1 Database** | ✅ | AiProviderConfig model + seed script |
 | **14.2 Admin UI** | ✅ | System Settings > AI Systems pagina |
-| 14.3 Abstraction | ❌ | Provider interfaces + implementaties |
+| **14.3 Abstraction** | ✅ | Provider interfaces + 3 implementaties |
 | 14.4 Overrides | ❌ | Workspace/Project level configuratie |
 | 14.5 Testing | ❌ | Unit + integration + E2E tests |
 
@@ -1177,3 +1177,12 @@ cat ~/genx/v6/dev/kanbu/docs/WIKI-base/GRAPHITI-IMPLEMENTATIE.md
 | 2026-01-12 | Create/Edit modals voor provider configuratie |
 | 2026-01-12 | AI Systems menu item toegevoegd aan AdminSidebar |
 | 2026-01-12 | Route /admin/settings/ai toegevoegd aan App.tsx |
+| 2026-01-12 | **Fase 14.3 Provider Abstraction Layer COMPLEET** |
+| 2026-01-12 | types.ts met AiProvider, EmbeddingProvider, ReasoningProvider, VisionProvider interfaces |
+| 2026-01-12 | OpenAiCompatibleProvider base class voor gedeelde OpenAI-compatible functionaliteit |
+| 2026-01-12 | OpenAiProvider implementatie (cloud, alle capabilities) |
+| 2026-01-12 | OllamaProvider implementatie (local, met native /api/tags fallback) |
+| 2026-01-12 | LmStudioProvider implementatie (local/desktop GUI) |
+| 2026-01-12 | factory.ts met createProvider(), createEmbeddingProvider(), etc. |
+| 2026-01-12 | registry.ts met ProviderRegistry singleton en scope resolution |
+| 2026-01-12 | Barrel export via lib/ai/providers/index.ts |
