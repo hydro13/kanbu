@@ -1,6 +1,6 @@
 /*
  * Workspace Wiki Page
- * Version: 2.3.0
+ * Version: 2.4.0
  *
  * Shows the workspace wiki/knowledge base with:
  * - Sidebar navigation (page tree)
@@ -9,6 +9,7 @@
  * - Version history
  * - Temporal search (what did we know at time X?)
  * - Ask the Wiki (RAG chat with AI)
+ * - Background indexing during idle time
  *
  * ===================================================================
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
@@ -31,6 +32,9 @@
  *         - Graph → Ask (onAskAboutNode)
  *         - Ask → Page navigation (onNavigateToPage)
  *         - Sidebar/PageView Ask Wiki buttons
+ *
+ * Modified: 2026-01-12
+ * Change: Fase 15.5 - Added background indexing with useWikiBackgroundIndexing hook
  * ===================================================================
  */
 
@@ -62,6 +66,7 @@ import { RichTextEditor, type WikiPage as WikiPageForLink, type TaskResult, type
 import { trpc } from '@/lib/trpc'
 import { useAppSelector } from '@/store'
 import { selectUser } from '@/store/authSlice'
+import { useWikiBackgroundIndexing } from '@/hooks/useWikiBackgroundIndexing'
 import { BookOpen, Plus, ArrowLeft } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
@@ -150,6 +155,14 @@ export function WorkspaceWikiPage() {
     { enabled: !!slug }
   )
   const workspace = workspaceQuery.data
+
+  // Background indexing - runs during idle time (Fase 15.5)
+  useWikiBackgroundIndexing({
+    workspaceId: workspace?.id ?? 0,
+    enabled: !!workspace?.id,
+    idleThreshold: 30_000, // 30 seconds
+    cooldown: 5 * 60 * 1000, // 5 minutes
+  })
 
   // Fetch wiki pages list
   const pagesQuery = trpc.workspaceWiki.list.useQuery(

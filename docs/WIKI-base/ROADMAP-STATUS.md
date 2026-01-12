@@ -2,9 +2,9 @@
 
 > **Laatst bijgewerkt:** 2026-01-12
 > **Huidige fase:** Fase 15 - Wiki Intelligence
-> **Sub-fase:** 15.1 Provider Koppeling ✅ | 15.2 Semantic Search ✅ | 15.3 Ask the Wiki ✅ | 15.4 Enhanced Graphs ✅ | 15.5 Integration
+> **Sub-fase:** 15.1 ✅ | 15.2 ✅ | 15.3 ✅ | 15.4 ✅ | 15.5 Integration 🔄 (11/16)
 > **Vorige fase:** Fase 14 - AI Provider Configuration ✅ COMPLEET
-> **Volgende actie:** 15.5 Integration (UI polish, performance, final testing)
+> **Volgende actie:** 15.5 Analytics & Testing (5 remaining items)
 
 ---
 
@@ -1365,16 +1365,16 @@ Beantwoord nu de vraag van de gebruiker.`
 | **UI Integration** | | |
 | WikiPageView integratie | ✅ | Ask Wiki button in toolbar + dropdown "Ask about this page" |
 | WikiSidebar integratie | ✅ | Ask Wiki toggle button (violet themed) |
-| Context menu | ❌ | Rechtermuisklik → "Ask about this" |
+| Context menu | ✅ | Rechtermuisklik → "Ask about this" (WikiPageView v1.2.0) |
 | **Cross-Feature Links** | | |
 | Search → Graph | ✅ | "Show in graph" button in ResultItem |
 | Graph → Ask | ✅ | "Ask about" button in NodeHoverCard |
 | Ask → Sources → Page | ✅ | onNavigateToPage callback + in-app navigation |
 | **Performance** | | |
 | Embedding caching | ✅ | checkEmbeddingStatus + storePageEmbeddingIfChanged (content hash) |
-| Lazy loading graph | ❌ | Load nodes on demand |
+| Lazy loading graph | ✅ | Progressive loading met nodeLimit (default 100), sorted by connections |
 | Debounced search | ✅ | WikiSearchDialog: 300ms debounce op graph/semantic search |
-| Background indexing | ❌ | Re-index bij idle |
+| Background indexing | ✅ | useWikiBackgroundIndexing hook (30s idle, 5min cooldown) + reindexEmbeddings tRPC |
 | **Analytics** | | |
 | Search analytics | ❌ | Wat zoeken users? |
 | Ask Wiki analytics | ❌ | Welke vragen worden gesteld? |
@@ -1395,7 +1395,7 @@ Beantwoord nu de vraag van de gebruiker.`
 | **15.2 Semantic Search** | ✅ | Backend (Qdrant) + Frontend (SearchModes) |
 | **15.3 Ask the Wiki** | ✅ | RAG Chat met bronnen (WikiRagService + AskWikiDialog) |
 | **15.4 Enhanced Graphs** | ✅ | WikiGraphView v3.0.0 - Alle features behalve Share URL |
-| **15.5 Integration** | 🔄 | UI + Cross-links + Performance (8/16), Analytics & Testing pending |
+| **15.5 Integration** | 🔄 | UI + Cross-links + Performance (11/16) ✅, Analytics & Testing pending |
 
 **Totaal items:** ~60 taken verdeeld over 5 sub-fases
 

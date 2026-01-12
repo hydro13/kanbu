@@ -1,6 +1,6 @@
 /*
  * Wiki Graph View Component
- * Version: 3.1.1
+ * Version: 3.2.0
  *
  * D3.js force-directed graph visualization for wiki knowledge graph.
  * Shows wiki pages, entities, and their relationships.
@@ -40,6 +40,9 @@
  *
  * Modified: 2026-01-12
  * Change: Fixed hover card interaction - card stays open when mouse moves to it
+ *
+ * Modified: 2026-01-12
+ * Change: Fase 15.5 - Added progressive loading with node limit for large graphs
  * ===================================================================
  */
 
@@ -855,6 +858,9 @@ export function WikiGraphView({
     showClusters: false,
   })
 
+  // Progressive loading - start with limited nodes for performance
+  const [nodeLimit, setNodeLimit] = useState<number | null>(100) // null = show all
+
   // Fetch graph data
   const groupId = `wiki-ws-${workspaceId}`
   const { data: graphData, isLoading, error } = trpc.graphiti.getGraph.useQuery(
@@ -882,7 +888,7 @@ export function WikiGraphView({
 
   // Process graph data with filters
   const processedData = useMemo(() => {
-    if (!graphData) return { nodes: [], edges: [], nodeStats: {} as Record<GraphNode['type'], number> }
+    if (!graphData) return { nodes: [], edges: [], nodeStats: {} as Record<GraphNode['type'], number>, totalNodesBeforeLimit: 0 }
 
     // Calculate node stats
     const nodeStats: Record<GraphNode['type'], number> = {
@@ -951,6 +957,15 @@ export function WikiGraphView({
       })
     }
 
+    // Track total before limiting (for UI message)
+    const totalNodesBeforeLimit = nodes.length
+
+    // Apply node limit for performance (sort by connections first)
+    if (nodeLimit !== null && nodes.length > nodeLimit) {
+      nodes = [...nodes].sort((a, b) => (b.connectionCount || 0) - (a.connectionCount || 0))
+      nodes = nodes.slice(0, nodeLimit)
+    }
+
     // Filter edges to only include visible nodes
     const nodeIds = new Set(nodes.map(n => n.id))
     const edges: GraphEdge[] = graphData.edges
@@ -968,8 +983,8 @@ export function WikiGraphView({
       })
     }
 
-    return { nodes, edges, nodeStats }
-  }, [graphData, filters, searchQuery, pathNodes])
+    return { nodes, edges, nodeStats, totalNodesBeforeLimit }
+  }, [graphData, filters, searchQuery, pathNodes, nodeLimit])
 
   // Handle node click
   const handleNodeClick = useCallback((node: GraphNode) => {
@@ -1592,6 +1607,20 @@ export function WikiGraphView({
               )}
             </DropdownMenuContent>
           </DropdownMenu>
+
+          {/* Node Limit Badge */}
+          {nodeLimit !== null && processedData.totalNodesBeforeLimit > nodeLimit && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 bg-amber-100/80 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/50 text-xs px-2"
+              onClick={() => setNodeLimit(null)}
+              title="Click to show all nodes"
+            >
+              {processedData.nodes.length}/{processedData.totalNodesBeforeLimit} nodes
+              <span className="ml-1 text-[10px]">(show all)</span>
+            </Button>
+          )}
 
           {/* Layout Dropdown */}
           <DropdownMenu>

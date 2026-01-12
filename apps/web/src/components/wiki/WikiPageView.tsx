@@ -1,6 +1,6 @@
 /*
  * Wiki Page View Component
- * Version: 1.1.0
+ * Version: 1.2.0
  *
  * Displays a single wiki page with view/edit mode toggle.
  * Integrates Lexical RichTextEditor for content editing.
@@ -13,6 +13,9 @@
  *
  * Modified: 2026-01-12
  * Change: Added BacklinksPanel for Fase 3 Graphiti integration
+ *
+ * Modified: 2026-01-12
+ * Change: Fase 15.5 - Added context menu with "Ask about this" for selected text
  * ===================================================================
  */
 
@@ -210,6 +213,14 @@ export function WikiPageView({
   const [editedContentJson, setEditedContentJson] = useState(page.contentJson || '')
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
 
+  // Context menu state
+  const [contextMenu, setContextMenu] = useState<{
+    x: number
+    y: number
+    selectedText: string
+  } | null>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
+
   const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null)
   const lastSavedRef = useRef({ title: page.title, contentJson: page.contentJson })
 
@@ -306,6 +317,53 @@ export function WikiPageView({
     }
     setIsEditing(false)
   }
+
+  // Handle right-click context menu
+  const handleContextMenu = useCallback((e: React.MouseEvent) => {
+    // Only show context menu in view mode (not editing) and when Ask is available
+    if (isEditing || !onAskAboutPage) return
+
+    const selection = window.getSelection()
+    const selectedText = selection?.toString().trim()
+
+    // Only show menu if there's selected text
+    if (selectedText && selectedText.length > 0) {
+      e.preventDefault()
+      setContextMenu({
+        x: e.clientX,
+        y: e.clientY,
+        selectedText,
+      })
+    }
+  }, [isEditing, onAskAboutPage])
+
+  // Handle context menu action
+  const handleAskAboutSelection = useCallback(() => {
+    if (contextMenu?.selectedText && onAskAboutPage) {
+      onAskAboutPage(
+        `Geselecteerde tekst: "${contextMenu.selectedText}"`,
+        contextMenu.selectedText
+      )
+    }
+    setContextMenu(null)
+  }, [contextMenu, onAskAboutPage])
+
+  // Close context menu on click outside
+  useEffect(() => {
+    const handleClick = () => setContextMenu(null)
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setContextMenu(null)
+    }
+
+    if (contextMenu) {
+      document.addEventListener('click', handleClick)
+      document.addEventListener('keydown', handleKeyDown)
+      return () => {
+        document.removeEventListener('click', handleClick)
+        document.removeEventListener('keydown', handleKeyDown)
+      }
+    }
+  }, [contextMenu])
 
   return (
     <div className="flex flex-col h-full">
@@ -464,7 +522,11 @@ export function WikiPageView({
       </div>
 
       {/* Content + Backlinks */}
-      <div className="flex-1 min-h-0 overflow-y-auto">
+      <div
+        ref={contentRef}
+        className="flex-1 min-h-0 overflow-y-auto relative"
+        onContextMenu={handleContextMenu}
+      >
         {/* Key excludes updatedAt to prevent editor remount on auto-save refetch */}
         <RichTextEditor
           key={`${page.id}-${isEditing}`}
@@ -496,6 +558,25 @@ export function WikiPageView({
             pageId={page.id}
             basePath={basePath}
           />
+        )}
+
+        {/* Context Menu for text selection */}
+        {contextMenu && (
+          <div
+            className="fixed z-50 min-w-[160px] bg-popover text-popover-foreground shadow-lg rounded-md border py-1 animate-in fade-in-0 zoom-in-95"
+            style={{
+              left: contextMenu.x,
+              top: contextMenu.y,
+            }}
+          >
+            <button
+              className="flex w-full items-center px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+              onClick={handleAskAboutSelection}
+            >
+              <Sparkles className="h-4 w-4 mr-2 text-violet-500" />
+              Ask about this
+            </button>
+          </div>
         )}
       </div>
     </div>

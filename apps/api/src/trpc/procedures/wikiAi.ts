@@ -1,20 +1,25 @@
 /**
  * Wiki AI Procedures
- * Version: 1.2.0
+ * Version: 1.3.0
  *
  * tRPC procedures for Wiki AI features.
  * Provides access to embeddings, entity extraction, text operations,
- * semantic search, and RAG chat for Wiki pages using configured AI providers.
+ * semantic search, RAG chat, and background indexing for Wiki pages
+ * using configured AI providers.
  *
  * Fase: 15.1 - Provider Koppeling
  * Fase: 15.2 - Semantic Search
  * Fase: 15.3 - Ask the Wiki (RAG Chat)
+ * Fase: 15.5 - Background Indexing
  *
  * =============================================================================
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
  * Claude Code: Opus 4.5
  * Host: MAX
  * Date: 2026-01-12
+ *
+ * Modified: 2026-01-12
+ * Change: Added reindexEmbeddings procedure for background indexing
  * =============================================================================
  */
 
@@ -25,6 +30,7 @@ import { permissionService } from '../../services'
 import {
   getWikiAiService,
   getWikiRagService,
+  getWikiEmbeddingService,
   WikiAiError,
   type WikiContext,
 } from '../../lib/ai/wiki'
@@ -129,6 +135,14 @@ const conversationIdSchema = z.object({
 const listConversationsSchema = z.object({
   workspaceId: z.number(),
   projectId: z.number().optional(),
+})
+
+// Reindex embeddings schema (Fase 15.5)
+const reindexEmbeddingsSchema = z.object({
+  workspaceId: z.number(),
+  projectId: z.number().optional(),
+  groupId: z.string().optional(),
+  forceReindex: z.boolean().optional().default(false),
 })
 
 // =============================================================================
@@ -725,6 +739,139 @@ export const wikiAiRouter = router({
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: error instanceof Error ? error.message : 'Ask Wiki Stream failed',
+        })
+      }
+    }),
+
+  // ===========================================================================
+  // Background Indexing (Fase 15.5)
+  // ===========================================================================
+
+  /**
+   * Reindex wiki page embeddings
+   *
+   * Fetches all wiki pages and updates embeddings only for pages
+   * where content has changed (using content hash comparison).
+   * This is designed to be called during idle time for background indexing.
+   *
+   * Returns statistics on stored vs skipped pages.
+   */
+  reindexEmbeddings: protectedProcedure
+    .input(reindexEmbeddingsSchema)
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.user!.id
+
+      // Verify access
+      await verifyWorkspaceAccess(userId, input.workspaceId)
+
+      const embeddingService = getWikiEmbeddingService(ctx.prisma)
+      const context: WikiContext = {
+        workspaceId: input.workspaceId,
+        projectId: input.projectId,
+      }
+
+      const stats = {
+        totalPages: 0,
+        stored: 0,
+        skipped: 0,
+        errors: 0,
+      }
+
+      try {
+        // Fetch all wiki pages for the workspace/project
+        const pages = input.projectId
+          ? await ctx.prisma.wikiPage.findMany({
+              where: {
+                projectId: input.projectId,
+                ...(input.groupId ? { graphitiGroupId: input.groupId } : {}),
+              },
+              select: {
+                id: true,
+                title: true,
+                content: true,
+                graphitiGroupId: true,
+              },
+            })
+          : await ctx.prisma.workspaceWikiPage.findMany({
+              where: {
+                workspaceId: input.workspaceId,
+                ...(input.groupId ? { graphitiGroupId: input.groupId } : {}),
+              },
+              select: {
+                id: true,
+                title: true,
+                content: true,
+                graphitiGroupId: true,
+              },
+            })
+
+        stats.totalPages = pages.length
+
+        // Process each page
+        for (const page of pages) {
+          try {
+            // Use workspace-based groupId if no graphiti groupId set
+            const groupId = page.graphitiGroupId ?? `workspace-${input.workspaceId}`
+
+            if (input.forceReindex) {
+              // Force reindex - always store
+              const success = await embeddingService.storePageEmbedding(
+                context,
+                page.id,
+                page.title,
+                page.content,
+                groupId
+              )
+              if (success) {
+                stats.stored++
+              } else {
+                stats.errors++
+              }
+            } else {
+              // Conditional reindex - only if content changed
+              const result = await embeddingService.storePageEmbeddingIfChanged(
+                context,
+                page.id,
+                page.title,
+                page.content,
+                groupId
+              )
+
+              switch (result) {
+                case 'stored':
+                  stats.stored++
+                  break
+                case 'skipped':
+                  stats.skipped++
+                  break
+                case 'error':
+                  stats.errors++
+                  break
+              }
+            }
+          } catch (pageError) {
+            console.error(
+              `[wikiAi.reindexEmbeddings] Error processing page ${page.id}:`,
+              pageError instanceof Error ? pageError.message : pageError
+            )
+            stats.errors++
+          }
+        }
+
+        console.log(
+          `[wikiAi.reindexEmbeddings] Completed for workspace ${input.workspaceId}` +
+          (input.projectId ? ` project ${input.projectId}` : '') +
+          `: ${stats.stored} stored, ${stats.skipped} skipped, ${stats.errors} errors`
+        )
+
+        return {
+          success: true,
+          stats,
+        }
+      } catch (error) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: error instanceof Error ? error.message : 'Reindex embeddings failed',
         })
       }
     }),

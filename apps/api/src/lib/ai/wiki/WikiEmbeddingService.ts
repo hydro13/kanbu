@@ -402,11 +402,12 @@ export class WikiEmbeddingService {
         with_payload: true,
       })
 
-      if (points.length === 0) {
+      const point = points[0]
+      if (!point) {
         return { needsUpdate: true, hasEmbedding: false }
       }
 
-      const storedHash = points[0].payload?.contentHash as string
+      const storedHash = point.payload?.contentHash as string
       const currentHash = this.hashContent(content)
 
       return {
