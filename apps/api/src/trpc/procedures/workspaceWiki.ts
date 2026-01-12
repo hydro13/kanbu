@@ -21,6 +21,7 @@ import { z } from 'zod'
 import { TRPCError } from '@trpc/server'
 import { router, protectedProcedure } from '../router'
 import type { WikiPageStatus } from '@prisma/client'
+import { getGraphitiService } from '../../services/graphitiService'
 
 // Max versions to keep per page
 const MAX_VERSIONS = 20
@@ -387,6 +388,25 @@ export const workspaceWikiRouter = router({
         'Initial version'
       )
 
+      // Sync to Graphiti knowledge graph (async, don't block response)
+      getGraphitiService().syncWikiPage({
+        pageId: page.id,
+        title: page.title,
+        content: page.content,
+        workspaceId: input.workspaceId,
+        groupId: graphitiGroupId,
+        userId: ctx.user.id,
+        timestamp: new Date(),
+      }).then(() => {
+        // Mark as synced
+        ctx.prisma.workspaceWikiPage.update({
+          where: { id: page.id },
+          data: { graphitiSynced: true, graphitiSyncedAt: new Date() },
+        }).catch(console.error)
+      }).catch(err => {
+        console.error('[workspaceWiki.create] Graphiti sync failed:', err.message)
+      })
+
       return page
     }),
 
@@ -465,6 +485,24 @@ export const workspaceWikiRouter = router({
           ctx.user.id,
           input.changeNote
         )
+
+        // Sync to Graphiti knowledge graph (async, don't block response)
+        getGraphitiService().syncWikiPage({
+          pageId: page.id,
+          title: page.title,
+          content: page.content,
+          workspaceId: existing.workspaceId,
+          groupId: existing.graphitiGroupId ?? `wiki-ws-${existing.workspaceId}`,
+          userId: ctx.user.id,
+          timestamp: new Date(),
+        }).then(() => {
+          ctx.prisma.workspaceWikiPage.update({
+            where: { id: page.id },
+            data: { graphitiSynced: true, graphitiSyncedAt: new Date() },
+          }).catch(console.error)
+        }).catch(err => {
+          console.error('[workspaceWiki.update] Graphiti sync failed:', err.message)
+        })
       }
 
       return page
@@ -491,6 +529,11 @@ export const workspaceWikiRouter = router({
       // Delete recursively (children and versions will cascade)
       await ctx.prisma.workspaceWikiPage.delete({
         where: { id: input.id },
+      })
+
+      // Remove from Graphiti knowledge graph (async)
+      getGraphitiService().deleteWikiPage(input.id).catch(err => {
+        console.error('[workspaceWiki.delete] Graphiti delete failed:', err.message)
       })
 
       return { success: true, deletedId: input.id }

@@ -1,11 +1,14 @@
-# Kanbu Development Database
+# Kanbu Development Services
 #
 # Usage:
 #   cd docker
 #   docker compose up -d
 #
-# This creates a persistent PostgreSQL database for local development.
-# Data is stored in a named volume that survives container restarts.
+# Services:
+#   - PostgreSQL: Main database
+#   - FalkorDB: Graph database for Wiki knowledge graph (Graphiti)
+#
+# Data is stored in named volumes that survive container restarts.
 
 services:
   postgres:
@@ -26,6 +29,25 @@ services:
       timeout: 5s
       retries: 5
 
+  # FalkorDB - Graph database for Graphiti (Wiki knowledge graph)
+  # Docs: https://docs.falkordb.com/
+  falkordb:
+    image: falkordb/falkordb:latest
+    container_name: kanbu-falkordb
+    restart: unless-stopped
+    ports:
+      - "6379:6379"   # Redis protocol
+      - "3000:3000"   # FalkorDB Browser UI
+    volumes:
+      - kanbu-falkordb-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   kanbu-postgres-data:
     name: kanbu-postgres-data
+  kanbu-falkordb-data:
+    name: kanbu-falkordb-data
