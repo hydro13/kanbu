@@ -1,9 +1,10 @@
 # Wiki Implementation Roadmap & Status
 
 > **Laatst bijgewerkt:** 2026-01-12
-> **Huidige fase:** Fase 14 - AI Provider Configuration ✅ **COMPLEET**
-> **Sub-fase:** 14.0 Research ✅ | 14.1 Database ✅ | 14.2 Admin UI ✅ | 14.3 Abstraction ✅ | 14.4 Overrides ✅ | 14.5 Testing ✅
-> **Volgende actie:** Fase 15 - Wiki AI Integration (embeddings + RAG)
+> **Huidige fase:** Fase 15 - Wiki Intelligence 🆕
+> **Sub-fase:** 15.1 Provider Koppeling | 15.2 Semantic Search | 15.3 Ask the Wiki | 15.4 Enhanced Graphs | 15.5 Integration
+> **Vorige fase:** Fase 14 - AI Provider Configuration ✅ COMPLEET
+> **Volgende actie:** Start met 15.1 Provider Koppeling (Fase 14 → Graphiti bridge)
 
 ---
 
@@ -993,6 +994,385 @@ jobs:
 
 ---
 
+## Fase 15: Wiki Intelligence 🆕
+
+> **Doel:** De volledige visie van "een wiki die zichzelf schrijft" realiseren door AI-powered search, Q&A, en enhanced graph visualization.
+> **Afhankelijkheid:** Fase 14 (AI Providers) moet compleet zijn ✅
+> **Drie Pijlers:** Semantic Search + Ask the Wiki + Enhanced Graphs
+
+### Overzicht
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  FASE 15: Wiki Intelligence                                      │
+│                                                                  │
+│  ┌───────────────┐  ┌───────────────┐  ┌───────────────────────┐│
+│  │ 15.2 Semantic │  │ 15.3 Ask the  │  │ 15.4 Enhanced         ││
+│  │     Search    │  │     Wiki      │  │     Graphs            ││
+│  │               │  │               │  │                       ││
+│  │ • Embeddings  │  │ • RAG Chat    │  │ • Filtering           ││
+│  │ • Hybrid      │  │ • Sources     │  │ • Clustering          ││
+│  │ • UI          │  │ • History     │  │ • Path finding        ││
+│  └───────────────┘  └───────────────┘  └───────────────────────┘│
+│                            │                                     │
+│                    15.1 Provider Koppeling                       │
+│                    (Fase 14 → Graphiti)                          │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 15.1 Provider Koppeling (Foundation)
+
+> **Doel:** Fase 14 AI Providers verbinden met Graphiti zodat workspace-specifieke configuratie wordt gebruikt.
+
+**Probleem:** De Python Graphiti service gebruikt nu hardcoded `OPENAI_API_KEY` uit `.env`. Dit moet de geconfigureerde provider uit Fase 14 worden.
+
+| Item | Status | Notities |
+|------|--------|----------|
+| **Backend Service** | | |
+| WikiAiService class aanmaken | ❌ | `lib/ai/wiki/WikiAiService.ts` |
+| getEmbeddingProvider(workspaceId) | ❌ | Haalt effective provider via registry |
+| getReasoningProvider(workspaceId) | ❌ | Voor entity extraction, summarization |
+| Provider caching per workspace | ❌ | Voorkom herhaalde DB lookups |
+| **Graphiti Integratie** | | |
+| graphitiService.ts updaten | ❌ | Inject provider i.p.v. hardcoded OpenAI |
+| Embedding via provider | ❌ | `provider.embed()` i.p.v. Python service |
+| Entity extraction via provider | ❌ | `provider.extractEntities()` |
+| Fallback naar Python service | ❌ | Als Node provider faalt |
+| **tRPC Endpoints** | | |
+| wiki.getEffectiveProvider | ❌ | Toont welke provider actief is voor wiki |
+| wiki.testProvider | ❌ | Test embedding + reasoning voor workspace |
+
+**Architectuur:**
+
+```typescript
+// lib/ai/wiki/WikiAiService.ts
+export class WikiAiService {
+  constructor(private registry: ProviderRegistry) {}
+
+  async getEmbeddings(workspaceId: number, texts: string[]): Promise<number[][]> {
+    const provider = await this.registry.getEmbeddingProvider({ workspaceId })
+    return provider.embedBatch(texts)
+  }
+
+  async extractEntities(workspaceId: number, text: string): Promise<Entity[]> {
+    const provider = await this.registry.getReasoningProvider({ workspaceId })
+    return provider.extractEntities(text, ['WikiPage', 'Task', 'User', 'Concept'])
+  }
+}
+```
+
+---
+
+### 15.2 Semantic Search
+
+> **Doel:** Zoeken op betekenis i.p.v. exacte keywords. "Find pages about authentication" vindt ook "OAuth2", "JWT", "Login flow".
+
+| Item | Status | Notities |
+|------|--------|----------|
+| **Backend** | | |
+| wiki.semanticSearch endpoint | ❌ | Query → embedding → vector search |
+| Hybrid search (BM25 + vector) | ❌ | Combineer keyword + semantic |
+| Search result ranking | ❌ | Score gebaseerd op relevantie |
+| Cross-wiki search | ❌ | Zoek over workspace + project wiki's |
+| Search caching | ❌ | Cache frequent queries |
+| **Frontend** | | |
+| WikiSemanticSearchDialog.tsx | ❌ | Nieuwe search dialog |
+| Search mode toggle | ❌ | Text / Semantic / Hybrid switch |
+| Search result preview | ❌ | Snippet met highlighted matches |
+| "More like this" button | ❌ | Vind vergelijkbare pages |
+| Recent searches | ❌ | Opslaan in localStorage |
+| **Integratie** | | |
+| Cmd+K semantic search | ❌ | CommandPalette integratie |
+| WikiSidebar search | ❌ | Quick search in sidebar |
+
+**Search Flow:**
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  User Query: "how does authentication work"                      │
+│                              │                                   │
+│                              ▼                                   │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │ 1. Query → Embedding (via Fase 14 provider)             │    │
+│  │    "how does authentication work" → [0.12, -0.34, ...]  │    │
+│  └─────────────────────────────────────────────────────────┘    │
+│                              │                                   │
+│                              ▼                                   │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │ 2. Vector Search (FalkorDB)                             │    │
+│  │    Find nodes with similar embeddings                   │    │
+│  │    + BM25 text search for keyword boost                 │    │
+│  └─────────────────────────────────────────────────────────┘    │
+│                              │                                   │
+│                              ▼                                   │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │ 3. Results                                              │    │
+│  │    • Authentication Flow (0.92)                         │    │
+│  │    • OAuth2 Setup Guide (0.87)                          │    │
+│  │    • JWT Token Management (0.84)                        │    │
+│  │    • Login Component (0.79)                             │    │
+│  └─────────────────────────────────────────────────────────┘    │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 15.3 Ask the Wiki (RAG Chat)
+
+> **Doel:** Natural language Q&A over wiki content met bronvermelding. "Hoe werkt onze authenticatie?" → Antwoord + bronnen.
+
+| Item | Status | Notities |
+|------|--------|----------|
+| **RAG Pipeline** | | |
+| Context retrieval | ❌ | Semantic search voor relevante chunks |
+| Context ranking | ❌ | Top-K meest relevante passages |
+| Context formatting | ❌ | Markdown chunks voor LLM |
+| Prompt template | ❌ | System prompt met instructies |
+| Answer generation | ❌ | Via reasoning provider |
+| Source extraction | ❌ | Welke pages gebruikt voor antwoord |
+| **Backend Endpoints** | | |
+| wiki.askWiki | ❌ | Vraag stellen aan wiki |
+| wiki.askWikiStream | ❌ | Streaming antwoord |
+| wiki.getConversation | ❌ | Conversatie history ophalen |
+| wiki.clearConversation | ❌ | History wissen |
+| **Frontend Components** | | |
+| AskWikiDialog.tsx | ❌ | Modal met chat interface |
+| AskWikiPanel.tsx | ❌ | Sidebar panel variant |
+| ChatMessage.tsx | ❌ | User/AI message bubbles |
+| SourceCitation.tsx | ❌ | Klikbare bronvermelding |
+| StreamingResponse.tsx | ❌ | Typing indicator + streaming |
+| ConversationHistory.tsx | ❌ | Eerdere vragen tonen |
+| **Features** | | |
+| Follow-up questions | ❌ | Context behouden in gesprek |
+| "Show me the source" | ❌ | Direct naar wiki page navigeren |
+| Copy answer | ❌ | Kopieer naar clipboard |
+| Feedback (👍/👎) | ❌ | Answer quality tracking |
+| Scope selector | ❌ | Workspace / Project / Alles |
+
+**UI Mockup:**
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  🔮 Ask the Wiki                                          [×]   │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  Scope: [Workspace: GenX ▾]                                     │
+│                                                                  │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │ 👤 Hoe werkt onze authenticatie?                        │    │
+│  └─────────────────────────────────────────────────────────┘    │
+│                                                                  │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │ 🤖 Jullie applicatie gebruikt OAuth2 voor               │    │
+│  │    authenticatie. Het proces werkt als volgt:           │    │
+│  │                                                          │    │
+│  │    1. Gebruiker klikt op "Login with Google"            │    │
+│  │    2. Na consent wordt een JWT token gegenereerd        │    │
+│  │    3. Token wordt opgeslagen voor sessie management     │    │
+│  │                                                          │    │
+│  │    De implementatie is gedaan door @robin in sprint 23. │    │
+│  │                                                          │    │
+│  │    📚 Bronnen:                                          │    │
+│  │    • [Authentication Flow](wiki/auth-flow) ←            │    │
+│  │    • [Security Guidelines](wiki/security)               │    │
+│  │    • [JWT Token Refresh](wiki/jwt-refresh)              │    │
+│  │                                                          │    │
+│  │    [👍] [👎] [📋 Copy]                                  │    │
+│  └─────────────────────────────────────────────────────────┘    │
+│                                                                  │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │ Stel een vraag...                               [Ask]   │    │
+│  └─────────────────────────────────────────────────────────┘    │
+│                                                                  │
+│  💡 Suggesties: "Hoe deploy ik naar productie?"                 │
+│                 "Wat zijn onze coding standards?"               │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**RAG Prompt Template:**
+
+```typescript
+const SYSTEM_PROMPT = `Je bent een behulpzame assistent die vragen beantwoordt
+op basis van de wiki documentatie van het team.
+
+REGELS:
+1. Gebruik ALLEEN informatie uit de gegeven context
+2. Als je het antwoord niet weet, zeg dat eerlijk
+3. Citeer je bronnen met [Pagina Titel]
+4. Antwoord in dezelfde taal als de vraag
+5. Wees beknopt maar volledig
+
+CONTEXT:
+{context}
+
+Beantwoord nu de vraag van de gebruiker.`
+```
+
+---
+
+### 15.4 Enhanced Graphs
+
+> **Doel:** De knowledge graph transformeren van simpele visualisatie naar een krachtig discovery tool.
+
+| Item | Status | Notities |
+|------|--------|----------|
+| **Filtering & Controls** | | |
+| Entity type filter | ❌ | Checkbox: WikiPage / Person / Concept / Task |
+| Time range filter | ❌ | Slider: "Laatste week / maand / jaar / alles" |
+| Depth control | ❌ | Hoeveel levels tonen (1-5) |
+| Search within graph | ❌ | Highlight matching nodes |
+| Hide/show orphans | ❌ | Nodes zonder connecties |
+| **Clustering** | | |
+| Auto-cluster detection | ❌ | Louvain / Label Propagation algoritme |
+| Cluster coloring | ❌ | Elke cluster eigen kleur |
+| Cluster labels | ❌ | Auto-generated cluster naam |
+| Expand/collapse cluster | ❌ | Klik om cluster te openen |
+| **Path Finding** | | |
+| "How is X related to Y?" | ❌ | Shortest path tussen nodes |
+| Path highlighting | ❌ | Animatie langs het pad |
+| Path explanation | ❌ | "X → linked to → Y → mentions → Z" |
+| **Node Details** | | |
+| Hover card | ❌ | Quick preview bij hover |
+| Detail panel | ❌ | Sidebar met volledige info |
+| Node connections list | ❌ | Alle edges van/naar node |
+| Quick actions | ❌ | Open / Edit / Find related |
+| **Advanced Visualization** | | |
+| Mini-map | ❌ | Overzicht in hoek |
+| Zoom to fit | ❌ | Automatisch schalen |
+| Layout options | ❌ | Force / Hierarchical / Radial |
+| Timeline mode | ❌ | Nodes op tijdlijn (created_at) |
+| **Export & Sharing** | | |
+| Export PNG | ❌ | Screenshot van graph |
+| Export SVG | ❌ | Vector voor print |
+| Export JSON | ❌ | Graph data voor externe tools |
+| Share view | ❌ | URL met filters/positie |
+
+**Enhanced Graph UI:**
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  🌐 Knowledge Graph: GenX Workspace                       [×]   │
+├──────────────────────────────────┬──────────────────────────────┤
+│                                  │ 📋 Filters                   │
+│                                  │ ┌────────────────────────┐   │
+│       ┌─────┐                    │ │ ☑ WikiPage             │   │
+│      ╱ Auth ╲──────┐             │ │ ☑ Person               │   │
+│     ╱ Cluster╲     │             │ │ ☑ Concept              │   │
+│    ◯ OAuth2  ◯─────┼──┐          │ │ ☐ Task                 │   │
+│     ╲ JWT   ╱      │  │          │ └────────────────────────┘   │
+│      ╲_____╱       │  │          │                              │
+│         │          │  │          │ 🔍 Search in graph           │
+│         ▼          │  │          │ ┌────────────────────────┐   │
+│    ◯ @robin ◯──────┘  │          │ │ authentication...      │   │
+│                       │          │ └────────────────────────┘   │
+│       ┌─────┐         │          │                              │
+│      ╱ API  ╲─────────┘          │ 📊 Stats                     │
+│     ╱Cluster╲                    │ • 47 nodes                   │
+│    ◯ REST   ◯                    │ • 123 edges                  │
+│     ╲GraphQL╱                    │ • 4 clusters                 │
+│      ╲_____╱                     │                              │
+│                                  │ ⚡ Actions                   │
+│  [Mini-map]                      │ [Path: A → B]               │
+│  ┌────┐                          │ [Export PNG]                │
+│  │ •  │                          │ [Export JSON]               │
+│  └────┘                          │                              │
+├──────────────────────────────────┴──────────────────────────────┤
+│  Layout: [Force ▾]  Depth: [3 ▾]  Time: [All ▾]   [Fit] [Reset] │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Path Finding UI:**
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  🔗 Path Finder                                                  │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  From: [OAuth2           ▾]                                     │
+│  To:   [@robin           ▾]                                     │
+│                                                                  │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │                                                          │    │
+│  │  OAuth2 ──mentions──▶ Authentication Flow ──author──▶ @robin│
+│  │                                                          │    │
+│  │  Path length: 2 hops                                     │    │
+│  │                                                          │    │
+│  └─────────────────────────────────────────────────────────┘    │
+│                                                                  │
+│  [Highlight in Graph] [Show Alternative Paths]                  │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 15.5 Integration & Polish
+
+> **Doel:** Alle componenten integreren in een coherente gebruikerservaring.
+
+| Item | Status | Notities |
+|------|--------|----------|
+| **UI Integration** | | |
+| WikiPageView integratie | ❌ | Ask Wiki button in toolbar |
+| WikiSidebar integratie | ❌ | Search + Graph + Ask toggles |
+| Keyboard shortcuts | ❌ | Cmd+Shift+A = Ask Wiki |
+| Context menu | ❌ | Rechtermuisklik → "Ask about this" |
+| **Cross-Feature Links** | | |
+| Search → Graph | ❌ | "Show in graph" button |
+| Graph → Ask | ❌ | "Ask about this node" |
+| Ask → Sources → Page | ❌ | Klikbare bronnen |
+| **Performance** | | |
+| Embedding caching | ❌ | Cache wiki page embeddings |
+| Lazy loading graph | ❌ | Load nodes on demand |
+| Debounced search | ❌ | Wacht tot user stopt typen |
+| Background indexing | ❌ | Re-index bij idle |
+| **Analytics** | | |
+| Search analytics | ❌ | Wat zoeken users? |
+| Ask Wiki analytics | ❌ | Welke vragen worden gesteld? |
+| Graph usage | ❌ | Welke filters populair? |
+| Answer quality | ❌ | 👍/👎 aggregatie |
+| **Testing** | | |
+| Unit tests | ❌ | WikiAiService tests |
+| Integration tests | ❌ | RAG pipeline tests |
+| E2E tests | ❌ | Full flow tests |
+
+---
+
+### 15.6 Status Overzicht
+
+| Sub-fase | Status | Beschrijving |
+|----------|--------|--------------|
+| **15.1 Provider Koppeling** | ❌ | Fase 14 → Graphiti bridge |
+| **15.2 Semantic Search** | ❌ | Zoeken op betekenis |
+| **15.3 Ask the Wiki** | ❌ | RAG Chat met bronnen |
+| **15.4 Enhanced Graphs** | ❌ | Filtering, clustering, paths |
+| **15.5 Integration** | ❌ | UI polish en performance |
+
+**Totaal items:** ~60 taken verdeeld over 5 sub-fases
+
+---
+
+### Aanbevolen Volgorde
+
+```
+15.1 Provider Koppeling  ──┐
+                           ├──▶ 15.2 Semantic Search ──┐
+                           │                           │
+                           └──▶ 15.4 Enhanced Graphs ──┼──▶ 15.5 Integration
+                                                       │
+                               15.3 Ask the Wiki ──────┘
+```
+
+1. **15.1 eerst** - Fundament voor alles
+2. **15.2 en 15.4 parallel** - Onafhankelijk van elkaar
+3. **15.3 na 15.2** - RAG heeft semantic search nodig
+4. **15.5 laatste** - Alles samenvoegen
+
+---
+
 ## Graphiti Architectuur
 
 ```
@@ -1210,3 +1590,4 @@ cat ~/genx/v6/dev/kanbu/docs/WIKI-base/GRAPHITI-IMPLEMENTATIE.md
 | 2026-01-12 | test-ai-provider.ts script voor handmatige integration tests |
 | 2026-01-12 | OpenAI live test: Connection ✅ (648ms), Embedding ✅ (1536 dim), Reasoning ✅ |
 | 2026-01-12 | **Fase 14 AI Provider Configuration VOLLEDIG COMPLEET** |
+| 2026-01-12 | **Fase 15 Wiki Intelligence toegevoegd** - Semantic Search + Ask the Wiki + Enhanced Graphs |

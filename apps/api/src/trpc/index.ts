@@ -141,6 +141,7 @@ import { favoriteRouter } from './procedures/favorite';
 import { graphitiRouter } from './procedures/graphiti';
 import { aiProviderRouter } from './procedures/aiProvider';
 import { workspaceAiProviderRouter } from './procedures/workspaceAiProvider';
+import { wikiAiRouter } from './procedures/wikiAi';
 
 /**
  * Main app router
@@ -189,6 +190,7 @@ export const appRouter = router({
   graphiti: graphitiRouter,
   aiProvider: aiProviderRouter,
   workspaceAiProvider: workspaceAiProviderRouter,
+  wikiAi: wikiAiRouter,
 });
 
 /**

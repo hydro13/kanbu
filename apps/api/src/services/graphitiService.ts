@@ -1,25 +1,32 @@
 /*
  * Graphiti Service
- * Version: 2.0.0
+ * Version: 3.0.0
  *
  * Knowledge graph service for Wiki using FalkorDB.
- * Now integrates with Python Graphiti service for LLM-based entity extraction.
- * Falls back to direct FalkorDB queries when Python service unavailable.
+ * Integrates with Python Graphiti service for LLM-based entity extraction.
+ * Falls back to WikiAiService (Fase 14 providers) when Python service unavailable.
+ * Falls back to direct FalkorDB queries with rules-based extraction as last resort.
  *
  * ===================================================================
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
  * Signed: 2026-01-12
- * Change: Fase 8 - Python service integration with fallback
+ * Change: Fase 15.1 - WikiAiService integration for provider-based extraction
  * ===================================================================
  */
 
 import Redis from 'ioredis'
+import type { PrismaClient } from '@prisma/client'
 
 import {
   getGraphitiClient,
   GraphitiClient,
   GraphitiClientError,
 } from '../lib/graphitiClient'
+import {
+  WikiAiService,
+  getWikiAiService,
+  type WikiContext,
+} from '../lib/ai/wiki'
 
 // =============================================================================
 // Types
@@ -75,14 +82,22 @@ export class GraphitiService {
   private initialized: boolean = false
   private pythonClient: GraphitiClient
   private pythonServiceAvailable: boolean | null = null // null = unknown, check on first use
+  private wikiAiService: WikiAiService | null = null
+  private prisma: PrismaClient | null = null
 
-  constructor(config?: Partial<GraphitiConfig>) {
+  constructor(config?: Partial<GraphitiConfig>, prisma?: PrismaClient) {
     const host = config?.host ?? process.env.FALKORDB_HOST ?? 'localhost'
     const port = config?.port ?? parseInt(process.env.FALKORDB_PORT ?? '6379')
     this.graphName = config?.graphName ?? 'kanbu_wiki'
 
     // Initialize Python service client
     this.pythonClient = getGraphitiClient()
+
+    // Initialize WikiAiService if Prisma is provided (Fase 15.1)
+    if (prisma) {
+      this.prisma = prisma
+      this.wikiAiService = getWikiAiService(prisma)
+    }
 
     this.redis = new Redis({
       host,
@@ -101,6 +116,15 @@ export class GraphitiService {
     this.redis.on('connect', () => {
       console.log('[GraphitiService] Connected to FalkorDB')
     })
+  }
+
+  /**
+   * Set Prisma client and initialize WikiAiService
+   * Call this if Prisma wasn't passed to constructor
+   */
+  setPrisma(prisma: PrismaClient): void {
+    this.prisma = prisma
+    this.wikiAiService = getWikiAiService(prisma)
   }
 
   // ===========================================================================
@@ -209,13 +233,17 @@ export class GraphitiService {
 
   /**
    * Add or update a wiki page in the graph
-   * Tries Python service first for LLM-based extraction, falls back to direct FalkorDB
+   *
+   * Fallback chain:
+   * 1. Python Graphiti service (LLM-based extraction via graphiti_core)
+   * 2. WikiAiService (Fase 14 providers - OpenAI/Ollama/LM Studio)
+   * 3. Direct FalkorDB with rules-based extraction
    *
    * Uses Kanbu-specific entity types (Fase 10):
    * - WikiPage, Task, User, Project, Concept
    */
   async syncWikiPage(episode: WikiEpisode): Promise<void> {
-    const { pageId, title, content, groupId, timestamp } = episode
+    const { pageId, title, content, groupId, timestamp, workspaceId } = episode
 
     // Try Python service first (LLM-based entity extraction with Kanbu entity types)
     if (await this.isPythonServiceAvailable()) {
@@ -243,20 +271,113 @@ export class GraphitiService {
       } catch (error) {
         if (error instanceof GraphitiClientError) {
           console.warn(
-            `[GraphitiService] Python service error for page ${pageId}: ${error.message}, using fallback`
+            `[GraphitiService] Python service error for page ${pageId}: ${error.message}, trying WikiAiService`
           )
           // Mark service as unavailable to skip future checks temporarily
           if (error.isConnectionError() || error.isServerError()) {
             this.pythonServiceAvailable = false
           }
         } else {
-          console.warn(`[GraphitiService] Unexpected error for page ${pageId}, using fallback:`, error)
+          console.warn(`[GraphitiService] Unexpected error for page ${pageId}, trying WikiAiService:`, error)
         }
       }
     }
 
-    // Fallback: Direct FalkorDB with rules-based extraction
+    // Try WikiAiService (Fase 15.1 - uses Fase 14 providers)
+    if (this.wikiAiService && workspaceId) {
+      try {
+        const aiResult = await this.syncWikiPageWithAiService(episode)
+        if (aiResult) {
+          return // Successfully synced with WikiAiService
+        }
+      } catch (error) {
+        console.warn(
+          `[GraphitiService] WikiAiService error for page ${pageId}: ${error instanceof Error ? error.message : 'Unknown error'}, using rules-based fallback`
+        )
+      }
+    }
+
+    // Final fallback: Direct FalkorDB with rules-based extraction
     await this.syncWikiPageFallback(episode)
+  }
+
+  /**
+   * Sync wiki page using WikiAiService (Fase 15.1)
+   * Uses configured providers from Fase 14 for LLM-based entity extraction
+   */
+  private async syncWikiPageWithAiService(episode: WikiEpisode): Promise<boolean> {
+    if (!this.wikiAiService || !episode.workspaceId) {
+      return false
+    }
+
+    const context: WikiContext = {
+      workspaceId: episode.workspaceId,
+      projectId: episode.projectId,
+    }
+
+    // Check if reasoning provider is available
+    const capabilities = await this.wikiAiService.getCapabilities(context)
+    if (!capabilities.reasoning) {
+      console.log(`[GraphitiService] No reasoning provider configured for workspace ${episode.workspaceId}`)
+      return false
+    }
+
+    await this.initialize()
+
+    const { pageId, title, content, timestamp } = episode
+
+    // Extract entities using WikiAiService (Fase 14 providers)
+    const extractionResult = await this.wikiAiService.extractEntities(
+      context,
+      content,
+      ['WikiPage', 'Task', 'User', 'Project', 'Concept']
+    )
+
+    // Sync page metadata to FalkorDB
+    await this.syncPageMetadataFallback(episode)
+
+    // Create entity nodes and relationships
+    for (const entity of extractionResult.entities) {
+      // Map entity type to graph label
+      const graphType = this.mapEntityTypeToGraphLabel(entity.type)
+
+      // Create entity node
+      await this.query(`
+        MERGE (e:${graphType} {name: '${this.escapeString(entity.name)}'})
+        SET e.lastSeen = '${timestamp.toISOString()}',
+            e.confidence = ${entity.confidence}
+      `)
+
+      // Create relationship from page to entity
+      await this.query(`
+        MATCH (p:WikiPage {pageId: ${pageId}})
+        MATCH (e:${graphType} {name: '${this.escapeString(entity.name)}'})
+        MERGE (p)-[r:MENTIONS]->(e)
+        SET r.updatedAt = '${timestamp.toISOString()}'
+      `)
+    }
+
+    console.log(
+      `[GraphitiService] Synced page ${pageId}: "${title}" via WikiAiService (${extractionResult.provider}) - ` +
+      `${extractionResult.entities.length} entities extracted`
+    )
+
+    return true
+  }
+
+  /**
+   * Map entity type from LLM extraction to graph label
+   */
+  private mapEntityTypeToGraphLabel(type: string): string {
+    const typeMap: Record<string, string> = {
+      'WikiPage': 'WikiPage',
+      'Task': 'Task',
+      'User': 'Person',
+      'Person': 'Person',
+      'Project': 'Project',
+      'Concept': 'Concept',
+    }
+    return typeMap[type] || 'Concept'
   }
 
   /**
@@ -839,11 +960,25 @@ export class GraphitiService {
 
 let graphitiInstance: GraphitiService | null = null
 
-export function getGraphitiService(): GraphitiService {
+/**
+ * Get the GraphitiService singleton
+ * Pass Prisma client to enable WikiAiService (Fase 15.1)
+ */
+export function getGraphitiService(prisma?: PrismaClient): GraphitiService {
   if (!graphitiInstance) {
-    graphitiInstance = new GraphitiService()
+    graphitiInstance = new GraphitiService(undefined, prisma)
+  } else if (prisma && !graphitiInstance['prisma']) {
+    // Set Prisma if not already set
+    graphitiInstance.setPrisma(prisma)
   }
   return graphitiInstance
+}
+
+/**
+ * Reset the singleton (useful for testing)
+ */
+export function resetGraphitiService(): void {
+  graphitiInstance = null
 }
 
 export default GraphitiService
