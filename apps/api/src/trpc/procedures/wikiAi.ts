@@ -685,4 +685,47 @@ export const wikiAiRouter = router({
         count: conversations.length,
       }
     }),
+
+  /**
+   * Ask a question about the wiki content (streaming version)
+   *
+   * Returns an async iterator that yields:
+   * - { type: 'token', data: string } for each token
+   * - { type: 'sources', data: Source[] } with source citations
+   * - { type: 'done', data: '' } when complete
+   */
+  askWikiStream: protectedProcedure
+    .input(askWikiSchema)
+    .mutation(async function* ({ ctx, input }) {
+      const userId = ctx.user!.id
+
+      // Verify access
+      await verifyWorkspaceAccess(userId, input.workspaceId)
+
+      const ragService = getWikiRagService(ctx.prisma)
+
+      try {
+        for await (const chunk of ragService.askWikiStream(
+          input.question,
+          input.workspaceId,
+          {
+            projectId: input.projectId,
+            ...input.options,
+          }
+        )) {
+          yield chunk
+        }
+      } catch (error) {
+        if (error instanceof Error && error.message.includes('No reasoning provider')) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'No AI provider configured for this workspace. Please configure an AI provider in settings.',
+          })
+        }
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: error instanceof Error ? error.message : 'Ask Wiki Stream failed',
+        })
+      }
+    }),
 })

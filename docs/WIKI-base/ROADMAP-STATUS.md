@@ -53,7 +53,7 @@
 
 ### Vereisten voor Fase 2:
 - [x] FalkorDB draaiend op MAX (kanbu-falkordb container)
-- [ ] LLM-based entity extraction (future improvement)
+- [x] LLM-based entity extraction (future improvement)
 - [x] Sync hooks in wiki routers
 - [x] tRPC endpoints voor graph queries
 
@@ -72,28 +72,28 @@
 
 ---
 
-## Fase 4: Search & Discovery 🔄 IN PROGRESS
+## Fase 4: Search & Discovery ✅ COMPLEET
 
 | Item | Status | Notities |
 |------|--------|----------|
 | Text search (graph) | ✅ | Cypher CONTAINS query op titles/entities |
 | Wiki search UI | ✅ | WikiSearchDialog.tsx met keyboard nav |
 | Cmd+K wiki search | ✅ | Wiki pages zoeken via CommandPalette |
-| Semantic search (vectors) | ❌ | Vereist embeddings + Qdrant (toekomst) |
+| Semantic search (vectors) | ✅ | WikiEmbeddingService + Qdrant (Fase 15.2) |
 
 ---
 
-## Fase 5: Graph Visualization 🔄 IN PROGRESS
+## Fase 5: Graph Visualization ✅ COMPLEET
 
 | Item | Status | Notities |
 |------|--------|----------|
 | D3.js installatie | ✅ | d3 + @types/d3 |
 | getGraph endpoint | ✅ | graphiti.ts + graphitiService.ts |
-| WikiGraphView component | ✅ | Force-directed layout, zoom/pan |
+| WikiGraphView component | ✅ | v3.0.0 - Force/Hierarchical/Radial layouts, filtering, clustering |
 | Sidebar toggle button | ✅ | Network icon in WikiSidebar |
 | Fullscreen mode | ✅ | Uitklapbaar naar volledig scherm |
-| 3D/WebXR support | ❌ | Three.js integratie (toekomst) |
-| 100k+ nodes | ❌ | WebGPU/Cosmos integratie (toekomst) |
+| 3D/WebXR support | ⏳ | Three.js integratie (future roadmap) |
+| 100k+ nodes | ⏳ | WebGPU/Cosmos integratie (future roadmap) |
 
 ---
 
@@ -1092,14 +1092,14 @@ export class WikiAiService {
 | Embedding bij wiki sync | ✅ | GraphitiService v3.1.0 slaat embeddings op |
 | Search result ranking | ✅ | Cosine similarity score |
 | Cross-wiki search | ✅ | Workspace + project filtering |
-| Hybrid search (BM25 + vector) | ⏸️ | Deferred - pure vector voldoet voor v1 |
-| Search caching | ⏸️ | Deferred - Qdrant is snel genoeg |
+| Hybrid search (BM25 + vector) | ❌ | MOET NOG GEMAAKT WORDEN |
+| Search caching | ❌ | Embedding cache voor herhaalde queries |
 | **Frontend** | | |
 | WikiSearchDialog v2.0.0 | ✅ | Enhanced met search mode toggle |
 | Search mode toggle | ✅ | Local / Graph / Semantic / Hybrid |
 | Search result preview | ✅ | Score percentage per resultaat |
 | "More like this" button | ⏸️ | Deferred - via findSimilarPages endpoint beschikbaar |
-| Recent searches | ⏸️ | Deferred - later toevoegen |
+| Recent searches | ❌ | Toon recente zoekopdrachten |
 | **Integratie** | | |
 | WikiSearchDialog semantic | ✅ | wikiAi.semanticSearch via hybrid mode |
 | WikiSidebar search | ✅ | Bestaande search trigger werkt met nieuwe dialog |
@@ -1179,7 +1179,7 @@ export class WikiAiService {
 | Source extraction | ✅ | extractSources() met relevance levels |
 | **Backend Endpoints** | | |
 | wiki.askWiki | ✅ | wikiAi.askWiki mutation |
-| wiki.askWikiStream | ❌ | Streaming (future enhancement) |
+| wiki.askWikiStream | ✅ | Streaming via async generator in WikiRagService |
 | wiki.getConversation | ✅ | wikiAi.getConversation query |
 | wiki.clearConversation | ✅ | wikiAi.clearConversation mutation |
 | wiki.createConversation | ✅ | wikiAi.createConversation mutation |
@@ -1189,14 +1189,14 @@ export class WikiAiService {
 | AskWikiFab.tsx | ✅ | Floating action button |
 | ChatMessage.tsx | ✅ | Inline in AskWikiDialog |
 | SourceCitation.tsx | ✅ | SourceChip component met links |
-| StreamingResponse.tsx | ❌ | TypingIndicator (no streaming yet) |
-| ConversationHistory.tsx | ❌ | Future enhancement |
+| StreamingResponse.tsx | ✅ | StreamingMessage component in AskWikiDialog |
+| ConversationHistory.tsx | ✅ | ConversationHistoryPanel in AskWikiDialog |
 | **Features** | | |
 | Follow-up questions | ✅ | conversationId tracking |
 | "Show me the source" | ✅ | SourceChip met ExternalLink |
-| Copy answer | ❌ | Future enhancement |
-| Feedback (👍/👎) | ❌ | Future enhancement |
-| Scope selector | ❌ | Uses projectId (future UI) |
+| Copy answer | ✅ | Copy button in ChatMessage component |
+| Feedback (👍/👎) | ✅ | ThumbsUp/ThumbsDown buttons in ChatMessage |
+| Scope selector | ✅ | ScopeSelector dropdown voor workspace/project |
 
 **UI Mockup:**
 

@@ -508,6 +508,92 @@ ${page.content}
     return conversationStore.delete(conversationId)
   }
 
+  // ===========================================================================
+  // Streaming RAG Pipeline
+  // ===========================================================================
+
+  /**
+   * Ask a question about the wiki content (streaming version)
+   *
+   * Same as askWiki but yields tokens as they arrive.
+   * Final yield contains the sources.
+   */
+  async *askWikiStream(
+    question: string,
+    workspaceId: number,
+    options: AskWikiOptions = {}
+  ): AsyncGenerator<{ type: 'token' | 'sources' | 'done'; data: string | RagSource[] }> {
+    const {
+      maxContextPages = DEFAULT_MAX_CONTEXT_PAGES,
+      minRelevanceScore = DEFAULT_MIN_RELEVANCE_SCORE,
+      maxContextTokens = DEFAULT_MAX_CONTEXT_TOKENS,
+      conversationId,
+      projectId,
+      temperature = 0.7,
+    } = options
+
+    const context: WikiContext = { workspaceId, projectId }
+
+    // Check if reasoning provider is available
+    const capabilities = await this.wikiAiService.getCapabilities(context)
+    if (!capabilities.reasoning) {
+      throw new Error('No reasoning provider configured for this workspace')
+    }
+
+    // Step 1: Retrieve relevant context
+    const retrievedContext = await this.retrieveContext(
+      question,
+      workspaceId,
+      {
+        projectId,
+        maxPages: maxContextPages,
+        minScore: minRelevanceScore,
+        maxTokens: maxContextTokens,
+      }
+    )
+
+    if (retrievedContext.length === 0) {
+      yield {
+        type: 'token',
+        data: 'Ik kon geen relevante informatie vinden in de wiki om je vraag te beantwoorden. Probeer je vraag anders te formuleren of controleer of er wiki pagina\'s over dit onderwerp bestaan.',
+      }
+      yield { type: 'sources', data: [] }
+      yield { type: 'done', data: '' }
+      return
+    }
+
+    // Step 2: Format context for LLM
+    const formattedContext = this.formatContext(retrievedContext)
+
+    // Step 3: Build messages with conversation history
+    const messages = this.buildMessages(
+      question,
+      formattedContext,
+      conversationId
+    )
+
+    // Step 4: Stream the response
+    let fullResponse = ''
+    for await (const token of this.wikiAiService.stream(context, messages, {
+      temperature,
+      maxTokens: 2000,
+    })) {
+      fullResponse += token
+      yield { type: 'token', data: token }
+    }
+
+    // Step 5: Extract sources from response and context
+    const sources = this.extractSources(fullResponse, retrievedContext)
+    yield { type: 'sources', data: sources }
+
+    // Step 6: Update conversation history
+    if (conversationId) {
+      this.updateConversation(conversationId, question, fullResponse, sources)
+    }
+
+    yield { type: 'done', data: '' }
+  }
+
   /**
    * List conversations for a workspace
    */
