@@ -2,9 +2,9 @@
 
 > **Laatst bijgewerkt:** 2026-01-12
 > **Huidige fase:** Fase 15 - Wiki Intelligence
-> **Sub-fase:** 15.1 Provider Koppeling ✅ | 15.2 Semantic Search ✅ | 15.3 Ask the Wiki ✅ | 15.4 Enhanced Graphs | 15.5 Integration
+> **Sub-fase:** 15.1 Provider Koppeling ✅ | 15.2 Semantic Search ✅ | 15.3 Ask the Wiki ✅ | 15.4 Enhanced Graphs 🔄 | 15.5 Integration
 > **Vorige fase:** Fase 14 - AI Provider Configuration ✅ COMPLEET
-> **Volgende actie:** 15.4 Enhanced Graphs (Filtering, Clustering, Paths)
+> **Volgende actie:** 15.4 Enhanced Graphs (Clustering, Export/Sharing)
 
 ---
 
@@ -1267,28 +1267,28 @@ Beantwoord nu de vraag van de gebruiker.`
 | Item | Status | Notities |
 |------|--------|----------|
 | **Filtering & Controls** | | |
-| Entity type filter | ❌ | Checkbox: WikiPage / Person / Concept / Task |
+| Entity type filter | ✅ | Checkbox: WikiPage / Person / Concept / Task |
 | Time range filter | ❌ | Slider: "Laatste week / maand / jaar / alles" |
-| Depth control | ❌ | Hoeveel levels tonen (1-5) |
-| Search within graph | ❌ | Highlight matching nodes |
-| Hide/show orphans | ❌ | Nodes zonder connecties |
+| Depth control | ✅ | Slider 1-5 levels + focus node |
+| Search within graph | ✅ | Highlight matching nodes |
+| Hide/show orphans | ✅ | Toggle in filter panel |
 | **Clustering** | | |
 | Auto-cluster detection | ❌ | Louvain / Label Propagation algoritme |
 | Cluster coloring | ❌ | Elke cluster eigen kleur |
 | Cluster labels | ❌ | Auto-generated cluster naam |
 | Expand/collapse cluster | ❌ | Klik om cluster te openen |
 | **Path Finding** | | |
-| "How is X related to Y?" | ❌ | Shortest path tussen nodes |
-| Path highlighting | ❌ | Animatie langs het pad |
+| "How is X related to Y?" | ✅ | BFS shortest path algoritme |
+| Path highlighting | ✅ | Groene nodes/edges in pad |
 | Path explanation | ❌ | "X → linked to → Y → mentions → Z" |
 | **Node Details** | | |
-| Hover card | ❌ | Quick preview bij hover |
+| Hover card | ✅ | NodeHoverCard component |
 | Detail panel | ❌ | Sidebar met volledige info |
-| Node connections list | ❌ | Alle edges van/naar node |
-| Quick actions | ❌ | Open / Edit / Find related |
+| Node connections list | ✅ | In hover card + count per node |
+| Quick actions | ✅ | Open / Find path buttons |
 | **Advanced Visualization** | | |
 | Mini-map | ❌ | Overzicht in hoek |
-| Zoom to fit | ❌ | Automatisch schalen |
+| Zoom to fit | ✅ | Reset zoom button |
 | Layout options | ❌ | Force / Hierarchical / Radial |
 | Timeline mode | ❌ | Nodes op tijdlijn (created_at) |
 | **Export & Sharing** | | |
@@ -1395,7 +1395,7 @@ Beantwoord nu de vraag van de gebruiker.`
 | **15.1 Provider Koppeling** | ✅ | WikiAiService + tRPC endpoints |
 | **15.2 Semantic Search** | ✅ | Backend (Qdrant) + Frontend (SearchModes) |
 | **15.3 Ask the Wiki** | ✅ | RAG Chat met bronnen (WikiRagService + AskWikiDialog) |
-| **15.4 Enhanced Graphs** | ❌ | Filtering, clustering, paths |
+| **15.4 Enhanced Graphs** | 🔄 | Filtering ✅, Hover cards ✅, Path finding ✅, Clustering ❌ |
 | **15.5 Integration** | ❌ | UI polish en performance |
 
 **Totaal items:** ~60 taken verdeeld over 5 sub-fases
