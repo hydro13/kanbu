@@ -838,6 +838,7 @@ export class GraphitiService {
   /**
    * Get full graph data for visualization
    * Returns all nodes and edges for a workspace/project wiki
+   * Enhanced for Fase 15.4: includes timestamps for time filtering
    */
   async getGraph(groupId: string): Promise<{
     nodes: Array<{
@@ -846,22 +847,24 @@ export class GraphitiService {
       type: 'WikiPage' | 'Concept' | 'Person' | 'Task'
       pageId?: number
       slug?: string
+      updatedAt?: string
     }>
     edges: Array<{
       source: string
       target: string
       type: 'LINKS_TO' | 'MENTIONS'
+      updatedAt?: string
     }>
   }> {
     await this.initialize()
 
-    // Get all WikiPage nodes
+    // Get all WikiPage nodes with timestamps
     const pagesResult = await this.query(`
       MATCH (p:WikiPage {groupId: '${groupId}'})
       WHERE p.pageId IS NOT NULL
-      RETURN p.pageId AS pageId, p.title AS title, p.slug AS slug
+      RETURN p.pageId AS pageId, p.title AS title, p.slug AS slug, p.updatedAt AS updatedAt
     `)
-    const pages = this.parseResults<{ pageId: number; title: string; slug: string }>(pagesResult, ['pageId', 'title', 'slug'])
+    const pages = this.parseResults<{ pageId: number; title: string; slug: string; updatedAt?: string }>(pagesResult, ['pageId', 'title', 'slug', 'updatedAt'])
 
     // Get all entities connected to pages in this group
     const entitiesResult = await this.query(`
@@ -871,21 +874,21 @@ export class GraphitiService {
     `)
     const entities = this.parseResults<{ name: string; type: string }>(entitiesResult, ['name', 'type'])
 
-    // Get LINKS_TO edges between pages
+    // Get LINKS_TO edges between pages (with timestamps)
     const linksResult = await this.query(`
-      MATCH (source:WikiPage {groupId: '${groupId}'})-[:LINKS_TO]->(target:WikiPage)
+      MATCH (source:WikiPage {groupId: '${groupId}'})-[r:LINKS_TO]->(target:WikiPage)
       WHERE source.pageId IS NOT NULL AND target.pageId IS NOT NULL
-      RETURN source.pageId AS sourceId, target.pageId AS targetId
+      RETURN source.pageId AS sourceId, target.pageId AS targetId, r.updatedAt AS updatedAt
     `)
-    const links = this.parseResults<{ sourceId: number; targetId: number }>(linksResult, ['sourceId', 'targetId'])
+    const links = this.parseResults<{ sourceId: number; targetId: number; updatedAt?: string }>(linksResult, ['sourceId', 'targetId', 'updatedAt'])
 
-    // Get MENTIONS edges
+    // Get MENTIONS edges (with timestamps)
     const mentionsResult = await this.query(`
-      MATCH (p:WikiPage {groupId: '${groupId}'})-[:MENTIONS]->(e)
+      MATCH (p:WikiPage {groupId: '${groupId}'})-[r:MENTIONS]->(e)
       WHERE p.pageId IS NOT NULL
-      RETURN p.pageId AS pageId, e.name AS entityName, labels(e)[0] AS entityType
+      RETURN p.pageId AS pageId, e.name AS entityName, labels(e)[0] AS entityType, r.updatedAt AS updatedAt
     `)
-    const mentions = this.parseResults<{ pageId: number; entityName: string; entityType: string }>(mentionsResult, ['pageId', 'entityName', 'entityType'])
+    const mentions = this.parseResults<{ pageId: number; entityName: string; entityType: string; updatedAt?: string }>(mentionsResult, ['pageId', 'entityName', 'entityType', 'updatedAt'])
 
     // Build nodes array
     const nodes: Array<{
@@ -894,6 +897,7 @@ export class GraphitiService {
       type: 'WikiPage' | 'Concept' | 'Person' | 'Task'
       pageId?: number
       slug?: string
+      updatedAt?: string
     }> = []
 
     // Add page nodes
@@ -904,6 +908,7 @@ export class GraphitiService {
         type: 'WikiPage',
         pageId: page.pageId,
         slug: page.slug,
+        updatedAt: page.updatedAt,
       })
     }
 
@@ -922,6 +927,7 @@ export class GraphitiService {
       source: string
       target: string
       type: 'LINKS_TO' | 'MENTIONS'
+      updatedAt?: string
     }> = []
 
     // Add LINKS_TO edges
@@ -930,6 +936,7 @@ export class GraphitiService {
         source: `page-${link.sourceId}`,
         target: `page-${link.targetId}`,
         type: 'LINKS_TO',
+        updatedAt: link.updatedAt,
       })
     }
 
@@ -939,6 +946,7 @@ export class GraphitiService {
         source: `page-${mention.pageId}`,
         target: `${mention.entityType.toLowerCase()}-${mention.entityName}`,
         type: 'MENTIONS',
+        updatedAt: mention.updatedAt,
       })
     }
 

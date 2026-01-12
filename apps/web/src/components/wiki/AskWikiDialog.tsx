@@ -22,11 +22,9 @@ import {
   Send,
   MessageCircle,
   Loader2,
-  AlertCircle,
   FileText,
   RefreshCw,
   Sparkles,
-  ChevronDown,
   ExternalLink,
 } from 'lucide-react'
 import { trpc } from '../../lib/trpc'

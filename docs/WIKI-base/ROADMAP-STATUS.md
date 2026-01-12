@@ -2,9 +2,9 @@
 
 > **Laatst bijgewerkt:** 2026-01-12
 > **Huidige fase:** Fase 15 - Wiki Intelligence
-> **Sub-fase:** 15.1 Provider Koppeling ✅ | 15.2 Semantic Search ✅ | 15.3 Ask the Wiki ✅ | 15.4 Enhanced Graphs 🔄 | 15.5 Integration
+> **Sub-fase:** 15.1 Provider Koppeling ✅ | 15.2 Semantic Search ✅ | 15.3 Ask the Wiki ✅ | 15.4 Enhanced Graphs ✅ | 15.5 Integration
 > **Vorige fase:** Fase 14 - AI Provider Configuration ✅ COMPLEET
-> **Volgende actie:** 15.4 Enhanced Graphs (Clustering, Export/Sharing)
+> **Volgende actie:** 15.5 Integration (UI polish, performance, final testing)
 
 ---
 
@@ -1268,34 +1268,34 @@ Beantwoord nu de vraag van de gebruiker.`
 |------|--------|----------|
 | **Filtering & Controls** | | |
 | Entity type filter | ✅ | Checkbox: WikiPage / Person / Concept / Task |
-| Time range filter | ❌ | Slider: "Laatste week / maand / jaar / alles" |
+| Time range filter | ✅ | Date range picker met start/end datum |
 | Depth control | ✅ | Slider 1-5 levels + focus node |
 | Search within graph | ✅ | Highlight matching nodes |
 | Hide/show orphans | ✅ | Toggle in filter panel |
 | **Clustering** | | |
-| Auto-cluster detection | ❌ | Louvain / Label Propagation algoritme |
-| Cluster coloring | ❌ | Elke cluster eigen kleur |
-| Cluster labels | ❌ | Auto-generated cluster naam |
-| Expand/collapse cluster | ❌ | Klik om cluster te openen |
+| Auto-cluster detection | ✅ | Connected components algoritme (detectCommunities) |
+| Cluster coloring | ✅ | 8 kleuren palette, per cluster unieke kleur |
+| Cluster labels | ❌ | Auto-generated cluster naam (niet geïmplementeerd) |
+| Expand/collapse cluster | ❌ | Klik om cluster te openen (niet geïmplementeerd) |
 | **Path Finding** | | |
 | "How is X related to Y?" | ✅ | BFS shortest path algoritme |
 | Path highlighting | ✅ | Groene nodes/edges in pad |
-| Path explanation | ❌ | "X → linked to → Y → mentions → Z" |
+| Path explanation | ✅ | PathExplanation component met stappen |
 | **Node Details** | | |
 | Hover card | ✅ | NodeHoverCard component |
-| Detail panel | ❌ | Sidebar met volledige info |
-| Node connections list | ✅ | In hover card + count per node |
-| Quick actions | ✅ | Open / Find path buttons |
+| Detail panel | ✅ | DetailSidebar component met connections |
+| Node connections list | ✅ | In hover card + sidebar + count per node |
+| Quick actions | ✅ | Open / Find path / Select for path buttons |
 | **Advanced Visualization** | | |
-| Mini-map | ❌ | Overzicht in hoek |
+| Mini-map | ✅ | MiniMap canvas in hoek, viewport indicator |
 | Zoom to fit | ✅ | Reset zoom button |
-| Layout options | ❌ | Force / Hierarchical / Radial |
-| Timeline mode | ❌ | Nodes op tijdlijn (created_at) |
+| Layout options | ✅ | Force / Hierarchical / Radial dropdown |
+| Timeline mode | ✅ | Chronologische view met time axis (updatedAt) |
 | **Export & Sharing** | | |
-| Export PNG | ❌ | Screenshot van graph |
-| Export SVG | ❌ | Vector voor print |
-| Export JSON | ❌ | Graph data voor externe tools |
-| Share view | ❌ | URL met filters/positie |
+| Export PNG | ✅ | SVG → Canvas → PNG download |
+| Export SVG | ✅ | Direct SVG download |
+| Export JSON | ✅ | Graph data (nodes + edges) export |
+| Share view | ❌ | URL met filters/positie (niet geïmplementeerd) |
 
 **Enhanced Graph UI:**
 
@@ -1395,7 +1395,7 @@ Beantwoord nu de vraag van de gebruiker.`
 | **15.1 Provider Koppeling** | ✅ | WikiAiService + tRPC endpoints |
 | **15.2 Semantic Search** | ✅ | Backend (Qdrant) + Frontend (SearchModes) |
 | **15.3 Ask the Wiki** | ✅ | RAG Chat met bronnen (WikiRagService + AskWikiDialog) |
-| **15.4 Enhanced Graphs** | 🔄 | Filtering ✅, Hover cards ✅, Path finding ✅, Clustering ❌ |
+| **15.4 Enhanced Graphs** | ✅ | WikiGraphView v3.0.0 - Alle features behalve Share URL |
 | **15.5 Integration** | ❌ | UI polish en performance |
 
 **Totaal items:** ~60 taken verdeeld over 5 sub-fases
@@ -1682,3 +1682,18 @@ cat ~/genx/v6/dev/kanbu/docs/WIKI-base/GRAPHITI-IMPLEMENTATIE.md
 | 2026-01-12 | TypingIndicator - animated dots tijdens wachten |
 | 2026-01-12 | wiki/index.ts v1.4.0 - AskWikiDialog + AskWikiFab exports |
 | 2026-01-12 | **Fase 15.3 Ask the Wiki COMPLEET** |
+| 2026-01-12 | **Fase 15.4 Enhanced Graphs START** |
+| 2026-01-12 | WikiGraphView v2.0.0 - Entity filtering + hover cards + depth control |
+| 2026-01-12 | GraphitiService v3.2.0 - updatedAt timestamps voor nodes/edges |
+| 2026-01-12 | WikiGraphView v3.0.0 - Alle Fase 15.4 features (~1830 LOC) |
+| 2026-01-12 | Time range filter met date pickers (start/end) |
+| 2026-01-12 | Clustering via connected components (detectCommunities) |
+| 2026-01-12 | Cluster coloring met 8-kleuren palette |
+| 2026-01-12 | PathExplanation component - "A → edge type → B → edge type → C" |
+| 2026-01-12 | DetailSidebar component - volledige node info + connections |
+| 2026-01-12 | MiniMap component - viewport indicator + click-to-pan |
+| 2026-01-12 | Layout options: Force / Hierarchical / Radial |
+| 2026-01-12 | Timeline mode - nodes chronologisch + time axis |
+| 2026-01-12 | Export PNG (SVG→Canvas→Blob), SVG, JSON |
+| 2026-01-12 | TypeScript fix: lucide-react Map icon shadowed native Map constructor |
+| 2026-01-12 | **Fase 15.4 Enhanced Graphs COMPLEET** (behalve Share URL) |
