@@ -1,14 +1,18 @@
 /*
  * Wiki Page View Component
- * Version: 1.0.0
+ * Version: 1.1.0
  *
  * Displays a single wiki page with view/edit mode toggle.
  * Integrates Lexical RichTextEditor for content editing.
+ * Includes backlinks and related pages panel (Graphiti integration).
  *
  * ===================================================================
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
  * Signed: 2026-01-12
  * Change: Initial implementation following WIKI-MASTER-CONCEPT.md
+ *
+ * Modified: 2026-01-12
+ * Change: Added BacklinksPanel for Fase 3 Graphiti integration
  * ===================================================================
  */
 
@@ -40,6 +44,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { WikiPageStatus } from './WikiSidebar'
+import { BacklinksPanel } from './BacklinksPanel'
 
 // =============================================================================
 // Types
@@ -420,11 +425,11 @@ export function WikiPageView({
         </div>
       </div>
 
-      {/* Content */}
-      <div className="flex-1 min-h-0">
+      {/* Content + Backlinks */}
+      <div className="flex-1 min-h-0 overflow-y-auto">
         <RichTextEditor
-          key={`${page.id}-${isEditing}`}
-          initialContent={editedContentJson || undefined}
+          key={`${page.id}-${page.updatedAt}-${isEditing}`}
+          initialContent={isEditing ? editedContentJson || undefined : page.contentJson || undefined}
           onChange={handleEditorChange}
           readOnly={!isEditing}
           showToolbar={isEditing}
@@ -438,10 +443,15 @@ export function WikiPageView({
           wikiPages={wikiPages}
           wikiBasePath={basePath}
         />
-      </div>
 
-      {/* Future: Backlinks and Related Pages sections will go here */}
-      {/* See WIKI-MASTER-CONCEPT.md for design */}
+        {/* Backlinks and Related Pages panel */}
+        {!isEditing && (
+          <BacklinksPanel
+            pageId={page.id}
+            basePath={basePath}
+          />
+        )}
+      </div>
     </div>
   )
 }

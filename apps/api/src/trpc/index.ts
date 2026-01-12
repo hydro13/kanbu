@@ -138,6 +138,7 @@ import { workspaceWikiRouter } from './procedures/workspaceWiki';
 import { projectWikiRouter } from './procedures/projectWiki';
 import { projectGroupRouter } from './procedures/projectGroup';
 import { favoriteRouter } from './procedures/favorite';
+import { graphitiRouter } from './procedures/graphiti';
 
 /**
  * Main app router
@@ -183,6 +184,7 @@ export const appRouter = router({
   projectWiki: projectWikiRouter,
   projectGroup: projectGroupRouter,
   favorite: favoriteRouter,
+  graphiti: graphitiRouter,
 });
 
 /**

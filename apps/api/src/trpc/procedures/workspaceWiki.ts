@@ -392,6 +392,7 @@ export const workspaceWikiRouter = router({
       getGraphitiService().syncWikiPage({
         pageId: page.id,
         title: page.title,
+        slug: page.slug,
         content: page.content,
         workspaceId: input.workspaceId,
         groupId: graphitiGroupId,
@@ -490,6 +491,7 @@ export const workspaceWikiRouter = router({
         getGraphitiService().syncWikiPage({
           pageId: page.id,
           title: page.title,
+          slug: page.slug,
           content: page.content,
           workspaceId: existing.workspaceId,
           groupId: existing.graphitiGroupId ?? `wiki-ws-${existing.workspaceId}`,

@@ -389,6 +389,7 @@ export const projectWikiRouter = router({
       getGraphitiService().syncWikiPage({
         pageId: page.id,
         title: page.title,
+        slug: page.slug,
         content: page.content,
         projectId: input.projectId,
         groupId: graphitiGroupId,
@@ -486,6 +487,7 @@ export const projectWikiRouter = router({
         getGraphitiService().syncWikiPage({
           pageId: page.id,
           title: page.title,
+          slug: page.slug,
           content: page.content,
           projectId: existing.projectId,
           groupId: existing.graphitiGroupId ?? `wiki-proj-${existing.projectId}`,

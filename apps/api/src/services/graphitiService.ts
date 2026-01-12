@@ -27,6 +27,7 @@ export interface GraphitiConfig {
 export interface WikiEpisode {
   pageId: number
   title: string
+  slug: string
   content: string
   workspaceId?: number
   projectId?: number
@@ -131,7 +132,6 @@ export class GraphitiService {
       // Simple parameter substitution (FalkorDB style)
       if (params) {
         for (const [key, value] of Object.entries(params)) {
-          const placeholder = `$${key}`
           const replacement = typeof value === 'string'
             ? `'${value.replace(/'/g, "\\'")}'`
             : String(value)
@@ -164,16 +164,33 @@ export class GraphitiService {
   async syncWikiPage(episode: WikiEpisode): Promise<void> {
     await this.initialize()
 
-    const { pageId, title, content, groupId, userId, timestamp } = episode
+    const { pageId, title, slug, content, groupId, userId, timestamp } = episode
+    const escapedTitle = this.escapeString(title)
+    const escapedSlug = this.escapeString(slug)
 
-    // Create/update the WikiPage node
+    // First, try to find and update an existing node by title (from wiki link extraction)
+    // Then fall back to creating/updating by pageId
     await this.query(`
       MERGE (p:WikiPage {pageId: ${pageId}})
-      SET p.title = '${this.escapeString(title)}',
+      ON CREATE SET p.title = '${escapedTitle}'
+      ON MATCH SET p.title = '${escapedTitle}'
+      SET p.slug = '${escapedSlug}',
           p.groupId = '${groupId}',
           p.updatedBy = ${userId},
           p.updatedAt = '${timestamp.toISOString()}',
           p.contentLength = ${content.length}
+    `)
+
+    // Also update any title-only nodes to point to this pageId
+    // This handles the case where [[Page Title]] was extracted before the page was synced
+    await this.query(`
+      MATCH (titleNode:WikiPage {title: '${escapedTitle}'})
+      WHERE titleNode.pageId IS NULL
+      SET titleNode.pageId = ${pageId},
+          titleNode.slug = '${escapedSlug}',
+          titleNode.groupId = '${groupId}',
+          titleNode.updatedBy = ${userId},
+          titleNode.updatedAt = '${timestamp.toISOString()}'
     `)
 
     // Extract and link entities from content
@@ -238,34 +255,58 @@ export class GraphitiService {
 
   /**
    * Get pages that link to a specific page (backlinks)
+   * Matches by pageId OR by title (for wiki links that were created before the target page was synced)
    */
-  async getBacklinks(pageId: number): Promise<{ pageId: number; title: string }[]> {
+  async getBacklinks(pageId: number): Promise<{ pageId: number; title: string; slug: string }[]> {
     await this.initialize()
 
+    // First get the title of the target page
+    const targetResult = await this.query(`
+      MATCH (p:WikiPage {pageId: ${pageId}})
+      RETURN p.title AS title
+    `)
+    const targetParsed = this.parseResults<{ title: string }>(targetResult, ['title'])
+    const targetTitle = targetParsed[0]?.title
+
+    if (!targetTitle) {
+      // Page not in graph yet, try matching by pageId only
+      const result = await this.query(`
+        MATCH (source:WikiPage)-[:LINKS_TO]->(target:WikiPage {pageId: ${pageId}})
+        WHERE source.pageId IS NOT NULL
+        RETURN source.pageId AS pageId, source.title AS title, source.slug AS slug
+      `)
+      return this.parseResults<{ pageId: number; title: string; slug: string }>(result, ['pageId', 'title', 'slug'])
+    }
+
+    // Find pages linking to this page by pageId OR by title
+    const escapedTitle = this.escapeString(targetTitle)
     const result = await this.query(`
-      MATCH (source:WikiPage)-[:LINKS_TO]->(target:WikiPage {pageId: ${pageId}})
-      RETURN source.pageId AS pageId, source.title AS title
+      MATCH (source:WikiPage)-[:LINKS_TO]->(target:WikiPage)
+      WHERE (target.pageId = ${pageId} OR target.title = '${escapedTitle}')
+        AND source.pageId IS NOT NULL
+        AND source.pageId <> ${pageId}
+      RETURN DISTINCT source.pageId AS pageId, source.title AS title, source.slug AS slug
     `)
 
-    return this.parseResults(result, ['pageId', 'title'])
+    return this.parseResults<{ pageId: number; title: string; slug: string }>(result, ['pageId', 'title', 'slug'])
   }
 
   /**
    * Get pages related through shared entities
    */
-  async getRelatedPages(pageId: number, limit: number = 5): Promise<{ pageId: number; title: string; sharedCount: number }[]> {
+  async getRelatedPages(pageId: number, limit: number = 5): Promise<{ pageId: number; title: string; slug: string; sharedCount: number }[]> {
     await this.initialize()
 
     const result = await this.query(`
       MATCH (p1:WikiPage {pageId: ${pageId}})-[:MENTIONS]->(e)<-[:MENTIONS]-(p2:WikiPage)
-      WHERE p1 <> p2
+      WHERE p1 <> p2 AND p2.pageId IS NOT NULL
       WITH p2, count(e) AS sharedCount
-      RETURN p2.pageId AS pageId, p2.title AS title, sharedCount
+      RETURN p2.pageId AS pageId, p2.title AS title, p2.slug AS slug, sharedCount
       ORDER BY sharedCount DESC
       LIMIT ${limit}
     `)
 
-    return this.parseResults(result, ['pageId', 'title', 'sharedCount'])
+    return this.parseResults<{ pageId: number; title: string; slug: string; sharedCount: number }>(result, ['pageId', 'title', 'slug', 'sharedCount'])
   }
 
   /**
@@ -279,7 +320,7 @@ export class GraphitiService {
       RETURN e.name AS name, labels(e)[0] AS type
     `)
 
-    const parsed = this.parseResults(result, ['name', 'type'])
+    const parsed = this.parseResults<{ name: string; type: string }>(result, ['name', 'type'])
     return parsed.map(row => ({
       id: `${row.type}-${row.name}`,
       name: row.name,
@@ -310,7 +351,7 @@ export class GraphitiService {
       LIMIT ${limit}
     `)
 
-    const parsed = this.parseResults(result, ['pageId', 'name', 'type', 'score'])
+    const parsed = this.parseResults<{ pageId: number; name: string; type: string; score: number }>(result, ['pageId', 'name', 'type', 'score'])
 
     // Deduplicate by pageId
     const seen = new Set<number>()
@@ -340,7 +381,7 @@ export class GraphitiService {
     const relsResult = await this.query(`MATCH ()-[r]->() RETURN count(r) AS count`)
 
     const parseCount = (result: unknown[]): number => {
-      const parsed = this.parseResults(result, ['count'])
+      const parsed = this.parseResults<{ count: number }>(result, ['count'])
       return parsed[0]?.count ?? 0
     }
 
@@ -365,13 +406,15 @@ export class GraphitiService {
 
     // Extract @mentions (Person)
     const mentionRegex = /@(\w+)/g
-    let match
+    let match: RegExpExecArray | null
     while ((match = mentionRegex.exec(content)) !== null) {
       const name = match[1]
-      const key = `Person:${name}`
-      if (!seen.has(key)) {
-        entities.push({ name, type: 'Person' })
-        seen.add(key)
+      if (name) {
+        const key = `Person:${name}`
+        if (!seen.has(key)) {
+          entities.push({ name, type: 'Person' })
+          seen.add(key)
+        }
       }
     }
 
@@ -379,10 +422,12 @@ export class GraphitiService {
     const taskRegex = /#([A-Z]+-\d+)/g
     while ((match = taskRegex.exec(content)) !== null) {
       const name = match[1]
-      const key = `Task:${name}`
-      if (!seen.has(key)) {
-        entities.push({ name, type: 'Task' })
-        seen.add(key)
+      if (name) {
+        const key = `Task:${name}`
+        if (!seen.has(key)) {
+          entities.push({ name, type: 'Task' })
+          seen.add(key)
+        }
       }
     }
 
@@ -392,7 +437,7 @@ export class GraphitiService {
     const skipWords = new Set(['The', 'This', 'That', 'What', 'When', 'Where', 'How', 'Why', 'If', 'Then'])
     while ((match = conceptRegex.exec(content)) !== null) {
       const name = match[1]
-      if (name.length > 2 && !skipWords.has(name)) {
+      if (name && name.length > 2 && !skipWords.has(name)) {
         const key = `Concept:${name}`
         if (!seen.has(key)) {
           entities.push({ name, type: 'Concept' })
@@ -410,12 +455,16 @@ export class GraphitiService {
   private extractWikiLinks(content: string): string[] {
     const links: string[] = []
     const linkRegex = /\[\[([^\]]+)\]\]/g
-    let match
+    let match: RegExpExecArray | null
 
     while ((match = linkRegex.exec(content)) !== null) {
-      const link = match[1].split('|')[0].trim() // Handle [[Page|Display Text]] format
-      if (link && !links.includes(link)) {
-        links.push(link)
+      const captured = match[1]
+      if (captured) {
+        const parts = captured.split('|')
+        const link = (parts[0] ?? '').trim() // Handle [[Page|Display Text]] format
+        if (link && !links.includes(link)) {
+          links.push(link)
+        }
       }
     }
 
@@ -430,19 +479,21 @@ export class GraphitiService {
     return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"')
   }
 
-  private parseResults(result: unknown[], columns: string[]): Record<string, unknown>[] {
+  private parseResults<T extends Record<string, unknown>>(result: unknown[], columns: string[]): T[] {
     if (!Array.isArray(result) || result.length < 2) return []
 
-    // FalkorDB result format: [headers, row1, row2, ..., metadata]
-    const rows = result.slice(1, -1) // Skip headers and metadata
+    // FalkorDB result format: [headers, [row1, row2, ...], metadata]
+    // The rows are nested in a single array at index 1
+    const rowsContainer = result[1]
+    if (!Array.isArray(rowsContainer)) return []
 
-    return rows.map(row => {
-      if (!Array.isArray(row)) return {}
+    return rowsContainer.map(row => {
+      if (!Array.isArray(row)) return {} as T
       const obj: Record<string, unknown> = {}
       columns.forEach((col, i) => {
         obj[col] = row[i]
       })
-      return obj
+      return obj as T
     })
   }
 

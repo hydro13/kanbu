@@ -1,8 +1,8 @@
 # Wiki Implementation Roadmap & Status
 
 > **Laatst bijgewerkt:** 2026-01-12
-> **Huidige fase:** Fase 2 - Graphiti Integration
-> **Volgende actie:** Test sync + add tRPC endpoints voor search/backlinks
+> **Huidige fase:** Fase 3 - Cross-References
+> **Volgende actie:** Test BacklinksPanel in browser
 
 ---
 
@@ -37,7 +37,7 @@
 
 ---
 
-## Fase 2: Graphiti Integration ⏳ IN PROGRESS
+## Fase 2: Graphiti Integration ✅ COMPLEET
 
 | Item | Status | Notities |
 |------|--------|----------|
@@ -45,23 +45,25 @@
 | GraphitiService class | ✅ | apps/api/src/services/graphitiService.ts |
 | Sync on wiki save | ✅ | Hooks in create/update/delete mutations |
 | Entity extraction | ✅ | Rules-based (@mentions, #tasks, concepts) |
-| graphiti.getBacklinks endpoint | ❌ | Voor backlinks panel |
-| graphiti.search endpoint | ❌ | Voor wiki search |
-| graphiti.getRelated endpoint | ❌ | Voor related pages |
+| graphiti.getBacklinks endpoint | ✅ | graphiti.ts router |
+| graphiti.search endpoint | ✅ | graphiti.ts router |
+| graphiti.getRelated endpoint | ✅ | graphiti.ts router |
 
 ### Vereisten voor Fase 2:
 - [x] FalkorDB draaiend op MAX (kanbu-falkordb container)
 - [ ] LLM-based entity extraction (future improvement)
 - [x] Sync hooks in wiki routers
+- [x] tRPC endpoints voor graph queries
 
 ---
 
-## Fase 3: Cross-References (NA FASE 2)
+## Fase 3: Cross-References ⏳ IN PROGRESS
 
 | Item | Status | Notities |
 |------|--------|----------|
-| Backlinks panel | ❌ | Query Graphiti voor incoming links |
-| Related pages sidebar | ❌ | Based op shared entities |
+| BacklinksPanel component | ✅ | components/wiki/BacklinksPanel.tsx |
+| Related pages in panel | ✅ | Geïntegreerd in BacklinksPanel |
+| Integratie in WikiPageView | ✅ | Toont panel onder content |
 | @mentions plugin | ❌ | Lexical plugin |
 | #task-refs plugin | ❌ | Link naar tasks |
 
@@ -92,7 +94,7 @@
 |-------|--------|-----------|
 | ~~Geen Graphiti server~~ | ~~Fase 2 blocked~~ | ✅ FalkorDB draait |
 | Project Wiki page mist | Minor | Kan later, workspace wiki werkt |
-| tRPC endpoints voor graph queries | Fase 3 blocked | Endpoints toevoegen |
+| ~~tRPC endpoints voor graph queries~~ | ~~Fase 3 blocked~~ | ✅ graphiti.ts router |
 
 ---
 
@@ -121,3 +123,6 @@ cat ~/genx/v6/dev/kanbu/docs/WIKI-base/GRAPHITI-IMPLEMENTATIE.md
 | 2026-01-12 | FalkorDB toegevoegd aan docker-compose.yml |
 | 2026-01-12 | GraphitiService.ts aangemaakt |
 | 2026-01-12 | Sync hooks toegevoegd aan workspaceWiki.ts en projectWiki.ts |
+| 2026-01-12 | graphiti.ts tRPC router toegevoegd (Fase 2 compleet) |
+| 2026-01-12 | BacklinksPanel.tsx component aangemaakt |
+| 2026-01-12 | BacklinksPanel geïntegreerd in WikiPageView.tsx |
