@@ -65,7 +65,7 @@
 | Related pages in panel | ✅ | Geïntegreerd in BacklinksPanel |
 | Integratie in WikiPageView | ✅ | Toont panel onder content |
 | @mentions plugin | ❌ | Lexical plugin |
-| #task-refs plugin | ❌ | Link naar tasks |
+| #task-refs plugin | ✅ | TaskRefPlugin.tsx, TaskRefNode.tsx |
 
 ---
 
@@ -126,3 +126,4 @@ cat ~/genx/v6/dev/kanbu/docs/WIKI-base/GRAPHITI-IMPLEMENTATIE.md
 | 2026-01-12 | graphiti.ts tRPC router toegevoegd (Fase 2 compleet) |
 | 2026-01-12 | BacklinksPanel.tsx component aangemaakt |
 | 2026-01-12 | BacklinksPanel geïntegreerd in WikiPageView.tsx |
+| 2026-01-12 | TaskRefNode.tsx en TaskRefPlugin.tsx toegevoegd (#task-refs) |

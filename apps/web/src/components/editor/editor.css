@@ -416,6 +416,57 @@
 }
 
 /* =============================================================================
+   Task References
+   ============================================================================= */
+
+.task-ref {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.0625rem 0.375rem;
+  margin: 0 0.0625rem;
+  background: hsl(142 76% 36% / 0.1);
+  color: hsl(142 76% 36%);
+  border-radius: 0.25rem;
+  text-decoration: none;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.875em;
+  font-weight: 500;
+  transition: background-color 0.15s, color 0.15s;
+  cursor: pointer;
+}
+
+.task-ref:hover {
+  background: hsl(142 76% 36% / 0.2);
+  color: hsl(142 76% 30%);
+  text-decoration: underline;
+}
+
+/* Non-existing task references */
+.task-ref--missing {
+  background: hsl(var(--muted));
+  color: hsl(var(--muted-foreground));
+  border: 1px dashed hsl(var(--border));
+}
+
+.task-ref--missing:hover {
+  background: hsl(var(--muted));
+  border-color: hsl(var(--destructive) / 0.5);
+  color: hsl(var(--destructive));
+}
+
+/* Dark mode adjustments for task refs */
+:root.dark .task-ref {
+  background: hsl(142 76% 36% / 0.15);
+  color: hsl(142 72% 55%);
+}
+
+:root.dark .task-ref:hover {
+  background: hsl(142 76% 36% / 0.25);
+  color: hsl(142 72% 60%);
+}
+
+/* =============================================================================
    Code Blocks
    ============================================================================= */
 

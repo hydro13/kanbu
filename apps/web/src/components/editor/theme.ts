@@ -105,6 +105,12 @@ export const editorTheme: EditorThemeClasses = {
 
   // Horizontal rule
   hr: 'lexical-hr',
+
+  // Wiki links
+  wikiLink: 'wiki-link',
+
+  // Task references
+  taskRef: 'task-ref',
 }
 
 export default editorTheme

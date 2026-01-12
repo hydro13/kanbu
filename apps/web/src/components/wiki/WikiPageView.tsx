@@ -27,7 +27,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { RichTextEditor, type WikiPage as WikiPageForLink } from '@/components/editor'
+import { RichTextEditor, type WikiPage as WikiPageForLink, type TaskResult } from '@/components/editor'
 import {
   Edit2,
   Eye,
@@ -103,6 +103,8 @@ interface WikiPageViewProps {
   searchWikiPages?: (query: string) => Promise<WikiPageForLink[]>
   /** Static list of wiki pages (alternative to searchWikiPages) */
   wikiPages?: WikiPageForLink[]
+  /** Function to search tasks for # task ref autocomplete (only for project wikis) */
+  searchTasks?: (query: string) => Promise<TaskResult[]>
 }
 
 // =============================================================================
@@ -187,6 +189,7 @@ export function WikiPageView({
   autoSaveDelay = 2000,
   searchWikiPages,
   wikiPages,
+  searchTasks,
 }: WikiPageViewProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [editedTitle, setEditedTitle] = useState(page.title)
@@ -427,8 +430,9 @@ export function WikiPageView({
 
       {/* Content + Backlinks */}
       <div className="flex-1 min-h-0 overflow-y-auto">
+        {/* Key excludes updatedAt to prevent editor remount on auto-save refetch */}
         <RichTextEditor
-          key={`${page.id}-${page.updatedAt}-${isEditing}`}
+          key={`${page.id}-${isEditing}`}
           initialContent={isEditing ? editedContentJson || undefined : page.contentJson || undefined}
           onChange={handleEditorChange}
           readOnly={!isEditing}
@@ -442,6 +446,8 @@ export function WikiPageView({
           searchWikiPages={searchWikiPages}
           wikiPages={wikiPages}
           wikiBasePath={basePath}
+          enableTaskRefs={!!searchTasks}
+          searchTasks={searchTasks}
         />
 
         {/* Backlinks and Related Pages panel */}

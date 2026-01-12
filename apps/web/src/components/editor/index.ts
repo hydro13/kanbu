@@ -40,6 +40,11 @@ export { DraggableMediaPlugin } from './DraggableMediaPlugin'
 export { WikiLinkPlugin } from './WikiLinkPlugin'
 export type { WikiPage, WikiLinkPluginProps } from './WikiLinkPlugin'
 
+export { TaskRefPlugin } from './TaskRefPlugin'
+export type { TaskResult, TaskRefPluginProps } from './TaskRefPlugin'
+
+export { TaskRefCleanupPlugin } from './TaskRefCleanupPlugin'
+
 // Nodes
 export {
   ImageNode,
@@ -57,6 +62,9 @@ export {
   WikiLinkNode,
   $createWikiLinkNode,
   $isWikiLinkNode,
+  TaskRefNode,
+  $createTaskRefNode,
+  $isTaskRefNode,
 } from './nodes'
 export type {
   ImagePayload,
@@ -68,6 +76,8 @@ export type {
   EmbedProvider,
   WikiLinkPayload,
   SerializedWikiLinkNode,
+  TaskRefPayload,
+  SerializedTaskRefNode,
 } from './nodes'
 
 export { editorTheme } from './theme'

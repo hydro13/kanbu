@@ -19,7 +19,7 @@
  * ===================================================================
  */
 
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { WorkspaceLayout } from '@/components/layout/WorkspaceLayout'
 import { WikiSidebar, WikiPageView, WikiVersionHistory } from '@/components/wiki'
@@ -43,7 +43,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { RichTextEditor, type WikiPage as WikiPageForLink } from '@/components/editor'
+import { RichTextEditor, type WikiPage as WikiPageForLink, type TaskResult } from '@/components/editor'
 import { trpc } from '@/lib/trpc'
 import { BookOpen, Plus, ArrowLeft } from 'lucide-react'
 import { Link } from 'react-router-dom'
@@ -203,6 +203,81 @@ export function WorkspaceWikiPage() {
     [pages]
   )
 
+  // Priority number to string conversion
+  const priorityToString = (priority: number): TaskResult['priority'] => {
+    switch (priority) {
+      case 1: return 'MEDIUM'
+      case 2: return 'HIGH'
+      case 3: return 'URGENT'
+      default: return 'LOW'
+    }
+  }
+
+  // Search tasks function for #task-ref autocomplete
+  // Searches across all projects in this workspace
+  const searchTasks = useCallback(
+    async (query: string): Promise<TaskResult[]> => {
+      if (!workspace?.id || query.length < 1) {
+        return []
+      }
+
+      try {
+        const results = await utils.client.search.tasksInWorkspace.query({
+          workspaceId: workspace.id,
+          query,
+          limit: 10,
+          includeCompleted: false,
+        })
+
+        return results.map((task) => ({
+          id: task.id,
+          title: task.title,
+          reference: task.reference,
+          priority: priorityToString(task.priority),
+          isActive: task.isActive,
+          column: task.column ? { title: task.column.title } : undefined,
+        }))
+      } catch (error) {
+        console.error('Task search failed:', error)
+        return []
+      }
+    },
+    [workspace?.id, utils.client]
+  )
+
+  // Memoize the page object to prevent unnecessary re-renders during auto-save
+  // Only update when page.id changes (not on every refetch)
+  const currentPageRef = useRef(currentPage)
+  if (currentPage && (!currentPageRef.current || currentPageRef.current.id !== currentPage.id)) {
+    currentPageRef.current = currentPage
+  }
+
+  const pageForView = useMemo(() => {
+    const cp = currentPage
+    if (!cp) return null
+    return {
+      id: cp.id,
+      title: cp.title,
+      slug: cp.slug,
+      content: cp.content,
+      contentJson:
+        typeof cp.contentJson === 'string'
+          ? cp.contentJson
+          : cp.contentJson
+          ? JSON.stringify(cp.contentJson)
+          : null,
+      status: cp.status,
+      sortOrder: cp.sortOrder,
+      parentId: cp.parentId,
+      createdAt: cp.createdAt,
+      updatedAt: cp.updatedAt,
+      publishedAt: cp.publishedAt,
+    }
+  }, [currentPage?.id, currentPage?.title, currentPage?.slug, currentPage?.content,
+      currentPage?.contentJson, currentPage?.status, currentPage?.sortOrder,
+      currentPage?.parentId, currentPage?.createdAt, currentPage?.updatedAt,
+      currentPage?.publishedAt])
+
   // Handlers
   const handleCreatePage = useCallback((parentId?: number) => {
     setCreateParentId(parentId)
@@ -297,27 +372,10 @@ export function WorkspaceWikiPage() {
 
         {/* Main Content */}
         <div className="flex-1 overflow-auto p-6">
-          {pageSlug && currentPage ? (
+          {pageSlug && pageForView ? (
             /* Page View */
             <WikiPageView
-              page={{
-                id: currentPage.id,
-                title: currentPage.title,
-                slug: currentPage.slug,
-                content: currentPage.content,
-                contentJson:
-                  typeof currentPage.contentJson === 'string'
-                    ? currentPage.contentJson
-                    : currentPage.contentJson
-                    ? JSON.stringify(currentPage.contentJson)
-                    : null,
-                status: currentPage.status,
-                sortOrder: currentPage.sortOrder,
-                parentId: currentPage.parentId,
-                createdAt: currentPage.createdAt,
-                updatedAt: currentPage.updatedAt,
-                publishedAt: currentPage.publishedAt,
-              }}
+              page={pageForView}
               basePath={basePath}
               breadcrumbs={breadcrumbs}
               canEdit={true}
@@ -328,6 +386,7 @@ export function WorkspaceWikiPage() {
               isSaving={updateMutation.isPending}
               autoSaveDelay={2000}
               wikiPages={wikiPagesForLinks}
+              searchTasks={searchTasks}
             />
           ) : pageSlug && currentPageQuery.isLoading ? (
             /* Loading page */

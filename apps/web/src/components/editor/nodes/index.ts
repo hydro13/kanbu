@@ -27,3 +27,6 @@ export type { EmbedPayload, SerializedEmbedNode, EmbedProvider, EmbedMetadata } 
 
 export { WikiLinkNode, $createWikiLinkNode, $isWikiLinkNode } from './WikiLinkNode'
 export type { WikiLinkPayload, SerializedWikiLinkNode } from './WikiLinkNode'
+
+export { TaskRefNode, $createTaskRefNode, $isTaskRefNode } from './TaskRefNode'
+export type { TaskRefPayload, SerializedTaskRefNode } from './TaskRefNode'

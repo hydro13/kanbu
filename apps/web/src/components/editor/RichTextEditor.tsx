@@ -44,7 +44,9 @@ import { MarkdownPastePlugin } from './MarkdownPastePlugin'
 import { MediaPlugin } from './MediaPlugin'
 import { DraggableMediaPlugin } from './DraggableMediaPlugin'
 import { WikiLinkPlugin, type WikiPage } from './WikiLinkPlugin'
-import { ImageNode, VideoNode, EmbedNode, WikiLinkNode } from './nodes'
+import { TaskRefPlugin, type TaskResult } from './TaskRefPlugin'
+import { TaskRefCleanupPlugin } from './TaskRefCleanupPlugin'
+import { ImageNode, VideoNode, EmbedNode, WikiLinkNode, TaskRefNode } from './nodes'
 import './editor.css'
 
 // =============================================================================
@@ -80,6 +82,10 @@ export interface RichTextEditorProps {
   wikiPages?: WikiPage[]
   /** Base path for wiki links (e.g., /workspace/slug/wiki) */
   wikiBasePath?: string
+  /** Enable task reference detection with # syntax */
+  enableTaskRefs?: boolean
+  /** Function to search for tasks (for task ref autocomplete) */
+  searchTasks?: (query: string) => Promise<TaskResult[]>
 }
 
 // =============================================================================
@@ -142,6 +148,8 @@ export function RichTextEditor({
   searchWikiPages,
   wikiPages,
   wikiBasePath,
+  enableTaskRefs = false,
+  searchTasks,
 }: RichTextEditorProps) {
   // Editor configuration
   const initialConfig = {
@@ -168,6 +176,8 @@ export function RichTextEditor({
       EmbedNode,
       // Wiki nodes
       WikiLinkNode,
+      // Task ref nodes
+      TaskRefNode,
     ],
   }
 
@@ -228,6 +238,14 @@ export function RichTextEditor({
               basePath={wikiBasePath}
             />
           )}
+
+          {/* Task Ref Plugin - only in edit mode with enableTaskRefs */}
+          {enableTaskRefs && !readOnly && searchTasks && (
+            <TaskRefPlugin searchTasks={searchTasks} />
+          )}
+
+          {/* Task Ref Cleanup Plugin - cleans up duplicate children from earlier bug */}
+          {enableTaskRefs && <TaskRefCleanupPlugin />}
 
           {/* Change handler */}
           {onChange && <OnChangePlugin onChange={handleChange} ignoreSelectionChange />}

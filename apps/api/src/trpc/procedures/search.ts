@@ -28,6 +28,13 @@ const searchTasksSchema = z.object({
   includeCompleted: z.boolean().default(false),
 })
 
+const searchTasksInWorkspaceSchema = z.object({
+  workspaceId: z.number(),
+  query: z.string().min(1).max(200),
+  limit: z.number().min(1).max(50).default(20),
+  includeCompleted: z.boolean().default(false),
+})
+
 const globalSearchSchema = z.object({
   projectId: z.number(),
   query: z.string().min(1).max(200),
@@ -95,6 +102,91 @@ export const searchRouter = router({
         assignees: t.assignees.map((a) => a.user),
         tags: t.tags.map((tt) => tt.tag),
       }))
+    }),
+
+  /**
+   * Full-text search over tasks across ALL projects in a workspace
+   * Searches in title, reference, and description
+   * Requires at least VIEWER access to the workspace
+   * Used by workspace wiki for #task-ref autocomplete
+   */
+  tasksInWorkspace: protectedProcedure
+    .input(searchTasksInWorkspaceSchema)
+    .query(async ({ ctx, input }) => {
+      // Check workspace access
+      await permissionService.requireWorkspaceAccess(ctx.user.id, input.workspaceId, 'VIEWER')
+
+      // Get all projects the user has access to in this workspace
+      const projects = await ctx.prisma.project.findMany({
+        where: {
+          workspaceId: input.workspaceId,
+          isActive: true,
+        },
+        select: { id: true },
+      })
+
+      const projectIds = projects.map((p) => p.id)
+
+      if (projectIds.length === 0) {
+        return []
+      }
+
+      // Search tasks across all projects in the workspace
+      const tasks = await ctx.prisma.task.findMany({
+        where: {
+          projectId: { in: projectIds },
+          ...(input.includeCompleted ? {} : { isActive: true }),
+          OR: [
+            { title: { contains: input.query, mode: 'insensitive' } },
+            { reference: { contains: input.query, mode: 'insensitive' } },
+            { description: { contains: input.query, mode: 'insensitive' } },
+          ],
+        },
+        include: {
+          column: {
+            select: { id: true, title: true },
+          },
+          project: {
+            select: { id: true, name: true, identifier: true },
+          },
+        },
+        orderBy: [
+          { isActive: 'desc' },
+          { updatedAt: 'desc' },
+        ],
+        take: input.limit,
+      })
+
+      // Map and sort results: reference starts with query first, then contains
+      const queryUpper = input.query.toUpperCase()
+      const results = tasks.map((t) => ({
+        id: t.id,
+        title: t.title,
+        reference: t.reference ?? '',
+        priority: t.priority,
+        isActive: t.isActive,
+        column: t.column ? { title: t.column.title } : null,
+        projectName: t.project.name,
+      }))
+
+      // Sort: reference starts with query > reference contains query > title match
+      results.sort((a, b) => {
+        const aRefStartsWith = a.reference.toUpperCase().startsWith(queryUpper)
+        const bRefStartsWith = b.reference.toUpperCase().startsWith(queryUpper)
+        const aRefContains = a.reference.toUpperCase().includes(queryUpper)
+        const bRefContains = b.reference.toUpperCase().includes(queryUpper)
+
+        // Priority: startsWith > contains > other
+        if (aRefStartsWith && !bRefStartsWith) return -1
+        if (!aRefStartsWith && bRefStartsWith) return 1
+        if (aRefContains && !bRefContains) return -1
+        if (!aRefContains && bRefContains) return 1
+
+        // Same priority - sort by reference alphabetically
+        return a.reference.localeCompare(b.reference)
+      })
+
+      return results
     }),
 
   /**
