@@ -136,6 +136,45 @@ export interface HealthResponse {
   embedder_configured: boolean
   version: string
   entity_types_available?: string[]
+  embedding_model?: string | null
+  embedding_dim?: number | null
+}
+
+// =============================================================================
+// Hybrid Search Types (Fase 11)
+// =============================================================================
+
+export interface HybridSearchRequest {
+  query: string
+  group_id?: string
+  limit?: number
+
+  // Search methods to use
+  use_bm25?: boolean // BM25 fulltext search (default: true)
+  use_vector?: boolean // Vector similarity search (default: true)
+  use_bfs?: boolean // Graph traversal (default: false)
+
+  // What to search
+  search_edges?: boolean // Search facts/relations (default: true)
+  search_nodes?: boolean // Search entities (default: true)
+  search_episodes?: boolean // Search raw episodes (default: false)
+  search_communities?: boolean // Search community summaries (default: false)
+
+  // Reranking
+  reranker?: 'rrf' | 'mmr' | 'cross_encoder' | 'none'
+  mmr_lambda?: number // 0 = diverse, 1 = relevant (default: 0.5)
+}
+
+export interface HybridSearchResponse {
+  edges: SearchResult[] // Matched facts/relations
+  nodes: SearchResult[] // Matched entities
+  episodes: SearchResult[] // Matched episodes
+  communities: SearchResult[] // Matched communities
+
+  query: string
+  search_methods_used: string[]
+  reranker_used?: string
+  total_results: number
 }
 
 export interface StatsResponse {
@@ -266,6 +305,29 @@ export class GraphitiClient {
 
   async temporalSearch(request: TemporalQueryRequest): Promise<TemporalQueryResponse> {
     return this.request<TemporalQueryResponse>('POST', '/search/temporal', request)
+  }
+
+  /**
+   * Hybrid search combining BM25, vector similarity, and graph traversal.
+   * Returns separate arrays for edges, nodes, episodes, and communities.
+   *
+   * @example
+   * // Basic semantic search
+   * const results = await client.hybridSearch({
+   *   query: 'authentication',
+   *   group_id: 'wiki-ws-1',
+   * })
+   *
+   * @example
+   * // Search with diversity (MMR reranking)
+   * const results = await client.hybridSearch({
+   *   query: 'authentication',
+   *   reranker: 'mmr',
+   *   mmr_lambda: 0.3, // More diversity
+   * })
+   */
+  async hybridSearch(request: HybridSearchRequest): Promise<HybridSearchResponse> {
+    return this.request<HybridSearchResponse>('POST', '/search/hybrid', request)
   }
 
   // ===========================================================================

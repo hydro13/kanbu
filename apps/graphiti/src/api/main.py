@@ -37,6 +37,8 @@ from .schemas import (
     GraphEdge,
     GraphNode,
     HealthResponse,
+    HybridSearchRequest,
+    HybridSearchResponse,
     SearchRequest,
     SearchResponse,
     SearchResult,
@@ -72,12 +74,18 @@ async def get_graphiti():
     from urllib.parse import urlparse
 
     from graphiti_core.driver.falkordb_driver import FalkorDriver
+    from graphiti_core.embedder import OpenAIEmbedder
+    from graphiti_core.embedder.openai import OpenAIEmbedderConfig
     from graphiti_core.graphiti import Graphiti
     from graphiti_core.llm_client import LLMConfig, OpenAIClient
 
     # Get configuration from environment
     falkordb_uri = os.getenv('FALKORDB_URI', 'redis://localhost:6379')
     openai_api_key = os.getenv('OPENAI_API_KEY')
+
+    # Embedding configuration
+    embedding_model = os.getenv('EMBEDDING_MODEL', 'text-embedding-3-small')
+    embedding_dim = int(os.getenv('EMBEDDING_DIM', '1024'))
 
     # Parse FalkorDB URI (redis://host:port)
     parsed = urlparse(falkordb_uri)
@@ -104,10 +112,27 @@ async def get_graphiti():
         )
         llm_client = OpenAIClient(llm_config)
 
-        # Create Graphiti instance with FalkorDB driver
+        # Create Embedder client (Fase 11)
+        # Embeddings are automatically generated for:
+        # - Entity nodes (name_embedding)
+        # - Entity edges (fact_embedding)
+        # - Community nodes (name_embedding)
+        embedder_config = OpenAIEmbedderConfig(
+            api_key=openai_api_key,
+            embedding_model=embedding_model,
+            embedding_dim=embedding_dim,
+        )
+        embedder = OpenAIEmbedder(config=embedder_config)
+
+        logger.info(
+            f'Embedder configured: model={embedding_model}, dim={embedding_dim}'
+        )
+
+        # Create Graphiti instance with FalkorDB driver and embedder
         graphiti_client = Graphiti(
             graph_driver=falkor_driver,
             llm_client=llm_client,
+            embedder=embedder,
         )
 
         # Initialize the graph database
@@ -188,13 +213,20 @@ async def health_check():
 
     entity_types = list(KANBU_ENTITY_TYPES.keys())
 
+    # Embedding configuration info
+    embedding_model = os.getenv('EMBEDDING_MODEL', 'text-embedding-3-small')
+    embedding_dim = int(os.getenv('EMBEDDING_DIM', '1024'))
+    has_api_key = bool(os.getenv('OPENAI_API_KEY'))
+
     return HealthResponse(
         status='healthy' if db_connected else 'unhealthy',
         database_connected=db_connected,
-        llm_configured=bool(os.getenv('OPENAI_API_KEY')),
-        embedder_configured=bool(os.getenv('OPENAI_API_KEY')),
+        llm_configured=has_api_key,
+        embedder_configured=has_api_key,
         version='1.0.0',
         entity_types_available=entity_types,
+        embedding_model=embedding_model if has_api_key else None,
+        embedding_dim=embedding_dim if has_api_key else None,
     )
 
 
@@ -493,6 +525,240 @@ async def temporal_search(request: TemporalQueryRequest):
 
     except Exception as e:
         logger.error(f'Temporal search failed: {e}')
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post('/search/hybrid', response_model=HybridSearchResponse)
+async def hybrid_search(request: HybridSearchRequest):
+    """
+    Advanced hybrid search (Fase 11).
+
+    Combines multiple search methods:
+    - BM25 (fulltext) for keyword matching
+    - Vector similarity for semantic matching
+    - BFS (breadth-first search) for graph traversal
+
+    Supports multiple reranking strategies:
+    - RRF (Reciprocal Rank Fusion) - combines multiple rankings
+    - MMR (Maximal Marginal Relevance) - diversity-aware
+    - Cross-encoder - neural reranking
+    """
+    try:
+        graphiti = await get_graphiti()
+
+        # Import search configuration
+        from graphiti_core.search.search import search as graphiti_search
+        from graphiti_core.search.search_config import (
+            CommunityReranker,
+            CommunitySearchConfig,
+            CommunitySearchMethod,
+            EdgeReranker,
+            EdgeSearchConfig,
+            EdgeSearchMethod,
+            EpisodeReranker,
+            EpisodeSearchConfig,
+            NodeReranker,
+            NodeSearchConfig,
+            NodeSearchMethod,
+            SearchConfig,
+        )
+        from graphiti_core.search.search_filters import SearchFilters
+
+        # Build search methods based on request
+        edge_methods = []
+        node_methods = []
+
+        if request.use_bm25:
+            edge_methods.append(EdgeSearchMethod.bm25)
+            node_methods.append(NodeSearchMethod.bm25)
+        if request.use_vector:
+            edge_methods.append(EdgeSearchMethod.cosine_similarity)
+            node_methods.append(NodeSearchMethod.cosine_similarity)
+        if request.use_bfs:
+            edge_methods.append(EdgeSearchMethod.bfs)
+            node_methods.append(NodeSearchMethod.bfs)
+
+        # Map reranker string to enum
+        edge_reranker_map = {
+            'rrf': EdgeReranker.rrf,
+            'mmr': EdgeReranker.mmr,
+            'cross_encoder': EdgeReranker.cross_encoder,
+            'none': EdgeReranker.rrf,  # Default to RRF
+        }
+        node_reranker_map = {
+            'rrf': NodeReranker.rrf,
+            'mmr': NodeReranker.mmr,
+            'cross_encoder': NodeReranker.cross_encoder,
+            'none': NodeReranker.rrf,
+        }
+
+        # Build search config
+        edge_config = None
+        node_config = None
+        episode_config = None
+        community_config = None
+
+        if request.search_edges and edge_methods:
+            edge_config = EdgeSearchConfig(
+                search_methods=edge_methods,
+                reranker=edge_reranker_map.get(request.reranker, EdgeReranker.rrf),
+                mmr_lambda=request.mmr_lambda,
+            )
+
+        if request.search_nodes and node_methods:
+            node_config = NodeSearchConfig(
+                search_methods=node_methods,
+                reranker=node_reranker_map.get(request.reranker, NodeReranker.rrf),
+                mmr_lambda=request.mmr_lambda,
+            )
+
+        if request.search_episodes:
+            episode_config = EpisodeSearchConfig(
+                reranker=EpisodeReranker.rrf,
+            )
+
+        if request.search_communities:
+            community_reranker_map = {
+                'rrf': CommunityReranker.rrf,
+                'mmr': CommunityReranker.mmr,
+                'cross_encoder': CommunityReranker.cross_encoder,
+                'none': CommunityReranker.rrf,
+            }
+            community_config = CommunitySearchConfig(
+                search_methods=[
+                    CommunitySearchMethod.bm25 if request.use_bm25 else None,
+                    CommunitySearchMethod.cosine_similarity if request.use_vector else None,
+                ],
+                reranker=community_reranker_map.get(request.reranker, CommunityReranker.rrf),
+                mmr_lambda=request.mmr_lambda,
+            )
+            # Filter out None values
+            community_config.search_methods = [m for m in community_config.search_methods if m]
+
+        search_config = SearchConfig(
+            edge_config=edge_config,
+            node_config=node_config,
+            episode_config=episode_config,
+            community_config=community_config,
+            limit=request.limit,
+        )
+
+        # Execute search
+        group_ids = [request.group_id] if request.group_id else None
+        results = await graphiti_search(
+            clients=graphiti.clients,
+            query=request.query,
+            group_ids=group_ids,
+            config=search_config,
+            search_filter=SearchFilters(),
+        )
+
+        # Build response
+        search_methods_used = []
+        if request.use_bm25:
+            search_methods_used.append('bm25')
+        if request.use_vector:
+            search_methods_used.append('vector')
+        if request.use_bfs:
+            search_methods_used.append('bfs')
+
+        # Convert edges to SearchResult
+        edge_results = []
+        for i, edge in enumerate(results.edges):
+            score = results.edge_reranker_scores[i] if i < len(results.edge_reranker_scores) else 1.0
+            edge_results.append(
+                SearchResult(
+                    uuid=str(edge.uuid),
+                    name=edge.name if hasattr(edge, 'name') else '',
+                    content=edge.fact,
+                    score=score,
+                    result_type='edge',
+                    metadata={
+                        'source_node': edge.source_node_uuid,
+                        'target_node': edge.target_node_uuid,
+                        'valid_at': edge.valid_at.isoformat() if edge.valid_at else None,
+                        'invalid_at': edge.invalid_at.isoformat() if edge.invalid_at else None,
+                    },
+                )
+            )
+
+        # Convert nodes to SearchResult
+        node_results = []
+        for i, node in enumerate(results.nodes):
+            score = results.node_reranker_scores[i] if i < len(results.node_reranker_scores) else 1.0
+            node_results.append(
+                SearchResult(
+                    uuid=str(node.uuid),
+                    name=node.name,
+                    content=node.summary or node.name,
+                    score=score,
+                    result_type='entity',
+                    metadata={
+                        'labels': node.labels,
+                    },
+                )
+            )
+
+        # Convert episodes to SearchResult
+        episode_results = []
+        for i, ep in enumerate(results.episodes):
+            score = results.episode_reranker_scores[i] if i < len(results.episode_reranker_scores) else 1.0
+            episode_results.append(
+                SearchResult(
+                    uuid=str(ep.uuid),
+                    name=ep.name,
+                    content=ep.content[:500] if ep.content else '',
+                    score=score,
+                    result_type='episode',
+                    metadata={
+                        'source': ep.source,
+                        'created_at': ep.created_at.isoformat() if ep.created_at else None,
+                    },
+                )
+            )
+
+        # Convert communities to SearchResult
+        community_results = []
+        for i, comm in enumerate(results.communities):
+            score = (
+                results.community_reranker_scores[i]
+                if i < len(results.community_reranker_scores)
+                else 1.0
+            )
+            community_results.append(
+                SearchResult(
+                    uuid=str(comm.uuid),
+                    name=comm.name,
+                    content=comm.summary or comm.name,
+                    score=score,
+                    result_type='entity',
+                    metadata={
+                        'type': 'community',
+                    },
+                )
+            )
+
+        total = len(edge_results) + len(node_results) + len(episode_results) + len(community_results)
+
+        logger.info(
+            f'Hybrid search "{request.query[:50]}..." returned {total} results '
+            f'(edges={len(edge_results)}, nodes={len(node_results)}, '
+            f'episodes={len(episode_results)}, communities={len(community_results)})'
+        )
+
+        return HybridSearchResponse(
+            edges=edge_results,
+            nodes=node_results,
+            episodes=episode_results,
+            communities=community_results,
+            query=request.query,
+            search_methods_used=search_methods_used,
+            reranker_used=request.reranker,
+            total_results=total,
+        )
+
+    except Exception as e:
+        logger.error(f'Hybrid search failed: {e}')
         raise HTTPException(status_code=500, detail=str(e))
 
 

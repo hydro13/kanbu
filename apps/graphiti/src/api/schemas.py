@@ -215,3 +215,54 @@ class HealthResponse(BaseModel):
     embedder_configured: bool
     version: str
     entity_types_available: list[str] = Field(default_factory=list)
+    embedding_model: str | None = Field(default=None, description='Active embedding model')
+    embedding_dim: int | None = Field(default=None, description='Embedding dimensions')
+
+
+# =============================================================================
+# Hybrid Search (Fase 11)
+# =============================================================================
+
+
+class HybridSearchRequest(BaseModel):
+    """
+    Advanced hybrid search request.
+    Combines BM25 (fulltext), vector similarity, and graph traversal.
+    """
+
+    query: str = Field(..., min_length=1, description='Search query')
+    group_id: str | None = Field(default=None, description='Filter by group')
+    limit: int = Field(default=10, ge=1, le=50)
+
+    # Search methods to use
+    use_bm25: bool = Field(default=True, description='Use BM25 fulltext search')
+    use_vector: bool = Field(default=True, description='Use vector similarity search')
+    use_bfs: bool = Field(default=False, description='Use graph traversal (BFS)')
+
+    # What to search
+    search_edges: bool = Field(default=True, description='Search entity edges (facts)')
+    search_nodes: bool = Field(default=True, description='Search entity nodes')
+    search_episodes: bool = Field(default=False, description='Search raw episodes')
+    search_communities: bool = Field(default=False, description='Search community summaries')
+
+    # Reranking
+    reranker: Literal['rrf', 'mmr', 'cross_encoder', 'none'] = Field(
+        default='rrf', description='Reranking method'
+    )
+    mmr_lambda: float = Field(
+        default=0.5, ge=0.0, le=1.0, description='MMR diversity parameter (0=diverse, 1=relevant)'
+    )
+
+
+class HybridSearchResponse(BaseModel):
+    """Advanced hybrid search response with scored results."""
+
+    edges: list[SearchResult] = Field(default_factory=list, description='Matched facts/relations')
+    nodes: list[SearchResult] = Field(default_factory=list, description='Matched entities')
+    episodes: list[SearchResult] = Field(default_factory=list, description='Matched episodes')
+    communities: list[SearchResult] = Field(default_factory=list, description='Matched communities')
+
+    query: str
+    search_methods_used: list[str] = Field(default_factory=list)
+    reranker_used: str | None = None
+    total_results: int = 0
