@@ -2,8 +2,8 @@
 
 > **Laatst bijgewerkt:** 2026-01-12
 > **Huidige fase:** Fase 14 - AI Provider Configuration (multi-environment support)
-> **Sub-fase:** 14.0 Research ✅ COMPLEET | 14.1 Database ❌ VOLGENDE
-> **Volgende actie:** Fase 14.1 Database Model implementatie (AiProviderConfig)
+> **Sub-fase:** 14.0 Research ✅ | 14.1 Database ✅ | 14.2 Admin UI ✅ COMPLEET
+> **Volgende actie:** Fase 14.3 Provider Abstraction Layer implementatie
 
 ---
 
@@ -917,8 +917,8 @@ jobs:
 | ↳ 14.0.3 OpenCode | ✅ | Inspiratie voor provider abstractie |
 | ↳ 14.0.4 GLM-4.7 | ✅ | Code specialist → **AFGEVALLEN** (overkill voor Wiki) |
 | ↳ 14.0.5 LM Studio | ✅ | GUI alternatief voor Ollama → **GESELECTEERD** |
-| **14.1 Database** | 🔄 | AiProviderConfig model + migratie |
-| 14.2 Admin UI | ❌ | System Settings > AI Systems |
+| **14.1 Database** | ✅ | AiProviderConfig model + seed script |
+| **14.2 Admin UI** | ✅ | System Settings > AI Systems pagina |
 | 14.3 Abstraction | ❌ | Provider interfaces + implementaties |
 | 14.4 Overrides | ❌ | Workspace/Project level configuratie |
 | 14.5 Testing | ❌ | Unit + integration + E2E tests |
@@ -1170,3 +1170,10 @@ cat ~/genx/v6/dev/kanbu/docs/WIKI-base/GRAPHITI-IMPLEMENTATIE.md
 | 2026-01-12 | `pnpm prisma db push` succesvol uitgevoerd |
 | 2026-01-12 | seed-ai-providers.ts script aangemaakt |
 | 2026-01-12 | 3 global providers geseeded: OpenAI, Ollama, LM Studio (alle inactief) |
+| 2026-01-12 | **Fase 14.2 Admin UI COMPLEET** |
+| 2026-01-12 | aiProvider.ts tRPC router toegevoegd (CRUD + testConnection + getModels) |
+| 2026-01-12 | AiSystemsPage.tsx admin pagina aangemaakt |
+| 2026-01-12 | ProviderCard component met test functionaliteit |
+| 2026-01-12 | Create/Edit modals voor provider configuratie |
+| 2026-01-12 | AI Systems menu item toegevoegd aan AdminSidebar |
+| 2026-01-12 | Route /admin/settings/ai toegevoegd aan App.tsx |
