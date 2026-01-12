@@ -1,13 +1,13 @@
 /**
- * Task Reference Plugin for Lexical Editor
+ * Signature Plugin for Lexical Editor
  *
- * Handles #TASK-123 syntax detection and autocomplete.
- * When user types # followed by characters, shows a dropdown with matching tasks.
+ * Handles & syntax for inserting user signatures.
+ * Type &Sign to insert your own signature, or &username for others.
  *
  * ===================================================================
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
  * Signed: 2026-01-12
- * Change: Initial implementation (Fase 3 - Cross References)
+ * Change: Initial implementation (signature insertion feature)
  * ===================================================================
  */
 
@@ -26,7 +26,7 @@ import {
   TextNode,
 } from 'lexical'
 import { mergeRegister } from '@lexical/utils'
-import { $createTaskRefNode } from './nodes/TaskRefNode'
+import { $createSignatureNode } from './nodes/SignatureNode'
 import { createPortal } from 'react-dom'
 import { cn } from '@/lib/utils'
 
@@ -34,40 +34,18 @@ import { cn } from '@/lib/utils'
 // Types
 // =============================================================================
 
-export interface TaskResult {
+export interface SignatureUser {
   id: number
-  title: string
-  reference: string
-  priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'
-  isActive?: boolean
-  column?: { title: string }
+  username: string
+  name: string | null
+  avatarUrl?: string | null
 }
 
-export interface TaskRefPluginProps {
-  /** Function to search for tasks */
-  searchTasks?: (query: string) => Promise<TaskResult[]>
-  /** Project ID for searching tasks */
-  projectId?: number
-}
-
-// =============================================================================
-// Priority Badge Component
-// =============================================================================
-
-const priorityColors: Record<string, string> = {
-  LOW: 'bg-slate-100 text-slate-600',
-  MEDIUM: 'bg-blue-100 text-blue-600',
-  HIGH: 'bg-orange-100 text-orange-600',
-  URGENT: 'bg-red-100 text-red-600',
-}
-
-function PriorityBadge({ priority }: { priority?: string }) {
-  if (!priority) return null
-  return (
-    <span className={cn('text-[10px] px-1 rounded', priorityColors[priority] ?? 'bg-gray-100')}>
-      {priority}
-    </span>
-  )
+export interface SignaturePluginProps {
+  /** Current user (for &Sign shortcut) */
+  currentUser?: SignatureUser
+  /** Function to search for users */
+  searchUsers?: (query: string) => Promise<SignatureUser[]>
 }
 
 // =============================================================================
@@ -81,16 +59,47 @@ interface AnchorRect {
 }
 
 // =============================================================================
+// Avatar Component
+// =============================================================================
+
+function UserAvatar({ user }: { user: SignatureUser }) {
+  if (user.avatarUrl) {
+    return (
+      <img
+        src={user.avatarUrl}
+        alt={user.name ?? user.username}
+        className="w-8 h-8 rounded-full object-cover"
+      />
+    )
+  }
+
+  // Fallback initials avatar
+  const initials = (user.name ?? user.username)
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
+
+  return (
+    <div className="w-8 h-8 rounded-full bg-primary/10 text-primary text-sm font-medium flex items-center justify-center">
+      {initials}
+    </div>
+  )
+}
+
+// =============================================================================
 // Autocomplete Dropdown Component
 // =============================================================================
 
 interface AutocompleteDropdownProps {
   anchorRect: AnchorRect | null
-  items: TaskResult[]
+  items: SignatureUser[]
   selectedIndex: number
-  onSelect: (task: TaskResult) => void
+  onSelect: (user: SignatureUser) => void
   query: string
   isLoading?: boolean
+  currentUser?: SignatureUser
 }
 
 function AutocompleteDropdown({
@@ -100,25 +109,40 @@ function AutocompleteDropdown({
   onSelect,
   query,
   isLoading,
+  currentUser,
 }: AutocompleteDropdownProps) {
   if (!anchorRect) return null
 
-  // Calculate position - center horizontally with some constraints
-  const dropdownWidth = 380
+  // Calculate position
+  const dropdownWidth = 320
   const viewportWidth = window.innerWidth
   const viewportHeight = window.innerHeight
 
-  // Position below cursor, but center the dropdown
   let left = anchorRect.left - dropdownWidth / 2 + 10
-  // Constrain to viewport
   left = Math.max(16, Math.min(left, viewportWidth - dropdownWidth - 16))
 
-  // Position below cursor, or above if not enough space below
   let top = anchorRect.bottom + 8
-  const dropdownHeight = 300 // approximate max height
+  const dropdownHeight = 300
   if (top + dropdownHeight > viewportHeight - 16) {
     top = anchorRect.top - dropdownHeight - 8
   }
+
+  // Check for &Sign or &sign shortcut
+  const isSignShortcut = query.toLowerCase() === 'sign'
+
+  // Build display items - add current user as "Sign" option at top
+  const displayItems: (SignatureUser & { isSignOption?: boolean })[] = []
+
+  if (currentUser && (query === '' || isSignShortcut || currentUser.username.toLowerCase().includes(query.toLowerCase()) || (currentUser.name ?? '').toLowerCase().includes(query.toLowerCase()))) {
+    displayItems.push({ ...currentUser, isSignOption: true })
+  }
+
+  // Add other users (but not current user again)
+  items.forEach((user) => {
+    if (!currentUser || user.id !== currentUser.id) {
+      displayItems.push(user)
+    }
+  })
 
   return createPortal(
     <div
@@ -129,43 +153,51 @@ function AutocompleteDropdown({
         width: dropdownWidth,
       }}
     >
+      <div className="px-3 py-2 text-xs font-medium text-muted-foreground border-b bg-muted/30">
+        Insert Signature
+      </div>
       {isLoading ? (
-        <div className="px-3 py-2 text-sm text-muted-foreground">
-          Searching tasks...
+        <div className="px-3 py-3 text-sm text-muted-foreground">
+          Searching users...
         </div>
-      ) : items.length === 0 ? (
-        <div className="px-3 py-2 text-sm text-muted-foreground">
-          {query ? `No tasks matching "${query}"` : 'Type to search tasks...'}
+      ) : displayItems.length === 0 ? (
+        <div className="px-3 py-3 text-sm text-muted-foreground">
+          {query ? `No users matching "${query}"` : 'Type to search users...'}
         </div>
       ) : (
-        <div className="max-h-[250px] overflow-y-auto">
-          {items.map((task, index) => (
+        <div className="max-h-[240px] overflow-y-auto">
+          {displayItems.map((user, index) => (
             <button
-              key={task.id}
+              key={user.id}
               className={cn(
-                'w-full text-left px-3 py-2 hover:bg-accent transition-colors',
+                'w-full text-left px-3 py-2.5 hover:bg-accent transition-colors flex items-center gap-3',
                 index === selectedIndex && 'bg-accent'
               )}
-              onClick={() => onSelect(task)}
+              onClick={() => onSelect(user)}
             >
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-mono text-muted-foreground shrink-0">
-                  #{task.reference}
-                </span>
-                <span className="text-sm font-medium truncate flex-1">
-                  {task.title}
-                </span>
-                <PriorityBadge priority={task.priority} />
-              </div>
-              {task.column && (
-                <div className="text-xs text-muted-foreground mt-0.5">
-                  {task.column.title}
+              <UserAvatar user={user} />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium truncate">
+                    {user.name ?? user.username}
+                  </span>
+                  {'isSignOption' in user && user.isSignOption && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium">
+                      Your signature
+                    </span>
+                  )}
                 </div>
-              )}
+                <div className="text-xs text-muted-foreground truncate">
+                  @{user.username}
+                </div>
+              </div>
             </button>
           ))}
         </div>
       )}
+      <div className="px-3 py-1.5 text-[10px] text-muted-foreground border-t bg-muted/30">
+        Type <kbd className="px-1 py-0.5 rounded bg-muted text-[9px]">&Sign</kbd> for quick signature
+      </div>
     </div>,
     document.body
   )
@@ -175,17 +207,17 @@ function AutocompleteDropdown({
 // Main Plugin
 // =============================================================================
 
-export function TaskRefPlugin({
-  searchTasks,
-  projectId: _projectId,
-}: TaskRefPluginProps): React.ReactElement | null {
+export function SignaturePlugin({
+  currentUser,
+  searchUsers,
+}: SignaturePluginProps): React.ReactElement | null {
   const [editor] = useLexicalComposerContext()
 
   const [isOpen, setIsOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [anchorRect, setAnchorRect] = useState<AnchorRect | null>(null)
-  const [searchResults, setSearchResults] = useState<TaskResult[]>([])
+  const [searchResults, setSearchResults] = useState<SignatureUser[]>([])
   const [triggerOffset, setTriggerOffset] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
@@ -195,15 +227,26 @@ export function TaskRefPlugin({
   // Guard against duplicate insertions
   const isInsertingRef = useRef(false)
 
+  // Build display items for index calculation
+  const displayItems: SignatureUser[] = []
+  if (currentUser && (query === '' || query.toLowerCase() === 'sign' || currentUser.username.toLowerCase().includes(query.toLowerCase()) || (currentUser.name ?? '').toLowerCase().includes(query.toLowerCase()))) {
+    displayItems.push(currentUser)
+  }
+  searchResults.forEach((user) => {
+    if (!currentUser || user.id !== currentUser.id) {
+      displayItems.push(user)
+    }
+  })
+
   // Search effect for async search
   useEffect(() => {
-    if (!searchTasks || !isOpen) {
+    if (!searchUsers || !isOpen) {
       setSearchResults([])
       return
     }
 
-    // Only search if we have at least 1 character (to match PREFIX-NUM pattern)
-    if (query.length < 1) {
+    // Don't search if just "sign" - that's for current user
+    if (query.toLowerCase() === 'sign') {
       setSearchResults([])
       return
     }
@@ -211,10 +254,10 @@ export function TaskRefPlugin({
     setIsLoading(true)
     const timeoutId = setTimeout(async () => {
       try {
-        const results = await searchTasks(query)
+        const results = await searchUsers(query)
         setSearchResults(results)
       } catch (error) {
-        console.error('Task search failed:', error)
+        console.error('User search failed:', error)
         setSearchResults([])
       } finally {
         setIsLoading(false)
@@ -222,21 +265,21 @@ export function TaskRefPlugin({
     }, 150)
 
     return () => clearTimeout(timeoutId)
-  }, [query, searchTasks, isOpen])
+  }, [query, searchUsers, isOpen])
 
   // Reset selected index when results change
   useEffect(() => {
     setSelectedIndex(0)
-  }, [searchResults])
+  }, [displayItems.length])
 
-  // Insert task reference
-  const insertTaskRef = useCallback(
-    (task: TaskResult) => {
+  // Insert signature
+  const insertSignature = useCallback(
+    (user: SignatureUser) => {
       // Prevent duplicate insertions
       if (isInsertingRef.current) return
       isInsertingRef.current = true
 
-      // Close dropdown immediately to prevent double-clicks
+      // Close dropdown immediately
       setIsOpen(false)
       setQuery('')
       const currentTriggerOffset = triggerOffset
@@ -249,45 +292,37 @@ export function TaskRefPlugin({
           return
         }
 
-        // Get the text node and remove the # and query
         const anchor = selection.anchor
         const node = anchor.getNode()
 
         if (node instanceof TextNode) {
           const text = node.getTextContent()
-          // Find the # trigger position
           const beforeTrigger = text.substring(0, currentTriggerOffset)
           const afterCursor = text.substring(anchor.offset)
 
-          // Create the task ref node
-          const taskRefNode = $createTaskRefNode({
-            taskId: task.id,
-            reference: task.reference,
-            title: task.title,
-            exists: true,
+          // Create the signature node
+          const signatureNode = $createSignatureNode({
+            userId: user.id,
+            username: user.username,
+            name: user.name,
+            avatarUrl: user.avatarUrl,
           })
 
-          // Replace the text with our link
+          // Replace text
           node.setTextContent(beforeTrigger)
+          node.insertAfter(signatureNode)
 
-          // Insert after the shortened text node
-          node.insertAfter(taskRefNode)
-
-          // Add any remaining text after
           if (afterCursor) {
             const afterNode = $createTextNode(afterCursor)
-            taskRefNode.insertAfter(afterNode)
+            signatureNode.insertAfter(afterNode)
           }
 
-          // Add a space after the link for better UX
+          // Add space after signature
           const spaceNode = $createTextNode(' ')
-          taskRefNode.insertAfter(spaceNode)
-
-          // Move selection to after the space
+          signatureNode.insertAfter(spaceNode)
           spaceNode.select(1, 1)
         }
 
-        // Reset insertion guard after update completes
         setTimeout(() => {
           isInsertingRef.current = false
         }, 100)
@@ -298,13 +333,13 @@ export function TaskRefPlugin({
 
   // Handle selection
   const handleSelect = useCallback(
-    (task: TaskResult) => {
-      insertTaskRef(task)
+    (user: SignatureUser) => {
+      insertSignature(user)
     },
-    [insertTaskRef]
+    [insertSignature]
   )
 
-  // Update listener to detect # and track query
+  // Update listener to detect & and track query
   useEffect(() => {
     return editor.registerUpdateListener(({ editorState }) => {
       editorState.read(() => {
@@ -332,22 +367,17 @@ export function TaskRefPlugin({
 
         const text = node.getTextContent()
         const cursorPos = anchor.offset
-
-        // Find # before cursor that could be a task reference trigger
         const textBeforeCursor = text.substring(0, cursorPos)
 
-        // Look for # that is either at the start or after whitespace
-        // This prevents triggering on URLs or other # usages
+        // Look for & that is either at the start or after whitespace
         let triggerIndex = -1
         for (let i = textBeforeCursor.length - 1; i >= 0; i--) {
-          if (textBeforeCursor[i] === '#') {
-            // Check if it's a valid trigger position (start or after whitespace)
+          if (textBeforeCursor[i] === '&') {
             if (i === 0 || /\s/.test(textBeforeCursor[i - 1] ?? '')) {
               triggerIndex = i
               break
             }
           }
-          // Stop looking if we hit whitespace (no # found in this word)
           if (/\s/.test(textBeforeCursor[i] ?? '')) {
             break
           }
@@ -362,10 +392,9 @@ export function TaskRefPlugin({
           return
         }
 
-        // Get the query after #
         const queryText = textBeforeCursor.substring(triggerIndex + 1)
 
-        // If query contains whitespace, close the dropdown (user is done)
+        // If query contains whitespace, close dropdown
         if (/\s/.test(queryText)) {
           if (isOpenRef.current) {
             setIsOpen(false)
@@ -375,7 +404,6 @@ export function TaskRefPlugin({
           return
         }
 
-        // We have a valid # trigger, show dropdown
         setQuery(queryText)
         setTriggerOffset(triggerIndex)
 
@@ -383,7 +411,7 @@ export function TaskRefPlugin({
           setIsOpen(true)
         }
 
-        // Always update anchor position while open
+        // Update anchor position
         const domSelection = window.getSelection()
         if (domSelection && domSelection.rangeCount > 0) {
           const range = domSelection.getRangeAt(0)
@@ -409,7 +437,7 @@ export function TaskRefPlugin({
           if (!isOpenRef.current) return false
           event?.preventDefault()
           setSelectedIndex((prev) =>
-            prev < searchResults.length - 1 ? prev + 1 : 0
+            prev < displayItems.length - 1 ? prev + 1 : 0
           )
           return true
         },
@@ -421,7 +449,7 @@ export function TaskRefPlugin({
           if (!isOpenRef.current) return false
           event?.preventDefault()
           setSelectedIndex((prev) =>
-            prev > 0 ? prev - 1 : searchResults.length - 1
+            prev > 0 ? prev - 1 : displayItems.length - 1
           )
           return true
         },
@@ -431,9 +459,9 @@ export function TaskRefPlugin({
         KEY_ENTER_COMMAND,
         (event) => {
           if (!isOpenRef.current) return false
-          if (searchResults[selectedIndex]) {
+          if (displayItems[selectedIndex]) {
             event?.preventDefault()
-            handleSelect(searchResults[selectedIndex])
+            handleSelect(displayItems[selectedIndex])
             return true
           }
           return false
@@ -444,9 +472,9 @@ export function TaskRefPlugin({
         KEY_TAB_COMMAND,
         (event) => {
           if (!isOpenRef.current) return false
-          if (searchResults[selectedIndex]) {
+          if (displayItems[selectedIndex]) {
             event?.preventDefault()
-            handleSelect(searchResults[selectedIndex])
+            handleSelect(displayItems[selectedIndex])
             return true
           }
           return false
@@ -465,7 +493,7 @@ export function TaskRefPlugin({
         COMMAND_PRIORITY_LOW
       )
     )
-  }, [editor, isOpen, searchResults, selectedIndex, handleSelect])
+  }, [editor, isOpen, displayItems, selectedIndex, handleSelect])
 
   // Update anchor position on scroll/resize
   useEffect(() => {
@@ -493,8 +521,8 @@ export function TaskRefPlugin({
     }
   }, [isOpen])
 
-  // Don't render if no search function provided
-  if (!searchTasks) return null
+  // Don't render if no current user and no search function
+  if (!currentUser && !searchUsers) return null
 
   return isOpen ? (
     <AutocompleteDropdown
@@ -504,8 +532,9 @@ export function TaskRefPlugin({
       onSelect={handleSelect}
       query={query}
       isLoading={isLoading}
+      currentUser={currentUser}
     />
   ) : null
 }
 
-export default TaskRefPlugin
+export default SignaturePlugin

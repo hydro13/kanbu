@@ -197,11 +197,13 @@ export class WikiLinkNode extends ElementNode {
 
   // JSON Serialization
   static importJSON(serializedNode: SerializedWikiLinkNode): WikiLinkNode {
-    const node = $createWikiLinkNode({
-      pageSlug: serializedNode.pageSlug,
-      displayText: serializedNode.displayText,
-      exists: serializedNode.exists,
-    })
+    // Use raw constructor to avoid duplicate children bug
+    // Lexical will restore children from the serialized JSON automatically
+    const node = new WikiLinkNode(
+      serializedNode.pageSlug,
+      serializedNode.displayText,
+      serializedNode.exists
+    )
     return node
   }
 

@@ -43,8 +43,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { RichTextEditor, type WikiPage as WikiPageForLink, type TaskResult } from '@/components/editor'
+import { RichTextEditor, type WikiPage as WikiPageForLink, type TaskResult, type MentionResult } from '@/components/editor'
 import { trpc } from '@/lib/trpc'
+import { useAppSelector } from '@/store'
+import { selectUser } from '@/store/authSlice'
 import { BookOpen, Plus, ArrowLeft } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
@@ -109,6 +111,17 @@ export function WorkspaceWikiPage() {
   const [showVersionHistory, setShowVersionHistory] = useState(false)
 
   const utils = trpc.useUtils()
+  const user = useAppSelector(selectUser)
+
+  // Current user for signature feature
+  const currentUser = user
+    ? {
+        id: user.id,
+        username: user.username,
+        name: user.name ?? null,
+        avatarUrl: user.avatarUrl,
+      }
+    : undefined
 
   // Fetch workspace
   const workspaceQuery = trpc.workspace.getBySlug.useQuery(
@@ -239,6 +252,35 @@ export function WorkspaceWikiPage() {
         }))
       } catch (error) {
         console.error('Task search failed:', error)
+        return []
+      }
+    },
+    [workspace?.id, utils.client]
+  )
+
+  // Search users function for @mention autocomplete
+  // Searches across all members in this workspace
+  const searchUsers = useCallback(
+    async (query: string): Promise<MentionResult[]> => {
+      if (!workspace?.id) {
+        return []
+      }
+
+      try {
+        const results = await utils.client.search.membersInWorkspace.query({
+          workspaceId: workspace.id,
+          query,
+          limit: 10,
+        })
+
+        return results.map((user) => ({
+          id: user.id,
+          username: user.username,
+          name: user.name,
+          avatarUrl: user.avatarUrl,
+        }))
+      } catch (error) {
+        console.error('User search failed:', error)
         return []
       }
     },
@@ -387,6 +429,8 @@ export function WorkspaceWikiPage() {
               autoSaveDelay={2000}
               wikiPages={wikiPagesForLinks}
               searchTasks={searchTasks}
+              searchUsers={searchUsers}
+              currentUser={currentUser}
             />
           ) : pageSlug && currentPageQuery.isLoading ? (
             /* Loading page */

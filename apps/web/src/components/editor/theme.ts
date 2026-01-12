@@ -111,6 +111,12 @@ export const editorTheme: EditorThemeClasses = {
 
   // Task references
   taskRef: 'task-ref',
+
+  // Mentions
+  mention: 'mention',
+
+  // Signatures
+  signature: 'signature',
 }
 
 export default editorTheme

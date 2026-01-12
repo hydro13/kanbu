@@ -30,3 +30,9 @@ export type { WikiLinkPayload, SerializedWikiLinkNode } from './WikiLinkNode'
 
 export { TaskRefNode, $createTaskRefNode, $isTaskRefNode } from './TaskRefNode'
 export type { TaskRefPayload, SerializedTaskRefNode } from './TaskRefNode'
+
+export { MentionNode, $createMentionNode, $isMentionNode } from './MentionNode'
+export type { MentionPayload, SerializedMentionNode } from './MentionNode'
+
+export { SignatureNode, $createSignatureNode, $isSignatureNode } from './SignatureNode'
+export type { SignaturePayload, SerializedSignatureNode } from './SignatureNode'

@@ -35,6 +35,12 @@ const searchTasksInWorkspaceSchema = z.object({
   includeCompleted: z.boolean().default(false),
 })
 
+const searchMembersInWorkspaceSchema = z.object({
+  workspaceId: z.number(),
+  query: z.string().max(200).default(''),
+  limit: z.number().min(1).max(50).default(10),
+})
+
 const globalSearchSchema = z.object({
   projectId: z.number(),
   query: z.string().min(1).max(200),
@@ -187,6 +193,87 @@ export const searchRouter = router({
       })
 
       return results
+    }),
+
+  /**
+   * Search for workspace members by username or name
+   * Used by wiki editor for @mention autocomplete
+   * Requires at least VIEWER access to the workspace
+   */
+  membersInWorkspace: protectedProcedure
+    .input(searchMembersInWorkspaceSchema)
+    .query(async ({ ctx, input }) => {
+      // Check workspace access
+      await permissionService.requireWorkspaceAccess(ctx.user.id, input.workspaceId, 'VIEWER')
+
+      // Get all workspace members via ACL entries
+      const aclEntries = await ctx.prisma.aclEntry.findMany({
+        where: {
+          resourceType: 'workspace',
+          resourceId: input.workspaceId,
+          principalType: 'user',
+          deny: false,
+        },
+        select: { principalId: true },
+      })
+
+      const userIds = aclEntries.map((e) => e.principalId)
+
+      if (userIds.length === 0) {
+        return []
+      }
+
+      // Build search filter
+      const searchFilter = input.query.length > 0
+        ? {
+            OR: [
+              { username: { contains: input.query, mode: 'insensitive' as const } },
+              { name: { contains: input.query, mode: 'insensitive' as const } },
+            ],
+          }
+        : {}
+
+      // Search users
+      const users = await ctx.prisma.user.findMany({
+        where: {
+          id: { in: userIds },
+          isActive: true,
+          ...searchFilter,
+        },
+        select: {
+          id: true,
+          username: true,
+          name: true,
+          avatarUrl: true,
+        },
+        orderBy: [
+          { name: 'asc' },
+          { username: 'asc' },
+        ],
+        take: input.limit,
+      })
+
+      // Sort: username starts with query > name starts with query > contains
+      if (input.query.length > 0) {
+        const queryLower = input.query.toLowerCase()
+        users.sort((a, b) => {
+          const aUsernameStartsWith = a.username.toLowerCase().startsWith(queryLower)
+          const bUsernameStartsWith = b.username.toLowerCase().startsWith(queryLower)
+          const aNameStartsWith = (a.name ?? '').toLowerCase().startsWith(queryLower)
+          const bNameStartsWith = (b.name ?? '').toLowerCase().startsWith(queryLower)
+
+          // Priority: username starts > name starts > other
+          if (aUsernameStartsWith && !bUsernameStartsWith) return -1
+          if (!aUsernameStartsWith && bUsernameStartsWith) return 1
+          if (aNameStartsWith && !bNameStartsWith) return -1
+          if (!aNameStartsWith && bNameStartsWith) return 1
+
+          // Same priority - sort by username
+          return a.username.localeCompare(b.username)
+        })
+      }
+
+      return users
     }),
 
   /**

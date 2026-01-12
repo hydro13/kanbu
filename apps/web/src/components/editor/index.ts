@@ -45,6 +45,12 @@ export type { TaskResult, TaskRefPluginProps } from './TaskRefPlugin'
 
 export { TaskRefCleanupPlugin } from './TaskRefCleanupPlugin'
 
+export { MentionPlugin } from './MentionPlugin'
+export type { MentionResult, MentionPluginProps } from './MentionPlugin'
+
+export { SignaturePlugin } from './SignaturePlugin'
+export type { SignatureUser, SignaturePluginProps } from './SignaturePlugin'
+
 // Nodes
 export {
   ImageNode,
@@ -65,6 +71,12 @@ export {
   TaskRefNode,
   $createTaskRefNode,
   $isTaskRefNode,
+  MentionNode,
+  $createMentionNode,
+  $isMentionNode,
+  SignatureNode,
+  $createSignatureNode,
+  $isSignatureNode,
 } from './nodes'
 export type {
   ImagePayload,
@@ -78,6 +90,10 @@ export type {
   SerializedWikiLinkNode,
   TaskRefPayload,
   SerializedTaskRefNode,
+  MentionPayload,
+  SerializedMentionNode,
+  SignaturePayload,
+  SerializedSignatureNode,
 } from './nodes'
 
 export { editorTheme } from './theme'

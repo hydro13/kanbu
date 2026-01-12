@@ -46,7 +46,9 @@ import { DraggableMediaPlugin } from './DraggableMediaPlugin'
 import { WikiLinkPlugin, type WikiPage } from './WikiLinkPlugin'
 import { TaskRefPlugin, type TaskResult } from './TaskRefPlugin'
 import { TaskRefCleanupPlugin } from './TaskRefCleanupPlugin'
-import { ImageNode, VideoNode, EmbedNode, WikiLinkNode, TaskRefNode } from './nodes'
+import { MentionPlugin, type MentionResult } from './MentionPlugin'
+import { SignaturePlugin, type SignatureUser } from './SignaturePlugin'
+import { ImageNode, VideoNode, EmbedNode, WikiLinkNode, TaskRefNode, MentionNode, SignatureNode } from './nodes'
 import './editor.css'
 
 // =============================================================================
@@ -86,6 +88,16 @@ export interface RichTextEditorProps {
   enableTaskRefs?: boolean
   /** Function to search for tasks (for task ref autocomplete) */
   searchTasks?: (query: string) => Promise<TaskResult[]>
+  /** Enable @mention detection */
+  enableMentions?: boolean
+  /** Function to search for users (for mention autocomplete) */
+  searchUsers?: (query: string) => Promise<MentionResult[]>
+  /** Enable &signature insertion */
+  enableSignatures?: boolean
+  /** Current user for &Sign shortcut */
+  currentUser?: SignatureUser
+  /** Function to search for users (for signature autocomplete) */
+  searchUsersForSignature?: (query: string) => Promise<SignatureUser[]>
 }
 
 // =============================================================================
@@ -150,6 +162,11 @@ export function RichTextEditor({
   wikiBasePath,
   enableTaskRefs = false,
   searchTasks,
+  enableMentions = false,
+  searchUsers,
+  enableSignatures = false,
+  currentUser,
+  searchUsersForSignature,
 }: RichTextEditorProps) {
   // Editor configuration
   const initialConfig = {
@@ -178,6 +195,10 @@ export function RichTextEditor({
       WikiLinkNode,
       // Task ref nodes
       TaskRefNode,
+      // Mention nodes
+      MentionNode,
+      // Signature nodes
+      SignatureNode,
     ],
   }
 
@@ -246,6 +267,19 @@ export function RichTextEditor({
 
           {/* Task Ref Cleanup Plugin - cleans up duplicate children from earlier bug */}
           {enableTaskRefs && <TaskRefCleanupPlugin />}
+
+          {/* Mention Plugin - only in edit mode with enableMentions */}
+          {enableMentions && !readOnly && searchUsers && (
+            <MentionPlugin searchUsers={searchUsers} />
+          )}
+
+          {/* Signature Plugin - only in edit mode with enableSignatures */}
+          {enableSignatures && !readOnly && (currentUser || searchUsersForSignature) && (
+            <SignaturePlugin
+              currentUser={currentUser}
+              searchUsers={searchUsersForSignature}
+            />
+          )}
 
           {/* Change handler */}
           {onChange && <OnChangePlugin onChange={handleChange} ignoreSelectionChange />}

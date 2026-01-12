@@ -51,11 +51,21 @@ export interface WikiLinkPluginProps {
 }
 
 // =============================================================================
+// Types for positioning
+// =============================================================================
+
+interface AnchorRect {
+  left: number
+  top: number
+  bottom: number
+}
+
+// =============================================================================
 // Autocomplete Dropdown Component
 // =============================================================================
 
 interface AutocompleteDropdownProps {
-  anchorElement: HTMLElement | null
+  anchorRect: AnchorRect | null
   items: WikiPage[]
   selectedIndex: number
   onSelect: (page: WikiPage) => void
@@ -63,22 +73,38 @@ interface AutocompleteDropdownProps {
 }
 
 function AutocompleteDropdown({
-  anchorElement,
+  anchorRect,
   items,
   selectedIndex,
   onSelect,
   query,
 }: AutocompleteDropdownProps) {
-  if (!anchorElement) return null
+  if (!anchorRect) return null
 
-  const rect = anchorElement.getBoundingClientRect()
+  // Calculate position - center horizontally with some constraints
+  const dropdownWidth = 300
+  const viewportWidth = window.innerWidth
+  const viewportHeight = window.innerHeight
+
+  // Position below cursor, but center the dropdown
+  let left = anchorRect.left - dropdownWidth / 2 + 10
+  // Constrain to viewport
+  left = Math.max(16, Math.min(left, viewportWidth - dropdownWidth - 16))
+
+  // Position below cursor, or above if not enough space below
+  let top = anchorRect.bottom + 4
+  const dropdownHeight = 250 // approximate max height
+  if (top + dropdownHeight > viewportHeight - 16) {
+    top = anchorRect.top - dropdownHeight - 8
+  }
 
   return createPortal(
     <div
-      className="fixed z-50 min-w-[200px] max-w-[300px] bg-popover border rounded-md shadow-lg overflow-hidden"
+      className="fixed z-50 bg-popover border rounded-md shadow-lg overflow-hidden"
       style={{
-        top: rect.bottom + 4,
-        left: rect.left,
+        top,
+        left,
+        width: dropdownWidth,
       }}
     >
       {items.length === 0 ? (
@@ -134,7 +160,7 @@ export function WikiLinkPlugin({
   const [isOpen, setIsOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
-  const [anchorElement, setAnchorElement] = useState<HTMLElement | null>(null)
+  const [anchorRect, setAnchorRect] = useState<AnchorRect | null>(null)
   const [searchResults, setSearchResults] = useState<WikiPage[]>([])
   const [triggerOffset, setTriggerOffset] = useState<number | null>(null)
 
@@ -319,28 +345,18 @@ export function WikiLinkPlugin({
 
         if (!isOpenRef.current) {
           setIsOpen(true)
+        }
 
-          // Get anchor element for positioning
-          const domSelection = window.getSelection()
-          if (domSelection && domSelection.rangeCount > 0) {
-            const range = domSelection.getRangeAt(0)
-            const rect = range.getBoundingClientRect()
-
-            // Create a temporary element at the cursor position
-            const tempSpan = document.createElement('span')
-            tempSpan.style.position = 'absolute'
-            tempSpan.style.left = `${rect.left}px`
-            tempSpan.style.top = `${rect.top}px`
-            document.body.appendChild(tempSpan)
-            setAnchorElement(tempSpan)
-
-            // Clean up temp element after a frame
-            requestAnimationFrame(() => {
-              if (document.body.contains(tempSpan)) {
-                document.body.removeChild(tempSpan)
-              }
-            })
-          }
+        // Always update anchor position while open
+        const domSelection = window.getSelection()
+        if (domSelection && domSelection.rangeCount > 0) {
+          const range = domSelection.getRangeAt(0)
+          const rect = range.getBoundingClientRect()
+          setAnchorRect({
+            left: rect.left,
+            top: rect.top,
+            bottom: rect.bottom,
+          })
         }
       })
     })
@@ -424,18 +440,10 @@ export function WikiLinkPlugin({
       if (domSelection && domSelection.rangeCount > 0) {
         const range = domSelection.getRangeAt(0)
         const rect = range.getBoundingClientRect()
-
-        const tempSpan = document.createElement('span')
-        tempSpan.style.position = 'absolute'
-        tempSpan.style.left = `${rect.left}px`
-        tempSpan.style.top = `${rect.top}px`
-        document.body.appendChild(tempSpan)
-        setAnchorElement(tempSpan)
-
-        requestAnimationFrame(() => {
-          if (document.body.contains(tempSpan)) {
-            document.body.removeChild(tempSpan)
-          }
+        setAnchorRect({
+          left: rect.left,
+          top: rect.top,
+          bottom: rect.bottom,
         })
       }
     }
@@ -451,7 +459,7 @@ export function WikiLinkPlugin({
 
   return isOpen ? (
     <AutocompleteDropdown
-      anchorElement={anchorElement}
+      anchorRect={anchorRect}
       items={filteredPages}
       selectedIndex={selectedIndex}
       onSelect={handleSelect}

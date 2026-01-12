@@ -27,7 +27,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { RichTextEditor, type WikiPage as WikiPageForLink, type TaskResult } from '@/components/editor'
+import { RichTextEditor, type WikiPage as WikiPageForLink, type TaskResult, type MentionResult, type SignatureUser } from '@/components/editor'
 import {
   Edit2,
   Eye,
@@ -105,6 +105,10 @@ interface WikiPageViewProps {
   wikiPages?: WikiPageForLink[]
   /** Function to search tasks for # task ref autocomplete (only for project wikis) */
   searchTasks?: (query: string) => Promise<TaskResult[]>
+  /** Function to search users for @ mention autocomplete */
+  searchUsers?: (query: string) => Promise<MentionResult[]>
+  /** Current user for &Sign signature shortcut */
+  currentUser?: SignatureUser
 }
 
 // =============================================================================
@@ -190,6 +194,8 @@ export function WikiPageView({
   searchWikiPages,
   wikiPages,
   searchTasks,
+  searchUsers,
+  currentUser,
 }: WikiPageViewProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [editedTitle, setEditedTitle] = useState(page.title)
@@ -448,6 +454,11 @@ export function WikiPageView({
           wikiBasePath={basePath}
           enableTaskRefs={!!searchTasks}
           searchTasks={searchTasks}
+          enableMentions={!!searchUsers}
+          searchUsers={searchUsers}
+          enableSignatures={!!currentUser || !!searchUsers}
+          currentUser={currentUser}
+          searchUsersForSignature={searchUsers}
         />
 
         {/* Backlinks and Related Pages panel */}

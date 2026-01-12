@@ -1,13 +1,13 @@
 /**
- * Task Reference Plugin for Lexical Editor
+ * Mention Plugin for Lexical Editor
  *
- * Handles #TASK-123 syntax detection and autocomplete.
- * When user types # followed by characters, shows a dropdown with matching tasks.
+ * Handles @username syntax detection and autocomplete.
+ * When user types @ followed by characters, shows a dropdown with matching users.
  *
  * ===================================================================
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
  * Signed: 2026-01-12
- * Change: Initial implementation (Fase 3 - Cross References)
+ * Change: Initial implementation (@mentions plugin)
  * ===================================================================
  */
 
@@ -26,7 +26,7 @@ import {
   TextNode,
 } from 'lexical'
 import { mergeRegister } from '@lexical/utils'
-import { $createTaskRefNode } from './nodes/TaskRefNode'
+import { $createMentionNode } from './nodes/MentionNode'
 import { createPortal } from 'react-dom'
 import { cn } from '@/lib/utils'
 
@@ -34,39 +34,45 @@ import { cn } from '@/lib/utils'
 // Types
 // =============================================================================
 
-export interface TaskResult {
+export interface MentionResult {
   id: number
-  title: string
-  reference: string
-  priority?: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT'
-  isActive?: boolean
-  column?: { title: string }
+  username: string
+  name: string | null
+  avatarUrl?: string | null
 }
 
-export interface TaskRefPluginProps {
-  /** Function to search for tasks */
-  searchTasks?: (query: string) => Promise<TaskResult[]>
-  /** Project ID for searching tasks */
-  projectId?: number
+export interface MentionPluginProps {
+  /** Function to search for users */
+  searchUsers?: (query: string) => Promise<MentionResult[]>
 }
 
 // =============================================================================
-// Priority Badge Component
+// Avatar Component
 // =============================================================================
 
-const priorityColors: Record<string, string> = {
-  LOW: 'bg-slate-100 text-slate-600',
-  MEDIUM: 'bg-blue-100 text-blue-600',
-  HIGH: 'bg-orange-100 text-orange-600',
-  URGENT: 'bg-red-100 text-red-600',
-}
+function UserAvatar({ user }: { user: MentionResult }) {
+  if (user.avatarUrl) {
+    return (
+      <img
+        src={user.avatarUrl}
+        alt={user.name ?? user.username}
+        className="w-6 h-6 rounded-full object-cover"
+      />
+    )
+  }
 
-function PriorityBadge({ priority }: { priority?: string }) {
-  if (!priority) return null
+  // Fallback initials avatar
+  const initials = (user.name ?? user.username)
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
+
   return (
-    <span className={cn('text-[10px] px-1 rounded', priorityColors[priority] ?? 'bg-gray-100')}>
-      {priority}
-    </span>
+    <div className="w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-medium flex items-center justify-center">
+      {initials}
+    </div>
   )
 }
 
@@ -86,9 +92,9 @@ interface AnchorRect {
 
 interface AutocompleteDropdownProps {
   anchorRect: AnchorRect | null
-  items: TaskResult[]
+  items: MentionResult[]
   selectedIndex: number
-  onSelect: (task: TaskResult) => void
+  onSelect: (user: MentionResult) => void
   query: string
   isLoading?: boolean
 }
@@ -104,7 +110,7 @@ function AutocompleteDropdown({
   if (!anchorRect) return null
 
   // Calculate position - center horizontally with some constraints
-  const dropdownWidth = 380
+  const dropdownWidth = 300
   const viewportWidth = window.innerWidth
   const viewportHeight = window.innerHeight
 
@@ -115,7 +121,7 @@ function AutocompleteDropdown({
 
   // Position below cursor, or above if not enough space below
   let top = anchorRect.bottom + 8
-  const dropdownHeight = 300 // approximate max height
+  const dropdownHeight = 250 // approximate max height
   if (top + dropdownHeight > viewportHeight - 16) {
     top = anchorRect.top - dropdownHeight - 8
   }
@@ -131,37 +137,32 @@ function AutocompleteDropdown({
     >
       {isLoading ? (
         <div className="px-3 py-2 text-sm text-muted-foreground">
-          Searching tasks...
+          Searching users...
         </div>
       ) : items.length === 0 ? (
         <div className="px-3 py-2 text-sm text-muted-foreground">
-          {query ? `No tasks matching "${query}"` : 'Type to search tasks...'}
+          {query ? `No users matching "${query}"` : 'Type to search users...'}
         </div>
       ) : (
-        <div className="max-h-[250px] overflow-y-auto">
-          {items.map((task, index) => (
+        <div className="max-h-[200px] overflow-y-auto">
+          {items.map((user, index) => (
             <button
-              key={task.id}
+              key={user.id}
               className={cn(
-                'w-full text-left px-3 py-2 hover:bg-accent transition-colors',
+                'w-full text-left px-3 py-2 hover:bg-accent transition-colors flex items-center gap-3',
                 index === selectedIndex && 'bg-accent'
               )}
-              onClick={() => onSelect(task)}
+              onClick={() => onSelect(user)}
             >
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-mono text-muted-foreground shrink-0">
-                  #{task.reference}
-                </span>
-                <span className="text-sm font-medium truncate flex-1">
-                  {task.title}
-                </span>
-                <PriorityBadge priority={task.priority} />
-              </div>
-              {task.column && (
-                <div className="text-xs text-muted-foreground mt-0.5">
-                  {task.column.title}
+              <UserAvatar user={user} />
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium truncate">
+                  {user.name ?? user.username}
                 </div>
-              )}
+                <div className="text-xs text-muted-foreground truncate">
+                  @{user.username}
+                </div>
+              </div>
             </button>
           ))}
         </div>
@@ -175,17 +176,16 @@ function AutocompleteDropdown({
 // Main Plugin
 // =============================================================================
 
-export function TaskRefPlugin({
-  searchTasks,
-  projectId: _projectId,
-}: TaskRefPluginProps): React.ReactElement | null {
+export function MentionPlugin({
+  searchUsers,
+}: MentionPluginProps): React.ReactElement | null {
   const [editor] = useLexicalComposerContext()
 
   const [isOpen, setIsOpen] = useState(false)
   const [query, setQuery] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
   const [anchorRect, setAnchorRect] = useState<AnchorRect | null>(null)
-  const [searchResults, setSearchResults] = useState<TaskResult[]>([])
+  const [searchResults, setSearchResults] = useState<MentionResult[]>([])
   const [triggerOffset, setTriggerOffset] = useState<number | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
@@ -197,24 +197,19 @@ export function TaskRefPlugin({
 
   // Search effect for async search
   useEffect(() => {
-    if (!searchTasks || !isOpen) {
+    if (!searchUsers || !isOpen) {
       setSearchResults([])
       return
     }
 
-    // Only search if we have at least 1 character (to match PREFIX-NUM pattern)
-    if (query.length < 1) {
-      setSearchResults([])
-      return
-    }
-
+    // Search immediately (empty query returns all members up to limit)
     setIsLoading(true)
     const timeoutId = setTimeout(async () => {
       try {
-        const results = await searchTasks(query)
+        const results = await searchUsers(query)
         setSearchResults(results)
       } catch (error) {
-        console.error('Task search failed:', error)
+        console.error('User search failed:', error)
         setSearchResults([])
       } finally {
         setIsLoading(false)
@@ -222,16 +217,16 @@ export function TaskRefPlugin({
     }, 150)
 
     return () => clearTimeout(timeoutId)
-  }, [query, searchTasks, isOpen])
+  }, [query, searchUsers, isOpen])
 
   // Reset selected index when results change
   useEffect(() => {
     setSelectedIndex(0)
   }, [searchResults])
 
-  // Insert task reference
-  const insertTaskRef = useCallback(
-    (task: TaskResult) => {
+  // Insert mention
+  const insertMention = useCallback(
+    (user: MentionResult) => {
       // Prevent duplicate insertions
       if (isInsertingRef.current) return
       isInsertingRef.current = true
@@ -249,39 +244,39 @@ export function TaskRefPlugin({
           return
         }
 
-        // Get the text node and remove the # and query
+        // Get the text node and remove the @ and query
         const anchor = selection.anchor
         const node = anchor.getNode()
 
         if (node instanceof TextNode) {
           const text = node.getTextContent()
-          // Find the # trigger position
+          // Find the @ trigger position
           const beforeTrigger = text.substring(0, currentTriggerOffset)
           const afterCursor = text.substring(anchor.offset)
 
-          // Create the task ref node
-          const taskRefNode = $createTaskRefNode({
-            taskId: task.id,
-            reference: task.reference,
-            title: task.title,
-            exists: true,
+          // Create the mention node
+          const mentionNode = $createMentionNode({
+            userId: user.id,
+            username: user.username,
+            name: user.name,
+            avatarUrl: user.avatarUrl,
           })
 
-          // Replace the text with our link
+          // Replace the text with our mention
           node.setTextContent(beforeTrigger)
 
           // Insert after the shortened text node
-          node.insertAfter(taskRefNode)
+          node.insertAfter(mentionNode)
 
           // Add any remaining text after
           if (afterCursor) {
             const afterNode = $createTextNode(afterCursor)
-            taskRefNode.insertAfter(afterNode)
+            mentionNode.insertAfter(afterNode)
           }
 
-          // Add a space after the link for better UX
+          // Add a space after the mention for better UX
           const spaceNode = $createTextNode(' ')
-          taskRefNode.insertAfter(spaceNode)
+          mentionNode.insertAfter(spaceNode)
 
           // Move selection to after the space
           spaceNode.select(1, 1)
@@ -298,13 +293,13 @@ export function TaskRefPlugin({
 
   // Handle selection
   const handleSelect = useCallback(
-    (task: TaskResult) => {
-      insertTaskRef(task)
+    (user: MentionResult) => {
+      insertMention(user)
     },
-    [insertTaskRef]
+    [insertMention]
   )
 
-  // Update listener to detect # and track query
+  // Update listener to detect @ and track query
   useEffect(() => {
     return editor.registerUpdateListener(({ editorState }) => {
       editorState.read(() => {
@@ -333,21 +328,20 @@ export function TaskRefPlugin({
         const text = node.getTextContent()
         const cursorPos = anchor.offset
 
-        // Find # before cursor that could be a task reference trigger
+        // Find @ before cursor that could be a mention trigger
         const textBeforeCursor = text.substring(0, cursorPos)
 
-        // Look for # that is either at the start or after whitespace
-        // This prevents triggering on URLs or other # usages
+        // Look for @ that is either at the start or after whitespace
         let triggerIndex = -1
         for (let i = textBeforeCursor.length - 1; i >= 0; i--) {
-          if (textBeforeCursor[i] === '#') {
+          if (textBeforeCursor[i] === '@') {
             // Check if it's a valid trigger position (start or after whitespace)
             if (i === 0 || /\s/.test(textBeforeCursor[i - 1] ?? '')) {
               triggerIndex = i
               break
             }
           }
-          // Stop looking if we hit whitespace (no # found in this word)
+          // Stop looking if we hit whitespace (no @ found in this word)
           if (/\s/.test(textBeforeCursor[i] ?? '')) {
             break
           }
@@ -362,7 +356,7 @@ export function TaskRefPlugin({
           return
         }
 
-        // Get the query after #
+        // Get the query after @
         const queryText = textBeforeCursor.substring(triggerIndex + 1)
 
         // If query contains whitespace, close the dropdown (user is done)
@@ -375,7 +369,7 @@ export function TaskRefPlugin({
           return
         }
 
-        // We have a valid # trigger, show dropdown
+        // We have a valid @ trigger, show dropdown
         setQuery(queryText)
         setTriggerOffset(triggerIndex)
 
@@ -494,7 +488,7 @@ export function TaskRefPlugin({
   }, [isOpen])
 
   // Don't render if no search function provided
-  if (!searchTasks) return null
+  if (!searchUsers) return null
 
   return isOpen ? (
     <AutocompleteDropdown
@@ -508,4 +502,4 @@ export function TaskRefPlugin({
   ) : null
 }
 
-export default TaskRefPlugin
+export default MentionPlugin
