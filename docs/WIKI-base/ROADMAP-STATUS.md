@@ -2,9 +2,9 @@
 
 > **Laatst bijgewerkt:** 2026-01-12
 > **Huidige fase:** Fase 15 - Wiki Intelligence
-> **Sub-fase:** 15.1 Provider Koppeling ✅ | 15.2 Semantic Search ✅ | 15.3 Ask the Wiki | 15.4 Enhanced Graphs | 15.5 Integration
+> **Sub-fase:** 15.1 Provider Koppeling ✅ | 15.2 Semantic Search ✅ | 15.3 Ask the Wiki ✅ | 15.4 Enhanced Graphs | 15.5 Integration
 > **Vorige fase:** Fase 14 - AI Provider Configuration ✅ COMPLEET
-> **Volgende actie:** 15.3 Ask the Wiki (RAG Chat)
+> **Volgende actie:** 15.4 Enhanced Graphs (Filtering, Clustering, Paths)
 
 ---
 
@@ -193,7 +193,7 @@ Alle functies zijn nu actief wanneer de Python Graphiti service draait met OPENA
 | MCP protocol endpoints | ❌ | add_memory, search_nodes, etc. |
 | Claude Desktop integratie | ❌ | Persistent memory |
 | Agent memory per workspace | ❌ | group_id isolatie |
-| "Ask the Wiki" chatbox | ❌ | RAG over wiki content |
+| "Ask the Wiki" chatbox | ✅ | RAG over wiki content (Fase 15.3) |
 
 ---
 
@@ -1171,30 +1171,32 @@ export class WikiAiService {
 | Item | Status | Notities |
 |------|--------|----------|
 | **RAG Pipeline** | | |
-| Context retrieval | ❌ | Semantic search voor relevante chunks |
-| Context ranking | ❌ | Top-K meest relevante passages |
-| Context formatting | ❌ | Markdown chunks voor LLM |
-| Prompt template | ❌ | System prompt met instructies |
-| Answer generation | ❌ | Via reasoning provider |
-| Source extraction | ❌ | Welke pages gebruikt voor antwoord |
+| Context retrieval | ✅ | WikiEmbeddingService.semanticSearch() |
+| Context ranking | ✅ | Top-K met score filtering |
+| Context formatting | ✅ | Formatted met BRON markers |
+| Prompt template | ✅ | Dutch system prompt met citatie regels |
+| Answer generation | ✅ | Via WikiAiService.chat() |
+| Source extraction | ✅ | extractSources() met relevance levels |
 | **Backend Endpoints** | | |
-| wiki.askWiki | ❌ | Vraag stellen aan wiki |
-| wiki.askWikiStream | ❌ | Streaming antwoord |
-| wiki.getConversation | ❌ | Conversatie history ophalen |
-| wiki.clearConversation | ❌ | History wissen |
+| wiki.askWiki | ✅ | wikiAi.askWiki mutation |
+| wiki.askWikiStream | ❌ | Streaming (future enhancement) |
+| wiki.getConversation | ✅ | wikiAi.getConversation query |
+| wiki.clearConversation | ✅ | wikiAi.clearConversation mutation |
+| wiki.createConversation | ✅ | wikiAi.createConversation mutation |
+| wiki.listConversations | ✅ | wikiAi.listConversations query |
 | **Frontend Components** | | |
-| AskWikiDialog.tsx | ❌ | Modal met chat interface |
-| AskWikiPanel.tsx | ❌ | Sidebar panel variant |
-| ChatMessage.tsx | ❌ | User/AI message bubbles |
-| SourceCitation.tsx | ❌ | Klikbare bronvermelding |
-| StreamingResponse.tsx | ❌ | Typing indicator + streaming |
-| ConversationHistory.tsx | ❌ | Eerdere vragen tonen |
+| AskWikiDialog.tsx | ✅ | Modal met chat interface |
+| AskWikiFab.tsx | ✅ | Floating action button |
+| ChatMessage.tsx | ✅ | Inline in AskWikiDialog |
+| SourceCitation.tsx | ✅ | SourceChip component met links |
+| StreamingResponse.tsx | ❌ | TypingIndicator (no streaming yet) |
+| ConversationHistory.tsx | ❌ | Future enhancement |
 | **Features** | | |
-| Follow-up questions | ❌ | Context behouden in gesprek |
-| "Show me the source" | ❌ | Direct naar wiki page navigeren |
-| Copy answer | ❌ | Kopieer naar clipboard |
-| Feedback (👍/👎) | ❌ | Answer quality tracking |
-| Scope selector | ❌ | Workspace / Project / Alles |
+| Follow-up questions | ✅ | conversationId tracking |
+| "Show me the source" | ✅ | SourceChip met ExternalLink |
+| Copy answer | ❌ | Future enhancement |
+| Feedback (👍/👎) | ❌ | Future enhancement |
+| Scope selector | ❌ | Uses projectId (future UI) |
 
 **UI Mockup:**
 
@@ -1391,8 +1393,8 @@ Beantwoord nu de vraag van de gebruiker.`
 | Sub-fase | Status | Beschrijving |
 |----------|--------|--------------|
 | **15.1 Provider Koppeling** | ✅ | WikiAiService + tRPC endpoints |
-| **15.2 Semantic Search** | 🔶 | Backend ✅ (Qdrant), Frontend ❌ |
-| **15.3 Ask the Wiki** | ❌ | RAG Chat met bronnen |
+| **15.2 Semantic Search** | ✅ | Backend (Qdrant) + Frontend (SearchModes) |
+| **15.3 Ask the Wiki** | ✅ | RAG Chat met bronnen (WikiRagService + AskWikiDialog) |
 | **15.4 Enhanced Graphs** | ❌ | Filtering, clustering, paths |
 | **15.5 Integration** | ❌ | UI polish en performance |
 
@@ -1663,3 +1665,20 @@ cat ~/genx/v6/dev/kanbu/docs/WIKI-base/GRAPHITI-IMPLEMENTATIE.md
 | 2026-01-12 | icons per search type: FileText/Network/Sparkles |
 | 2026-01-12 | wiki/index.ts v1.3.0 - SearchMode type export |
 | 2026-01-12 | **Fase 15.2 Semantic Search COMPLEET** |
+| 2026-01-12 | **Fase 15.3 Ask the Wiki START** |
+| 2026-01-12 | WikiRagService.ts aangemaakt - RAG pipeline voor wiki Q&A |
+| 2026-01-12 | RAG pipeline: context retrieval → formatting → LLM → source extraction |
+| 2026-01-12 | Dutch system prompt met citatie regels en "zeg eerlijk als je het niet weet" |
+| 2026-01-12 | In-memory conversation store voor follow-up questions |
+| 2026-01-12 | wikiAi.askWiki mutation - vraag stellen aan wiki |
+| 2026-01-12 | wikiAi.createConversation - nieuwe conversatie starten |
+| 2026-01-12 | wikiAi.getConversation - history ophalen |
+| 2026-01-12 | wikiAi.clearConversation - conversatie wissen |
+| 2026-01-12 | wikiAi.listConversations - alle conversaties voor workspace |
+| 2026-01-12 | AskWikiDialog.tsx v1.0.0 - Chat interface component |
+| 2026-01-12 | AskWikiFab - Floating action button voor snelle toegang |
+| 2026-01-12 | SourceChip component - klikbare bronvermelding per relevance |
+| 2026-01-12 | ChatMessage component - user/assistant messages met sources |
+| 2026-01-12 | TypingIndicator - animated dots tijdens wachten |
+| 2026-01-12 | wiki/index.ts v1.4.0 - AskWikiDialog + AskWikiFab exports |
+| 2026-01-12 | **Fase 15.3 Ask the Wiki COMPLEET** |

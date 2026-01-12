@@ -1,13 +1,14 @@
 /**
  * Wiki AI Procedures
- * Version: 1.1.0
+ * Version: 1.2.0
  *
  * tRPC procedures for Wiki AI features.
  * Provides access to embeddings, entity extraction, text operations,
- * and semantic search for Wiki pages using configured AI providers.
+ * semantic search, and RAG chat for Wiki pages using configured AI providers.
  *
  * Fase: 15.1 - Provider Koppeling
  * Fase: 15.2 - Semantic Search
+ * Fase: 15.3 - Ask the Wiki (RAG Chat)
  *
  * =============================================================================
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
@@ -23,6 +24,7 @@ import { router, protectedProcedure } from '../router'
 import { permissionService } from '../../services'
 import {
   getWikiAiService,
+  getWikiRagService,
   WikiAiError,
   type WikiContext,
 } from '../../lib/ai/wiki'
@@ -97,6 +99,36 @@ const similarPagesSchema = z.object({
   workspaceId: z.number(),
   pageId: z.number(),
   limit: z.number().min(1).max(20).optional().default(5),
+})
+
+// Ask the Wiki schemas (Fase 15.3)
+const askWikiSchema = z.object({
+  workspaceId: z.number(),
+  projectId: z.number().optional(),
+  question: z.string().min(1).max(2000),
+  options: z
+    .object({
+      maxContextPages: z.number().min(1).max(20).optional(),
+      minRelevanceScore: z.number().min(0).max(1).optional(),
+      maxContextTokens: z.number().min(500).max(16000).optional(),
+      conversationId: z.string().optional(),
+      temperature: z.number().min(0).max(2).optional(),
+    })
+    .optional(),
+})
+
+const createConversationSchema = z.object({
+  workspaceId: z.number(),
+  projectId: z.number().optional(),
+})
+
+const conversationIdSchema = z.object({
+  conversationId: z.string(),
+})
+
+const listConversationsSchema = z.object({
+  workspaceId: z.number(),
+  projectId: z.number().optional(),
 })
 
 // =============================================================================
@@ -477,6 +509,180 @@ export const wikiAiRouter = router({
           code: 'INTERNAL_SERVER_ERROR',
           message: error instanceof Error ? error.message : 'Get embedding stats failed',
         })
+      }
+    }),
+
+  // ===========================================================================
+  // Ask the Wiki - RAG Chat (Fase 15.3)
+  // ===========================================================================
+
+  /**
+   * Ask a question about the wiki content
+   *
+   * Uses RAG (Retrieval-Augmented Generation) pipeline:
+   * 1. Semantic search for relevant wiki pages
+   * 2. Build context from retrieved pages
+   * 3. Generate answer using LLM
+   * 4. Extract and return sources
+   *
+   * Supports conversation history for follow-up questions.
+   */
+  askWiki: protectedProcedure
+    .input(askWikiSchema)
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.user!.id
+
+      // Verify access
+      await verifyWorkspaceAccess(userId, input.workspaceId)
+
+      const ragService = getWikiRagService(ctx.prisma)
+
+      try {
+        const result = await ragService.askWiki(
+          input.question,
+          input.workspaceId,
+          {
+            projectId: input.projectId,
+            ...input.options,
+          }
+        )
+
+        return {
+          success: true,
+          answer: result.answer,
+          sources: result.sources,
+          contextCount: result.context.length,
+          model: result.model,
+          provider: result.provider,
+        }
+      } catch (error) {
+        if (error instanceof Error && error.message.includes('No reasoning provider')) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'No AI provider configured for this workspace. Please configure an AI provider in settings.',
+          })
+        }
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: error instanceof Error ? error.message : 'Ask Wiki failed',
+        })
+      }
+    }),
+
+  /**
+   * Create a new conversation for follow-up questions
+   */
+  createConversation: protectedProcedure
+    .input(createConversationSchema)
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.user!.id
+
+      // Verify access
+      await verifyWorkspaceAccess(userId, input.workspaceId)
+
+      const ragService = getWikiRagService(ctx.prisma)
+      const conversation = ragService.createConversation(
+        input.workspaceId,
+        input.projectId
+      )
+
+      return {
+        success: true,
+        conversationId: conversation.id,
+        createdAt: conversation.createdAt,
+      }
+    }),
+
+  /**
+   * Get conversation history
+   */
+  getConversation: protectedProcedure
+    .input(conversationIdSchema)
+    .query(async ({ ctx, input }) => {
+      const ragService = getWikiRagService(ctx.prisma)
+      const conversation = ragService.getConversation(input.conversationId)
+
+      if (!conversation) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Conversation not found',
+        })
+      }
+
+      // Verify user has access to the workspace
+      const userId = ctx.user!.id
+      await verifyWorkspaceAccess(userId, conversation.workspaceId)
+
+      return {
+        success: true,
+        conversation: {
+          id: conversation.id,
+          workspaceId: conversation.workspaceId,
+          projectId: conversation.projectId,
+          messages: conversation.messages,
+          createdAt: conversation.createdAt,
+          updatedAt: conversation.updatedAt,
+        },
+      }
+    }),
+
+  /**
+   * Clear/delete a conversation
+   */
+  clearConversation: protectedProcedure
+    .input(conversationIdSchema)
+    .mutation(async ({ ctx, input }) => {
+      const ragService = getWikiRagService(ctx.prisma)
+      const conversation = ragService.getConversation(input.conversationId)
+
+      if (!conversation) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Conversation not found',
+        })
+      }
+
+      // Verify user has access to the workspace
+      const userId = ctx.user!.id
+      await verifyWorkspaceAccess(userId, conversation.workspaceId)
+
+      const deleted = ragService.clearConversation(input.conversationId)
+
+      return {
+        success: deleted,
+        conversationId: input.conversationId,
+      }
+    }),
+
+  /**
+   * List all conversations for a workspace/project
+   */
+  listConversations: protectedProcedure
+    .input(listConversationsSchema)
+    .query(async ({ ctx, input }) => {
+      const userId = ctx.user!.id
+
+      // Verify access
+      await verifyWorkspaceAccess(userId, input.workspaceId)
+
+      const ragService = getWikiRagService(ctx.prisma)
+      const conversations = ragService.listConversations(
+        input.workspaceId,
+        input.projectId
+      )
+
+      return {
+        success: true,
+        conversations: conversations.map(c => ({
+          id: c.id,
+          workspaceId: c.workspaceId,
+          projectId: c.projectId,
+          messageCount: c.messages.length,
+          createdAt: c.createdAt,
+          updatedAt: c.updatedAt,
+          lastMessage: c.messages[c.messages.length - 1]?.content.substring(0, 100),
+        })),
+        count: conversations.length,
       }
     }),
 })

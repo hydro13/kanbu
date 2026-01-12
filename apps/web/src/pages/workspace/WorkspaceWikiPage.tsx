@@ -1,6 +1,6 @@
 /*
  * Workspace Wiki Page
- * Version: 2.1.0
+ * Version: 2.2.0
  *
  * Shows the workspace wiki/knowledge base with:
  * - Sidebar navigation (page tree)
@@ -8,6 +8,7 @@
  * - Status management (draft/published/archived)
  * - Version history
  * - Temporal search (what did we know at time X?)
+ * - Ask the Wiki (RAG chat with AI)
  *
  * ===================================================================
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
@@ -20,13 +21,16 @@
  *
  * Modified: 2026-01-12
  * Change: Added WikiTemporalSearch integration (Fase 9)
+ *
+ * Modified: 2026-01-12
+ * Change: Added AskWikiDialog + AskWikiFab (Fase 15.3)
  * ===================================================================
  */
 
 import { useState, useCallback, useMemo, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { WorkspaceLayout } from '@/components/layout/WorkspaceLayout'
-import { WikiSidebar, WikiPageView, WikiVersionHistory, WikiSearchDialog, WikiGraphView, WikiTemporalSearch } from '@/components/wiki'
+import { WikiSidebar, WikiPageView, WikiVersionHistory, WikiSearchDialog, WikiGraphView, WikiTemporalSearch, AskWikiDialog, AskWikiFab } from '@/components/wiki'
 import type { WikiPageNode, WikiPageStatus, WikiBreadcrumb, WikiPageForSearch } from '@/components/wiki'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -117,6 +121,7 @@ export function WorkspaceWikiPage() {
   const [showGraphView, setShowGraphView] = useState(false)
   const [graphFullscreen, setGraphFullscreen] = useState(false)
   const [showTemporalSearch, setShowTemporalSearch] = useState(false)
+  const [showAskWiki, setShowAskWiki] = useState(false)
 
   const utils = trpc.useUtils()
   const user = useAppSelector(selectUser)
@@ -579,6 +584,19 @@ export function WorkspaceWikiPage() {
             }
           }}
         />
+      )}
+
+      {/* Ask Wiki Dialog (Fase 15.3) */}
+      {workspace && (
+        <>
+          <AskWikiFab onClick={() => setShowAskWiki(true)} />
+          <AskWikiDialog
+            isOpen={showAskWiki}
+            onClose={() => setShowAskWiki(false)}
+            workspaceId={workspace.id}
+            wikiBaseUrl={basePath}
+          />
+        </>
       )}
     </WorkspaceLayout>
   )

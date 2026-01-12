@@ -5,6 +5,7 @@
  *
  * Fase 15.1 - Provider Koppeling
  * Fase 15.2 - Semantic Search (WikiEmbeddingService)
+ * Fase 15.3 - Ask the Wiki (WikiRagService)
  */
 
 export {
@@ -28,3 +29,15 @@ export {
   type SemanticSearchResult,
   type SemanticSearchOptions,
 } from './WikiEmbeddingService'
+
+export {
+  WikiRagService,
+  getWikiRagService,
+  resetWikiRagService,
+  type RagContext,
+  type RagSource,
+  type RagAnswer,
+  type ConversationMessage,
+  type Conversation,
+  type AskWikiOptions,
+} from './WikiRagService'
