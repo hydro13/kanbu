@@ -46,6 +46,31 @@ services:
       timeout: 5s
       retries: 5
 
+  # Graphiti - Knowledge Graph Service (Python/FastAPI)
+  # Wraps graphiti_core for Wiki entity extraction and temporal queries
+  graphiti:
+    build:
+      context: ../apps/graphiti
+      dockerfile: Dockerfile
+    container_name: kanbu-graphiti
+    restart: unless-stopped
+    environment:
+      - FALKORDB_URI=redis://falkordb:6379
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - EMBEDDING_PROVIDER=openai
+      - EMBEDDING_MODEL=text-embedding-3-small
+    ports:
+      - "8000:8000"
+    depends_on:
+      falkordb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
 volumes:
   kanbu-postgres-data:
     name: kanbu-postgres-data

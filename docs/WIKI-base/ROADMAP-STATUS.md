@@ -1,8 +1,8 @@
 # Wiki Implementation Roadmap & Status
 
 > **Laatst bijgewerkt:** 2026-01-12
-> **Huidige fase:** Fase 5 - Graph Visualization 🔄 IN PROGRESS
-> **Volgende actie:** 3D/WebXR support (Three.js)
+> **Huidige fase:** Fase 8 - Kanbu API Integratie 🔄 NEXT
+> **Volgende actie:** GraphitiClient class in Node.js API
 
 ---
 
@@ -70,13 +70,14 @@
 
 ---
 
-## Fase 4: Search & Discovery ✅ COMPLEET
+## Fase 4: Search & Discovery 🔄 IN PROGRESS
 
 | Item | Status | Notities |
 |------|--------|----------|
-| Semantic search | ✅ | Graphiti search in WikiSearchDialog |
+| Text search (graph) | ✅ | Cypher CONTAINS query op titles/entities |
 | Wiki search UI | ✅ | WikiSearchDialog.tsx met keyboard nav |
 | Cmd+K wiki search | ✅ | Wiki pages zoeken via CommandPalette |
+| Semantic search (vectors) | ❌ | Vereist embeddings + Qdrant (toekomst) |
 
 ---
 
@@ -94,11 +95,133 @@
 
 ---
 
-## Fase 6+: AI Features (TOEKOMST)
+---
 
-- Ask the Wiki (RAG)
-- Auto-suggestions
-- Temporal queries
+# GRAPHITI CORE INTEGRATIE
+
+> **Doel:** Volledige Graphiti Python library integreren in Kanbu voor maximale controle en aanpasbaarheid.
+> **Bron:** https://github.com/getzep/graphiti (geforkt naar apps/graphiti/)
+
+---
+
+## Fase 7: Python Service Setup ✅ COMPLEET
+
+| Item | Status | Notities |
+|------|--------|----------|
+| apps/graphiti/ directory aanmaken | ✅ | Nieuwe app in monorepo |
+| graphiti_core code kopiëren | ✅ | Van ~/repos/graphiti/ naar src/core/ |
+| pyproject.toml + dependencies | ✅ | uv package manager |
+| FastAPI wrapper service | ✅ | src/api/main.py + schemas.py |
+| Dockerfile voor graphiti service | ✅ | Python 3.11-slim image |
+| docker-compose.yml updaten | ✅ | graphiti service op poort 8000 |
+| .env configuratie | ✅ | .env.example aangemaakt |
+| Health check endpoint | ✅ | GET /health endpoint
+
+---
+
+## Fase 8: Kanbu API Integratie
+
+| Item | Status | Notities |
+|------|--------|----------|
+| GraphitiClient class in Node.js | ❌ | HTTP client naar Python service |
+| graphitiService.ts refactoren | ❌ | Calls naar Python ipv direct Cypher |
+| Episode sync bij wiki save | ❌ | add_episode via HTTP |
+| Error handling + retries | ❌ | Graceful degradation |
+| Connection pooling | ❌ | Performance optimalisatie |
+
+---
+
+## Fase 9: Bi-Temporal Model
+
+| Item | Status | Notities |
+|------|--------|----------|
+| valid_at / invalid_at velden | ❌ | Temporal edges in FalkorDB |
+| created_at / expired_at tracking | ❌ | Audit trail |
+| Temporal query endpoints | ❌ | "Wat wisten we op datum X?" |
+| Version diff met temporal context | ❌ | UI component |
+| Contradiction detection | ❌ | LLM detecteert conflicten |
+
+---
+
+## Fase 10: LLM Entity Extraction
+
+| Item | Status | Notities |
+|------|--------|----------|
+| LLM provider configuratie | ❌ | OpenAI/Anthropic/Ollama |
+| Entity extraction pipeline | ❌ | Vervang rules-based |
+| Custom entity types | ❌ | WikiPage, Task, User, Project |
+| Relation extraction | ❌ | Automatische relaties |
+| Concept deduplicatie | ❌ | LLM mergt duplicates |
+
+---
+
+## Fase 11: Embeddings & Semantic Search
+
+| Item | Status | Notities |
+|------|--------|----------|
+| Embedding provider setup | ❌ | OpenAI/Voyage/local |
+| fact_embedding generatie | ❌ | Bij elke wiki save |
+| Qdrant integratie | ❌ | Vector storage (draait al) |
+| Hybrid search (BM25 + vector) | ❌ | Beste van beide werelden |
+| Search ranking tuning | ❌ | Relevantie optimalisatie |
+
+---
+
+## Fase 12: MCP Server & Claude Integratie
+
+| Item | Status | Notities |
+|------|--------|----------|
+| MCP protocol endpoints | ❌ | add_memory, search_nodes, etc. |
+| Claude Desktop integratie | ❌ | Persistent memory |
+| Agent memory per workspace | ❌ | group_id isolatie |
+| "Ask the Wiki" chatbox | ❌ | RAG over wiki content |
+
+---
+
+## Fase 13: Advanced Features
+
+| Item | Status | Notities |
+|------|--------|----------|
+| Queue-based processing | ❌ | Concurrent editing support |
+| Auto-suggestions tijdens typen | ❌ | Real-time entity hints |
+| Graph analytics dashboard | ❌ | Statistieken, trends |
+| Export/import graph data | ❌ | Backup/restore |
+| Multi-tenant graph isolation | ❌ | Workspace boundaries |
+
+---
+
+## Graphiti Architectuur
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         Kanbu Stack                              │
+│                                                                  │
+│  ┌──────────────┐  ┌──────────────┐  ┌────────────────────────┐ │
+│  │   Web App    │  │   API (Node) │  │   Graphiti (Python)    │ │
+│  │   React      │──│   Fastify    │──│   FastAPI              │ │
+│  │   Vite       │  │   tRPC       │  │   graphiti_core        │ │
+│  │   :5173      │  │   :3001      │  │   :8000                │ │
+│  └──────────────┘  └──────────────┘  └────────────────────────┘ │
+│                              │                    │              │
+│                              ▼                    ▼              │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │                     Data Layer                            │   │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌────────────────┐  │   │
+│  │  │ PostgreSQL   │  │ FalkorDB     │  │ Qdrant         │  │   │
+│  │  │ :5432        │  │ :6379        │  │ :6333          │  │   │
+│  │  │ Source data  │  │ Graph DB     │  │ Vectors        │  │   │
+│  │  └──────────────┘  └──────────────┘  └────────────────┘  │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│                                                                  │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │                     LLM Layer                             │   │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌────────────────┐  │   │
+│  │  │ OpenAI       │  │ Anthropic    │  │ Ollama (local) │  │   │
+│  │  │ gpt-4o-mini  │  │ claude-3     │  │ llama3.2       │  │   │
+│  │  └──────────────┘  └──────────────┘  └────────────────┘  │   │
+│  └──────────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
@@ -154,3 +277,10 @@ cat ~/genx/v6/dev/kanbu/docs/WIKI-base/GRAPHITI-IMPLEMENTATIE.md
 | 2026-01-12 | getGraph endpoint toegevoegd aan graphiti router |
 | 2026-01-12 | WikiGraphView.tsx component met D3.js force-directed graph |
 | 2026-01-12 | Graph toggle button in WikiSidebar |
+| 2026-01-12 | Correctie: "Semantic search" → "Text search" (geen echte vectors) |
+| 2026-01-12 | GRAPHITI CORE INTEGRATIE roadmap toegevoegd (Fase 7-13) |
+| 2026-01-12 | apps/graphiti/ directory + graphiti_core gekopieerd |
+| 2026-01-12 | pyproject.toml + FastAPI service (main.py, schemas.py) |
+| 2026-01-12 | Dockerfile + .env.example aangemaakt |
+| 2026-01-12 | graphiti service toegevoegd aan docker-compose.yml |
+| 2026-01-12 | Fase 7 COMPLEET |
