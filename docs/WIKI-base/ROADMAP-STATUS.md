@@ -560,15 +560,15 @@ model AiProviderConfig {
 
 | Item | Status | Notities |
 |------|--------|----------|
-| AiSystemsPage.tsx | ❌ | Main admin page |
-| AiProviderList.tsx | ❌ | Lijst van 3 providers |
-| AiProviderForm.tsx | ❌ | Add/edit provider modal |
-| AiProviderCard.tsx | ❌ | Provider card met status |
-| API key input met mask | ❌ | Show/hide toggle, encrypted storage (alleen OpenAI) |
-| Connection test button | ❌ | Test API connectivity |
-| Model selector dropdown | ❌ | Dynamisch ophalen van beschikbare modellen |
-| Ollama URL configuratie | ❌ | Default: http://localhost:11434 |
-| LM Studio URL configuratie | ❌ | Default: http://localhost:1234 |
+| AiSystemsPage.tsx | ✅ | Main admin page met provider cards |
+| AiProviderList.tsx | ✅ | Geïntegreerd in AiSystemsPage (ProviderSection) |
+| AiProviderForm.tsx | ✅ | ProviderModal + EditProviderModal in AiSystemsPage |
+| AiProviderCard.tsx | ✅ | ProviderCard component in AiSystemsPage |
+| API key input met mask | ✅ | Password input, backend maskeert met ••••••••  |
+| Connection test button | ✅ | Test /v1/models endpoint, toont latency + models |
+| Model selector dropdown | ✅ | getModels procedure haalt beschikbare modellen op |
+| Ollama URL configuratie | ✅ | Default: http://localhost:11434/v1 |
+| LM Studio URL configuratie | ✅ | Default: http://localhost:1234/v1 |
 
 **UI Mockup:**
 
