@@ -1,10 +1,10 @@
 # Wiki Implementation Roadmap & Status
 
 > **Laatst bijgewerkt:** 2026-01-12
-> **Huidige fase:** Fase 15 - Wiki Intelligence 🆕
-> **Sub-fase:** 15.1 Provider Koppeling | 15.2 Semantic Search | 15.3 Ask the Wiki | 15.4 Enhanced Graphs | 15.5 Integration
+> **Huidige fase:** Fase 15 - Wiki Intelligence
+> **Sub-fase:** 15.1 Provider Koppeling ✅ | 15.2 Semantic Search | 15.3 Ask the Wiki | 15.4 Enhanced Graphs | 15.5 Integration
 > **Vorige fase:** Fase 14 - AI Provider Configuration ✅ COMPLEET
-> **Volgende actie:** Start met 15.1 Provider Koppeling (Fase 14 → Graphiti bridge)
+> **Volgende actie:** Start met 15.2 Semantic Search (vector search in FalkorDB)
 
 ---
 
@@ -1022,27 +1022,39 @@ jobs:
 
 ---
 
-### 15.1 Provider Koppeling (Foundation)
+### 15.1 Provider Koppeling (Foundation) ✅ COMPLEET
 
 > **Doel:** Fase 14 AI Providers verbinden met Graphiti zodat workspace-specifieke configuratie wordt gebruikt.
+> **Status:** COMPLEET - WikiAiService operationeel met OpenAI (2026-01-12)
 
-**Probleem:** De Python Graphiti service gebruikt nu hardcoded `OPENAI_API_KEY` uit `.env`. Dit moet de geconfigureerde provider uit Fase 14 worden.
+**Oplossing:** WikiAiService als bridge tussen Fase 14 providers en Wiki/Graphiti. GraphitiService v3.0.0 met fallback chain: Python Graphiti → WikiAiService → Rules-based.
 
 | Item | Status | Notities |
 |------|--------|----------|
 | **Backend Service** | | |
-| WikiAiService class aanmaken | ❌ | `lib/ai/wiki/WikiAiService.ts` |
-| getEmbeddingProvider(workspaceId) | ❌ | Haalt effective provider via registry |
-| getReasoningProvider(workspaceId) | ❌ | Voor entity extraction, summarization |
-| Provider caching per workspace | ❌ | Voorkom herhaalde DB lookups |
+| WikiAiService class aanmaken | ✅ | `lib/ai/wiki/WikiAiService.ts` |
+| getEmbeddingProvider(workspaceId) | ✅ | Via ProviderRegistry |
+| getReasoningProvider(workspaceId) | ✅ | Voor entity extraction, summarization |
+| Provider caching per workspace | ✅ | Singleton pattern met registry |
 | **Graphiti Integratie** | | |
-| graphitiService.ts updaten | ❌ | Inject provider i.p.v. hardcoded OpenAI |
-| Embedding via provider | ❌ | `provider.embed()` i.p.v. Python service |
-| Entity extraction via provider | ❌ | `provider.extractEntities()` |
-| Fallback naar Python service | ❌ | Als Node provider faalt |
+| graphitiService.ts updaten | ✅ | v3.0.0 - WikiAiService als fallback |
+| Embedding via provider | ✅ | `WikiAiService.embed()` |
+| Entity extraction via provider | ✅ | `WikiAiService.extractEntities()` |
+| Fallback naar Python service | ✅ | Python → WikiAi → Rules-based |
 | **tRPC Endpoints** | | |
-| wiki.getEffectiveProvider | ❌ | Toont welke provider actief is voor wiki |
-| wiki.testProvider | ❌ | Test embedding + reasoning voor workspace |
+| wikiAi.getCapabilities | ✅ | Toont embedding + reasoning providers |
+| wikiAi.testConnection | ✅ | Test latency voor beide providers |
+| wikiAi.embed | ✅ | Single text embedding |
+| wikiAi.embedBatch | ✅ | Batch embeddings |
+| wikiAi.extractEntities | ✅ | LLM-based entity extraction |
+| wikiAi.summarize | ✅ | Text summarization |
+| wikiAi.chat | ✅ | Non-streaming chat |
+| wikiAi.getEmbeddingInfo | ✅ | Provider info zonder embedding |
+
+**Live Test (2026-01-12):**
+- `wikiAi.getCapabilities` → OpenAI provider detected ✅
+- `wikiAi.extractEntities` → GPT-4o-mini extracted 3 entities ✅
+- `wikiAi.embed` → text-embedding-3-small, 1536 dimensions ✅
 
 **Architectuur:**
 
@@ -1345,7 +1357,7 @@ Beantwoord nu de vraag van de gebruiker.`
 
 | Sub-fase | Status | Beschrijving |
 |----------|--------|--------------|
-| **15.1 Provider Koppeling** | ❌ | Fase 14 → Graphiti bridge |
+| **15.1 Provider Koppeling** | ✅ | WikiAiService + tRPC endpoints |
 | **15.2 Semantic Search** | ❌ | Zoeken op betekenis |
 | **15.3 Ask the Wiki** | ❌ | RAG Chat met bronnen |
 | **15.4 Enhanced Graphs** | ❌ | Filtering, clustering, paths |
@@ -1591,3 +1603,12 @@ cat ~/genx/v6/dev/kanbu/docs/WIKI-base/GRAPHITI-IMPLEMENTATIE.md
 | 2026-01-12 | OpenAI live test: Connection ✅ (648ms), Embedding ✅ (1536 dim), Reasoning ✅ |
 | 2026-01-12 | **Fase 14 AI Provider Configuration VOLLEDIG COMPLEET** |
 | 2026-01-12 | **Fase 15 Wiki Intelligence toegevoegd** - Semantic Search + Ask the Wiki + Enhanced Graphs |
+| 2026-01-12 | **Fase 15.1 Provider Koppeling START** |
+| 2026-01-12 | WikiAiService.ts aangemaakt - bridge tussen Fase 14 providers en Wiki |
+| 2026-01-12 | wikiAi.ts tRPC router met 8 endpoints (getCapabilities, embed, extractEntities, etc.) |
+| 2026-01-12 | GraphitiService v3.0.0 - WikiAiService als fallback voor Python service |
+| 2026-01-12 | Fallback chain: Python Graphiti → WikiAiService → Rules-based FalkorDB |
+| 2026-01-12 | Live test: wikiAi.getCapabilities ✅ (OpenAI provider detected) |
+| 2026-01-12 | Live test: wikiAi.extractEntities ✅ (GPT-4o-mini, 3 entities from Dutch text) |
+| 2026-01-12 | Live test: wikiAi.embed ✅ (text-embedding-3-small, 1536 dimensions) |
+| 2026-01-12 | **Fase 15.1 Provider Koppeling COMPLEET** |
