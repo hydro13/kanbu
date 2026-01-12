@@ -19,3 +19,8 @@ export { WikiPageView } from './WikiPageView'
 export type { WikiPage, WikiBreadcrumb } from './WikiPageView'
 
 export { WikiVersionHistory } from './WikiVersionHistory'
+
+export { WikiSearchDialog } from './WikiSearchDialog'
+export type { WikiPageForSearch } from './WikiSearchDialog'
+
+export { WikiGraphView } from './WikiGraphView'

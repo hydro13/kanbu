@@ -369,6 +369,116 @@ export class GraphitiService {
   }
 
   /**
+   * Get full graph data for visualization
+   * Returns all nodes and edges for a workspace/project wiki
+   */
+  async getGraph(groupId: string): Promise<{
+    nodes: Array<{
+      id: string
+      label: string
+      type: 'WikiPage' | 'Concept' | 'Person' | 'Task'
+      pageId?: number
+      slug?: string
+    }>
+    edges: Array<{
+      source: string
+      target: string
+      type: 'LINKS_TO' | 'MENTIONS'
+    }>
+  }> {
+    await this.initialize()
+
+    // Get all WikiPage nodes
+    const pagesResult = await this.query(`
+      MATCH (p:WikiPage {groupId: '${groupId}'})
+      WHERE p.pageId IS NOT NULL
+      RETURN p.pageId AS pageId, p.title AS title, p.slug AS slug
+    `)
+    const pages = this.parseResults<{ pageId: number; title: string; slug: string }>(pagesResult, ['pageId', 'title', 'slug'])
+
+    // Get all entities connected to pages in this group
+    const entitiesResult = await this.query(`
+      MATCH (p:WikiPage {groupId: '${groupId}'})-[:MENTIONS]->(e)
+      WHERE p.pageId IS NOT NULL
+      RETURN DISTINCT e.name AS name, labels(e)[0] AS type
+    `)
+    const entities = this.parseResults<{ name: string; type: string }>(entitiesResult, ['name', 'type'])
+
+    // Get LINKS_TO edges between pages
+    const linksResult = await this.query(`
+      MATCH (source:WikiPage {groupId: '${groupId}'})-[:LINKS_TO]->(target:WikiPage)
+      WHERE source.pageId IS NOT NULL AND target.pageId IS NOT NULL
+      RETURN source.pageId AS sourceId, target.pageId AS targetId
+    `)
+    const links = this.parseResults<{ sourceId: number; targetId: number }>(linksResult, ['sourceId', 'targetId'])
+
+    // Get MENTIONS edges
+    const mentionsResult = await this.query(`
+      MATCH (p:WikiPage {groupId: '${groupId}'})-[:MENTIONS]->(e)
+      WHERE p.pageId IS NOT NULL
+      RETURN p.pageId AS pageId, e.name AS entityName, labels(e)[0] AS entityType
+    `)
+    const mentions = this.parseResults<{ pageId: number; entityName: string; entityType: string }>(mentionsResult, ['pageId', 'entityName', 'entityType'])
+
+    // Build nodes array
+    const nodes: Array<{
+      id: string
+      label: string
+      type: 'WikiPage' | 'Concept' | 'Person' | 'Task'
+      pageId?: number
+      slug?: string
+    }> = []
+
+    // Add page nodes
+    for (const page of pages) {
+      nodes.push({
+        id: `page-${page.pageId}`,
+        label: page.title,
+        type: 'WikiPage',
+        pageId: page.pageId,
+        slug: page.slug,
+      })
+    }
+
+    // Add entity nodes
+    for (const entity of entities) {
+      const nodeType = entity.type as 'Concept' | 'Person' | 'Task'
+      nodes.push({
+        id: `${entity.type.toLowerCase()}-${entity.name}`,
+        label: entity.name,
+        type: nodeType,
+      })
+    }
+
+    // Build edges array
+    const edges: Array<{
+      source: string
+      target: string
+      type: 'LINKS_TO' | 'MENTIONS'
+    }> = []
+
+    // Add LINKS_TO edges
+    for (const link of links) {
+      edges.push({
+        source: `page-${link.sourceId}`,
+        target: `page-${link.targetId}`,
+        type: 'LINKS_TO',
+      })
+    }
+
+    // Add MENTIONS edges
+    for (const mention of mentions) {
+      edges.push({
+        source: `page-${mention.pageId}`,
+        target: `${mention.entityType.toLowerCase()}-${mention.entityName}`,
+        type: 'MENTIONS',
+      })
+    }
+
+    return { nodes, edges }
+  }
+
+  /**
    * Get graph statistics
    */
   async getStats(groupId?: string): Promise<{ pages: number; entities: number; relationships: number }> {

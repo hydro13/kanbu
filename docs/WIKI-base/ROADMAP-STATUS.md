@@ -1,8 +1,8 @@
 # Wiki Implementation Roadmap & Status
 
 > **Laatst bijgewerkt:** 2026-01-12
-> **Huidige fase:** Fase 3 - Cross-References
-> **Volgende actie:** Test BacklinksPanel in browser
+> **Huidige fase:** Fase 5 - Graph Visualization 🔄 IN PROGRESS
+> **Volgende actie:** 3D/WebXR support (Three.js)
 
 ---
 
@@ -57,33 +57,47 @@
 
 ---
 
-## Fase 3: Cross-References ⏳ IN PROGRESS
+## Fase 3: Cross-References ✅ COMPLEET
 
 | Item | Status | Notities |
 |------|--------|----------|
 | BacklinksPanel component | ✅ | components/wiki/BacklinksPanel.tsx |
 | Related pages in panel | ✅ | Geïntegreerd in BacklinksPanel |
 | Integratie in WikiPageView | ✅ | Toont panel onder content |
-| @mentions plugin | ❌ | Lexical plugin |
+| @mentions plugin | ✅ | MentionPlugin.tsx, MentionNode.tsx |
+| &Sign plugin | ✅ | SignaturePlugin.tsx, SignatureNode.tsx (DecoratorNode) |
 | #task-refs plugin | ✅ | TaskRefPlugin.tsx, TaskRefNode.tsx |
 
 ---
 
-## Fase 4: Search & Discovery (NA FASE 3)
+## Fase 4: Search & Discovery ✅ COMPLEET
 
 | Item | Status | Notities |
 |------|--------|----------|
-| Semantic search | ❌ | Graphiti search integration |
-| Wiki search UI | ❌ | In sidebar (nu placeholder) |
-| Cmd+K wiki search | ❌ | CommandPalette integratie |
+| Semantic search | ✅ | Graphiti search in WikiSearchDialog |
+| Wiki search UI | ✅ | WikiSearchDialog.tsx met keyboard nav |
+| Cmd+K wiki search | ✅ | Wiki pages zoeken via CommandPalette |
 
 ---
 
-## Fase 5+: AI Features (TOEKOMST)
+## Fase 5: Graph Visualization 🔄 IN PROGRESS
+
+| Item | Status | Notities |
+|------|--------|----------|
+| D3.js installatie | ✅ | d3 + @types/d3 |
+| getGraph endpoint | ✅ | graphiti.ts + graphitiService.ts |
+| WikiGraphView component | ✅ | Force-directed layout, zoom/pan |
+| Sidebar toggle button | ✅ | Network icon in WikiSidebar |
+| Fullscreen mode | ✅ | Uitklapbaar naar volledig scherm |
+| 3D/WebXR support | ❌ | Three.js integratie (toekomst) |
+| 100k+ nodes | ❌ | WebGPU/Cosmos integratie (toekomst) |
+
+---
+
+## Fase 6+: AI Features (TOEKOMST)
 
 - Ask the Wiki (RAG)
 - Auto-suggestions
-- Graph visualization (D3.js)
 - Temporal queries
 
 ---
@@ -106,7 +120,7 @@ bash ~/genx/v6/dev/kanbu/scripts/api.sh start
 cd ~/genx/v6/dev/kanbu/apps/web && pnpm dev
 
 # Wiki URL
-http://max:5173/workspace/genx/wiki
+https://max:5173/workspace/genx/wiki
 
 # Graphiti docs
 cat ~/genx/v6/dev/kanbu/docs/WIKI-base/GRAPHITI-IMPLEMENTATIE.md
@@ -127,3 +141,16 @@ cat ~/genx/v6/dev/kanbu/docs/WIKI-base/GRAPHITI-IMPLEMENTATIE.md
 | 2026-01-12 | BacklinksPanel.tsx component aangemaakt |
 | 2026-01-12 | BacklinksPanel geïntegreerd in WikiPageView.tsx |
 | 2026-01-12 | TaskRefNode.tsx en TaskRefPlugin.tsx toegevoegd (#task-refs) |
+| 2026-01-12 | MentionNode.tsx en MentionPlugin.tsx toegevoegd (@mentions) |
+| 2026-01-12 | SignatureNode.tsx en SignaturePlugin.tsx toegevoegd (&Sign) |
+| 2026-01-12 | Dropdown positioning fix (center ipv far right) |
+| 2026-01-12 | WikiLinkNode importJSON fix voor duplicate children bug |
+| 2026-01-12 | Fase 3 COMPLEET |
+| 2026-01-12 | WikiSearchDialog.tsx met local + semantic search |
+| 2026-01-12 | Search dialog geïntegreerd in WorkspaceWikiPage |
+| 2026-01-12 | Wiki pages zoeken via Cmd+K CommandPalette |
+| 2026-01-12 | Fase 4 COMPLEET |
+| 2026-01-12 | D3.js geïnstalleerd voor graph visualization |
+| 2026-01-12 | getGraph endpoint toegevoegd aan graphiti router |
+| 2026-01-12 | WikiGraphView.tsx component met D3.js force-directed graph |
+| 2026-01-12 | Graph toggle button in WikiSidebar |

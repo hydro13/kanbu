@@ -46,6 +46,10 @@ const getStatsSchema = z.object({
   groupId: z.string().optional(),
 })
 
+const getGraphSchema = z.object({
+  groupId: z.string(), // e.g., 'wiki-ws-1' or 'wiki-proj-5'
+})
+
 const syncPageSchema = z.object({
   pageId: z.number(),
   title: z.string(),
@@ -112,6 +116,17 @@ export const graphitiRouter = router({
       const graphiti = getGraphitiService()
       const stats = await graphiti.getStats(input.groupId)
       return stats
+    }),
+
+  /**
+   * Get full graph data for visualization
+   */
+  getGraph: protectedProcedure
+    .input(getGraphSchema)
+    .query(async ({ input }) => {
+      const graphiti = getGraphitiService()
+      const graph = await graphiti.getGraph(input.groupId)
+      return graph
     }),
 
   /**

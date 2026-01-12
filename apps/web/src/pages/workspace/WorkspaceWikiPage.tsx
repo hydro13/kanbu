@@ -22,8 +22,8 @@
 import { useState, useCallback, useMemo, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { WorkspaceLayout } from '@/components/layout/WorkspaceLayout'
-import { WikiSidebar, WikiPageView, WikiVersionHistory } from '@/components/wiki'
-import type { WikiPageNode, WikiPageStatus, WikiBreadcrumb } from '@/components/wiki'
+import { WikiSidebar, WikiPageView, WikiVersionHistory, WikiSearchDialog, WikiGraphView } from '@/components/wiki'
+import type { WikiPageNode, WikiPageStatus, WikiBreadcrumb, WikiPageForSearch } from '@/components/wiki'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -47,7 +47,7 @@ import { RichTextEditor, type WikiPage as WikiPageForLink, type TaskResult, type
 import { trpc } from '@/lib/trpc'
 import { useAppSelector } from '@/store'
 import { selectUser } from '@/store/authSlice'
-import { BookOpen, Plus, ArrowLeft } from 'lucide-react'
+import { BookOpen, Plus, ArrowLeft, Network } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
 // =============================================================================
@@ -109,6 +109,9 @@ export function WorkspaceWikiPage() {
   const [createParentId, setCreateParentId] = useState<number | undefined>()
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [showVersionHistory, setShowVersionHistory] = useState(false)
+  const [showSearchDialog, setShowSearchDialog] = useState(false)
+  const [showGraphView, setShowGraphView] = useState(false)
+  const [graphFullscreen, setGraphFullscreen] = useState(false)
 
   const utils = trpc.useUtils()
   const user = useAppSelector(selectUser)
@@ -358,8 +361,7 @@ export function WorkspaceWikiPage() {
   }, [currentPage, deleteMutation])
 
   const handleSearch = useCallback(() => {
-    // TODO: Implement search (Fase 4 - Search & Discovery)
-    console.log('Search clicked')
+    setShowSearchDialog(true)
   }, [])
 
   const basePath = `/workspace/${slug}/wiki`
@@ -407,6 +409,8 @@ export function WorkspaceWikiPage() {
             showUnpublished={true}
             onCreatePage={handleCreatePage}
             onSearch={handleSearch}
+            onShowGraph={() => setShowGraphView(!showGraphView)}
+            graphViewActive={showGraphView}
             wikiType="workspace"
             title={`${workspace.name} Wiki`}
           />
@@ -527,6 +531,29 @@ export function WorkspaceWikiPage() {
             currentPageQuery.refetch()
             pagesQuery.refetch()
           }}
+        />
+      )}
+
+      {/* Search Dialog */}
+      {workspace && (
+        <WikiSearchDialog
+          open={showSearchDialog}
+          onClose={() => setShowSearchDialog(false)}
+          workspaceId={workspace.id}
+          pages={pages as WikiPageForSearch[]}
+          basePath={basePath}
+        />
+      )}
+
+      {/* Graph View */}
+      {showGraphView && workspace && (
+        <WikiGraphView
+          workspaceId={workspace.id}
+          basePath={basePath}
+          height={graphFullscreen ? undefined : 400}
+          fullscreen={graphFullscreen}
+          onToggleFullscreen={() => setGraphFullscreen(!graphFullscreen)}
+          className={graphFullscreen ? '' : 'mt-4'}
         />
       )}
     </WorkspaceLayout>

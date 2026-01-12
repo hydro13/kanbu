@@ -22,6 +22,7 @@ import {
   Plus,
   BookOpen,
   Search,
+  Network,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -55,6 +56,10 @@ interface WikiSidebarProps {
   onCreatePage?: (parentId?: number) => void
   /** Callback when search is triggered */
   onSearch?: () => void
+  /** Callback when graph view is triggered */
+  onShowGraph?: () => void
+  /** Whether graph view is currently shown */
+  graphViewActive?: boolean
   /** Wiki type for display */
   wikiType?: 'workspace' | 'project'
   /** Wiki title to display */
@@ -221,6 +226,8 @@ export function WikiSidebar({
   showUnpublished = true,
   onCreatePage,
   onSearch,
+  onShowGraph,
+  graphViewActive = false,
   wikiType = 'workspace',
   title,
 }: WikiSidebarProps) {
@@ -305,6 +312,16 @@ export function WikiSidebar({
               title="Create new page"
             >
               <Plus className="h-3.5 w-3.5" />
+            </Button>
+          )}
+          {onShowGraph && (
+            <Button
+              variant={graphViewActive ? 'default' : 'outline'}
+              size="sm"
+              onClick={onShowGraph}
+              title="Knowledge graph"
+            >
+              <Network className="h-3.5 w-3.5" />
             </Button>
           )}
         </div>

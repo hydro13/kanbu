@@ -230,6 +230,18 @@ export function CommandPalette({ projectId: propProjectId, onOpenTaskDetail }: C
     { enabled: isOpen && !!projectId && query.length >= 2 }
   )
 
+  // Fetch workspace by slug for wiki search
+  const { data: workspace } = trpc.workspace.getBySlug.useQuery(
+    { slug: workspaceSlug! },
+    { enabled: isOpen && !!workspaceSlug && query.length >= 2 }
+  )
+
+  // Fetch wiki pages for workspace
+  const { data: wikiPages } = trpc.workspaceWiki.getTree.useQuery(
+    { workspaceId: workspace?.id ?? 0 },
+    { enabled: isOpen && !!workspace?.id && query.length >= 2 }
+  )
+
   // ==========================================================================
   // Build Command Items
   // ==========================================================================
@@ -563,10 +575,35 @@ export function CommandPalette({ projectId: propProjectId, onOpenTaskDetail }: C
           })
         })
       }
+
+      // Wiki page search results (when in workspace context)
+      if (wikiPages && workspaceSlug) {
+        const matchingWikiPages = wikiPages
+          .filter(page =>
+            page.title.toLowerCase().includes(lowerQuery) ||
+            page.slug.toLowerCase().includes(lowerQuery)
+          )
+          .slice(0, 5)
+
+        matchingWikiPages.forEach(page => {
+          items.push({
+            id: `wiki-${page.id}`,
+            type: 'navigation',
+            label: page.title,
+            description: `Wiki • ${page.status === 'DRAFT' ? 'Draft' : 'Published'}`,
+            icon: <WikiIcon />,
+            section: 'Wiki Pages',
+            onSelect: () => {
+              navigate(`/workspace/${workspaceSlug}/wiki/${page.slug}`)
+              close()
+            },
+          })
+        })
+      }
     }
 
     return items
-  }, [query, workspaces, myTasks, projectTasks, projectId, workspaceSlug, navContext, navigate, close, onOpenTaskDetail])
+  }, [query, workspaces, myTasks, projectTasks, wikiPages, projectId, workspaceSlug, navContext, navigate, close, onOpenTaskDetail])
 
   // ==========================================================================
   // Group items by section
