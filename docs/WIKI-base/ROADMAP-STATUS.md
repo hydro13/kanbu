@@ -1,8 +1,8 @@
 # Wiki Implementation Roadmap & Status
 
 > **Laatst bijgewerkt:** 2026-01-12
-> **Huidige fase:** Fase 9 - Bi-Temporal Model 🔄 IN PROGRESS (3/5)
-> **Volgende actie:** Audit trail tracking (created_at/expired_at)
+> **Huidige fase:** Fase 10 - LLM Entity Extraction ✅ COMPLEET
+> **Volgende actie:** Fase 11 - Embeddings & Semantic Search (of Fase 9.2/9.5 afhankelijkheden)
 
 ---
 
@@ -143,15 +143,22 @@
 
 ---
 
-## Fase 10: LLM Entity Extraction
+## Fase 10: LLM Entity Extraction ✅ COMPLEET
 
 | Item | Status | Notities |
 |------|--------|----------|
-| LLM provider configuratie | ❌ | OpenAI/Anthropic/Ollama |
-| Entity extraction pipeline | ❌ | Vervang rules-based |
-| Custom entity types | ❌ | WikiPage, Task, User, Project |
-| Relation extraction | ❌ | Automatische relaties |
-| Concept deduplicatie | ❌ | LLM mergt duplicates |
+| LLM provider configuratie | ✅ | OpenAI via graphiti_core (al geïntegreerd in Fase 7/8) |
+| Entity extraction pipeline | ✅ | graphiti_core add_episode met custom entity_types |
+| Custom entity types | ✅ | WikiPage, Task, User, Project, Concept in kanbu_entities.py |
+| Relation extraction | ✅ | Native in graphiti_core - automatische relatie-extractie via LLM |
+| Concept deduplicatie | ✅ | Native in graphiti_core - dedupe_nodes.py prompts |
+
+**Notitie:** Graphiti_core heeft built-in LLM-based:
+- **Entity extraction** met custom types (via `entity_types` parameter)
+- **Relation extraction** (automatisch bij `add_episode()`)
+- **Entity deduplication** (via dedupe_nodes prompts)
+
+Alle functies zijn nu actief wanneer de Python Graphiti service draait met OPENAI_API_KEY.
 
 ---
 
@@ -295,3 +302,12 @@ cat ~/genx/v6/dev/kanbu/docs/WIKI-base/GRAPHITI-IMPLEMENTATIE.md
 | 2026-01-12 | POST /search/temporal endpoint in Python service |
 | 2026-01-12 | WikiTemporalSearch.tsx component aangemaakt (9.4 ✅) |
 | 2026-01-12 | Temporal search button toegevoegd aan WikiSidebar (Clock icon) |
+| 2026-01-12 | **Fase 10 gestart: LLM Entity Extraction** |
+| 2026-01-12 | Custom entity types aangemaakt: WikiPage, Task, User, Project, Concept |
+| 2026-01-12 | src/entity_types/kanbu_entities.py met Pydantic models |
+| 2026-01-12 | AddEpisodeRequest uitgebreid met use_kanbu_entities optie |
+| 2026-01-12 | /entity-types endpoint toegevoegd aan Python service |
+| 2026-01-12 | graphitiService.ts gebruikt nu Kanbu entity types by default |
+| 2026-01-12 | Entity details in AddEpisodeResponse (entity_name, entity_type) |
+| 2026-01-12 | Fase 10.1-10.3 COMPLEET |
+| 2026-01-12 | **Fase 10 COMPLEET** - Relation extraction en deduplicatie zijn native in graphiti_core |

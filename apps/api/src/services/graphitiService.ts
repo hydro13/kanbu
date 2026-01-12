@@ -210,11 +210,14 @@ export class GraphitiService {
   /**
    * Add or update a wiki page in the graph
    * Tries Python service first for LLM-based extraction, falls back to direct FalkorDB
+   *
+   * Uses Kanbu-specific entity types (Fase 10):
+   * - WikiPage, Task, User, Project, Concept
    */
   async syncWikiPage(episode: WikiEpisode): Promise<void> {
     const { pageId, title, content, groupId, timestamp } = episode
 
-    // Try Python service first (LLM-based entity extraction)
+    // Try Python service first (LLM-based entity extraction with Kanbu entity types)
     if (await this.isPythonServiceAvailable()) {
       try {
         const result = await this.pythonClient.addEpisode({
@@ -224,11 +227,14 @@ export class GraphitiService {
           source_description: `Wiki page: ${title}`,
           group_id: groupId,
           reference_time: timestamp.toISOString(),
+          use_kanbu_entities: true, // Fase 10: Use custom entity types
         })
 
+        // Log detailed extraction results
+        const entityTypes = result.entity_details?.map(e => e.entity_type).filter((v, i, a) => a.indexOf(v) === i).join(', ')
         console.log(
           `[GraphitiService] Synced page ${pageId}: "${title}" via Python service - ` +
-          `${result.entities_extracted} entities, ${result.relations_created} relations`
+          `${result.entities_extracted} entities (${entityTypes || 'none'}), ${result.relations_created} relations`
         )
 
         // Also sync basic page metadata to FalkorDB for backlinks/queries

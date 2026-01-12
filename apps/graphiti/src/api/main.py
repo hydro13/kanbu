@@ -26,7 +26,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from .schemas import (
     AddEpisodeRequest,
     AddEpisodeResponse,
+    EntityTypeInfo,
+    EntityTypesResponse,
     EpisodeInfo,
+    ExtractedEntityInfo,
     GetEpisodesRequest,
     GetEpisodesResponse,
     GetGraphRequest,
@@ -180,12 +183,50 @@ async def health_check():
     except Exception:
         db_connected = False
 
+    # Get available entity types
+    from ..entity_types import KANBU_ENTITY_TYPES
+
+    entity_types = list(KANBU_ENTITY_TYPES.keys())
+
     return HealthResponse(
         status='healthy' if db_connected else 'unhealthy',
         database_connected=db_connected,
         llm_configured=bool(os.getenv('OPENAI_API_KEY')),
         embedder_configured=bool(os.getenv('OPENAI_API_KEY')),
         version='1.0.0',
+        entity_types_available=entity_types,
+    )
+
+
+@app.get('/entity-types', response_model=EntityTypesResponse)
+async def get_entity_types():
+    """
+    List available entity types for extraction.
+    Shows Kanbu-specific entity types and their fields.
+    """
+    from ..entity_types import KANBU_ENTITY_TYPES, KANBU_EXTRACTION_INSTRUCTIONS
+
+    entity_types = []
+    for type_name, type_model in KANBU_ENTITY_TYPES.items():
+        # Get docstring as description
+        description = type_model.__doc__ or f'{type_name} entity'
+        description = description.strip().split('\n')[0]  # First line only
+
+        # Get field names
+        fields = list(type_model.model_fields.keys())
+
+        entity_types.append(
+            EntityTypeInfo(
+                type_name=type_name,
+                description=description,
+                fields=fields,
+            )
+        )
+
+    return EntityTypesResponse(
+        entity_types=entity_types,
+        kanbu_entities_enabled=True,
+        custom_instructions_preview=KANBU_EXTRACTION_INSTRUCTIONS[:500] + '...',
     )
 
 
@@ -219,6 +260,11 @@ async def add_episode(request: AddEpisodeRequest):
     """
     Add an episode (wiki page save).
     This is the main entry point for syncing wiki content to the knowledge graph.
+
+    Features:
+    - LLM-based entity extraction (Fase 10)
+    - Custom Kanbu entity types: WikiPage, Task, User, Project, Concept
+    - Custom extraction instructions for domain-specific context
     """
     try:
         graphiti = await get_graphiti()
@@ -233,7 +279,26 @@ async def add_episode(request: AddEpisodeRequest):
             'message': EpisodeType.message,
         }
 
-        # Add episode to graphiti
+        # Prepare entity types and extraction instructions
+        entity_types = None
+        extraction_instructions = request.custom_instructions or ''
+
+        if request.use_kanbu_entities:
+            from ..entity_types import KANBU_ENTITY_TYPES, KANBU_EXTRACTION_INSTRUCTIONS
+
+            entity_types = KANBU_ENTITY_TYPES
+            # Combine custom instructions with Kanbu defaults
+            if extraction_instructions:
+                extraction_instructions = f'{KANBU_EXTRACTION_INSTRUCTIONS}\n\n{extraction_instructions}'
+            else:
+                extraction_instructions = KANBU_EXTRACTION_INSTRUCTIONS
+
+        logger.info(
+            f'Adding episode "{request.name}" to group {request.group_id} '
+            f'with entity_types={list(entity_types.keys()) if entity_types else "default"}'
+        )
+
+        # Add episode to graphiti with custom entity types
         result = await graphiti.add_episode(
             name=request.name,
             episode_body=request.episode_body,
@@ -241,12 +306,42 @@ async def add_episode(request: AddEpisodeRequest):
             source_description=request.source_description,
             group_id=request.group_id,
             reference_time=request.reference_time or datetime.now(),
+            entity_types=entity_types,
+            custom_extraction_instructions=extraction_instructions if extraction_instructions else None,
+        )
+
+        # Extract result information
+        episode_uuid = str(result.uuid) if hasattr(result, 'uuid') else 'unknown'
+        extracted_entities = result.extracted_entities if hasattr(result, 'extracted_entities') else []
+        created_edges = result.created_edges if hasattr(result, 'created_edges') else []
+
+        # Build entity details
+        entity_details = []
+        for entity in extracted_entities:
+            entity_type = 'Entity'  # Default
+            if hasattr(entity, 'labels') and entity.labels:
+                entity_type = entity.labels[0]
+            elif hasattr(entity, '__class__'):
+                entity_type = entity.__class__.__name__
+
+            entity_details.append(
+                ExtractedEntityInfo(
+                    entity_name=getattr(entity, 'name', str(entity)),
+                    entity_type=entity_type,
+                    is_new=True,  # Will need to track this properly
+                )
+            )
+
+        logger.info(
+            f'Episode "{request.name}" processed: '
+            f'{len(extracted_entities)} entities, {len(created_edges)} relations'
         )
 
         return AddEpisodeResponse(
-            episode_uuid=str(result.uuid) if hasattr(result, 'uuid') else 'unknown',
-            entities_extracted=len(result.extracted_entities) if hasattr(result, 'extracted_entities') else 0,
-            relations_created=len(result.created_edges) if hasattr(result, 'created_edges') else 0,
+            episode_uuid=episode_uuid,
+            entities_extracted=len(extracted_entities),
+            relations_created=len(created_edges),
+            entity_details=entity_details,
         )
 
     except Exception as e:

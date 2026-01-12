@@ -23,12 +23,33 @@ export interface AddEpisodeRequest {
   source_description?: string
   group_id: string
   reference_time?: string // ISO datetime
+  use_kanbu_entities?: boolean // Use Kanbu-specific entity types (default: true)
+  custom_instructions?: string // Additional LLM extraction instructions
+}
+
+export interface ExtractedEntityInfo {
+  entity_name: string
+  entity_type: string
+  is_new: boolean
 }
 
 export interface AddEpisodeResponse {
   episode_uuid: string
   entities_extracted: number
   relations_created: number
+  entity_details?: ExtractedEntityInfo[]
+}
+
+export interface EntityTypeInfo {
+  type_name: string
+  description: string
+  fields: string[]
+}
+
+export interface EntityTypesResponse {
+  entity_types: EntityTypeInfo[]
+  kanbu_entities_enabled: boolean
+  custom_instructions_preview?: string
 }
 
 export interface SearchRequest {
@@ -114,6 +135,7 @@ export interface HealthResponse {
   llm_configured: boolean
   embedder_configured: boolean
   version: string
+  entity_types_available?: string[]
 }
 
 export interface StatsResponse {
@@ -203,6 +225,10 @@ export class GraphitiClient {
   async stats(groupId?: string): Promise<StatsResponse> {
     const query = groupId ? `?group_id=${encodeURIComponent(groupId)}` : ''
     return this.request<StatsResponse>('GET', `/stats${query}`)
+  }
+
+  async entityTypes(): Promise<EntityTypesResponse> {
+    return this.request<EntityTypesResponse>('GET', '/entity-types')
   }
 
   async isAvailable(): Promise<boolean> {

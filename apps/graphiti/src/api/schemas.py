@@ -29,6 +29,22 @@ class AddEpisodeRequest(BaseModel):
     reference_time: datetime | None = Field(
         default=None, description='Reference time for temporal queries'
     )
+    use_kanbu_entities: bool = Field(
+        default=True,
+        description='Use Kanbu-specific entity types (WikiPage, Task, User, Project, Concept)',
+    )
+    custom_instructions: str | None = Field(
+        default=None,
+        description='Additional extraction instructions for the LLM (optional)',
+    )
+
+
+class ExtractedEntityInfo(BaseModel):
+    """Information about an extracted entity."""
+
+    entity_name: str
+    entity_type: str
+    is_new: bool = False
 
 
 class AddEpisodeResponse(BaseModel):
@@ -37,6 +53,23 @@ class AddEpisodeResponse(BaseModel):
     episode_uuid: str
     entities_extracted: int
     relations_created: int
+    entity_details: list[ExtractedEntityInfo] = Field(default_factory=list)
+
+
+class EntityTypeInfo(BaseModel):
+    """Information about an available entity type."""
+
+    type_name: str
+    description: str
+    fields: list[str]
+
+
+class EntityTypesResponse(BaseModel):
+    """Response listing available entity types."""
+
+    entity_types: list[EntityTypeInfo]
+    kanbu_entities_enabled: bool
+    custom_instructions_preview: str | None = None
 
 
 class GetEpisodesRequest(BaseModel):
@@ -181,3 +214,4 @@ class HealthResponse(BaseModel):
     llm_configured: bool
     embedder_configured: bool
     version: str
+    entity_types_available: list[str] = Field(default_factory=list)
