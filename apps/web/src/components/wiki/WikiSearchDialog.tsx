@@ -1,16 +1,18 @@
 /*
  * Wiki Search Dialog Component
- * Version: 1.0.0
+ * Version: 2.0.0
  *
  * Search dialog for wiki pages with:
  * - Local title/slug search
- * - Graphiti semantic search integration
+ * - Graphiti graph search (entities/relationships)
+ * - Semantic vector search (Qdrant embeddings) - Fase 15.2
+ * - Hybrid mode combining all search types
  * - Keyboard navigation
  *
  * ===================================================================
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
  * Signed: 2026-01-12
- * Change: Initial implementation (Fase 4 - Search & Discovery)
+ * Change: Fase 15.2 - Added semantic search mode toggle with Qdrant
  * ===================================================================
  */
 
@@ -25,12 +27,15 @@ import {
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
   Search,
   FileText,
   Sparkles,
   ArrowRight,
   Loader2,
+  Network,
+  Zap,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { trpc } from '@/lib/trpc'
@@ -38,6 +43,8 @@ import { trpc } from '@/lib/trpc'
 // =============================================================================
 // Types
 // =============================================================================
+
+export type SearchMode = 'local' | 'graph' | 'semantic' | 'hybrid'
 
 export interface WikiPageForSearch {
   id: number
@@ -52,7 +59,7 @@ interface SearchResult {
   id: number
   title: string
   slug: string
-  type: 'local' | 'semantic'
+  type: 'local' | 'graph' | 'semantic'
   score?: number
   status?: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'
   snippet?: string
@@ -63,12 +70,16 @@ interface WikiSearchDialogProps {
   open: boolean
   /** Callback when dialog should close */
   onClose: () => void
-  /** Workspace ID for Graphiti search */
+  /** Workspace ID for search */
   workspaceId: number
+  /** Project ID for project-scoped search (optional) */
+  projectId?: number
   /** Local wiki pages for quick search */
   pages: WikiPageForSearch[]
   /** Base path for navigation (e.g., /workspace/slug/wiki) */
   basePath: string
+  /** Initial search mode (default: hybrid) */
+  defaultMode?: SearchMode
 }
 
 // =============================================================================
@@ -110,6 +121,17 @@ interface ResultItemProps {
 }
 
 function ResultItem({ result, isSelected, onClick }: ResultItemProps) {
+  const getIcon = () => {
+    switch (result.type) {
+      case 'semantic':
+        return <Sparkles className="h-4 w-4 text-purple-500 flex-shrink-0" />
+      case 'graph':
+        return <Network className="h-4 w-4 text-blue-500 flex-shrink-0" />
+      default:
+        return <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+    }
+  }
+
   return (
     <button
       onClick={onClick}
@@ -120,11 +142,7 @@ function ResultItem({ result, isSelected, onClick }: ResultItemProps) {
           : 'hover:bg-accent/50'
       )}
     >
-      {result.type === 'semantic' ? (
-        <Sparkles className="h-4 w-4 text-purple-500 flex-shrink-0" />
-      ) : (
-        <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-      )}
+      {getIcon()}
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
@@ -133,6 +151,11 @@ function ResultItem({ result, isSelected, onClick }: ResultItemProps) {
             <Badge variant="outline" className="text-[10px] px-1 py-0 bg-amber-50 text-amber-700 border-amber-200">
               Draft
             </Badge>
+          )}
+          {result.score !== undefined && result.score < 1 && (
+            <span className="text-[10px] text-muted-foreground">
+              {Math.round(result.score * 100)}%
+            </span>
           )}
         </div>
         {result.snippet && (
@@ -148,6 +171,45 @@ function ResultItem({ result, isSelected, onClick }: ResultItemProps) {
 }
 
 // =============================================================================
+// Search Mode Toggle Component
+// =============================================================================
+
+interface SearchModeToggleProps {
+  mode: SearchMode
+  onChange: (mode: SearchMode) => void
+}
+
+function SearchModeToggle({ mode, onChange }: SearchModeToggleProps) {
+  const modes: { value: SearchMode; label: string; icon: React.ReactNode; description: string }[] = [
+    { value: 'hybrid', label: 'Hybrid', icon: <Zap className="h-3 w-3" />, description: 'Best of all' },
+    { value: 'local', label: 'Local', icon: <FileText className="h-3 w-3" />, description: 'Title match' },
+    { value: 'graph', label: 'Graph', icon: <Network className="h-3 w-3" />, description: 'Entities' },
+    { value: 'semantic', label: 'AI', icon: <Sparkles className="h-3 w-3" />, description: 'Meaning' },
+  ]
+
+  return (
+    <div className="flex gap-1 p-1 bg-muted/50 rounded-md">
+      {modes.map((m) => (
+        <Button
+          key={m.value}
+          variant={mode === m.value ? 'secondary' : 'ghost'}
+          size="sm"
+          className={cn(
+            'h-6 px-2 text-xs gap-1',
+            mode === m.value && 'bg-background shadow-sm'
+          )}
+          onClick={() => onChange(m.value)}
+          title={m.description}
+        >
+          {m.icon}
+          <span className="hidden sm:inline">{m.label}</span>
+        </Button>
+      ))}
+    </div>
+  )
+}
+
+// =============================================================================
 // Main Component
 // =============================================================================
 
@@ -155,31 +217,74 @@ export function WikiSearchDialog({
   open,
   onClose,
   workspaceId,
+  projectId,
   pages,
   basePath,
+  defaultMode = 'hybrid',
 }: WikiSearchDialogProps) {
   const navigate = useNavigate()
   const inputRef = useRef<HTMLInputElement>(null)
 
   const [query, setQuery] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
+  const [searchMode, setSearchMode] = useState<SearchMode>(defaultMode)
+  const [graphResults, setGraphResults] = useState<SearchResult[]>([])
   const [semanticResults, setSemanticResults] = useState<SearchResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
 
   const utils = trpc.useUtils()
 
+  // Semantic search mutation (Fase 15.2)
+  const semanticSearchMutation = trpc.wikiAi.semanticSearch.useMutation()
+
   // Local search results
   const localResults = searchLocalPages(pages, query)
 
-  // Combined results: local first, then semantic
-  const allResults = [...localResults, ...semanticResults.filter(
-    (sr) => !localResults.some((lr) => lr.id === sr.id)
-  )]
+  // Combine results based on search mode
+  const allResults = (() => {
+    const seen = new Set<number>()
+    const results: SearchResult[] = []
 
-  // Semantic search with debounce
+    const addUnique = (items: SearchResult[]) => {
+      for (const item of items) {
+        if (!seen.has(item.id)) {
+          seen.add(item.id)
+          results.push(item)
+        }
+      }
+    }
+
+    switch (searchMode) {
+      case 'local':
+        addUnique(localResults)
+        break
+      case 'graph':
+        addUnique(graphResults)
+        break
+      case 'semantic':
+        addUnique(semanticResults)
+        break
+      case 'hybrid':
+      default:
+        // Hybrid: local first, then semantic (higher relevance), then graph
+        addUnique(localResults)
+        addUnique(semanticResults)
+        addUnique(graphResults)
+        break
+    }
+
+    return results
+  })()
+
+  // Graph search (entity-based via Graphiti)
   useEffect(() => {
     if (!query.trim() || query.length < 2) {
-      setSemanticResults([])
+      setGraphResults([])
+      return
+    }
+
+    if (searchMode !== 'graph' && searchMode !== 'hybrid') {
+      setGraphResults([])
       return
     }
 
@@ -196,8 +301,7 @@ export function WikiSearchDialog({
         })
 
         // Convert to SearchResult format
-        // Look up page details from local pages array
-        const semantic: SearchResult[] = results
+        const graph: SearchResult[] = results
           .filter((r) => r.pageId !== undefined)
           .map((r) => {
             const localPage = pages.find((p) => p.id === r.pageId)
@@ -205,12 +309,62 @@ export function WikiSearchDialog({
               id: r.pageId!,
               title: localPage?.title ?? r.name,
               slug: localPage?.slug ?? '',
+              type: 'graph' as const,
+              score: r.score,
+              status: localPage?.status,
+            }
+          })
+          .filter((r) => r.slug)
+
+        setGraphResults(graph)
+      } catch (error) {
+        console.error('Graph search failed:', error)
+        setGraphResults([])
+      } finally {
+        setIsSearching(false)
+      }
+    }, 300)
+
+    return () => clearTimeout(timeoutId)
+  }, [query, workspaceId, pages, utils.client, searchMode])
+
+  // Semantic search (vector-based via Qdrant)
+  useEffect(() => {
+    if (!query.trim() || query.length < 2) {
+      setSemanticResults([])
+      return
+    }
+
+    if (searchMode !== 'semantic' && searchMode !== 'hybrid') {
+      setSemanticResults([])
+      return
+    }
+
+    const timeoutId = setTimeout(async () => {
+      setIsSearching(true)
+      try {
+        const result = await semanticSearchMutation.mutateAsync({
+          workspaceId,
+          projectId,
+          query,
+          limit: 5,
+          scoreThreshold: 0.5,
+        })
+
+        // Convert to SearchResult format
+        const semantic: SearchResult[] = result.results
+          .map((r) => {
+            const localPage = pages.find((p) => p.id === r.pageId)
+            return {
+              id: r.pageId,
+              title: localPage?.title ?? r.title,
+              slug: localPage?.slug ?? '',
               type: 'semantic' as const,
               score: r.score,
               status: localPage?.status,
             }
           })
-          .filter((r) => r.slug) // Only include if we have a slug
+          .filter((r) => r.slug)
 
         setSemanticResults(semantic)
       } catch (error) {
@@ -222,18 +376,22 @@ export function WikiSearchDialog({
     }, 300)
 
     return () => clearTimeout(timeoutId)
-  }, [query, workspaceId, pages, utils.client])
+    // Note: semanticSearchMutation excluded - mutateAsync is stable, we only want input changes to trigger
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, workspaceId, projectId, pages, searchMode])
 
   // Reset state when dialog opens/closes
   useEffect(() => {
     if (open) {
       setQuery('')
       setSelectedIndex(0)
+      setGraphResults([])
       setSemanticResults([])
+      setSearchMode(defaultMode)
       // Focus input after dialog animation
       setTimeout(() => inputRef.current?.focus(), 100)
     }
-  }, [open])
+  }, [open, defaultMode])
 
   // Reset selection when results change
   useEffect(() => {
@@ -278,12 +436,36 @@ export function WikiSearchDialog({
     [allResults, selectedIndex, navigateToResult, onClose]
   )
 
+  // Get the label for result sections
+  const getResultSectionLabel = (type: SearchResult['type']) => {
+    switch (type) {
+      case 'local':
+        return { label: 'Title Matches', icon: <FileText className="h-3 w-3" /> }
+      case 'graph':
+        return { label: 'Entity Matches', icon: <Network className="h-3 w-3" /> }
+      case 'semantic':
+        return { label: 'AI Matches', icon: <Sparkles className="h-3 w-3" /> }
+    }
+  }
+
+  // Group results by type for display
+  const groupedResults = allResults.reduce((acc, result) => {
+    if (!acc[result.type]) acc[result.type] = []
+    acc[result.type].push(result)
+    return acc
+  }, {} as Record<SearchResult['type'], SearchResult[]>)
+
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="max-w-lg p-0 gap-0">
         <DialogHeader className="px-4 pt-4 pb-2">
           <DialogTitle className="sr-only">Search Wiki</DialogTitle>
         </DialogHeader>
+
+        {/* Search Mode Toggle */}
+        <div className="px-4 pb-2">
+          <SearchModeToggle mode={searchMode} onChange={setSearchMode} />
+        </div>
 
         {/* Search Input */}
         <div className="px-4 pb-2">
@@ -294,10 +476,16 @@ export function WikiSearchDialog({
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Search wiki pages..."
+              placeholder={
+                searchMode === 'semantic'
+                  ? 'Search by meaning...'
+                  : searchMode === 'graph'
+                  ? 'Search entities...'
+                  : 'Search wiki pages...'
+              }
               className="pl-9 pr-8"
             />
-            {isSearching && (
+            {(isSearching || semanticSearchMutation.isPending) && (
               <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
             )}
           </div>
@@ -314,57 +502,66 @@ export function WikiSearchDialog({
                   Use <kbd className="px-1 py-0.5 bg-muted rounded text-xs">Enter</kbd> to select,{' '}
                   <kbd className="px-1 py-0.5 bg-muted rounded text-xs">Esc</kbd> to close
                 </p>
+                {searchMode === 'semantic' && (
+                  <p className="text-xs mt-2 text-purple-600">
+                    AI search finds pages by meaning, not just keywords
+                  </p>
+                )}
               </div>
             ) : allResults.length === 0 ? (
               <div className="px-3 py-8 text-center text-sm text-muted-foreground">
-                {isSearching ? (
+                {isSearching || semanticSearchMutation.isPending ? (
                   <>
                     <Loader2 className="h-6 w-6 mx-auto mb-2 animate-spin" />
-                    <p>Searching...</p>
+                    <p>
+                      {searchMode === 'semantic' ? 'Searching by meaning...' : 'Searching...'}
+                    </p>
                   </>
                 ) : (
                   <>
                     <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
                     <p>No pages found for "{query}"</p>
+                    {searchMode !== 'hybrid' && (
+                      <p className="text-xs mt-1">
+                        Try <button
+                          className="text-primary underline"
+                          onClick={() => setSearchMode('hybrid')}
+                        >hybrid mode</button> for more results
+                      </p>
+                    )}
                   </>
                 )}
               </div>
             ) : (
               <div className="space-y-1">
-                {localResults.length > 0 && (
-                  <>
-                    <div className="px-3 py-1 text-xs font-medium text-muted-foreground">
-                      Pages
-                    </div>
-                    {localResults.map((result, index) => (
-                      <ResultItem
-                        key={`local-${result.id}`}
-                        result={result}
-                        isSelected={index === selectedIndex}
-                        onClick={() => navigateToResult(result)}
-                      />
-                    ))}
-                  </>
-                )}
+                {/* Render results grouped by type */}
+                {(['local', 'semantic', 'graph'] as const).map((type) => {
+                  const results = groupedResults[type]
+                  if (!results?.length) return null
 
-                {semanticResults.length > 0 && (
-                  <>
-                    <div className="px-3 py-1 text-xs font-medium text-muted-foreground flex items-center gap-1 mt-2">
-                      <Sparkles className="h-3 w-3" />
-                      Semantic Matches
-                    </div>
-                    {semanticResults
-                      .filter((sr) => !localResults.some((lr) => lr.id === sr.id))
-                      .map((result, index) => (
+                  const section = getResultSectionLabel(type)
+                  const firstResult = results[0]
+                  const startIndex = firstResult
+                    ? allResults.findIndex((r) => r.type === type && r.id === firstResult.id)
+                    : 0
+
+                  return (
+                    <div key={type}>
+                      <div className="px-3 py-1 text-xs font-medium text-muted-foreground flex items-center gap-1 mt-2 first:mt-0">
+                        {section.icon}
+                        {section.label}
+                      </div>
+                      {results.map((result, index) => (
                         <ResultItem
-                          key={`semantic-${result.id}`}
+                          key={`${type}-${result.id}`}
                           result={result}
-                          isSelected={localResults.length + index === selectedIndex}
+                          isSelected={startIndex + index === selectedIndex}
                           onClick={() => navigateToResult(result)}
                         />
                       ))}
-                  </>
-                )}
+                    </div>
+                  )
+                })}
               </div>
             )}
           </div>

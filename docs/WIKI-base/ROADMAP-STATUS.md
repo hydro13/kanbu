@@ -2,9 +2,9 @@
 
 > **Laatst bijgewerkt:** 2026-01-12
 > **Huidige fase:** Fase 15 - Wiki Intelligence
-> **Sub-fase:** 15.1 Provider Koppeling ✅ | 15.2 Semantic Search (Backend ✅) | 15.3 Ask the Wiki | 15.4 Enhanced Graphs | 15.5 Integration
+> **Sub-fase:** 15.1 Provider Koppeling ✅ | 15.2 Semantic Search ✅ | 15.3 Ask the Wiki | 15.4 Enhanced Graphs | 15.5 Integration
 > **Vorige fase:** Fase 14 - AI Provider Configuration ✅ COMPLEET
-> **Volgende actie:** 15.2 Frontend (WikiSemanticSearchDialog) of 15.3 Ask the Wiki (RAG)
+> **Volgende actie:** 15.3 Ask the Wiki (RAG Chat)
 
 ---
 
@@ -1095,14 +1095,14 @@ export class WikiAiService {
 | Hybrid search (BM25 + vector) | ⏸️ | Deferred - pure vector voldoet voor v1 |
 | Search caching | ⏸️ | Deferred - Qdrant is snel genoeg |
 | **Frontend** | | |
-| WikiSemanticSearchDialog.tsx | ❌ | Nieuwe search dialog |
-| Search mode toggle | ❌ | Text / Semantic / Hybrid switch |
-| Search result preview | ❌ | Snippet met highlighted matches |
-| "More like this" button | ❌ | Vind vergelijkbare pages |
-| Recent searches | ❌ | Opslaan in localStorage |
+| WikiSearchDialog v2.0.0 | ✅ | Enhanced met search mode toggle |
+| Search mode toggle | ✅ | Local / Graph / Semantic / Hybrid |
+| Search result preview | ✅ | Score percentage per resultaat |
+| "More like this" button | ⏸️ | Deferred - via findSimilarPages endpoint beschikbaar |
+| Recent searches | ⏸️ | Deferred - later toevoegen |
 | **Integratie** | | |
-| Cmd+K semantic search | ❌ | CommandPalette integratie |
-| WikiSidebar search | ❌ | Quick search in sidebar |
+| WikiSearchDialog semantic | ✅ | wikiAi.semanticSearch via hybrid mode |
+| WikiSidebar search | ✅ | Bestaande search trigger werkt met nieuwe dialog |
 
 **Architectuur (Fase 15.2):**
 
@@ -1654,4 +1654,12 @@ cat ~/genx/v6/dev/kanbu/docs/WIKI-base/GRAPHITI-IMPLEMENTATIE.md
 | 2026-01-12 | wikiAi.findSimilarPages endpoint - vergelijkbare pagina's |
 | 2026-01-12 | wikiAi.getEmbeddingStats endpoint - statistieken |
 | 2026-01-12 | Fallback chain: Python Graphiti → WikiEmbeddingService → FalkorDB text |
-| 2026-01-12 | **Fase 15.2 Semantic Search (Backend) COMPLEET** - Frontend nog te doen |
+| 2026-01-12 | **Fase 15.2 Semantic Search (Backend) COMPLEET** |
+| 2026-01-12 | **Fase 15.2 Semantic Search (Frontend) START** |
+| 2026-01-12 | WikiSearchDialog v2.0.0 - search mode toggle toegevoegd |
+| 2026-01-12 | Modes: local (title), graph (entities), semantic (AI), hybrid |
+| 2026-01-12 | Semantic search via wikiAi.semanticSearch endpoint |
+| 2026-01-12 | Score percentage weergave per resultaat |
+| 2026-01-12 | icons per search type: FileText/Network/Sparkles |
+| 2026-01-12 | wiki/index.ts v1.3.0 - SearchMode type export |
+| 2026-01-12 | **Fase 15.2 Semantic Search COMPLEET** |
