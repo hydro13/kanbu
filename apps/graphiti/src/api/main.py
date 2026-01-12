@@ -66,12 +66,20 @@ async def get_graphiti():
         return graphiti_client
 
     # Import here to avoid circular imports
-    from src.core.graphiti import Graphiti
-    from src.core.llm_client import LLMConfig, OpenAIClient
+    from urllib.parse import urlparse
+
+    from graphiti_core.driver.falkordb_driver import FalkorDriver
+    from graphiti_core.graphiti import Graphiti
+    from graphiti_core.llm_client import LLMConfig, OpenAIClient
 
     # Get configuration from environment
     falkordb_uri = os.getenv('FALKORDB_URI', 'redis://localhost:6379')
     openai_api_key = os.getenv('OPENAI_API_KEY')
+
+    # Parse FalkorDB URI (redis://host:port)
+    parsed = urlparse(falkordb_uri)
+    falkordb_host = parsed.hostname or 'localhost'
+    falkordb_port = parsed.port or 6379
 
     if not openai_api_key:
         logger.warning('OPENAI_API_KEY not set, using mock LLM client')
@@ -79,6 +87,13 @@ async def get_graphiti():
         # In production, you'd want to fail or use Ollama
 
     try:
+        # Create FalkorDB driver
+        falkor_driver = FalkorDriver(
+            host=falkordb_host,
+            port=falkordb_port,
+            database='kanbu_wiki',
+        )
+
         # Create LLM client
         llm_config = LLMConfig(
             api_key=openai_api_key or 'mock-key',
@@ -86,16 +101,16 @@ async def get_graphiti():
         )
         llm_client = OpenAIClient(llm_config)
 
-        # Create Graphiti instance with FalkorDB
+        # Create Graphiti instance with FalkorDB driver
         graphiti_client = Graphiti(
-            uri=falkordb_uri,
+            graph_driver=falkor_driver,
             llm_client=llm_client,
         )
 
         # Initialize the graph database
         await graphiti_client.build_indices_and_constraints()
 
-        logger.info(f'Graphiti client initialized with FalkorDB at {falkordb_uri}')
+        logger.info(f'Graphiti client initialized with FalkorDB at {falkordb_host}:{falkordb_port}')
         return graphiti_client
 
     except Exception as e:
@@ -209,7 +224,7 @@ async def add_episode(request: AddEpisodeRequest):
         graphiti = await get_graphiti()
 
         # Import EpisodeType
-        from src.core.graphiti_types import EpisodeType
+        from graphiti_core.graphiti_types import EpisodeType
 
         # Map source to EpisodeType
         source_map = {
@@ -331,7 +346,7 @@ async def temporal_search(request: TemporalQueryRequest):
         graphiti = await get_graphiti()
 
         # Import search filters
-        from src.core.search.search_filters import (
+        from graphiti_core.search.search_filters import (
             ComparisonOperator,
             DateFilter,
             SearchFilters,

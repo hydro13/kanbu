@@ -17,9 +17,9 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="/root/.local/bin:$PATH"
 
 # Copy project files
-COPY pyproject.toml ./
+COPY pyproject.toml README.md ./
 COPY src/ ./src/
-COPY config/ ./config/
+COPY graphiti_core/ ./graphiti_core/
 
 # Install dependencies using uv
 RUN uv pip install --system -e .
