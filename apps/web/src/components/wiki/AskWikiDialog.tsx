@@ -1,6 +1,6 @@
 /*
  * Ask Wiki Dialog
- * Version: 2.0.0
+ * Version: 2.1.0
  *
  * Chat interface for asking questions about wiki content.
  * Uses RAG (Retrieval-Augmented Generation) to provide answers
@@ -12,6 +12,7 @@
  * - Feedback (thumbs up/down)
  * - Scope selector (workspace/project)
  * - Conversation history
+ * - In-app source navigation (Fase 15.5)
  *
  * Fase 15.3 - Ask the Wiki
  *
@@ -20,6 +21,9 @@
  * Claude Code: Opus 4.5
  * Host: MAX
  * Date: 2026-01-12
+ *
+ * Modified: 2026-01-12
+ * Change: Fase 15.5 - Added onNavigateToPage for in-app source navigation
  * ===================================================================
  */
 
@@ -83,6 +87,10 @@ interface AskWikiDialogProps {
   workspaceName?: string
   projectName?: string
   availableProjects?: Array<{ id: number; name: string }>
+  /** Callback when user clicks a source - navigates within app instead of new tab */
+  onNavigateToPage?: (pageId: number, slug: string) => void
+  /** Initial query to pre-fill (e.g., from "Ask about this" buttons) */
+  initialQuery?: string
 }
 
 // =============================================================================
@@ -468,6 +476,8 @@ export function AskWikiDialog({
   workspaceName = 'Workspace',
   projectName,
   availableProjects = [],
+  onNavigateToPage,
+  initialQuery,
 }: AskWikiDialogProps) {
   // State
   const [messages, setMessages] = useState<Message[]>([])
@@ -524,6 +534,13 @@ export function AskWikiDialog({
       setTimeout(() => inputRef.current?.focus(), 100)
     }
   }, [isOpen])
+
+  // Pre-fill input with initialQuery when provided
+  useEffect(() => {
+    if (isOpen && initialQuery) {
+      setInputValue(initialQuery)
+    }
+  }, [isOpen, initialQuery])
 
   // Reset state when dialog opens (fresh start each time)
   useEffect(() => {
@@ -654,9 +671,14 @@ export function AskWikiDialog({
     setIsStreaming(false)
   }
 
-  // Handle source click
+  // Handle source click - navigate within app or open in new tab
   const handleSourceClick = (source: Source) => {
-    window.open(`${wikiBaseUrl}/${source.slug}`, '_blank')
+    if (onNavigateToPage) {
+      onNavigateToPage(source.pageId, source.slug)
+      onClose() // Close dialog after navigation
+    } else {
+      window.open(`${wikiBaseUrl}/${source.slug}`, '_blank')
+    }
   }
 
   // Handle feedback

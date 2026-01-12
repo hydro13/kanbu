@@ -1,9 +1,15 @@
 /**
  * Wiki Embedding Service
- * Version: 1.0.0
+ * Version: 1.1.0
  *
  * Vector storage and semantic search for Wiki pages using Qdrant.
  * Stores embeddings generated via WikiAiService (Fase 14 providers).
+ *
+ * Features:
+ * - Store/retrieve wiki page embeddings in Qdrant
+ * - Semantic search over wiki content
+ * - Content hash-based caching (Fase 15.5)
+ * - Conditional re-embedding (skip if unchanged)
  *
  * Fase 15.2 - Semantic Search
  *
@@ -12,6 +18,10 @@
  * Claude Code: Opus 4.5
  * Host: MAX
  * Date: 2026-01-12
+ *
+ * Modified: 2026-01-12
+ * Change: Fase 15.5 - Added checkEmbeddingStatus and storePageEmbeddingIfChanged
+ *         for content hash-based caching
  * =============================================================================
  */
 
@@ -374,6 +384,70 @@ export class WikiEmbeddingService {
       return points.length > 0
     } catch {
       return false
+    }
+  }
+
+  /**
+   * Check if a page's embedding is up-to-date based on content hash
+   * Returns { needsUpdate: boolean, currentHash?: string }
+   */
+  async checkEmbeddingStatus(pageId: number, content: string): Promise<{
+    needsUpdate: boolean
+    hasEmbedding: boolean
+    currentHash?: string
+  }> {
+    try {
+      const points = await this.client.retrieve(this.collectionName, {
+        ids: [pageId],
+        with_payload: true,
+      })
+
+      if (points.length === 0) {
+        return { needsUpdate: true, hasEmbedding: false }
+      }
+
+      const storedHash = points[0].payload?.contentHash as string
+      const currentHash = this.hashContent(content)
+
+      return {
+        needsUpdate: storedHash !== currentHash,
+        hasEmbedding: true,
+        currentHash: storedHash,
+      }
+    } catch {
+      return { needsUpdate: true, hasEmbedding: false }
+    }
+  }
+
+  /**
+   * Conditionally store embedding only if content has changed
+   * Returns 'stored' | 'skipped' | 'error'
+   */
+  async storePageEmbeddingIfChanged(
+    context: WikiContext,
+    pageId: number,
+    title: string,
+    content: string,
+    groupId: string
+  ): Promise<'stored' | 'skipped' | 'error'> {
+    try {
+      const status = await this.checkEmbeddingStatus(pageId, content)
+
+      if (!status.needsUpdate) {
+        console.log(
+          `[WikiEmbeddingService] Skipping embedding for page ${pageId}: content unchanged`
+        )
+        return 'skipped'
+      }
+
+      const success = await this.storePageEmbedding(context, pageId, title, content, groupId)
+      return success ? 'stored' : 'error'
+    } catch (error) {
+      console.error(
+        `[WikiEmbeddingService] Failed to check/store embedding for page ${pageId}:`,
+        error instanceof Error ? error.message : error
+      )
+      return 'error'
     }
   }
 

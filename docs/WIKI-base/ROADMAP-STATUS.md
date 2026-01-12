@@ -1363,18 +1363,17 @@ Beantwoord nu de vraag van de gebruiker.`
 | Item | Status | Notities |
 |------|--------|----------|
 | **UI Integration** | | |
-| WikiPageView integratie | ❌ | Ask Wiki button in toolbar |
-| WikiSidebar integratie | ❌ | Search + Graph + Ask toggles |
-| Keyboard shortcuts | ❌ | Cmd+Shift+A = Ask Wiki |
+| WikiPageView integratie | ✅ | Ask Wiki button in toolbar + dropdown "Ask about this page" |
+| WikiSidebar integratie | ✅ | Ask Wiki toggle button (violet themed) |
 | Context menu | ❌ | Rechtermuisklik → "Ask about this" |
 | **Cross-Feature Links** | | |
-| Search → Graph | ❌ | "Show in graph" button |
-| Graph → Ask | ❌ | "Ask about this node" |
-| Ask → Sources → Page | ❌ | Klikbare bronnen |
+| Search → Graph | ✅ | "Show in graph" button in ResultItem |
+| Graph → Ask | ✅ | "Ask about" button in NodeHoverCard |
+| Ask → Sources → Page | ✅ | onNavigateToPage callback + in-app navigation |
 | **Performance** | | |
-| Embedding caching | ❌ | Cache wiki page embeddings |
+| Embedding caching | ✅ | checkEmbeddingStatus + storePageEmbeddingIfChanged (content hash) |
 | Lazy loading graph | ❌ | Load nodes on demand |
-| Debounced search | ❌ | Wacht tot user stopt typen |
+| Debounced search | ✅ | WikiSearchDialog: 300ms debounce op graph/semantic search |
 | Background indexing | ❌ | Re-index bij idle |
 | **Analytics** | | |
 | Search analytics | ❌ | Wat zoeken users? |
@@ -1396,7 +1395,7 @@ Beantwoord nu de vraag van de gebruiker.`
 | **15.2 Semantic Search** | ✅ | Backend (Qdrant) + Frontend (SearchModes) |
 | **15.3 Ask the Wiki** | ✅ | RAG Chat met bronnen (WikiRagService + AskWikiDialog) |
 | **15.4 Enhanced Graphs** | ✅ | WikiGraphView v3.0.0 - Alle features behalve Share URL |
-| **15.5 Integration** | ❌ | UI polish en performance |
+| **15.5 Integration** | 🔄 | UI + Cross-links + Performance (8/16), Analytics & Testing pending |
 
 **Totaal items:** ~60 taken verdeeld over 5 sub-fases
 

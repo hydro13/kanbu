@@ -26,6 +26,7 @@ import {
   Search,
   Network,
   Clock,
+  Sparkles,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -65,6 +66,10 @@ interface WikiSidebarProps {
   graphViewActive?: boolean
   /** Callback when temporal search is triggered */
   onTemporalSearch?: () => void
+  /** Callback when Ask Wiki is triggered */
+  onAskWiki?: () => void
+  /** Whether Ask Wiki dialog is currently shown */
+  askWikiActive?: boolean
   /** Wiki type for display */
   wikiType?: 'workspace' | 'project'
   /** Wiki title to display */
@@ -234,6 +239,8 @@ export function WikiSidebar({
   onShowGraph,
   graphViewActive = false,
   onTemporalSearch,
+  onAskWiki,
+  askWikiActive = false,
   wikiType = 'workspace',
   title,
 }: WikiSidebarProps) {
@@ -328,6 +335,19 @@ export function WikiSidebar({
               title="Knowledge graph"
             >
               <Network className="h-3.5 w-3.5" />
+            </Button>
+          )}
+          {onAskWiki && (
+            <Button
+              variant={askWikiActive ? 'default' : 'outline'}
+              size="sm"
+              onClick={onAskWiki}
+              title="Ask the Wiki"
+              className={cn(
+                !askWikiActive && 'text-violet-600 hover:text-violet-700 hover:bg-violet-50 dark:text-violet-400 dark:hover:bg-violet-900/20'
+              )}
+            >
+              <Sparkles className="h-3.5 w-3.5" />
             </Button>
           )}
           {onTemporalSearch && (

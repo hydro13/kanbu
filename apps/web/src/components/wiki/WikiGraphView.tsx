@@ -1,6 +1,6 @@
 /*
  * Wiki Graph View Component
- * Version: 3.0.0
+ * Version: 3.1.1
  *
  * D3.js force-directed graph visualization for wiki knowledge graph.
  * Shows wiki pages, entities, and their relationships.
@@ -21,6 +21,7 @@
  * - Mini-map navigation
  * - Timeline mode (chronological view)
  * - Export PNG/SVG/JSON
+ * - "Ask about this node" integration (Fase 15.5)
  *
  * ===================================================================
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
@@ -33,6 +34,12 @@
  * Modified: 2026-01-12
  * Change: Complete Fase 15.4 - All features including clustering,
  *         timeline mode, mini-map, export, multiple layouts
+ *
+ * Modified: 2026-01-12
+ * Change: Fase 15.5 - Added "Ask about this node" for cross-feature linking
+ *
+ * Modified: 2026-01-12
+ * Change: Fixed hover card interaction - card stays open when mouse moves to it
  * ===================================================================
  */
 
@@ -87,6 +94,7 @@ import {
   FileCode,
   PanelRight,
   PanelRightClose,
+  Sparkles,
 } from 'lucide-react'
 
 // =============================================================================
@@ -124,6 +132,8 @@ interface WikiGraphViewProps {
   height?: number
   fullscreen?: boolean
   onToggleFullscreen?: () => void
+  /** Callback when "Ask about this node" is triggered */
+  onAskAboutNode?: (nodeLabel: string, nodeType: string) => void
 }
 
 interface HoverCardData {
@@ -355,10 +365,16 @@ function NodeHoverCard({
   data,
   onNavigate,
   onSelectForPath,
+  onAskAboutNode,
+  onMouseEnter,
+  onMouseLeave,
 }: {
   data: HoverCardData
   onNavigate: (slug: string) => void
   onSelectForPath: (node: GraphNode) => void
+  onAskAboutNode?: (nodeLabel: string, nodeType: string) => void
+  onMouseEnter?: () => void
+  onMouseLeave?: () => void
 }) {
   const Icon = NODE_ICONS[data.node.type]
   const updatedAt = parseDate(data.node.updatedAt)
@@ -371,6 +387,8 @@ function NodeHoverCard({
         top: data.y - 10,
         transform: 'translateY(-50%)',
       }}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
     >
       {/* Header */}
       <div className="flex items-start gap-3 mb-3">
@@ -420,7 +438,7 @@ function NodeHoverCard({
       )}
 
       {/* Actions */}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         {data.node.type === 'WikiPage' && data.node.slug && (
           <Button
             size="sm"
@@ -441,6 +459,17 @@ function NodeHoverCard({
           <ArrowRight className="w-3 h-3 mr-1" />
           Find path
         </Button>
+        {onAskAboutNode && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="flex-1 text-violet-600 hover:text-violet-700 hover:bg-violet-50 dark:text-violet-400 dark:hover:bg-violet-900/20"
+            onClick={() => onAskAboutNode(data.node.label, data.node.type)}
+          >
+            <Sparkles className="w-3 h-3 mr-1" />
+            Ask about
+          </Button>
+        )}
       </div>
     </div>
   )
@@ -792,6 +821,7 @@ export function WikiGraphView({
   height = 500,
   fullscreen = false,
   onToggleFullscreen,
+  onAskAboutNode,
 }: WikiGraphViewProps) {
   const navigate = useNavigate()
   const containerRef = useRef<HTMLDivElement>(null)
@@ -802,6 +832,8 @@ export function WikiGraphView({
   const [isInitialized, setIsInitialized] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [hoverCard, setHoverCard] = useState<HoverCardData | null>(null)
+  const hoverCardTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const isHoveringCardRef = useRef(false)
   const [pathStart, setPathStart] = useState<GraphNode | null>(null)
   const [pathEnd, setPathEnd] = useState<GraphNode | null>(null)
   const [pathNodes, setPathNodes] = useState<Set<string>>(new Set())
@@ -950,10 +982,22 @@ export function WikiGraphView({
     navigate(`${basePath}/${slug}`)
   }, [navigate, basePath])
 
-  // Handle node hover
+  // Handle node hover with delayed close to allow interaction with hover card
   const handleNodeHover = useCallback((node: GraphNode | null, event?: MouseEvent) => {
+    // Clear any pending close timeout
+    if (hoverCardTimeoutRef.current) {
+      clearTimeout(hoverCardTimeoutRef.current)
+      hoverCardTimeoutRef.current = null
+    }
+
     if (!node || !event) {
-      setHoverCard(null)
+      // Delay closing to allow mouse to move to hover card
+      hoverCardTimeoutRef.current = setTimeout(() => {
+        // Only close if not hovering over the card
+        if (!isHoveringCardRef.current) {
+          setHoverCard(null)
+        }
+      }, 150) // 150ms delay
       return
     }
 
@@ -965,6 +1009,24 @@ export function WikiGraphView({
       connections,
     })
   }, [processedData.nodes, processedData.edges])
+
+  // Handle hover card mouse events
+  const handleHoverCardMouseEnter = useCallback(() => {
+    isHoveringCardRef.current = true
+    // Clear any pending close timeout
+    if (hoverCardTimeoutRef.current) {
+      clearTimeout(hoverCardTimeoutRef.current)
+      hoverCardTimeoutRef.current = null
+    }
+  }, [])
+
+  const handleHoverCardMouseLeave = useCallback(() => {
+    isHoveringCardRef.current = false
+    // Close the hover card after a short delay
+    hoverCardTimeoutRef.current = setTimeout(() => {
+      setHoverCard(null)
+    }, 100)
+  }, [])
 
   // Handle path selection
   const handleSelectForPath = useCallback((node: GraphNode) => {
@@ -995,6 +1057,15 @@ export function WikiGraphView({
     setPathEnd(null)
     setPathNodes(new Set())
     setPathSteps([])
+  }, [])
+
+  // Cleanup hover timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (hoverCardTimeoutRef.current) {
+        clearTimeout(hoverCardTimeoutRef.current)
+      }
+    }
   }, [])
 
   // Zoom controls
@@ -1802,6 +1873,9 @@ export function WikiGraphView({
             data={hoverCard}
             onNavigate={handleNavigate}
             onSelectForPath={handleSelectForPath}
+            onAskAboutNode={onAskAboutNode}
+            onMouseEnter={handleHoverCardMouseEnter}
+            onMouseLeave={handleHoverCardMouseLeave}
           />
         )}
       </div>

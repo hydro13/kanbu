@@ -41,6 +41,7 @@ import {
   ChevronRight,
   Clock,
   User,
+  Sparkles,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { WikiPageStatus } from './WikiSidebar'
@@ -109,6 +110,10 @@ interface WikiPageViewProps {
   searchUsers?: (query: string) => Promise<MentionResult[]>
   /** Current user for &Sign signature shortcut */
   currentUser?: SignatureUser
+  /** Callback when "Ask Wiki" is triggered */
+  onAskWiki?: () => void
+  /** Callback when "Ask about this page" is triggered (with page context) */
+  onAskAboutPage?: (pageTitle: string, pageContent: string) => void
 }
 
 // =============================================================================
@@ -196,6 +201,8 @@ export function WikiPageView({
   searchTasks,
   searchUsers,
   currentUser,
+  onAskWiki,
+  onAskAboutPage,
 }: WikiPageViewProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [editedTitle, setEditedTitle] = useState(page.title)
@@ -370,6 +377,18 @@ export function WikiPageView({
             </>
           ) : (
             <>
+              {onAskWiki && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={onAskWiki}
+                  className="text-violet-600 hover:text-violet-700 hover:bg-violet-50 dark:text-violet-400 dark:hover:bg-violet-900/20"
+                >
+                  <Sparkles className="h-4 w-4 mr-1" />
+                  Ask Wiki
+                </Button>
+              )}
+
               {canEdit && (
                 <Button variant="outline" size="sm" onClick={handleStartEdit}>
                   <Edit2 className="h-4 w-4 mr-1" />
@@ -384,6 +403,16 @@ export function WikiPageView({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  {onAskAboutPage && (
+                    <DropdownMenuItem
+                      onClick={() => onAskAboutPage(page.title, editedContent)}
+                      className="text-violet-600 focus:text-violet-700"
+                    >
+                      <Sparkles className="h-4 w-4 mr-2" />
+                      Ask about this page
+                    </DropdownMenuItem>
+                  )}
+
                   {onViewHistory && (
                     <DropdownMenuItem onClick={onViewHistory}>
                       <History className="h-4 w-4 mr-2" />

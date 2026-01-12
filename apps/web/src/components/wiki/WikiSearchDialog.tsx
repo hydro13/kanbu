@@ -1,6 +1,6 @@
 /*
  * Wiki Search Dialog Component
- * Version: 2.0.0
+ * Version: 2.1.0
  *
  * Search dialog for wiki pages with:
  * - Local title/slug search
@@ -8,11 +8,15 @@
  * - Semantic vector search (Qdrant embeddings) - Fase 15.2
  * - Hybrid mode combining all search types
  * - Keyboard navigation
+ * - "Show in graph" action on results (Fase 15.5)
  *
  * ===================================================================
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
  * Signed: 2026-01-12
  * Change: Fase 15.2 - Added semantic search mode toggle with Qdrant
+ *
+ * Modified: 2026-01-12
+ * Change: Fase 15.5 - Added "Show in graph" button for cross-feature linking
  * ===================================================================
  */
 
@@ -80,6 +84,8 @@ interface WikiSearchDialogProps {
   basePath: string
   /** Initial search mode (default: hybrid) */
   defaultMode?: SearchMode
+  /** Callback to show a page in the graph view */
+  onShowInGraph?: (pageId: number) => void
 }
 
 // =============================================================================
@@ -118,9 +124,10 @@ interface ResultItemProps {
   result: SearchResult
   isSelected: boolean
   onClick: () => void
+  onShowInGraph?: () => void
 }
 
-function ResultItem({ result, isSelected, onClick }: ResultItemProps) {
+function ResultItem({ result, isSelected, onClick, onShowInGraph }: ResultItemProps) {
   const getIcon = () => {
     switch (result.type) {
       case 'semantic':
@@ -133,40 +140,57 @@ function ResultItem({ result, isSelected, onClick }: ResultItemProps) {
   }
 
   return (
-    <button
-      onClick={onClick}
+    <div
       className={cn(
-        'w-full flex items-center gap-3 px-3 py-2 rounded-md text-left transition-colors',
+        'w-full flex items-center gap-3 px-3 py-2 rounded-md text-left transition-colors group',
         isSelected
           ? 'bg-accent text-accent-foreground'
           : 'hover:bg-accent/50'
       )}
     >
-      {getIcon()}
+      <button onClick={onClick} className="flex items-center gap-3 flex-1 min-w-0">
+        {getIcon()}
 
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="font-medium truncate">{result.title}</span>
-          {result.status === 'DRAFT' && (
-            <Badge variant="outline" className="text-[10px] px-1 py-0 bg-amber-50 text-amber-700 border-amber-200">
-              Draft
-            </Badge>
-          )}
-          {result.score !== undefined && result.score < 1 && (
-            <span className="text-[10px] text-muted-foreground">
-              {Math.round(result.score * 100)}%
-            </span>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="font-medium truncate">{result.title}</span>
+            {result.status === 'DRAFT' && (
+              <Badge variant="outline" className="text-[10px] px-1 py-0 bg-amber-50 text-amber-700 border-amber-200">
+                Draft
+              </Badge>
+            )}
+            {result.score !== undefined && result.score < 1 && (
+              <span className="text-[10px] text-muted-foreground">
+                {Math.round(result.score * 100)}%
+              </span>
+            )}
+          </div>
+          {result.snippet && (
+            <p className="text-xs text-muted-foreground truncate mt-0.5">
+              {result.snippet}
+            </p>
           )}
         </div>
-        {result.snippet && (
-          <p className="text-xs text-muted-foreground truncate mt-0.5">
-            {result.snippet}
-          </p>
-        )}
-      </div>
+      </button>
 
-      <ArrowRight className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-    </button>
+      {/* Show in graph button */}
+      {onShowInGraph && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            onShowInGraph()
+          }}
+          className="opacity-0 group-hover:opacity-100 p-1.5 rounded hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-opacity"
+          title="Show in graph"
+        >
+          <Network className="h-3.5 w-3.5 text-blue-500" />
+        </button>
+      )}
+
+      <button onClick={onClick} className="flex-shrink-0">
+        <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
+      </button>
+    </div>
   )
 }
 
@@ -221,6 +245,7 @@ export function WikiSearchDialog({
   pages,
   basePath,
   defaultMode = 'hybrid',
+  onShowInGraph,
 }: WikiSearchDialogProps) {
   const navigate = useNavigate()
   const inputRef = useRef<HTMLInputElement>(null)
@@ -557,6 +582,10 @@ export function WikiSearchDialog({
                           result={result}
                           isSelected={startIndex + index === selectedIndex}
                           onClick={() => navigateToResult(result)}
+                          onShowInGraph={onShowInGraph ? () => {
+                            onShowInGraph(result.id)
+                            onClose()
+                          } : undefined}
                         />
                       ))}
                     </div>

@@ -1,6 +1,6 @@
 /*
  * Workspace Wiki Page
- * Version: 2.2.0
+ * Version: 2.3.0
  *
  * Shows the workspace wiki/knowledge base with:
  * - Sidebar navigation (page tree)
@@ -24,6 +24,13 @@
  *
  * Modified: 2026-01-12
  * Change: Added AskWikiDialog + AskWikiFab (Fase 15.3)
+ *
+ * Modified: 2026-01-12
+ * Change: Fase 15.5 - Wired cross-feature callbacks:
+ *         - Search → Graph (onShowInGraph)
+ *         - Graph → Ask (onAskAboutNode)
+ *         - Ask → Page navigation (onNavigateToPage)
+ *         - Sidebar/PageView Ask Wiki buttons
  * ===================================================================
  */
 
@@ -122,6 +129,7 @@ export function WorkspaceWikiPage() {
   const [graphFullscreen, setGraphFullscreen] = useState(false)
   const [showTemporalSearch, setShowTemporalSearch] = useState(false)
   const [showAskWiki, setShowAskWiki] = useState(false)
+  const [askWikiInitialQuery, setAskWikiInitialQuery] = useState<string | undefined>()
 
   const utils = trpc.useUtils()
   const user = useAppSelector(selectUser)
@@ -374,7 +382,51 @@ export function WorkspaceWikiPage() {
     setShowSearchDialog(true)
   }, [])
 
+  // Handler: Show a page in the graph view (from search results)
+  const handleShowInGraph = useCallback((pageId: number) => {
+    // Enable graph view if not already shown
+    if (!showGraphView) {
+      setShowGraphView(true)
+    }
+    // TODO: Focus on the specific node - requires WikiGraphView enhancement
+    console.log(`[WikiPage] Show in graph: pageId=${pageId}`)
+  }, [showGraphView])
+
+  // Handler: Open Ask Wiki with context about a graph node
+  const handleAskAboutNode = useCallback((nodeLabel: string, nodeType: string) => {
+    const query = nodeType === 'page'
+      ? `Vertel me meer over "${nodeLabel}"`
+      : `Wat betekent "${nodeLabel}" in de context van onze wiki?`
+    setAskWikiInitialQuery(query)
+    setShowAskWiki(true)
+  }, [])
+
+  // Handler: Open Ask Wiki dialog
+  const handleOpenAskWiki = useCallback(() => {
+    setAskWikiInitialQuery(undefined) // Clear any previous query
+    setShowAskWiki(true)
+  }, [])
+
+  // Handler: Open Ask Wiki with page context
+  const handleAskAboutPage = useCallback((pageTitle: string, _pageContent: string) => {
+    const query = `Leg uit wat "${pageTitle}" betekent en hoe het samenhangt met andere onderwerpen.`
+    setAskWikiInitialQuery(query)
+    setShowAskWiki(true)
+  }, [])
+
   const basePath = `/workspace/${slug}/wiki`
+
+  // Handler: Navigate to page from Ask Wiki sources
+  const handleNavigateToPage = useCallback((_pageId: number, pageSlugParam: string) => {
+    navigate(`${basePath}/${pageSlugParam}`)
+    // Dialog will close itself after calling this
+  }, [navigate, basePath])
+
+  // Handler: Close Ask Wiki and clear initial query
+  const handleCloseAskWiki = useCallback(() => {
+    setShowAskWiki(false)
+    setAskWikiInitialQuery(undefined)
+  }, [])
   const isLoading = workspaceQuery.isLoading || pagesQuery.isLoading
 
   // Loading state
@@ -422,6 +474,8 @@ export function WorkspaceWikiPage() {
             onShowGraph={() => setShowGraphView(!showGraphView)}
             graphViewActive={showGraphView}
             onTemporalSearch={() => setShowTemporalSearch(true)}
+            onAskWiki={handleOpenAskWiki}
+            askWikiActive={showAskWiki}
             wikiType="workspace"
             title={`${workspace.name} Wiki`}
           />
@@ -446,6 +500,8 @@ export function WorkspaceWikiPage() {
               searchTasks={searchTasks}
               searchUsers={searchUsers}
               currentUser={currentUser}
+              onAskWiki={handleOpenAskWiki}
+              onAskAboutPage={handleAskAboutPage}
             />
           ) : pageSlug && currentPageQuery.isLoading ? (
             /* Loading page */
@@ -553,6 +609,7 @@ export function WorkspaceWikiPage() {
           workspaceId={workspace.id}
           pages={pages as WikiPageForSearch[]}
           basePath={basePath}
+          onShowInGraph={handleShowInGraph}
         />
       )}
 
@@ -565,6 +622,7 @@ export function WorkspaceWikiPage() {
           fullscreen={graphFullscreen}
           onToggleFullscreen={() => setGraphFullscreen(!graphFullscreen)}
           className={graphFullscreen ? '' : 'mt-4'}
+          onAskAboutNode={handleAskAboutNode}
         />
       )}
 
@@ -586,15 +644,18 @@ export function WorkspaceWikiPage() {
         />
       )}
 
-      {/* Ask Wiki Dialog (Fase 15.3) */}
+      {/* Ask Wiki Dialog (Fase 15.3 + 15.5 wiring) */}
       {workspace && (
         <>
-          <AskWikiFab onClick={() => setShowAskWiki(true)} />
+          <AskWikiFab onClick={handleOpenAskWiki} />
           <AskWikiDialog
             isOpen={showAskWiki}
-            onClose={() => setShowAskWiki(false)}
+            onClose={handleCloseAskWiki}
             workspaceId={workspace.id}
             wikiBaseUrl={basePath}
+            workspaceName={workspace.name}
+            initialQuery={askWikiInitialQuery}
+            onNavigateToPage={handleNavigateToPage}
           />
         </>
       )}
