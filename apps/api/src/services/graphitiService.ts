@@ -1,18 +1,25 @@
 /*
  * Graphiti Service
- * Version: 1.0.0
+ * Version: 2.0.0
  *
  * Knowledge graph service for Wiki using FalkorDB.
- * Handles entity extraction, relationship storage, and graph queries.
+ * Now integrates with Python Graphiti service for LLM-based entity extraction.
+ * Falls back to direct FalkorDB queries when Python service unavailable.
  *
  * ===================================================================
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
  * Signed: 2026-01-12
- * Change: Initial implementation for Wiki Fase 2
+ * Change: Fase 8 - Python service integration with fallback
  * ===================================================================
  */
 
 import Redis from 'ioredis'
+
+import {
+  getGraphitiClient,
+  GraphitiClient,
+  GraphitiClientError,
+} from '../lib/graphitiClient'
 
 // =============================================================================
 // Types
@@ -66,11 +73,16 @@ export class GraphitiService {
   private redis: Redis
   private graphName: string
   private initialized: boolean = false
+  private pythonClient: GraphitiClient
+  private pythonServiceAvailable: boolean | null = null // null = unknown, check on first use
 
   constructor(config?: Partial<GraphitiConfig>) {
     const host = config?.host ?? process.env.FALKORDB_HOST ?? 'localhost'
     const port = config?.port ?? parseInt(process.env.FALKORDB_PORT ?? '6379')
     this.graphName = config?.graphName ?? 'kanbu_wiki'
+
+    // Initialize Python service client
+    this.pythonClient = getGraphitiClient()
 
     this.redis = new Redis({
       host,
@@ -89,6 +101,43 @@ export class GraphitiService {
     this.redis.on('connect', () => {
       console.log('[GraphitiService] Connected to FalkorDB')
     })
+  }
+
+  // ===========================================================================
+  // Python Service Integration
+  // ===========================================================================
+
+  /**
+   * Check if the Python Graphiti service is available
+   * Caches result for 60 seconds to avoid repeated health checks
+   */
+  private lastPythonCheck: number = 0
+  private readonly PYTHON_CHECK_INTERVAL = 60000 // 60 seconds
+
+  private async isPythonServiceAvailable(): Promise<boolean> {
+    const now = Date.now()
+
+    // Use cached result if recent
+    if (this.pythonServiceAvailable !== null && now - this.lastPythonCheck < this.PYTHON_CHECK_INTERVAL) {
+      return this.pythonServiceAvailable
+    }
+
+    try {
+      this.pythonServiceAvailable = await this.pythonClient.isAvailable()
+      this.lastPythonCheck = now
+
+      if (this.pythonServiceAvailable) {
+        console.log('[GraphitiService] Python service available - using LLM extraction')
+      } else {
+        console.log('[GraphitiService] Python service unavailable - using fallback')
+      }
+
+      return this.pythonServiceAvailable
+    } catch {
+      this.pythonServiceAvailable = false
+      this.lastPythonCheck = now
+      return false
+    }
   }
 
   // ===========================================================================
@@ -160,8 +209,54 @@ export class GraphitiService {
 
   /**
    * Add or update a wiki page in the graph
+   * Tries Python service first for LLM-based extraction, falls back to direct FalkorDB
    */
   async syncWikiPage(episode: WikiEpisode): Promise<void> {
+    const { pageId, title, content, groupId, timestamp } = episode
+
+    // Try Python service first (LLM-based entity extraction)
+    if (await this.isPythonServiceAvailable()) {
+      try {
+        const result = await this.pythonClient.addEpisode({
+          name: title,
+          episode_body: content,
+          source: 'text',
+          source_description: `Wiki page: ${title}`,
+          group_id: groupId,
+          reference_time: timestamp.toISOString(),
+        })
+
+        console.log(
+          `[GraphitiService] Synced page ${pageId}: "${title}" via Python service - ` +
+          `${result.entities_extracted} entities, ${result.relations_created} relations`
+        )
+
+        // Also sync basic page metadata to FalkorDB for backlinks/queries
+        await this.syncPageMetadataFallback(episode)
+        return
+      } catch (error) {
+        if (error instanceof GraphitiClientError) {
+          console.warn(
+            `[GraphitiService] Python service error for page ${pageId}: ${error.message}, using fallback`
+          )
+          // Mark service as unavailable to skip future checks temporarily
+          if (error.isConnectionError() || error.isServerError()) {
+            this.pythonServiceAvailable = false
+          }
+        } else {
+          console.warn(`[GraphitiService] Unexpected error for page ${pageId}, using fallback:`, error)
+        }
+      }
+    }
+
+    // Fallback: Direct FalkorDB with rules-based extraction
+    await this.syncWikiPageFallback(episode)
+  }
+
+  /**
+   * Fallback: Sync wiki page directly to FalkorDB with rules-based extraction
+   */
+  private async syncWikiPageFallback(episode: WikiEpisode): Promise<void> {
     await this.initialize()
 
     const { pageId, title, slug, content, groupId, userId, timestamp } = episode
@@ -231,7 +326,43 @@ export class GraphitiService {
       `)
     }
 
-    console.log(`[GraphitiService] Synced page ${pageId}: "${title}" with ${entities.length} entities, ${wikiLinks.length} links`)
+    console.log(`[GraphitiService] Synced page ${pageId}: "${title}" via fallback - ${entities.length} entities, ${wikiLinks.length} links`)
+  }
+
+  /**
+   * Sync only page metadata to FalkorDB (used alongside Python service)
+   */
+  private async syncPageMetadataFallback(episode: WikiEpisode): Promise<void> {
+    await this.initialize()
+
+    const { pageId, title, slug, content, groupId, userId, timestamp } = episode
+    const escapedTitle = this.escapeString(title)
+    const escapedSlug = this.escapeString(slug)
+
+    // Sync basic page node for backlinks/queries
+    await this.query(`
+      MERGE (p:WikiPage {pageId: ${pageId}})
+      ON CREATE SET p.title = '${escapedTitle}'
+      ON MATCH SET p.title = '${escapedTitle}'
+      SET p.slug = '${escapedSlug}',
+          p.groupId = '${groupId}',
+          p.updatedBy = ${userId},
+          p.updatedAt = '${timestamp.toISOString()}',
+          p.contentLength = ${content.length}
+    `)
+
+    // Extract and sync wiki links for backlinks functionality
+    const wikiLinks = this.extractWikiLinks(content)
+    for (const link of wikiLinks) {
+      await this.query(`MERGE (target:WikiPage {title: '${this.escapeString(link)}'})`)
+      await this.query(`
+        MATCH (source:WikiPage {pageId: ${pageId}})
+        MATCH (target:WikiPage {title: '${this.escapeString(link)}'})
+        WHERE source <> target
+        MERGE (source)-[r:LINKS_TO]->(target)
+        SET r.updatedAt = '${timestamp.toISOString()}'
+      `)
+    }
   }
 
   /**
@@ -331,8 +462,42 @@ export class GraphitiService {
 
   /**
    * Search for pages by content/entities
+   * Uses Python service for semantic search when available, falls back to text search
    */
   async search(query: string, groupId?: string, limit: number = 10): Promise<SearchResult[]> {
+    // Try Python service first (semantic search with embeddings)
+    if (await this.isPythonServiceAvailable()) {
+      try {
+        const response = await this.pythonClient.search({
+          query,
+          group_id: groupId,
+          limit,
+        })
+
+        // Map Python response to our SearchResult format
+        return response.results.map(r => ({
+          nodeId: r.uuid,
+          name: r.name,
+          type: r.result_type,
+          score: r.score,
+          pageId: r.metadata?.pageId as number | undefined,
+        }))
+      } catch (error) {
+        if (error instanceof GraphitiClientError) {
+          console.warn(`[GraphitiService] Python search error: ${error.message}, using fallback`)
+        }
+        // Fall through to fallback
+      }
+    }
+
+    // Fallback: Direct FalkorDB text search
+    return this.searchFallback(query, groupId, limit)
+  }
+
+  /**
+   * Fallback: Direct FalkorDB text search
+   */
+  private async searchFallback(query: string, groupId?: string, limit: number = 10): Promise<SearchResult[]> {
     await this.initialize()
 
     // Search in page titles and entity names
@@ -366,6 +531,37 @@ export class GraphitiService {
       score: r.score,
       pageId: r.pageId,
     }))
+  }
+
+  /**
+   * Temporal search - "What did we know at time X?"
+   * Only available via Python service
+   */
+  async temporalSearch(query: string, groupId: string, asOf: Date, limit: number = 10): Promise<SearchResult[]> {
+    if (!await this.isPythonServiceAvailable()) {
+      console.warn('[GraphitiService] Temporal search requires Python service - not available')
+      return []
+    }
+
+    try {
+      const response = await this.pythonClient.temporalSearch({
+        query,
+        group_id: groupId,
+        as_of: asOf.toISOString(),
+        limit,
+      })
+
+      return response.results.map(r => ({
+        nodeId: r.uuid,
+        name: r.name,
+        type: r.result_type,
+        score: r.score,
+        pageId: r.metadata?.pageId as number | undefined,
+      }))
+    } catch (error) {
+      console.error('[GraphitiService] Temporal search failed:', error)
+      return []
+    }
   }
 
   /**

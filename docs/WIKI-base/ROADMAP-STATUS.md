@@ -1,8 +1,8 @@
 # Wiki Implementation Roadmap & Status
 
 > **Laatst bijgewerkt:** 2026-01-12
-> **Huidige fase:** Fase 8 - Kanbu API Integratie 🔄 NEXT
-> **Volgende actie:** GraphitiClient class in Node.js API
+> **Huidige fase:** Fase 9 - Bi-Temporal Model 🔄 NEXT
+> **Volgende actie:** Temporal edges in FalkorDB (valid_at/invalid_at)
 
 ---
 
@@ -119,15 +119,15 @@
 
 ---
 
-## Fase 8: Kanbu API Integratie
+## Fase 8: Kanbu API Integratie ✅ COMPLEET
 
 | Item | Status | Notities |
 |------|--------|----------|
-| GraphitiClient class in Node.js | ❌ | HTTP client naar Python service |
-| graphitiService.ts refactoren | ❌ | Calls naar Python ipv direct Cypher |
-| Episode sync bij wiki save | ❌ | add_episode via HTTP |
-| Error handling + retries | ❌ | Graceful degradation |
-| Connection pooling | ❌ | Performance optimalisatie |
+| GraphitiClient class in Node.js | ✅ | lib/graphitiClient.ts met typed methods |
+| graphitiService.ts refactoren | ✅ | Python service first, FalkorDB fallback |
+| Episode sync bij wiki save | ✅ | add_episode via HTTP met fallback |
+| Error handling + retries | ✅ | GraphitiClientError, timeout, graceful degradation |
+| Connection pooling | ✅ | Native fetch, 60s health check cache |
 
 ---
 
@@ -284,3 +284,8 @@ cat ~/genx/v6/dev/kanbu/docs/WIKI-base/GRAPHITI-IMPLEMENTATIE.md
 | 2026-01-12 | Dockerfile + .env.example aangemaakt |
 | 2026-01-12 | graphiti service toegevoegd aan docker-compose.yml |
 | 2026-01-12 | Fase 7 COMPLEET |
+| 2026-01-12 | GraphitiClient class (lib/graphitiClient.ts) |
+| 2026-01-12 | graphitiService.ts v2 - Python service + fallback |
+| 2026-01-12 | temporalSearch() method toegevoegd |
+| 2026-01-12 | GRAPHITI_SERVICE_URL in .env |
+| 2026-01-12 | Fase 8 COMPLEET |
