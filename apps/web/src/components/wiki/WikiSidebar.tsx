@@ -1,6 +1,6 @@
 /*
  * Wiki Sidebar Component
- * Version: 1.1.0
+ * Version: 1.2.0
  *
  * Tree-based navigation sidebar for wiki pages.
  * Supports both workspace and project wikis.
@@ -11,18 +11,19 @@
  * Change: Initial implementation following WIKI-MASTER-CONCEPT.md
  * Modified: 2026-01-12
  * Change: Added temporal search button (Fase 9)
+ * Modified: 2026-01-12
+ * Change: Removed title/icon, repositioned action icons above search
  * ===================================================================
  */
 
 import { useState, useMemo } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   ChevronRight,
   FileText,
   Plus,
-  BookOpen,
   Search,
   Network,
   Clock,
@@ -241,11 +242,12 @@ export function WikiSidebar({
   onTemporalSearch,
   onAskWiki,
   askWikiActive = false,
-  wikiType = 'workspace',
-  title,
+  wikiType: _wikiType = 'workspace',
+  title: _title,
 }: WikiSidebarProps) {
-  const location = useLocation()
-
+  // Note: wikiType and title props kept for backwards compatibility but no longer displayed
+  void _wikiType
+  void _title
   // Track expanded nodes
   const [expandedIds, setExpandedIds] = useState<Set<number>>(() => {
     // Auto-expand parents of active page
@@ -284,39 +286,12 @@ export function WikiSidebar({
     [pages, showUnpublished]
   )
 
-  // Check if on wiki root
-  const isWikiRoot = location.pathname === basePath || location.pathname === basePath + '/'
-
   return (
     <div className="flex flex-col h-full border-r bg-muted/20">
       {/* Header */}
-      <div className="p-4 border-b">
-        <div className="flex items-center justify-between mb-3">
-          <Link
-            to={basePath}
-            className={cn(
-              'flex items-center gap-2 font-semibold text-sm hover:text-primary transition-colors',
-              isWikiRoot && 'text-primary'
-            )}
-          >
-            <BookOpen className="h-4 w-4" />
-            {title || (wikiType === 'workspace' ? 'Workspace Wiki' : 'Project Wiki')}
-          </Link>
-        </div>
-
-        {/* Actions */}
-        <div className="flex items-center gap-2">
-          {onSearch && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex-1 justify-start text-muted-foreground"
-              onClick={onSearch}
-            >
-              <Search className="h-3.5 w-3.5 mr-2" />
-              Search...
-            </Button>
-          )}
+      <div className="p-3 border-b">
+        {/* Action icons row */}
+        <div className="flex items-center gap-1.5 mb-2">
           {onCreatePage && (
             <Button
               variant="outline"
@@ -361,6 +336,19 @@ export function WikiSidebar({
             </Button>
           )}
         </div>
+
+        {/* Search button */}
+        {onSearch && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full justify-start text-muted-foreground"
+            onClick={onSearch}
+          >
+            <Search className="h-3.5 w-3.5 mr-2" />
+            Search...
+          </Button>
+        )}
       </div>
 
       {/* Page Tree */}

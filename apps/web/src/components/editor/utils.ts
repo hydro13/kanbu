@@ -8,6 +8,7 @@
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
  * Session: MAX-2026-01-07
  * Updated: MAX-2026-01-10 - Added markdown/HTML parsing for GitHub sync
+ * Updated: MAX-2026-01-12 - Fixed wiki link extraction to preserve [[...]] format
  * ===================================================================
  */
 
@@ -86,6 +87,7 @@ export function lexicalToPlainText(content: string): string {
 
 /**
  * Recursively extract text from a Lexical node
+ * Preserves special node formats for graph link extraction
  */
 function extractTextFromNode(node: unknown): string {
   if (!node || typeof node !== 'object') return ''
@@ -95,6 +97,36 @@ function extractTextFromNode(node: unknown): string {
   // Text node
   if (n.type === 'text' && typeof n.text === 'string') {
     return n.text
+  }
+
+  // Wiki link node - preserve [[...]] format for backlinks extraction
+  if (n.type === 'wiki-link') {
+    const displayText = n.displayText as string || ''
+    if (displayText) {
+      return `[[${displayText}]]`
+    }
+    // Fallback to children if displayText not available
+    if (Array.isArray(n.children)) {
+      const childText = n.children.map(extractTextFromNode).join('')
+      return `[[${childText}]]`
+    }
+    return ''
+  }
+
+  // Mention node - preserve @format for entity extraction
+  if (n.type === 'mention') {
+    const mentionName = n.mentionName as string || ''
+    if (mentionName) {
+      return `@${mentionName}`
+    }
+  }
+
+  // Task ref node - preserve #format for task references
+  if (n.type === 'task-ref') {
+    const taskRef = n.taskRef as string || ''
+    if (taskRef) {
+      return `#${taskRef}`
+    }
   }
 
   // Node with children

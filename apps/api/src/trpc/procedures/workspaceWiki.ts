@@ -1,6 +1,6 @@
 /*
  * Workspace Wiki Procedures
- * Version: 2.0.0
+ * Version: 2.1.0
  *
  * tRPC procedures for workspace-level wiki pages CRUD with:
  * - Version control (20 versions per page)
@@ -14,6 +14,10 @@
  *
  * Modified: 2026-01-12
  * Change: Added version control, Lexical JSON, Graphiti tracking
+ *
+ * Modified: 2026-01-12
+ * Change: Added resyncGraph endpoint to fix wiki link extraction
+ *         and re-sync all pages to knowledge graph
  * ===================================================================
  */
 
@@ -749,4 +753,159 @@ export const workspaceWikiRouter = router({
 
       return { success: true }
     }),
+
+  /**
+   * Re-sync all wiki pages to Graphiti knowledge graph
+   * Extracts fresh plain text from contentJson and syncs to graph
+   * Use this after fixing wiki link extraction issues
+   */
+  resyncGraph: protectedProcedure
+    .input(z.object({ workspaceId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const pages = await ctx.prisma.workspaceWikiPage.findMany({
+        where: { workspaceId: input.workspaceId },
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          content: true,
+          contentJson: true,
+          graphitiGroupId: true,
+          creatorId: true,
+        },
+      })
+
+      const stats = { total: pages.length, synced: 0, errors: 0 }
+
+      for (const page of pages) {
+        try {
+          // Re-extract plain text from Lexical JSON if available
+          let plainText = page.content
+          if (page.contentJson) {
+            // contentJson from Prisma is JsonValue, convert to string
+            const jsonString = typeof page.contentJson === 'string'
+              ? page.contentJson
+              : JSON.stringify(page.contentJson)
+            const extracted = extractPlainTextFromLexical(jsonString)
+            if (extracted) {
+              plainText = extracted
+
+              // Update the content field in database
+              await ctx.prisma.workspaceWikiPage.update({
+                where: { id: page.id },
+                data: { content: plainText },
+              })
+            }
+          }
+
+          // Sync to Graphiti
+          await getGraphitiService().syncWikiPage({
+            pageId: page.id,
+            title: page.title,
+            slug: page.slug,
+            content: plainText,
+            workspaceId: input.workspaceId,
+            groupId: page.graphitiGroupId ?? `wiki-ws-${input.workspaceId}`,
+            userId: page.creatorId ?? ctx.user.id, // Fallback to current user if creator unknown
+            timestamp: new Date(),
+          })
+
+          // Mark as synced
+          await ctx.prisma.workspaceWikiPage.update({
+            where: { id: page.id },
+            data: { graphitiSynced: true, graphitiSyncedAt: new Date() },
+          })
+
+          stats.synced++
+        } catch (err) {
+          console.error(`[workspaceWiki.resyncGraph] Failed to sync page ${page.id}:`, err)
+          stats.errors++
+        }
+      }
+
+      console.log(`[workspaceWiki.resyncGraph] Completed: ${stats.synced}/${stats.total} synced, ${stats.errors} errors`)
+      return stats
+    }),
 })
+
+// =============================================================================
+// Helper: Extract plain text from Lexical JSON
+// =============================================================================
+
+/**
+ * Extract plain text from Lexical JSON, preserving wiki link format
+ */
+function extractPlainTextFromLexical(contentJson: string | null): string | null {
+  if (!contentJson) return null
+
+  try {
+    const parsed = JSON.parse(contentJson)
+    return extractTextFromNode(parsed.root)
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Recursively extract text from Lexical node
+ * Preserves [[wiki-link]] format for graph extraction
+ */
+function extractTextFromNode(node: Record<string, unknown> | null): string {
+  if (!node) return ''
+
+  const parts: string[] = []
+
+  // Text node
+  if (node.type === 'text' && typeof node.text === 'string') {
+    parts.push(node.text)
+  }
+
+  // Wiki link node - preserve [[...]] format for backlinks extraction
+  if (node.type === 'wiki-link') {
+    const displayText = node.displayText as string
+    if (displayText) {
+      parts.push(`[[${displayText}]]`)
+      return parts.join('')
+    }
+    // Fallback to children if displayText not available
+    if (Array.isArray(node.children)) {
+      const childText = (node.children as Record<string, unknown>[])
+        .map(extractTextFromNode)
+        .join('')
+      parts.push(`[[${childText}]]`)
+      return parts.join('')
+    }
+  }
+
+  // Mention node - preserve @format
+  if (node.type === 'mention') {
+    const mentionName = node.mentionName as string
+    if (mentionName) {
+      parts.push(`@${mentionName}`)
+      return parts.join('')
+    }
+  }
+
+  // Task ref node - preserve #format
+  if (node.type === 'task-ref') {
+    const taskRef = node.taskRef as string
+    if (taskRef) {
+      parts.push(`#${taskRef}`)
+      return parts.join('')
+    }
+  }
+
+  // Recursively handle children
+  if (Array.isArray(node.children)) {
+    const childTexts = (node.children as Record<string, unknown>[])
+      .map(extractTextFromNode)
+    // Add newline after block elements
+    if (['paragraph', 'heading', 'quote', 'listitem'].includes(node.type as string)) {
+      parts.push(childTexts.join('') + '\n')
+    } else {
+      parts.push(childTexts.join(''))
+    }
+  }
+
+  return parts.join('')
+}

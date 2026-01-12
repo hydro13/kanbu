@@ -1,6 +1,6 @@
 /*
  * Dialog Component
- * Version: 1.0.0
+ * Version: 1.1.0
  *
  * Shadcn-style Dialog component using Radix UI primitives.
  *
@@ -10,6 +10,8 @@
  * Claude Code: v2.0.70 (Opus 4.5)
  * Host: linux-dev
  * Signed: 2025-12-28T17:15 CET
+ * Modified: 2026-01-12
+ * Change: Added backdrop-blur-sm to overlay for consistent dialog styling
  * ═══════════════════════════════════════════════════════════════════
  */
 
@@ -30,7 +32,7 @@ const DialogOverlay = React.forwardRef<
   <DialogPrimitive.Overlay
     ref={ref}
     className={cn(
-      'fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
+      'fixed inset-0 z-50 bg-black/50 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
       className
     )}
     {...props}

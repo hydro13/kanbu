@@ -1,6 +1,6 @@
 /*
  * Wiki Page View Component
- * Version: 1.2.0
+ * Version: 1.3.0
  *
  * Displays a single wiki page with view/edit mode toggle.
  * Integrates Lexical RichTextEditor for content editing.
@@ -16,6 +16,10 @@
  *
  * Modified: 2026-01-12
  * Change: Fase 15.5 - Added context menu with "Ask about this" for selected text
+ *
+ * Modified: 2026-01-12
+ * Change: Fix wiki link extraction - preserve [[...]] format in plain text
+ *         for backlinks and graph link detection
  * ===================================================================
  */
 
@@ -595,6 +599,33 @@ function extractPlainText(node: Record<string, unknown>): string {
   // Handle text nodes
   if (node.text && typeof node.text === 'string') {
     parts.push(node.text)
+  }
+
+  // Handle wiki-link nodes - preserve [[...]] format for graph link extraction
+  if (node.type === 'wiki-link') {
+    const displayText = node.displayText as string
+    if (displayText) {
+      parts.push(`[[${displayText}]]`)
+      return parts.join(' ').trim()
+    }
+  }
+
+  // Handle mention nodes - preserve @format for entity extraction
+  if (node.type === 'mention') {
+    const mentionName = node.mentionName as string
+    if (mentionName) {
+      parts.push(`@${mentionName}`)
+      return parts.join(' ').trim()
+    }
+  }
+
+  // Handle task-ref nodes - preserve #format for task references
+  if (node.type === 'task-ref') {
+    const taskRef = node.taskRef as string
+    if (taskRef) {
+      parts.push(`#${taskRef}`)
+      return parts.join(' ').trim()
+    }
   }
 
   // Recursively handle children
