@@ -1,6 +1,6 @@
 /*
  * Graphiti Service
- * Version: 3.0.0
+ * Version: 3.1.0
  *
  * Knowledge graph service for Wiki using FalkorDB.
  * Integrates with Python Graphiti service for LLM-based entity extraction.
@@ -11,6 +11,7 @@
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
  * Signed: 2026-01-12
  * Change: Fase 15.1 - WikiAiService integration for provider-based extraction
+ * Change: Fase 15.2 - WikiEmbeddingService for semantic search via Qdrant
  * ===================================================================
  */
 
@@ -25,7 +26,10 @@ import {
 import {
   WikiAiService,
   getWikiAiService,
+  WikiEmbeddingService,
+  getWikiEmbeddingService,
   type WikiContext,
+  type SemanticSearchResult,
 } from '../lib/ai/wiki'
 
 // =============================================================================
@@ -83,6 +87,7 @@ export class GraphitiService {
   private pythonClient: GraphitiClient
   private pythonServiceAvailable: boolean | null = null // null = unknown, check on first use
   private wikiAiService: WikiAiService | null = null
+  private wikiEmbeddingService: WikiEmbeddingService | null = null
   private prisma: PrismaClient | null = null
 
   constructor(config?: Partial<GraphitiConfig>, prisma?: PrismaClient) {
@@ -93,10 +98,11 @@ export class GraphitiService {
     // Initialize Python service client
     this.pythonClient = getGraphitiClient()
 
-    // Initialize WikiAiService if Prisma is provided (Fase 15.1)
+    // Initialize WikiAiService and WikiEmbeddingService if Prisma is provided
     if (prisma) {
       this.prisma = prisma
       this.wikiAiService = getWikiAiService(prisma)
+      this.wikiEmbeddingService = getWikiEmbeddingService(prisma)
     }
 
     this.redis = new Redis({
@@ -119,12 +125,13 @@ export class GraphitiService {
   }
 
   /**
-   * Set Prisma client and initialize WikiAiService
+   * Set Prisma client and initialize AI services
    * Call this if Prisma wasn't passed to constructor
    */
   setPrisma(prisma: PrismaClient): void {
     this.prisma = prisma
     this.wikiAiService = getWikiAiService(prisma)
+    this.wikiEmbeddingService = getWikiEmbeddingService(prisma)
   }
 
   // ===========================================================================
@@ -361,6 +368,25 @@ export class GraphitiService {
       `[GraphitiService] Synced page ${pageId}: "${title}" via WikiAiService (${extractionResult.provider}) - ` +
       `${extractionResult.entities.length} entities extracted`
     )
+
+    // Store embedding for semantic search (Fase 15.2)
+    if (this.wikiEmbeddingService && capabilities.embedding) {
+      try {
+        await this.wikiEmbeddingService.storePageEmbedding(
+          context,
+          pageId,
+          title,
+          content,
+          episode.groupId
+        )
+      } catch (embeddingError) {
+        // Don't fail the sync if embedding storage fails
+        console.warn(
+          `[GraphitiService] Failed to store embedding for page ${pageId}: ` +
+          `${embeddingError instanceof Error ? embeddingError.message : 'Unknown error'}`
+        )
+      }
+    }
 
     return true
   }
@@ -689,6 +715,124 @@ export class GraphitiService {
       console.error('[GraphitiService] Temporal search failed:', error)
       return []
     }
+  }
+
+  // ===========================================================================
+  // Semantic Search (Fase 15.2)
+  // ===========================================================================
+
+  /**
+   * Semantic search using embeddings stored in Qdrant
+   * Searches by meaning rather than keywords
+   *
+   * Fallback chain:
+   * 1. Python Graphiti service (if available)
+   * 2. WikiEmbeddingService + Qdrant vector search
+   * 3. FalkorDB text search (basic keyword matching)
+   */
+  async semanticSearch(
+    query: string,
+    workspaceId: number,
+    options?: {
+      projectId?: number
+      groupId?: string
+      limit?: number
+      scoreThreshold?: number
+    }
+  ): Promise<SemanticSearchResult[]> {
+    const limit = options?.limit ?? 10
+    const scoreThreshold = options?.scoreThreshold ?? 0.5
+
+    // Try Python service first (has its own embedding pipeline)
+    if (await this.isPythonServiceAvailable()) {
+      try {
+        const response = await this.pythonClient.search({
+          query,
+          group_id: options?.groupId,
+          limit,
+        })
+
+        return response.results.map(r => ({
+          pageId: r.metadata?.pageId as number,
+          title: r.name,
+          score: r.score,
+          groupId: r.metadata?.groupId as string || '',
+        }))
+      } catch (error) {
+        if (error instanceof GraphitiClientError) {
+          console.warn(`[GraphitiService] Python semantic search error: ${error.message}, trying WikiEmbeddingService`)
+        }
+      }
+    }
+
+    // Try WikiEmbeddingService (Qdrant vector search)
+    if (this.wikiEmbeddingService) {
+      try {
+        const context: WikiContext = {
+          workspaceId,
+          projectId: options?.projectId,
+        }
+
+        return await this.wikiEmbeddingService.semanticSearch(context, query, {
+          workspaceId,
+          projectId: options?.projectId,
+          groupId: options?.groupId,
+          limit,
+          scoreThreshold,
+        })
+      } catch (error) {
+        console.warn(
+          `[GraphitiService] WikiEmbeddingService search error: ${error instanceof Error ? error.message : 'Unknown'}, using text fallback`
+        )
+      }
+    }
+
+    // Final fallback: text search in FalkorDB
+    const textResults = await this.searchFallback(query, options?.groupId, limit)
+    return textResults
+      .filter(r => r.pageId !== undefined)
+      .map(r => ({
+        pageId: r.pageId!,
+        title: r.name,
+        score: r.score,
+        groupId: '',
+      }))
+  }
+
+  /**
+   * Find wiki pages similar to a given page
+   */
+  async findSimilarPages(
+    pageId: number,
+    workspaceId: number,
+    limit: number = 5
+  ): Promise<SemanticSearchResult[]> {
+    if (!this.wikiEmbeddingService) {
+      console.warn('[GraphitiService] WikiEmbeddingService not available for similar pages search')
+      return []
+    }
+
+    try {
+      const context: WikiContext = { workspaceId }
+      return await this.wikiEmbeddingService.findSimilarPages(context, pageId, limit)
+    } catch (error) {
+      console.error(
+        `[GraphitiService] Find similar pages failed:`,
+        error instanceof Error ? error.message : error
+      )
+      return []
+    }
+  }
+
+  /**
+   * Get embedding statistics for a workspace
+   */
+  async getEmbeddingStats(): Promise<{ totalPages: number; collectionExists: boolean }> {
+    if (!this.wikiEmbeddingService) {
+      return { totalPages: 0, collectionExists: false }
+    }
+
+    return this.wikiEmbeddingService.getStats()
   }
 
   /**

@@ -2,9 +2,9 @@
 
 > **Laatst bijgewerkt:** 2026-01-12
 > **Huidige fase:** Fase 15 - Wiki Intelligence
-> **Sub-fase:** 15.1 Provider Koppeling ✅ | 15.2 Semantic Search | 15.3 Ask the Wiki | 15.4 Enhanced Graphs | 15.5 Integration
+> **Sub-fase:** 15.1 Provider Koppeling ✅ | 15.2 Semantic Search (Backend ✅) | 15.3 Ask the Wiki | 15.4 Enhanced Graphs | 15.5 Integration
 > **Vorige fase:** Fase 14 - AI Provider Configuration ✅ COMPLEET
-> **Volgende actie:** Start met 15.2 Semantic Search (vector search in FalkorDB)
+> **Volgende actie:** 15.2 Frontend (WikiSemanticSearchDialog) of 15.3 Ask the Wiki (RAG)
 
 ---
 
@@ -1077,18 +1077,23 @@ export class WikiAiService {
 
 ---
 
-### 15.2 Semantic Search
+### 15.2 Semantic Search (Backend ✅)
 
 > **Doel:** Zoeken op betekenis i.p.v. exacte keywords. "Find pages about authentication" vindt ook "OAuth2", "JWT", "Login flow".
+> **Status:** Backend COMPLEET - WikiEmbeddingService + Qdrant vector search (2026-01-12)
 
 | Item | Status | Notities |
 |------|--------|----------|
 | **Backend** | | |
-| wiki.semanticSearch endpoint | ❌ | Query → embedding → vector search |
-| Hybrid search (BM25 + vector) | ❌ | Combineer keyword + semantic |
-| Search result ranking | ❌ | Score gebaseerd op relevantie |
-| Cross-wiki search | ❌ | Zoek over workspace + project wiki's |
-| Search caching | ❌ | Cache frequent queries |
+| WikiEmbeddingService | ✅ | Qdrant vector storage + search |
+| wikiAi.semanticSearch endpoint | ✅ | Query → embedding → Qdrant search |
+| wikiAi.findSimilarPages endpoint | ✅ | Vind vergelijkbare pagina's |
+| wikiAi.getEmbeddingStats endpoint | ✅ | Statistieken over embeddings |
+| Embedding bij wiki sync | ✅ | GraphitiService v3.1.0 slaat embeddings op |
+| Search result ranking | ✅ | Cosine similarity score |
+| Cross-wiki search | ✅ | Workspace + project filtering |
+| Hybrid search (BM25 + vector) | ⏸️ | Deferred - pure vector voldoet voor v1 |
+| Search caching | ⏸️ | Deferred - Qdrant is snel genoeg |
 | **Frontend** | | |
 | WikiSemanticSearchDialog.tsx | ❌ | Nieuwe search dialog |
 | Search mode toggle | ❌ | Text / Semantic / Hybrid switch |
@@ -1098,6 +1103,34 @@ export class WikiAiService {
 | **Integratie** | | |
 | Cmd+K semantic search | ❌ | CommandPalette integratie |
 | WikiSidebar search | ❌ | Quick search in sidebar |
+
+**Architectuur (Fase 15.2):**
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  Wiki Page Sync                                                  │
+│                                                                  │
+│  GraphitiService.syncWikiPageWithAiService()                     │
+│       │                                                          │
+│       ├──▶ WikiAiService.extractEntities() → FalkorDB           │
+│       │                                                          │
+│       └──▶ WikiEmbeddingService.storePageEmbedding() → Qdrant   │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│  Semantic Search                                                 │
+│                                                                  │
+│  wikiAi.semanticSearch(query, workspaceId)                       │
+│       │                                                          │
+│       └──▶ WikiEmbeddingService.semanticSearch()                 │
+│               │                                                  │
+│               ├──▶ WikiAiService.embed(query) → query vector     │
+│               │                                                  │
+│               └──▶ Qdrant.search(vector, filter) → results       │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
 
 **Search Flow:**
 
@@ -1358,7 +1391,7 @@ Beantwoord nu de vraag van de gebruiker.`
 | Sub-fase | Status | Beschrijving |
 |----------|--------|--------------|
 | **15.1 Provider Koppeling** | ✅ | WikiAiService + tRPC endpoints |
-| **15.2 Semantic Search** | ❌ | Zoeken op betekenis |
+| **15.2 Semantic Search** | 🔶 | Backend ✅ (Qdrant), Frontend ❌ |
 | **15.3 Ask the Wiki** | ❌ | RAG Chat met bronnen |
 | **15.4 Enhanced Graphs** | ❌ | Filtering, clustering, paths |
 | **15.5 Integration** | ❌ | UI polish en performance |
@@ -1612,3 +1645,13 @@ cat ~/genx/v6/dev/kanbu/docs/WIKI-base/GRAPHITI-IMPLEMENTATIE.md
 | 2026-01-12 | Live test: wikiAi.extractEntities ✅ (GPT-4o-mini, 3 entities from Dutch text) |
 | 2026-01-12 | Live test: wikiAi.embed ✅ (text-embedding-3-small, 1536 dimensions) |
 | 2026-01-12 | **Fase 15.1 Provider Koppeling COMPLEET** |
+| 2026-01-12 | **Fase 15.2 Semantic Search (Backend) START** |
+| 2026-01-12 | @qdrant/js-client-rest package toegevoegd voor vector storage |
+| 2026-01-12 | WikiEmbeddingService.ts aangemaakt - Qdrant vector storage + semantic search |
+| 2026-01-12 | Collection: kanbu_wiki_embeddings met cosine similarity |
+| 2026-01-12 | GraphitiService v3.1.0 - embedding storage bij wiki sync |
+| 2026-01-12 | wikiAi.semanticSearch endpoint - vector search in Qdrant |
+| 2026-01-12 | wikiAi.findSimilarPages endpoint - vergelijkbare pagina's |
+| 2026-01-12 | wikiAi.getEmbeddingStats endpoint - statistieken |
+| 2026-01-12 | Fallback chain: Python Graphiti → WikiEmbeddingService → FalkorDB text |
+| 2026-01-12 | **Fase 15.2 Semantic Search (Backend) COMPLEET** - Frontend nog te doen |

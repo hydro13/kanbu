@@ -4,6 +4,7 @@
  * Exports for Wiki AI functionality.
  *
  * Fase 15.1 - Provider Koppeling
+ * Fase 15.2 - Semantic Search (WikiEmbeddingService)
  */
 
 export {
@@ -17,3 +18,13 @@ export {
   type SummarizeResult,
   type WikiAiCapabilities,
 } from './WikiAiService'
+
+export {
+  WikiEmbeddingService,
+  getWikiEmbeddingService,
+  resetWikiEmbeddingService,
+  type WikiEmbeddingConfig,
+  type WikiPageEmbedding,
+  type SemanticSearchResult,
+  type SemanticSearchOptions,
+} from './WikiEmbeddingService'
