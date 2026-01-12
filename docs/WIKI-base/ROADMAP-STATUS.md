@@ -1,8 +1,8 @@
 # Wiki Implementation Roadmap & Status
 
 > **Laatst bijgewerkt:** 2026-01-12
-> **Huidige fase:** Fase 9 - Bi-Temporal Model 🔄 NEXT
-> **Volgende actie:** Temporal edges in FalkorDB (valid_at/invalid_at)
+> **Huidige fase:** Fase 9 - Bi-Temporal Model 🔄 IN PROGRESS (3/5)
+> **Volgende actie:** Audit trail tracking (created_at/expired_at)
 
 ---
 
@@ -131,14 +131,14 @@
 
 ---
 
-## Fase 9: Bi-Temporal Model
+## Fase 9: Bi-Temporal Model 🔄 IN PROGRESS
 
 | Item | Status | Notities |
 |------|--------|----------|
-| valid_at / invalid_at velden | ❌ | Temporal edges in FalkorDB |
+| valid_at / invalid_at velden | ✅ | graphiti_core heeft native support |
 | created_at / expired_at tracking | ❌ | Audit trail |
-| Temporal query endpoints | ❌ | "Wat wisten we op datum X?" |
-| Version diff met temporal context | ❌ | UI component |
+| Temporal query endpoints | ✅ | temporalSearch in graphiti.ts + Python service |
+| Version diff met temporal context | ✅ | WikiTemporalSearch.tsx component |
 | Contradiction detection | ❌ | LLM detecteert conflicten |
 
 ---
@@ -289,3 +289,9 @@ cat ~/genx/v6/dev/kanbu/docs/WIKI-base/GRAPHITI-IMPLEMENTATIE.md
 | 2026-01-12 | temporalSearch() method toegevoegd |
 | 2026-01-12 | GRAPHITI_SERVICE_URL in .env |
 | 2026-01-12 | Fase 8 COMPLEET |
+| 2026-01-12 | Fase 9 gestart: Bi-Temporal Model |
+| 2026-01-12 | graphiti_core heeft native valid_at/invalid_at support (9.1 ✅) |
+| 2026-01-12 | temporalSearch tRPC endpoint toegevoegd aan graphiti.ts (9.3 ✅) |
+| 2026-01-12 | POST /search/temporal endpoint in Python service |
+| 2026-01-12 | WikiTemporalSearch.tsx component aangemaakt (9.4 ✅) |
+| 2026-01-12 | Temporal search button toegevoegd aan WikiSidebar (Clock icon) |

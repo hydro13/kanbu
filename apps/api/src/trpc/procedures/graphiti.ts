@@ -1,17 +1,18 @@
 /*
  * Graphiti tRPC Procedures
- * Version: 1.0.0
+ * Version: 2.0.0
  *
  * tRPC endpoints for Wiki knowledge graph queries:
  * - Backlinks (pages that link to a page)
  * - Related pages (via shared entities)
  * - Search across wiki
- * - Graph statistics
+ * - Temporal search ("What did we know at time X?")
+ * - Graph statistics and visualization
  *
  * ===================================================================
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
  * Signed: 2026-01-12
- * Change: Initial implementation for Fase 2
+ * Change: Fase 9 - Added temporal search endpoint
  * ===================================================================
  */
 
@@ -56,6 +57,13 @@ const syncPageSchema = z.object({
   slug: z.string(),
   content: z.string(),
   groupId: z.string(),
+})
+
+const temporalSearchSchema = z.object({
+  query: z.string().min(1).max(200),
+  groupId: z.string(),
+  asOf: z.string().datetime(), // ISO datetime string: "What did we know at this time?"
+  limit: z.number().min(1).max(50).default(10),
 })
 
 // =============================================================================
@@ -137,6 +145,29 @@ export const graphitiRouter = router({
       const graphiti = getGraphitiService()
       const connected = await graphiti.isConnected()
       return { connected }
+    }),
+
+  /**
+   * Temporal search - "What did we know at time X?"
+   * Returns facts that were valid at the specified point in time.
+   * Only available when Python Graphiti service is running.
+   */
+  temporalSearch: protectedProcedure
+    .input(temporalSearchSchema)
+    .query(async ({ input }) => {
+      const graphiti = getGraphitiService()
+      const asOfDate = new Date(input.asOf)
+      const results = await graphiti.temporalSearch(
+        input.query,
+        input.groupId,
+        asOfDate,
+        input.limit
+      )
+      return {
+        results,
+        asOf: input.asOf,
+        query: input.query,
+      }
     }),
 
   /**

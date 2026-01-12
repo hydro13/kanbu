@@ -1,6 +1,6 @@
 /*
  * Wiki Sidebar Component
- * Version: 1.0.0
+ * Version: 1.1.0
  *
  * Tree-based navigation sidebar for wiki pages.
  * Supports both workspace and project wikis.
@@ -9,6 +9,8 @@
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
  * Signed: 2026-01-12
  * Change: Initial implementation following WIKI-MASTER-CONCEPT.md
+ * Modified: 2026-01-12
+ * Change: Added temporal search button (Fase 9)
  * ===================================================================
  */
 
@@ -23,6 +25,7 @@ import {
   BookOpen,
   Search,
   Network,
+  Clock,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -60,6 +63,8 @@ interface WikiSidebarProps {
   onShowGraph?: () => void
   /** Whether graph view is currently shown */
   graphViewActive?: boolean
+  /** Callback when temporal search is triggered */
+  onTemporalSearch?: () => void
   /** Wiki type for display */
   wikiType?: 'workspace' | 'project'
   /** Wiki title to display */
@@ -228,6 +233,7 @@ export function WikiSidebar({
   onSearch,
   onShowGraph,
   graphViewActive = false,
+  onTemporalSearch,
   wikiType = 'workspace',
   title,
 }: WikiSidebarProps) {
@@ -322,6 +328,16 @@ export function WikiSidebar({
               title="Knowledge graph"
             >
               <Network className="h-3.5 w-3.5" />
+            </Button>
+          )}
+          {onTemporalSearch && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onTemporalSearch}
+              title="Temporal search - what did we know at time X?"
+            >
+              <Clock className="h-3.5 w-3.5" />
             </Button>
           )}
         </div>
