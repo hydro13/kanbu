@@ -2,8 +2,8 @@
 
 > **Laatst bijgewerkt:** 2026-01-12
 > **Huidige fase:** Fase 14 - AI Provider Configuration (multi-environment support)
-> **Sub-fase:** 14.0 Research ✅ | 14.1 Database ✅ | 14.2 Admin UI ✅ | 14.3 Abstraction ✅ COMPLEET
-> **Volgende actie:** Fase 14.4 Workspace & Project Overrides
+> **Sub-fase:** 14.0 Research ✅ | 14.1 Database ✅ | 14.2 Admin UI ✅ | 14.3 Abstraction ✅ | 14.4 Overrides ✅ COMPLEET
+> **Volgende actie:** Fase 14.5 Testing & Validation
 
 ---
 
@@ -760,12 +760,17 @@ export class LmStudioProvider implements EmbeddingProvider, ReasoningProvider, V
 
 | Item | Status | Notities |
 |------|--------|----------|
-| Workspace AI Settings page | ❌ | /workspace/:slug/settings/ai |
-| Project AI Settings tab | ❌ | In project settings modal |
-| Inheritance logic | ❌ | Project → Workspace → Global |
-| Override indicators in UI | ❌ | "Using Ollama (workspace override)" badge |
-| getEffectiveProvider() service | ❌ | Resolve provider per capability |
-| Fallback logic | ❌ | OpenAI → Ollama → LM Studio |
+| Workspace AI Settings page | ✅ | WorkspaceAiConfigCard in WorkspaceSettings.tsx |
+| Project AI Settings tab | ⏸️ | Deferred - workspace level is voldoende voor v1 |
+| Inheritance logic | ✅ | registry.ts findEffectiveConfig() |
+| Override indicators in UI | ✅ | Badge + icons (global/workspace) in WorkspaceAiConfigCard |
+| getEffectiveProvider() service | ✅ | workspaceAiProvider.getEffective/getEffectiveAll |
+| Fallback logic | ✅ | registry.ts getProviderWithFallback() |
+
+**Implementatie Details (2026-01-12):**
+- Backend: `apps/api/src/trpc/procedures/workspaceAiProvider.ts` - CRUD + getEffective
+- Frontend: `apps/web/src/components/workspace/WorkspaceAiConfigCard.tsx`
+- Registry: `apps/api/src/lib/ai/providers/registry.ts` - Scope resolution + caching
 
 **Inheritance Regels:**
 
@@ -920,7 +925,7 @@ jobs:
 | **14.1 Database** | ✅ | AiProviderConfig model + seed script |
 | **14.2 Admin UI** | ✅ | System Settings > AI Systems pagina |
 | **14.3 Abstraction** | ✅ | Provider interfaces + 3 implementaties |
-| 14.4 Overrides | ❌ | Workspace/Project level configuratie |
+| **14.4 Overrides** | ✅ | Workspace level configuratie + override indicators |
 | 14.5 Testing | ❌ | Unit + integration + E2E tests |
 
 **Geselecteerde Providers:** OpenAI, Ollama, LM Studio
@@ -1186,3 +1191,11 @@ cat ~/genx/v6/dev/kanbu/docs/WIKI-base/GRAPHITI-IMPLEMENTATIE.md
 | 2026-01-12 | factory.ts met createProvider(), createEmbeddingProvider(), etc. |
 | 2026-01-12 | registry.ts met ProviderRegistry singleton en scope resolution |
 | 2026-01-12 | Barrel export via lib/ai/providers/index.ts |
+| 2026-01-12 | **Fase 14.4 Workspace & Project Overrides COMPLEET** |
+| 2026-01-12 | workspaceAiProvider.ts tRPC router (CRUD voor workspace admins) |
+| 2026-01-12 | getEffectiveAll endpoint voor capability overview |
+| 2026-01-12 | WorkspaceAiConfigCard.tsx component met override indicators |
+| 2026-01-12 | Geïntegreerd in WorkspaceSettingsPage.tsx |
+| 2026-01-12 | Inheritance: Project > Workspace > Global (via registry.findEffectiveConfig) |
+| 2026-01-12 | Fallback: registry.getProviderWithFallback() voor automatic failover |
+| 2026-01-12 | Project level override: ⏸️ Deferred - workspace level voldoende voor v1 |

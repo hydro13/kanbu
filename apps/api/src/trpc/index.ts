@@ -140,6 +140,7 @@ import { projectGroupRouter } from './procedures/projectGroup';
 import { favoriteRouter } from './procedures/favorite';
 import { graphitiRouter } from './procedures/graphiti';
 import { aiProviderRouter } from './procedures/aiProvider';
+import { workspaceAiProviderRouter } from './procedures/workspaceAiProvider';
 
 /**
  * Main app router
@@ -187,6 +188,7 @@ export const appRouter = router({
   favorite: favoriteRouter,
   graphiti: graphitiRouter,
   aiProvider: aiProviderRouter,
+  workspaceAiProvider: workspaceAiProviderRouter,
 });
 
 /**

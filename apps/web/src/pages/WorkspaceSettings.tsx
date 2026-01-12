@@ -44,6 +44,7 @@ import {
   type MemberFiltersState,
   type PaginationState,
 } from '../components/workspace/MemberFilters'
+import { WorkspaceAiConfigCard } from '../components/workspace/WorkspaceAiConfigCard'
 import { RichTextEditor, getDisplayContent, isLexicalContent, lexicalToPlainText } from '../components/editor'
 import type { EditorState, LexicalEditor } from 'lexical'
 
@@ -740,6 +741,12 @@ export function WorkspaceSettingsPage() {
             </CardContent>
           </Card>
         )}
+
+        {/* AI Configuration */}
+        <WorkspaceAiConfigCard
+          workspaceId={currentWorkspace.id}
+          isAdmin={isAdmin}
+        />
 
         {/* Danger Zone */}
         {isOwner && (
