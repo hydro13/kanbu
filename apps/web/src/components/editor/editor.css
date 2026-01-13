@@ -567,19 +567,76 @@
    ============================================================================= */
 
 .lexical-code-block {
+  display: block;
   margin: 0;
   margin-bottom: 0.5rem;
   padding: 1rem;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 0.875rem;
-  line-height: 1.5;
+  line-height: 1.6;
   background: hsl(var(--muted));
   border-radius: 0.5rem;
   overflow-x: auto;
   tab-size: 2;
+  white-space: pre;
+  word-wrap: normal;
+}
+
+/* Code block content - prevent line overlapping */
+.lexical-code-block span {
+  display: inline;
+  white-space: pre;
+}
+
+/* Code block lines - each line on its own row */
+.lexical-code-block br {
+  display: block;
+  content: "";
+  margin: 0;
+}
+
+/* Lexical adds spans for each code line in edit mode */
+.lexical-code-block [data-lexical-text="true"] {
+  display: inline;
+  white-space: pre;
 }
 
 /* Code highlighting (Prism-compatible colors) */
+/* All code highlight classes must be inline to prevent line wrapping issues */
+.lexical-code-comment,
+.lexical-code-keyword,
+.lexical-code-string,
+.lexical-code-number,
+.lexical-code-boolean,
+.lexical-code-function,
+.lexical-code-class-name,
+.lexical-code-constant,
+.lexical-code-property,
+.lexical-code-punctuation,
+.lexical-code-operator,
+.lexical-code-tag,
+.lexical-code-attr,
+.lexical-code-selector,
+.lexical-code-regex,
+.lexical-code-variable,
+.lexical-code-builtin,
+.lexical-code-important,
+.lexical-code-deleted,
+.lexical-code-inserted,
+.lexical-code-atrule,
+.lexical-code-cdata,
+.lexical-code-char,
+.lexical-code-class,
+.lexical-code-doctype,
+.lexical-code-entity,
+.lexical-code-namespace,
+.lexical-code-prolog,
+.lexical-code-symbol,
+.lexical-code-url {
+  display: inline;
+  white-space: pre;
+}
+
 .lexical-code-comment { color: #6b7280; }
 .lexical-code-keyword { color: #c084fc; }
 .lexical-code-string { color: #4ade80; }
@@ -600,6 +657,32 @@
 .lexical-code-important { color: #f87171; font-weight: bold; }
 .lexical-code-deleted { color: #f87171; }
 .lexical-code-inserted { color: #4ade80; }
+
+/* Native pre/code tags from parsed markdown */
+.lexical-content-editable pre {
+  display: block;
+  margin: 0;
+  margin-bottom: 0.5rem;
+  padding: 1rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  background: hsl(var(--muted));
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  tab-size: 2;
+  white-space: pre;
+  word-wrap: normal;
+}
+
+.lexical-content-editable pre code {
+  display: block;
+  padding: 0;
+  background: transparent;
+  border-radius: 0;
+  font-size: inherit;
+  white-space: pre;
+}
 
 /* =============================================================================
    Horizontal Rule

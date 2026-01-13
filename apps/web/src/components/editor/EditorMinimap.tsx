@@ -1,11 +1,12 @@
 /*
  * Editor Minimap Component
- * Version: 2.3.0
+ * Version: 2.4.0
  *
  * VSCode-style minimap for Lexical editor with hybrid scrolling.
  * - For shorter documents: shows entire document scaled to fit (fill mode)
  * - For very long documents: minimap also scrolls, but slower than editor
  * - Uses sticky positioning to stay in view while content scrolls
+ * - Pointer capture for smooth drag operations
  *
  * ===================================================================
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
@@ -19,6 +20,8 @@
  * Change: Hybrid mode - minimap scrolls for very long documents
  * Modified: 2026-01-13
  * Change: Reverted to simple positioning - removed broken fixed positioning
+ * Modified: 2026-01-13
+ * Change: Added pointer capture for proper mouse tracking during drag
  * ===================================================================
  */
 
@@ -67,6 +70,7 @@ export function EditorMinimap({
 }: EditorMinimapProps) {
   const [editor] = useLexicalComposerContext()
   const minimapRef = useRef<HTMLDivElement>(null)
+  const viewportRef = useRef<HTMLDivElement>(null)
   const [lines, setLines] = useState<ContentLine[]>([])
   const [scrollInfo, setScrollInfo] = useState({
     scrollTop: 0,
@@ -77,6 +81,8 @@ export function EditorMinimap({
   // Use state instead of ref so changes trigger re-renders
   const [scrollContainer, setScrollContainer] = useState<HTMLElement | null>(null)
   const isDragging = useRef(false)
+  const dragStartY = useRef(0)
+  const dragStartScrollTop = useRef(0)
 
   // Find the scrollable container (the WikiPageView content area)
   useEffect(() => {
@@ -258,42 +264,55 @@ export function EditorMinimap({
     })
   }, [scrollContainer, minimapContentOffset, scale, scrollInfo.clientHeight, totalEditorScroll])
 
-  // Handle viewport drag
-  const handleViewportDrag = useCallback((e: React.MouseEvent) => {
+  // Handle viewport drag start - using pointer capture for smooth tracking
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
     e.preventDefault()
     e.stopPropagation()
 
-    if (!scrollContainer || !minimapRef.current) return
+    if (!scrollContainer || !viewportRef.current) return
+
+    // Capture pointer for smooth tracking even outside element bounds
+    viewportRef.current.setPointerCapture(e.pointerId)
 
     isDragging.current = true
-    const startY = e.clientY
-    const startScrollTop = scrollContainer.scrollTop
+    dragStartY.current = e.clientY
+    dragStartScrollTop.current = scrollContainer.scrollTop
+  }, [scrollContainer])
 
-    const handleMove = (moveEvent: MouseEvent) => {
-      const deltaY = moveEvent.clientY - startY
-      // Convert minimap movement to document scroll
-      // Account for hybrid mode: minimap moves slower than 1:1 with viewport
-      const scrollDelta = deltaY / scale
+  // Handle viewport drag move
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    if (!isDragging.current || !scrollContainer) return
 
-      const newScrollTop = Math.max(0, Math.min(totalEditorScroll, startScrollTop + scrollDelta))
-      scrollContainer.scrollTop = newScrollTop
+    const deltaY = e.clientY - dragStartY.current
 
-      setScrollInfo({
-        scrollTop: scrollContainer.scrollTop,
-        scrollHeight: scrollContainer.scrollHeight,
-        clientHeight: scrollContainer.clientHeight,
-      })
-    }
+    // Convert minimap movement to document scroll
+    // In hybrid mode, we need to account for the different scroll ratios
+    // The viewport should follow the mouse, so we use:
+    // - In fill mode: viewport moves across full minimap height for full scroll
+    // - In hybrid mode: viewport moves less because minimap also scrolls
+    const effectiveMinimapScrollRange = needsHybridScroll
+      ? minimapHeight - viewportHeight  // Available range for viewport in minimap
+      : minimapHeight - viewportHeight
 
-    const handleUp = () => {
-      isDragging.current = false
-      document.removeEventListener('mousemove', handleMove)
-      document.removeEventListener('mouseup', handleUp)
-    }
+    // How much document scroll per pixel of viewport movement
+    const scrollRatio = totalEditorScroll / effectiveMinimapScrollRange
+    const newScrollTop = Math.max(0, Math.min(totalEditorScroll, dragStartScrollTop.current + (deltaY * scrollRatio)))
 
-    document.addEventListener('mousemove', handleMove)
-    document.addEventListener('mouseup', handleUp)
-  }, [scrollContainer, scale, totalEditorScroll])
+    scrollContainer.scrollTop = newScrollTop
+    setScrollInfo({
+      scrollTop: scrollContainer.scrollTop,
+      scrollHeight: scrollContainer.scrollHeight,
+      clientHeight: scrollContainer.clientHeight,
+    })
+  }, [scrollContainer, totalEditorScroll, minimapHeight, viewportHeight, needsHybridScroll])
+
+  // Handle viewport drag end
+  const handlePointerUp = useCallback((e: React.PointerEvent) => {
+    if (!viewportRef.current) return
+
+    viewportRef.current.releasePointerCapture(e.pointerId)
+    isDragging.current = false
+  }, [])
 
   // Get line color based on type
   const getLineColor = (type: ContentLine['type']) => {
@@ -350,12 +369,16 @@ export function EditorMinimap({
 
       {/* Viewport indicator - green like Published badge */}
       <div
-        className="absolute left-0 right-0 bg-green-500/20 border-y border-green-500/40 cursor-grab active:cursor-grabbing hover:bg-green-500/30 transition-colors"
+        ref={viewportRef}
+        className="absolute left-0 right-0 bg-green-500/20 border-y border-green-500/40 cursor-grab active:cursor-grabbing hover:bg-green-500/30 transition-colors touch-none"
         style={{
           top: clampedViewportTop,
           height: viewportHeight,
         }}
-        onMouseDown={handleViewportDrag}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
         onClick={(e) => e.stopPropagation()}
       />
 
