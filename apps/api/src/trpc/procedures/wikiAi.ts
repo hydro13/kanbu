@@ -1,6 +1,6 @@
 /**
  * Wiki AI Procedures
- * Version: 1.3.0
+ * Version: 1.4.0
  *
  * tRPC procedures for Wiki AI features.
  * Provides access to embeddings, entity extraction, text operations,
@@ -11,6 +11,7 @@
  * Fase: 15.2 - Semantic Search
  * Fase: 15.3 - Ask the Wiki (RAG Chat)
  * Fase: 15.5 - Background Indexing
+ * Fase: 19.4 - Edge Search Integration
  *
  * =============================================================================
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
@@ -18,8 +19,8 @@
  * Host: MAX
  * Date: 2026-01-12
  *
- * Modified: 2026-01-12
- * Change: Added reindexEmbeddings procedure for background indexing
+ * Modified: 2026-01-13
+ * Change: Fase 19.4 - Added edgeSemanticSearch and hybridSemanticSearch endpoints
  * =============================================================================
  */
 
@@ -31,6 +32,7 @@ import {
   getWikiAiService,
   getWikiRagService,
   getWikiEmbeddingService,
+  getWikiEdgeEmbeddingService,
   WikiAiError,
   type WikiContext,
 } from '../../lib/ai/wiki'
@@ -153,6 +155,35 @@ const factCheckSchema = z.object({
   selectedText: z.string().min(1).max(5000),
   /** Current page ID (to exclude from results) */
   currentPageId: z.number().optional(),
+})
+
+// Edge Semantic Search schema (Fase 19.4)
+const edgeSemanticSearchSchema = z.object({
+  workspaceId: z.number(),
+  projectId: z.number().optional(),
+  query: z.string().min(1).max(1000),
+  /** Filter by page ID */
+  pageId: z.number().optional(),
+  /** Filter by edge type (MENTIONS, LINKS_TO, etc.) */
+  edgeType: z.string().optional(),
+  limit: z.number().min(1).max(50).optional().default(10),
+  scoreThreshold: z.number().min(0).max(1).optional().default(0.5),
+})
+
+// Hybrid Semantic Search schema (Fase 19.4)
+const hybridSemanticSearchSchema = z.object({
+  workspaceId: z.number(),
+  projectId: z.number().optional(),
+  query: z.string().min(1).max(1000),
+  /** Include page results (default: true) */
+  includePages: z.boolean().optional().default(true),
+  /** Include edge results (default: true) */
+  includeEdges: z.boolean().optional().default(true),
+  /** Max results per type */
+  limitPerType: z.number().min(1).max(50).optional().default(10),
+  /** Max total results */
+  limit: z.number().min(1).max(100).optional().default(20),
+  scoreThreshold: z.number().min(0).max(1).optional().default(0.5),
 })
 
 // =============================================================================
@@ -1004,6 +1035,114 @@ export const wikiAiRouter = router({
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: error instanceof Error ? error.message : 'Fact check failed',
+        })
+      }
+    }),
+
+  // ===========================================================================
+  // Edge Semantic Search (Fase 19.4)
+  // ===========================================================================
+
+  /**
+   * Search over edge fact embeddings
+   *
+   * Searches edge facts (relationships between entities) using semantic
+   * similarity. Returns edges with matching facts, including their
+   * source/target nodes and temporal validity.
+   */
+  edgeSemanticSearch: protectedProcedure
+    .input(edgeSemanticSearchSchema)
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.user!.id
+
+      // Verify access
+      await verifyWorkspaceAccess(userId, input.workspaceId)
+
+      const edgeEmbeddingService = getWikiEdgeEmbeddingService(ctx.prisma)
+      const context: WikiContext = {
+        workspaceId: input.workspaceId,
+        projectId: input.projectId,
+      }
+
+      try {
+        const results = await edgeEmbeddingService.edgeSemanticSearch(
+          context,
+          input.query,
+          {
+            pageId: input.pageId,
+            edgeType: input.edgeType,
+            limit: input.limit,
+            scoreThreshold: input.scoreThreshold,
+          }
+        )
+
+        return {
+          success: true,
+          results,
+          count: results.length,
+          query: input.query,
+        }
+      } catch (error) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: error instanceof Error ? error.message : 'Edge semantic search failed',
+        })
+      }
+    }),
+
+  /**
+   * Hybrid semantic search: pages + edges combined
+   *
+   * Searches both wiki page embeddings and edge fact embeddings,
+   * returning a combined list sorted by relevance score.
+   *
+   * This enables searches like "who wrote about authentication" to find:
+   * - Pages about authentication (type: 'page')
+   * - Edges where someone MENTIONS authentication (type: 'edge')
+   */
+  hybridSemanticSearch: protectedProcedure
+    .input(hybridSemanticSearchSchema)
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.user!.id
+
+      // Verify access
+      await verifyWorkspaceAccess(userId, input.workspaceId)
+
+      const edgeEmbeddingService = getWikiEdgeEmbeddingService(ctx.prisma)
+      const context: WikiContext = {
+        workspaceId: input.workspaceId,
+        projectId: input.projectId,
+      }
+
+      try {
+        const results = await edgeEmbeddingService.hybridSemanticSearch(
+          context,
+          input.query,
+          {
+            includePages: input.includePages,
+            includeEdges: input.includeEdges,
+            limitPerType: input.limitPerType,
+            limit: input.limit,
+            scoreThreshold: input.scoreThreshold,
+          }
+        )
+
+        // Separate counts for statistics
+        const pageCount = results.filter(r => r.type === 'page').length
+        const edgeCount = results.filter(r => r.type === 'edge').length
+
+        return {
+          success: true,
+          results,
+          count: results.length,
+          pageCount,
+          edgeCount,
+          query: input.query,
+        }
+      } catch (error) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: error instanceof Error ? error.message : 'Hybrid semantic search failed',
         })
       }
     }),

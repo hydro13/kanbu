@@ -3266,6 +3266,1040 @@ model WikiContradictionAudit {
 
 ---
 
+## Fase 19: Edge Embeddings 🆕
+
+> **Doel:** Volledige implementatie van vector embeddings op graph edges voor semantic search over relaties
+> **Afhankelijkheid:** Fase 16 (Bi-Temporal Model) ✅, Fase 15.2 (Semantic Search) ✅
+> **Referentie:** [Code function-check/decisions/DECISIONS.md](Code%20function-check/decisions/DECISIONS.md)
+> **Graphiti Broncode:** [graphiti-analysis/CORE-MODULES.md](Code%20function-check/graphiti-analysis/CORE-MODULES.md)
+
+---
+
+### ⚠️ CLAUDE CODE SESSIE INSTRUCTIES
+
+> **KRITIEK:** Check EERST wat al bestaat in de codebase!
+>
+> **Werkwijze:**
+> 1. Lees EERST de bestaande implementatie (zie "Pre-Check Bestaande Code")
+> 2. Identificeer waar embeddings al worden gebruikt (WikiEmbeddingService, Qdrant)
+> 3. Bij CONFLICT met bestaande code → STOP en vraag Robin
+> 4. Documenteer wat je vindt in de "Bevindingen" sectie
+>
+> **Wanneer STOPPEN en overleggen:**
+> - Bestaande embedding code breekt door wijzigingen
+> - Storage beslissing nodig (Qdrant vs FalkorDB)
+> - Schema wijziging conflicteert met Fase 16
+> - Performance impact op wiki sync
+> - Kosten impact op embedding API calls
+
+---
+
+### Overzicht Architectuur
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  FASE 19: Edge Embeddings                                                    │
+│                                                                              │
+│  ┌─────────────────┐   ┌─────────────────┐   ┌─────────────────────────────┐│
+│  │ 19.1 Validatie  │   │ 19.2 Schema &   │   │ 19.3 Embedding Generation  ││
+│  │     Bestaand    │──▶│     Storage     │──▶│     Pipeline               ││
+│  │                 │   │                 │   │                            ││
+│  │ • Check Qdrant  │   │ • fact field    │   │ • generateFactEmbedding() ││
+│  │ • Check edge    │   │ • fact_embedding│   │ • Batch processing        ││
+│  │   schema        │   │ • Storage keuze │   │ • Incremental updates     ││
+│  └─────────────────┘   └─────────────────┘   └─────────────────────────────┘│
+│            │                                          │                      │
+│            │                                          ▼                      │
+│            │                              ┌─────────────────────────────────┐│
+│            │                              │ 19.4 Search Integration        ││
+│            │                              │                                ││
+│            └─────────────────────────────▶│ • Edge semantic search        ││
+│                                           │ • Hybrid page + edge search   ││
+│                                           │ • Relevance ranking           ││
+│                                           └─────────────────────────────────┘│
+│                                                      │                       │
+│                                                      ▼                       │
+│                                           ┌─────────────────────────────────┐│
+│                                           │ 19.5 Testing & Migration       ││
+│                                           │                                ││
+│                                           └─────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Wat zijn Edge Embeddings?
+
+**Huidige situatie (Page Embeddings):**
+```
+Wiki Page "Authentication Flow"
+        │
+        ▼
+    Embedding: [0.12, -0.34, 0.56, ...]  ← Hele pagina als 1 vector
+        │
+        ▼
+    Qdrant: kanbu_wiki_embeddings collection
+```
+
+**Doel (Edge Embeddings):**
+```
+Wiki Page "Authentication Flow"
+        │
+        ├──▶ MENTIONS "OAuth2" ──▶ fact: "Authentication Flow uses OAuth2 protocol"
+        │                                  │
+        │                                  ▼
+        │                         Embedding: [0.23, -0.12, 0.78, ...]
+        │
+        ├──▶ MENTIONS "@robin" ──▶ fact: "Robin wrote Authentication Flow"
+        │                                  │
+        │                                  ▼
+        │                         Embedding: [0.45, -0.67, 0.34, ...]
+        │
+        └──▶ LINKS_TO "JWT Token" ──▶ fact: "Authentication Flow links to JWT Token guide"
+                                           │
+                                           ▼
+                                   Embedding: [0.11, -0.89, 0.22, ...]
+```
+
+**Voordeel:** Fijnmaziger search - "wie schreef over OAuth" vindt specifiek de edge, niet de hele pagina.
+
+---
+
+### 19.1 Validatie Bestaande Implementatie
+
+> **Doel:** Bestaande embedding infrastructuur valideren en integratiepunten identificeren
+> **Status:** ✅ COMPLEET (2026-01-13)
+
+#### Pre-Check Bestaande Code (VERPLICHT)
+
+```bash
+# Claude Code: Lees deze bestanden EERST en documenteer bevindingen!
+
+1. apps/api/src/lib/ai/wiki/WikiEmbeddingService.ts
+   - Check: Hoe worden page embeddings gemaakt?
+   - Check: Welke collection in Qdrant?
+   - Check: Embedding dimensies?
+
+2. apps/api/src/services/graphitiService.ts
+   - Zoek naar: "fact" field op edges
+   - Check: Fase 16.1 voegde "fact" al toe - bevestig dit
+   - Check: Hoe worden edges aangemaakt?
+
+3. apps/api/src/lib/ai/wiki/WikiAiService.ts
+   - Check: embed() en embedBatch() methodes
+   - Check: Welke provider wordt gebruikt?
+
+4. Qdrant collecties checken:
+   curl http://localhost:6333/collections
+
+5. FalkorDB edge schema checken:
+   MATCH ()-[e]->() RETURN keys(e) LIMIT 1
+```
+
+#### Taken
+
+| Item | Status | Check | Notities |
+|------|--------|-------|----------|
+| **Pre-Check Bevindingen** | | | |
+| WikiEmbeddingService.ts gelezen | ✅ | Documenteer embedding flow | `storePageEmbedding()`, `semanticSearch()`, `checkEmbeddingStatus()` |
+| Qdrant collection info opgehaald | ✅ | `kanbu_wiki_embeddings` settings | 1536 dim, Cosine, 9 points |
+| Edge schema gecontroleerd | ✅ | Heeft `fact` field al? (Fase 16.1) | Ja! 48/48 edges hebben fact |
+| WikiAiService.embed() gelezen | ✅ | Provider + dimensies | `embed()`, `embedBatch()`, 1536 dim |
+| **Gap Analyse** | | | |
+| Verschil met Graphiti model | ✅ | Vergelijk met CORE-MODULES.md | Kanbu mist fact_embedding op edges |
+| Storage beslissing voorbereiden | ✅ | Qdrant vs FalkorDB pros/cons | **Qdrant aanbevolen** |
+
+#### Gap Analyse - Bevindingen (2026-01-13)
+
+```markdown
+## Bestaande Embedding Infrastructuur
+
+### Page Embeddings (werkt):
+- [x] WikiEmbeddingService.storePageEmbedding()
+- [x] Qdrant collection: kanbu_wiki_embeddings
+- [x] Dimensies: 1536 (OpenAI text-embedding-3-small)
+- [x] Provider: Via ProviderRegistry (Fase 14)
+- [x] Distance: Cosine
+- [x] Points: 9 page embeddings opgeslagen
+- [x] Payload indexes: workspaceId (int), projectId (int), groupId (keyword)
+
+### Edge Schema (Fase 16.1):
+- [x] fact field aanwezig op edges (48/48 = 100%)
+- [x] fact wordt automatisch gegenereerd bij sync
+- [x] Temporal fields: valid_at, invalid_at, created_at, expired_at
+- [x] Voorbeelden:
+      - "CLAUDE.md" mentions project "Kanbu"
+      - "CLAUDE.md" mentions concept "Qdrant"
+      - "Genx-Index" links to "CLAUDE.md"
+
+### Wat mist voor Edge Embeddings:
+- [ ] fact_embedding_id field op edges (referentie naar Qdrant point)
+- [ ] fact_embedding_at field op edges (cache timestamp)
+- [ ] Edge embedding generatie (WikiEdgeEmbeddingService)
+- [ ] Edge embedding storage → **Qdrant collectie: kanbu_edge_embeddings**
+- [ ] Edge semantic search (edgeSemanticSearch())
+- [ ] Hybrid search pages + edges (hybridSemanticSearch())
+
+### Storage Beslissing: QDRANT ✅
+| Optie | Voordelen | Nadelen | Beslissing |
+|-------|-----------|---------|------------|
+| Qdrant | Consistent met pages, snelle vector search, schaalbaar | Extra collectie | ✅ GEKOZEN |
+| FalkorDB | Alles in één DB | Minder vector-geoptimaliseerd | ❌ |
+
+**Nieuwe collectie:** `kanbu_edge_embeddings` (1536 dim, Cosine)
+```
+
+#### Acceptatiecriteria
+
+- [x] Bestaande embedding flow volledig gedocumenteerd
+- [x] Storage beslissing voorbereid (Qdrant vs FalkorDB) → **Qdrant gekozen**
+- [x] Geen breaking changes aan bestaande code geïdentificeerd
+
+---
+
+### 19.2 Schema & Storage Design
+
+> **Doel:** Schema uitbreiden voor edge embeddings en storage strategie bepalen
+> **Afhankelijkheid:** 19.1 Validatie ✅
+> **Status:** ✅ COMPLEET (2026-01-13)
+
+#### Pre-Check (VERPLICHT)
+
+```bash
+# Claude Code: Check EERST storage opties!
+
+1. Qdrant capabilities:
+   - Bestaande collectie info
+   - Multi-vector support?
+   - Payload filtering
+
+2. FalkorDB capabilities:
+   - Vector storage in properties?
+   - Vector search support?
+
+3. Graphiti aanpak:
+   - Lees: Code function-check/graphiti-analysis/CORE-MODULES.md
+   - Zoek: fact_embedding storage
+```
+
+#### Storage Beslissing
+
+| Optie | Voordelen | Nadelen |
+|-------|-----------|---------|
+| **Qdrant (Aanbevolen)** | Bestaande infra, snelle vector search, schaalbaar | Extra collectie nodig, sync complexiteit |
+| **FalkorDB** | Alles in één DB, graph+vector queries | Minder geoptimaliseerd voor vectors, grotere graph |
+
+**Aanbeveling:** Qdrant in aparte collectie `kanbu_edge_embeddings`
+
+#### Taken
+
+| Item | Status | Check | Notities |
+|------|--------|-------|----------|
+| **Pre-Check Bevindingen** | | | |
+| Qdrant multi-collectie support | ✅ | Kan meerdere collecties? | 17 collecties actief |
+| FalkorDB vector support | ✅ | Native of via property? | Niet native, Qdrant gekozen |
+| **Storage Implementatie** | | | |
+| Nieuwe Qdrant collectie aanmaken | ✅ | `kanbu_edge_embeddings` | 1536 dim, Cosine, 4 indexes |
+| EdgeEmbeddingPoint interface | ✅ | TypeScript type voor Qdrant point | In WikiEdgeEmbeddingService.ts |
+| **Schema Uitbreiding** | | | |
+| fact_embedding field definiëren | ✅ | Type en storage formaat | `fact_embedding_id`, `fact_embedding_at` |
+| graphitiService edge interface | ✅ | Update TemporalEdgeProperties | Uitgebreid met embedding refs |
+
+#### Implementatie Details (2026-01-13)
+
+**Nieuwe bestanden:**
+- `apps/api/src/lib/ai/wiki/WikiEdgeEmbeddingService.ts` - Complete service class
+
+**Gewijzigde bestanden:**
+- `apps/api/src/lib/ai/wiki/index.ts` - Export toegevoegd
+- `apps/api/src/services/graphitiService.ts` - TemporalEdgeProperties uitgebreid
+
+**Qdrant collectie `kanbu_edge_embeddings`:**
+```
+curl http://localhost:6333/collections/kanbu_edge_embeddings
+
+- vectors.size: 1536
+- vectors.distance: Cosine
+- payload_schema:
+  - workspaceId (integer)
+  - projectId (integer)
+  - pageId (integer)
+  - edgeType (keyword)
+```
+
+#### Schema Design
+
+```typescript
+// apps/api/src/services/graphitiService.ts
+
+// Uitbreiding van TemporalEdgeProperties (Fase 16.1)
+interface TemporalEdgeProperties {
+  // Bestaand (Fase 16)
+  updatedAt: Date
+  created_at: Date
+  expired_at: Date | null
+  valid_at: Date | null
+  invalid_at: Date | null
+  fact: string | null
+
+  // Nieuw (Fase 19)
+  fact_embedding_id?: string   // Reference naar Qdrant point
+  fact_embedding_at?: Date     // Wanneer embedding gegenereerd
+}
+
+// Qdrant Edge Embedding Point
+interface EdgeEmbeddingPoint {
+  id: string                   // edge UUID
+  vector: number[]             // Embedding vector
+  payload: {
+    workspaceId: number
+    projectId?: number
+    pageId: number
+    sourceNodeId: string
+    targetNodeId: string
+    edgeType: string           // MENTIONS, LINKS_TO, etc.
+    fact: string
+    validAt?: string
+    invalidAt?: string
+    createdAt: string
+  }
+}
+```
+
+#### Qdrant Collection Schema
+
+```typescript
+// lib/ai/wiki/WikiEdgeEmbeddingService.ts
+
+const EDGE_COLLECTION_CONFIG = {
+  name: 'kanbu_edge_embeddings',
+  vectors: {
+    size: 1536,                // Match met page embeddings
+    distance: 'Cosine'
+  },
+  payload_schema: {
+    workspaceId: 'integer',
+    projectId: 'integer',
+    pageId: 'integer',
+    edgeType: 'keyword',
+    fact: 'text',
+  }
+}
+```
+
+#### Acceptatiecriteria
+
+- [x] Storage beslissing genomen en gedocumenteerd → **Qdrant**
+- [x] Qdrant collectie schema gedefinieerd → `kanbu_edge_embeddings` aangemaakt
+- [x] Edge interface uitgebreid met embedding fields → `fact_embedding_id`, `fact_embedding_at`
+- [x] Backward compatible met Fase 16 → Geen breaking changes
+
+---
+
+### 19.3 Embedding Generation Pipeline
+
+> **Doel:** Edge embeddings genereren bij wiki sync
+> **Afhankelijkheid:** 19.2 Schema & Storage ✅
+> **Status:** ✅ COMPLEET (2026-01-13)
+
+#### Pre-Check (VERPLICHT)
+
+```bash
+# Claude Code: Check bestaande embedding generation!
+
+1. WikiEmbeddingService.ts
+   - Check: storePageEmbedding() flow
+   - Check: checkEmbeddingStatus() voor caching
+
+2. graphitiService.ts
+   - Check: syncWikiPageWithAiService() flow
+   - Check: Waar worden edges aangemaakt?
+
+3. WikiAiService.ts
+   - Check: embed() en embedBatch() capaciteit
+```
+
+#### Taken
+
+| Item | Status | Check | Notities |
+|------|--------|-------|----------|
+| **Pre-Check Bevindingen** | | | |
+| Page embedding flow gelezen | ✅ | Begrijp storePageEmbedding() | WikiEmbeddingService.ts |
+| Edge creation flow gelezen | ✅ | Waar hooks toevoegen? | Na MERGE query in syncWikiPageWithAiService |
+| **Service Implementatie** | | | |
+| WikiEdgeEmbeddingService.ts | ✅ | Nieuwe service class | Fase 19.2 geïmplementeerd |
+| generateEdgeEmbedding() | ✅ | Single edge embedding | Inclusief context formatting |
+| generateEdgeEmbeddingsBatch() | ✅ | Batch voor alle edges | generateAndStoreEdgeEmbeddings() |
+| storeEdgeEmbedding() | ✅ | Opslaan in Qdrant | Met factHash caching |
+| **Integratie** | | | |
+| Hook in syncWikiPage | ✅ | Na edge creation → generate embeddings | graphitiService.ts regel 754-774 |
+| Incremental updates | ✅ | Alleen nieuwe/gewijzigde edges | Via factHash comparison |
+| **Caching & Performance** | | | |
+| checkEdgeEmbeddingStatus() | ✅ | Skip als al bestaat | Met factHash check |
+| Content hash voor change detection | ✅ | Vergelijk fact hash | hashFact() helper |
+
+#### Implementatie Details (2026-01-13)
+
+**Gewijzigde bestanden:**
+- `apps/api/src/services/graphitiService.ts` v3.6.0
+  - Import: `WikiEdgeEmbeddingService`, `getWikiEdgeEmbeddingService`, `EdgeForEmbedding`
+  - Config: `enableEdgeEmbeddings` (default: true, disable via `DISABLE_EDGE_EMBEDDINGS=true`)
+  - Property: `wikiEdgeEmbeddingService`
+  - Logic: Collect edges in `edgesForEmbedding[]`, call `generateAndStoreEdgeEmbeddings()` after entity loop
+
+**Feature Flag:**
+```bash
+# Disable edge embeddings (default: enabled)
+DISABLE_EDGE_EMBEDDINGS=true
+```
+
+**Flow:**
+```
+syncWikiPageWithAiService()
+├── extractEntities()
+├── for each entity:
+│   ├── MERGE node
+│   ├── MERGE edge with temporal props
+│   └── edgesForEmbedding.push({...})  # Fase 19.3
+├── storePageEmbedding()               # Fase 15.2
+└── generateAndStoreEdgeEmbeddings()   # Fase 19.3 NEW
+```
+
+#### Service Architecture
+
+```typescript
+// apps/api/src/lib/ai/wiki/WikiEdgeEmbeddingService.ts
+
+export class WikiEdgeEmbeddingService {
+  constructor(
+    private aiService: WikiAiService,
+    private qdrantClient: QdrantClient
+  ) {}
+
+  /**
+   * Generate embedding voor een edge fact
+   */
+  async generateEdgeEmbedding(edge: {
+    id: string
+    fact: string
+    edgeType: string
+    sourceNode: string
+    targetNode: string
+  }): Promise<number[]> {
+    // Formaat: "[edgeType] sourceNode → targetNode: fact"
+    const embeddingText = this.formatEdgeForEmbedding(edge)
+    return this.aiService.embed(embeddingText)
+  }
+
+  /**
+   * Format edge voor embedding - inclusief context
+   */
+  private formatEdgeForEmbedding(edge: Edge): string {
+    // "MENTIONS Robin → Authentication Flow: Robin wrote Authentication Flow"
+    return `[${edge.edgeType}] ${edge.sourceNode} → ${edge.targetNode}: ${edge.fact}`
+  }
+
+  /**
+   * Batch generatie voor alle edges van een pagina
+   */
+  async generateAndStoreEdgeEmbeddings(
+    pageId: number,
+    workspaceId: number,
+    projectId: number | null,
+    edges: Edge[]
+  ): Promise<{ stored: number; skipped: number }> {
+    let stored = 0
+    let skipped = 0
+
+    for (const edge of edges) {
+      // Skip als fact leeg of embedding al bestaat
+      if (!edge.fact) {
+        skipped++
+        continue
+      }
+
+      const status = await this.checkEdgeEmbeddingStatus(edge.id)
+      if (status.exists && status.factHash === this.hashFact(edge.fact)) {
+        skipped++
+        continue
+      }
+
+      const embedding = await this.generateEdgeEmbedding(edge)
+      await this.storeEdgeEmbedding({
+        id: edge.id,
+        vector: embedding,
+        payload: {
+          workspaceId,
+          projectId,
+          pageId,
+          sourceNodeId: edge.sourceId,
+          targetNodeId: edge.targetId,
+          edgeType: edge.type,
+          fact: edge.fact,
+          validAt: edge.validAt,
+          invalidAt: edge.invalidAt,
+          createdAt: edge.createdAt
+        }
+      })
+      stored++
+    }
+
+    return { stored, skipped }
+  }
+
+  /**
+   * Store edge embedding in Qdrant
+   */
+  async storeEdgeEmbedding(point: EdgeEmbeddingPoint): Promise<void> {
+    await this.qdrantClient.upsert('kanbu_edge_embeddings', {
+      points: [{
+        id: point.id,
+        vector: point.vector,
+        payload: {
+          ...point.payload,
+          factHash: this.hashFact(point.payload.fact)
+        }
+      }]
+    })
+  }
+}
+```
+
+#### Integration in syncWikiPage
+
+```typescript
+// graphitiService.ts - Na edge creation
+
+async syncWikiPageWithAiService(page: WikiPage) {
+  // ... bestaande logic ...
+
+  // 1. Extract entities (bestaand)
+  const entities = await this.wikiAiService.extractEntities(...)
+
+  // 2. Create edges (bestaand)
+  const edges = await this.createEdges(entities, page)
+
+  // 3. Generate edge embeddings (NIEUW - Fase 19)
+  if (this.edgeEmbeddingService) {
+    await this.edgeEmbeddingService.generateAndStoreEdgeEmbeddings(
+      page.id,
+      page.workspaceId,
+      page.projectId,
+      edges
+    )
+  }
+
+  // 4. Store page embedding (bestaand)
+  await this.wikiEmbeddingService.storePageEmbedding(page)
+}
+```
+
+#### Acceptatiecriteria
+
+- [x] WikiEdgeEmbeddingService class geïmplementeerd → Fase 19.2
+- [x] Edge embeddings worden gegenereerd bij sync → `generateAndStoreEdgeEmbeddings()`
+- [x] Incremental updates werken (alleen gewijzigde edges) → Via factHash comparison
+- [x] Feature flag beschikbaar → `DISABLE_EDGE_EMBEDDINGS=true`
+- [ ] Performance test (< 20% sync time increase) → Te valideren in productie
+
+---
+
+### 19.4 Search Integration
+
+> **Doel:** Edge embeddings integreren in semantic search
+> **Afhankelijkheid:** 19.3 Embedding Generation ✅
+> **Status:** ✅ COMPLEET (2026-01-13)
+
+#### Pre-Check (VERPLICHT)
+
+```bash
+# Claude Code: Check bestaande search implementation!
+
+1. WikiEmbeddingService.ts
+   - Check: semanticSearch() implementation
+   - Check: Hoe worden results gerankt?
+
+2. wikiAi.ts router
+   - Check: semanticSearch endpoint
+   - Check: Response format
+
+3. WikiSearchDialog.tsx
+   - Check: Hoe worden search results getoond?
+```
+
+#### Taken
+
+| Item | Status | Check | Notities |
+|------|--------|-------|----------|
+| **Pre-Check Bevindingen** | | | |
+| Bestaande semanticSearch gelezen | ✅ | Begrijp response format | Via graphitiService, returns pageId/title/score |
+| WikiSearchDialog UI gelezen | ✅ | Hoe results renderen? | ResultItem component, grouped by type |
+| **Backend Search** | | | |
+| edgeSemanticSearch() method | ✅ | Search alleen over edges | Al in Fase 19.2 geïmplementeerd |
+| hybridSemanticSearch() method | ✅ | Pages + edges gecombineerd | WikiEdgeEmbeddingService v1.1.0 |
+| Result ranking logic | ✅ | Score normalisatie | Sort by score descending, slice limit |
+| **API Endpoints** | | | |
+| wikiAi.edgeSemanticSearch | ✅ | Nieuwe tRPC endpoint | wikiAi.ts v1.4.0 |
+| wikiAi.hybridSemanticSearch | ✅ | Pages + edges gecombineerd | wikiAi.ts v1.4.0 |
+| **Frontend Integration** | | | |
+| EdgeSearchResult component | ✅ | Toont edge in search results | EdgeSearchResult.tsx nieuw |
+| WikiSearchDialog update | ✅ | Hybrid search met edges | WikiSearchDialog.tsx v2.2.0 |
+
+#### Implementatie Details (2026-01-13)
+
+**Backend - WikiEdgeEmbeddingService.ts v1.1.0:**
+- `hybridSemanticSearch()` - combineert page + edge search parallel
+- `HybridSearchOptions` type toegevoegd
+- Delegeert page search naar WikiEmbeddingService
+
+**Backend - wikiAi.ts v1.4.0:**
+- `edgeSemanticSearch` endpoint - search over edge facts
+- `hybridSemanticSearch` endpoint - gecombineerde search
+- Input schemas met filtering opties
+
+**Frontend - EdgeSearchResult.tsx (nieuw):**
+- Toont edge type badge (MENTIONS, LINKS_TO)
+- Source → Target node display
+- Fact beschrijving
+- Score percentage
+- Temporal validity info
+
+**Frontend - WikiSearchDialog.tsx v2.2.0:**
+- Gebruikt hybridSemanticSearch in semantic/hybrid modes
+- Nieuwe 'edge' result type
+- "Related Facts" sectie in search results
+- EdgeSearchResult component integratie
+
+#### Search Service Methods
+
+```typescript
+// WikiEdgeEmbeddingService.ts - Search methods
+
+/**
+ * Semantic search over edge embeddings
+ */
+async edgeSemanticSearch(params: {
+  query: string
+  workspaceId: number
+  projectId?: number
+  limit?: number
+  minScore?: number
+}): Promise<EdgeSearchResult[]> {
+  // 1. Generate query embedding
+  const queryEmbedding = await this.aiService.embed(params.query)
+
+  // 2. Search in Qdrant
+  const results = await this.qdrantClient.search('kanbu_edge_embeddings', {
+    vector: queryEmbedding,
+    limit: params.limit || 20,
+    filter: {
+      must: [
+        { key: 'workspaceId', match: { value: params.workspaceId } },
+        ...(params.projectId
+          ? [{ key: 'projectId', match: { value: params.projectId } }]
+          : [])
+      ]
+    },
+    score_threshold: params.minScore || 0.5
+  })
+
+  // 3. Format results
+  return results.map(r => ({
+    edgeId: r.id as string,
+    score: r.score,
+    fact: r.payload.fact,
+    edgeType: r.payload.edgeType,
+    sourceNode: r.payload.sourceNodeId,
+    targetNode: r.payload.targetNodeId,
+    pageId: r.payload.pageId,
+    validAt: r.payload.validAt,
+    invalidAt: r.payload.invalidAt
+  }))
+}
+
+/**
+ * Hybrid search: pages + edges gecombineerd
+ */
+async hybridSemanticSearch(params: {
+  query: string
+  workspaceId: number
+  projectId?: number
+  limit?: number
+  includePages?: boolean
+  includeEdges?: boolean
+}): Promise<HybridSearchResult[]> {
+  const results: HybridSearchResult[] = []
+
+  // 1. Page search (bestaand)
+  if (params.includePages !== false) {
+    const pageResults = await this.wikiEmbeddingService.semanticSearch({
+      query: params.query,
+      workspaceId: params.workspaceId,
+      projectId: params.projectId,
+      limit: params.limit
+    })
+    results.push(...pageResults.map(r => ({
+      type: 'page' as const,
+      score: r.score,
+      ...r
+    })))
+  }
+
+  // 2. Edge search (nieuw)
+  if (params.includeEdges !== false) {
+    const edgeResults = await this.edgeSemanticSearch({
+      query: params.query,
+      workspaceId: params.workspaceId,
+      projectId: params.projectId,
+      limit: params.limit
+    })
+    results.push(...edgeResults.map(r => ({
+      type: 'edge' as const,
+      score: r.score,
+      ...r
+    })))
+  }
+
+  // 3. Sort by score
+  return results.sort((a, b) => b.score - a.score).slice(0, params.limit || 20)
+}
+```
+
+#### Search Result Types
+
+```typescript
+// lib/ai/wiki/types.ts
+
+export interface EdgeSearchResult {
+  edgeId: string
+  score: number
+  fact: string
+  edgeType: 'MENTIONS' | 'LINKS_TO' | string
+  sourceNode: string
+  targetNode: string
+  pageId: number
+  validAt?: string
+  invalidAt?: string
+}
+
+export interface HybridSearchResult {
+  type: 'page' | 'edge'
+  score: number
+  // Page fields
+  pageId?: number
+  title?: string
+  content?: string
+  // Edge fields
+  edgeId?: string
+  fact?: string
+  edgeType?: string
+  sourceNode?: string
+  targetNode?: string
+}
+```
+
+#### UI Component: EdgeSearchResult
+
+```tsx
+// components/wiki/EdgeSearchResult.tsx
+
+interface EdgeSearchResultProps {
+  result: EdgeSearchResult
+  onNavigate: (pageId: number) => void
+}
+
+// Result item mockup:
+// ┌─────────────────────────────────────────────────────────────┐
+// │ 🔗 MENTIONS                                        92% match│
+// │                                                             │
+// │ Robin → Authentication Flow                                │
+// │ "Robin wrote the Authentication Flow documentation"         │
+// │                                                             │
+// │ Valid since: 2024-01-15                                     │
+// │ [Open Page]                                                 │
+// └─────────────────────────────────────────────────────────────┘
+```
+
+#### Acceptatiecriteria
+
+- [x] edgeSemanticSearch() vindt relevante edges → Via WikiEdgeEmbeddingService
+- [x] hybridSemanticSearch() combineert pages + edges correct → Parallel search, sorted by score
+- [x] UI toont edge results duidelijk onderscheiden van page results → EdgeSearchResult.tsx
+- [x] Score normalisatie zorgt voor eerlijke ranking → Cosine similarity 0-1 scale
+
+---
+
+### 19.5 Testing & Migration
+
+> **Doel:** Volledige test coverage en migratie van bestaande edges
+> **Afhankelijkheid:** 19.1-19.4 compleet
+> **Status:** ⏳ PENDING
+
+#### Pre-Check (VERPLICHT)
+
+```bash
+# Claude Code: Check bestaande tests en data!
+
+1. Test framework:
+   - Bestaande embedding tests?
+   - Mock strategy voor Qdrant?
+
+2. Bestaande data:
+   MATCH ()-[e]->() WHERE e.fact IS NOT NULL RETURN count(e)
+   → Hoeveel edges moeten gemigreerd worden?
+
+3. Performance baseline:
+   - Huidige sync time meten
+```
+
+#### Taken
+
+| Item | Status | Check | Notities |
+|------|--------|-------|----------|
+| **Pre-Check Bevindingen** | | | |
+| Bestaande edges geteld | ⏳ | Aantal te migreren | |
+| Performance baseline gemeten | ⏳ | Huidige sync time | |
+| **Unit Tests** | | | |
+| WikiEdgeEmbeddingService.test.ts | ⏳ | Service methods | |
+| edgeSemanticSearch.test.ts | ⏳ | Search functionality | |
+| hybridSearch.test.ts | ⏳ | Combined search | |
+| **Integration Tests** | | | |
+| Full sync + embedding test | ⏳ | Page sync met edge embeddings | |
+| Search accuracy test | ⏳ | Relevante results | |
+| **Migration** | | | |
+| scripts/migrate-edge-embeddings.ts | ⏳ | Backfill bestaande edges | |
+| Migration progress tracking | ⏳ | Logging en status | |
+| Rollback script | ⏳ | Verwijder embeddings indien nodig | |
+| **Performance Tests** | | | |
+| Sync time comparison | ⏳ | Before/after Fase 19 | |
+| Search latency test | ⏳ | < 500ms response time | |
+
+#### Migration Script
+
+```typescript
+// scripts/migrate-edge-embeddings.ts
+
+async function migrateEdgeEmbeddings() {
+  console.log('🚀 Starting edge embedding migration...')
+
+  // 1. Get all edges with facts
+  const edges = await falkorDB.query(`
+    MATCH ()-[e]->()
+    WHERE e.fact IS NOT NULL
+    RETURN e
+  `)
+
+  console.log(`📊 Found ${edges.length} edges to migrate`)
+
+  // 2. Process in batches
+  const BATCH_SIZE = 50
+  let processed = 0
+  let errors = 0
+
+  for (let i = 0; i < edges.length; i += BATCH_SIZE) {
+    const batch = edges.slice(i, i + BATCH_SIZE)
+
+    try {
+      await edgeEmbeddingService.generateAndStoreEdgeEmbeddingsBatch(batch)
+      processed += batch.length
+    } catch (err) {
+      console.error(`❌ Batch ${i}-${i + BATCH_SIZE} failed:`, err)
+      errors += batch.length
+    }
+
+    // Progress
+    const progress = ((processed + errors) / edges.length * 100).toFixed(1)
+    console.log(`📈 Progress: ${progress}% (${processed} success, ${errors} errors)`)
+  }
+
+  console.log(`\n✅ Migration complete!`)
+  console.log(`   Processed: ${processed}`)
+  console.log(`   Errors: ${errors}`)
+}
+```
+
+#### Test Scenarios
+
+```typescript
+const testScenarios = [
+  // Basic edge embedding
+  {
+    name: 'Generate embedding for MENTIONS edge',
+    edge: {
+      type: 'MENTIONS',
+      sourceNode: 'Robin',
+      targetNode: 'Authentication Flow',
+      fact: 'Robin wrote the Authentication Flow documentation'
+    },
+    expected: { dimensions: 1536, stored: true }
+  },
+
+  // Edge search
+  {
+    name: 'Find edge by semantic query',
+    query: 'who wrote authentication docs',
+    expected: {
+      results: 1,
+      topResult: {
+        fact: 'Robin wrote the Authentication Flow documentation',
+        minScore: 0.7
+      }
+    }
+  },
+
+  // Hybrid search
+  {
+    name: 'Hybrid search returns both pages and edges',
+    query: 'authentication',
+    options: { includePages: true, includeEdges: true },
+    expected: {
+      hasPageResults: true,
+      hasEdgeResults: true
+    }
+  },
+
+  // Incremental update
+  {
+    name: 'Skip unchanged edge on re-sync',
+    action: 'sync same page twice',
+    expected: {
+      firstSync: { stored: 3, skipped: 0 },
+      secondSync: { stored: 0, skipped: 3 }
+    }
+  }
+]
+```
+
+#### Acceptatiecriteria
+
+- [ ] Alle unit tests slagen (target: 30+ tests)
+- [ ] Migration script succesvol voor alle bestaande edges
+- [ ] Performance impact < 20% op sync time
+- [ ] Search latency < 500ms
+- [ ] No regressions in existing search functionality
+
+---
+
+### 19.6 Status Overzicht
+
+| Sub-fase | Status | Beschrijving |
+|----------|--------|--------------|
+| **19.1 Validatie Bestaand** | ✅ | Check embedding infra, storage opties - **COMPLEET** |
+| **19.2 Schema & Storage** | ✅ | Qdrant collectie, edge schema - **COMPLEET** |
+| **19.3 Embedding Generation** | ✅ | WikiEdgeEmbeddingService, sync integration - **COMPLEET** |
+| **19.4 Search Integration** | ✅ | Edge search, hybrid search, UI - **COMPLEET** |
+| **19.5 Testing & Migration** | ⏳ | Tests, migration script, performance |
+| **TOTAAL** | 🔄 | **FASE 19 IN PROGRESS (4/5)** |
+
+---
+
+### Aanbevolen Volgorde
+
+```
+19.1 Validatie Bestaand  ──┐
+                           │
+                           ├──▶ 19.2 Schema & Storage ──┐
+                           │                             │
+                           │                             ├──▶ 19.5 Testing & Migration
+                           │                             │
+                           └──▶ 19.3 Embedding Gen ──────┤
+                                                         │
+                               19.4 Search Integration ──┘
+```
+
+1. **19.1 EERST** - Valideer bestaande code en maak storage beslissing
+2. **19.2 na beslissing** - Schema moet vast staan voor implementatie
+3. **19.3 en 19.4 kunnen parallel** - Generation en search onafhankelijk
+4. **19.5 laatst** - Tests en migration na implementatie
+
+---
+
+### Rollback Plan
+
+> **Bij problemen:** Volg deze stappen om terug te draaien
+
+1. **Feature flag:**
+   ```bash
+   # Disable edge embeddings
+   ENABLE_EDGE_EMBEDDINGS=false
+   ```
+
+2. **Qdrant cleanup:**
+   ```bash
+   # Delete edge embeddings collection
+   curl -X DELETE http://localhost:6333/collections/kanbu_edge_embeddings
+   ```
+
+3. **Code rollback:**
+   ```bash
+   # Git revert naar voor Fase 19
+   git log --oneline --grep="Fase 19"
+   git revert <commit-hash>
+   ```
+
+4. **Verify:**
+   ```bash
+   # Ensure page embeddings still work
+   pnpm test:run --grep "embedding"
+   ```
+
+---
+
+### Dependencies
+
+| Dependency | Versie | Doel |
+|------------|--------|------|
+| Fase 16.1 | ✅ Compleet | `fact` field op edges |
+| WikiEmbeddingService | Fase 15.2 | Embedding infrastructure |
+| WikiAiService | Fase 15.1 | embed() method |
+| Qdrant | Bestaand | Vector storage |
+| FalkorDB | Bestaand | Graph met edges |
+
+---
+
+### Beslispunten voor Robin
+
+> **STOP hier en vraag Robin bij deze beslissingen:**
+
+| Vraag | Opties | Aanbeveling |
+|-------|--------|-------------|
+| Storage voor edge embeddings? | Qdrant / FalkorDB / Both | Qdrant (consistent met pages) |
+| Embedding text format? | Fact only / Fact + context | Fact + context (betere search) |
+| Default search mode? | Pages only / Hybrid | Hybrid (beste results) |
+| Migration strategy? | Background / Blocking / Manual | Background (geen downtime) |
+
+---
+
+### Kosten Analyse
+
+> **LET OP:** Edge embeddings verhogen API kosten!
+
+**Schatting per wiki sync:**
+- Gemiddeld 5 edges per pagina
+- text-embedding-3-small: $0.00002 per 1K tokens
+- ~50 tokens per edge fact
+- **Kosten: ~$0.000005 per edge = $0.000025 per page sync**
+
+**Maandelijkse kosten (schatting):**
+- 1000 page syncs/maand: ~$0.025
+- 10000 page syncs/maand: ~$0.25
+
+**Conclusie:** Verwaarloosbaar t.o.v. page embeddings
+
+---
+
+### Changelog
+
+| Datum | Actie |
+|-------|-------|
+| 2026-01-13 | Fase 19.4 Search Integration **COMPLEET** - hybridSemanticSearch, EdgeSearchResult.tsx, WikiSearchDialog v2.2.0 |
+| 2026-01-13 | Fase 19.3 Embedding Generation **COMPLEET** - graphitiService.ts v3.6.0, feature flag DISABLE_EDGE_EMBEDDINGS |
+| 2026-01-13 | Fase 19.2 Schema & Storage **COMPLEET** - Qdrant collectie aangemaakt, WikiEdgeEmbeddingService.ts geïmplementeerd |
+| 2026-01-13 | Fase 19.1 Validatie **COMPLEET** - Gap analyse ingevuld, storage beslissing: Qdrant |
+| 2026-01-13 | Fase 19 plan aangemaakt |
+
+---
+
 ## Graphiti Architectuur
 
 ```

@@ -11,7 +11,7 @@
 |---------|------------|-------|------------|
 | Bi-Temporal Model | ✅ JA | 2026-01-13 | HOOG |
 | Contradiction Detection | 🔄 FASE 17 | 2026-01-13 | HOOG |
-| Edge Embeddings | ⏳ PENDING | 2026-01-13 | MEDIUM |
+| Edge Embeddings | 🔄 FASE 19 | 2026-01-13 | MEDIUM |
 | Community Detection | ⏳ PENDING | 2026-01-13 | LAAG |
 | BM25 Search | ⏳ PENDING | 2026-01-13 | LAAG |
 | Node Embeddings | ⏳ PENDING | 2026-01-13 | LAAG |
@@ -20,6 +20,7 @@
 
 **Legenda:**
 - ✅ JA - Gaan we implementeren
+- 🔄 FASE X - Gepland/In progress in specifieke fase
 - ❌ NEE - Niet implementeren
 - ⏳ PENDING - Nog geen beslissing
 
@@ -98,23 +99,45 @@
 
 ### Edge Embeddings
 
-**Status:** ⏳ PENDING
+**Status:** 🔄 GEPLAND (Fase 19)
 
 **Wat:**
 - Vector embedding per edge fact
 - Semantic search over relaties
-- Opslag in Qdrant of FalkorDB
+- Opslag in Qdrant (aparte collection)
+
+**Bestaande Infrastructuur:**
+- ✅ WikiEmbeddingService - Page embeddings in Qdrant
+- ✅ Qdrant client configuratie
+- ✅ WikiAiService.embed() method
+- ⚠️ Edges hebben geen `fact` veld (moet toegevoegd)
+
+**Wat Fase 19 toevoegt:**
+- 🔄 19.1 Validatie Bestaande Implementatie
+- 🔄 19.2 Schema & Storage Design (Qdrant `kanbu_edge_embeddings` collection)
+- 🔄 19.3 Embedding Generation Pipeline (WikiEdgeEmbeddingService)
+- 🔄 19.4 Search Integration (edgeSemanticSearch, hybridSemanticSearch)
+- 🔄 19.5 Testing & Migration (migrate-edge-embeddings.ts)
+
+**Nieuwe Componenten:**
+- `WikiEdgeEmbeddingService.ts` - Edge embedding generatie & storage
+- `EdgeSearchResult` interface - Search resultaat format
+- `HybridSearchResult` interface - Gecombineerde page + edge results
+- `WikiEdgeSearchResults.tsx` - UI component voor edge results
 
 **Argumenten VOOR:**
 - Fijnmaziger search resultaten
 - Zoeken op relaties, niet alleen paginas
+- Betere RAG context voor AI features
 
 **Argumenten TEGEN:**
-- Extra storage kosten
-- ~16 uur implementatietijd
-- Page embeddings werken al goed
+- Extra storage kosten (Qdrant vectors)
+- Extra API calls voor embedding generatie
+- Complexiteit in search ranking
 
-**Beslissing:** _Te bepalen door Robin_
+**Beslissing:** ✅ IMPLEMENTEREN in Fase 19
+
+**Zie:** [ROADMAP-STATUS.md - Fase 19](../ROADMAP-STATUS.md#fase-19-edge-embeddings-)
 
 ---
 
@@ -224,6 +247,9 @@
 | Datum | Feature | Beslissing | Door | Notities |
 |-------|---------|------------|------|----------|
 | 2026-01-13 | Initiële analyse | N/A | Claude Code | Rapport gemaakt |
+| 2026-01-13 | Bi-Temporal Model | ✅ JA | Robin | Geïmplementeerd in Fase 16 |
+| 2026-01-13 | Contradiction Detection | ✅ JA | Robin | Gepland voor Fase 17 |
+| 2026-01-13 | Edge Embeddings | ✅ JA | Robin | Gepland voor Fase 19 |
 
 ---
 

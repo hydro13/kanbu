@@ -10,6 +10,7 @@
  * Fase 16.3 - Contradiction Detection
  * Fase 17.2 - Enhanced Contradiction Detection
  * Fase 17.3 - Conflict Resolution & Audit Trail
+ * Fase 19.2 - Edge Embeddings (WikiEdgeEmbeddingService)
  */
 
 export {
@@ -119,3 +120,20 @@ export {
   type LogContradictionInput,
   type RevertResult,
 } from './contradictionAudit'
+
+// Fase 19.2 - Edge Embeddings
+// Fase 19.4 - Search Integration (hybridSemanticSearch)
+export {
+  WikiEdgeEmbeddingService,
+  getWikiEdgeEmbeddingService,
+  resetWikiEdgeEmbeddingService,
+  type WikiEdgeEmbeddingConfig,
+  type EdgeEmbeddingPoint,
+  type EdgeEmbeddingPayload,
+  type EdgeSearchResult,
+  type HybridSearchResult,
+  type EdgeForEmbedding,
+  type EdgeSearchOptions,
+  type HybridSearchOptions,
+  type BatchEmbeddingResult,
+} from './WikiEdgeEmbeddingService'

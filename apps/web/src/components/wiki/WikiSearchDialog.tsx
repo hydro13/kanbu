@@ -1,11 +1,12 @@
 /*
  * Wiki Search Dialog Component
- * Version: 2.1.0
+ * Version: 2.2.0
  *
  * Search dialog for wiki pages with:
  * - Local title/slug search
  * - Graphiti graph search (entities/relationships)
  * - Semantic vector search (Qdrant embeddings) - Fase 15.2
+ * - Edge semantic search (relationship facts) - Fase 19.4
  * - Hybrid mode combining all search types
  * - Keyboard navigation
  * - "Show in graph" action on results (Fase 15.5)
@@ -17,6 +18,9 @@
  *
  * Modified: 2026-01-12
  * Change: Fase 15.5 - Added "Show in graph" button for cross-feature linking
+ *
+ * Modified: 2026-01-13
+ * Change: Fase 19.4 - Added edge semantic search with hybrid page+edge results
  * ===================================================================
  */
 
@@ -40,9 +44,11 @@ import {
   Loader2,
   Network,
   Zap,
+  Link2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { trpc } from '@/lib/trpc'
+import { EdgeSearchResult, type EdgeSearchResultData } from './EdgeSearchResult'
 
 // =============================================================================
 // Types
@@ -63,10 +69,12 @@ interface SearchResult {
   id: number
   title: string
   slug: string
-  type: 'local' | 'graph' | 'semantic'
+  type: 'local' | 'graph' | 'semantic' | 'edge'
   score?: number
   status?: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'
   snippet?: string
+  // Edge-specific fields (Fase 19.4)
+  edgeData?: EdgeSearchResultData
 }
 
 interface WikiSearchDialogProps {
@@ -128,6 +136,18 @@ interface ResultItemProps {
 }
 
 function ResultItem({ result, isSelected, onClick, onShowInGraph }: ResultItemProps) {
+  // For edge results, delegate to EdgeSearchResult component
+  if (result.type === 'edge' && result.edgeData) {
+    return (
+      <EdgeSearchResult
+        result={result.edgeData}
+        isSelected={isSelected}
+        onClick={onClick}
+        onShowInGraph={onShowInGraph}
+      />
+    )
+  }
+
   const getIcon = () => {
     switch (result.type) {
       case 'semantic':
@@ -255,12 +275,16 @@ export function WikiSearchDialog({
   const [searchMode, setSearchMode] = useState<SearchMode>(defaultMode)
   const [graphResults, setGraphResults] = useState<SearchResult[]>([])
   const [semanticResults, setSemanticResults] = useState<SearchResult[]>([])
+  const [edgeResults, setEdgeResults] = useState<SearchResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
 
   const utils = trpc.useUtils()
 
   // Semantic search mutation (Fase 15.2)
   const semanticSearchMutation = trpc.wikiAi.semanticSearch.useMutation()
+
+  // Hybrid search mutation (Fase 19.4) - combines pages + edges
+  const hybridSearchMutation = trpc.wikiAi.hybridSemanticSearch.useMutation()
 
   // Local search results
   const localResults = searchLocalPages(pages, query)
@@ -288,12 +312,15 @@ export function WikiSearchDialog({
         break
       case 'semantic':
         addUnique(semanticResults)
+        // Also add edge results in semantic mode (Fase 19.4)
+        addUnique(edgeResults)
         break
       case 'hybrid':
       default:
-        // Hybrid: local first, then semantic (higher relevance), then graph
+        // Hybrid: local first, then semantic + edges (higher relevance), then graph
         addUnique(localResults)
         addUnique(semanticResults)
+        addUnique(edgeResults)
         addUnique(graphResults)
         break
     }
@@ -353,36 +380,47 @@ export function WikiSearchDialog({
     return () => clearTimeout(timeoutId)
   }, [query, workspaceId, pages, utils.client, searchMode])
 
-  // Semantic search (vector-based via Qdrant)
+  // Semantic search (vector-based via Qdrant) - Fase 15.2
+  // In hybrid mode, uses hybridSemanticSearch to get both pages + edges (Fase 19.4)
   useEffect(() => {
     if (!query.trim() || query.length < 2) {
       setSemanticResults([])
+      setEdgeResults([])
       return
     }
 
     if (searchMode !== 'semantic' && searchMode !== 'hybrid') {
       setSemanticResults([])
+      setEdgeResults([])
       return
     }
 
     const timeoutId = setTimeout(async () => {
       setIsSearching(true)
       try {
-        const result = await semanticSearchMutation.mutateAsync({
+        // Use hybrid search for both semantic and hybrid modes (Fase 19.4)
+        const result = await hybridSearchMutation.mutateAsync({
           workspaceId,
           projectId,
           query,
-          limit: 5,
+          includePages: true,
+          includeEdges: true,
+          limitPerType: 5,
+          limit: 10,
           scoreThreshold: 0.5,
         })
 
-        // Convert to SearchResult format
-        const semantic: SearchResult[] = result.results
+        // Separate page and edge results
+        const pageResults = result.results.filter(r => r.type === 'page')
+        const edgeResultsRaw = result.results.filter(r => r.type === 'edge')
+
+        // Convert page results to SearchResult format
+        const semantic: SearchResult[] = pageResults
           .map((r) => {
             const localPage = pages.find((p) => p.id === r.pageId)
             return {
-              id: r.pageId,
-              title: localPage?.title ?? r.title,
+              id: r.pageId!,
+              title: localPage?.title ?? r.title ?? 'Unknown',
               slug: localPage?.slug ?? '',
               type: 'semantic' as const,
               score: r.score,
@@ -391,17 +429,43 @@ export function WikiSearchDialog({
           })
           .filter((r) => r.slug)
 
+        // Convert edge results to SearchResult format (Fase 19.4)
+        const edges: SearchResult[] = edgeResultsRaw
+          .map((r) => {
+            const localPage = pages.find((p) => p.id === r.pageId)
+            return {
+              id: r.pageId!, // Use pageId for navigation
+              title: r.fact ?? 'Unknown fact',
+              slug: localPage?.slug ?? '',
+              type: 'edge' as const,
+              score: r.score,
+              status: localPage?.status,
+              edgeData: {
+                edgeId: r.edgeId ?? '',
+                score: r.score,
+                fact: r.fact ?? '',
+                edgeType: r.edgeType ?? '',
+                sourceNodeId: r.sourceNodeId ?? '',
+                targetNodeId: r.targetNodeId ?? '',
+                pageId: r.pageId!,
+              },
+            }
+          })
+          .filter((r) => r.slug)
+
         setSemanticResults(semantic)
+        setEdgeResults(edges)
       } catch (error) {
-        console.error('Semantic search failed:', error)
+        console.error('Hybrid semantic search failed:', error)
         setSemanticResults([])
+        setEdgeResults([])
       } finally {
         setIsSearching(false)
       }
     }, 300)
 
     return () => clearTimeout(timeoutId)
-    // Note: semanticSearchMutation excluded - mutateAsync is stable, we only want input changes to trigger
+    // Note: hybridSearchMutation excluded - mutateAsync is stable, we only want input changes to trigger
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query, workspaceId, projectId, pages, searchMode])
 
@@ -412,6 +476,7 @@ export function WikiSearchDialog({
       setSelectedIndex(0)
       setGraphResults([])
       setSemanticResults([])
+      setEdgeResults([])
       setSearchMode(defaultMode)
       // Focus input after dialog animation
       setTimeout(() => inputRef.current?.focus(), 100)
@@ -470,6 +535,8 @@ export function WikiSearchDialog({
         return { label: 'Entity Matches', icon: <Network className="h-3 w-3" /> }
       case 'semantic':
         return { label: 'AI Matches', icon: <Sparkles className="h-3 w-3" /> }
+      case 'edge':
+        return { label: 'Related Facts', icon: <Link2 className="h-3 w-3" /> }
     }
   }
 
@@ -510,7 +577,7 @@ export function WikiSearchDialog({
               }
               className="pl-9 pr-8"
             />
-            {(isSearching || semanticSearchMutation.isPending) && (
+            {(isSearching || semanticSearchMutation.isPending || hybridSearchMutation.isPending) && (
               <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
             )}
           </div>
@@ -535,7 +602,7 @@ export function WikiSearchDialog({
               </div>
             ) : allResults.length === 0 ? (
               <div className="px-3 py-8 text-center text-sm text-muted-foreground">
-                {isSearching || semanticSearchMutation.isPending ? (
+                {isSearching || semanticSearchMutation.isPending || hybridSearchMutation.isPending ? (
                   <>
                     <Loader2 className="h-6 w-6 mx-auto mb-2 animate-spin" />
                     <p>
@@ -559,8 +626,8 @@ export function WikiSearchDialog({
               </div>
             ) : (
               <div className="space-y-1">
-                {/* Render results grouped by type */}
-                {(['local', 'semantic', 'graph'] as const).map((type) => {
+                {/* Render results grouped by type (Fase 19.4: added 'edge') */}
+                {(['local', 'semantic', 'edge', 'graph'] as const).map((type) => {
                   const results = groupedResults[type]
                   if (!results?.length) return null
 

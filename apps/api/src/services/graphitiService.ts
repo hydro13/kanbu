@@ -1,6 +1,6 @@
 /*
  * Graphiti Service
- * Version: 3.5.0
+ * Version: 3.6.0
  *
  * Knowledge graph service for Wiki using FalkorDB.
  * Integrates with Python Graphiti service for LLM-based entity extraction.
@@ -9,13 +9,14 @@
  *
  * ===================================================================
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
- * Signed: 2026-01-12
+ * Signed: 2026-01-13
  * Change: Fase 15.1 - WikiAiService integration for provider-based extraction
  * Change: Fase 15.2 - WikiEmbeddingService for semantic search via Qdrant
  * Change: Fase 16.1 - Bi-temporal edge fields (valid_at, invalid_at, created_at, expired_at, fact)
  * Change: Fase 16.2 - LLM-based date extraction (enabled by default, DISABLE_DATE_EXTRACTION env var to disable)
  * Change: Fase 16.3 - Contradiction detection and resolution (invalidates outdated facts)
  * Change: Fase 16.4 - Temporal queries with FalkorDB fallback (getFactsAsOf, temporalSearch)
+ * Change: Fase 19.3 - Edge embedding generation (WikiEdgeEmbeddingService integration)
  * ===================================================================
  */
 
@@ -32,12 +33,15 @@ import {
   getWikiAiService,
   WikiEmbeddingService,
   getWikiEmbeddingService,
+  WikiEdgeEmbeddingService,
+  getWikiEdgeEmbeddingService,
   getContradictionAuditService,
   ContradictionCategory,
   type ContradictionAuditEntry,
   type WikiContext,
   type SemanticSearchResult,
   type ExistingFact,
+  type EdgeForEmbedding,
 } from '../lib/ai/wiki'
 
 // =============================================================================
@@ -56,6 +60,14 @@ export interface GraphitiConfig {
    * @default true
    */
   enableDateExtraction?: boolean
+  /**
+   * Enable edge embedding generation (Fase 19.3)
+   * When enabled, generates vector embeddings for edge facts during sync
+   * Stored in Qdrant collection 'kanbu_edge_embeddings' for semantic search
+   * Can be disabled via DISABLE_EDGE_EMBEDDINGS=true env var
+   * @default true
+   */
+  enableEdgeEmbeddings?: boolean
 }
 
 export interface WikiEpisode {
@@ -91,7 +103,7 @@ export interface GraphEdge {
 }
 
 /**
- * Bi-temporal edge properties (Fase 16.1)
+ * Bi-temporal edge properties (Fase 16.1, extended Fase 19.2)
  *
  * Transaction Time: When the edge was recorded in the system
  * - created_at: When the edge was first created
@@ -104,6 +116,10 @@ export interface GraphEdge {
  * Additional:
  * - fact: Human-readable description of the relationship
  * - updatedAt: Last modification time (kept for backwards compatibility)
+ *
+ * Fase 19.2 - Edge Embeddings:
+ * - fact_embedding_id: Reference to Qdrant point ID for this edge's embedding
+ * - fact_embedding_at: When the embedding was last generated (for cache invalidation)
  */
 export interface TemporalEdgeProperties {
   // Transaction time
@@ -116,6 +132,10 @@ export interface TemporalEdgeProperties {
 
   // Fact description
   fact?: string         // Human-readable description of the relationship
+
+  // Fase 19.2 - Edge embeddings
+  fact_embedding_id?: string   // Reference to Qdrant point ID
+  fact_embedding_at?: string   // ISO timestamp - when embedding was generated
 
   // Legacy (kept for compatibility)
   updatedAt: string     // ISO timestamp - last update time
@@ -171,23 +191,27 @@ export class GraphitiService {
   private pythonServiceAvailable: boolean | null = null // null = unknown, check on first use
   private wikiAiService: WikiAiService | null = null
   private wikiEmbeddingService: WikiEmbeddingService | null = null
+  private wikiEdgeEmbeddingService: WikiEdgeEmbeddingService | null = null // Fase 19.3
   private prisma: PrismaClient | null = null
   private enableDateExtraction: boolean = true // Fase 16.2
+  private enableEdgeEmbeddings: boolean = true // Fase 19.3
 
   constructor(config?: Partial<GraphitiConfig>, prisma?: PrismaClient) {
     const host = config?.host ?? process.env.FALKORDB_HOST ?? 'localhost'
     const port = config?.port ?? parseInt(process.env.FALKORDB_PORT ?? '6379')
     this.graphName = config?.graphName ?? 'kanbu_wiki'
     this.enableDateExtraction = config?.enableDateExtraction ?? (process.env.DISABLE_DATE_EXTRACTION !== 'true')
+    this.enableEdgeEmbeddings = config?.enableEdgeEmbeddings ?? (process.env.DISABLE_EDGE_EMBEDDINGS !== 'true')
 
     // Initialize Python service client
     this.pythonClient = getGraphitiClient()
 
-    // Initialize WikiAiService and WikiEmbeddingService if Prisma is provided
+    // Initialize WikiAiService, WikiEmbeddingService, and WikiEdgeEmbeddingService if Prisma is provided
     if (prisma) {
       this.prisma = prisma
       this.wikiAiService = getWikiAiService(prisma)
       this.wikiEmbeddingService = getWikiEmbeddingService(prisma)
+      this.wikiEdgeEmbeddingService = getWikiEdgeEmbeddingService(prisma) // Fase 19.3
     }
 
     this.redis = new Redis({
@@ -217,6 +241,7 @@ export class GraphitiService {
     this.prisma = prisma
     this.wikiAiService = getWikiAiService(prisma)
     this.wikiEmbeddingService = getWikiEmbeddingService(prisma)
+    this.wikiEdgeEmbeddingService = getWikiEdgeEmbeddingService(prisma) // Fase 19.3
   }
 
   // ===========================================================================
@@ -499,6 +524,9 @@ export class GraphitiService {
     let newEntityCount = 0
     let skippedEntityCount = 0
 
+    // Fase 19.3: Collect edges for embedding generation
+    const edgesForEmbedding: EdgeForEmbedding[] = []
+
     for (const entity of extractionResult.entities) {
       // Map entity type to graph label
       const graphType = this.mapEntityTypeToGraphLabel(entity.type)
@@ -677,6 +705,20 @@ export class GraphitiService {
         MERGE (p)-[r:MENTIONS]->(e)
         SET ${temporalProps}
       `)
+
+      // Fase 19.3: Collect edge for embedding generation
+      if (this.enableEdgeEmbeddings && mentionsFact) {
+        edgesForEmbedding.push({
+          id: `edge-${pageId}-${entity.name}`,
+          fact: mentionsFact,
+          edgeType: 'MENTIONS',
+          sourceNode: title,
+          targetNode: entity.name,
+          validAt: validAt?.toISOString(),
+          invalidAt: invalidAt?.toISOString(),
+          createdAt: timestamp.toISOString(),
+        })
+      }
     }
 
     // Fase 17.3.1: Enhanced logging with optimization stats
@@ -706,6 +748,28 @@ export class GraphitiService {
         console.warn(
           `[GraphitiService] Failed to store embedding for page ${pageId}: ` +
           `${embeddingError instanceof Error ? embeddingError.message : 'Unknown error'}`
+        )
+      }
+    }
+
+    // Fase 19.3: Generate edge embeddings for semantic search over relations
+    if (this.enableEdgeEmbeddings && this.wikiEdgeEmbeddingService && capabilities.embedding && edgesForEmbedding.length > 0) {
+      try {
+        const edgeResult = await this.wikiEdgeEmbeddingService.generateAndStoreEdgeEmbeddings(
+          context,
+          pageId,
+          edgesForEmbedding
+        )
+        if (edgeResult.stored > 0 || edgeResult.skipped > 0) {
+          console.log(
+            `[GraphitiService] Edge embeddings for page ${pageId}: ${edgeResult.stored} stored, ${edgeResult.skipped} skipped`
+          )
+        }
+      } catch (edgeEmbeddingError) {
+        // Don't fail the sync if edge embedding storage fails
+        console.warn(
+          `[GraphitiService] Failed to store edge embeddings for page ${pageId}: ` +
+          `${edgeEmbeddingError instanceof Error ? edgeEmbeddingError.message : 'Unknown error'}`
         )
       }
     }
