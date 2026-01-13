@@ -316,14 +316,18 @@ export class WikiEdgeEmbeddingService {
       // Generate embedding
       const embedding = await this.generateEdgeEmbedding(context, edge)
 
+      // Generate numeric point ID from edge string ID
+      const pointId = this.generatePointId(edge.id)
+
       // Store in Qdrant
       await this.client.upsert(this.collectionName, {
         wait: true,
         points: [
           {
-            id: edge.id,
+            id: pointId,
             vector: embedding,
             payload: {
+              edgeId: edge.id, // Store original string ID for reference
               workspaceId: context.workspaceId,
               projectId: context.projectId ?? null,
               pageId,
@@ -428,8 +432,9 @@ export class WikiEdgeEmbeddingService {
     currentFact: string
   ): Promise<{ exists: boolean; needsUpdate: boolean; currentHash?: string }> {
     try {
+      const pointId = this.generatePointId(edgeId)
       const points = await this.client.retrieve(this.collectionName, {
-        ids: [edgeId],
+        ids: [pointId],
         with_payload: true,
       })
 
@@ -462,6 +467,21 @@ export class WikiEdgeEmbeddingService {
       hash = hash & hash // Convert to 32bit integer
     }
     return hash.toString(16)
+  }
+
+  /**
+   * Generate a stable numeric ID from edge ID string
+   * Qdrant requires either unsigned integers or UUIDs for point IDs
+   */
+  private generatePointId(edgeId: string): number {
+    let hash = 0
+    for (let i = 0; i < edgeId.length; i++) {
+      const char = edgeId.charCodeAt(i)
+      hash = ((hash << 5) - hash) + char
+      hash = hash >>> 0 // Convert to unsigned 32-bit integer
+    }
+    // Ensure we have a positive non-zero number
+    return hash || 1
   }
 
   // ===========================================================================
@@ -502,9 +522,9 @@ export class WikiEdgeEmbeddingService {
         with_payload: true,
       })
 
-      // Map results
+      // Map results - use edgeId from payload (original string ID)
       return searchResult.map(result => ({
-        edgeId: result.id as string,
+        edgeId: (result.payload?.edgeId as string) || String(result.id),
         score: result.score,
         fact: result.payload?.fact as string,
         edgeType: result.payload?.edgeType as string,
@@ -662,9 +682,10 @@ export class WikiEdgeEmbeddingService {
    */
   async deleteEdgeEmbedding(edgeId: string): Promise<boolean> {
     try {
+      const pointId = this.generatePointId(edgeId)
       await this.client.delete(this.collectionName, {
         wait: true,
-        points: [edgeId],
+        points: [pointId],
       })
 
       console.log(`[WikiEdgeEmbeddingService] Deleted embedding for edge ${edgeId}`)

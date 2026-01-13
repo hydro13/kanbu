@@ -1,6 +1,6 @@
 /**
  * Wiki AI Procedures
- * Version: 1.4.0
+ * Version: 1.5.0
  *
  * tRPC procedures for Wiki AI features.
  * Provides access to embeddings, entity extraction, text operations,
@@ -12,6 +12,7 @@
  * Fase: 15.3 - Ask the Wiki (RAG Chat)
  * Fase: 15.5 - Background Indexing
  * Fase: 19.4 - Edge Search Integration
+ * Fase: 20.5 - BM25 Keyword Search & RRF Hybrid Search
  *
  * =============================================================================
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
@@ -21,6 +22,9 @@
  *
  * Modified: 2026-01-13
  * Change: Fase 19.4 - Added edgeSemanticSearch and hybridSemanticSearch endpoints
+ *
+ * Modified: 2026-01-13
+ * Change: Fase 20.5 - Added keywordSearch and rrfHybridSearch endpoints
  * =============================================================================
  */
 
@@ -36,6 +40,8 @@ import {
   WikiAiError,
   type WikiContext,
 } from '../../lib/ai/wiki'
+import { WikiBm25Service } from '../../lib/ai/wiki/WikiBm25Service'
+import { WikiHybridSearchService } from '../../lib/ai/wiki/WikiHybridSearchService'
 import { getGraphitiService } from '../../services/graphitiService'
 
 // =============================================================================
@@ -184,6 +190,37 @@ const hybridSemanticSearchSchema = z.object({
   /** Max total results */
   limit: z.number().min(1).max(100).optional().default(20),
   scoreThreshold: z.number().min(0).max(1).optional().default(0.5),
+})
+
+// Keyword Search schema (Fase 20.5 - BM25)
+const keywordSearchSchema = z.object({
+  workspaceId: z.number(),
+  projectId: z.number().optional(),
+  query: z.string().min(1).max(1000),
+  limit: z.number().min(1).max(50).optional().default(20),
+  language: z.enum(['english', 'dutch', 'german', 'simple']).optional().default('english'),
+})
+
+// RRF Hybrid Search schema (Fase 20.5 - BM25 + Vector + Edge fusion)
+const rrfHybridSearchSchema = z.object({
+  workspaceId: z.number(),
+  projectId: z.number().optional(),
+  query: z.string().min(1).max(1000),
+  limit: z.number().min(1).max(50).optional().default(20),
+  /** Enable BM25 keyword search (default: true) */
+  useBm25: z.boolean().optional().default(true),
+  /** Enable semantic vector search (default: true) */
+  useVector: z.boolean().optional().default(true),
+  /** Enable edge/relationship search (default: true) */
+  useEdge: z.boolean().optional().default(true),
+  /** RRF smoothing factor k (default: 60) */
+  rrfK: z.number().min(1).max(200).optional().default(60),
+  /** Weight for BM25 results (default: 1.0) */
+  bm25Weight: z.number().min(0).max(5).optional().default(1.0),
+  /** Weight for vector results (default: 1.0) */
+  vectorWeight: z.number().min(0).max(5).optional().default(1.0),
+  /** Weight for edge results (default: 0.5) */
+  edgeWeight: z.number().min(0).max(5).optional().default(0.5),
 })
 
 // =============================================================================
@@ -1143,6 +1180,122 @@ export const wikiAiRouter = router({
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: error instanceof Error ? error.message : 'Hybrid semantic search failed',
+        })
+      }
+    }),
+
+  // ===========================================================================
+  // BM25 Keyword Search (Fase 20.5)
+  // ===========================================================================
+
+  /**
+   * Search wiki pages by keyword (BM25/Full-text search)
+   *
+   * Uses PostgreSQL full-text search with tsvector/tsquery.
+   * Returns results ranked by BM25 relevance with highlighted headlines.
+   */
+  keywordSearch: protectedProcedure
+    .input(keywordSearchSchema)
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.user!.id
+
+      // Verify access
+      await verifyWorkspaceAccess(userId, input.workspaceId)
+
+      const bm25Service = new WikiBm25Service(ctx.prisma)
+
+      try {
+        const results = await bm25Service.search(input.query, {
+          workspaceId: input.workspaceId,
+          projectId: input.projectId,
+          limit: input.limit,
+          language: input.language,
+        })
+
+        return {
+          success: true,
+          results: results.map(r => ({
+            pageId: r.pageId,
+            title: r.title,
+            slug: r.slug,
+            rank: r.rank,
+            headline: r.headline,
+            source: r.source,
+          })),
+          count: results.length,
+          query: input.query,
+        }
+      } catch (error) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: error instanceof Error ? error.message : 'Keyword search failed',
+        })
+      }
+    }),
+
+  // ===========================================================================
+  // RRF Hybrid Search (Fase 20.5)
+  // ===========================================================================
+
+  /**
+   * Hybrid search combining BM25, Vector, and Edge search with RRF fusion
+   *
+   * Uses Reciprocal Rank Fusion (RRF) to combine results from:
+   * - BM25 keyword search (PostgreSQL full-text)
+   * - Vector semantic search (Qdrant embeddings)
+   * - Edge relationship search (Qdrant edge embeddings)
+   *
+   * Returns unified results ranked by combined RRF score.
+   */
+  rrfHybridSearch: protectedProcedure
+    .input(rrfHybridSearchSchema)
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.user!.id
+
+      // Verify access
+      await verifyWorkspaceAccess(userId, input.workspaceId)
+
+      const bm25Service = new WikiBm25Service(ctx.prisma)
+      const embeddingService = getWikiEmbeddingService(ctx.prisma)
+      const edgeService = getWikiEdgeEmbeddingService(ctx.prisma)
+      const hybridService = new WikiHybridSearchService(
+        bm25Service,
+        embeddingService,
+        edgeService
+      )
+
+      try {
+        const results = await hybridService.search(input.query, {
+          workspaceId: input.workspaceId,
+          projectId: input.projectId,
+          limit: input.limit,
+          useBm25: input.useBm25,
+          useVector: input.useVector,
+          useEdge: input.useEdge,
+          rrfK: input.rrfK,
+          bm25Weight: input.bm25Weight,
+          vectorWeight: input.vectorWeight,
+          edgeWeight: input.edgeWeight,
+        })
+
+        // Count results by source
+        const bm25Count = results.filter(r => r.sources.includes('bm25')).length
+        const vectorCount = results.filter(r => r.sources.includes('vector')).length
+        const edgeCount = results.filter(r => r.sources.includes('edge')).length
+
+        return {
+          success: true,
+          results,
+          count: results.length,
+          bm25Count,
+          vectorCount,
+          edgeCount,
+          query: input.query,
+        }
+      } catch (error) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: error instanceof Error ? error.message : 'RRF hybrid search failed',
         })
       }
     }),
