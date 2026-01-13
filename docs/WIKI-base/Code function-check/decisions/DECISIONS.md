@@ -13,7 +13,7 @@
 | Contradiction Detection | 🔄 FASE 17 | 2026-01-13 | HOOG |
 | Edge Embeddings | 🔄 FASE 19 | 2026-01-13 | MEDIUM |
 | Community Detection | ⏳ PENDING | 2026-01-13 | LAAG |
-| BM25 Search | ⏳ PENDING | 2026-01-13 | LAAG |
+| BM25 Search | 🔄 FASE 20 | 2026-01-13 | MEDIUM |
 | Node Embeddings | ⏳ PENDING | 2026-01-13 | LAAG |
 | Deduplication | ⏳ PENDING | 2026-01-13 | MEDIUM |
 | Reflexion Extraction | ⏳ PENDING | 2026-01-13 | LAAG |
@@ -163,21 +163,50 @@
 
 ### BM25 Search
 
-**Status:** ⏳ PENDING
+**Status:** 🔄 GEPLAND (Fase 20)
 
 **Wat:**
 - Keyword-based search naast vector search
-- Hybrid fusion met RRF
+- Hybrid fusion met RRF (Reciprocal Rank Fusion)
+- PostgreSQL Full-Text Search (tsvector/tsquery)
+
+**Bestaande Infrastructuur:**
+- ✅ Vector search via Qdrant (Fase 15)
+- ✅ Edge search via Qdrant (Fase 19)
+- ✅ Python Graphiti heeft BM25 (als fallback)
+- ⚠️ Geen native BM25 in Kanbu Node.js backend
+- ⚠️ Geen searchVector kolom in WikiPage models
+
+**Wat Fase 20 toevoegt:**
+- 🔄 20.1 Validatie Bestaande Implementatie
+- 🔄 20.2 BM25 Index Schema & Setup (PostgreSQL tsvector + GIN indexes)
+- 🔄 20.3 BM25 Search Service (WikiBm25Service.ts)
+- 🔄 20.4 Hybrid Fusion RRF (WikiHybridSearchService.ts)
+- 🔄 20.5 UI Integration & Testing
+
+**Nieuwe Componenten:**
+- `WikiBm25Service.ts` - PostgreSQL full-text search
+- `WikiHybridSearchService.ts` - RRF fusion van BM25 + Vector + Edge
+- `searchVector` kolom in WikiPage models
+- GIN indexes voor snelle full-text search
+- `graphiti.hybridSearch` tRPC endpoint
+- `graphiti.keywordSearch` tRPC endpoint
 
 **Argumenten VOOR:**
-- Betere keyword matching
-- Gefuseerde ranking
+- Betere keyword matching (exacte termen)
+- Gefuseerde ranking via RRF
+- Gratis - geen API calls nodig
+- Sneller dan vector search voor exacte matches
+- Highlights in zoekresultaten (ts_headline)
 
 **Argumenten TEGEN:**
-- Vector search werkt goed
-- Extra complexity
+- Extra database kolom + indexes
+- Iets meer complexity in search layer
+- Triggers nodig voor auto-update
 
-**Beslissing:** _Te bepalen door Robin_
+**Beslissing:** ✅ IMPLEMENTEREN in Fase 20
+
+**Zie:** [ROADMAP-STATUS.md - Fase 20](../ROADMAP-STATUS.md#fase-20-bm25-search--hybrid-fusion-)
 
 ---
 
@@ -250,6 +279,7 @@
 | 2026-01-13 | Bi-Temporal Model | ✅ JA | Robin | Geïmplementeerd in Fase 16 |
 | 2026-01-13 | Contradiction Detection | ✅ JA | Robin | Gepland voor Fase 17 |
 | 2026-01-13 | Edge Embeddings | ✅ JA | Robin | Gepland voor Fase 19 |
+| 2026-01-13 | BM25 Search | ✅ JA | Robin | Gepland voor Fase 20 |
 
 ---
 

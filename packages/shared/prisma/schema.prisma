@@ -633,6 +633,8 @@ model WikiPage {
   slug             String               @db.VarChar(255)
   sortOrder        Int                  @default(0) @map("sort_order")
   status           WikiPageStatus       @default(DRAFT)
+  /// Full-text search vector (auto-populated by database trigger) - Fase 20.2
+  searchVector     Unsupported("tsvector")? @map("search_vector")
   versions         ProjectWikiVersion[]
   parent           WikiPage?            @relation("ProjectWikiHierarchy", fields: [parentId], references: [id])
   children         WikiPage[]           @relation("ProjectWikiHierarchy")
@@ -682,6 +684,8 @@ model WorkspaceWikiPage {
   graphitiSyncedAt DateTime?              @map("graphiti_synced_at")
   publishedAt      DateTime?              @map("published_at")
   status           WikiPageStatus         @default(DRAFT)
+  /// Full-text search vector (auto-populated by database trigger) - Fase 20.2
+  searchVector     Unsupported("tsvector")? @map("search_vector")
   parent           WorkspaceWikiPage?     @relation("WikiPageHierarchy", fields: [parentId], references: [id])
   children         WorkspaceWikiPage[]    @relation("WikiPageHierarchy")
   workspace        Workspace              @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
