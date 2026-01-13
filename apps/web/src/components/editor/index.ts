@@ -51,6 +51,8 @@ export type { MentionResult, MentionPluginProps } from './MentionPlugin'
 export { SignaturePlugin } from './SignaturePlugin'
 export type { SignatureUser, SignaturePluginProps } from './SignaturePlugin'
 
+export { EditorMinimap } from './EditorMinimap'
+
 // Nodes
 export {
   ImageNode,

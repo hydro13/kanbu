@@ -615,7 +615,8 @@ export function WikiPageView({
       {/* Content + Backlinks */}
       <div
         ref={contentRef}
-        className="flex-1 min-h-0 overflow-y-auto relative"
+        className="flex-1 min-h-0 overflow-y-auto relative [&::-webkit-scrollbar]:hidden"
+        style={{ scrollbarWidth: 'none' }}
         onContextMenu={handleContextMenu}
       >
         {/* Key excludes updatedAt to prevent editor remount on auto-save refetch */}
@@ -641,6 +642,7 @@ export function WikiPageView({
           enableSignatures={!!currentUser || !!searchUsers}
           currentUser={currentUser}
           searchUsersForSignature={searchUsers}
+          showMinimap={!isEditing}
         />
 
         {/* Backlinks and Related Pages panel */}

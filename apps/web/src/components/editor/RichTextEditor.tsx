@@ -48,6 +48,7 @@ import { TaskRefPlugin, type TaskResult } from './TaskRefPlugin'
 import { TaskRefCleanupPlugin } from './TaskRefCleanupPlugin'
 import { MentionPlugin, type MentionResult } from './MentionPlugin'
 import { SignaturePlugin, type SignatureUser } from './SignaturePlugin'
+import { EditorMinimap } from './EditorMinimap'
 import { ImageNode, VideoNode, EmbedNode, WikiLinkNode, TaskRefNode, MentionNode, SignatureNode } from './nodes'
 import './editor.css'
 
@@ -98,6 +99,10 @@ export interface RichTextEditorProps {
   currentUser?: SignatureUser
   /** Function to search for users (for signature autocomplete) */
   searchUsersForSignature?: (query: string) => Promise<SignatureUser[]>
+  /** Show VSCode-style minimap on the right side */
+  showMinimap?: boolean
+  /** Width of the minimap in pixels */
+  minimapWidth?: number
 }
 
 // =============================================================================
@@ -167,6 +172,8 @@ export function RichTextEditor({
   enableSignatures = false,
   currentUser,
   searchUsersForSignature,
+  showMinimap = false,
+  minimapWidth = 100,
 }: RichTextEditorProps) {
   // Editor configuration
   const initialConfig = {
@@ -225,70 +232,76 @@ export function RichTextEditor({
         {/* Toolbar */}
         {showToolbar && !readOnly && <ToolbarPlugin />}
 
-        {/* Editor Area */}
-        <div className="lexical-editor-inner" style={{ position: 'relative' }}>
-          <RichTextPlugin
-            contentEditable={
-              <ContentEditable
-                className="lexical-content-editable"
-                style={contentEditableStyle}
-                aria-placeholder={placeholder}
-                placeholder={<PlaceholderElement text={placeholder} />}
+        {/* Editor Area with optional Minimap */}
+        <div className="lexical-editor-wrapper" style={{ display: 'flex' }}>
+          {/* Main Editor */}
+          <div className="lexical-editor-inner" style={{ position: 'relative', flex: 1 }}>
+            <RichTextPlugin
+              contentEditable={
+                <ContentEditable
+                  className="lexical-content-editable"
+                  style={contentEditableStyle}
+                  aria-placeholder={placeholder}
+                  placeholder={<PlaceholderElement text={placeholder} />}
+                />
+              }
+              ErrorBoundary={LexicalErrorBoundary}
+            />
+
+            {/* Plugins */}
+            <HistoryPlugin />
+            <ListPlugin />
+            <LinkPlugin />
+            <CheckListPlugin />
+            <TabIndentationPlugin />
+            <TablePlugin />
+            <MarkdownShortcutPlugin transformers={TRANSFORMERS} />
+            <MarkdownPastePlugin />
+            <MediaPlugin />
+            {!readOnly && <DraggableMediaPlugin />}
+
+            {/* Wiki Link Plugin - only in edit mode with enableWikiLinks */}
+            {enableWikiLinks && !readOnly && (
+              <WikiLinkPlugin
+                searchPages={searchWikiPages}
+                pages={wikiPages}
+                basePath={wikiBasePath}
               />
-            }
-            ErrorBoundary={LexicalErrorBoundary}
-          />
+            )}
 
-          {/* Plugins */}
-          <HistoryPlugin />
-          <ListPlugin />
-          <LinkPlugin />
-          <CheckListPlugin />
-          <TabIndentationPlugin />
-          <TablePlugin />
-          <MarkdownShortcutPlugin transformers={TRANSFORMERS} />
-          <MarkdownPastePlugin />
-          <MediaPlugin />
-          {!readOnly && <DraggableMediaPlugin />}
+            {/* Task Ref Plugin - only in edit mode with enableTaskRefs */}
+            {enableTaskRefs && !readOnly && searchTasks && (
+              <TaskRefPlugin searchTasks={searchTasks} />
+            )}
 
-          {/* Wiki Link Plugin - only in edit mode with enableWikiLinks */}
-          {enableWikiLinks && !readOnly && (
-            <WikiLinkPlugin
-              searchPages={searchWikiPages}
-              pages={wikiPages}
-              basePath={wikiBasePath}
-            />
-          )}
+            {/* Task Ref Cleanup Plugin - cleans up duplicate children from earlier bug */}
+            {enableTaskRefs && <TaskRefCleanupPlugin />}
 
-          {/* Task Ref Plugin - only in edit mode with enableTaskRefs */}
-          {enableTaskRefs && !readOnly && searchTasks && (
-            <TaskRefPlugin searchTasks={searchTasks} />
-          )}
+            {/* Mention Plugin - only in edit mode with enableMentions */}
+            {enableMentions && !readOnly && searchUsers && (
+              <MentionPlugin searchUsers={searchUsers} />
+            )}
 
-          {/* Task Ref Cleanup Plugin - cleans up duplicate children from earlier bug */}
-          {enableTaskRefs && <TaskRefCleanupPlugin />}
+            {/* Signature Plugin - only in edit mode with enableSignatures */}
+            {enableSignatures && !readOnly && (currentUser || searchUsersForSignature) && (
+              <SignaturePlugin
+                currentUser={currentUser}
+                searchUsers={searchUsersForSignature}
+              />
+            )}
 
-          {/* Mention Plugin - only in edit mode with enableMentions */}
-          {enableMentions && !readOnly && searchUsers && (
-            <MentionPlugin searchUsers={searchUsers} />
-          )}
+            {/* Change handler */}
+            {onChange && <OnChangePlugin onChange={handleChange} ignoreSelectionChange />}
 
-          {/* Signature Plugin - only in edit mode with enableSignatures */}
-          {enableSignatures && !readOnly && (currentUser || searchUsersForSignature) && (
-            <SignaturePlugin
-              currentUser={currentUser}
-              searchUsers={searchUsersForSignature}
-            />
-          )}
+            {/* Auto focus */}
+            {autoFocus && <AutoFocusPlugin />}
 
-          {/* Change handler */}
-          {onChange && <OnChangePlugin onChange={handleChange} ignoreSelectionChange />}
+            {/* Initial content */}
+            {initialContent && <InitialStatePlugin initialContent={initialContent} />}
+          </div>
 
-          {/* Auto focus */}
-          {autoFocus && <AutoFocusPlugin />}
-
-          {/* Initial content */}
-          {initialContent && <InitialStatePlugin initialContent={initialContent} />}
+          {/* Minimap */}
+          {showMinimap && <EditorMinimap width={minimapWidth} />}
         </div>
       </div>
     </LexicalComposer>
