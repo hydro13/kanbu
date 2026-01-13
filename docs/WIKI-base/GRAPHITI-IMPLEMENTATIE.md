@@ -514,6 +514,56 @@ Start met Fase 1: Graphiti MCP Server opzetten en testen met sample wiki content
 
 ---
 
+## Privacy & Telemetry
+
+### Ontdekking (Januari 2025)
+
+Tijdens review van de Graphiti codebase is ontdekt dat Graphiti **anonieme telemetry data verzamelt** en naar PostHog stuurt. Dit is een **opt-out** systeem, wat betekent dat telemetry standaard **AAN** staat.
+
+### Wat wordt verzameld?
+
+- Anonieme usage statistics
+- Geen persoonlijke data of content
+- Verzonden naar PostHog analytics platform
+
+### Onze Oplossing
+
+In Kanbu is telemetry **uitgeschakeld** door de environment variable te zetten **voordat** graphiti_core modules worden geïmporteerd:
+
+```python
+# apps/graphiti/src/api/main.py
+import os
+
+# BELANGRIJK: Moet VOOR graphiti_core imports staan
+os.environ['GRAPHITI_TELEMETRY_ENABLED'] = 'false'
+
+from graphiti_core.graphiti import Graphiti  # Nu zonder telemetry
+```
+
+### Waarom op code-niveau?
+
+| Optie | Voordeel | Nadeel |
+|-------|----------|--------|
+| ~/.bashrc | Simpel | Alleen lokale machine, niet voor andere installaties |
+| .env file | Per project | Kan vergeten worden, moet handmatig toegevoegd |
+| **Code-niveau** | Werkt altijd | Kan breken bij upstream changes |
+| Fork | Volledige controle | Geen automatische updates meer |
+
+De code-niveau oplossing is gekozen omdat:
+1. Werkt voor alle Kanbu installaties
+2. Geen handmatige configuratie nodig
+3. Expliciet gedocumenteerd in de code
+
+### Toekomstige Overwegingen
+
+Als Graphiti de environment variable naam wijzigt in een toekomstige versie, kan deze oplossing breken. In dat geval overwegen we:
+
+1. **Versie pinnen**: `graphiti-core==X.Y.Z` in requirements
+2. **Fork**: Eigen versie onderhouden zonder telemetry
+3. **Upstream PR**: Bijdragen aan Graphiti om opt-in te maken
+
+---
+
 ## Referenties
 
 - [Graphiti GitHub](https://github.com/getzep/graphiti)

@@ -15,6 +15,15 @@ Endpoints:
 
 import logging
 import os
+
+# =============================================================================
+# IMPORTANT: Disable Graphiti telemetry BEFORE any graphiti_core imports
+# Graphiti by default sends anonymous telemetry to PostHog (opt-out).
+# This must be set before importing graphiti_core modules.
+# See: https://github.com/getzep/graphiti - telemetry is opt-out
+# =============================================================================
+os.environ['GRAPHITI_TELEMETRY_ENABLED'] = 'false'
+
 from contextlib import asynccontextmanager
 from datetime import datetime
 from typing import Any
