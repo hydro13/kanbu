@@ -142,6 +142,7 @@ import { graphitiRouter } from './procedures/graphiti';
 import { aiProviderRouter } from './procedures/aiProvider';
 import { workspaceAiProviderRouter } from './procedures/workspaceAiProvider';
 import { wikiAiRouter } from './procedures/wikiAi';
+import { contradictionAuditRouter } from './procedures/contradictionAudit';
 
 /**
  * Main app router
@@ -191,6 +192,7 @@ export const appRouter = router({
   aiProvider: aiProviderRouter,
   workspaceAiProvider: workspaceAiProviderRouter,
   wikiAi: wikiAiRouter,
+  contradictionAudit: contradictionAuditRouter,
 });
 
 /**

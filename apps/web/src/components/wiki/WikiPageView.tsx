@@ -23,6 +23,10 @@
  *
  * Modified: 2026-01-13
  * Change: Added parent page selector in edit mode
+ *
+ * Modified: 2026-01-13
+ * Change: Fase 17.5 - Added "Fact Check" context menu option for user-triggered
+ *         fact verification against existing wiki knowledge graph
  * ===================================================================
  */
 
@@ -60,6 +64,7 @@ import {
   User,
   Sparkles,
   FolderTree,
+  Search,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { WikiPageStatus } from './WikiSidebar'
@@ -132,6 +137,8 @@ interface WikiPageViewProps {
   onAskWiki?: () => void
   /** Callback when "Ask about this page" is triggered (with page context) */
   onAskAboutPage?: (pageTitle: string, pageContent: string) => void
+  /** Callback when "Fact Check" is triggered on selected text */
+  onFactCheck?: (selectedText: string) => void
   /** Available pages for parent selection (shown in edit mode) */
   availablePages?: Array<{ id: number; title: string; parentId: number | null }>
   /** Callback when parent page is changed */
@@ -225,6 +232,7 @@ export function WikiPageView({
   currentUser,
   onAskWiki,
   onAskAboutPage,
+  onFactCheck,
   availablePages,
   onParentChange,
 }: WikiPageViewProps) {
@@ -387,8 +395,13 @@ export function WikiPageView({
 
   // Handle right-click context menu
   const handleContextMenu = useCallback((e: React.MouseEvent) => {
-    // Only show context menu in view mode (not editing) and when Ask is available
-    if (isEditing || !onAskAboutPage) return
+    // Show context menu if:
+    // - onFactCheck is available (works in both edit and view mode)
+    // - OR onAskAboutPage is available AND not editing
+    const canShowFactCheck = !!onFactCheck
+    const canShowAskAbout = !!onAskAboutPage && !isEditing
+
+    if (!canShowFactCheck && !canShowAskAbout) return
 
     const selection = window.getSelection()
     const selectedText = selection?.toString().trim()
@@ -402,9 +415,9 @@ export function WikiPageView({
         selectedText,
       })
     }
-  }, [isEditing, onAskAboutPage])
+  }, [isEditing, onAskAboutPage, onFactCheck])
 
-  // Handle context menu action
+  // Handle context menu action - Ask about selection
   const handleAskAboutSelection = useCallback(() => {
     if (contextMenu?.selectedText && onAskAboutPage) {
       onAskAboutPage(
@@ -414,6 +427,14 @@ export function WikiPageView({
     }
     setContextMenu(null)
   }, [contextMenu, onAskAboutPage])
+
+  // Handle context menu action - Fact Check
+  const handleFactCheckSelection = useCallback(() => {
+    if (contextMenu?.selectedText && onFactCheck) {
+      onFactCheck(contextMenu.selectedText)
+    }
+    setContextMenu(null)
+  }, [contextMenu, onFactCheck])
 
   // Close context menu on click outside
   useEffect(() => {
@@ -662,13 +683,24 @@ export function WikiPageView({
               top: contextMenu.y,
             }}
           >
-            <button
-              className="flex w-full items-center px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
-              onClick={handleAskAboutSelection}
-            >
-              <Sparkles className="h-4 w-4 mr-2 text-violet-500" />
-              Ask about this
-            </button>
+            {onAskAboutPage && !isEditing && (
+              <button
+                className="flex w-full items-center px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                onClick={handleAskAboutSelection}
+              >
+                <Sparkles className="h-4 w-4 mr-2 text-violet-500" />
+                Ask about this
+              </button>
+            )}
+            {onFactCheck && (
+              <button
+                className="flex w-full items-center px-3 py-2 text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
+                onClick={handleFactCheckSelection}
+              >
+                <Search className="h-4 w-4 mr-2 text-amber-500" />
+                Fact Check
+              </button>
+            )}
           </div>
         )}
       </div>

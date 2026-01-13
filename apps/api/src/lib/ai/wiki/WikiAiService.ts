@@ -5,6 +5,8 @@
  * Provides embeddings, entity extraction, and text operations for Wiki pages.
  *
  * Fase 15.1 - Provider Koppeling
+ * Fase 16.2 - Bi-temporal date extraction
+ * Fase 16.3 - Contradiction detection
  */
 
 import type { PrismaClient } from '@prisma/client'
@@ -14,6 +16,35 @@ import type {
   ReasoningProvider,
   ExtractedEntity,
 } from '../providers/types'
+import {
+  getExtractEdgeDatesSystemPrompt,
+  getExtractEdgeDatesUserPrompt,
+  parseExtractEdgeDatesResponse,
+  getDetectContradictionsSystemPrompt,
+  getDetectContradictionsUserPrompt,
+  parseDetectContradictionsResponse,
+  // Fase 17.2 - Enhanced Detection
+  ContradictionCategory,
+  getEnhancedDetectContradictionsSystemPrompt,
+  getEnhancedDetectContradictionsUserPrompt,
+  parseEnhancedDetectContradictionsResponse,
+  toBasicContradictionResult,
+  // Fase 17.2 - Batch Detection
+  MAX_BATCH_SIZE,
+  getBatchDetectContradictionsSystemPrompt,
+  getBatchDetectContradictionsUserPrompt,
+  parseBatchDetectContradictionsResponse,
+  // Fase 17.2 - Category Handling
+  ResolutionAction,
+  DEFAULT_CATEGORY_HANDLING,
+  filterContradictionsByCategory,
+  type ExistingFact,
+  type ContradictionDetail,
+  type EnhancedContradictionResult,
+  type BatchNewFact,
+  type BatchContradictionResult,
+  type CategoryHandlingConfig,
+} from './prompts'
 
 // =============================================================================
 // Types
@@ -52,6 +83,104 @@ export interface WikiAiCapabilities {
   embeddingModel?: string
   reasoningProvider?: string
   reasoningModel?: string
+}
+
+/**
+ * Result of edge date extraction (Fase 16.2)
+ */
+export interface EdgeDateExtractionResult {
+  /** When the fact became true in the real world */
+  validAt: Date | null
+  /** When the fact stopped being true */
+  invalidAt: Date | null
+  /** Explanation of how dates were determined */
+  reasoning: string
+  /** Provider used for extraction */
+  provider: string
+  /** Model used for extraction */
+  model: string
+}
+
+/**
+ * Result of contradiction detection (Fase 16.3)
+ */
+export interface ContradictionDetectionResult {
+  /** IDs of existing facts that are contradicted by the new fact */
+  contradictedFactIds: string[]
+  /** Explanation of why these facts contradict */
+  reasoning: string
+  /** Provider used for detection */
+  provider: string
+  /** Model used for detection */
+  model: string
+}
+
+/**
+ * Enhanced result of contradiction detection (Fase 17.2)
+ * Includes confidence scores and categories
+ */
+export interface EnhancedContradictionDetectionResult {
+  /** Detailed list of contradictions found */
+  contradictions: ContradictionDetail[]
+  /** Overall reasoning for the analysis */
+  reasoning: string
+  /** Suggested resolution strategy */
+  suggestedResolution?: 'INVALIDATE_OLD' | 'INVALIDATE_NEW' | 'MERGE' | 'ASK_USER'
+  /** Provider used for detection */
+  provider: string
+  /** Model used for detection */
+  model: string
+}
+
+/**
+ * Result of batch contradiction detection (Fase 17.2)
+ */
+export interface BatchContradictionDetectionResult {
+  /** Results per new fact */
+  results: Array<{
+    /** ID of the new fact */
+    newFactId: string
+    /** Contradictions found */
+    contradictions: ContradictionDetail[]
+    /** Reasoning for this fact */
+    reasoning: string
+    /** Suggested resolution */
+    suggestedResolution?: 'INVALIDATE_OLD' | 'INVALIDATE_NEW' | 'MERGE' | 'ASK_USER'
+    /** Error if processing failed */
+    error?: string
+  }>
+  /** Overall summary */
+  summary: string
+  /** Number of facts that had errors */
+  errorCount: number
+  /** Provider used */
+  provider: string
+  /** Model used */
+  model: string
+}
+
+/**
+ * Result of category-filtered contradictions (Fase 17.2)
+ */
+export interface FilteredContradictions {
+  /** Contradictions to auto-invalidate */
+  toAutoInvalidate: ContradictionDetail[]
+  /** Contradictions requiring user confirmation */
+  toConfirm: ContradictionDetail[]
+  /** Contradictions to warn about only */
+  toWarn: ContradictionDetail[]
+  /** Contradictions to skip */
+  toSkip: ContradictionDetail[]
+}
+
+// Re-export types for consumers
+export {
+  ContradictionCategory,
+  ResolutionAction,
+  type ContradictionDetail,
+  type EnhancedContradictionResult,
+  type BatchNewFact,
+  type CategoryHandlingConfig,
 }
 
 // =============================================================================
@@ -237,6 +366,435 @@ export class WikiAiService {
       provider: provider.type,
       model: provider.getReasoningModel(),
     }
+  }
+
+  // ===========================================================================
+  // Temporal Date Extraction (Fase 16.2)
+  // ===========================================================================
+
+  /**
+   * Extract valid_at and invalid_at dates for a fact/relationship
+   *
+   * Uses LLM to determine when a fact became true and when it stopped being true
+   * based on the wiki content and reference timestamp.
+   *
+   * @param context - Wiki context (workspace/project)
+   * @param fact - The fact/relationship to extract dates for
+   * @param episodeContent - The full wiki page content
+   * @param referenceTimestamp - Reference timestamp (usually page update time)
+   */
+  async extractEdgeDates(
+    context: WikiContext,
+    fact: string,
+    episodeContent: string,
+    referenceTimestamp: Date
+  ): Promise<EdgeDateExtractionResult> {
+    const provider = await this.getReasoningProviderOrThrow(context)
+
+    const systemPrompt = getExtractEdgeDatesSystemPrompt()
+    const userPrompt = getExtractEdgeDatesUserPrompt({
+      fact,
+      episodeContent,
+      referenceTimestamp: referenceTimestamp.toISOString(),
+    })
+
+    try {
+      const response = await provider.chat(
+        [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        {
+          temperature: 0.1, // Low temperature for consistent date extraction
+          maxTokens: 500,   // Dates don't need many tokens
+        }
+      )
+
+      const parsed = parseExtractEdgeDatesResponse(response)
+
+      return {
+        validAt: parsed.valid_at ? new Date(parsed.valid_at) : null,
+        invalidAt: parsed.invalid_at ? new Date(parsed.invalid_at) : null,
+        reasoning: parsed.reasoning,
+        provider: provider.type,
+        model: provider.getReasoningModel(),
+      }
+    } catch (error) {
+      // If LLM call fails, return default dates
+      console.warn(
+        `[WikiAiService] extractEdgeDates failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
+      return {
+        validAt: referenceTimestamp,
+        invalidAt: null,
+        reasoning: 'Fallback: LLM extraction failed, using reference timestamp',
+        provider: provider.type,
+        model: provider.getReasoningModel(),
+      }
+    }
+  }
+
+  /**
+   * Extract dates for multiple facts in batch
+   * More efficient than calling extractEdgeDates for each fact
+   */
+  async extractEdgeDatesBatch(
+    context: WikiContext,
+    facts: string[],
+    episodeContent: string,
+    referenceTimestamp: Date
+  ): Promise<EdgeDateExtractionResult[]> {
+    // For now, process sequentially
+    // TODO: Optimize with parallel calls or batch LLM request
+    const results: EdgeDateExtractionResult[] = []
+
+    for (const fact of facts) {
+      const result = await this.extractEdgeDates(
+        context,
+        fact,
+        episodeContent,
+        referenceTimestamp
+      )
+      results.push(result)
+    }
+
+    return results
+  }
+
+  // ===========================================================================
+  // Contradiction Detection (Fase 16.3)
+  // ===========================================================================
+
+  /**
+   * Detect which existing facts are contradicted by a new fact
+   *
+   * Uses LLM to compare the new fact against existing facts and determine
+   * which ones are mutually exclusive (cannot both be true at the same time).
+   *
+   * @param context - Wiki context (workspace/project)
+   * @param newFact - The new fact being added
+   * @param existingFacts - List of existing facts to compare against
+   */
+  async detectContradictions(
+    context: WikiContext,
+    newFact: string,
+    existingFacts: ExistingFact[]
+  ): Promise<ContradictionDetectionResult> {
+    const provider = await this.getReasoningProviderOrThrow(context)
+
+    // If no existing facts, nothing to contradict
+    if (existingFacts.length === 0) {
+      return {
+        contradictedFactIds: [],
+        reasoning: 'No existing facts to compare against',
+        provider: provider.type,
+        model: provider.getReasoningModel(),
+      }
+    }
+
+    const systemPrompt = getDetectContradictionsSystemPrompt()
+    const userPrompt = getDetectContradictionsUserPrompt({
+      newFact,
+      existingFacts,
+    })
+
+    try {
+      const response = await provider.chat(
+        [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        {
+          temperature: 0.1, // Low temperature for consistent detection
+          maxTokens: 500,   // Contradictions don't need many tokens
+        }
+      )
+
+      const parsed = parseDetectContradictionsResponse(response)
+
+      return {
+        contradictedFactIds: parsed.contradictedFactIds,
+        reasoning: parsed.reasoning,
+        provider: provider.type,
+        model: provider.getReasoningModel(),
+      }
+    } catch (error) {
+      // If LLM call fails, be conservative and return no contradictions
+      console.warn(
+        `[WikiAiService] detectContradictions failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
+      return {
+        contradictedFactIds: [],
+        reasoning: 'Fallback: LLM detection failed, assuming no contradictions',
+        provider: provider.type,
+        model: provider.getReasoningModel(),
+      }
+    }
+  }
+
+  // ===========================================================================
+  // Enhanced Contradiction Detection (Fase 17.2)
+  // ===========================================================================
+
+  /**
+   * Enhanced contradiction detection with confidence scores and categories
+   *
+   * Uses LLM to compare the new fact against existing facts with detailed
+   * analysis including confidence scores and contradiction categories.
+   *
+   * @param context - Wiki context (workspace/project)
+   * @param newFact - The new fact being added
+   * @param existingFacts - List of existing facts to compare against
+   * @param options - Optional configuration
+   */
+  async detectContradictionsEnhanced(
+    context: WikiContext,
+    newFact: string,
+    existingFacts: ExistingFact[],
+    options?: {
+      /** Minimum confidence threshold (default: 0.7) */
+      confidenceThreshold?: number
+    }
+  ): Promise<EnhancedContradictionDetectionResult> {
+    const provider = await this.getReasoningProviderOrThrow(context)
+    const confidenceThreshold = options?.confidenceThreshold ?? 0.7
+
+    // If no existing facts, nothing to contradict
+    if (existingFacts.length === 0) {
+      return {
+        contradictions: [],
+        reasoning: 'No existing facts to compare against',
+        provider: provider.type,
+        model: provider.getReasoningModel(),
+      }
+    }
+
+    const systemPrompt = getEnhancedDetectContradictionsSystemPrompt()
+    const userPrompt = getEnhancedDetectContradictionsUserPrompt({
+      newFact,
+      existingFacts,
+    })
+
+    try {
+      const response = await provider.chat(
+        [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        {
+          temperature: 0.1, // Low temperature for consistent detection
+          maxTokens: 800,   // More tokens for detailed response
+        }
+      )
+
+      const parsed = parseEnhancedDetectContradictionsResponse(response)
+
+      // Filter by confidence threshold
+      const filteredContradictions = parsed.contradictions.filter(
+        c => c.confidence >= confidenceThreshold
+      )
+
+      return {
+        contradictions: filteredContradictions,
+        reasoning: parsed.reasoning,
+        suggestedResolution: parsed.suggestedResolution,
+        provider: provider.type,
+        model: provider.getReasoningModel(),
+      }
+    } catch (error) {
+      // If LLM call fails, be conservative and return no contradictions
+      console.warn(
+        `[WikiAiService] detectContradictionsEnhanced failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
+      return {
+        contradictions: [],
+        reasoning: 'Fallback: LLM detection failed, assuming no contradictions',
+        provider: provider.type,
+        model: provider.getReasoningModel(),
+      }
+    }
+  }
+
+  /**
+   * Convert enhanced result to basic result for backwards compatibility
+   */
+  enhancedToBasicResult(
+    enhanced: EnhancedContradictionDetectionResult
+  ): ContradictionDetectionResult {
+    return {
+      contradictedFactIds: enhanced.contradictions.map(c => c.factId),
+      reasoning: enhanced.reasoning,
+      provider: enhanced.provider,
+      model: enhanced.model,
+    }
+  }
+
+  // ===========================================================================
+  // Batch Contradiction Detection (Fase 17.2)
+  // ===========================================================================
+
+  /**
+   * Detect contradictions for multiple new facts in a single LLM call
+   *
+   * More efficient than calling detectContradictionsEnhanced for each fact.
+   * Automatically splits into batches of MAX_BATCH_SIZE (10) facts.
+   *
+   * @param context - Wiki context (workspace/project)
+   * @param newFacts - List of new facts to check (with IDs for result mapping)
+   * @param existingFacts - List of existing facts to compare against
+   * @param options - Optional configuration
+   */
+  async detectContradictionsBatch(
+    context: WikiContext,
+    newFacts: BatchNewFact[],
+    existingFacts: ExistingFact[],
+    options?: {
+      /** Minimum confidence threshold (default: 0.7) */
+      confidenceThreshold?: number
+    }
+  ): Promise<BatchContradictionDetectionResult> {
+    const provider = await this.getReasoningProviderOrThrow(context)
+    const confidenceThreshold = options?.confidenceThreshold ?? 0.7
+
+    // If no new facts or existing facts, return empty result
+    if (newFacts.length === 0) {
+      return {
+        results: [],
+        summary: 'No new facts to process',
+        errorCount: 0,
+        provider: provider.type,
+        model: provider.getReasoningModel(),
+      }
+    }
+
+    if (existingFacts.length === 0) {
+      return {
+        results: newFacts.map(f => ({
+          newFactId: f.id,
+          contradictions: [],
+          reasoning: 'No existing facts to compare against',
+        })),
+        summary: 'No existing facts to compare against',
+        errorCount: 0,
+        provider: provider.type,
+        model: provider.getReasoningModel(),
+      }
+    }
+
+    // Split into batches of MAX_BATCH_SIZE
+    const batches: BatchNewFact[][] = []
+    for (let i = 0; i < newFacts.length; i += MAX_BATCH_SIZE) {
+      batches.push(newFacts.slice(i, i + MAX_BATCH_SIZE))
+    }
+
+    // Process each batch
+    const allResults: BatchContradictionDetectionResult['results'] = []
+    let totalErrorCount = 0
+
+    for (const batch of batches) {
+      const batchResult = await this.processSingleBatch(
+        provider,
+        batch,
+        existingFacts,
+        confidenceThreshold
+      )
+      allResults.push(...batchResult.results)
+      totalErrorCount += batchResult.errorCount
+    }
+
+    return {
+      results: allResults,
+      summary: `Processed ${newFacts.length} facts in ${batches.length} batch(es)`,
+      errorCount: totalErrorCount,
+      provider: provider.type,
+      model: provider.getReasoningModel(),
+    }
+  }
+
+  /**
+   * Process a single batch of facts (internal helper)
+   */
+  private async processSingleBatch(
+    provider: ReasoningProvider,
+    batch: BatchNewFact[],
+    existingFacts: ExistingFact[],
+    confidenceThreshold: number
+  ): Promise<{ results: BatchContradictionDetectionResult['results']; errorCount: number }> {
+    const systemPrompt = getBatchDetectContradictionsSystemPrompt()
+    const userPrompt = getBatchDetectContradictionsUserPrompt({
+      newFacts: batch,
+      existingFacts,
+    })
+
+    try {
+      const response = await provider.chat(
+        [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        {
+          temperature: 0.1,
+          maxTokens: 1500, // More tokens for batch response
+        }
+      )
+
+      const parsed = parseBatchDetectContradictionsResponse(
+        response,
+        batch.map(f => f.id)
+      )
+
+      // Apply confidence threshold to each result
+      const results = parsed.results.map(r => ({
+        ...r,
+        contradictions: r.contradictions.filter(c => c.confidence >= confidenceThreshold),
+      }))
+
+      return { results, errorCount: parsed.errorCount }
+    } catch (error) {
+      // If batch fails, mark all facts as errored
+      console.warn(
+        `[WikiAiService] detectContradictionsBatch failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
+      return {
+        results: batch.map(f => ({
+          newFactId: f.id,
+          contradictions: [],
+          reasoning: 'Batch processing failed',
+          error: error instanceof Error ? error.message : 'Unknown error',
+        })),
+        errorCount: batch.length,
+      }
+    }
+  }
+
+  // ===========================================================================
+  // Category-Specific Handling (Fase 17.2)
+  // ===========================================================================
+
+  /**
+   * Filter contradictions based on their category and confidence
+   *
+   * Separates contradictions into different action groups:
+   * - toAutoInvalidate: High confidence factual/attribute contradictions
+   * - toConfirm: Temporal/semantic contradictions requiring user input
+   * - toWarn: Lower confidence contradictions (log only)
+   * - toSkip: Contradictions below threshold
+   *
+   * @param contradictions - List of contradictions to filter
+   * @param config - Optional category handling configuration
+   */
+  filterContradictionsByCategory(
+    contradictions: ContradictionDetail[],
+    config?: Record<ContradictionCategory, CategoryHandlingConfig>
+  ): FilteredContradictions {
+    return filterContradictionsByCategory(contradictions, config ?? DEFAULT_CATEGORY_HANDLING)
+  }
+
+  /**
+   * Get the default category handling configuration
+   */
+  getDefaultCategoryConfig(): Record<ContradictionCategory, CategoryHandlingConfig> {
+    return { ...DEFAULT_CATEGORY_HANDLING }
   }
 
   // ===========================================================================

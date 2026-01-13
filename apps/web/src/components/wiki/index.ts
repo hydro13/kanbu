@@ -28,3 +28,27 @@ export { WikiGraphView } from './WikiGraphView'
 export { WikiTemporalSearch } from './WikiTemporalSearch'
 
 export { AskWikiDialog, AskWikiFab } from './AskWikiDialog'
+
+// Fase 17.4 - Contradiction UI
+export { showContradictionToast, showBatchContradictionToasts } from './ContradictionToast'
+export type {
+  ContradictionData,
+  ContradictionToastProps,
+  ContradictionCategory,
+  ResolutionStrategy,
+} from './ContradictionToast'
+
+export { ContradictionDialog } from './ContradictionDialog'
+export type { ContradictionDetailData, ContradictionDialogProps } from './ContradictionDialog'
+
+export { ContradictionHistory } from './ContradictionHistory'
+export type { ContradictionAuditEntry, ContradictionHistoryProps } from './ContradictionHistory'
+
+// Fase 17.5 - User-Triggered Fact Check
+export { FactCheckDialog } from './FactCheckDialog'
+export type {
+  FactCheckEntity,
+  RelatedFact,
+  FactCheckResult,
+  FactCheckDialogProps,
+} from './FactCheckDialog'

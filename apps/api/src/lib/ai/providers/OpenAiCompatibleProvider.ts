@@ -281,23 +281,53 @@ export abstract class OpenAiCompatibleProvider
     text: string,
     entityTypes: string[]
   ): Promise<ExtractedEntity[]> {
-    const systemPrompt = `You are an entity extraction assistant. Extract entities from the given text.
-Only extract entities of these types: ${entityTypes.join(', ')}.
-Return a JSON array of objects with: name, type, confidence (0-1).
-Only return valid JSON, no explanation.`
+    const systemPrompt = `You are an entity extraction assistant. Your task is to identify and extract named entities from text.
+
+ENTITY TYPES TO EXTRACT:
+${entityTypes.map(t => `- ${t}`).join('\n')}
+
+RULES:
+1. Extract ANY named entity that matches the types above, even from short text
+2. Names of people (like "Robin", "John", "Maria") are "Person" entities
+3. Project names, product names are "Project" entities
+4. Abstract ideas or terms are "Concept" entities
+5. If unsure about the type, use "Concept"
+6. Always extract names, even if the sentence is very short
+
+OUTPUT FORMAT:
+Return ONLY a JSON array. Each object must have:
+- "name": the entity name as found in text
+- "type": one of the entity types listed above
+- "confidence": number between 0 and 1
+
+Example: For "Robin heeft blauw haar"
+Output: [{"name": "Robin", "type": "Person", "confidence": 0.9}]
+
+Example: For "Het Kanban project is gestart"
+Output: [{"name": "Kanban", "type": "Project", "confidence": 0.85}]
+
+If no entities found, return: []
+
+IMPORTANT: Return ONLY the JSON array, no other text.`
 
     const response = await this.chat(
       [
         { role: 'system', content: systemPrompt },
-        { role: 'user', content: text },
+        { role: 'user', content: `Extract entities from this text: "${text}"` },
       ],
       { temperature: 0.1, maxTokens: 2000 }
     )
 
+    console.log(`[extractEntities] Input: "${text}"`)
+    console.log(`[extractEntities] LLM response: ${response}`)
+
     try {
       // Extract JSON from response (handle markdown code blocks)
-      const jsonMatch = response.match(/\[[\s\S]*\]/)
-      if (!jsonMatch) return []
+      const jsonMatch = response.match(/\[[\s\S]*?\]/)
+      if (!jsonMatch) {
+        console.log('[extractEntities] No JSON array found in response')
+        return []
+      }
 
       const entities = JSON.parse(jsonMatch[0]) as Array<{
         name: string
@@ -305,13 +335,15 @@ Only return valid JSON, no explanation.`
         confidence?: number
       }>
 
+      console.log(`[extractEntities] Parsed ${entities.length} entities:`, entities)
+
       return entities.map((e) => ({
         name: e.name,
         type: e.type,
         confidence: e.confidence || 0.8,
       }))
-    } catch {
-      // If parsing fails, return empty array
+    } catch (error) {
+      console.error('[extractEntities] JSON parsing failed:', error)
       return []
     }
   }

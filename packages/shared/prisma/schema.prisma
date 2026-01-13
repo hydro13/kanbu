@@ -28,9 +28,10 @@ model Workspace {
   roleAssignments     RoleAssignment[]
   invitations         WorkspaceInvitation[]
   logo                WorkspaceLogo?
-  wikiPages           WorkspaceWikiPage[]
-  aiProviderConfigs   AiProviderConfig[]
-  createdBy           User?                 @relation("WorkspaceCreator", fields: [createdById], references: [id])
+  wikiPages              WorkspaceWikiPage[]
+  aiProviderConfigs      AiProviderConfig[]
+  contradictionAudits    WikiContradictionAudit[]
+  createdBy              User?                 @relation("WorkspaceCreator", fields: [createdById], references: [id])
 
   @@map("workspaces")
 }
@@ -206,8 +207,9 @@ model Project {
   tasks              Task[]
   favoritedBy        UserFavorite[]
   webhooks           Webhook[]
-  wikiPages          WikiPage[]
-  aiProviderConfigs  AiProviderConfig[]
+  wikiPages            WikiPage[]
+  aiProviderConfigs    AiProviderConfig[]
+  contradictionAudits  WikiContradictionAudit[]
 
   @@unique([workspaceId, identifier])
   @@map("projects")
@@ -709,6 +711,45 @@ model WorkspaceWikiVersion {
   @@unique([pageId, version])
   @@index([pageId])
   @@map("workspace_wiki_versions")
+}
+
+/// Audit trail for wiki contradiction resolutions (Fase 17.3)
+model WikiContradictionAudit {
+  id                  Int                     @id @default(autoincrement())
+  workspaceId         Int                     @map("workspace_id")
+  projectId           Int?                    @map("project_id")
+  wikiPageId          Int                     @map("wiki_page_id")
+  userId              Int                     @map("user_id")
+
+  // The new fact that caused the contradiction
+  newFactId           String                  @map("new_fact_id") @db.VarChar(255)
+  newFact             String                  @map("new_fact")
+
+  // The invalidated facts (JSON array of { id, fact } objects)
+  invalidatedFacts    Json                    @map("invalidated_facts")
+
+  // Resolution details
+  strategy            ResolutionStrategy
+  confidence          Float
+  category            ContradictionCategory
+  reasoning           String?
+
+  // Timestamps
+  createdAt           DateTime                @default(now()) @map("created_at")
+  revertedAt          DateTime?               @map("reverted_at")
+  revertedBy          Int?                    @map("reverted_by")
+  revertExpiresAt     DateTime                @map("revert_expires_at")
+
+  // Relations
+  workspace           Workspace               @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  project             Project?                @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([projectId])
+  @@index([wikiPageId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("wiki_contradiction_audits")
 }
 
 model ApiKey {
@@ -1592,6 +1633,22 @@ enum WikiPageStatus {
   DRAFT
   PUBLISHED
   ARCHIVED
+}
+
+// Fase 17.3 - Contradiction Resolution enums
+enum ResolutionStrategy {
+  INVALIDATE_OLD    // Default: oude fact invalideren
+  INVALIDATE_NEW    // Nieuwe fact negeren
+  KEEP_BOTH         // Beide houden (warning only)
+  MERGE             // Facts samenvoegen
+  ASK_USER          // User beslissing vereist
+}
+
+enum ContradictionCategory {
+  SEMANTIC          // Betekenis contradictie ("werkt bij" vs "werkt niet bij")
+  TEMPORAL          // Tijd contradictie (overlappende periodes)
+  FACTUAL           // Feit contradictie ("CEO" vs "CTO")
+  ATTRIBUTE         // Attribuut contradictie ("blauw" vs "rood")
 }
 
 // AI Provider Configuration enums

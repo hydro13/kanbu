@@ -69,6 +69,7 @@
  */
 
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { Toaster } from '@/components/ui/sonner'
 import { CommandPaletteProvider } from './components/command'
 // HomePage removed - now redirects to /dashboard
 import { LoginPage } from './pages/Login'
@@ -731,6 +732,7 @@ function App() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       </CommandPaletteProvider>
+      <Toaster position="bottom-right" richColors closeButton />
     </BrowserRouter>
   )
 }

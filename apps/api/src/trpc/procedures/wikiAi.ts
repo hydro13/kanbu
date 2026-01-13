@@ -145,6 +145,16 @@ const reindexEmbeddingsSchema = z.object({
   forceReindex: z.boolean().optional().default(false),
 })
 
+// Fact Check schema (Fase 17.5)
+const factCheckSchema = z.object({
+  workspaceId: z.number(),
+  projectId: z.number().optional(),
+  /** The selected text to fact-check */
+  selectedText: z.string().min(1).max(5000),
+  /** Current page ID (to exclude from results) */
+  currentPageId: z.number().optional(),
+})
+
 // =============================================================================
 // Helper Functions
 // =============================================================================
@@ -872,6 +882,128 @@ export const wikiAiRouter = router({
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: error instanceof Error ? error.message : 'Reindex embeddings failed',
+        })
+      }
+    }),
+
+  // ===========================================================================
+  // Fact Check (Fase 17.5)
+  // ===========================================================================
+
+  /**
+   * User-triggered fact check
+   *
+   * Takes selected text and searches for related facts across the wiki.
+   * Returns existing facts from other pages that mention the same entities.
+   *
+   * Flow:
+   * 1. Extract entities from selected text using LLM
+   * 2. For each entity, search knowledge graph for existing facts
+   * 3. Return all found facts with source page info
+   */
+  factCheck: protectedProcedure
+    .input(factCheckSchema)
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.user!.id
+
+      // Verify access
+      await verifyWorkspaceAccess(userId, input.workspaceId)
+
+      const wikiAiService = getWikiAiService(ctx.prisma)
+      const graphitiService = getGraphitiService(ctx.prisma)
+      const context: WikiContext = {
+        workspaceId: input.workspaceId,
+        projectId: input.projectId,
+      }
+
+      try {
+        // Step 1: Extract entities from selected text
+        const extractionResult = await wikiAiService.extractEntities(
+          context,
+          input.selectedText,
+          ['WikiPage', 'Task', 'User', 'Project', 'Concept', 'Person']
+        )
+
+        if (extractionResult.entities.length === 0) {
+          return {
+            success: true,
+            selectedText: input.selectedText,
+            entities: [],
+            relatedFacts: [],
+            message: 'No entities found in selected text',
+          }
+        }
+
+        // Step 2: For each entity, search for existing facts from other pages
+        interface RelatedFact {
+          entityName: string
+          entityType: string
+          fact: string
+          pageId: number
+          pageTitle: string
+          pageSlug?: string
+          validAt: string | null
+          invalidAt: string | null
+        }
+
+        const relatedFacts: RelatedFact[] = []
+        const processedEntities = new Set<string>()
+
+        for (const entity of extractionResult.entities) {
+          // Skip duplicates
+          const entityKey = `${entity.type}:${entity.name.toLowerCase()}`
+          if (processedEntities.has(entityKey)) continue
+          processedEntities.add(entityKey)
+
+          // Map entity type to graph label
+          const graphType = entity.type === 'User' ? 'Person' : entity.type
+
+          try {
+            // Use the public getFactsForEntity method
+            const facts = await graphitiService.getFactsForEntity(
+              entity.name,
+              graphType,
+              input.currentPageId
+            )
+
+            for (const factData of facts) {
+              relatedFacts.push({
+                entityName: entity.name,
+                entityType: entity.type,
+                fact: factData.fact,
+                pageId: factData.pageId,
+                pageTitle: factData.pageTitle,
+                pageSlug: factData.pageSlug,
+                validAt: factData.validAt,
+                invalidAt: factData.invalidAt,
+              })
+            }
+          } catch (queryError) {
+            console.warn(
+              `[wikiAi.factCheck] Query failed for entity "${entity.name}":`,
+              queryError instanceof Error ? queryError.message : queryError
+            )
+          }
+        }
+
+        return {
+          success: true,
+          selectedText: input.selectedText,
+          entities: extractionResult.entities.map(e => ({
+            name: e.name,
+            type: e.type,
+            confidence: e.confidence,
+          })),
+          relatedFacts,
+          message: relatedFacts.length > 0
+            ? `Found ${relatedFacts.length} related fact(s) from other pages`
+            : 'No related facts found in other wiki pages',
+        }
+      } catch (error) {
+        if (error instanceof TRPCError) throw error
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: error instanceof Error ? error.message : 'Fact check failed',
         })
       }
     }),

@@ -1,6 +1,6 @@
 /*
  * Graphiti tRPC Procedures
- * Version: 2.0.0
+ * Version: 2.1.0
  *
  * tRPC endpoints for Wiki knowledge graph queries:
  * - Backlinks (pages that link to a page)
@@ -8,11 +8,13 @@
  * - Search across wiki
  * - Temporal search ("What did we know at time X?")
  * - Graph statistics and visualization
+ * - Temporal facts query ("getFactsAsOf" - Fase 16.4)
  *
  * ===================================================================
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
  * Signed: 2026-01-12
  * Change: Fase 9 - Added temporal search endpoint
+ * Change: Fase 16.4 - Added getFactsAsOf endpoint with FalkorDB bi-temporal support
  * ===================================================================
  */
 
@@ -64,6 +66,12 @@ const temporalSearchSchema = z.object({
   groupId: z.string(),
   asOf: z.string().datetime(), // ISO datetime string: "What did we know at this time?"
   limit: z.number().min(1).max(50).default(10),
+})
+
+const getFactsAsOfSchema = z.object({
+  groupId: z.string(), // e.g., 'wiki-ws-1' or 'wiki-proj-5'
+  asOf: z.string().datetime(), // ISO datetime string: "Show facts valid at this time"
+  limit: z.number().min(1).max(200).default(100),
 })
 
 // =============================================================================
@@ -189,5 +197,32 @@ export const graphitiRouter = router({
       })
 
       return { success: true, pageId: input.pageId }
+    }),
+
+  /**
+   * Get all facts valid at a specific point in time (Fase 16.4)
+   *
+   * Uses bi-temporal fields to query what was known at a given moment:
+   * - Transaction time: facts that exist in the system
+   * - Valid time: facts that were true at the query time
+   *
+   * Works without Python service by querying FalkorDB directly.
+   */
+  getFactsAsOf: protectedProcedure
+    .input(getFactsAsOfSchema)
+    .query(async ({ input }) => {
+      const graphiti = getGraphitiService()
+      const asOfDate = new Date(input.asOf)
+      const facts = await graphiti.getFactsAsOf(
+        input.groupId,
+        asOfDate,
+        input.limit
+      )
+      return {
+        facts,
+        asOf: input.asOf,
+        groupId: input.groupId,
+        count: facts.length,
+      }
     }),
 })

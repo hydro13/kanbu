@@ -1,6 +1,6 @@
 /*
  * Graphiti Service
- * Version: 3.1.0
+ * Version: 3.5.0
  *
  * Knowledge graph service for Wiki using FalkorDB.
  * Integrates with Python Graphiti service for LLM-based entity extraction.
@@ -12,6 +12,10 @@
  * Signed: 2026-01-12
  * Change: Fase 15.1 - WikiAiService integration for provider-based extraction
  * Change: Fase 15.2 - WikiEmbeddingService for semantic search via Qdrant
+ * Change: Fase 16.1 - Bi-temporal edge fields (valid_at, invalid_at, created_at, expired_at, fact)
+ * Change: Fase 16.2 - LLM-based date extraction (enabled by default, DISABLE_DATE_EXTRACTION env var to disable)
+ * Change: Fase 16.3 - Contradiction detection and resolution (invalidates outdated facts)
+ * Change: Fase 16.4 - Temporal queries with FalkorDB fallback (getFactsAsOf, temporalSearch)
  * ===================================================================
  */
 
@@ -28,8 +32,12 @@ import {
   getWikiAiService,
   WikiEmbeddingService,
   getWikiEmbeddingService,
+  getContradictionAuditService,
+  ContradictionCategory,
+  type ContradictionAuditEntry,
   type WikiContext,
   type SemanticSearchResult,
+  type ExistingFact,
 } from '../lib/ai/wiki'
 
 // =============================================================================
@@ -40,6 +48,14 @@ export interface GraphitiConfig {
   host: string
   port: number
   graphName: string
+  /**
+   * Enable LLM-based date extraction for edges (Fase 16.2)
+   * When enabled, extracts valid_at/invalid_at from wiki content using AI
+   * Performance impact: adds 1 LLM call per entity mention
+   * Can be disabled via DISABLE_DATE_EXTRACTION=true env var
+   * @default true
+   */
+  enableDateExtraction?: boolean
 }
 
 export interface WikiEpisode {
@@ -47,6 +63,12 @@ export interface WikiEpisode {
   title: string
   slug: string
   content: string
+  /**
+   * Old content for diff-based extraction (Fase 17.3.1)
+   * When provided, only extracts entities from changed/new parts
+   * This reduces token usage from 600K+ to ~10K per edit
+   */
+  oldContent?: string
   workspaceId?: number
   projectId?: number
   groupId: string // wiki-ws-{id} or wiki-proj-{id}
@@ -68,12 +90,73 @@ export interface GraphEdge {
   properties: Record<string, unknown>
 }
 
+/**
+ * Bi-temporal edge properties (Fase 16.1)
+ *
+ * Transaction Time: When the edge was recorded in the system
+ * - created_at: When the edge was first created
+ * - expired_at: When the edge was superseded by a newer version (soft delete)
+ *
+ * Valid Time: When the fact was true in the real world
+ * - valid_at: When the fact became true
+ * - invalid_at: When the fact stopped being true
+ *
+ * Additional:
+ * - fact: Human-readable description of the relationship
+ * - updatedAt: Last modification time (kept for backwards compatibility)
+ */
+export interface TemporalEdgeProperties {
+  // Transaction time
+  created_at: string    // ISO timestamp - when edge was first created
+  expired_at?: string   // ISO timestamp - when edge was replaced/deleted
+
+  // Valid time
+  valid_at?: string     // ISO timestamp - when fact became true in real world
+  invalid_at?: string   // ISO timestamp - when fact stopped being true
+
+  // Fact description
+  fact?: string         // Human-readable description of the relationship
+
+  // Legacy (kept for compatibility)
+  updatedAt: string     // ISO timestamp - last update time
+}
+
 export interface SearchResult {
   nodeId: string
   name: string
   type: string
   score: number
   pageId?: number
+}
+
+/**
+ * Temporal fact result from getFactsAsOf (Fase 16.4)
+ */
+export interface TemporalFact {
+  sourceId: string
+  sourceName: string
+  sourceType: string
+  targetId: string
+  targetName: string
+  targetType: string
+  fact: string
+  edgeType: string
+  validAt: string | null
+  invalidAt: string | null
+  createdAt: string
+  pageId?: number
+}
+
+/**
+ * Result from syncWikiPage including contradiction data (Fase 17.4)
+ */
+export interface SyncWikiPageResult {
+  /** Number of entities extracted */
+  entitiesExtracted: number
+  /** Number of contradictions detected and resolved */
+  contradictionsResolved: number
+  /** Audit entries for detected contradictions (for UI notification) */
+  contradictions: ContradictionAuditEntry[]
 }
 
 // =============================================================================
@@ -89,11 +172,13 @@ export class GraphitiService {
   private wikiAiService: WikiAiService | null = null
   private wikiEmbeddingService: WikiEmbeddingService | null = null
   private prisma: PrismaClient | null = null
+  private enableDateExtraction: boolean = true // Fase 16.2
 
   constructor(config?: Partial<GraphitiConfig>, prisma?: PrismaClient) {
     const host = config?.host ?? process.env.FALKORDB_HOST ?? 'localhost'
     const port = config?.port ?? parseInt(process.env.FALKORDB_PORT ?? '6379')
     this.graphName = config?.graphName ?? 'kanbu_wiki'
+    this.enableDateExtraction = config?.enableDateExtraction ?? (process.env.DISABLE_DATE_EXTRACTION !== 'true')
 
     // Initialize Python service client
     this.pythonClient = getGraphitiClient()
@@ -183,16 +268,34 @@ export class GraphitiService {
 
     try {
       // Create indexes for faster lookups
-      await this.query(`CREATE INDEX IF NOT EXISTS FOR (n:WikiPage) ON (n.pageId)`)
-      await this.query(`CREATE INDEX IF NOT EXISTS FOR (n:WikiPage) ON (n.groupId)`)
-      await this.query(`CREATE INDEX IF NOT EXISTS FOR (n:Concept) ON (n.name)`)
-      await this.query(`CREATE INDEX IF NOT EXISTS FOR (n:Person) ON (n.name)`)
+      // FalkorDB syntax: CREATE INDEX ON :Label(property)
+      // Note: FalkorDB doesn't support IF NOT EXISTS, so we catch errors for existing indexes
+      await this.createIndexSafe('WikiPage', 'pageId')
+      await this.createIndexSafe('WikiPage', 'groupId')
+      await this.createIndexSafe('Concept', 'name')
+      await this.createIndexSafe('Person', 'name')
 
       this.initialized = true
       console.log('[GraphitiService] Graph initialized')
     } catch (error) {
       console.error('[GraphitiService] Failed to initialize graph:', error)
       // Don't throw - allow service to work even if indexes fail
+    }
+  }
+
+  /**
+   * Create an index safely, ignoring errors if index already exists
+   * FalkorDB doesn't support IF NOT EXISTS for indexes
+   */
+  private async createIndexSafe(label: string, property: string): Promise<void> {
+    try {
+      await this.query(`CREATE INDEX ON :${label}(${property})`)
+    } catch (error) {
+      // Ignore "Index already exists" errors
+      const errorStr = String(error)
+      if (!errorStr.includes('already indexed') && !errorStr.includes('Index already exists')) {
+        console.warn(`[GraphitiService] Index creation warning for ${label}.${property}:`, errorStr)
+      }
     }
   }
 
@@ -248,9 +351,18 @@ export class GraphitiService {
    *
    * Uses Kanbu-specific entity types (Fase 10):
    * - WikiPage, Task, User, Project, Concept
+   *
+   * Returns contradiction data for UI notifications (Fase 17.4)
    */
-  async syncWikiPage(episode: WikiEpisode): Promise<void> {
+  async syncWikiPage(episode: WikiEpisode): Promise<SyncWikiPageResult> {
     const { pageId, title, content, groupId, timestamp, workspaceId } = episode
+
+    // Default result (no contradictions)
+    const emptyResult: SyncWikiPageResult = {
+      entitiesExtracted: 0,
+      contradictionsResolved: 0,
+      contradictions: [],
+    }
 
     // Try Python service first (LLM-based entity extraction with Kanbu entity types)
     if (await this.isPythonServiceAvailable()) {
@@ -274,7 +386,8 @@ export class GraphitiService {
 
         // Also sync basic page metadata to FalkorDB for backlinks/queries
         await this.syncPageMetadataFallback(episode)
-        return
+        // Python service doesn't support contradiction detection yet
+        return { ...emptyResult, entitiesExtracted: result.entities_extracted }
       } catch (error) {
         if (error instanceof GraphitiClientError) {
           console.warn(
@@ -295,7 +408,7 @@ export class GraphitiService {
       try {
         const aiResult = await this.syncWikiPageWithAiService(episode)
         if (aiResult) {
-          return // Successfully synced with WikiAiService
+          return aiResult // Successfully synced with WikiAiService, includes contradiction data
         }
       } catch (error) {
         console.warn(
@@ -306,15 +419,20 @@ export class GraphitiService {
 
     // Final fallback: Direct FalkorDB with rules-based extraction
     await this.syncWikiPageFallback(episode)
+    return emptyResult
   }
 
   /**
    * Sync wiki page using WikiAiService (Fase 15.1)
    * Uses configured providers from Fase 14 for LLM-based entity extraction
+   * Returns contradiction data for UI notifications (Fase 17.4)
+   *
+   * OPTIMIZED (Fase 17.3.1): When oldContent is provided, uses diff-based extraction
+   * to only process new/changed content. This reduces token usage from 600K+ to ~10K per edit.
    */
-  private async syncWikiPageWithAiService(episode: WikiEpisode): Promise<boolean> {
-    if (!this.wikiAiService || !episode.workspaceId) {
-      return false
+  private async syncWikiPageWithAiService(episode: WikiEpisode): Promise<SyncWikiPageResult | null> {
+    if (!this.wikiAiService || !episode.workspaceId || !this.prisma) {
+      return null
     }
 
     const context: WikiContext = {
@@ -326,47 +444,251 @@ export class GraphitiService {
     const capabilities = await this.wikiAiService.getCapabilities(context)
     if (!capabilities.reasoning) {
       console.log(`[GraphitiService] No reasoning provider configured for workspace ${episode.workspaceId}`)
-      return false
+      return null
     }
 
     await this.initialize()
 
-    const { pageId, title, content, timestamp } = episode
+    const { pageId, title, content, oldContent, timestamp, userId, workspaceId, projectId } = episode
+
+    // Fase 17.3.1: Calculate diff for incremental extraction
+    const isUpdate = !!oldContent
+    const diffContent = this.calculateContentDiff(oldContent, content)
+
+    // If nothing changed, skip expensive operations
+    if (isUpdate && diffContent.length === 0) {
+      console.log(`[GraphitiService] Page ${pageId}: No content changes detected, skipping entity extraction`)
+      return {
+        entitiesExtracted: 0,
+        contradictionsResolved: 0,
+        contradictions: [],
+      }
+    }
+
+    // For updates: extract entities from diff only (new/changed content)
+    // For creates: extract from full content
+    const contentToExtract = isUpdate ? diffContent : content
 
     // Extract entities using WikiAiService (Fase 14 providers)
     const extractionResult = await this.wikiAiService.extractEntities(
       context,
-      content,
+      contentToExtract,
       ['WikiPage', 'Task', 'User', 'Project', 'Concept']
     )
+
+    // Log diff-based optimization
+    if (isUpdate) {
+      console.log(
+        `[GraphitiService] Page ${pageId}: Diff-based extraction - ` +
+        `diff size: ${diffContent.length} chars (was ${content.length}), ` +
+        `${extractionResult.entities.length} entities in diff`
+      )
+    }
 
     // Sync page metadata to FalkorDB
     await this.syncPageMetadataFallback(episode)
 
     // Create entity nodes and relationships
+    // Fase 17.4: Collect contradiction audit entries for UI notification
+    let datesExtracted = 0
+    let contradictionsResolved = 0
+    const contradictionAuditEntries: ContradictionAuditEntry[] = []
+    const auditService = getContradictionAuditService(this.prisma)
+
+    // Track new entities for logging
+    let newEntityCount = 0
+    let skippedEntityCount = 0
+
     for (const entity of extractionResult.entities) {
       // Map entity type to graph label
       const graphType = this.mapEntityTypeToGraphLabel(entity.type)
 
-      // Create entity node
+      // Fase 17.3.1: Check if this entity is new (not in old content)
+      // Only run expensive LLM operations for new entities
+      const entityIsNew = this.isNewEntity(entity.name, oldContent)
+
+      // Create/update entity node (always do this for lastSeen timestamp)
       await this.query(`
         MERGE (e:${graphType} {name: '${this.escapeString(entity.name)}'})
         SET e.lastSeen = '${timestamp.toISOString()}',
             e.confidence = ${entity.confidence}
       `)
 
-      // Create relationship from page to entity
+      // Generate fact description
+      // Fase 17.4: Use actual context from content for meaningful contradiction detection
+      // Instead of generic "page mentions entity", extract the actual sentence about the entity
+      const contextContent = isUpdate ? diffContent : content
+      const entityContextFact = this.extractEntityContext(contextContent, entity.name, title, 2)
+
+      // For edge storage and date extraction, use full content context
+      // This ensures we capture the actual semantic meaning for contradiction comparison
+      const mentionsFact = entityContextFact
+
+      // Debug log: Show extracted fact for verification
+      console.log(`[GraphitiService] Entity "${entity.name}" fact: "${mentionsFact.substring(0, 100)}${mentionsFact.length > 100 ? '...' : ''}"`)
+
+      // Fase 16.2: Extract dates using LLM if enabled
+      // OPTIMIZED: Only for NEW entities (Fase 17.3.1)
+      let validAt: Date | undefined
+      let invalidAt: Date | undefined
+
+      if (this.enableDateExtraction && this.wikiAiService && entityIsNew) {
+        newEntityCount++
+        try {
+          // contextContent already defined above for entity context extraction
+          const dateResult = await this.wikiAiService.extractEdgeDates(
+            context,
+            mentionsFact,
+            contextContent,
+            timestamp
+          )
+          if (dateResult.validAt) {
+            validAt = dateResult.validAt
+          }
+          if (dateResult.invalidAt) {
+            invalidAt = dateResult.invalidAt
+          }
+          datesExtracted++
+
+          if (dateResult.reasoning) {
+            console.log(
+              `[GraphitiService] Date extraction for "${entity.name}": ${dateResult.reasoning}`
+            )
+          }
+        } catch (dateError) {
+          console.warn(
+            `[GraphitiService] Date extraction failed for "${entity.name}": ` +
+            `${dateError instanceof Error ? dateError.message : 'Unknown error'}`
+          )
+        }
+      }
+
+      // Fase 16.3 & 17.4: Detect and resolve contradictions, log to audit trail
+      // NOTE: Contradiction detection runs for ALL entities in the diff, not just new ones!
+      // A change like "Robin has brown hair" -> "Robin has green hair" should be detected
+      // even though "Robin" already existed in the old content.
+      if (this.enableDateExtraction && this.wikiAiService) {
+        try {
+          // Get existing edges for this entity (excluding current page to avoid false positives)
+          const existingFacts = await this.getExistingEdgesForEntity(entity.name, graphType, pageId)
+
+          // Debug: Log existing facts found for contradiction comparison
+          console.log(
+            `[GraphitiService] Contradiction check for "${entity.name}": ` +
+            `${existingFacts.length} existing facts found from other pages`
+          )
+          if (existingFacts.length > 0) {
+            existingFacts.forEach((f, i) => {
+              console.log(`  - Fact ${i + 1}: "${f.fact.substring(0, 80)}${f.fact.length > 80 ? '...' : ''}"`)
+            })
+          }
+
+          if (existingFacts.length > 0) {
+            // Detect contradictions
+            const contradictionResult = await this.wikiAiService.detectContradictions(
+              context,
+              mentionsFact,
+              existingFacts
+            )
+
+            if (contradictionResult.contradictedFactIds.length > 0) {
+              console.log(
+                `[GraphitiService] Contradictions detected for "${entity.name}": ` +
+                `${contradictionResult.contradictedFactIds.length} facts (${contradictionResult.reasoning})`
+              )
+
+              // Resolve contradictions by invalidating old edges
+              const resolved = await this.resolveContradictions(
+                contradictionResult.contradictedFactIds,
+                validAt ?? timestamp
+              )
+              contradictionsResolved += resolved
+
+              // Fase 17.4: Log to audit trail for UI notification
+              if (resolved > 0) {
+                try {
+                  // Build invalidated facts array for audit
+                  const invalidatedFacts = contradictionResult.contradictedFactIds.map((id) => {
+                    const existingFact = existingFacts.find((f) => f.id === id)
+                    return {
+                      id,
+                      fact: existingFact?.fact ?? 'Unknown fact',
+                    }
+                  })
+
+                  // Use defaults for category and confidence (basic detection doesn't provide these)
+                  // Enhanced detection (Fase 17.2) would provide more detailed info
+                  const category = ContradictionCategory.FACTUAL // Default category
+                  const confidence = 0.85 // Default high confidence for auto-resolved contradictions
+                  const strategy = 'INVALIDATE_OLD' as const // Default strategy for auto-resolution
+
+                  // Log to audit service
+                  const auditEntry = await auditService.logContradictionResolution({
+                    workspaceId,
+                    projectId: projectId ?? undefined,
+                    wikiPageId: pageId,
+                    userId,
+                    newFactId: `entity-${entity.name}`,
+                    newFact: mentionsFact,
+                    invalidatedFacts,
+                    strategy,
+                    confidence,
+                    category,
+                    reasoning: contradictionResult.reasoning,
+                  })
+
+                  contradictionAuditEntries.push(auditEntry)
+
+                  console.log(
+                    `[GraphitiService] Logged contradiction audit entry ${auditEntry.id} for "${entity.name}"`
+                  )
+                } catch (auditError) {
+                  console.warn(
+                    `[GraphitiService] Failed to log contradiction audit for "${entity.name}": ` +
+                    `${auditError instanceof Error ? auditError.message : 'Unknown error'}`
+                  )
+                }
+              }
+            }
+          }
+        } catch (contradictionError) {
+          console.warn(
+            `[GraphitiService] Contradiction detection failed for "${entity.name}": ` +
+            `${contradictionError instanceof Error ? contradictionError.message : 'Unknown error'}`
+          )
+        }
+      }
+
+      // Fase 17.3.1: Track skipped entities for date extraction only
+      // (contradiction detection now runs for all entities in diff)
+      if (!entityIsNew && this.enableDateExtraction) {
+        skippedEntityCount++
+      }
+
+      // Create relationship from page to entity with temporal properties (Fase 16.1/16.2)
+      const temporalProps = this.generateTemporalEdgeProps(timestamp, {
+        fact: mentionsFact,
+        validAt,
+        invalidAt,
+      })
       await this.query(`
         MATCH (p:WikiPage {pageId: ${pageId}})
         MATCH (e:${graphType} {name: '${this.escapeString(entity.name)}'})
         MERGE (p)-[r:MENTIONS]->(e)
-        SET r.updatedAt = '${timestamp.toISOString()}'
+        SET ${temporalProps}
       `)
     }
 
+    // Fase 17.3.1: Enhanced logging with optimization stats
+    const dateInfo = this.enableDateExtraction ? `, ${datesExtracted} dates extracted` : ''
+    const contradictionInfo = contradictionsResolved > 0 ? `, ${contradictionsResolved} contradictions resolved` : ''
+    // Note: skipped count is for date extraction only - contradiction detection runs for all entities
+    const optimizationInfo = isUpdate && skippedEntityCount > 0
+      ? ` (date extraction: ${newEntityCount} new, ${skippedEntityCount} existing)`
+      : ''
     console.log(
       `[GraphitiService] Synced page ${pageId}: "${title}" via WikiAiService (${extractionResult.provider}) - ` +
-      `${extractionResult.entities.length} entities extracted`
+      `${extractionResult.entities.length} entities extracted${dateInfo}${contradictionInfo}${optimizationInfo}`
     )
 
     // Store embedding for semantic search (Fase 15.2)
@@ -388,7 +710,12 @@ export class GraphitiService {
       }
     }
 
-    return true
+    // Fase 17.4: Return result with contradiction data for UI notification
+    return {
+      entitiesExtracted: extractionResult.entities.length,
+      contradictionsResolved,
+      contradictions: contradictionAuditEntries,
+    }
   }
 
   /**
@@ -451,12 +778,14 @@ export class GraphitiService {
         SET e.lastSeen = '${timestamp.toISOString()}'
       `)
 
-      // Create relationship from page to entity
+      // Create relationship from page to entity with temporal properties (Fase 16.1)
+      const mentionsFact = this.generateMentionsFact(title, entity.name, entity.type)
+      const temporalProps = this.generateTemporalEdgeProps(timestamp, { fact: mentionsFact })
       await this.query(`
         MATCH (p:WikiPage {pageId: ${pageId}})
         MATCH (e:${entity.type} {name: '${this.escapeString(entity.name)}'})
         MERGE (p)-[r:MENTIONS]->(e)
-        SET r.updatedAt = '${timestamp.toISOString()}'
+        SET ${temporalProps}
       `)
     }
 
@@ -469,13 +798,15 @@ export class GraphitiService {
         MERGE (target:WikiPage {title: '${this.escapeString(link)}'})
       `)
 
-      // Create LINKS_TO relationship
+      // Create LINKS_TO relationship with temporal properties (Fase 16.1)
+      const linksToFact = this.generateLinksToFact(title, link)
+      const temporalProps = this.generateTemporalEdgeProps(timestamp, { fact: linksToFact })
       await this.query(`
         MATCH (source:WikiPage {pageId: ${pageId}})
         MATCH (target:WikiPage {title: '${this.escapeString(link)}'})
         WHERE source <> target
         MERGE (source)-[r:LINKS_TO]->(target)
-        SET r.updatedAt = '${timestamp.toISOString()}'
+        SET ${temporalProps}
       `)
     }
 
@@ -504,16 +835,19 @@ export class GraphitiService {
           p.contentLength = ${content.length}
     `)
 
-    // Extract and sync wiki links for backlinks functionality
+    // Extract and sync wiki links for backlinks functionality with temporal properties (Fase 16.1)
     const wikiLinks = this.extractWikiLinks(content)
     for (const link of wikiLinks) {
       await this.query(`MERGE (target:WikiPage {title: '${this.escapeString(link)}'})`)
+
+      const linksToFact = this.generateLinksToFact(title, link)
+      const temporalProps = this.generateTemporalEdgeProps(timestamp, { fact: linksToFact })
       await this.query(`
         MATCH (source:WikiPage {pageId: ${pageId}})
         MATCH (target:WikiPage {title: '${this.escapeString(link)}'})
         WHERE source <> target
         MERGE (source)-[r:LINKS_TO]->(target)
-        SET r.updatedAt = '${timestamp.toISOString()}'
+        SET ${temporalProps}
       `)
     }
   }
@@ -687,34 +1021,14 @@ export class GraphitiService {
   }
 
   /**
-   * Temporal search - "What did we know at time X?"
-   * Only available via Python service
+   * Temporal search - "What did we know at time X?" (Fase 16.4 - Updated)
+   *
+   * Now with FalkorDB fallback using bi-temporal fields when Python service unavailable.
+   * @see temporalSearchWithFallback for implementation details
    */
   async temporalSearch(query: string, groupId: string, asOf: Date, limit: number = 10): Promise<SearchResult[]> {
-    if (!await this.isPythonServiceAvailable()) {
-      console.warn('[GraphitiService] Temporal search requires Python service - not available')
-      return []
-    }
-
-    try {
-      const response = await this.pythonClient.temporalSearch({
-        query,
-        group_id: groupId,
-        as_of: asOf.toISOString(),
-        limit,
-      })
-
-      return response.results.map(r => ({
-        nodeId: r.uuid,
-        name: r.name,
-        type: r.result_type,
-        score: r.score,
-        pageId: r.metadata?.pageId as number | undefined,
-      }))
-    } catch (error) {
-      console.error('[GraphitiService] Temporal search failed:', error)
-      return []
-    }
+    // Delegate to the fallback-enabled method
+    return this.temporalSearchWithFallback(query, groupId, asOf, limit)
   }
 
   // ===========================================================================
@@ -833,6 +1147,68 @@ export class GraphitiService {
     }
 
     return this.wikiEmbeddingService.getStats()
+  }
+
+  /**
+   * Get facts for an entity from the knowledge graph (Fase 17.5)
+   *
+   * Used by user-triggered fact check feature.
+   * Returns all facts about an entity with source page information.
+   *
+   * @param entityName - Name of the entity to search for
+   * @param entityType - Type/label (e.g., 'Person', 'Concept', 'Project')
+   * @param excludePageId - Optional page ID to exclude from results
+   */
+  async getFactsForEntity(
+    entityName: string,
+    entityType: string,
+    excludePageId?: number
+  ): Promise<Array<{
+    fact: string
+    pageId: number
+    pageTitle: string
+    pageSlug?: string
+    validAt: string | null
+    invalidAt: string | null
+  }>> {
+    await this.initialize()
+
+    const whereClause = excludePageId
+      ? `WHERE e.expired_at IS NULL AND p.pageId <> ${excludePageId}`
+      : `WHERE e.expired_at IS NULL`
+
+    const result = await this.query(`
+      MATCH (p:WikiPage)-[e:MENTIONS]->(target:${entityType} {name: '${this.escapeString(entityName)}'})
+      ${whereClause}
+      RETURN p.pageId AS pageId,
+             p.title AS pageTitle,
+             p.slug AS pageSlug,
+             e.fact AS fact,
+             e.valid_at AS validAt,
+             e.invalid_at AS invalidAt
+      ORDER BY e.created_at DESC
+      LIMIT 20
+    `)
+
+    const parsed = this.parseResults<{
+      pageId: number
+      pageTitle: string
+      pageSlug: string | null
+      fact: string | null
+      validAt: string | null
+      invalidAt: string | null
+    }>(result, ['pageId', 'pageTitle', 'pageSlug', 'fact', 'validAt', 'invalidAt'])
+
+    return parsed
+      .filter(row => row.fact !== null)
+      .map(row => ({
+        fact: row.fact!,
+        pageId: row.pageId,
+        pageTitle: row.pageTitle || 'Unknown',
+        pageSlug: row.pageSlug ?? undefined,
+        validAt: row.validAt,
+        invalidAt: row.invalidAt,
+      }))
   }
 
   /**
@@ -1060,6 +1436,345 @@ export class GraphitiService {
   // Helpers
   // ===========================================================================
 
+  /**
+   * Calculate the diff between old and new content (Fase 17.3.1)
+   *
+   * Returns only the new/changed parts of the content.
+   * Uses a simple line-based diff that works well for wiki content.
+   *
+   * @param oldContent - Previous version of the content
+   * @param newContent - Current version of the content
+   * @returns The new/changed parts concatenated, or full newContent if no oldContent
+   */
+  private calculateContentDiff(oldContent: string | undefined, newContent: string): string {
+    if (!oldContent) {
+      // No old content = everything is new (first save)
+      return newContent
+    }
+
+    // Normalize whitespace for comparison
+    const normalizeText = (text: string) => text.trim().toLowerCase()
+
+    // Split into lines and create a set of old content lines
+    const oldLines = new Set(
+      oldContent.split('\n')
+        .map(line => normalizeText(line))
+        .filter(line => line.length > 0)
+    )
+
+    // Find lines that are new or changed
+    const newLines = newContent.split('\n').filter(line => {
+      const normalized = normalizeText(line)
+      return normalized.length > 0 && !oldLines.has(normalized)
+    })
+
+    // If no new lines, return empty (nothing changed)
+    if (newLines.length === 0) {
+      return ''
+    }
+
+    // Return the new/changed content
+    return newLines.join('\n')
+  }
+
+  /**
+   * Check if an entity is new (not mentioned in old content) (Fase 17.3.1)
+   *
+   * @param entityName - Name of the entity to check
+   * @param oldContent - Previous version of the content
+   * @returns true if entity is new, false if it was already in old content
+   */
+  private isNewEntity(entityName: string, oldContent: string | undefined): boolean {
+    if (!oldContent) {
+      // No old content = all entities are new
+      return true
+    }
+
+    // Case-insensitive search for entity name in old content
+    const normalizedOld = oldContent.toLowerCase()
+    const normalizedName = entityName.toLowerCase()
+
+    return !normalizedOld.includes(normalizedName)
+  }
+
+  /**
+   * Generate temporal edge properties for a new edge (Fase 16.1)
+   *
+   * @param timestamp - The reference timestamp for the edge
+   * @param options - Optional overrides for temporal fields
+   * @returns Cypher SET clause fragment for temporal properties
+   */
+  private generateTemporalEdgeProps(
+    timestamp: Date,
+    options?: {
+      fact?: string
+      validAt?: Date
+      invalidAt?: Date
+      isUpdate?: boolean  // If true, don't set created_at
+    }
+  ): string {
+    const now = new Date()
+    const isoTimestamp = timestamp.toISOString()
+    const isoNow = now.toISOString()
+
+    // Build properties array
+    const props: string[] = [
+      `r.updatedAt = '${isoTimestamp}'`,
+    ]
+
+    // Transaction time: created_at (only on create, not update)
+    if (!options?.isUpdate) {
+      props.push(`r.created_at = COALESCE(r.created_at, '${isoNow}')`)
+    }
+
+    // Valid time: valid_at defaults to timestamp if not specified
+    const validAt = options?.validAt ?? timestamp
+    props.push(`r.valid_at = COALESCE(r.valid_at, '${validAt.toISOString()}')`)
+
+    // Valid time: invalid_at only if explicitly specified
+    if (options?.invalidAt) {
+      props.push(`r.invalid_at = '${options.invalidAt.toISOString()}'`)
+    }
+
+    // Fact description if provided
+    if (options?.fact) {
+      props.push(`r.fact = '${this.escapeString(options.fact)}'`)
+    }
+
+    return props.join(',\n            ')
+  }
+
+  /**
+   * Generate a fact description for a MENTIONS edge
+   */
+  private generateMentionsFact(pageTitle: string, entityName: string, entityType: string): string {
+    return `"${pageTitle}" mentions ${entityType.toLowerCase()} "${entityName}"`
+  }
+
+  /**
+   * Generate a fact description for a LINKS_TO edge
+   */
+  private generateLinksToFact(sourceTitle: string, targetTitle: string): string {
+    return `"${sourceTitle}" links to "${targetTitle}"`
+  }
+
+  /**
+   * Extract the actual sentence/context where an entity is mentioned (Fase 17.4)
+   *
+   * This function finds the sentence(s) in the content that mention the entity,
+   * providing meaningful context for contradiction detection.
+   *
+   * For example, if content contains "Robin has green hair. He works at Acme."
+   * and entity is "Robin", this returns "Robin has green hair."
+   *
+   * @param content - The page content to search
+   * @param entityName - The entity name to find
+   * @param pageTitle - Page title for fallback
+   * @param maxSentences - Maximum sentences to include (default: 2)
+   * @returns The extracted context or a fallback mentions fact
+   */
+  private extractEntityContext(
+    content: string,
+    entityName: string,
+    pageTitle: string,
+    maxSentences: number = 2
+  ): string {
+    // Normalize for case-insensitive search
+    const normalizedContent = content.toLowerCase()
+    const normalizedEntity = entityName.toLowerCase()
+
+    // Find position of entity mention
+    const entityIndex = normalizedContent.indexOf(normalizedEntity)
+    if (entityIndex === -1) {
+      // Entity not found in content, use fallback
+      return `"${pageTitle}" mentions "${entityName}"`
+    }
+
+    // Split content into sentences (simple approach)
+    // Handle common sentence endings: . ! ? and newlines
+    const sentences = content.split(/(?<=[.!?])\s+|\n+/).filter(s => s.trim().length > 0)
+
+    // Find sentences that contain the entity (case-insensitive)
+    const relevantSentences: string[] = []
+    for (const sentence of sentences) {
+      if (sentence.toLowerCase().includes(normalizedEntity)) {
+        relevantSentences.push(sentence.trim())
+        if (relevantSentences.length >= maxSentences) break
+      }
+    }
+
+    if (relevantSentences.length === 0) {
+      // No sentence found, extract context around mention
+      const start = Math.max(0, entityIndex - 50)
+      const end = Math.min(content.length, entityIndex + entityName.length + 100)
+      let context = content.substring(start, end).trim()
+
+      // Clean up partial words at start/end
+      if (start > 0) {
+        const firstSpace = context.indexOf(' ')
+        if (firstSpace > 0 && firstSpace < 20) {
+          context = context.substring(firstSpace + 1)
+        }
+      }
+      if (end < content.length) {
+        const lastSpace = context.lastIndexOf(' ')
+        if (lastSpace > context.length - 20) {
+          context = context.substring(0, lastSpace)
+        }
+      }
+
+      return context || `"${pageTitle}" mentions "${entityName}"`
+    }
+
+    // Join relevant sentences
+    const contextFact = relevantSentences.join(' ')
+
+    // Truncate if too long (max 500 chars for fact description)
+    if (contextFact.length > 500) {
+      return contextFact.substring(0, 497) + '...'
+    }
+
+    return contextFact
+  }
+
+  /**
+   * Get existing edges (MENTIONS relationships) for an entity (Fase 16.3)
+   *
+   * Returns all edges that mention a specific entity, including their
+   * fact descriptions and temporal properties.
+   *
+   * Fase 17.4: If stored facts are generic "mentions" format, fetches page content
+   * from database and extracts actual context for meaningful contradiction comparison.
+   *
+   * @param entityName - The name of the entity to find edges for
+   * @param entityType - The type/label of the entity (e.g., 'Concept', 'User')
+   * @param excludePageId - Optional pageId to exclude (prevents false positives when re-saving same page)
+   */
+  private async getExistingEdgesForEntity(
+    entityName: string,
+    entityType: string,
+    excludePageId?: number
+  ): Promise<ExistingFact[]> {
+    // Build WHERE clause - always exclude expired edges, optionally exclude current page
+    const whereClause = excludePageId
+      ? `WHERE e.expired_at IS NULL AND p.pageId <> ${excludePageId}`
+      : `WHERE e.expired_at IS NULL`
+
+    const result = await this.query(`
+      MATCH (p:WikiPage)-[e:MENTIONS]->(target:${entityType} {name: '${this.escapeString(entityName)}'})
+      ${whereClause}
+      RETURN id(e) AS edgeId,
+             e.fact AS fact,
+             e.valid_at AS validAt,
+             e.invalid_at AS invalidAt,
+             p.pageId AS pageId,
+             p.title AS pageTitle
+    `)
+
+    const parsed = this.parseResults<{
+      edgeId: number | string
+      fact: string | null
+      validAt: string | null
+      invalidAt: string | null
+      pageId: number
+      pageTitle: string
+    }>(result, ['edgeId', 'fact', 'validAt', 'invalidAt', 'pageId', 'pageTitle'])
+
+    // Fase 17.4: Check if facts are in old generic format and need context extraction
+    const facts: ExistingFact[] = []
+    for (const row of parsed) {
+      if (!row.fact) continue
+
+      let fact = row.fact
+
+      // Detect old generic "mentions" format and extract actual context if needed
+      const isGenericFormat = fact.includes('" mentions ') && fact.includes(' "')
+      if (isGenericFormat && this.prisma) {
+        try {
+          // Fetch page content from database to extract actual context
+          const page = await this.prisma.wikiPage.findUnique({
+            where: { id: row.pageId },
+            select: { content: true, title: true }
+          })
+          if (page?.content) {
+            const extractedContext = this.extractEntityContext(
+              page.content,
+              entityName,
+              page.title ?? row.pageTitle,
+              2
+            )
+            // Only use extracted context if it's more meaningful than generic format
+            if (!extractedContext.includes('" mentions "') && extractedContext.length > 10) {
+              fact = extractedContext
+              console.log(
+                `[GraphitiService] Upgraded fact for "${entityName}" from page ${row.pageId}: "${fact.substring(0, 80)}..."`
+              )
+            }
+          }
+        } catch (err) {
+          // Keep original fact on error
+          console.warn(
+            `[GraphitiService] Failed to extract context for "${entityName}" from page ${row.pageId}:`,
+            err instanceof Error ? err.message : 'Unknown error'
+          )
+        }
+      }
+
+      facts.push({
+        id: `edge-${row.edgeId}`,
+        fact,
+        validAt: row.validAt,
+        invalidAt: row.invalidAt,
+      })
+    }
+
+    return facts
+  }
+
+  /**
+   * Resolve contradictions by invalidating old edges (Fase 16.3)
+   *
+   * When a new fact contradicts existing facts, this method:
+   * 1. Sets invalid_at on the old edge to when the new fact became valid
+   * 2. Sets expired_at on the old edge to mark it as superseded
+   *
+   * @param contradictedEdgeIds - IDs of edges to invalidate (format: "edge-{id}")
+   * @param newFactValidAt - When the new (contradicting) fact became valid
+   */
+  private async resolveContradictions(
+    contradictedEdgeIds: string[],
+    newFactValidAt: Date
+  ): Promise<number> {
+    if (contradictedEdgeIds.length === 0) return 0
+
+    const now = new Date()
+    let invalidatedCount = 0
+
+    for (const edgeId of contradictedEdgeIds) {
+      // Extract numeric ID from "edge-{id}" format
+      const numericId = edgeId.replace('edge-', '')
+
+      try {
+        // Update the edge to mark it as invalidated
+        await this.query(`
+          MATCH ()-[e]->()
+          WHERE id(e) = ${numericId}
+            AND e.expired_at IS NULL
+          SET e.invalid_at = '${newFactValidAt.toISOString()}',
+              e.expired_at = '${now.toISOString()}'
+        `)
+        invalidatedCount++
+      } catch (error) {
+        console.warn(
+          `[GraphitiService] Failed to invalidate edge ${edgeId}: ` +
+          `${error instanceof Error ? error.message : 'Unknown error'}`
+        )
+      }
+    }
+
+    return invalidatedCount
+  }
+
   private escapeString(str: string): string {
     return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"')
   }
@@ -1080,6 +1795,207 @@ export class GraphitiService {
       })
       return obj as T
     })
+  }
+
+  // ===========================================================================
+  // Temporal Queries (Fase 16.4)
+  // ===========================================================================
+
+  /**
+   * Get all facts that were valid at a specific point in time (Fase 16.4)
+   *
+   * Uses bi-temporal fields to filter:
+   * - Transaction time: edge must exist (expired_at is null)
+   * - Valid time: fact must be valid (valid_at <= asOf AND (invalid_at is null OR invalid_at > asOf))
+   *
+   * @param groupId - Wiki group ID to scope the query
+   * @param asOf - Point in time to query
+   * @param limit - Maximum number of facts to return
+   */
+  async getFactsAsOf(groupId: string, asOf: Date, limit: number = 100): Promise<TemporalFact[]> {
+    await this.initialize()
+
+    const asOfIso = asOf.toISOString()
+
+    // Query edges with bi-temporal filtering
+    // - expired_at IS NULL: edge has not been replaced (transaction time)
+    // - valid_at <= asOf: fact became valid before or at the query time
+    // - invalid_at IS NULL OR invalid_at > asOf: fact is still valid at query time
+    const result = await this.query(`
+      MATCH (source:WikiPage {groupId: '${groupId}'})-[e:MENTIONS]->(target)
+      WHERE source.pageId IS NOT NULL
+        AND (e.expired_at IS NULL)
+        AND (e.valid_at IS NULL OR e.valid_at <= '${asOfIso}')
+        AND (e.invalid_at IS NULL OR e.invalid_at > '${asOfIso}')
+      RETURN
+        ID(source) AS sourceId,
+        source.title AS sourceName,
+        'WikiPage' AS sourceType,
+        source.pageId AS pageId,
+        ID(target) AS targetId,
+        target.name AS targetName,
+        labels(target)[0] AS targetType,
+        e.fact AS fact,
+        'MENTIONS' AS edgeType,
+        e.valid_at AS validAt,
+        e.invalid_at AS invalidAt,
+        e.created_at AS createdAt
+      ORDER BY e.valid_at DESC
+      LIMIT ${limit}
+    `)
+
+    const parsed = this.parseResults<{
+      sourceId: number
+      sourceName: string
+      sourceType: string
+      pageId: number
+      targetId: number
+      targetName: string
+      targetType: string
+      fact: string | null
+      edgeType: string
+      validAt: string | null
+      invalidAt: string | null
+      createdAt: string | null
+    }>(result, [
+      'sourceId', 'sourceName', 'sourceType', 'pageId',
+      'targetId', 'targetName', 'targetType',
+      'fact', 'edgeType', 'validAt', 'invalidAt', 'createdAt'
+    ])
+
+    return parsed.map(r => ({
+      sourceId: String(r.sourceId),
+      sourceName: r.sourceName,
+      sourceType: r.sourceType,
+      targetId: String(r.targetId),
+      targetName: r.targetName,
+      targetType: r.targetType,
+      fact: r.fact ?? `${r.sourceName} mentions ${r.targetName}`,
+      edgeType: r.edgeType,
+      validAt: r.validAt,
+      invalidAt: r.invalidAt,
+      createdAt: r.createdAt ?? new Date().toISOString(),
+      pageId: r.pageId,
+    }))
+  }
+
+  /**
+   * Temporal search with FalkorDB fallback (Fase 16.4)
+   *
+   * Search for facts matching a query that were valid at a specific point in time.
+   * Falls back to FalkorDB bi-temporal queries when Python service is unavailable.
+   *
+   * @param query - Search query (matched against entity names and facts)
+   * @param groupId - Wiki group ID to scope the search
+   * @param asOf - Point in time to query
+   * @param limit - Maximum number of results
+   */
+  async temporalSearchWithFallback(
+    query: string,
+    groupId: string,
+    asOf: Date,
+    limit: number = 10
+  ): Promise<SearchResult[]> {
+    // Try Python service first (has full-text search capabilities)
+    if (await this.isPythonServiceAvailable()) {
+      try {
+        const response = await this.pythonClient.temporalSearch({
+          query,
+          group_id: groupId,
+          as_of: asOf.toISOString(),
+          limit,
+        })
+
+        return response.results.map(r => ({
+          nodeId: r.uuid,
+          name: r.name,
+          type: r.result_type,
+          score: r.score,
+          pageId: r.metadata?.pageId as number | undefined,
+        }))
+      } catch (error) {
+        console.warn('[GraphitiService] Python temporal search failed, using FalkorDB fallback:', error)
+      }
+    }
+
+    // FalkorDB fallback: search with bi-temporal filtering
+    await this.initialize()
+
+    const asOfIso = asOf.toISOString()
+    const searchTerm = query.toLowerCase().replace(/'/g, "\\'")
+
+    // Search for entities matching the query with temporal constraints
+    const result = await this.query(`
+      MATCH (p:WikiPage {groupId: '${groupId}'})-[e:MENTIONS]->(target)
+      WHERE p.pageId IS NOT NULL
+        AND (
+          toLower(target.name) CONTAINS '${searchTerm}'
+          OR (e.fact IS NOT NULL AND toLower(e.fact) CONTAINS '${searchTerm}')
+        )
+        AND (e.expired_at IS NULL)
+        AND (e.valid_at IS NULL OR e.valid_at <= '${asOfIso}')
+        AND (e.invalid_at IS NULL OR e.invalid_at > '${asOfIso}')
+      RETURN DISTINCT
+        ID(target) AS nodeId,
+        target.name AS name,
+        labels(target)[0] AS type,
+        p.pageId AS pageId,
+        0.8 AS score
+      LIMIT ${limit}
+    `)
+
+    const parsed = this.parseResults<{
+      nodeId: number
+      name: string
+      type: string
+      pageId: number
+      score: number
+    }>(result, ['nodeId', 'name', 'type', 'pageId', 'score'])
+
+    // Also search for pages matching the query
+    const pagesResult = await this.query(`
+      MATCH (p:WikiPage {groupId: '${groupId}'})
+      WHERE p.pageId IS NOT NULL
+        AND toLower(p.title) CONTAINS '${searchTerm}'
+      RETURN
+        p.pageId AS nodeId,
+        p.title AS name,
+        'WikiPage' AS type,
+        p.pageId AS pageId,
+        0.9 AS score
+      LIMIT ${limit}
+    `)
+
+    const parsedPages = this.parseResults<{
+      nodeId: number
+      name: string
+      type: string
+      pageId: number
+      score: number
+    }>(pagesResult, ['nodeId', 'name', 'type', 'pageId', 'score'])
+
+    // Combine and sort by score
+    const combined = [
+      ...parsedPages.map(r => ({
+        nodeId: `page-${r.nodeId}`,
+        name: r.name,
+        type: r.type,
+        score: r.score,
+        pageId: r.pageId,
+      })),
+      ...parsed.map(r => ({
+        nodeId: `${r.type.toLowerCase()}-${r.nodeId}`,
+        name: r.name,
+        type: r.type,
+        score: r.score,
+        pageId: r.pageId,
+      })),
+    ]
+
+    // Sort by score descending and limit
+    return combined
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit)
   }
 
   // ===========================================================================

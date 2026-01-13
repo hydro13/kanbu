@@ -35,13 +35,30 @@
  *
  * Modified: 2026-01-12
  * Change: Fase 15.5 - Added background indexing with useWikiBackgroundIndexing hook
+ *
+ * Modified: 2026-01-13
+ * Change: Fase 17.5 - Added user-triggered fact check via context menu
  * ===================================================================
  */
 
 import { useState, useCallback, useMemo, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { WorkspaceLayout } from '@/components/layout/WorkspaceLayout'
-import { WikiSidebar, WikiPageView, WikiVersionHistory, WikiSearchDialog, WikiGraphView, WikiTemporalSearch, AskWikiDialog, AskWikiFab } from '@/components/wiki'
+import {
+  WikiSidebar,
+  WikiPageView,
+  WikiVersionHistory,
+  WikiSearchDialog,
+  WikiGraphView,
+  WikiTemporalSearch,
+  AskWikiDialog,
+  AskWikiFab,
+  FactCheckDialog,
+  showContradictionToast,
+  type ContradictionCategory,
+  type ResolutionStrategy,
+  type FactCheckResult,
+} from '@/components/wiki'
 import type { WikiPageNode, WikiPageStatus, WikiBreadcrumb, WikiPageForSearch } from '@/components/wiki'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -135,6 +152,10 @@ export function WorkspaceWikiPage() {
   const [showTemporalSearch, setShowTemporalSearch] = useState(false)
   const [showAskWiki, setShowAskWiki] = useState(false)
   const [askWikiInitialQuery, setAskWikiInitialQuery] = useState<string | undefined>()
+  const [showFactCheck, setShowFactCheck] = useState(false)
+  const [factCheckText, setFactCheckText] = useState('')
+  const [factCheckResult, setFactCheckResult] = useState<FactCheckResult | null>(null)
+  const [factCheckError, setFactCheckError] = useState<string | undefined>()
 
   const utils = trpc.useUtils()
   const user = useAppSelector(selectUser)
@@ -178,11 +199,37 @@ export function WorkspaceWikiPage() {
   )
   const currentPage = currentPageQuery.data as FullPageFromApi | undefined
 
-  // Update mutation
+  // Update mutation - Fase 17.4: Now handles contradiction data
   const updateMutation = trpc.workspaceWiki.update.useMutation({
-    onSuccess: () => {
+    onSuccess: (result) => {
       utils.workspaceWiki.list.invalidate()
       utils.workspaceWiki.getBySlug.invalidate()
+
+      // Fase 17.4: Show toast if contradictions were resolved
+      if (result.contradictions && result.contradictions.length > 0) {
+        // Show toast for the first contradiction (batch handled by showBatchContradictionToasts)
+        const firstContradiction = result.contradictions[0]
+        if (firstContradiction) {
+          showContradictionToast({
+            contradiction: {
+              newFact: firstContradiction.newFact,
+              invalidatedFact: firstContradiction.invalidatedFacts[0]?.fact ?? 'Unknown fact',
+              confidence: firstContradiction.confidence,
+              category: firstContradiction.category as ContradictionCategory,
+              strategy: firstContradiction.strategy as ResolutionStrategy,
+              auditId: firstContradiction.id,
+            },
+            onViewDetails: () => {
+              // TODO: Open ContradictionDialog with details
+              console.log('[Wiki] View contradiction details:', firstContradiction.id)
+            },
+            onUndo: () => {
+              // TODO: Call revert mutation
+              console.log('[Wiki] Undo contradiction:', firstContradiction.id)
+            },
+          })
+        }
+      }
     },
   })
 
@@ -192,6 +239,18 @@ export function WorkspaceWikiPage() {
       utils.workspaceWiki.list.invalidate()
       setShowDeleteConfirm(false)
       navigate(`/workspace/${slug}/wiki`)
+    },
+  })
+
+  // Fact check mutation (Fase 17.5)
+  const factCheckMutation = trpc.wikiAi.factCheck.useMutation({
+    onSuccess: (result) => {
+      setFactCheckResult(result)
+      setFactCheckError(undefined)
+    },
+    onError: (error) => {
+      setFactCheckError(error.message)
+      setFactCheckResult(null)
     },
   })
 
@@ -452,6 +511,22 @@ export function WorkspaceWikiPage() {
     setShowAskWiki(false)
     setAskWikiInitialQuery(undefined)
   }, [])
+
+  // Handler: Fact Check selected text (Fase 17.5)
+  const handleFactCheck = useCallback((selectedText: string) => {
+    if (!workspace?.id) return
+
+    setFactCheckText(selectedText)
+    setFactCheckResult(null)
+    setFactCheckError(undefined)
+    setShowFactCheck(true)
+
+    factCheckMutation.mutate({
+      workspaceId: workspace.id,
+      selectedText,
+      currentPageId: currentPage?.id,
+    })
+  }, [workspace?.id, currentPage?.id, factCheckMutation])
   const isLoading = workspaceQuery.isLoading || pagesQuery.isLoading
 
   // Loading state
@@ -527,6 +602,7 @@ export function WorkspaceWikiPage() {
               currentUser={currentUser}
               onAskWiki={handleOpenAskWiki}
               onAskAboutPage={handleAskAboutPage}
+              onFactCheck={handleFactCheck}
               availablePages={pages.map((p) => ({ id: p.id, title: p.title, parentId: p.parentId }))}
               onParentChange={handleParentChange}
             />
@@ -686,6 +762,17 @@ export function WorkspaceWikiPage() {
           />
         </>
       )}
+
+      {/* Fact Check Dialog (Fase 17.5) */}
+      <FactCheckDialog
+        open={showFactCheck}
+        onOpenChange={setShowFactCheck}
+        selectedText={factCheckText}
+        result={factCheckResult}
+        isLoading={factCheckMutation.isPending}
+        error={factCheckError}
+        wikiBasePath={basePath}
+      />
     </WorkspaceLayout>
   )
 }
@@ -828,8 +915,26 @@ function CreateWikiPageModal({
   const [contentJson, setContentJson] = useState('')
 
   const createMutation = trpc.workspaceWiki.create.useMutation({
-    onSuccess: (data) => {
-      onCreated(data.slug)
+    onSuccess: (result) => {
+      // Fase 17.4: API now returns { page, contradictions }
+      onCreated(result.page.slug)
+
+      // Show toast if contradictions were resolved during create (rare but possible)
+      if (result.contradictions && result.contradictions.length > 0) {
+        const firstContradiction = result.contradictions[0]
+        if (firstContradiction) {
+          showContradictionToast({
+            contradiction: {
+              newFact: firstContradiction.newFact,
+              invalidatedFact: firstContradiction.invalidatedFacts[0]?.fact ?? 'Unknown fact',
+              confidence: firstContradiction.confidence,
+              category: firstContradiction.category as ContradictionCategory,
+              strategy: firstContradiction.strategy as ResolutionStrategy,
+              auditId: firstContradiction.id,
+            },
+          })
+        }
+      }
     },
   })
 

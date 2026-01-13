@@ -392,8 +392,9 @@ export const workspaceWikiRouter = router({
         'Initial version'
       )
 
-      // Sync to Graphiti knowledge graph (async, don't block response)
-      getGraphitiService().syncWikiPage({
+      // Sync to Graphiti knowledge graph (async - don't block the response)
+      // Contradictions are logged to audit table and can be fetched separately
+      getGraphitiService(ctx.prisma).syncWikiPage({
         pageId: page.id,
         title: page.title,
         slug: page.slug,
@@ -402,17 +403,22 @@ export const workspaceWikiRouter = router({
         groupId: graphitiGroupId,
         userId: ctx.user.id,
         timestamp: new Date(),
-      }).then(() => {
+      }).then(async () => {
         // Mark as synced
-        ctx.prisma.workspaceWikiPage.update({
+        await ctx.prisma.workspaceWikiPage.update({
           where: { id: page.id },
           data: { graphitiSynced: true, graphitiSyncedAt: new Date() },
-        }).catch(console.error)
-      }).catch(err => {
-        console.error('[workspaceWiki.create] Graphiti sync failed:', err.message)
+        })
+      }).catch((err) => {
+        console.error('[workspaceWiki.create] Graphiti sync failed:', err instanceof Error ? err.message : err)
       })
 
-      return page
+      // Return page immediately (contradictions are logged and can be fetched via contradictionAudit.getForPage)
+      return {
+        page,
+        contradictions: [],
+        contradictionsResolved: 0,
+      }
     }),
 
   /**
@@ -491,27 +497,36 @@ export const workspaceWikiRouter = router({
           input.changeNote
         )
 
-        // Sync to Graphiti knowledge graph (async, don't block response)
-        getGraphitiService().syncWikiPage({
+        // Sync to Graphiti knowledge graph (async - don't block the response)
+        // Contradictions are logged to audit table and can be fetched separately
+        // Fase 17.3.1: Pass oldContent for diff-based extraction (reduces token usage 600K+ → ~10K)
+        getGraphitiService(ctx.prisma).syncWikiPage({
           pageId: page.id,
           title: page.title,
           slug: page.slug,
           content: page.content,
+          oldContent: existing.content, // For diff-based extraction
           workspaceId: existing.workspaceId,
           groupId: existing.graphitiGroupId ?? `wiki-ws-${existing.workspaceId}`,
           userId: ctx.user.id,
           timestamp: new Date(),
-        }).then(() => {
-          ctx.prisma.workspaceWikiPage.update({
+        }).then(async () => {
+          // Mark as synced
+          await ctx.prisma.workspaceWikiPage.update({
             where: { id: page.id },
             data: { graphitiSynced: true, graphitiSyncedAt: new Date() },
-          }).catch(console.error)
-        }).catch(err => {
-          console.error('[workspaceWiki.update] Graphiti sync failed:', err.message)
+          })
+        }).catch((err) => {
+          console.error('[workspaceWiki.update] Graphiti sync failed:', err instanceof Error ? err.message : err)
         })
       }
 
-      return page
+      // Return page immediately (contradictions are logged and can be fetched via contradictionAudit.getForPage)
+      return {
+        page,
+        contradictions: [],
+        contradictionsResolved: 0,
+      }
     }),
 
   /**
