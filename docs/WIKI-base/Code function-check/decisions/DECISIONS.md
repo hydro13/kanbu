@@ -12,7 +12,7 @@
 | Bi-Temporal Model | ✅ JA | 2026-01-13 | HOOG |
 | Contradiction Detection | 🔄 FASE 17 | 2026-01-13 | HOOG |
 | Edge Embeddings | 🔄 FASE 19 | 2026-01-13 | MEDIUM |
-| Community Detection | ⏳ PENDING | 2026-01-13 | LAAG |
+| Community Detection | 🔄 FASE 24 | 2026-01-14 | MEDIUM |
 | BM25 Search | 🔄 FASE 20 | 2026-01-13 | MEDIUM |
 | Node Embeddings | 🔄 FASE 21 | 2026-01-13 | MEDIUM |
 | Deduplication | 🔄 FASE 22 | 2026-01-13 | MEDIUM |
@@ -143,21 +143,55 @@
 
 ### Community Detection
 
-**Status:** ⏳ PENDING
+**Status:** ✅ IMPLEMENTEREN in Fase 24
 
 **Wat:**
 - Automatisch clusteren van entities
 - LLM summaries per cluster
 
+**Bestaande Infrastructuur:**
+- ✅ Connected components detection (Fase 15.4 WikiGraphView)
+- ✅ WikiAiService - LLM calls infrastructure (Fase 15.1)
+- ✅ FalkorDB nodes (Concept, Person, Task, Project, WikiPage)
+- ⚠️ Geen geavanceerd clustering algoritme (Leiden/Louvain)
+- ⚠️ Geen AI-gener cluster namen/descriptions
+
+**Wat Fase 24 toevoegt:**
+- 🔄 24.1 Validatie & Setup (pre-checks, test data)
+- 🔄 24.2 Clustering Algorithm (Leiden/Louvain, cache)
+- 🔄 24.3 AI Cluster Summaries (LLM prompts, naming, descriptions)
+- 🔄 24.4 tRPC Endpoints (6 endpoints, frontend hooks)
+- 🔄 24.5 UI Components (ClusterLegend, ClusterDetailPanel)
+- 🔄 24.6 Testing & Validation (~88 tests)
+
+**Nieuwe Componenten:**
+- `WikiClusterService.ts` - Clustering algoritme + cache management
+- `generateClusterSummary.ts` - LLM prompt template
+- `ClusterLegend.tsx` - Enhanced legend met AI namen
+- `ClusterDetailPanel.tsx` - Detail panel met edit/regenerate
+- `detectClusters`, `getClusters`, `getClusterDetails`, `updateClusterMetadata`, `regenerateClusterSummary`, `invalidateClusterCache` - tRPC endpoints
+- `useClusters`, `useClusterDetails`, `useDetectClusters` - React hooks
+
+**Multi-Tenten Considerations:**
+- Workspace-level wiki: `wiki-ws-{id}` (huidige)
+- Project-level wiki: `wiki-proj-{id}` (toekomstig, backwards compatible)
+- Clustering altijd scoped per `groupId` - nooit cross-tenant
+- WikiContext (workspaceId + projectId) altijd correct doorgeven
+
 **Argumenten VOOR:**
-- Automatische categorisatie
-- Overzichtelijker graph
+- Automatische categorisatie zonder handmatig werk
+- Overzichtelijker graph bij veel nodes
+- AI-gener namen zijn begrijpelijk voor users
+- Schaalbaar: werkt ook bij 100+ nodes
 
 **Argumenten TEGEN:**
-- Hoge complexiteit
-- Niet essentieel voor wiki
+- Extra LLM calls per cluster (~$0.01-0.03 per cluster)
+- Clustering algoritme complexiteit (Leiden implementatie)
+- Cache invalidatie nodig bij graph updates
 
-**Beslissing:** _Te bepalen door Robin_
+**Beslissing:** ✅ IMPLEMENTEREN in Fase 24
+
+**Zie:** [ROADMAP-STATUS.md - Fase 24](../ROADMAP-STATUS.md#fase-24-community-detection-volledig-)
 
 ---
 
@@ -373,6 +407,7 @@
 | 2026-01-13 | Node Embeddings | ✅ JA | Robin | Gepland voor Fase 21 |
 | 2026-01-14 | Deduplication | ✅ JA | Robin | Gepland voor Fase 22 |
 | 2026-01-14 | Reflexion Extraction | ✅ JA | Robin | Gepland voor Fase 23 |
+| 2026-01-14 | Community Detection | ✅ JA | Robin | Gepland voor Fase 24 |
 
 ---
 
