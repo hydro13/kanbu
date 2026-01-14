@@ -7,6 +7,7 @@
  * Fase 15.1 - Provider Koppeling
  * Fase 16.2 - Bi-temporal date extraction
  * Fase 16.3 - Contradiction detection
+ * Fase 22.4 - Entity Deduplication (LLM-based)
  */
 
 import type { PrismaClient } from '@prisma/client'
@@ -38,6 +39,13 @@ import {
   ResolutionAction,
   DEFAULT_CATEGORY_HANDLING,
   filterContradictionsByCategory,
+  // Fase 22.4 - Entity Deduplication
+  getDeduplicateNodesSystemPrompt,
+  getDeduplicateNodesUserPrompt,
+  parseDeduplicateNodesResponse,
+  getDeduplicateEdgeSystemPrompt,
+  getDeduplicateEdgeUserPrompt,
+  parseDeduplicateEdgeResponse,
   type ExistingFact,
   type ContradictionDetail,
   type EnhancedContradictionResult,
@@ -45,6 +53,7 @@ import {
   type BatchContradictionResult,
   type CategoryHandlingConfig,
 } from './prompts'
+import type { NodeResolutionsResponse, EdgeDuplicateResponse } from './types'
 
 // =============================================================================
 // Types
@@ -795,6 +804,115 @@ export class WikiAiService {
    */
   getDefaultCategoryConfig(): Record<ContradictionCategory, CategoryHandlingConfig> {
     return { ...DEFAULT_CATEGORY_HANDLING }
+  }
+
+  // ===========================================================================
+  // Entity Deduplication (Fase 22.4)
+  // ===========================================================================
+
+  /**
+   * Detect duplicate nodes using LLM
+   *
+   * Compares extracted entities against existing entities and determines
+   * which ones refer to the same real-world object or concept.
+   *
+   * @param context - Wiki context (workspace/project)
+   * @param extractedNodes - New entities to check
+   * @param existingNodes - Existing entities to compare against
+   * @param episodeContent - Current content for context
+   * @param previousEpisodes - Previous content for additional context
+   */
+  async detectNodeDuplicates(
+    context: WikiContext,
+    extractedNodes: Array<{ id: number; name: string; entity_type: string[] }>,
+    existingNodes: Array<{ idx: number; name: string; entity_types: string[]; summary?: string }>,
+    episodeContent: string,
+    previousEpisodes?: string[]
+  ): Promise<NodeResolutionsResponse> {
+    const provider = await this.getReasoningProviderOrThrow(context)
+
+    const systemPrompt = getDeduplicateNodesSystemPrompt()
+    const userPrompt = getDeduplicateNodesUserPrompt({
+      extractedNodes: extractedNodes.map((n) => ({
+        id: n.id,
+        name: n.name,
+        entity_type: n.entity_type,
+      })),
+      existingNodes: existingNodes.map((n) => ({
+        idx: n.idx,
+        name: n.name,
+        entity_types: n.entity_types,
+        summary: n.summary,
+      })),
+      episodeContent,
+      previousEpisodes,
+    })
+
+    try {
+      const response = await provider.chat(
+        [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        {
+          temperature: 0.1, // Low temperature for deterministic results
+          maxTokens: 2000,
+        }
+      )
+
+      return parseDeduplicateNodesResponse(response, extractedNodes.length)
+    } catch (error) {
+      console.error(
+        '[WikiAiService] detectNodeDuplicates failed:',
+        error instanceof Error ? error.message : error
+      )
+      return { entityResolutions: [] }
+    }
+  }
+
+  /**
+   * Detect duplicate edges using LLM
+   *
+   * Compares a new edge/fact against existing edges and determines
+   * if it's a duplicate or contradicts existing facts.
+   *
+   * @param context - Wiki context (workspace/project)
+   * @param existingEdges - Existing edges to compare against
+   * @param newEdge - New edge to check
+   */
+  async detectEdgeDuplicates(
+    context: WikiContext,
+    existingEdges: Array<{ idx: number; fact: string; sourceUuid: string; targetUuid: string }>,
+    newEdge: { fact: string; sourceUuid: string; targetUuid: string }
+  ): Promise<EdgeDuplicateResponse> {
+    const provider = await this.getReasoningProviderOrThrow(context)
+
+    const systemPrompt = getDeduplicateEdgeSystemPrompt()
+    const userPrompt = getDeduplicateEdgeUserPrompt({
+      existingEdges,
+      newEdge,
+    })
+
+    try {
+      const response = await provider.chat(
+        [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        {
+          temperature: 0.1,
+          maxTokens: 500,
+        }
+      )
+
+      return parseDeduplicateEdgeResponse(response, existingEdges.length)
+    } catch (error) {
+      console.error(
+        '[WikiAiService] detectEdgeDuplicates failed:',
+        error instanceof Error ? error.message : error
+      )
+      return { duplicateFacts: [], contradictedFacts: [], factType: 'DEFAULT' }
+    }
   }
 
   // ===========================================================================

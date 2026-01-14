@@ -557,10 +557,12 @@ export class GraphitiService {
       const entityIsNew = this.isNewEntity(entity.name, oldContent)
 
       // Create/update entity node (always do this for lastSeen timestamp)
+      // Fase 22: Include groupId for multi-tenancy and deduplication filtering
       await this.query(`
         MERGE (e:${graphType} {name: '${this.escapeString(entity.name)}'})
         SET e.lastSeen = '${timestamp.toISOString()}',
-            e.confidence = ${entity.confidence}
+            e.confidence = ${entity.confidence},
+            e.groupId = '${groupId}'
       `)
 
       // Fase 21.4: Collect node for embedding generation (skip WikiPage - they have page embeddings)
@@ -2114,6 +2116,265 @@ export class GraphitiService {
     return combined
       .sort((a, b) => b.score - a.score)
       .slice(0, limit)
+  }
+
+  // ===========================================================================
+  // Entity Deduplication (Fase 22.5)
+  // ===========================================================================
+
+  /**
+   * Create IS_DUPLICATE_OF edge between two nodes
+   *
+   * Direction: sourceNode -[:IS_DUPLICATE_OF]-> targetNode
+   * The source is the duplicate, target is the canonical version.
+   *
+   * @param sourceId - Internal node ID (as string) of the duplicate node
+   * @param targetId - Internal node ID (as string) of the canonical node
+   * @param confidence - Match confidence (0.0 - 1.0)
+   * @param matchType - How the match was determined
+   * @param resolvedBy - User who resolved (null for auto)
+   *
+   * Fase 22: Uses FalkorDB internal ID since entity nodes don't have uuid property
+   */
+  async createDuplicateOfEdge(
+    sourceId: string,
+    targetId: string,
+    confidence: number,
+    matchType: 'exact' | 'fuzzy' | 'llm' | 'embedding',
+    resolvedBy: string | null = null
+  ): Promise<void> {
+    // Fase 22: Match by internal node ID since nodes don't have uuid property
+    const query = `
+      MATCH (source), (target)
+      WHERE ID(source) = toInteger($sourceId) AND ID(target) = toInteger($targetId)
+      MERGE (source)-[r:IS_DUPLICATE_OF]->(target)
+      SET r.confidence = $confidence,
+          r.matchType = $matchType,
+          r.detectedAt = $detectedAt,
+          r.resolvedBy = $resolvedBy
+    `
+
+    await this.query(query, {
+      sourceId,
+      targetId,
+      confidence,
+      matchType,
+      resolvedBy,
+      detectedAt: new Date().toISOString(),
+    })
+
+    console.log(
+      `[GraphitiService] Created IS_DUPLICATE_OF: ${sourceId} -> ${targetId} (${matchType}, conf=${confidence})`
+    )
+  }
+
+  /**
+   * Check if IS_DUPLICATE_OF edge already exists
+   * Fase 22: Uses internal node IDs
+   */
+  async duplicateEdgeExists(sourceId: string, targetId: string): Promise<boolean> {
+    const query = `
+      MATCH (source)-[r:IS_DUPLICATE_OF]->(target)
+      WHERE ID(source) = toInteger($sourceId) AND ID(target) = toInteger($targetId)
+      RETURN count(r) as count
+    `
+
+    const result = await this.query(query, { sourceId, targetId }) as Array<{ count: number }>
+    return (result[0]?.count || 0) > 0
+  }
+
+  /**
+   * Remove IS_DUPLICATE_OF edge between two nodes
+   * Fase 22: Uses internal node IDs
+   */
+  async removeDuplicateEdge(sourceId: string, targetId: string): Promise<void> {
+    const query = `
+      MATCH (source)-[r:IS_DUPLICATE_OF]->(target)
+      WHERE ID(source) = toInteger($sourceId) AND ID(target) = toInteger($targetId)
+      DELETE r
+    `
+
+    await this.query(query, { sourceId, targetId })
+    console.log(`[GraphitiService] Removed IS_DUPLICATE_OF: ${sourceId} -> ${targetId}`)
+  }
+
+  /**
+   * Get all nodes that are duplicates of given node
+   * Returns both nodes that point TO this node and nodes this node points TO
+   * Fase 22: Uses internal node IDs
+   */
+  async getDuplicatesOf(nodeId: string): Promise<Array<{ uuid: string; name: string; type: string; direction: 'incoming' | 'outgoing' }>> {
+    const query = `
+      MATCH (source)-[r:IS_DUPLICATE_OF]->(target)
+      WHERE ID(target) = toInteger($nodeId)
+      RETURN toString(ID(source)) as uuid, source.name as name, labels(source)[0] as type, 'incoming' as direction
+      UNION
+      MATCH (source)-[r:IS_DUPLICATE_OF]->(target)
+      WHERE ID(source) = toInteger($nodeId)
+      RETURN toString(ID(target)) as uuid, target.name as name, labels(target)[0] as type, 'outgoing' as direction
+    `
+
+    const result = await this.query(query, { nodeId }) as Array<{ uuid: string; name: string; type: string; direction: string }>
+    return result.map((r) => ({
+      uuid: r.uuid,
+      name: r.name,
+      type: r.type,
+      direction: r.direction as 'incoming' | 'outgoing',
+    }))
+  }
+
+  /**
+   * Get canonical node (follow IS_DUPLICATE_OF chain to root)
+   * Returns the node that has no outgoing IS_DUPLICATE_OF edge
+   * Fase 22: Uses internal node IDs
+   */
+  async getCanonicalNode(nodeId: string): Promise<{ uuid: string; name: string; type: string } | null> {
+    // Follow IS_DUPLICATE_OF edges until we find a node with no outgoing IS_DUPLICATE_OF
+    const query = `
+      MATCH (start)
+      WHERE ID(start) = toInteger($nodeId)
+      MATCH path = (start)-[:IS_DUPLICATE_OF*0..10]->(canonical)
+      WHERE NOT (canonical)-[:IS_DUPLICATE_OF]->()
+      RETURN toString(ID(canonical)) as uuid, canonical.name as name, labels(canonical)[0] as type
+      ORDER BY length(path) DESC
+      LIMIT 1
+    `
+
+    const result = await this.query(query, { nodeId }) as Array<{ uuid: string; name: string; type: string }>
+    if (result.length === 0) return null
+
+    const first = result[0]
+    if (!first) return null
+
+    return {
+      uuid: first.uuid,
+      name: first.name,
+      type: first.type,
+    }
+  }
+
+  /**
+   * Get all entity nodes in a workspace/group
+   * Used for batch deduplication scanning
+   */
+  async getWorkspaceNodes(
+    groupId: string,
+    nodeTypes: string[] = ['Concept', 'Person', 'Task', 'Project']
+  ): Promise<Array<{ uuid: string; name: string; type: string; groupId: string; summary?: string }>> {
+    await this.initialize()
+
+    // Build type filter dynamically
+    const typeConditions = nodeTypes.map((t) => `n:${t}`).join(' OR ')
+
+    // Fase 22: Use FalkorDB internal ID as uuid since entity nodes don't have uuid property yet
+    // The ID(n) function returns the internal graph database ID
+    const query = `
+      MATCH (n)
+      WHERE n.groupId = $groupId
+      AND (${typeConditions})
+      RETURN toString(ID(n)) as uuid, n.name as name, labels(n)[0] as type, n.groupId as groupId, n.summary as summary
+    `
+
+    const result = await this.query(query, { groupId })
+
+    // Parse FalkorDB result format using the helper
+    const parsed = this.parseResults<{ uuid: string; name: string; type: string; groupId: string; summary?: string }>(
+      result,
+      ['uuid', 'name', 'type', 'groupId', 'summary']
+    )
+
+    console.log(`[GraphitiService] getWorkspaceNodes: found ${parsed.length} nodes for groupId=${groupId}`)
+
+    return parsed
+  }
+
+  /**
+   * Merge duplicate nodes: transfer all edges from duplicate to canonical
+   * Then mark the duplicate with IS_DUPLICATE_OF edge
+   * Fase 22: Uses internal node IDs
+   */
+  async mergeNodes(duplicateId: string, canonicalId: string): Promise<{ edgesTransferred: number }> {
+    // Transfer all incoming edges from duplicate to canonical
+    const transferIncoming = `
+      MATCH (other)-[r]->(duplicate), (canonical)
+      WHERE ID(duplicate) = toInteger($duplicateId) AND ID(canonical) = toInteger($canonicalId)
+        AND type(r) <> 'IS_DUPLICATE_OF'
+      MERGE (other)-[newR:RELATES_TO]->(canonical)
+      SET newR = properties(r)
+      DELETE r
+      RETURN count(r) as count
+    `
+
+    // Transfer all outgoing edges from duplicate to canonical
+    const transferOutgoing = `
+      MATCH (duplicate)-[r]->(other), (canonical)
+      WHERE ID(duplicate) = toInteger($duplicateId) AND ID(canonical) = toInteger($canonicalId)
+        AND type(r) <> 'IS_DUPLICATE_OF'
+      MERGE (canonical)-[newR:RELATES_TO]->(other)
+      SET newR = properties(r)
+      DELETE r
+      RETURN count(r) as count
+    `
+
+    const [inResult, outResult] = await Promise.all([
+      this.query(transferIncoming, { duplicateId, canonicalId }) as Promise<Array<{ count: number }>>,
+      this.query(transferOutgoing, { duplicateId, canonicalId }) as Promise<Array<{ count: number }>>,
+    ])
+
+    const edgesTransferred = (inResult[0]?.count || 0) + (outResult[0]?.count || 0)
+
+    // Create IS_DUPLICATE_OF edge
+    await this.createDuplicateOfEdge(duplicateId, canonicalId, 1.0, 'exact', null)
+
+    console.log(
+      `[GraphitiService] Merged ${duplicateId} -> ${canonicalId}, transferred ${edgesTransferred} edges`
+    )
+
+    return { edgesTransferred }
+  }
+
+  /**
+   * Find potential duplicates using FalkorDB full-text or property search
+   * This is a lightweight alternative to vector search
+   */
+  async findPotentialDuplicatesByName(
+    name: string,
+    groupId: string,
+    limit: number = 10
+  ): Promise<Array<{ uuid: string; name: string; type: string; similarity: number }>> {
+    await this.initialize()
+
+    // Normalize name for comparison
+    const normalizedName = name.toLowerCase().trim()
+
+    // Use property matching with CONTAINS for fuzzy match
+    // Fase 22: Use FalkorDB internal ID as uuid since entity nodes don't have uuid property yet
+    const query = `
+      MATCH (n)
+      WHERE n.groupId = $groupId
+      AND toLower(n.name) CONTAINS $normalizedName
+      RETURN toString(ID(n)) as uuid, n.name as name, labels(n)[0] as type
+      LIMIT $limit
+    `
+
+    const result = await this.query(query, { groupId, normalizedName, limit })
+
+    // Parse FalkorDB result format using the helper
+    const parsed = this.parseResults<{ uuid: string; name: string; type: string }>(
+      result,
+      ['uuid', 'name', 'type']
+    )
+
+    // Calculate simple similarity score based on string length ratio
+    return parsed.map((r) => {
+      const similarity = Math.min(normalizedName.length, r.name?.length || 0) / Math.max(normalizedName.length, r.name?.length || 1)
+      return {
+        uuid: r.uuid,
+        name: r.name,
+        type: r.type,
+        similarity,
+      }
+    })
   }
 
   // ===========================================================================
