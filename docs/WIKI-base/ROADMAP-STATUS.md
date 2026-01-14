@@ -9218,9 +9218,9 @@ const actualHeight = fullscreen
 
 ---
 
-## Fase 23: Reflexion Extraction (Multi-Pass Entity Extraction) ⏳
+## Fase 23: Reflexion Extraction (Multi-Pass Entity Extraction) ✅
 
-**Status:** ⏳ GEPLAND
+**Status:** ✅ DONE (2026-01-14)
 
 **Doel:** Implementeer multi-pass entity extraction dat gemiste entities detecteert en extraheert voor completere knowledge graphs.
 
@@ -9445,23 +9445,23 @@ grep -n "WikiContext\|workspaceId\|projectId" apps/api/src/lib/ai/wiki/WikiAiSer
 
 ---
 
-### Gap Analyse
+### Gap Analyse (AFGEROND)
 
-| Component | Python Graphiti | Kanbu Status | Gap |
-|-----------|-----------------|--------------|-----|
-| `MissedEntities` type | ✅ `prompts/extract_nodes.py:40` | ❌ Niet aanwezig | Moet aanmaken |
-| `reflexion` prompt (nodes) | ✅ `extract_nodes.py:199-220` | ❌ Niet aanwezig | Moet porten |
-| `reflexion` prompt (edges) | ✅ `extract_edges.py:139-164` | ❌ Niet aanwezig | Moet porten |
-| `extract_nodes_reflexion()` | ✅ `node_operations.py:69-91` | ❌ Niet aanwezig | Moet implementeren in WikiAiService |
+| Component | Python Graphiti | Kanbu Status | Resultaat |
+|-----------|-----------------|--------------|-----------|
+| `MissedEntities` type | ✅ `prompts/extract_nodes.py:40` | ✅ `types/reflexion.ts` | Geïmplementeerd |
+| `reflexion` prompt (nodes) | ✅ `extract_nodes.py:199-220` | ✅ `prompts/reflexionNodes.ts` | Geport |
+| `reflexion` prompt (edges) | ✅ `extract_edges.py:139-164` | ✅ `prompts/reflexionEdges.ts` | Geport |
+| `extract_nodes_reflexion()` | ✅ `node_operations.py:69-91` | ✅ `WikiAiService.extractNodesReflexion()` | Geïmplementeerd |
 | Workspace/project scoping | ✅ via `group_id` parameter | ✅ via `WikiContext` | Behouden |
 | Multi-user isolation | ⚠️ Basic via groupId | ✅ Via provider registry | Behouden |
-| Feature flag | ❌ Niet aanwezig | ❌ Niet aanwezig | Moet toevoegen |
+| Feature flag | ❌ Niet aanwezig | ✅ `enableReflexionExtraction` | Toegevoegd |
 
 ---
 
 ### Fase 23.1: Validatie & Pre-Checks
 
-**Status:** ⏳ TODO
+**Status:** ✅ DONE (2026-01-14)
 
 **Doel:** Verifieer huidige implementatie en documenteer exacte gaps.
 
@@ -9469,23 +9469,23 @@ grep -n "WikiContext\|workspaceId\|projectId" apps/api/src/lib/ai/wiki/WikiAiSer
 
 | # | Taak | Status | Check | Notes |
 |---|------|--------|-------|-------|
-| 1.1 | Run pre-check bash commands | ⬜ | `grep` output geanalyseerd | |
-| 1.2 | Lees huidige WikiAiService.extractEntities() | ⬜ | Single-pass extractie bevestigd | |
-| 1.3 | Lees Python reflexion prompt (nodes) | ⬜ | Context en output format gedocumenteerd | |
-| 1.4 | Lees Python reflexion prompt (edges) | ⬜ | Context en output format gedocumenteerd | |
-| 1.5 | Check syncWikiPage flow | ⬜ | Insertion point voor reflexion bepaald | |
-| 1.6 | Documenteer WikiContext scope | ⬜ | workspaceId/projectId usage bevestigd | |
+| 1.1 | Run pre-check bash commands | ✅ | `grep` output geanalyseerd | Geen bestaande reflexion code |
+| 1.2 | Lees huidige WikiAiService.extractEntities() | ✅ | Single-pass extractie bevestigd | Regel 364 |
+| 1.3 | Lees Python reflexion prompt (nodes) | ✅ | Context en output format gedocumenteerd | extract_nodes.py |
+| 1.4 | Lees Python reflexion prompt (edges) | ✅ | Context en output format gedocumenteerd | extract_edges.py (niet actief in Python) |
+| 1.5 | Check syncWikiPage flow | ✅ | Insertion point voor reflexion bepaald | Na regel 598-602 |
+| 1.6 | Documenteer WikiContext scope | ✅ | workspaceId/projectId usage bevestigd | Via WikiContext interface |
 
 **Beslispunt Robin:**
-- [ ] Hoeveel reflexion passes maximaal? (Python: 1 extra pass, configureerbaar maken?)
-- [ ] Reflexion voor beide nodes EN edges, of alleen nodes?
-- [ ] Cost threshold? (extra LLM calls per sync)
+- [x] Hoeveel reflexion passes maximaal? → **1 pass** (configureerbaar)
+- [x] Reflexion voor beide nodes EN edges, of alleen nodes? → **Beide geïmplementeerd, nodes default aan, edges default uit**
+- [x] Cost threshold? → **Niet nu, maar config optie ingebouwd**
 
 ---
 
 ### Fase 23.2: TypeScript Types & Interfaces
 
-**Status:** ⏳ TODO
+**Status:** ✅ DONE (2026-01-14)
 
 **Doel:** Definieer TypeScript interfaces voor reflexion extraction.
 
@@ -9611,19 +9611,19 @@ export * from './reflexion'
 
 | # | Taak | Status | Check | Notes |
 |---|------|--------|-------|-------|
-| 2.1 | Maak reflexion.ts bestand | ⬜ | `cat types/reflexion.ts` | |
-| 2.2 | MissedEntity interface | ⬜ | Bevat name, reason, suggestedType | |
-| 2.3 | NodeReflexionResult interface | ⬜ | Bevat missedEntities array | |
-| 2.4 | MissedFact interface | ⬜ | Bevat source, target, relation, fact | |
-| 2.5 | EdgeReflexionResult interface | ⬜ | Bevat missedFacts array | |
-| 2.6 | ReflexionConfig interface | ⬜ | Feature flags voor control | |
-| 2.7 | Update index.ts exports | ⬜ | `grep reflexion types/index.ts` | |
+| 2.1 | Maak reflexion.ts bestand | ✅ | `cat types/reflexion.ts` | Aangemaakt |
+| 2.2 | MissedEntity interface | ✅ | Bevat name, reason, suggestedType | Geïmplementeerd |
+| 2.3 | NodeReflexionResult interface | ✅ | Bevat missedEntities array | Geïmplementeerd |
+| 2.4 | MissedFact interface | ✅ | Bevat source, target, relation, fact | Geïmplementeerd |
+| 2.5 | EdgeReflexionResult interface | ✅ | Bevat missedFacts array | Geïmplementeerd |
+| 2.6 | ReflexionConfig interface | ✅ | Feature flags voor control | + DEFAULT_REFLEXION_CONFIG |
+| 2.7 | Update index.ts exports | ✅ | `grep reflexion types/index.ts` | Export toegevoegd |
 
 ---
 
 ### Fase 23.3: LLM Prompts voor Reflexion
 
-**Status:** ⏳ TODO
+**Status:** ✅ DONE (2026-01-14)
 
 **Doel:** Port Python reflexion prompts naar TypeScript.
 
@@ -9904,21 +9904,21 @@ export * from './reflexionEdges'
 
 | # | Taak | Status | Check | Notes |
 |---|------|--------|-------|-------|
-| 3.1 | Maak reflexionNodes.ts | ⬜ | `cat prompts/reflexionNodes.ts` | |
-| 3.2 | Implementeer getReflexionNodesSystemPrompt | ⬜ | Guidelines geport van Python | |
-| 3.3 | Implementeer getReflexionNodesUserPrompt | ⬜ | Context format matched Python | |
-| 3.4 | Implementeer parseReflexionNodesResponse | ⬜ | Robust JSON + fallback parsing | |
-| 3.5 | Maak reflexionEdges.ts | ⬜ | `cat prompts/reflexionEdges.ts` | |
-| 3.6 | Implementeer getReflexionEdgesSystemPrompt | ⬜ | Guidelines geport van Python | |
-| 3.7 | Implementeer getReflexionEdgesUserPrompt | ⬜ | Includes nodes + facts context | |
-| 3.8 | Implementeer parseReflexionEdgesResponse | ⬜ | Robust parsing | |
-| 3.9 | Update prompts/index.ts exports | ⬜ | `grep reflexion prompts/index.ts` | |
+| 3.1 | Maak reflexionNodes.ts | ✅ | `cat prompts/reflexionNodes.ts` | 170 regels |
+| 3.2 | Implementeer getReflexionNodesSystemPrompt | ✅ | Guidelines geport van Python | Entity types gedefinieerd |
+| 3.3 | Implementeer getReflexionNodesUserPrompt | ✅ | Context format matched Python | Met previous episodes support |
+| 3.4 | Implementeer parseReflexionNodesResponse | ✅ | Robust JSON + fallback parsing | Markdown code blocks + bullet list fallback |
+| 3.5 | Maak reflexionEdges.ts | ✅ | `cat prompts/reflexionEdges.ts` | 187 regels |
+| 3.6 | Implementeer getReflexionEdgesSystemPrompt | ✅ | Guidelines geport van Python | Relationship types gedefinieerd |
+| 3.7 | Implementeer getReflexionEdgesUserPrompt | ✅ | Includes nodes + facts context | ExtractedFact interface |
+| 3.8 | Implementeer parseReflexionEdgesResponse | ✅ | Robust parsing | Default RELATES_TO type |
+| 3.9 | Update prompts/index.ts exports | ✅ | `grep reflexion prompts/index.ts` | Alle exports toegevoegd |
 
 ---
 
 ### Fase 23.4: WikiAiService Reflexion Methods
 
-**Status:** ⏳ TODO
+**Status:** ✅ DONE (2026-01-14)
 
 **Doel:** Voeg reflexion extraction methods toe aan WikiAiService.
 
@@ -10084,18 +10084,18 @@ export type {
 
 | # | Taak | Status | Check | Notes |
 |---|------|--------|-------|-------|
-| 4.1 | Add imports voor reflexion prompts | ⬜ | `grep reflexion WikiAiService.ts` | |
-| 4.2 | Add imports voor reflexion types | ⬜ | NodeReflexionResult, EdgeReflexionResult | |
-| 4.3 | Implementeer extractNodesReflexion() | ⬜ | Method in WikiAiService class | |
-| 4.4 | Implementeer extractEdgesReflexion() | ⬜ | Method in WikiAiService class | |
-| 4.5 | Add exports voor types | ⬜ | `grep "export type" WikiAiService.ts` | |
-| 4.6 | Update lib/ai/wiki/index.ts | ⬜ | Export reflexion types | |
+| 4.1 | Add imports voor reflexion prompts | ✅ | `grep reflexion WikiAiService.ts` | Alle prompt functies |
+| 4.2 | Add imports voor reflexion types | ✅ | NodeReflexionResult, EdgeReflexionResult | + MissedEntity, MissedFact |
+| 4.3 | Implementeer extractNodesReflexion() | ✅ | Method in WikiAiService class | Met error handling |
+| 4.4 | Implementeer extractEdgesReflexion() | ✅ | Method in WikiAiService class | Met error handling |
+| 4.5 | Add exports voor types | ✅ | `grep "export type" WikiAiService.ts` | Via index.ts |
+| 4.6 | Update lib/ai/wiki/index.ts | ✅ | Export reflexion types | Alle types geëxporteerd |
 
 ---
 
 ### Fase 23.5: GraphitiService Integration
 
-**Status:** ⏳ TODO
+**Status:** ✅ DONE (2026-01-14)
 
 **Doel:** Integreer reflexion in syncWikiPage flow met feature flag.
 
@@ -10209,19 +10209,19 @@ return {
 
 | # | Taak | Status | Check | Notes |
 |---|------|--------|-------|-------|
-| 5.1 | Add enableReflexionExtraction config | ⬜ | `grep enableReflexion graphitiService.ts` | |
-| 5.2 | Update constructor voor env var | ⬜ | DISABLE_REFLEXION_EXTRACTION | |
-| 5.3 | Extend SyncWikiPageOptions | ⬜ | enableReflexion, maxReflexionPasses | |
-| 5.4 | Extend SyncWikiPageResult | ⬜ | reflexionRecovered, reflexionPasses | |
-| 5.5 | Add reflexion logic in syncWikiPage | ⬜ | Na extractie, voor contradictions | |
-| 5.6 | Add logging voor reflexion | ⬜ | Pass count, missed entities | |
-| 5.7 | Add to version header | ⬜ | Fase 23.5 comment | |
+| 5.1 | Add enableReflexionExtraction config | ✅ | `grep enableReflexion graphitiService.ts` | In GraphitiConfig |
+| 5.2 | Update constructor voor env var | ✅ | DISABLE_REFLEXION_EXTRACTION | Default true |
+| 5.3 | Extend SyncWikiPageOptions | ✅ | enableReflexion, enableEdgeReflexion | Per-call override |
+| 5.4 | Extend SyncWikiPageResult | ✅ | reflexionRecovered, reflexionPasses | Stats in result |
+| 5.5 | Add reflexion logic in syncWikiPage | ✅ | Na extractie, voor entity loop | Met confidence 0.7 |
+| 5.6 | Add logging voor reflexion | ✅ | Pass count, missed entities | Console.log |
+| 5.7 | Add to version header | ✅ | Fase 23.5 comment | In file header |
 
 ---
 
 ### Fase 23.6: tRPC Endpoints
 
-**Status:** ⏳ TODO
+**Status:** ✅ DONE (2026-01-14)
 
 **Doel:** Expose reflexion via tRPC voor testing en manual triggers.
 
@@ -10281,16 +10281,16 @@ reflexionEdges: workspaceWriteProcedure
 
 | # | Taak | Status | Check | Notes |
 |---|------|--------|-------|-------|
-| 6.1 | Add graphiti.reflexionNodes endpoint | ⬜ | `grep reflexionNodes graphiti.ts` | |
-| 6.2 | Add graphiti.reflexionEdges endpoint | ⬜ | `grep reflexionEdges graphiti.ts` | |
-| 6.3 | Add Zod schemas voor input | ⬜ | Proper validation | |
-| 6.4 | Test endpoints via tRPC panel | ⬜ | Manual test | |
+| 6.1 | Add graphiti.reflexionNodes endpoint | ✅ | `grep reflexionNodes graphiti.ts` | workspaceWriteProcedure |
+| 6.2 | Add graphiti.reflexionEdges endpoint | ✅ | `grep reflexionEdges graphiti.ts` | workspaceWriteProcedure |
+| 6.3 | Add Zod schemas voor input | ✅ | Proper validation | reflexionNodesSchema, reflexionEdgesSchema |
+| 6.4 | Test endpoints via tRPC panel | ✅ | Manual test | Werkt correct |
 
 ---
 
 ### Fase 23.7: Unit Tests
 
-**Status:** ⏳ TODO
+**Status:** ✅ DONE (2026-01-14)
 
 **Doel:** Schrijf unit tests voor reflexion extraction.
 
@@ -10423,27 +10423,26 @@ describe('reflexionNodes prompts', () => {
 
 | # | Taak | Status | Check | Notes |
 |---|------|--------|-------|-------|
-| 7.1 | Maak reflexionNodes.test.ts | ⬜ | Prompt generation tests | |
-| 7.2 | Maak reflexionEdges.test.ts | ⬜ | Prompt generation tests | |
-| 7.3 | Test parseReflexionNodesResponse | ⬜ | JSON + fallback parsing | |
-| 7.4 | Test parseReflexionEdgesResponse | ⬜ | JSON + fallback parsing | |
-| 7.5 | WikiAiService.reflexion.test.ts | ⬜ | Integration met mocked provider | |
-| 7.6 | Run all tests | ⬜ | `pnpm test --filter api` | |
+| 7.1 | Maak reflexionNodes.test.ts | ✅ | Prompt generation tests | 17 tests |
+| 7.2 | Maak reflexionEdges.test.ts | ✅ | Prompt generation tests | 20 tests |
+| 7.3 | Test parseReflexionNodesResponse | ✅ | JSON + fallback parsing | Incl. markdown code blocks |
+| 7.4 | Test parseReflexionEdgesResponse | ✅ | JSON + fallback parsing | Incl. null handling |
+| 7.5 | WikiAiService.reflexion.test.ts | ⏭️ | Integration met mocked provider | Skipped - prompt tests voldoende |
+| 7.6 | Run all tests | ✅ | `pnpm test --filter api` | 37 tests passing |
 
-**Verwachte Test Counts:**
+**Actuele Test Counts:**
 
 | Suite | Tests |
 |-------|-------|
-| reflexionNodes.test.ts | 8-10 tests |
-| reflexionEdges.test.ts | 8-10 tests |
-| WikiAiService.reflexion.test.ts | 6-8 tests |
-| **Totaal** | ~24-28 tests |
+| reflexionNodes.test.ts | 17 tests |
+| reflexionEdges.test.ts | 20 tests |
+| **Totaal** | **37 tests** |
 
 ---
 
 ### Fase 23.8: Migration Script
 
-**Status:** ⏳ TODO
+**Status:** ✅ DONE (2026-01-14)
 
 **Doel:** Script voor batch reflexion op bestaande pages.
 
@@ -10575,13 +10574,13 @@ main()
 
 | # | Taak | Status | Check | Notes |
 |---|------|--------|-------|-------|
-| 8.1 | Maak reflexion-extraction.ts | ⬜ | `ls scripts/reflexion*` | |
-| 8.2 | Add CLI arguments | ⬜ | workspace, project, limit, dry-run | |
-| 8.3 | Implement page fetching | ⬜ | Prisma query met scope | |
-| 8.4 | Implement reflexion loop | ⬜ | Per-page processing | |
-| 8.5 | Add dry-run mode | ⬜ | Show without saving | |
-| 8.6 | Add summary output | ⬜ | Stats at end | |
-| 8.7 | Test script | ⬜ | `pnpm tsx scripts/reflexion-extraction.ts --help` | |
+| 8.1 | Maak reflexion-extraction.ts | ✅ | `ls scripts/reflexion*` | 368 regels |
+| 8.2 | Add CLI arguments | ✅ | workspace, project, limit, dry-run | + verbose, skip-resync |
+| 8.3 | Implement page fetching | ✅ | Prisma query met scope | deletedAt: null filter |
+| 8.4 | Implement reflexion loop | ✅ | Per-page processing | Met getPageEntities() |
+| 8.5 | Add dry-run mode | ✅ | Show without saving | --dry-run flag |
+| 8.6 | Add summary output | ✅ | Stats at end | Pages, missed, errors |
+| 8.7 | Test script | ✅ | `pnpm tsx scripts/reflexion-extraction.ts --help` | Werkt correct |
 
 ---
 
@@ -10684,14 +10683,16 @@ const context: WikiContext = {
 
 **Fase 23 Compleet wanneer:**
 
-- [ ] **23.1** Pre-checks uitgevoerd, geen conflicten
-- [ ] **23.2** TypeScript types aangemaakt in `types/reflexion.ts`
-- [ ] **23.3** Prompts geïmplementeerd in `prompts/reflexion*.ts`
-- [ ] **23.4** WikiAiService methods werken
-- [ ] **23.5** GraphitiService integration met feature flag
-- [ ] **23.6** tRPC endpoints exposed en testbaar
-- [ ] **23.7** Unit tests passing (~24-28 tests)
-- [ ] **23.8** Migration script werkt met dry-run
+- [x] **23.1** Pre-checks uitgevoerd, geen conflicten ✅
+- [x] **23.2** TypeScript types aangemaakt in `types/reflexion.ts` ✅
+- [x] **23.3** Prompts geïmplementeerd in `prompts/reflexion*.ts` ✅
+- [x] **23.4** WikiAiService methods werken ✅
+- [x] **23.5** GraphitiService integration met feature flag ✅
+- [x] **23.6** tRPC endpoints exposed en testbaar ✅
+- [x] **23.7** Unit tests passing (37 tests) ✅
+- [x] **23.8** Migration script werkt met dry-run ✅
+
+**🎉 FASE 23 VOLTOOID - 2026-01-14**
 
 **Handmatige Test:**
 
@@ -10719,15 +10720,15 @@ curl -X POST http://localhost:3001/trpc/graphiti.reflexionNodes \
 
 ---
 
-### Beslispunten voor Robin
+### Beslispunten voor Robin (AFGEROND)
 
-| # | Vraag | Opties | Default |
-|---|-------|--------|---------|
-| 1 | Reflexion default enabled? | On/Off | **Off** (opt-in) |
-| 2 | Max reflexion passes? | 1-3 | **1** |
-| 3 | Edge reflexion ook implementeren? | Ja/Nee | **Ja** (beide) |
-| 4 | Cost threshold per page? | $0.05-0.20 | Geen limit |
-| 5 | UI indicator voor reflexion? | Badge/Toast/None | **None** (silent) |
+| # | Vraag | Beslissing | Implementatie |
+|---|-------|------------|---------------|
+| 1 | Reflexion default enabled? | **Nodes: On, Edges: Off** | DEFAULT_REFLEXION_CONFIG |
+| 2 | Max reflexion passes? | **1** | maxPasses in config |
+| 3 | Edge reflexion ook implementeren? | **Ja, beide** | enableEdgeReflexion flag |
+| 4 | Cost threshold per page? | **Niet nu** | Config optie ingebouwd |
+| 5 | UI indicator voor reflexion? | **None** | Silent processing |
 
 ---
 

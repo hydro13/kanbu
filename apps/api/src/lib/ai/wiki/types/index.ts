@@ -5,3 +5,4 @@
  */
 
 export * from './deduplication'
+export * from './reflexion'
