@@ -141,6 +141,14 @@ const runBatchDedupSchema = z.object({
   limit: z.number().min(1).max(100).default(50),
 })
 
+// Fase 22.8 - Get existing confirmed duplicates
+const getWorkspaceDuplicatesSchema = z.object({
+  workspaceId: z.number(),
+  projectId: z.number().optional(),
+  groupId: z.string().optional(),
+  nodeTypes: z.array(z.enum(['Concept', 'Person', 'Task', 'Project'])).optional(),
+})
+
 // =============================================================================
 // Graphiti Router
 // =============================================================================
@@ -564,15 +572,16 @@ export const graphitiRouter = router({
 
       let edgesCreated = 0
 
-      // If not dry run, create IS_DUPLICATE_OF edges
-      if (!input.dryRun) {
-        for (const dup of duplicates) {
-          const exists = await graphiti.duplicateEdgeExists(
+      // Check which candidates are already linked and optionally create edges
+      const candidatesWithStatus = await Promise.all(
+        duplicates.map(async (dup) => {
+          const alreadyLinked = await graphiti.duplicateEdgeExists(
             dup.sourceNode.uuid,
             dup.targetNode.uuid
           )
 
-          if (!exists) {
+          // If not dry run and not already linked, create edge
+          if (!input.dryRun && !alreadyLinked) {
             await graphiti.createDuplicateOfEdge(
               dup.sourceNode.uuid,
               dup.targetNode.uuid,
@@ -582,8 +591,20 @@ export const graphitiRouter = router({
             )
             edgesCreated++
           }
-        }
-      }
+
+          return {
+            sourceUuid: dup.sourceNode.uuid,
+            sourceName: dup.sourceNode.name,
+            sourceType: dup.sourceNode.type,
+            targetUuid: dup.targetNode.uuid,
+            targetName: dup.targetNode.name,
+            targetType: dup.targetNode.type,
+            confidence: dup.confidence,
+            matchType: dup.matchType,
+            alreadyLinked,
+          }
+        })
+      )
 
       return {
         duplicatesFound: duplicates.length,
@@ -592,14 +613,44 @@ export const graphitiRouter = router({
         validNodes: validNodes.length,
         dryRun: input.dryRun,
         threshold: input.threshold,
-        candidates: duplicates.map(d => ({
-          sourceUuid: d.sourceNode.uuid,
-          sourceName: d.sourceNode.name,
-          targetUuid: d.targetNode.uuid,
-          targetName: d.targetNode.name,
-          confidence: d.confidence,
-          matchType: d.matchType,
+        candidates: candidatesWithStatus,
+      }
+    }),
+
+  /**
+   * Get existing confirmed duplicates in workspace (Fase 22.8)
+   *
+   * Returns all IS_DUPLICATE_OF edges that have been confirmed/created.
+   * Use this to load existing duplicates when opening WikiDuplicateManager.
+   */
+  getWorkspaceDuplicates: protectedProcedure
+    .input(getWorkspaceDuplicatesSchema)
+    .query(async ({ input }) => {
+      const graphiti = getGraphitiService()
+
+      // Build groupId from workspace/project
+      const groupId = input.groupId || (input.projectId
+        ? `wiki-proj-${input.projectId}`
+        : `wiki-ws-${input.workspaceId}`)
+
+      const nodeTypes = input.nodeTypes || ['Concept', 'Person', 'Task', 'Project']
+
+      const duplicates = await graphiti.getWorkspaceDuplicates(groupId, nodeTypes)
+
+      return {
+        duplicates: duplicates.map(d => ({
+          sourceUuid: d.sourceUuid,
+          sourceName: d.sourceName,
+          sourceType: d.sourceType,
+          targetUuid: d.targetUuid,
+          targetName: d.targetName,
+          targetType: d.targetType,
+          confidence: d.confidence || 1.0,
+          matchType: d.matchType || 'manual',
+          detectedAt: d.detectedAt,
+          detectedBy: d.detectedBy,
         })),
+        total: duplicates.length,
       }
     }),
 })

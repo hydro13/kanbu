@@ -39,6 +39,7 @@ import {
   WikiNodeEmbeddingService,
   getWikiNodeEmbeddingService,
   getContradictionAuditService,
+  getWikiDeduplicationService,
   ContradictionCategory,
   type ContradictionAuditEntry,
   type WikiContext,
@@ -47,6 +48,8 @@ import {
   type EdgeForEmbedding,
   type NodeForEmbedding,
   type EmbeddableNodeType,
+  type EntityNodeInfo,
+  type DuplicateCandidate,
 } from '../lib/ai/wiki'
 
 // =============================================================================
@@ -99,6 +102,27 @@ export interface WikiEpisode {
   groupId: string // wiki-ws-{id} or wiki-proj-{id}
   userId: number
   timestamp: Date
+}
+
+/**
+ * Fase 22.8.2: Options for wiki sync with deduplication
+ * Backwards compatible - all fields are optional with sensible defaults
+ */
+export interface SyncWikiPageOptions {
+  /**
+   * Enable entity deduplication during sync (default: true)
+   * When enabled, detects duplicates using exact/fuzzy/embedding/LLM matching
+   */
+  enableDedup?: boolean
+  /**
+   * Similarity threshold for fuzzy/embedding matching (default: 0.85)
+   */
+  dedupThreshold?: number
+  /**
+   * Use LLM for unresolved duplicates (default: true)
+   * Set to false to save API costs - only uses deterministic matching
+   */
+  useLlm?: boolean
 }
 
 export interface GraphEntity {
@@ -190,6 +214,8 @@ export interface SyncWikiPageResult {
   contradictionsResolved: number
   /** Audit entries for detected contradictions (for UI notification) */
   contradictions: ContradictionAuditEntry[]
+  /** Fase 22.8.2: Number of duplicate entities found and marked */
+  duplicatesFound?: number
 }
 
 // =============================================================================
@@ -318,8 +344,23 @@ export class GraphitiService {
       await this.createIndexSafe('Concept', 'name')
       await this.createIndexSafe('Person', 'name')
 
+      // Fase 22.8.3: Additional indexes for deduplication performance
+      // UUID indexes for fast node lookups
+      await this.createIndexSafe('Concept', 'uuid')
+      await this.createIndexSafe('Person', 'uuid')
+      await this.createIndexSafe('Task', 'uuid')
+      await this.createIndexSafe('Project', 'uuid')
+      // GroupId indexes for multi-tenant filtering
+      await this.createIndexSafe('Concept', 'groupId')
+      await this.createIndexSafe('Person', 'groupId')
+      await this.createIndexSafe('Task', 'groupId')
+      await this.createIndexSafe('Project', 'groupId')
+      // Name indexes for entity lookups
+      await this.createIndexSafe('Task', 'name')
+      await this.createIndexSafe('Project', 'name')
+
       this.initialized = true
-      console.log('[GraphitiService] Graph initialized')
+      console.log('[GraphitiService] Graph initialized with dedup indexes')
     } catch (error) {
       console.error('[GraphitiService] Failed to initialize graph:', error)
       // Don't throw - allow service to work even if indexes fail
@@ -396,8 +437,16 @@ export class GraphitiService {
    * - WikiPage, Task, User, Project, Concept
    *
    * Returns contradiction data for UI notifications (Fase 17.4)
+   *
+   * Fase 22.8.2: Optional deduplication during sync
+   * - enableDedup: true (default) - detect and mark duplicate entities
+   * - dedupThreshold: 0.85 (default) - similarity threshold
+   * - useLlm: true (default) - use LLM for complex cases
    */
-  async syncWikiPage(episode: WikiEpisode): Promise<SyncWikiPageResult> {
+  async syncWikiPage(
+    episode: WikiEpisode,
+    options?: SyncWikiPageOptions
+  ): Promise<SyncWikiPageResult> {
     const { pageId, title, content, groupId, timestamp, workspaceId } = episode
 
     // Default result (no contradictions)
@@ -449,7 +498,7 @@ export class GraphitiService {
     // Try WikiAiService (Fase 15.1 - uses Fase 14 providers)
     if (this.wikiAiService && workspaceId) {
       try {
-        const aiResult = await this.syncWikiPageWithAiService(episode)
+        const aiResult = await this.syncWikiPageWithAiService(episode, options)
         if (aiResult) {
           return aiResult // Successfully synced with WikiAiService, includes contradiction data
         }
@@ -472,8 +521,13 @@ export class GraphitiService {
    *
    * OPTIMIZED (Fase 17.3.1): When oldContent is provided, uses diff-based extraction
    * to only process new/changed content. This reduces token usage from 600K+ to ~10K per edit.
+   *
+   * Fase 22.8.2: Optional deduplication during sync
    */
-  private async syncWikiPageWithAiService(episode: WikiEpisode): Promise<SyncWikiPageResult | null> {
+  private async syncWikiPageWithAiService(
+    episode: WikiEpisode,
+    options?: SyncWikiPageOptions
+  ): Promise<SyncWikiPageResult | null> {
     if (!this.wikiAiService || !episode.workspaceId || !this.prisma) {
       return null
     }
@@ -830,11 +884,46 @@ export class GraphitiService {
       }
     }
 
+    // Fase 22.8.2: Entity deduplication during sync
+    const enableDedup = options?.enableDedup ?? true
+    let duplicatesFound = 0
+
+    if (enableDedup && extractionResult.entities.length > 0) {
+      try {
+        const dedupResult = await this.runEntityDeduplication(
+          extractionResult.entities,
+          context,
+          groupId,
+          {
+            threshold: options?.dedupThreshold ?? 0.85,
+            useLlm: options?.useLlm ?? true,
+            episodeContent: content,
+          }
+        )
+        duplicatesFound = dedupResult.duplicatesFound
+
+        if (duplicatesFound > 0) {
+          console.log(
+            `[GraphitiService] Page ${pageId}: Found ${duplicatesFound} duplicate entities ` +
+            `(${dedupResult.exactMatches} exact, ${dedupResult.fuzzyMatches} fuzzy, ` +
+            `${dedupResult.embeddingMatches} embedding, ${dedupResult.llmMatches} LLM)`
+          )
+        }
+      } catch (dedupError) {
+        // Don't fail the sync if deduplication fails
+        console.warn(
+          `[GraphitiService] Deduplication failed for page ${pageId}: ` +
+          `${dedupError instanceof Error ? dedupError.message : 'Unknown error'}`
+        )
+      }
+    }
+
     // Fase 17.4: Return result with contradiction data for UI notification
     return {
       entitiesExtracted: extractionResult.entities.length,
       contradictionsResolved,
       contradictions: contradictionAuditEntries,
+      duplicatesFound, // Fase 22.8.2
     }
   }
 
@@ -851,6 +940,161 @@ export class GraphitiService {
       'Concept': 'Concept',
     }
     return typeMap[type] || 'Concept'
+  }
+
+  /**
+   * Fase 22.8.2: Run entity deduplication and create IS_DUPLICATE_OF edges
+   *
+   * @param extractedEntities - Entities extracted from the current page
+   * @param context - Wiki context (workspace/project)
+   * @param groupId - Group ID for scoping (wiki-ws-{id} or wiki-proj-{id})
+   * @param options - Deduplication options
+   * @returns Deduplication statistics
+   */
+  private async runEntityDeduplication(
+    extractedEntities: Array<{ name: string; type: string; confidence?: number }>,
+    context: WikiContext,
+    groupId: string,
+    options: {
+      threshold: number
+      useLlm: boolean
+      episodeContent: string
+    }
+  ): Promise<{
+    duplicatesFound: number
+    exactMatches: number
+    fuzzyMatches: number
+    embeddingMatches: number
+    llmMatches: number
+  }> {
+    const emptyResult = {
+      duplicatesFound: 0,
+      exactMatches: 0,
+      fuzzyMatches: 0,
+      embeddingMatches: 0,
+      llmMatches: 0,
+    }
+
+    // Get deduplication service with required dependencies
+    const dedupService = getWikiDeduplicationService(
+      this.wikiNodeEmbeddingService ?? undefined,
+      this.wikiAiService ?? undefined
+    )
+
+    // Convert extracted entities to EntityNodeInfo format
+    const extractedNodes: EntityNodeInfo[] = extractedEntities.map((entity, idx) => ({
+      uuid: `temp-${groupId}-${entity.type}-${entity.name}-${idx}`.replace(/[^a-zA-Z0-9-]/g, '_'),
+      name: entity.name,
+      type: this.mapEntityTypeToGraphLabel(entity.type),
+      groupId,
+    }))
+
+    if (extractedNodes.length === 0) {
+      return emptyResult
+    }
+
+    // Fetch existing entities from FalkorDB for this group
+    const existingNodes = await this.getExistingEntitiesForDedup(groupId)
+
+    if (existingNodes.length === 0) {
+      // No existing entities to compare against
+      return emptyResult
+    }
+
+    // Run deduplication
+    const result = await dedupService.resolveExtractedNodes(
+      extractedNodes,
+      existingNodes,
+      {
+        workspaceId: context.workspaceId,
+        projectId: context.projectId,
+        useEmbeddings: !!this.wikiNodeEmbeddingService,
+        useLlm: options.useLlm,
+        embeddingThreshold: options.threshold,
+      },
+      options.episodeContent
+    )
+
+    // Create IS_DUPLICATE_OF edges for found duplicates
+    for (const pair of result.duplicatePairs) {
+      // Get the internal ID from FalkorDB (temp UUIDs are for dedup only)
+      const sourceId = await this.getNodeIdByName(pair.sourceNode.name, pair.sourceNode.type, groupId)
+      if (!sourceId) continue
+
+      // targetNode.uuid is already the internal ID from getWorkspaceNodes
+      await this.createDuplicateOfEdge(
+        sourceId,
+        pair.targetNode.uuid,
+        pair.confidence,
+        pair.matchType as 'exact' | 'fuzzy' | 'llm' | 'embedding',
+        null
+      )
+    }
+
+    return {
+      duplicatesFound: result.duplicatePairs.length,
+      exactMatches: result.stats.exactMatches,
+      fuzzyMatches: result.stats.fuzzyMatches,
+      embeddingMatches: result.stats.embeddingMatches,
+      llmMatches: result.stats.llmMatches,
+    }
+  }
+
+  /**
+   * Fase 22.8.2: Get existing entities from FalkorDB for deduplication
+   */
+  private async getExistingEntitiesForDedup(groupId: string): Promise<EntityNodeInfo[]> {
+    await this.initialize()
+
+    const nodeTypes = ['Concept', 'Person', 'Task', 'Project']
+    const entities: EntityNodeInfo[] = []
+
+    for (const nodeType of nodeTypes) {
+      try {
+        const result = await this.query(`
+          MATCH (n:${nodeType})
+          WHERE n.groupId = '${groupId}'
+          RETURN n.uuid as uuid, n.name as name, '${nodeType}' as type, n.groupId as groupId
+        `) as unknown[][]
+
+        for (const row of result) {
+          if (row && row.length >= 4) {
+            const [uuid, name, type, grpId] = row as [string, string, string, string]
+            if (uuid && name) {
+              entities.push({ uuid, name, type, groupId: grpId || groupId })
+            }
+          }
+        }
+      } catch (error) {
+        console.warn(`[GraphitiService] Failed to fetch ${nodeType} entities for dedup:`, error)
+      }
+    }
+
+    return entities
+  }
+
+  /**
+   * Fase 22.8.2: Get node internal ID by name and type
+   * Returns FalkorDB internal ID as string (since entity nodes may not have uuid property)
+   */
+  private async getNodeIdByName(name: string, type: string, groupId: string): Promise<string | null> {
+    await this.initialize()
+
+    try {
+      const result = await this.query(`
+        MATCH (n:${type} {name: '${this.escapeString(name)}', groupId: '${groupId}'})
+        RETURN toString(ID(n)) as nodeId
+        LIMIT 1
+      `) as unknown[][]
+
+      if (result && result.length > 0 && result[0] && result[0][0]) {
+        return result[0][0] as string
+      }
+    } catch (error) {
+      console.warn(`[GraphitiService] Failed to get ID for ${type}:${name}:`, error)
+    }
+
+    return null
   }
 
   /**
@@ -2173,14 +2417,18 @@ export class GraphitiService {
    * Fase 22: Uses internal node IDs
    */
   async duplicateEdgeExists(sourceId: string, targetId: string): Promise<boolean> {
+    // Check both directions - edge can be stored either way
     const query = `
-      MATCH (source)-[r:IS_DUPLICATE_OF]->(target)
-      WHERE ID(source) = toInteger($sourceId) AND ID(target) = toInteger($targetId)
-      RETURN count(r) as count
+      MATCH (a), (b)
+      WHERE ID(a) = toInteger($sourceId) AND ID(b) = toInteger($targetId)
+      OPTIONAL MATCH (a)-[r1:IS_DUPLICATE_OF]->(b)
+      OPTIONAL MATCH (b)-[r2:IS_DUPLICATE_OF]->(a)
+      RETURN count(r1) + count(r2) as count
     `
 
-    const result = await this.query(query, { sourceId, targetId }) as Array<{ count: number }>
-    return (result[0]?.count || 0) > 0
+    const result = await this.query(query, { sourceId, targetId })
+    const parsed = this.parseResults<{ count: number }>(result, ['count'])
+    return (parsed[0]?.count || 0) > 0
   }
 
   /**
@@ -2196,6 +2444,73 @@ export class GraphitiService {
 
     await this.query(query, { sourceId, targetId })
     console.log(`[GraphitiService] Removed IS_DUPLICATE_OF: ${sourceId} -> ${targetId}`)
+  }
+
+  /**
+   * Get all existing IS_DUPLICATE_OF edges in a workspace
+   * Returns all confirmed duplicate pairs with their metadata
+   * Fase 22.8: For loading existing duplicates in WikiDuplicateManager
+   */
+  async getWorkspaceDuplicates(
+    groupId: string,
+    nodeTypes: string[] = ['Concept', 'Person', 'Task', 'Project']
+  ): Promise<Array<{
+    sourceUuid: string
+    sourceName: string
+    sourceType: string
+    targetUuid: string
+    targetName: string
+    targetType: string
+    confidence: number
+    matchType: string
+    detectedAt: string | null
+    detectedBy: string | null
+  }>> {
+    await this.initialize()
+
+    // Build type filter
+    const typeConditions = nodeTypes.map((t) => `source:${t}`).join(' OR ')
+
+    const query = `
+      MATCH (source)-[r:IS_DUPLICATE_OF]->(target)
+      WHERE source.groupId = $groupId
+      AND (${typeConditions})
+      RETURN
+        toString(ID(source)) as sourceUuid,
+        source.name as sourceName,
+        labels(source)[0] as sourceType,
+        toString(ID(target)) as targetUuid,
+        target.name as targetName,
+        labels(target)[0] as targetType,
+        r.confidence as confidence,
+        r.matchType as matchType,
+        r.detectedAt as detectedAt,
+        r.detectedBy as detectedBy
+      ORDER BY source.name
+    `
+
+    const result = await this.query(query, { groupId })
+
+    const parsed = this.parseResults<{
+      sourceUuid: string
+      sourceName: string
+      sourceType: string
+      targetUuid: string
+      targetName: string
+      targetType: string
+      confidence: number
+      matchType: string
+      detectedAt: string | null
+      detectedBy: string | null
+    }>(result, [
+      'sourceUuid', 'sourceName', 'sourceType',
+      'targetUuid', 'targetName', 'targetType',
+      'confidence', 'matchType', 'detectedAt', 'detectedBy'
+    ])
+
+    console.log(`[GraphitiService] getWorkspaceDuplicates: found ${parsed.length} pairs for groupId=${groupId}`)
+
+    return parsed
   }
 
   /**

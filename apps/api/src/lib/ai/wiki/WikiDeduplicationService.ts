@@ -12,7 +12,7 @@
  * Based on Python Graphiti: dedup_helpers.py, dedupe_nodes.py
  */
 
-import type { WikiContext } from './WikiAiService'
+import type { WikiContext, WikiAiService } from './WikiAiService'
 import type { WikiNodeEmbeddingService } from './WikiNodeEmbeddingService'
 import type {
   EntityNodeInfo,
@@ -24,6 +24,12 @@ import type {
   DuplicateMatchType,
 } from './types'
 import { DEDUP_CONSTANTS } from './types'
+
+/**
+ * Default confidence score for LLM-based matches.
+ * LLM doesn't provide a numeric confidence, so we use a fixed value.
+ */
+const LLM_MATCH_CONFIDENCE = 0.85
 
 // ===========================================================================
 // Constants (from Python Graphiti)
@@ -45,10 +51,17 @@ const {
 
 export class WikiDeduplicationService {
   private nodeEmbeddingService: WikiNodeEmbeddingService | null = null
+  private wikiAiService: WikiAiService | null = null
 
-  constructor(nodeEmbeddingService?: WikiNodeEmbeddingService) {
+  constructor(
+    nodeEmbeddingService?: WikiNodeEmbeddingService,
+    wikiAiService?: WikiAiService
+  ) {
     if (nodeEmbeddingService) {
       this.nodeEmbeddingService = nodeEmbeddingService
+    }
+    if (wikiAiService) {
+      this.wikiAiService = wikiAiService
     }
   }
 
@@ -57,6 +70,14 @@ export class WikiDeduplicationService {
    */
   setNodeEmbeddingService(service: WikiNodeEmbeddingService): void {
     this.nodeEmbeddingService = service
+  }
+
+  /**
+   * Set the WikiAiService (for lazy initialization)
+   * Required for LLM-based deduplication (useLlm: true)
+   */
+  setWikiAiService(service: WikiAiService): void {
+    this.wikiAiService = service
   }
 
   // ===========================================================================
@@ -469,25 +490,192 @@ export class WikiDeduplicationService {
   }
 
   // ===========================================================================
+  // LLM-BASED RESOLUTION
+  // ===========================================================================
+
+  /**
+   * Resolve unresolved nodes using LLM
+   * Equivalent to Python's _resolve_with_llm()
+   *
+   * Fase 22.8.1 - LLM Deduplication Implementation
+   *
+   * @param extractedNodes - All extracted nodes (by index)
+   * @param indexes - Precomputed lookup indexes
+   * @param state - Mutable resolution state
+   * @param context - Wiki context (workspace/project)
+   * @param episodeContent - Current content for LLM context
+   * @param previousEpisodes - Previous content for LLM context
+   */
+  async resolveWithLlm(
+    extractedNodes: EntityNodeInfo[],
+    indexes: DedupCandidateIndexes,
+    state: DedupResolutionState,
+    context: WikiContext,
+    episodeContent?: string,
+    previousEpisodes?: string[]
+  ): Promise<void> {
+    if (!this.wikiAiService) {
+      console.warn('[WikiDeduplicationService] No WikiAiService, skipping LLM resolution')
+      return
+    }
+
+    if (state.unresolvedIndices.length === 0) {
+      console.log('[WikiDeduplicationService] No unresolved nodes for LLM')
+      return
+    }
+
+    // Build extracted nodes context for LLM
+    const llmExtractedNodes = state.unresolvedIndices.map((idx, i) => {
+      const node = extractedNodes[idx]
+      return {
+        id: i, // Relative ID within unresolved batch
+        name: node?.name || '',
+        entity_type: [node?.type || 'Entity'],
+      }
+    })
+
+    // Build existing nodes context for LLM
+    const llmExistingNodes = indexes.existingNodes.map((node, idx) => ({
+      idx,
+      name: node.name,
+      entity_types: [node.type],
+      summary: node.summary,
+    }))
+
+    console.log(
+      `[WikiDeduplicationService] Calling LLM for ${llmExtractedNodes.length} unresolved nodes against ${llmExistingNodes.length} existing`
+    )
+
+    try {
+      // Call LLM for deduplication
+      const response = await this.wikiAiService.detectNodeDuplicates(
+        context,
+        llmExtractedNodes,
+        llmExistingNodes,
+        episodeContent || '',
+        previousEpisodes
+      )
+
+      // Process LLM response
+      const validRange = new Set(
+        Array.from({ length: state.unresolvedIndices.length }, (_, i) => i)
+      )
+
+      const stillUnresolved: number[] = []
+
+      for (const resolution of response.entityResolutions) {
+        const relativeId = resolution.id
+        const duplicateIdx = resolution.duplicateIdx
+
+        if (!validRange.has(relativeId)) {
+          console.warn(`[WikiDeduplicationService] Invalid LLM dedupe id ${relativeId}, skipping`)
+          continue
+        }
+
+        const originalIndex = state.unresolvedIndices[relativeId]
+        if (originalIndex === undefined) continue
+
+        const extractedNode = extractedNodes[originalIndex]
+        if (!extractedNode) continue
+
+        if (duplicateIdx === -1) {
+          // No duplicate found by LLM - mark as still unresolved (will become new node)
+          stillUnresolved.push(originalIndex)
+        } else if (duplicateIdx >= 0 && duplicateIdx < indexes.existingNodes.length) {
+          // Found duplicate by LLM
+          const resolvedNode = indexes.existingNodes[duplicateIdx]
+          if (resolvedNode) {
+            state.resolvedNodes[originalIndex] = resolvedNode
+            state.uuidMap.set(extractedNode.uuid, resolvedNode.uuid)
+
+            // Only add to duplicatePairs if they're actually different nodes
+            if (resolvedNode.uuid !== extractedNode.uuid) {
+              state.duplicatePairs.push({
+                sourceNode: {
+                  uuid: extractedNode.uuid,
+                  name: extractedNode.name,
+                  type: extractedNode.type,
+                  groupId: extractedNode.groupId,
+                },
+                targetNode: {
+                  uuid: resolvedNode.uuid,
+                  name: resolvedNode.name,
+                  type: resolvedNode.type,
+                  groupId: resolvedNode.groupId,
+                },
+                matchType: 'llm',
+                confidence: LLM_MATCH_CONFIDENCE,
+                metrics: {},
+              })
+            }
+          } else {
+            stillUnresolved.push(originalIndex)
+          }
+        } else {
+          console.warn(
+            `[WikiDeduplicationService] Invalid duplicate_idx ${duplicateIdx}, treating as no duplicate`
+          )
+          stillUnresolved.push(originalIndex)
+        }
+      }
+
+      // Handle any unresolved indices that weren't in the LLM response
+      for (let i = 0; i < state.unresolvedIndices.length; i++) {
+        const originalIndex = state.unresolvedIndices[i]
+        if (originalIndex === undefined) continue
+        const wasProcessed = response.entityResolutions.some((r) => r.id === i)
+        if (!wasProcessed && state.resolvedNodes[originalIndex] === null) {
+          stillUnresolved.push(originalIndex)
+        }
+      }
+
+      // Update unresolved indices
+      state.unresolvedIndices = stillUnresolved
+
+      console.log(
+        `[WikiDeduplicationService] After LLM: ${stillUnresolved.length} still unresolved`
+      )
+    } catch (error) {
+      console.error(
+        '[WikiDeduplicationService] LLM deduplication failed:',
+        error instanceof Error ? error.message : error
+      )
+      // Keep all as unresolved on error
+    }
+  }
+
+  // ===========================================================================
   // MAIN RESOLUTION FLOW
   // ===========================================================================
 
   /**
    * Main entry point for node deduplication
-   * Combines exact, fuzzy, and embedding matching
+   * Combines exact, fuzzy, embedding, and LLM matching
    *
-   * Note: LLM resolution is not included in this version to keep costs down.
-   * Add LLM resolution in a future phase if needed.
+   * Resolution order:
+   * 1. Exact match - Normalized string matching (O(1) via Map)
+   * 2. Fuzzy match - MinHash/LSH with Jaccard similarity
+   * 3. Embedding match - Vector similarity via Qdrant
+   * 4. LLM match - AI-powered resolution for complex cases (default: enabled)
+   *
+   * @param extractedNodes - Nodes extracted from content
+   * @param existingNodes - Existing nodes to match against
+   * @param options - Deduplication options including useLlm (default: true)
+   * @param episodeContent - Current content for LLM context (optional)
+   * @param previousEpisodes - Previous content for LLM context (optional)
    */
   async resolveExtractedNodes(
     extractedNodes: EntityNodeInfo[],
     existingNodes: EntityNodeInfo[],
-    options: DeduplicationOptions
+    options: DeduplicationOptions,
+    episodeContent?: string,
+    previousEpisodes?: string[]
   ): Promise<DeduplicationResult> {
     const {
       workspaceId,
       projectId,
       useEmbeddings = true,
+      useLlm = true,
       embeddingThreshold = EMBEDDING_THRESHOLD,
     } = options
 
@@ -544,7 +732,24 @@ export class WikiDeduplicationService {
       )
     }
 
-    // Step 3: Fill in any remaining unresolved nodes as "new"
+    // Step 3: LLM-based resolution for remaining nodes
+    if (useLlm && state.unresolvedIndices.length > 0 && this.wikiAiService) {
+      const beforeLlm = state.duplicatePairs.length
+      await this.resolveWithLlm(
+        extractedNodes,
+        indexes,
+        state,
+        context,
+        episodeContent,
+        previousEpisodes
+      )
+      stats.llmMatches = state.duplicatePairs.length - beforeLlm
+      console.log(
+        `[WikiDeduplicationService] After LLM: ${state.unresolvedIndices.length} unresolved`
+      )
+    }
+
+    // Step 4: Fill in any remaining unresolved nodes as "new"
     for (let idx = 0; idx < extractedNodes.length; idx++) {
       if (state.resolvedNodes[idx] === null) {
         const node = extractedNodes[idx]
@@ -638,13 +843,26 @@ export class WikiDeduplicationService {
 
 let serviceInstance: WikiDeduplicationService | null = null
 
+/**
+ * Get the singleton WikiDeduplicationService instance
+ *
+ * @param nodeEmbeddingService - Service for embedding-based matching (optional)
+ * @param wikiAiService - Service for LLM-based matching (optional, required for useLlm=true)
+ */
 export function getWikiDeduplicationService(
-  nodeEmbeddingService?: WikiNodeEmbeddingService
+  nodeEmbeddingService?: WikiNodeEmbeddingService,
+  wikiAiService?: WikiAiService
 ): WikiDeduplicationService {
   if (!serviceInstance) {
-    serviceInstance = new WikiDeduplicationService(nodeEmbeddingService)
-  } else if (nodeEmbeddingService && !serviceInstance['nodeEmbeddingService']) {
-    serviceInstance.setNodeEmbeddingService(nodeEmbeddingService)
+    serviceInstance = new WikiDeduplicationService(nodeEmbeddingService, wikiAiService)
+  } else {
+    // Inject services if not already set
+    if (nodeEmbeddingService && !serviceInstance['nodeEmbeddingService']) {
+      serviceInstance.setNodeEmbeddingService(nodeEmbeddingService)
+    }
+    if (wikiAiService && !serviceInstance['wikiAiService']) {
+      serviceInstance.setWikiAiService(wikiAiService)
+    }
   }
   return serviceInstance
 }
