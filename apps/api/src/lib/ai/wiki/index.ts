@@ -11,6 +11,7 @@
  * Fase 17.2 - Enhanced Contradiction Detection
  * Fase 17.3 - Conflict Resolution & Audit Trail
  * Fase 19.2 - Edge Embeddings (WikiEdgeEmbeddingService)
+ * Fase 21.3 - Node Embeddings (WikiNodeEmbeddingService)
  */
 
 export {
@@ -137,3 +138,17 @@ export {
   type HybridSearchOptions,
   type BatchEmbeddingResult,
 } from './WikiEdgeEmbeddingService'
+
+// Fase 21.3 - Node Embeddings (Entity Resolution)
+export {
+  WikiNodeEmbeddingService,
+  getWikiNodeEmbeddingService,
+  resetWikiNodeEmbeddingService,
+  type WikiNodeEmbeddingConfig,
+  type EmbeddableNodeType,
+  type NodeForEmbedding,
+  type NodeEmbeddingPayload,
+  type SimilarNodeResult,
+  type SimilarNodeSearchOptions,
+  type BatchNodeEmbeddingResult,
+} from './WikiNodeEmbeddingService'
