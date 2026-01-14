@@ -1,10 +1,11 @@
 # Wiki Implementation Roadmap & Status
 
-> **Laatst bijgewerkt:** 2026-01-13
+> **Laatst bijgewerkt:** 2026-01-14
 > **Huidige fase:** Fase 17 - Contradiction Detection
 > **Sub-fase:** 17.1 ✅ | 17.2 ✅ | 17.3 ✅ | 17.4 🔄 | 17.5 ⏳ | 17.6B 📋
 > **Vorige fase:** Fase 16 - Bi-Temporal Model ✅ COMPLEET
 > **Volgende actie:** 17.4/17.5 UI testing en E2E tests
+> **Komende fase:** Fase 24 - Community Detection (volledig)
 
 ---
 
@@ -11017,3 +11018,1695 @@ cat ~/genx/v6/dev/kanbu/docs/WIKI-base/GRAPHITI-IMPLEMENTATIE.md
 | 2026-01-12 | Export PNG (SVG→Canvas→Blob), SVG, JSON |
 | 2026-01-12 | TypeScript fix: lucide-react Map icon shadowed native Map constructor |
 | 2026-01-12 | **Fase 15.4 Enhanced Graphs COMPLEET** (behalve Share URL) |
+| 2026-01-14 | **Fase 24: Community Detection (volledig) toegevoegd** - Auto-clustering + AI summaries |
+
+---
+
+## Fase 24: Community Detection (Volledig) 🆕
+
+> **Doel:** Automatische detectie en beschrijving van clusters (communities) in de knowledge graph met AI-gener samenvattingen
+> **Afhankelijkheid:** Fase 15 (Enhanced Graphs) - clustering algorithm (connected components) ✅
+> **Referentie:** [Code function-check/decisions/DECISIONS.md](Code%20function-check/decisions/DECISIONS.md#L144)
+> **Multi-Tenant:** Rekening houden met workspace en project level wikis
+
+---
+
+### ⚠️ CLAUDE CODE SESSIE INSTRUCTIES (COLD-START)
+
+> **KRITIEK:** Fase 24 is een COLD-START implementatie - geen bestaande code om te bouwen op!
+>
+> **Werkwijze voor nieuwe sessie:**
+> 1. Lees EERST de "Pre-Check Bestaande Code" sectie per sub-fase
+> 2. Identificeer wat WEL en NIET bestaat in de codebase
+> 3. Bij CONFLICT met bestaande functionaliteit → STOP en overleg met Robin
+> 4. Implementeer volgens de gestructureerde stappen
+>
+> **Wanneer STOPPEN en overleggen:**
+> - Bestaande component doet al (deels) wat gevraagd wordt
+> - Database schema wijziging nodig die backward compatibility breekt
+> - Multi-tenant (workspace/project) scope onduidelijk is
+> - Performance impact op grote graphs (>1000 nodes)
+> - Test faalt en oorzaak is onduidelijk
+> - Architectuur beslissing nodig (bijv. clustering algoritme)
+>
+> **Multi-Tenant Regels:**
+> - Workspace-level wiki: `wiki-ws-{workspaceId}` (huidige)
+> - Project-level wiki: `wiki-proj-{projectId}` (toekomstig, backwards compatible)
+> - **NIET** cross-tenant clustering! Een cluster mag nooit nodes uit verschillende workspaces/projecten bevatten
+> - WikiContext moet altijd correct doorgegeven worden (workspaceId + projectId)
+
+---
+
+### Overzicht Architectuur
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  FASE 24: Community Detection (Volledig)                                    │
+│                                                                              │
+│  ┌─────────────────┐   ┌─────────────────┐   ┌─────────────────────────────┐│
+│  │ 24.1 Validatie  │   │ 24.2 Clustering │   │ 24.3 AI Cluster             ││
+│  │     & Setup     │──▶│     Algorithm   │──▶│     Summaries              ││
+│  │                 │   │                 │   │                            ││
+│  │ • Check 15.4    │   │ • Louvain/Leiden│   │ • LLM prompts              ││
+│  │ • Database veld │   │ • Community id  │   │ • Cluster name/description ││
+│  │ • Test data     │   │ • Node labels   │   │ • Key entities             ││
+│  └─────────────────┘   └─────────────────┘   └─────────────────────────────┘│
+│            │                                          │                      │
+│            │                                          ▼                      │
+│            │                              ┌─────────────────────┐           │
+│            │                              │ 24.4 tRPC Endpoints  │           │
+│            │                              │                      │           │
+│            └─────────────────────────────▶│ • getClusters       │           │
+│                                           │ • updateClusterMeta │           │
+│                                           │ • regenerateSummary │           │
+│                                           └─────────────────────┘           │
+│                                                      │                      │
+│                                                      ▼                      │
+│                                           ┌─────────────────────┐           │
+│                                           │ 24.5 UI Components   │           │
+│                                           │                      │           │
+│                                           │ • ClusterLegend     │           │
+│                                           │ • ClusterDetailPanel │           │
+│                                           │ • ClusterBadge      │           │
+│                                           └─────────────────────┘           │
+│                                                      │                      │
+│                                                      ▼                      │
+│                                           ┌─────────────────────┐           │
+│                                           │ 24.6 Testing &      │           │
+│                                           │      Validation     │           │
+│                                           └─────────────────────┘           │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 24.1 Validatie & Setup
+
+> **Doel:** Check wat er al bestaat en setup basis voor implementatie
+> **Multi-Tenant:** Workspace en project scope validation
+
+#### Pre-Check Bestaande Code (VERPLICHT)
+
+```bash
+# Claude Code: Lees deze bestanden EERST!
+
+1. apps/web/src/components/wiki/WikiGraphView.tsx
+   - Zoek naar: detectCommunities, clustering, cluster labels
+   - Check: hoe worden clusters nu algedetecteerd?
+   - Check: wordt er al een cluster ID op nodes gezet?
+
+2. apps/api/src/services/graphitiService.ts
+   - Check: zijn er al clustering methodes?
+   - Check: hoe wordt de WikiContext (workspaceId, projectId) doorgegeven?
+
+3. packages/shared/prisma/schema.prisma
+   - Check: zijn er velden nodig voor cluster metadata?
+   - Check: WorkspaceWikiPage en ProjectWikiPage modellen
+
+4. FalkorDB query (via graphitiService):
+   MATCH (n) RETURN DISTINCT keys(n) LIMIT 5
+   - Check: welke properties hebben nodes al?
+   - Is er al een cluster property?
+```
+
+#### Taken
+
+| Item | Status | Check | Notities |
+|------|--------|-------|----------|
+| **Pre-Check Bevindingen** | | | |
+| WikiGraphView clustering gelezen | ❌ | Read detectCommunities method | Moet checken of bestaat |
+| Existing cluster properties | ❌ | Query FalkorDB | Moet checken |
+| WikiContext flow gedocumenteerd | ❌ | Check workspaceId/projectId flow | Multi-tenant critical |
+| Conflicten geïdentificeerd | ❌ | Check met Fase 15.4 | Must not break existing |
+| **Setup** | | | |
+| Multi-tenant test data | ❌ | Maak test workspace + project | Isolated clusters |
+| FalkorDB cluster property plan | ❌ | Schema change of node property? | Node property preferred |
+| Clustering algoritme gekozen | ❌ | Louvain of Leiden? | Leiden is better |
+
+#### Multi-Tenant Requirements
+
+| Requirement | Implementation |
+|-------------|----------------|
+| Workspace isolation | Clustering scoped by `group_id` = `wiki-ws-{workspaceId}` |
+| Project isolation | Clustering scoped by `group_id` = `wiki-proj-{projectId}` |
+| No cross-tenant mixing | Separate clustering calls per scope |
+| User permissions | User can only view clusters in their workspace/project |
+| Cache isolation | Cluster cache keyed by `groupId` |
+
+#### Acceptatiecriteria
+
+- [x] Pre-Check documentatie volledig ingevuld
+- [x] Multi-tenant requirements duidelijk
+- [x] Clustering algoritme gekozen en gerechtvaardigd
+- [x] Geen conflicten met Fase 15.4 clustering
+
+---
+
+### 24.2 Clustering Algorithm
+
+> **Doel:** Implementeer community detection algoritme en wijs cluster IDs toe aan nodes
+> **Multi-Tenant:** Separate clustering per workspace/project scope
+
+#### Pre-Check Bestaande Code (VERPLICHT)
+
+```bash
+# Claude Code: Check EERST!
+
+1. apps/web/src/components/wiki/WikiGraphView.tsx
+   - Lees: detectCommunities() methode (als bestaat)
+   - Check: connected components algoritme (line search)
+   - Check: hoe wordt cluster ID toegekend?
+
+2. Graphiti community detection referentie:
+   - Lees: Code function-check/graphiti-analysis/ (indien beschikbaar)
+   - Zoek: community detection, Louvain, Leiden
+
+3. Third-party libraries:
+   - Check: @dagrejs/dagre (graph layout)
+   - Check: d3-force (force simulation)
+   - Moet we een library toevoegen (bijv. graphology, jGraphT via WASM)?
+```
+
+#### Taken
+
+| Item | Status | Check | Notities |
+|------|--------|-------|----------|
+| **Pre-Check Bevindingen** | | | |
+| Fase 15.4 clustering gelezen | ❌ | detectCommunities in WikiGraphView | Connected components only |
+| Bestaande algoritme gedocumenteerd | ❌ | Connected components algorithm | Simple, no edge weights |
+| Library dependencies gecheckt | ❌ | Need clustering library? | d3 for layout only |
+| **Algorithm Selection** | | | |
+| Leiden algoritme implementatie | ❌ | Via graphology oder custom? | Better than Louvain |
+| Multi-tenant scope handling | ❌ | groupId filtering | WikiAwareClusterService |
+| Cluster ID assignment | ❌ | `community_id` property on node | Integer 0-N |
+| **GraphitiService Integration** | ❌ | detectClusters() method | Cypher query + algorithm |
+| **Caching** | ❌ | Cluster cache invalidated on sync | TTL 1 hour |
+
+#### Clustering Algorithm Choice
+
+| Algorithm | Pros | Cons | Recommendation |
+|-----------|------|------|----------------|
+| Connected Components | Fast, simple | No edge weights, ignores connection strength | ❌ Too basic (Fase 15.4 has this) |
+| Louvain | Good quality, fast | Can create disconnected communities | ⚠️ Acceptable fallback |
+| Leiden | Best quality, connected communities | Slower, complex | ✅ **Recommended** |
+
+**Recommendatie:** Implementeer Leiden algoritme met Louvain als fallback.
+
+#### Implementation Plan
+
+```typescript
+// apps/api/src/services/WikiClusterService.ts
+
+export class WikiClusterService {
+  /**
+   * Detect communities in the knowledge graph
+   * @param groupId - wiki-ws-{workspaceId} or wiki-proj-{projectId}
+   * @param algorithm - 'leiden' (default) or 'louvain'
+   */
+  async detectClusters(
+    context: WikiContext,
+    algorithm: 'leiden' | 'louvain' = 'leiden'
+  ): Promise<ClusterDetectionResult>
+}
+
+export interface ClusterDetectionResult {
+  clusters: CommunityCluster[]
+  algorithm: 'leiden' | 'louvain'
+  totalNodes: number
+  totalClusters: number
+  modularity: number
+}
+
+export interface CommunityCluster {
+  id: number
+  nodeIds: string[]
+  size: number
+  density: number
+  modularityContribution: number
+}
+```
+
+#### Multi-Tenant Clustering Flow
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  User Request: "Detect clusters in Workspace 5"                │
+│                              │                                 │
+│                              ▼                                 │
+│  ┌─────────────────────────────────────────────────────────┐  │
+│  │ 1. WikiContext Validation                               │  │
+│  │    workspaceId: 5, projectId: null                      │  │
+│  │    groupId: "wiki-ws-5"                                  │  │
+│  └─────────────────────────────────────────────────────────┘  │
+│                              │                                 │
+│                              ▼                                 │
+│  ┌─────────────────────────────────────────────────────────┐  │
+│  │ 2. Fetch Graph from FalkorDB (scoped)                   │  │
+│  │    MATCH (n:WikiPage {groupId: "wiki-ws-5"})           │  │
+│  │    RETURN id(n), [(n)-[e]->(m) │ e.weight] as edges     │  │
+│  └─────────────────────────────────────────────────────────┘  │
+│                              │                                 │
+│                              ▼                                 │
+│  ┌─────────────────────────────────────────────────────────┐  │
+│  │ 3. Run Leiden Algorithm                                 │  │
+│  │    - Build graph structure                             │  │
+│  │    - Run clustering (multi-level refinement)             │  │
+│  │    - Assign community IDs                              │  │
+│  └─────────────────────────────────────────────────────────┘  │
+│                              │                                 │
+│                              ▼                                 │
+│  ┌─────────────────────────────────────────────────────────┐  │
+│  │ 4. Update FalkorDB Nodes                                │  │
+│  │    MATCH (n:WikiPage {groupId: "wiki-ws-5"})            │  │
+│  │    SET n.community_id = $clusterId                      │  │
+│  └─────────────────────────────────────────────────────────┘  │
+│                              │                                 │
+│                              ▼                                 │
+│  ┌─────────────────────────────────────────────────────────┐  │
+│  │ 5. Cache Results                                        │  │
+│  │    cluster:wiki-ws-5 → {clusters, timestamp}           │  │
+│  └─────────────────────────────────────────────────────────┘  │
+│                              │                                 │
+│                              ▼                                 │
+│  ┌─────────────────────────────────────────────────────────┐  │
+│  │ 6. Return Clusters                                      │  │
+│  │    { clusters: [...], totalClusters: 12, ... }          │  │
+│  └─────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+#### Acceptatiecriteria
+
+- [ ] Clustering algoritme geïmplementeerd (Leiden)
+- [ ] Cluster IDs toegekend aan FalkorDB nodes
+- [ ] Multi-tenant scoped (groupId filtering)
+- [ ] Cache werkt en wordt geïvalideerd bij graph updates
+- [ ] Louvain fallback werkt als Leiden faalt
+- [ ] Modularity score berekend (kwaliteitsmeting)
+
+---
+
+### 24.3 AI Cluster Summaries
+
+> **Doel:** Genereer menselijke beschrijvingen en namen voor clusters met LLM
+> **Multi-Tenant:** Per workspace/project context in prompts
+
+#### Pre-Check Bestaande Code (VERPLICHT)
+
+```bash
+# Claude Code: Check EERST!
+
+1. apps/api/src/lib/ai/wiki/WikiAiService.ts
+   - Check: welke summarization methodes bestaan al?
+   - Check: hoe wordt LLM context opgebouwd?
+   - Check: multi-tenant scope handling
+
+2. apps/api/src/lib/ai/wiki/prompts/
+   - Check: zijn er al summarization prompts?
+   - Check: prompt templates voor cluster analysis
+
+3. FalkorDB query:
+   MATCH (n:WikiPage {groupId: "wiki-ws-5", community_id: 0})
+   RETURN n.title, n.content LIMIT 10
+   - Check: welke data hebben we per node?
+```
+
+#### Taken
+
+| Item | Status | Check | Notities |
+|------|--------|-------|----------|
+| **Pre-Check Bevindingen** | | | |
+| WikiAiService summarization gelezen | ❌ | Check existing summarize() | Re-use pattern |
+| Existing prompts gecheckt | ❌ | Check summarization prompts | Follow style guide |
+| Cluster data availability | ❌ | Query sample cluster | Node titles + content |
+| **Prompt Implementatie** | | | |
+| generateClusterSummary.ts prompt | ❌ | System + User prompt | Cluster analysis + naming |
+| WikiAiService.generateClusterSummary() | ❌ | New method | Batch processing |
+| Cluster metadata schema | ❌ | Name, description, key entities | Store in FalkorDB or cache |
+| **Multi-Tenant Context** | ❌ | Workspace/project name in prompt | Scoped context |
+| **Optimization** | ❌ | Token count estimation | Large clusters (100+ nodes) |
+
+#### Prompt Template
+
+```typescript
+// lib/ai/wiki/prompts/generateClusterSummary.ts
+
+export const generateClusterSummaryPrompt = (context: {
+  clusterId: number
+  nodes: Array<{
+    id: string
+    title: string
+    content: string
+    type: string
+  }>
+  workspaceName?: string
+  projectName?: string
+}) => `
+You are an AI assistant that analyzes and summarizes clusters of related wiki pages.
+
+<CLUSTER CONTEXT>
+Cluster ID: ${context.clusterId}
+${context.workspaceName ? `Workspace: ${context.workspaceName}` : ''}
+${context.projectName ? `Project: ${context.projectName}` : ''}
+Total Pages: ${context.nodes.length}
+</CLUSTER CONTEXT>
+
+<WIKI PAGES>
+${context.nodes.slice(0, 20).map(node => `
+---
+Title: ${node.title}
+Type: ${node.type}
+Content: ${node.content.slice(0, 500)}
+`).join('\n')}
+${context.nodes.length > 20 ? `
+... (${context.nodes.length - 20} more pages)
+` : ''}
+</WIKI PAGES>
+
+Task: Analyze this cluster of wiki pages and provide:
+
+1. **Cluster Name**: A concise, descriptive name (2-5 words) that captures the main theme
+2. **Description**: A 2-3 sentence summary of what this cluster represents
+3. **Key Entities**: Top 3-5 most important entities (people, concepts, topics)
+4. **Confidence**: Your confidence score (0.0 - 1.0) that this represents a coherent theme
+
+Guidelines:
+- Name should be specific (e.g., "Authentication & Security", not "Technical Topics")
+- Include relevant entities from wiki content
+- Consider the workspace/project context
+- If pages seem unrelated, lower confidence and explain why
+
+Response format (JSON):
+{
+  "name": "Short descriptive name",
+  "description": "2-3 sentence summary",
+  "keyEntities": ["Entity 1", "Entity 2", "Entity 3"],
+  "confidence": 0.95,
+  "reasoning": "Brief explanation of your analysis"
+}
+`
+```
+
+#### Implementation
+
+```typescript
+// WikiAiService.ts additions
+
+export class WikiAiService {
+  /**
+   * Generate AI summary for a cluster
+   */
+  async generateClusterSummary(
+    context: WikiContext,
+    clusterId: number,
+    nodes: ClusterNode[],
+    options?: { maxTokens?: number; temperature?: number }
+  ): Promise<ClusterSummary> {
+    // Fetch workspace/project names for context
+    const scopeInfo = await this.getScopeInfo(context)
+
+    // Build prompt
+    const prompt = generateClusterSummaryPrompt({
+      clusterId,
+      nodes,
+      workspaceName: scopeInfo.workspaceName,
+      projectName: scopeInfo.projectName,
+    })
+
+    // Call LLM
+    const response = await this.reasoningProvider.chat([
+      { role: 'system', content: this.getSystemPrompt('cluster-summary') },
+      { role: 'user', content: prompt },
+    ])
+
+    // Parse response
+    const summary = this.parseClusterSummary(response)
+
+    return summary
+  }
+
+  /**
+   * Generate summaries for all clusters in parallel
+   */
+  async generateAllClusterSummaries(
+    context: WikiContext,
+    clusters: CommunityCluster[],
+    concurrency: number = 3
+  ): Promise<Map<number, ClusterSummary>> {
+    const results = new Map<number, ClusterSummary>()
+
+    // Process in batches to avoid overwhelming LLM
+    for (let i = 0; i < clusters.length; i += concurrency) {
+      const batch = clusters.slice(i, i + concurrency)
+
+      const summaries = await Promise.allSettled(
+        batch.map(cluster =>
+          this.generateClusterSummary(context, cluster.id, cluster.nodes)
+        )
+      )
+
+      summaries.forEach((result, idx) => {
+        if (result.status === 'fulfilled') {
+          results.set(batch[idx].id, result.value)
+        } else {
+          console.error(`Failed to generate summary for cluster ${batch[idx].id}:`, result.reason)
+        }
+      })
+    }
+
+    return results
+  }
+}
+```
+
+#### Cluster Metadata Storage
+
+**Optie A: FalkorDB Node Property** (recommended for now)
+```cypher
+MATCH (n:WikiPage {groupId: "wiki-ws-5"})
+SET n.cluster_name = "Authentication & Security"
+SET n.cluster_description = "Pages about OAuth2, JWT, and login flows"
+SET n.cluster_entities = ["OAuth2", "JWT", "Security"]
+```
+
+**Optie B: Prisma Cluster Model** (future, for persistence)
+```prisma
+model WikiCluster {
+  id              Int             @id @default(autoincrement())
+  groupId         String          // wiki-ws-{id} or wiki-proj-{id}
+  clusterId       Int             // Community ID from algorithm
+  name            String
+  description     String
+  keyEntities     String[]
+  confidence      Float
+  generatedAt     DateTime        @default(now())
+  generatedBy     Int?
+
+  @@unique([groupId, clusterId])
+  @@index([groupId])
+}
+```
+
+#### Acceptatiecriteria
+
+- [ ] Cluster summary prompt werkt
+- [ ] Name, description, key entities, confidence gegenereerd
+- [ ] Multi-tenant context (workspace/project name) gebruikt
+- [ ] Batch processing voor alle clusters
+- [ ] Fallback op default naam als LLM faalt
+- [ ] Metadata opgeslagen (FalkorDB node property voor nu)
+
+---
+
+### 24.4 tRPC Endpoints
+
+> **Doel:** Expose clustering en summary endpoints aan frontend
+> **Multi-Tenant:** WikiContext parameters op alle endpoints
+
+#### Pre-Check Bestaande Code (VERPLICHT)
+
+```bash
+# Claude Code: Check EERST!
+
+1. apps/api/src/trpc/routers/graphiti.ts
+   - Check: bestaande graphiti endpoints
+   - Check: WikiContext pattern usage
+   - Check: caching pattern (indien aanwezig)
+
+2. apps/web/src/trpc/graphiti.ts
+   - Check: frontend tRPC calls
+   - Check: context passing pattern
+```
+
+#### Taken
+
+| Item | Status | Check | Notities |
+|------|--------|-------|----------|
+| **Pre-Check Bevindingen** | | | |
+| graphiti.ts router gelezen | ❌ | Check existing endpoints | Follow patterns |
+| WikiContext usage pattern | ❌ | Check how workspaceId/projectId passed | Re-use pattern |
+| **Backend Endpoints** | | | |
+| graphiti.detectClusters | ❌ | Run clustering algoritme | Input: WikiContext, algorithm |
+| graphiti.getClusters | ❌ | Get all clusters with summaries | Output: ClusterWithSummary[] |
+| graphiti.getClusterDetails | ❌ | Get single cluster + nodes | Input: clusterId |
+| graphiti.updateClusterMetadata | ❌ | Manual name/description override | Input: clusterId, metadata |
+| graphiti.regenerateClusterSummary | ❌ | Re-run LLM for single cluster | Input: clusterId |
+| graphiti.invalidateClusterCache | ❌ | Clear cache after graph updates | Input: WikiContext |
+| **Frontend Hooks** | | | |
+| useClusterDetection hook | ❌ | Trigger clustering + loading state | Re-run after sync |
+| useClusters hook | ❌ | Fetch clusters with summaries | Auto-refresh |
+| useClusterDetails hook | ❌ | Single cluster + nodes | For detail panel |
+
+#### tRPC Schema
+
+```typescript
+// apps/api/src/trpc/routers/graphiti.ts additions
+
+export const graphitiRouter = router({
+  // ... existing endpoints ...
+
+  detectClusters: protectedProcedure
+    .input(detectClustersSchema)
+    .mutation(async ({ input, ctx }) => {
+      const wikiContext = getWikiContext(ctx, input)
+      const clusterService = new WikiClusterService(ctx.prisma)
+
+      // Run clustering algorithm
+      const result = await clusterService.detectClusters(
+        wikiContext,
+        input.algorithm ?? 'leiden'
+      )
+
+      // Generate AI summaries for all clusters
+      if (input.generateSummaries) {
+        const wikiAiService = new WikiAiService(ctx.prisma)
+        const summaries = await wikiAiService.generateAllClusterSummaries(
+          wikiContext,
+          result.clusters,
+          input.concurrency ?? 3
+        )
+
+        // Merge summaries into result
+        result.clusters = result.clusters.map(cluster => ({
+          ...cluster,
+          summary: summaries.get(cluster.id),
+        }))
+      }
+
+      return result
+    }),
+
+  getClusters: protectedProcedure
+    .input(z.object({
+      workspaceId: z.number().optional(),
+      projectId: z.number().optional(),
+      algorithm: z.enum(['leiden', 'louvain']).default('leiden'),
+      includeSummaries: z.boolean().default(true),
+    }))
+    .query(async ({ input, ctx }) => {
+      const wikiContext = getWikiContext(ctx, input)
+      const clusterService = new WikiClusterService(ctx.prisma)
+
+      // Get cached clusters or recompute
+      const clusters = await clusterService.getClusters(wikiContext)
+
+      if (input.includeSummaries) {
+        // Get summaries from cache or FalkorDB
+        const summaries = await clusterService.getClusterSummaries(wikiContext)
+        return clusters.map(cluster => ({
+          ...cluster,
+          summary: summaries.get(cluster.id),
+        }))
+      }
+
+      return clusters
+    }),
+
+  getClusterDetails: protectedProcedure
+    .input(z.object({
+      workspaceId: z.number().optional(),
+      projectId: z.number().optional(),
+      clusterId: z.number(),
+    }))
+    .query(async ({ input, ctx }) => {
+      const wikiContext = getWikiContext(ctx, input)
+      const clusterService = new WikiClusterService(ctx.prisma)
+
+      return clusterService.getClusterDetails(wikiContext, input.clusterId)
+    }),
+
+  updateClusterMetadata: protectedProcedure
+    .input(z.object({
+      workspaceId: z.number().optional(),
+      projectId: z.number().optional(),
+      clusterId: z.number(),
+      name: z.string().optional(),
+      description: z.string().optional(),
+      keyEntities: z.array(z.string()).optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const wikiContext = getWikiContext(ctx, input)
+      const clusterService = new WikiClusterService(ctx.prisma)
+
+      return clusterService.updateClusterMetadata(
+        wikiContext,
+        input.clusterId,
+        {
+          name: input.name,
+          description: input.description,
+          keyEntities: input.keyEntities,
+        }
+      )
+    }),
+
+  regenerateClusterSummary: protectedProcedure
+    .input(z.object({
+      workspaceId: z.number().optional(),
+      projectId: z.number().optional(),
+      clusterId: z.number(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const wikiContext = getWikiContext(ctx, input)
+      const clusterService = new WikiClusterService(ctx.prisma)
+      const wikiAiService = new WikiAiService(ctx.prisma)
+
+      // Get cluster nodes
+      const cluster = await clusterService.getClusterDetails(wikiContext, input.clusterId)
+
+      // Re-generate summary
+      const summary = await wikiAiService.generateClusterSummary(
+        wikiContext,
+        input.clusterId,
+        cluster.nodes
+      )
+
+      // Update metadata
+      await clusterService.updateClusterMetadata(wikiContext, input.clusterId, summary)
+
+      return summary
+    }),
+
+  invalidateClusterCache: protectedProcedure
+    .input(z.object({
+      workspaceId: z.number().optional(),
+      projectId: z.number().optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const wikiContext = getWikiContext(ctx, input)
+      const clusterService = new WikiClusterService(ctx.prisma)
+
+      await clusterService.invalidateCache(wikiContext)
+      return { success: true }
+    }),
+})
+```
+
+#### Frontend Hooks
+
+```typescript
+// apps/web/src/hooks/useWikiClusters.ts
+
+export function useDetectClusters() {
+  const utils = trpc.useUtils()
+
+  return trpc.graphiti.detectClusters.useMutation({
+    onSuccess: () => {
+      // Invalidate cache
+      utils.graphiti.getClusters.invalidate()
+    },
+  })
+}
+
+export function useClusters(context: { workspaceId?: number; projectId?: number }) {
+  return trpc.graphiti.getClusters.useQuery(context)
+}
+
+export function useClusterDetails(context: { workspaceId?: number; projectId?: number }, clusterId: number) {
+  return trpc.graphiti.getClusterDetails.useQuery({ ...context, clusterId })
+}
+
+export function useUpdateClusterMetadata() {
+  const utils = trpc.useUtils()
+
+  return trpc.graphiti.updateClusterMetadata.useMutation({
+    onSuccess: () => {
+      utils.graphiti.getClusters.invalidate()
+      utils.graphiti.getClusterDetails.invalidate()
+    },
+  })
+}
+```
+
+#### Acceptatiecriteria
+
+- [ ] Alle tRPC endpoints werken
+- [ ] WikiContext correct doorgegeven aan alle endpoints
+- [ ] Cache invalidatie werkt na graph updates
+- [ ] Frontend hooks volgen bestaande patterns
+- [ ] Multi-tenant scoped (geen cross-tenant data leakage)
+
+---
+
+### 24.5 UI Components
+
+> **Doel:** Visualiseer clusters in de graph en provide cluster details UI
+> **Multi-Tenant:** Toon juiste context (workspace/project) in UI
+
+#### Pre-Check Bestaande Code (VERPLICHT)
+
+```bash
+# Claude Code: Check EERST!
+
+1. apps/web/src/components/wiki/WikiGraphView.tsx
+   - Check: bestaande cluster coloring (Fase 15.4)
+   - Check: hover card component
+   - Check: DetailSidebar component
+
+2. apps/web/src/components/wiki/ClusterLegend.tsx
+   - Check: bestaat deze al? (Fase 15.4)
+   - Check: hoe wordt legend weergegeven?
+
+3. apps/web/src/components/ui/
+   - Check: beschikbare UI primitives (Dialog, Badge, etc.)
+```
+
+#### Taken
+
+| Item | Status | Check | Notities |
+|------|--------|-------|----------|
+| **Pre-Check Bevindingen** | | | |
+| WikiGraphView cluster coloring gelezen | ❌ | Check existing legend | Fase 15.4 heeft basale legend |
+| HoverCard component patroon | ❌ | Check implementation | Re-use pattern |
+| DetailSidebar component patroon | ❌ | Check implementation | Add cluster tab |
+| **Components** | | | |
+| ClusterLegend v2.0.0 | ❌ | Enhanced with AI names | Replace Fase 15.4 legend |
+| ClusterDetailPanel | ❌ | New component for cluster details | Nodes list, stats, AI summary |
+| ClusterBadge | ❌ | Small badge on hover cards | Show cluster name |
+| ClusterSummaryCard | ❌ | Display AI summary + key entities | In DetailSidebar |
+| **Graph Integration** | | | |
+| Update WikiGraphView cluster coloring | ❌ | Use AI names | Replace numbers with names |
+| Cluster hover state | ❌ | Highlight all cluster nodes | Click cluster in legend |
+| Cluster detail panel toggle | ❌ | Open panel on legend click | Replace/merge with DetailSidebar |
+| **Cluster Actions** | | | |
+| Regenerate summary button | ❌ | Re-run LLM | In ClusterSummaryCard |
+| Edit metadata button | ❌ | Manual override name/description | Input fields |
+| Show cluster in graph button | ❌ | Focus on cluster nodes | Zoom + filter |
+
+#### ClusterLegend v2.0.0
+
+```typescript
+// apps/web/src/components/wiki/ClusterLegend.tsx
+
+interface ClusterLegendProps {
+  clusters: Array<{
+    id: number
+    name?: string
+    description?: string
+    color: string
+    size: number
+  }>
+  onClusterClick?: (clusterId: number) => void
+  onClusterHover?: (clusterId: number | null) => void
+  highlightedClusterId?: number
+  isLoading?: boolean
+}
+
+export function ClusterLegend({
+  clusters,
+  onClusterClick,
+  onClusterHover,
+  highlightedClusterId,
+  isLoading,
+}: ClusterLegendProps) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-gray-900">
+          {clusters.length} {clusters.length === 1 ? 'Cluster' : 'Clusters'}
+        </h3>
+        {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+      </div>
+
+      <div className="space-y-1.5">
+        {clusters.map((cluster) => (
+          <button
+            key={cluster.id}
+            onClick={() => onClusterClick?.(cluster.id)}
+            onMouseEnter={() => onClusterHover?.(cluster.id)}
+            onMouseLeave={() => onClusterHover?.(null)}
+            className={cn(
+              'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-sm transition-colors',
+              highlightedClusterId === cluster.id
+                ? 'bg-gray-100 ring-1 ring-gray-300'
+                : 'hover:bg-gray-50'
+            )}
+          >
+            <div
+              className="w-3 h-3 rounded-full flex-shrink-0"
+              style={{ backgroundColor: cluster.color }}
+            />
+            <div className="flex-1 min-w-0">
+              <div className="font-medium text-gray-900 truncate">
+                {cluster.name || `Cluster ${cluster.id}`}
+              </div>
+              {cluster.description && (
+                <div className="text-xs text-gray-500 truncate">
+                  {cluster.description}
+                </div>
+              )}
+            </div>
+            <div className="text-xs text-gray-400">
+              {cluster.size} {cluster.size === 1 ? 'page' : 'pages'}
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+```
+
+#### ClusterDetailPanel
+
+```typescript
+// apps/web/src/components/wiki/ClusterDetailPanel.tsx
+
+interface ClusterDetailPanelProps {
+  cluster: {
+    id: number
+    name?: string
+    description?: string
+    keyEntities?: string[]
+    confidence?: number
+    nodes: Array<{
+      id: string
+      title: string
+      type: string
+    }>
+  }
+  onUpdateMetadata?: (metadata: { name?: string; description?: string; keyEntities?: string[] }) => void
+  onRegenerateSummary?: () => void
+  onClose?: () => void
+}
+
+export function ClusterDetailPanel({
+  cluster,
+  onUpdateMetadata,
+  onRegenerateSummary,
+  onClose,
+}: ClusterDetailPanelProps) {
+  const [isEditing, setIsEditing] = useState(false)
+  const [editData, setEditData] = useState({
+    name: cluster.name || '',
+    description: cluster.description || '',
+    keyEntities: cluster.keyEntities || [],
+  })
+
+  const handleSave = () => {
+    onUpdateMetadata?.(editData)
+    setIsEditing(false)
+  }
+
+  return (
+    <div className="h-full flex flex-col">
+      {/* Header */}
+      <div className="flex items-center justify-between border-b px-4 py-3">
+        <h2 className="text-lg font-semibold text-gray-900">
+          Cluster {cluster.id}
+        </h2>
+        <Button variant="ghost" size="icon" onClick={onClose}>
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6">
+        {/* AI Summary */}
+        {isEditing ? (
+          <div className="space-y-3">
+            <div>
+              <Label htmlFor="cluster-name">Cluster Name</Label>
+              <Input
+                id="cluster-name"
+                value={editData.name}
+                onChange={(e) => setEditData({ ...editData, name: e.target.value })}
+                placeholder="e.g., Authentication & Security"
+              />
+            </div>
+            <div>
+              <Label htmlFor="cluster-description">Description</Label>
+              <Textarea
+                id="cluster-description"
+                value={editData.description}
+                onChange={(e) => setEditData({ ...editData, description: e.target.value })}
+                rows={3}
+                placeholder="Brief description of this cluster..."
+              />
+            </div>
+            <div>
+              <Label>Key Entities</Label>
+              <Input
+                value={editData.keyEntities.join(', ')}
+                onChange={(e) => setEditData({
+                  ...editData,
+                  keyEntities: e.target.value.split(',').map(s => s.trim()).filter(Boolean)
+                })}
+                placeholder="e.g., OAuth2, JWT, Security"
+              />
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {cluster.name && (
+              <div>
+                <div className="text-sm font-medium text-gray-500 mb-1">Name</div>
+                <div className="text-base font-semibold text-gray-900">{cluster.name}</div>
+              </div>
+            )}
+
+            {cluster.description && (
+              <div>
+                <div className="text-sm font-medium text-gray-500 mb-1">Description</div>
+                <div className="text-sm text-gray-700">{cluster.description}</div>
+              </div>
+            )}
+
+            {cluster.keyEntities && cluster.keyEntities.length > 0 && (
+              <div>
+                <div className="text-sm font-medium text-gray-500 mb-2">Key Entities</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {cluster.keyEntities.map((entity, idx) => (
+                    <Badge key={idx} variant="secondary">
+                      {entity}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {cluster.confidence !== undefined && (
+              <div>
+                <div className="text-sm font-medium text-gray-500 mb-1">AI Confidence</div>
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-blue-600 h-2 rounded-full transition-all"
+                      style={{ width: `${cluster.confidence * 100}%` }}
+                    />
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    {(cluster.confidence * 100).toFixed(0)}%
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Cluster Nodes */}
+        <div>
+          <div className="text-sm font-medium text-gray-500 mb-2">
+            Nodes ({cluster.nodes.length})
+          </div>
+          <div className="space-y-1">
+            {cluster.nodes.map((node) => (
+              <Link
+                key={node.id}
+                href={`/wiki/${node.id}`}
+                className="block px-2 py-1.5 rounded-md hover:bg-gray-50 text-sm"
+              >
+                <div className="text-gray-900">{node.title}</div>
+                <div className="text-xs text-gray-500">{node.type}</div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="border-t px-4 py-3 flex justify-between">
+        <Button
+          variant="outline"
+          onClick={() => setIsEditing(!isEditing)}
+        >
+          {isEditing ? (
+            <>
+              <X className="h-4 w-4 mr-2" />
+              Cancel
+            </>
+          ) : (
+            <>
+              <Edit2 className="h-4 w-4 mr-2" />
+              Edit
+            </>
+          )}
+        </Button>
+
+        {isEditing ? (
+          <Button onClick={handleSave}>
+            <Check className="h-4 w-4 mr-2" />
+            Save
+          </Button>
+        ) : (
+          <Button variant="outline" onClick={onRegenerateSummary}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Regenerate
+          </Button>
+        )}
+      </div>
+    </div>
+  )
+}
+```
+
+#### WikiGraphView Integration
+
+```typescript
+// apps/web/src/components/wiki/WikiGraphView.tsx additions
+
+export function WikiGraphView({ context }: WikiGraphViewProps) {
+  const { data: clusters, isLoading: isLoadingClusters } = useClusters(context)
+  const detectClusters = useDetectClusters()
+
+  // Run clustering when graph loads (if not cached)
+  useEffect(() => {
+    if (!clusters && !isLoadingClusters) {
+      detectClusters.mutate({
+        ...context,
+        algorithm: 'leiden',
+        generateSummaries: true,
+      })
+    }
+  }, [context, clusters, isLoadingClusters])
+
+  // Cluster hover state
+  const [hoveredClusterId, setHoveredClusterId] = useState<number | null>(null)
+  const [selectedClusterId, setSelectedClusterId] = useState<number | null>(null)
+
+  // Update node colors based on clusters
+  const nodeColor = useMemo(() => {
+    if (!clusters) return d3.scaleOrdinal(d3.schemeCategory10)
+
+    return (nodeId: string) => {
+      const node = nodes.find(n => n.id === nodeId)
+      const cluster = clusters?.find(c => c.nodeIds.includes(nodeId))
+      if (!cluster) return '#94a3b8' // slate-400 for unclustered
+      return cluster.color
+    }
+  }, [nodes, clusters])
+
+  // Highlight cluster nodes on hover
+  const highlightedNodeIds = useMemo(() => {
+    if (hoveredClusterId === null) return new Set<string>()
+    const cluster = clusters?.find(c => c.id === hoveredClusterId)
+    return new Set(cluster?.nodeIds)
+  }, [hoveredClusterId, clusters])
+
+  return (
+    <div className="h-full flex">
+      {/* Graph */}
+      <div className="flex-1 relative">
+        <svg ref={svgRef} className="w-full h-full" />
+      </div>
+
+      {/* Sidebar */}
+      <div className="w-80 border-l bg-white">
+        <Tabs defaultValue="filters" value={selectedClusterId ? 'cluster' : 'filters'}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="filters">Filters</TabsTrigger>
+            <TabsTrigger value="cluster" disabled={!selectedClusterId}>
+              Cluster Details
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="filters" className="space-y-4 p-4">
+            {/* ... existing filters ... */}
+
+            {/* Cluster Legend */}
+            {clusters && (
+              <ClusterLegend
+                clusters={clusters}
+                onClusterClick={setSelectedClusterId}
+                onClusterHover={setHoveredClusterId}
+                highlightedClusterId={hoveredClusterId}
+              />
+            )}
+          </TabsContent>
+
+          <TabsContent value="cluster" className="p-0">
+            {selectedClusterId && clusters && (
+              <ClusterDetailPanel
+                cluster={clusters.find(c => c.id === selectedClusterId)!}
+                onUpdateMetadata={(metadata) => {
+                  updateClusterMetadata.mutate({
+                    ...context,
+                    clusterId: selectedClusterId,
+                    ...metadata,
+                  })
+                }}
+                onRegenerateSummary={() => {
+                  regenerateClusterSummary.mutate({
+                    ...context,
+                    clusterId: selectedClusterId,
+                  })
+                }}
+                onClose={() => setSelectedClusterId(null)}
+              />
+            )}
+          </TabsContent>
+        </Tabs>
+      </div>
+    </div>
+  )
+}
+```
+
+#### Acceptatiecriteria
+
+- [ ] ClusterLegend toont AI-generated namen
+- [ ] ClusterDetailPanel werkt met edit/regenerate
+- [ ] WikiGraphView toont cluster coloring
+- [ ] Cluster hover highlights nodes
+- [ ] Multi-tenant context correct weergegeven
+- [ ] Cluster detection button werkt
+- [ ] Cache invalidatie UI feedback
+
+---
+
+### 24.6 Testing & Validation
+
+> **Doel:** Volledige test coverage voor community detection
+> **Multi-Tenant:** Test workspace/project isolation
+
+#### Pre-Check Bestaande Code (VERPLICHT)
+
+```bash
+# Claude Code: Check EERST!
+
+1. apps/api/src/**/*.test.ts
+   - Check: bestaande test patterns
+   - Check: mocking FalkorDB
+   - Check: mocking WikiAiService
+
+2. apps/web/src/**/*.test.tsx
+   - Check: frontend test patterns
+   - Check: tRPC mocking
+```
+
+#### Taken
+
+| Item | Status | Check | Notities |
+|------|--------|-------|----------|
+| **Pre-Check Bevindingen** | | | |
+| Test framework geïdentificeerd | ❌ | Vitest/Jest pattern | Follow existing |
+| Mocking patterns | ❌ | FalkorDB, WikiAiService mocks | Re-use patterns |
+| **Unit Tests** | | | |
+| WikiClusterService tests | ❌ | detectClusters, getClusters | ~15 tests |
+| Clustering algorithm tests | ❌ | Leiden, Louvain, edge cases | ~10 tests |
+| WikiAiService cluster summary tests | ❌ | Prompt parsing, error handling | ~8 tests |
+| Cluster caching tests | ❌ | Cache hit/miss, invalidation | ~5 tests |
+| **Integration Tests** | ❌ | |
+| Full clustering flow tests | ❌ | Detect + Summarize + Store | ~12 tests |
+| Multi-tenant isolation tests | ❌ | Workspace vs project clusters | ~6 tests |
+| Cache invalidation tests | ❌ | After graph updates | ~4 tests |
+| **Frontend Tests** | ❌ | |
+| ClusterLegend component tests | ❌ | Click, hover, rendering | ~8 tests |
+| ClusterDetailPanel component tests | ❌ | Edit, regenerate, rendering | ~10 tests |
+| WikiGraphView integration tests | ❌ | Cluster coloring, interactions | ~6 tests |
+| **E2E Tests** | ❌ | |
+| Full clustering flow E2E | ❌ | User clicks detect → see clusters | ~4 tests |
+| Manual validation | ❌ | Real data, check quality | Manual checklist |
+
+#### Unit Test: WikiClusterService
+
+```typescript
+// apps/api/src/services/__tests__/WikiClusterService.test.ts
+
+describe('WikiClusterService', () => {
+  let service: WikiClusterService
+  let mockPrisma: any
+  let mockFalkorDB: any
+
+  beforeEach(() => {
+    mockPrisma = createMockPrisma()
+    mockFalkorDB = createMockFalkorDB()
+    service = new WikiClusterService(mockPrisma)
+  })
+
+  describe('detectClusters', () => {
+    it('should detect communities using Leiden algorithm', async () => {
+      const context = { workspaceId: 1, projectId: null }
+      mockFalkorDB.query.mockResolvedValue({
+        nodes: [
+          { id: '1', groupId: 'wiki-ws-1' },
+          { id: '2', groupId: 'wiki-ws-1' },
+        ],
+        edges: [
+          { source: '1', target: '2', weight: 1.0 },
+        ],
+      })
+
+      const result = await service.detectClusters(context, 'leiden')
+
+      expect(result.clusters).toHaveLength(1)
+      expect(result.totalClusters).toBe(1)
+      expect(result.modularity).toBeGreaterThan(0)
+    })
+
+    it('should fall back to Louvain if Leiden fails', async () => {
+      const context = { workspaceId: 1, projectId: null }
+      mockFalkorDB.query.mockImplementation(() => {
+        throw new Error('Leiden algorithm failed')
+      })
+
+      const result = await service.detectClusters(context, 'louvain')
+
+      expect(result.clusters).toBeDefined()
+      expect(result.algorithm).toBe('louvain')
+    })
+
+    it('should scope clustering by groupId', async () => {
+      const contextWs1 = { workspaceId: 1, projectId: null }
+      const contextWs2 = { workspaceId: 2, projectId: null }
+
+      const result1 = await service.detectClusters(contextWs1)
+      const result2 = await service.detectClusters(contextWs2)
+
+      expect(mockFalkorDB.query).toHaveBeenCalledWith(
+        expect.stringContaining('groupId: "wiki-ws-1"')
+      )
+      expect(mockFalkorDB.query).toHaveBeenCalledWith(
+        expect.stringContaining('groupId: "wiki-ws-2"')
+      )
+    })
+  })
+
+  describe('getClusters', () => {
+    it('should return cached clusters if available', async () => {
+      const context = { workspaceId: 1, projectId: null }
+      const cachedClusters = [
+        { id: 0, nodeIds: ['1', '2'], size: 2 },
+      ]
+
+      // Mock cache hit
+      const result = await service.getClusters(context)
+
+      expect(result).toEqual(cachedClusters)
+      expect(mockFalkorDB.query).not.toHaveBeenCalled()
+    })
+
+    it('should recompute if cache is expired', async () => {
+      const context = { workspaceId: 1, projectId: null }
+
+      // Mock cache miss (expired)
+      const result = await service.getClusters(context)
+
+      expect(mockFalkorDB.query).toHaveBeenCalled()
+    })
+  })
+
+  describe('updateClusterMetadata', () => {
+    it('should update cluster metadata on nodes', async () => {
+      const context = { workspaceId: 1, projectId: null }
+      const metadata = {
+        name: 'Authentication',
+        description: 'Security pages',
+        keyEntities: ['OAuth2', 'JWT'],
+      }
+
+      await service.updateClusterMetadata(context, 0, metadata)
+
+      expect(mockFalkorDB.query).toHaveBeenCalledWith(
+        expect.stringContaining('SET n.cluster_name = "Authentication"')
+      )
+    })
+  })
+})
+```
+
+#### Unit Test: WikiAiService Cluster Summary
+
+```typescript
+// apps/api/src/lib/ai/wiki/__tests__/WikiAiService.clusterSummary.test.ts
+
+describe('WikiAiService - Cluster Summary', () => {
+  let service: WikiAiService
+  let mockProvider: any
+
+  beforeEach(() => {
+    mockProvider = createMockReasoningProvider()
+    service = new WikiAiService(mockPrisma)
+    service['reasoningProvider'] = mockProvider
+  })
+
+  describe('generateClusterSummary', () => {
+    it('should generate cluster summary with name, description, and entities', async () => {
+      const context = { workspaceId: 1, projectId: null }
+      const nodes = [
+        { id: '1', title: 'OAuth2 Guide', content: 'How to set up OAuth2', type: 'WikiPage' },
+        { id: '2', title: 'JWT Tokens', content: 'JWT token management', type: 'WikiPage' },
+      ]
+
+      mockProvider.chat.mockResolvedValue(
+        JSON.stringify({
+          name: 'Authentication & Security',
+          description: 'Pages about OAuth2 and JWT authentication',
+          keyEntities: ['OAuth2', 'JWT'],
+          confidence: 0.95,
+          reasoning: 'Both pages focus on authentication mechanisms',
+        })
+      )
+
+      const result = await service.generateClusterSummary(context, 0, nodes)
+
+      expect(result.name).toBe('Authentication & Security')
+      expect(result.description).toContain('authentication')
+      expect(result.keyEntities).toContain('OAuth2')
+      expect(result.confidence).toBe(0.95)
+    })
+
+    it('should include workspace/project context in prompt', async () => {
+      const context = { workspaceId: 1, projectId: 5 }
+      const nodes = []
+
+      mockProvider.chat.mockResolvedValue('{}')
+
+      await service.generateClusterSummary(context, 0, nodes)
+
+      const callArgs = mockProvider.chat.mock.calls[0][1]
+      expect(callArgs[1].content).toContain('Workspace')
+      expect(callArgs[1].content).toContain('Project')
+    })
+
+    it('should handle large clusters by limiting node content', async () => {
+      const context = { workspaceId: 1, projectId: null }
+      const nodes = Array.from({ length: 50 }, (_, i) => ({
+        id: String(i),
+        title: `Page ${i}`,
+        content: 'Content '.repeat(100),
+        type: 'WikiPage',
+      }))
+
+      mockProvider.chat.mockResolvedValue('{}')
+
+      await service.generateClusterSummary(context, 0, nodes)
+
+      const callArgs = mockProvider.chat.mock.calls[0][1][1]
+      const prompt = callArgs.content
+      expect(prompt).toContain('20 more pages') // Truncation indicator
+    })
+  })
+
+  describe('generateAllClusterSummaries', () => {
+    it('should process clusters in batches', async () => {
+      const context = { workspaceId: 1, projectId: null }
+      const clusters = Array.from({ length: 10 }, (_, i) => ({
+        id: i,
+        nodeIds: [],
+        size: 5,
+      }))
+
+      mockProvider.chat.mockResolvedValue('{"name": "Test"}')
+
+      const results = await service.generateAllClusterSummaries(context, clusters, 3)
+
+      expect(mockProvider.chat).toHaveBeenCalledTimes(10)
+      expect(results.size).toBe(10)
+    })
+  })
+})
+```
+
+#### Integration Test: Full Clustering Flow
+
+```typescript
+// apps/api/src/__tests__/communityDetection.integration.test.ts
+
+describe('Community Detection Integration', () => {
+  let clusterService: WikiClusterService
+  let wikiAiService: WikiAiService
+
+  beforeAll(async () => {
+    clusterService = new WikiClusterService(prisma)
+    wikiAiService = new WikiAiService(prisma)
+  })
+
+  describe('Full Clustering Flow', () => {
+    it('should detect clusters and generate summaries', async () => {
+      const context = { workspaceId: 1, projectId: null }
+
+      // 1. Create test data
+      await createTestWikiPages(context.workspaceId)
+
+      // 2. Detect clusters
+      const clusteringResult = await clusterService.detectClusters(context, 'leiden')
+      expect(clusteringResult.totalClusters).toBeGreaterThan(0)
+
+      // 3. Generate summaries
+      const clusters = clusteringResult.clusters.slice(0, 3) // First 3
+      const summaries = await wikiAiService.generateAllClusterSummaries(context, clusters)
+
+      expect(summaries.size).toBe(clusters.length)
+      summaries.forEach((summary, clusterId) => {
+        expect(summary.name).toBeDefined()
+        expect(summary.description).toBeDefined()
+        expect(summary.confidence).toBeGreaterThan(0)
+      })
+
+      // 4. Verify cluster metadata on nodes
+      for (const cluster of clusters) {
+        const nodes = await clusterService.getClusterNodes(context, cluster.id)
+        nodes.forEach(node => {
+          expect(node.clusterId).toBe(cluster.id)
+        })
+      }
+
+      // 5. Cleanup
+      await cleanupTestWikiPages(context.workspaceId)
+    })
+  })
+
+  describe('Multi-Tenant Isolation', () => {
+    it('should not mix nodes from different workspaces', async () => {
+      const ws1Context = { workspaceId: 1, projectId: null }
+      const ws2Context = { workspaceId: 2, projectId: null }
+
+      // Create pages in both workspaces
+      await createTestWikiPages(ws1Context.workspaceId)
+      await createTestWikiPages(ws2Context.workspaceId)
+
+      // Detect clusters in WS1
+      const ws1Clusters = await clusterService.detectClusters(ws1Context)
+      const ws1NodeIds = new Set(
+        ws1Clusters.flatMap(c => c.nodeIds)
+      )
+
+      // Detect clusters in WS2
+      const ws2Clusters = await clusterService.detectClusters(ws2Context)
+      const ws2NodeIds = new Set(
+        ws2Clusters.flatMap(c => c.nodeIds)
+      )
+
+      // Verify no overlap
+      const intersection = [...ws1NodeIds].filter(id => ws2NodeIds.has(id))
+      expect(intersection).toHaveLength(0)
+
+      // Cleanup
+      await cleanupTestWikiPages(ws1Context.workspaceId)
+      await cleanupTestWikiPages(ws2Context.workspaceId)
+    })
+  })
+})
+```
+
+#### Frontend Test: ClusterLegend Component
+
+```typescript
+// apps/web/src/components/wiki/__tests__/ClusterLegend.test.tsx
+
+describe('ClusterLegend', () => {
+  const clusters = [
+    { id: 0, name: 'Authentication', description: 'Security pages', color: '#3b82f6', size: 5 },
+    { id: 1, name: 'API', description: 'REST & GraphQL', color: '#10b981', size: 3 },
+  ]
+
+  it('should render all clusters', () => {
+    render(<ClusterLegend clusters={clusters} />)
+
+    expect(screen.getByText('2 Clusters')).toBeInTheDocument()
+    expect(screen.getByText('Authentication')).toBeInTheDocument()
+    expect(screen.getByText('API')).toBeInTheDocument()
+  })
+
+  it('should call onClusterClick when cluster is clicked', () => {
+    const handleClick = vi.fn()
+    render(<ClusterLegend clusters={clusters} onClusterClick={handleClick} />)
+
+    fireEvent.click(screen.getByText('Authentication'))
+
+    expect(handleClick).toHaveBeenCalledWith(0)
+  })
+
+  it('should call onClusterHover on mouse enter/leave', () => {
+    const handleHover = vi.fn()
+    render(<ClusterLegend clusters={clusters} onClusterHover={handleHover} />)
+
+    const clusterRow = screen.getByText('Authentication').closest('button')
+    fireEvent.mouseEnter(clusterRow!)
+    expect(handleHover).toHaveBeenCalledWith(0)
+
+    fireEvent.mouseLeave(clusterRow!)
+    expect(handleHover).toHaveBeenCalledWith(null)
+  })
+
+  it('should show loading state', () => {
+    render(<ClusterLegend clusters={clusters} isLoading />)
+
+    expect(screen.getByRole('progressbar')).toBeInTheDocument()
+  })
+})
+```
+
+#### Manual Validation Checklist
+
+```markdown
+## Manual Testing - Fase 24: Community Detection
+
+### Prerequisites
+- [ ] Test workspace with 20+ wiki pages
+- [ ] AI provider configured (OpenAI or Ollama)
+- [ ] FalkorDB running and connected
+
+### Clustering Detection
+- [ ] Click "Detect Clusters" button
+- [ ] Loading state shown during clustering
+- [ ] Clusters appear in legend (2-10 clusters expected)
+- [ ] Each cluster has color, name, description, page count
+- [ ] Cluster names make sense (review by human)
+
+### Graph Visualization
+- [ ] Nodes colored by cluster
+- [ ] Hovering legend highlights cluster nodes
+- [ ] Clicking legend selects cluster
+- [ ] Cluster detail panel opens
+
+### Cluster Detail Panel
+- [ ] Shows cluster name, description, key entities
+- [ ] Shows confidence score
+- [ ] Lists all nodes in cluster
+- [ ] Clicking node navigates to page
+- [ ] Edit button allows name/description override
+- [ ] Regenerate button re-runs LLM
+
+### Multi-Tenant Isolation
+- [ ] Create 2 workspaces with pages
+- [ ] Clusters in WS1 do not show in WS2
+- [ ] Clustering respects projectId (when implemented)
+
+### Cache & Performance
+- [ ] Second "Detect Clusters" is instant (cache hit)
+- [ ] Adding new page invalidates cache
+- [ ] Large graph (100+ nodes) completes in <10s
+
+### Edge Cases
+- [ ] Single page graph: 1 cluster
+- [ ] Disconnected pages: multiple clusters
+- [ ] Empty graph: no clusters
+- [ ] LLM error: falls back to "Cluster N" name
+```
+
+#### Acceptatiecriteria
+
+- [ ] Unit tests: ~38 tests (WikiClusterService, WikiAiService, caching)
+- [ ] Integration tests: ~22 tests (full flow, multi-tenant)
+- [ ] Frontend tests: ~24 tests (components)
+- [ ] E2E tests: ~4 tests
+- [ ] Manual validation checklist compleet
+- [ ] Geen regressies in bestaande tests
+
+---
+
+### 24.7 Status Overzicht
+
+| Sub-fase | Status | Beschrijving | Tests |
+|----------|--------|--------------|-------|
+| **24.1 Validatie & Setup** | ⏸️ | Pre-checks + test data | - |
+| **24.2 Clustering Algorithm** | ⏸️ | Leiden/Louvain + cache | ~25 |
+| **24.3 AI Cluster Summaries** | ⏸️ | LLM prompts + generation | ~13 |
+| **24.4 tRPC Endpoints** | ⏸️ | 6 endpoints + hooks | - |
+| **24.5 UI Components** | ⏸️ | Legend + DetailPanel | ~24 |
+| **24.6 Testing & Validation** | ⏸️ | Unit + Integration + E2E | ~88 |
+| **TOTAAL** | ⏸️ | **FASE 24: TOE TE VOEGEN** | **~88** |
+
+---
+
+### Aanbevolen Volgorde
+
+```
+24.1 Validatie & Setup  ──┐
+                          ├──▶ 24.2 Clustering Algorithm ──┐
+                          │                               │
+                          └──▶ 24.3 AI Cluster Summaries ─┼──▶ 24.4 tRPC Endpoints
+                                                          │
+                                           24.5 UI Components ─────┘
+                                                          │
+                                           24.6 Testing & Validation
+```
+
+1. **24.1 eerst** - Begrip van bestaande code + test data
+2. **24.2 en 24.3 parallel** - Kunnen onafhankelijk geïmplementeerd worden
+3. **24.4 na 24.2/24.3** - Endpoints vereisen clustering + summaries
+4. **24.5 na 24.4** - UI heeft data nodig van endpoints
+5. **24.6 laatste** - Alles moet werken voor testing
+
+---
+
+### Dependencies
+
+| Dependency | Versie | Doel |
+|------------|--------|------|
+| Fase 15.4 Enhanced Graphs | ✅ Complement | Connected components (basis clustering) |
+| WikiAiService | Fase 15.1 | LLM voor summaries |
+| FalkorDB | Bestaand | Graph storage + cluster metadata |
+| OpenAI/Ollama | Fase 14 | Reasoning provider voor LLM calls |
+| Graphology library | Nieuw? | Leiden/Louvain algoritme implementatie |
+
+**Library Options voor Clustering:**
+
+| Library | Language | Pros | Cons | Recommendation |
+|---------|----------|------|------|----------------|
+| graphology (JS) | JavaScript | Native Node.js, good docs | Leiden not built-in | ⚠️ Custom implementation needed |
+| igraph (Python) | Python | Leiden built-in, fast | Extra service call | ❌ Too complex |
+| jGraphT (Java) | Java | Robust algorithms | WASM needed | ❌ Too complex |
+| Custom Leiden | TypeScript | Full control | Complex implementation | ✅ **Recommended** (port from NetworkX)
+
+---
+
+### Known Limitations & Future Work
+
+| Limitation | Impact | Future Work |
+|------------|--------|-------------|
+| Cluster metadata stored as node properties | No queryable cluster table | Prisma WikiCluster model (v2) |
+| No hierarchical clustering | Flat cluster hierarchy | Multi-level clustering |
+| Static clustering (re-run manually) | No auto-updates on graph changes | Webhook + auto-recluster |
+| Limited to WikiPage nodes | No other node types | Include all entity types |
+| Large graphs slow (>1000 nodes) | Performance issues | Incremental clustering |
+
+---
+
+### Multi-Tenant Architecture Notes
+
+```typescript
+// WikiContext type (already exists in wiki/index.ts)
+export interface WikiContext {
+  workspaceId?: number
+  projectId?: number
+}
+
+// Scope Resolution Logic
+function getGroupId(context: WikiContext): string {
+  if (context.projectId !== undefined) {
+    return `wiki-proj-${context.projectId}` // Future: project-level wiki
+  }
+  if (context.workspaceId !== undefined) {
+    return `wiki-ws-${context.workspaceId}` // Current: workspace-level wiki
+  }
+  throw new Error('Invalid WikiContext: must have workspaceId or projectId')
+}
+
+// FalkorDB Query Example (scoped)
+MATCH (n:WikiPage {groupId: "wiki-ws-5"})-[e]->(m:WikiPage {groupId: "wiki-ws-5"})
+RETURN n, e, m
+
+// IMPORTANT: Never query without groupId filter!
+// This prevents cross-tenant data leakage.
+```
+
+---
+
+### Changelog
+
+| Datum | Actie |
+|-------|-------|
+| 2026-01-14 | Fase 24 plan aangemaakt (Community Detection) |
+
