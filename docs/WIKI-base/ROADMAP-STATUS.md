@@ -9022,33 +9022,164 @@ npx tsx ../../scripts/detect-duplicates.ts --help
 - [x] Alle 6 items geïmplementeerd
 - [x] Alle items gedocumenteerd
 - [x] Alle tests passing
+- [ ] Alle Bugs gefixt
 - [x] ROADMAP-STATUS.md up-to-date
 
 ---
 
-### 22.9 [TITEL NOG TE BEPALEN] 🚧
+### 22.9 Graph Visualization in Duplicate Manager ✅
 
-> **Doel:** [Te bepalen na discussie]
+> **Doel:** Interactieve graph visualisatie toevoegen aan de Duplicate Manager voor visuele analyse van duplicaten
 > **Datum:** 2026-01-14
-> **Status:** 🚧 IN PLANNING
+> **Status:** ✅ VOLTOOID
 
-#### Beschrijving
+#### Pre-Check (Claude Code Sessie)
 
-[Beschrijf hier de nieuwe functionaliteit na discussie]
+**VOORDAT je begint met implementeren, voer deze checks uit:**
 
-#### Technische Aanpak
+```bash
+# 1. Check bestaande WikiGraphView props
+grep -n "interface WikiGraphViewProps" apps/web/src/components/wiki/WikiGraphView.tsx
 
-**Frontend:**
-- [ ] [UI component wijzigingen]
+# 2. Check bestaande WikiDuplicateManager
+grep -n "showGraph\|highlightedNodeIds" apps/web/src/components/wiki/WikiDuplicateManager.tsx
 
-**Backend:**
-- [ ] [API/service wijzigingen]
+# 3. Check of Dialog al expanderende width support heeft
+grep -n "max-w-\|transition" apps/web/src/components/wiki/WikiDuplicateManager.tsx
 
-#### Acceptatiecriteria
+# 4. Check lucide icons beschikbaar
+grep -n "Network\|PanelRight" apps/web/src/components/wiki/WikiDuplicateManager.tsx
+```
 
-- [ ] [Criterium 1]
-- [ ] [Criterium 2]
-- [ ] [Criterium 3]
+**⚠️ STOP en rapporteer als:**
+- WikiGraphView al highlightedNodeIds prop heeft
+- WikiDuplicateManager al showGraph state heeft
+- Conflicterende CSS classes voor dialog width
+
+---
+
+#### Taak Tabel
+
+| Taak | Status | Check | Notities |
+|------|--------|-------|----------|
+| WikiGraphView: highlightedNodeIds prop | ✅ | `grep "highlightedNodeIds" WikiGraphView.tsx` | Amber kleur (#f59e0b) |
+| WikiGraphView: onHighlightedNodeClick callback | ✅ | `grep "onHighlightedNodeClick" WikiGraphView.tsx` | Roept callback aan bij klik |
+| WikiGraphView: highlightedNodeIdsSet useMemo | ✅ | `grep "highlightedNodeIdsSet" WikiGraphView.tsx` | Efficiënte Set lookup |
+| WikiGraphView: dynamische hoogte (container) | ✅ | `grep "containerHeight" WikiGraphView.tsx` | Gebruikt clientHeight voor flex layouts |
+| WikiDuplicateManager: showGraph state | ✅ | `grep "showGraph" WikiDuplicateManager.tsx` | Toggle state |
+| WikiDuplicateManager: selectedPair state | ✅ | `grep "selectedPair" WikiDuplicateManager.tsx` | Geselecteerde duplicate pair |
+| WikiDuplicateManager: handleSelectPair handler | ✅ | `grep "handleSelectPair" WikiDuplicateManager.tsx` | Toggle selectie |
+| WikiDuplicateManager: handleHighlightedNodeClick | ✅ | `grep "handleHighlightedNodeClick" WikiDuplicateManager.tsx` | Expand pair bij graph node klik |
+| WikiDuplicateManager: expanderende dialog | ✅ | `grep "max-w-\[95vw\]" WikiDuplicateManager.tsx` | CSS transition 300ms |
+| WikiDuplicateManager: Network icon per row | ✅ | `grep "Network" WikiDuplicateManager.tsx` | lucide-react icon |
+| WikiDuplicateManager: flex layout graph | ✅ | `grep "flex-1 min-w-\[500px\]" WikiDuplicateManager.tsx` | Graph past mee met dialog |
+
+---
+
+#### Acceptatiecriteria 22.9
+
+- [x] Graph toggle button zichtbaar in dialog header
+- [x] Dialog expandeert naar ~95vw wanneer graph actief is
+- [x] CSS transition voor smooth width verandering
+- [x] WikiGraphView embedded in dialog
+- [x] Graph hoogte past zich aan aan container (flex layout)
+- [x] Network icon per duplicate row (alleen wanneer graph actief)
+- [x] Klik op Network icon → highlight nodes in graph (amber)
+- [x] Amber achtergrond op geselecteerde row
+- [x] Klik op highlighted node → expand duplicate pair in lijst
+- [x] Toggle off: klik nogmaals op zelfde pair
+- [x] Header comment update met Fase 22.9
+- [x] TypeScript compileert zonder errors
+
+---
+
+#### Gewijzigde Bestanden
+
+**`apps/web/src/components/wiki/WikiGraphView.tsx`**
+- Nieuwe props: `highlightedNodeIds?: string[]`, `onHighlightedNodeClick?: (nodeId: string) => void`
+- `highlightedNodeIdsSet` useMemo voor efficiënte lookup
+- Node circle styling: amber fill (#f59e0b), grotere radius (16), witte stroke
+- Click handler roept `onHighlightedNodeClick` aan voor highlighted nodes
+- Dynamische hoogte: gebruikt `container.clientHeight` voor flex layouts
+
+**`apps/web/src/components/wiki/WikiDuplicateManager.tsx`**
+- Nieuwe imports: `Network`, `PanelRightOpen`, `PanelRightClose` van lucide-react
+- Import: `WikiGraphView` component
+- Nieuwe state: `showGraph`, `selectedPair`
+- Nieuwe handlers: `handleSelectPair`, `handleHighlightedNodeClick`
+- `highlightedNodeIds` useMemo berekening
+- Dialog CSS: conditionele `max-w-[95vw] w-[1600px]` met transition
+- Graph toggle button in header met amber styling wanneer actief
+- Network icon button per duplicate row (conditioneel op showGraph)
+- Geselecteerde row krijgt amber achtergrond
+- WikiGraphView embedded met flex layout (past mee met dialog hoogte)
+
+---
+
+#### Code Snippets (ter referentie)
+
+**Highlighted node styling (WikiGraphView.tsx):**
+```typescript
+.attr('fill', d => {
+  if (highlightedNodeIdsSet.has(d.id)) return '#f59e0b' // Amber
+  if (pathNodes.has(d.id)) return '#22c55e'
+  // ...
+})
+```
+
+**Dynamische hoogte (WikiGraphView.tsx):**
+```typescript
+const containerHeight = container.clientHeight
+const actualHeight = fullscreen
+  ? window.innerHeight - 100
+  : containerHeight > 100
+    ? containerHeight
+    : height
+```
+
+**Graph toggle button (WikiDuplicateManager.tsx):**
+```tsx
+<Button
+  variant={showGraph ? "default" : "outline"}
+  size="sm"
+  onClick={() => setShowGraph(!showGraph)}
+  className={cn(
+    "transition-colors",
+    showGraph && "bg-amber-600 hover:bg-amber-700"
+  )}
+>
+  {showGraph ? <PanelRightClose /> : <PanelRightOpen />}
+  {showGraph ? "Hide Graph" : "Show Graph"}
+</Button>
+```
+
+**Flex layout graph container (WikiDuplicateManager.tsx):**
+```tsx
+<div className="flex-1 min-w-[500px] min-h-[400px] border rounded-lg overflow-hidden bg-slate-50 dark:bg-slate-900 flex flex-col">
+  <WikiGraphView
+    workspaceId={workspaceId}
+    basePath={`/wiki/${workspaceId}`}
+    className="flex-1"
+    highlightedNodeIds={highlightedNodeIds}
+    onHighlightedNodeClick={handleHighlightedNodeClick}
+  />
+</div>
+```
+
+---
+
+#### Screenshot Verificatie
+
+```bash
+# Test in browser:
+# 1. Open Wiki sidebar → klik GitMerge icon
+# 2. Klik "Show Graph" button in header
+# 3. Dialog moet expanderen naar 95vw
+# 4. Graph moet zelfde hoogte hebben als linker paneel
+# 5. Klik Network icon naast een duplicate pair
+# 6. Beide nodes moeten amber worden in graph
+# 7. Klik op amber node in graph → pair moet expanderen in lijst
+```
 
 ---
 
@@ -9076,24 +9207,6 @@ npx tsx ../../scripts/detect-duplicates.ts --help
 | 2026-01-14 | **Fase 22.8 COMPLEET** - Alle 6 uitgestelde items geïmplementeerd |
 | 2026-01-14 | Fase 22.9 aangemaakt - Graph visualisatie in Duplicate Manager |
 | 2026-01-14 | Fase 22.9 voltooid - Graph toggle, highlighting, bidirectionele selectie |
-
-### Fase 22.9 - Graph Visualization in Duplicate Manager ✅
-
-**Doel:** Interactieve graph visualisatie toevoegen aan de Duplicate Manager voor visuele analyse van duplicaten.
-
-**Geïmplementeerde features:**
-1. **Graph Toggle Button** - In dialog header, schakelt graph panel aan/uit
-2. **Expanderende Dialog** - Dialog breidt uit van max-w-3xl naar max-w-[95vw] met CSS transition
-3. **WikiGraphView Integratie** - Hergebruik van bestaande graph component
-4. **Node Highlighting** - Geselecteerde duplicate pairs worden in amber getoond in graph
-5. **Bidirectionele Selectie:**
-   - Klik op duplicate pair → highlight nodes in graph
-   - Klik op highlighted node in graph → expand duplicate pair in lijst
-6. **Visuele Feedback** - Selected pair krijgt amber achtergrond, network icon per row
-
-**Gewijzigde bestanden:**
-- `apps/web/src/components/wiki/WikiGraphView.tsx` - highlightedNodeIds + onHighlightedNodeClick props
-- `apps/web/src/components/wiki/WikiDuplicateManager.tsx` - Graph toggle, highlighting, selectie logica
 
 ---
 
