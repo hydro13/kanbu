@@ -1,6 +1,6 @@
 /*
  * Wiki Sidebar Component
- * Version: 1.4.0
+ * Version: 1.5.0
  *
  * Tree-based navigation sidebar for wiki pages.
  * Supports both workspace and project wikis.
@@ -17,6 +17,8 @@
  * Change: VSCode-style tree: smaller indent (8px), no file icons
  * Modified: 2026-01-13
  * Change: Added VSCode-style vertical indent guide lines
+ * Modified: 2026-01-14
+ * Change: Fase 22 - Added WikiDuplicateManager integration
  * ===================================================================
  */
 
@@ -32,7 +34,9 @@ import {
   Network,
   Clock,
   Sparkles,
+  GitMerge,
 } from 'lucide-react'
+import { WikiDuplicateManager } from './WikiDuplicateManager'
 import { cn } from '@/lib/utils'
 
 // =============================================================================
@@ -79,6 +83,10 @@ interface WikiSidebarProps {
   wikiType?: 'workspace' | 'project'
   /** Wiki title to display */
   title?: string
+  /** Workspace ID for duplicate detection (required for Fase 22 features) */
+  workspaceId?: number
+  /** Project ID for duplicate detection scope */
+  projectId?: number
 }
 
 // =============================================================================
@@ -265,10 +273,16 @@ export function WikiSidebar({
   askWikiActive = false,
   wikiType: _wikiType = 'workspace',
   title: _title,
+  workspaceId,
+  projectId,
 }: WikiSidebarProps) {
   // Note: wikiType and title props kept for backwards compatibility but no longer displayed
   void _wikiType
   void _title
+
+  // Fase 22: Duplicate manager dialog state
+  const [duplicateManagerOpen, setDuplicateManagerOpen] = useState(false)
+
   // Track expanded nodes
   const [expandedIds, setExpandedIds] = useState<Set<number>>(() => {
     // Auto-expand parents of active page
@@ -356,6 +370,16 @@ export function WikiSidebar({
               <Clock className="h-3.5 w-3.5" />
             </Button>
           )}
+          {workspaceId && (
+            <Button
+              variant={duplicateManagerOpen ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setDuplicateManagerOpen(true)}
+              title="Manage duplicate entities"
+            >
+              <GitMerge className="h-3.5 w-3.5" />
+            </Button>
+          )}
         </div>
 
         {/* Search button */}
@@ -417,6 +441,16 @@ export function WikiSidebar({
           </span>
         )}
       </div>
+
+      {/* Fase 22: Duplicate Manager Dialog */}
+      {workspaceId && (
+        <WikiDuplicateManager
+          workspaceId={workspaceId}
+          projectId={projectId}
+          open={duplicateManagerOpen}
+          onOpenChange={setDuplicateManagerOpen}
+        />
+      )}
     </div>
   )
 }

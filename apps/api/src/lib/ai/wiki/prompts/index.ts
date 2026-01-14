@@ -58,3 +58,18 @@ export {
   getContradictionNotification,
   type CategoryHandlingConfig,
 } from './detectContradictions'
+
+// Fase 22.4 - Entity Deduplication
+export {
+  getDeduplicateNodesSystemPrompt,
+  getDeduplicateNodesUserPrompt,
+  parseDeduplicateNodesResponse,
+  getDeduplicateEdgeSystemPrompt,
+  getDeduplicateEdgeUserPrompt,
+  parseDeduplicateEdgeResponse,
+  type ExtractedNodeContext,
+  type ExistingNodeContext,
+  type DeduplicateNodesContext,
+  type ExistingEdgeContext,
+  type DeduplicateEdgeContext,
+} from './deduplicateNodes'

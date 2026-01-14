@@ -1,14 +1,15 @@
 /*
  * Wiki Components
- * Version: 1.4.0
+ * Version: 1.5.0
  *
  * Exports all wiki-related components.
  *
  * ===================================================================
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
  * Signed: 2026-01-12
- * Modified: 2026-01-12
+ * Modified: 2026-01-14
  * Change: Fase 15.3 - Added AskWikiDialog and AskWikiFab components
+ * Change: Fase 22 - Added WikiDuplicateBadge and WikiDuplicateManager components
  * ===================================================================
  */
 
@@ -52,3 +53,10 @@ export type {
   FactCheckResult,
   FactCheckDialogProps,
 } from './FactCheckDialog'
+
+// Fase 22 - Entity Deduplication UI
+export { WikiDuplicateBadge } from './WikiDuplicateBadge'
+export type { WikiDuplicateBadgeProps, DuplicateInfo } from './WikiDuplicateBadge'
+
+export { WikiDuplicateManager } from './WikiDuplicateManager'
+export type { WikiDuplicateManagerProps } from './WikiDuplicateManager'

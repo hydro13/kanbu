@@ -12,6 +12,7 @@
  * Fase 17.3 - Conflict Resolution & Audit Trail
  * Fase 19.2 - Edge Embeddings (WikiEdgeEmbeddingService)
  * Fase 21.3 - Node Embeddings (WikiNodeEmbeddingService)
+ * Fase 22 - Entity Deduplication & Graph Cleanup
  */
 
 export {
@@ -152,3 +153,35 @@ export {
   type SimilarNodeSearchOptions,
   type BatchNodeEmbeddingResult,
 } from './WikiNodeEmbeddingService'
+
+// Fase 22 - Entity Deduplication Types
+export {
+  // Core types
+  type EntityNodeInfo,
+  type DuplicateMatchType,
+  type DuplicateCandidate,
+  type DuplicateResolution,
+  // Index types
+  type DedupCandidateIndexes,
+  type DedupResolutionState,
+  // LLM response types
+  type NodeDuplicateResponse,
+  type NodeResolutionsResponse,
+  type EdgeDuplicateResponse,
+  // Edge types
+  type DuplicateOfEdgeProps,
+  // Service options
+  type DeduplicationOptions,
+  type DeduplicationResult,
+  type BatchDeduplicationOptions,
+  type BatchDeduplicationResult,
+  // Constants
+  DEDUP_CONSTANTS,
+} from './types'
+
+// Fase 22.3 - Entity Deduplication Service
+export {
+  WikiDeduplicationService,
+  getWikiDeduplicationService,
+  resetWikiDeduplicationService,
+} from './WikiDeduplicationService'

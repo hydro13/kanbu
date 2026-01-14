@@ -578,6 +578,7 @@ export function WorkspaceWikiPage() {
             askWikiActive={showAskWiki}
             wikiType="workspace"
             title={`${workspace.name} Wiki`}
+            workspaceId={workspace.id}
           />
         </div>
 

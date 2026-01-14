@@ -1,6 +1,6 @@
 /*
  * Graphiti tRPC Procedures
- * Version: 2.2.0
+ * Version: 2.3.0
  *
  * tRPC endpoints for Wiki knowledge graph queries:
  * - Backlinks (pages that link to a page)
@@ -10,7 +10,8 @@
  * - Graph statistics and visualization
  * - Temporal facts query ("getFactsAsOf" - Fase 16.4)
  * - Entity suggestions ("entitySuggest" - Fase 21.5)
- * - Duplicate detection ("findDuplicates" - Fase 21.5)
+ * - Duplicate detection ("findDuplicates" - Fase 22.6)
+ * - Entity deduplication ("getDuplicatesOf", "getCanonicalNode", etc. - Fase 22.6)
  *
  * ===================================================================
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
@@ -18,6 +19,7 @@
  * Change: Fase 9 - Added temporal search endpoint
  * Change: Fase 16.4 - Added getFactsAsOf endpoint with FalkorDB bi-temporal support
  * Change: Fase 21.5 - Added entitySuggest and findDuplicates for entity resolution
+ * Change: Fase 22.6 - Enhanced findDuplicates, added deduplication endpoints
  * ===================================================================
  */
 
@@ -26,6 +28,7 @@ import { router, protectedProcedure } from '../router'
 import { getGraphitiService } from '../../services/graphitiService'
 import {
   getWikiNodeEmbeddingService,
+  getWikiDeduplicationService,
   type EmbeddableNodeType,
 } from '../../lib/ai/wiki'
 
@@ -99,6 +102,42 @@ const findDuplicatesSchema = z.object({
   groupId: z.string().optional(),
   nodeType: z.enum(['Concept', 'Person', 'Task', 'Project']).optional(),
   threshold: z.number().min(0).max(1).default(0.90),
+  limit: z.number().min(1).max(100).default(50),
+})
+
+// Fase 22.6 - Entity Deduplication Schemas
+const getDuplicatesOfSchema = z.object({
+  nodeUuid: z.string(),
+})
+
+const getCanonicalNodeSchema = z.object({
+  nodeUuid: z.string(),
+})
+
+const markAsDuplicateSchema = z.object({
+  sourceUuid: z.string(),
+  targetUuid: z.string(),
+  confidence: z.number().min(0).max(1).default(1.0),
+})
+
+const unmarkDuplicateSchema = z.object({
+  sourceUuid: z.string(),
+  targetUuid: z.string(),
+})
+
+const mergeDuplicatesSchema = z.object({
+  sourceUuid: z.string(),
+  targetUuid: z.string(),
+  keepTarget: z.boolean().default(true),
+})
+
+const runBatchDedupSchema = z.object({
+  workspaceId: z.number(),
+  projectId: z.number().optional(),
+  groupId: z.string().optional(),
+  nodeTypes: z.array(z.enum(['Concept', 'Person', 'Task', 'Project'])).optional(),
+  threshold: z.number().min(0).max(1).default(0.85),
+  dryRun: z.boolean().default(true),
   limit: z.number().min(1).max(100).default(50),
 })
 
@@ -292,42 +331,275 @@ export const graphitiRouter = router({
     }),
 
   /**
-   * Find potential duplicate entities (Fase 21.5)
+   * Find potential duplicate entities (Fase 22.6)
    *
-   * Scans entity embeddings to find pairs with high similarity scores.
-   * Useful for cleaning up duplicate entities in the knowledge graph.
+   * Uses WikiDeduplicationService to scan entity embeddings and find pairs
+   * with high similarity scores using MinHash/LSH and Jaccard similarity.
    */
   findDuplicates: protectedProcedure
     .input(findDuplicatesSchema)
     .query(async ({ ctx, input }) => {
+      const graphiti = getGraphitiService()
       const nodeEmbeddingService = getWikiNodeEmbeddingService(ctx.prisma)
+      const deduplicationService = getWikiDeduplicationService(nodeEmbeddingService)
 
-      // Note: context would be used for full duplicate scanning in future
-      // For now, we only return stats since full scan is expensive
-      void input.workspaceId
-      void input.projectId
+      // Build groupId from workspace/project
+      const groupId = input.groupId || (input.projectId
+        ? `wiki-proj-${input.projectId}`
+        : `wiki-ws-${input.workspaceId}`)
 
-      // Get stats to know total nodes
-      const stats = await nodeEmbeddingService.getStats()
-      if (!stats.collectionExists || stats.totalNodes === 0) {
+      // Get all nodes in workspace
+      const nodeTypes = input.nodeType
+        ? [input.nodeType]
+        : ['Concept', 'Person', 'Task', 'Project']
+
+      const nodes = await graphiti.getWorkspaceNodes(groupId, nodeTypes)
+
+      if (nodes.length === 0) {
         return {
           duplicates: [],
           count: 0,
           totalNodes: 0,
-          message: 'No node embeddings found',
+          message: 'No nodes found in workspace',
         }
       }
 
-      // For now, return a placeholder - full duplicate detection requires
-      // scanning all nodes which is expensive. In practice, duplicates
-      // are found during entitySuggest when adding new entities.
-      // TODO: Implement background duplicate scanning in a future phase.
+      // Use WikiDeduplicationService to find duplicates
+      const duplicates = await deduplicationService.findDuplicatesInWorkspace(
+        nodes.map(n => ({
+          uuid: n.uuid,
+          name: n.name,
+          type: n.type,
+          groupId: n.groupId,
+        })),
+        { threshold: input.threshold, limit: input.limit }
+      )
+
       return {
-        duplicates: [],
-        count: 0,
-        totalNodes: stats.totalNodes,
-        message: 'Duplicate detection available via entitySuggest when adding entities',
+        duplicates: duplicates.map(d => ({
+          sourceUuid: d.sourceNode.uuid,
+          sourceName: d.sourceNode.name,
+          sourceType: d.sourceNode.type,
+          targetUuid: d.targetNode.uuid,
+          targetName: d.targetNode.name,
+          targetType: d.targetNode.type,
+          confidence: d.confidence,
+          matchType: d.matchType,
+        })),
+        count: duplicates.length,
+        totalNodes: nodes.length,
         threshold: input.threshold,
+      }
+    }),
+
+  // =========================================================================
+  // Fase 22.6 - Entity Deduplication Endpoints
+  // =========================================================================
+
+  /**
+   * Get all nodes marked as duplicates of a given node
+   */
+  getDuplicatesOf: protectedProcedure
+    .input(getDuplicatesOfSchema)
+    .query(async ({ input }) => {
+      const graphiti = getGraphitiService()
+      const duplicates = await graphiti.getDuplicatesOf(input.nodeUuid)
+      return {
+        duplicates,
+        count: duplicates.length,
+      }
+    }),
+
+  /**
+   * Get canonical (root) node by following IS_DUPLICATE_OF chain
+   */
+  getCanonicalNode: protectedProcedure
+    .input(getCanonicalNodeSchema)
+    .query(async ({ input }) => {
+      const graphiti = getGraphitiService()
+      const canonical = await graphiti.getCanonicalNode(input.nodeUuid)
+      return {
+        canonical,
+        isCanonical: canonical?.uuid === input.nodeUuid,
+      }
+    }),
+
+  /**
+   * Mark two nodes as duplicates (manual user action)
+   */
+  markAsDuplicate: protectedProcedure
+    .input(markAsDuplicateSchema)
+    .mutation(async ({ ctx, input }) => {
+      const graphiti = getGraphitiService()
+
+      // Check if edge already exists
+      const exists = await graphiti.duplicateEdgeExists(input.sourceUuid, input.targetUuid)
+      if (exists) {
+        return {
+          success: false,
+          message: 'Duplicate relationship already exists',
+        }
+      }
+
+      // Create IS_DUPLICATE_OF edge with 'manual' matchType
+      await graphiti.createDuplicateOfEdge(
+        input.sourceUuid,
+        input.targetUuid,
+        input.confidence,
+        'exact', // Manual marking treated as exact match
+        ctx.user?.id?.toString() || null
+      )
+
+      return {
+        success: true,
+        sourceUuid: input.sourceUuid,
+        targetUuid: input.targetUuid,
+      }
+    }),
+
+  /**
+   * Remove duplicate relationship between two nodes
+   */
+  unmarkDuplicate: protectedProcedure
+    .input(unmarkDuplicateSchema)
+    .mutation(async ({ input }) => {
+      const graphiti = getGraphitiService()
+
+      // Check if edge exists
+      const exists = await graphiti.duplicateEdgeExists(input.sourceUuid, input.targetUuid)
+      if (!exists) {
+        return {
+          success: false,
+          message: 'No duplicate relationship found',
+        }
+      }
+
+      await graphiti.removeDuplicateEdge(input.sourceUuid, input.targetUuid)
+
+      return {
+        success: true,
+        sourceUuid: input.sourceUuid,
+        targetUuid: input.targetUuid,
+      }
+    }),
+
+  /**
+   * Merge duplicate nodes: transfer all edges to canonical node
+   */
+  mergeDuplicates: protectedProcedure
+    .input(mergeDuplicatesSchema)
+    .mutation(async ({ input }) => {
+      const graphiti = getGraphitiService()
+
+      const canonicalUuid = input.keepTarget ? input.targetUuid : input.sourceUuid
+      const duplicateUuid = input.keepTarget ? input.sourceUuid : input.targetUuid
+
+      const result = await graphiti.mergeNodes(duplicateUuid, canonicalUuid)
+
+      return {
+        success: true,
+        canonicalUuid,
+        mergedUuid: duplicateUuid,
+        edgesTransferred: result.edgesTransferred,
+      }
+    }),
+
+  /**
+   * Run batch deduplication scan for workspace (Fase 22.6)
+   *
+   * Scans all nodes in a workspace and returns potential duplicates.
+   * With dryRun=true (default), only returns candidates without creating edges.
+   * With dryRun=false, creates IS_DUPLICATE_OF edges for matches.
+   */
+  runBatchDedup: protectedProcedure
+    .input(runBatchDedupSchema)
+    .mutation(async ({ ctx, input }) => {
+      const graphiti = getGraphitiService()
+      const nodeEmbeddingService = getWikiNodeEmbeddingService(ctx.prisma)
+      const deduplicationService = getWikiDeduplicationService(nodeEmbeddingService)
+
+      // Build groupId from workspace/project
+      const groupId = input.groupId || (input.projectId
+        ? `wiki-proj-${input.projectId}`
+        : `wiki-ws-${input.workspaceId}`)
+
+      // Get all nodes in workspace
+      const nodeTypes = input.nodeTypes || ['Concept', 'Person', 'Task', 'Project']
+      const nodes = await graphiti.getWorkspaceNodes(groupId, nodeTypes)
+
+      if (nodes.length === 0) {
+        return {
+          duplicatesFound: 0,
+          edgesCreated: 0,
+          totalNodes: 0,
+          dryRun: input.dryRun,
+          message: 'No nodes found in workspace',
+        }
+      }
+
+      // Filter out nodes without valid names (prevents toLowerCase errors)
+      const validNodes = nodes.filter(n => n.name && typeof n.name === 'string' && n.name.trim() !== '')
+
+      if (validNodes.length === 0) {
+        return {
+          duplicatesFound: 0,
+          edgesCreated: 0,
+          totalNodes: nodes.length,
+          validNodes: 0,
+          dryRun: input.dryRun,
+          message: `Found ${nodes.length} nodes but none have valid names`,
+        }
+      }
+
+      // Find duplicates using WikiDeduplicationService
+      const duplicates = await deduplicationService.findDuplicatesInWorkspace(
+        validNodes.map(n => ({
+          uuid: n.uuid,
+          name: n.name,
+          type: n.type,
+          groupId: n.groupId,
+        })),
+        { threshold: input.threshold, limit: input.limit }
+      )
+
+      let edgesCreated = 0
+
+      // If not dry run, create IS_DUPLICATE_OF edges
+      if (!input.dryRun) {
+        for (const dup of duplicates) {
+          const exists = await graphiti.duplicateEdgeExists(
+            dup.sourceNode.uuid,
+            dup.targetNode.uuid
+          )
+
+          if (!exists) {
+            await graphiti.createDuplicateOfEdge(
+              dup.sourceNode.uuid,
+              dup.targetNode.uuid,
+              dup.confidence,
+              dup.matchType,
+              ctx.user?.id?.toString() || 'batch'
+            )
+            edgesCreated++
+          }
+        }
+      }
+
+      return {
+        duplicatesFound: duplicates.length,
+        edgesCreated,
+        totalNodes: nodes.length,
+        validNodes: validNodes.length,
+        dryRun: input.dryRun,
+        threshold: input.threshold,
+        candidates: duplicates.map(d => ({
+          sourceUuid: d.sourceNode.uuid,
+          sourceName: d.sourceNode.name,
+          targetUuid: d.targetNode.uuid,
+          targetName: d.targetNode.name,
+          confidence: d.confidence,
+          matchType: d.matchType,
+        })),
       }
     }),
 })
