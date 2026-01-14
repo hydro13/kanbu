@@ -1588,6 +1588,8 @@ export class GraphitiService {
       pageId?: number
       slug?: string
       updatedAt?: string
+      /** FalkorDB internal ID for entity nodes (used for duplicate matching) */
+      uuid?: string
     }>
     edges: Array<{
       source: string
@@ -1607,12 +1609,13 @@ export class GraphitiService {
     const pages = this.parseResults<{ pageId: number; title: string; slug: string; updatedAt?: string }>(pagesResult, ['pageId', 'title', 'slug', 'updatedAt'])
 
     // Get all entities connected to pages in this group
+    // Fase 22.9: Include FalkorDB internal ID (uuid) for duplicate matching
     const entitiesResult = await this.query(`
       MATCH (p:WikiPage {groupId: '${groupId}'})-[:MENTIONS]->(e)
       WHERE p.pageId IS NOT NULL
-      RETURN DISTINCT e.name AS name, labels(e)[0] AS type
+      RETURN DISTINCT toString(ID(e)) AS uuid, e.name AS name, labels(e)[0] AS type
     `)
-    const entities = this.parseResults<{ name: string; type: string }>(entitiesResult, ['name', 'type'])
+    const entities = this.parseResults<{ uuid: string; name: string; type: string }>(entitiesResult, ['uuid', 'name', 'type'])
 
     // Get LINKS_TO edges between pages (with timestamps)
     const linksResult = await this.query(`
@@ -1638,6 +1641,7 @@ export class GraphitiService {
       pageId?: number
       slug?: string
       updatedAt?: string
+      uuid?: string
     }> = []
 
     // Add page nodes
@@ -1653,12 +1657,14 @@ export class GraphitiService {
     }
 
     // Add entity nodes
+    // Fase 22.9: Include uuid for duplicate matching
     for (const entity of entities) {
       const nodeType = entity.type as 'Concept' | 'Person' | 'Task'
       nodes.push({
         id: `${entity.type.toLowerCase()}-${entity.name}`,
         label: entity.name,
         type: nodeType,
+        uuid: entity.uuid, // FalkorDB internal ID for duplicate matching
       })
     }
 
