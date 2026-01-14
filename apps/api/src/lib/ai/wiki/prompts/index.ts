@@ -73,3 +73,21 @@ export {
   type ExistingEdgeContext,
   type DeduplicateEdgeContext,
 } from './deduplicateNodes'
+
+// Fase 23.3 - Reflexion Extraction
+export {
+  getReflexionNodesSystemPrompt,
+  getReflexionNodesUserPrompt,
+  parseReflexionNodesResponse,
+  type ReflexionNodesContext,
+  type ReflexionNodesResponse,
+} from './reflexionNodes'
+
+export {
+  getReflexionEdgesSystemPrompt,
+  getReflexionEdgesUserPrompt,
+  parseReflexionEdgesResponse,
+  type ExtractedFact,
+  type ReflexionEdgesContext,
+  type ReflexionEdgesResponse,
+} from './reflexionEdges'

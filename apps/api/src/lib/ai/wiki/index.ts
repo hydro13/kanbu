@@ -87,6 +87,21 @@ export {
   getContradictionNotification,
 } from './prompts'
 
+// Fase 23.3 - Reflexion Extraction Prompts
+export {
+  getReflexionNodesSystemPrompt,
+  getReflexionNodesUserPrompt,
+  parseReflexionNodesResponse,
+  getReflexionEdgesSystemPrompt,
+  getReflexionEdgesUserPrompt,
+  parseReflexionEdgesResponse,
+  type ReflexionNodesContext,
+  type ReflexionNodesResponse,
+  type ExtractedFact,
+  type ReflexionEdgesContext,
+  type ReflexionEdgesResponse,
+} from './prompts'
+
 export {
   WikiEmbeddingService,
   getWikiEmbeddingService,
@@ -177,6 +192,17 @@ export {
   type BatchDeduplicationResult,
   // Constants
   DEDUP_CONSTANTS,
+} from './types'
+
+// Fase 23 - Reflexion Extraction Types
+export {
+  type MissedEntity,
+  type NodeReflexionResult,
+  type MissedFact,
+  type EdgeReflexionResult,
+  type ReflexionConfig,
+  type ReflexionSyncResult,
+  DEFAULT_REFLEXION_CONFIG,
 } from './types'
 
 // Fase 22.3 - Entity Deduplication Service

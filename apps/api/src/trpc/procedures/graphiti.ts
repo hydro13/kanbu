@@ -29,7 +29,9 @@ import { getGraphitiService } from '../../services/graphitiService'
 import {
   getWikiNodeEmbeddingService,
   getWikiDeduplicationService,
+  getWikiAiService,
   type EmbeddableNodeType,
+  type WikiContext,
 } from '../../lib/ai/wiki'
 
 // =============================================================================
@@ -147,6 +149,28 @@ const getWorkspaceDuplicatesSchema = z.object({
   projectId: z.number().optional(),
   groupId: z.string().optional(),
   nodeTypes: z.array(z.enum(['Concept', 'Person', 'Task', 'Project'])).optional(),
+})
+
+// Fase 23.6 - Reflexion Extraction Endpoints
+const reflexionNodesSchema = z.object({
+  workspaceId: z.number(),
+  projectId: z.number().optional(),
+  content: z.string().min(1).max(50000),
+  extractedEntities: z.array(z.string()),
+  previousEpisodes: z.array(z.string()).optional(),
+})
+
+const reflexionEdgesSchema = z.object({
+  workspaceId: z.number(),
+  projectId: z.number().optional(),
+  content: z.string().min(1).max(50000),
+  extractedNodes: z.array(z.string()),
+  extractedFacts: z.array(z.object({
+    source: z.string(),
+    target: z.string(),
+    fact: z.string(),
+  })),
+  previousEpisodes: z.array(z.string()).optional(),
 })
 
 // =============================================================================
@@ -651,6 +675,73 @@ export const graphitiRouter = router({
           detectedBy: d.detectedBy,
         })),
         total: duplicates.length,
+      }
+    }),
+
+  // ===========================================================================
+  // Fase 23.6 - Reflexion Extraction
+  // ===========================================================================
+
+  /**
+   * Detect missed entities using reflexion (Fase 23.6)
+   *
+   * Performs a second-pass LLM call to identify entities that were
+   * missed during initial extraction.
+   */
+  reflexionNodes: protectedProcedure
+    .input(reflexionNodesSchema)
+    .mutation(async ({ input, ctx }) => {
+      const wikiAiService = getWikiAiService(ctx.prisma)
+
+      const context: WikiContext = {
+        workspaceId: input.workspaceId,
+        projectId: input.projectId,
+      }
+
+      const result = await wikiAiService.extractNodesReflexion(
+        context,
+        input.content,
+        input.extractedEntities,
+        input.previousEpisodes
+      )
+
+      return {
+        missedEntities: result.missedEntities,
+        reasoning: result.reasoning,
+        provider: result.provider,
+        model: result.model,
+      }
+    }),
+
+  /**
+   * Detect missed facts/edges using reflexion (Fase 23.6)
+   *
+   * Performs a second-pass LLM call to identify relationships that were
+   * missed during initial extraction.
+   */
+  reflexionEdges: protectedProcedure
+    .input(reflexionEdgesSchema)
+    .mutation(async ({ input, ctx }) => {
+      const wikiAiService = getWikiAiService(ctx.prisma)
+
+      const context: WikiContext = {
+        workspaceId: input.workspaceId,
+        projectId: input.projectId,
+      }
+
+      const result = await wikiAiService.extractEdgesReflexion(
+        context,
+        input.content,
+        input.extractedNodes,
+        input.extractedFacts,
+        input.previousEpisodes
+      )
+
+      return {
+        missedFacts: result.missedFacts,
+        reasoning: result.reasoning,
+        provider: result.provider,
+        model: result.model,
       }
     }),
 })

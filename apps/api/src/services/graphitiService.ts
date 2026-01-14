@@ -84,6 +84,14 @@ export interface GraphitiConfig {
    * @default true
    */
   enableNodeEmbeddings?: boolean
+  /**
+   * Enable reflexion extraction for missed entities (Fase 23.5)
+   * When enabled, performs second-pass LLM call to detect missed entities
+   * Performance impact: +1 LLM call per sync (when enabled)
+   * Can be disabled via DISABLE_REFLEXION_EXTRACTION=true env var
+   * @default true
+   */
+  enableReflexionExtraction?: boolean
 }
 
 export interface WikiEpisode {
@@ -123,6 +131,20 @@ export interface SyncWikiPageOptions {
    * Set to false to save API costs - only uses deterministic matching
    */
   useLlm?: boolean
+  /**
+   * Enable reflexion extraction for this sync (Fase 23.5)
+   * When enabled, performs a second-pass LLM call to detect missed entities
+   * Overrides global enableReflexionExtraction config if set
+   * @default undefined (uses global config)
+   */
+  enableReflexion?: boolean
+  /**
+   * Enable reflexion for edges (default: false)
+   * When enabled, also detects missed relationships
+   * Only effective when enableReflexion is true
+   * @default false
+   */
+  enableEdgeReflexion?: boolean
 }
 
 export interface GraphEntity {
@@ -216,6 +238,10 @@ export interface SyncWikiPageResult {
   contradictions: ContradictionAuditEntry[]
   /** Fase 22.8.2: Number of duplicate entities found and marked */
   duplicatesFound?: number
+  /** Fase 23.5: Number of missed entities recovered via reflexion */
+  reflexionRecovered?: number
+  /** Fase 23.5: Number of reflexion passes executed (0 = disabled, 1 = normal) */
+  reflexionPasses?: number
 }
 
 // =============================================================================
@@ -236,6 +262,7 @@ export class GraphitiService {
   private enableDateExtraction: boolean = true // Fase 16.2
   private enableEdgeEmbeddings: boolean = true // Fase 19.3
   private enableNodeEmbeddings: boolean = true // Fase 21.4
+  private enableReflexionExtraction: boolean = true // Fase 23.5
 
   constructor(config?: Partial<GraphitiConfig>, prisma?: PrismaClient) {
     const host = config?.host ?? process.env.FALKORDB_HOST ?? 'localhost'
@@ -244,6 +271,7 @@ export class GraphitiService {
     this.enableDateExtraction = config?.enableDateExtraction ?? (process.env.DISABLE_DATE_EXTRACTION !== 'true')
     this.enableEdgeEmbeddings = config?.enableEdgeEmbeddings ?? (process.env.DISABLE_EDGE_EMBEDDINGS !== 'true')
     this.enableNodeEmbeddings = config?.enableNodeEmbeddings ?? (process.env.DISABLE_NODE_EMBEDDINGS !== 'true')
+    this.enableReflexionExtraction = config?.enableReflexionExtraction ?? (process.env.DISABLE_REFLEXION_EXTRACTION !== 'true')
 
     // Initialize Python service client
     this.pythonClient = getGraphitiClient()
@@ -580,6 +608,62 @@ export class GraphitiService {
         `diff size: ${diffContent.length} chars (was ${content.length}), ` +
         `${extractionResult.entities.length} entities in diff`
       )
+    }
+
+    // Fase 23.5: Reflexion extraction for missed entities
+    let reflexionRecovered = 0
+    let reflexionPasses = 0
+
+    // Determine if reflexion should run
+    const shouldRunReflexion = options?.enableReflexion ?? this.enableReflexionExtraction
+    const shouldRunEdgeReflexion = options?.enableEdgeReflexion ?? false
+
+    if (shouldRunReflexion && extractionResult.entities.length > 0) {
+      try {
+        reflexionPasses = 1
+        const extractedEntityNames = extractionResult.entities.map((e) => e.name)
+
+        // Run node reflexion
+        const nodeReflexion = await this.wikiAiService.extractNodesReflexion(
+          context,
+          contentToExtract,
+          extractedEntityNames
+        )
+
+        if (nodeReflexion.missedEntities.length > 0) {
+          console.log(
+            `[GraphitiService] Page ${pageId}: Reflexion found ${nodeReflexion.missedEntities.length} missed entities: ` +
+            `${nodeReflexion.missedEntities.map((e) => e.name).join(', ')}`
+          )
+
+          // Add missed entities to extraction result
+          for (const missed of nodeReflexion.missedEntities) {
+            // Determine entity type from suggested type or default to Concept
+            const entityType = missed.suggestedType || 'Concept'
+            extractionResult.entities.push({
+              name: missed.name,
+              type: entityType,
+              confidence: 0.7, // Lower confidence for reflexion-recovered entities
+            })
+            reflexionRecovered++
+          }
+        }
+
+        // Run edge reflexion if enabled (default: false to match Python Graphiti)
+        if (shouldRunEdgeReflexion) {
+          // Note: Edge reflexion is more expensive and less commonly needed
+          // Keeping implementation simple for now - can be expanded later
+          console.log(
+            `[GraphitiService] Page ${pageId}: Edge reflexion enabled but not yet integrated into sync flow`
+          )
+        }
+      } catch (reflexionError) {
+        // Don't fail the sync if reflexion fails - it's an enhancement, not critical
+        console.warn(
+          `[GraphitiService] Reflexion extraction failed for page ${pageId}: ` +
+          `${reflexionError instanceof Error ? reflexionError.message : 'Unknown error'}`
+        )
+      }
     }
 
     // Sync page metadata to FalkorDB
@@ -924,6 +1008,8 @@ export class GraphitiService {
       contradictionsResolved,
       contradictions: contradictionAuditEntries,
       duplicatesFound, // Fase 22.8.2
+      reflexionRecovered, // Fase 23.5
+      reflexionPasses, // Fase 23.5
     }
   }
 

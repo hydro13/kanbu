@@ -46,14 +46,30 @@ import {
   getDeduplicateEdgeSystemPrompt,
   getDeduplicateEdgeUserPrompt,
   parseDeduplicateEdgeResponse,
+  // Fase 23.3 - Reflexion Extraction
+  getReflexionNodesSystemPrompt,
+  getReflexionNodesUserPrompt,
+  parseReflexionNodesResponse,
+  getReflexionEdgesSystemPrompt,
+  getReflexionEdgesUserPrompt,
+  parseReflexionEdgesResponse,
   type ExistingFact,
   type ContradictionDetail,
   type EnhancedContradictionResult,
   type BatchNewFact,
   type BatchContradictionResult,
   type CategoryHandlingConfig,
+  type ExtractedFact,
 } from './prompts'
-import type { NodeResolutionsResponse, EdgeDuplicateResponse } from './types'
+import type {
+  NodeResolutionsResponse,
+  EdgeDuplicateResponse,
+  // Fase 23 - Reflexion Extraction
+  NodeReflexionResult,
+  EdgeReflexionResult,
+  MissedEntity,
+  MissedFact,
+} from './types'
 
 // =============================================================================
 // Types
@@ -963,6 +979,148 @@ export class WikiAiService {
     const provider = await this.getReasoningProviderOrThrow(context)
 
     yield* provider.stream(messages, options)
+  }
+
+  // ===========================================================================
+  // Reflexion Extraction (Fase 23.4)
+  // ===========================================================================
+
+  /**
+   * Detect missed entities using reflexion (Fase 23.4)
+   *
+   * Performs a second-pass LLM call to identify entities that were
+   * missed during initial extraction. Uses WikiContext for scoping.
+   *
+   * @param context - Wiki context (workspace/project) for provider selection
+   * @param episodeContent - Current wiki page content
+   * @param extractedEntities - Entity names extracted in first pass
+   * @param previousEpisodes - Optional previous content for context
+   */
+  async extractNodesReflexion(
+    context: WikiContext,
+    episodeContent: string,
+    extractedEntities: string[],
+    previousEpisodes?: string[]
+  ): Promise<NodeReflexionResult> {
+    const provider = await this.getReasoningProviderOrThrow(context)
+
+    const systemPrompt = getReflexionNodesSystemPrompt()
+    const userPrompt = getReflexionNodesUserPrompt({
+      episodeContent,
+      previousEpisodes,
+      extractedEntities,
+    })
+
+    try {
+      const response = await provider.chat(
+        [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        {
+          temperature: 0.1,
+          maxTokens: 1000,
+        }
+      )
+
+      const parsed = parseReflexionNodesResponse(response)
+
+      return {
+        missedEntities: parsed.missedEntities.map(
+          (e): MissedEntity => ({
+            name: e.name,
+            reason: e.reason,
+            suggestedType: e.suggestedType,
+          })
+        ),
+        reasoning: parsed.reasoning,
+        provider: provider.type,
+        model: provider.getReasoningModel(),
+      }
+    } catch (error) {
+      console.warn(
+        `[WikiAiService] extractNodesReflexion failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
+      return {
+        missedEntities: [],
+        reasoning: 'Reflexion failed - fallback to no missed entities',
+        provider: provider.type,
+        model: provider.getReasoningModel(),
+      }
+    }
+  }
+
+  /**
+   * Detect missed facts/edges using reflexion (Fase 23.4)
+   *
+   * Performs a second-pass LLM call to identify relationships that were
+   * missed during initial extraction.
+   *
+   * Note: This is disabled by default (enableEdgeReflexion: false) to match
+   * Python Graphiti behavior. Enable via ReflexionConfig if needed.
+   *
+   * @param context - Wiki context (workspace/project) for provider selection
+   * @param episodeContent - Current wiki page content
+   * @param extractedNodes - Entity names extracted
+   * @param extractedFacts - Facts extracted in first pass
+   * @param previousEpisodes - Optional previous content for context
+   */
+  async extractEdgesReflexion(
+    context: WikiContext,
+    episodeContent: string,
+    extractedNodes: string[],
+    extractedFacts: ExtractedFact[],
+    previousEpisodes?: string[]
+  ): Promise<EdgeReflexionResult> {
+    const provider = await this.getReasoningProviderOrThrow(context)
+
+    const systemPrompt = getReflexionEdgesSystemPrompt()
+    const userPrompt = getReflexionEdgesUserPrompt({
+      episodeContent,
+      previousEpisodes,
+      extractedNodes,
+      extractedFacts,
+    })
+
+    try {
+      const response = await provider.chat(
+        [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        {
+          temperature: 0.1,
+          maxTokens: 1500,
+        }
+      )
+
+      const parsed = parseReflexionEdgesResponse(response)
+
+      return {
+        missedFacts: parsed.missedFacts.map(
+          (f): MissedFact => ({
+            sourceName: f.sourceName,
+            targetName: f.targetName,
+            relationType: f.relationType,
+            fact: f.fact,
+            reason: f.reason,
+          })
+        ),
+        reasoning: parsed.reasoning,
+        provider: provider.type,
+        model: provider.getReasoningModel(),
+      }
+    } catch (error) {
+      console.warn(
+        `[WikiAiService] extractEdgesReflexion failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      )
+      return {
+        missedFacts: [],
+        reasoning: 'Reflexion failed - fallback to no missed facts',
+        provider: provider.type,
+        model: provider.getReasoningModel(),
+      }
+    }
   }
 
   // ===========================================================================
