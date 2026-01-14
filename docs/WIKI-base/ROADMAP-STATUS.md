@@ -8803,6 +8803,229 @@ git revert <commit-hash>
 
 ---
 
+### 22.8 Completering Uitgestelde Items ✅
+
+> **Doel:** Alle uitgestelde items uit Fase 22.1-22.7 alsnog implementeren
+> **Datum:** 2026-01-14
+> **Status:** ✅ COMPLEET
+
+#### Overzicht Uitgestelde Items
+
+| # | Item | Oorspronkelijke Fase | Status | Prioriteit |
+|---|------|---------------------|--------|------------|
+| 1 | `resolveWithLlm()` implementatie | 22.3 → 22.4 | ✅ | **KRITIEK** |
+| 2 | `syncWikiPage()` uitbreiden met dedup | 22.5 | ✅ | Hoog |
+| 3 | FalkorDB Indexes aanmaken | 22.2 → 22.5 | ✅ | Medium |
+| 4 | LLM Prompt Unit Tests (mocks) | 22.4 → 22.7 | ✅ | Medium |
+| 5 | `detect-duplicates.ts` CLI script | 22.7 | ✅ | Laag |
+| 6 | Integration Test E2E | 22.7 | ✅ | Laag |
+
+---
+
+#### 22.8.1 `resolveWithLlm()` Implementatie
+
+**Status:** ✅ COMPLEET (2026-01-14)
+
+**Wat:** Methode toevoegen aan WikiDeduplicationService die LLM aanroept voor nodes die niet via exact/fuzzy/embedding zijn opgelost.
+
+**Geïmplementeerd:**
+- `resolveWithLlm()` methode toegevoegd (lines 509-645) - roept `WikiAiService.detectNodeDuplicates()` aan
+- `resolveExtractedNodes()` uitgebreid met `useLlm` optie (default: true) en optionele `episodeContent`/`previousEpisodes` parameters
+- LLM wordt aangeroepen als Step 3 (na exact/fuzzy en embeddings)
+- `llmMatches` counter wordt correct bijgewerkt via `state.duplicatePairs.length` diff
+- `getWikiDeduplicationService()` singleton accepteert nu ook `wikiAiService` parameter
+- `LLM_MATCH_CONFIDENCE = 0.85` constant voor confidence scores
+
+**Acceptatiecriteria:**
+- [x] `resolveWithLlm()` methode bestaat en werkt
+- [x] `useLlm: true` (default) roept LLM aan voor unresolved nodes
+- [x] `useLlm: false` skipt LLM stap
+- [x] `llmMatches` counter wordt correct bijgewerkt
+- [x] Gedocumenteerd in code comments
+
+---
+
+#### 22.8.2 `syncWikiPage()` Uitbreiden met Dedup
+
+**Status:** ✅ COMPLEET (2026-01-14)
+
+**Wat:** Bestaande `syncWikiPage()` uitbreiden met optionele deduplication parameter.
+
+**Geïmplementeerd:**
+- `SyncWikiPageOptions` interface toegevoegd met `enableDedup`, `dedupThreshold`, `useLlm` opties
+- `syncWikiPage()` signature uitgebreid met optionele options parameter (backwards compatible)
+- `syncWikiPageWithAiService()` roept nu `runEntityDeduplication()` aan na entity extraction
+- `runEntityDeduplication()` private methode implementeert volledige dedup flow
+- `getExistingEntitiesForDedup()` haalt bestaande entities op per groupId
+- `createDuplicateOfEdge()` maakt IS_DUPLICATE_OF edges in FalkorDB
+- `SyncWikiPageResult.duplicatesFound` optional field toegevoegd
+
+**Acceptatiecriteria:**
+- [x] Bestaande calls naar `syncWikiPage()` blijven werken (backwards compatible)
+- [x] Nieuwe parameter `enableDedup` werkt (default: true)
+- [x] IS_DUPLICATE_OF edges worden aangemaakt bij duplicates
+- [x] Gedocumenteerd
+
+---
+
+#### 22.8.3 FalkorDB Indexes
+
+**Status:** ✅ COMPLEET (2026-01-14)
+
+**Wat:** Performance indexes aanmaken voor duplicate lookups.
+
+**Geïmplementeerd:**
+- `initialize()` in graphitiService.ts uitgebreid met uuid, groupId en name indexes voor alle entity types
+- Migration script `scripts/create-falkordb-indexes.ts` aangemaakt:
+  - Ondersteunt `--dry-run` en `--verbose` flags
+  - Maakt 16 indexes aan voor Concept, Person, Task, Project en WikiPage
+  - Veilig voor herhaald uitvoeren (negeert "already indexed" errors)
+
+**Usage:**
+```bash
+cd apps/api
+npx tsx ../../scripts/create-falkordb-indexes.ts --dry-run  # Preview
+npx tsx ../../scripts/create-falkordb-indexes.ts            # Apply
+```
+
+**Acceptatiecriteria:**
+- [x] `initialize()` methode in graphitiService aangevuld met indexes
+- [x] Migration script `create-falkordb-indexes.ts`
+- [x] Gedocumenteerd
+
+---
+
+#### 22.8.4 LLM Prompt Unit Tests (Mocks)
+
+**Status:** ✅ COMPLEET (2026-01-14)
+
+**Wat:** Unit tests voor deduplicateNodes.ts prompts met mocked LLM responses.
+
+**Geïmplementeerd:**
+- Comprehensive test file aangemaakt (673 lines, 20+ tests)
+- Node deduplication tests:
+  - System prompt content verification
+  - User prompt formatting tests
+  - Response parsing tests (valid JSON, various scenarios)
+- Edge deduplication tests:
+  - System prompt content verification
+  - User prompt formatting tests
+  - Response parsing tests
+- Scenario tests:
+  - Exact match duplicates
+  - Semantic equivalent duplicates
+  - No duplicates found
+  - Mixed results
+  - Malformed JSON handling
+  - Empty input handling
+
+**Locatie:** `apps/api/src/lib/ai/wiki/prompts/deduplicateNodes.test.ts`
+
+**Acceptatiecriteria:**
+- [x] 10+ unit tests (20+ tests geïmplementeerd)
+- [x] Mocked LLM responses (geen echte API calls)
+- [x] Alle prompt functies getest
+- [x] Alle parse functies getest
+
+---
+
+#### 22.8.5 `detect-duplicates.ts` CLI Script
+
+**Status:** ✅ COMPLEET (2026-01-14)
+
+**Wat:** CLI tool voor batch duplicate detectie.
+
+**Geïmplementeerd:**
+- Script aangemaakt: `scripts/detect-duplicates.ts`
+- Volledige CLI met help, argument parsing, en kleurenoutput
+- Integreert met WikiDeduplicationService voor duplicate detectie
+- Direct FalkorDB queries voor node ophalen en edge creatie
+- Qdrant connectie voor embedding-based matching
+
+**Usage:**
+```bash
+cd apps/api
+npx tsx ../../scripts/detect-duplicates.ts --workspace=1 --dry-run
+npx tsx ../../scripts/detect-duplicates.ts --workspace=1 --threshold=0.85 --apply
+npx tsx ../../scripts/detect-duplicates.ts --help
+```
+
+**Options:**
+- `--workspace <id>` - Workspace ID (required)
+- `--project <id>` - Project ID (optional, limits scope)
+- `--threshold <0.0-1.0>` - Similarity threshold (default: 0.85)
+- `--dry-run` - Only report, do not create edges (default)
+- `--apply` - Create IS_DUPLICATE_OF edges
+- `--node-types <types>` - Comma-separated: Concept,Person,Task,Project
+- `--limit <n>` - Maximum duplicates to process (default: 100)
+- `--verbose` - Show detailed output
+- `--help` - Show help text
+
+**Features:**
+- Gekleurde output voor confidence levels en match types
+- Gegroepeerde weergave per match type
+- Edge collision check (overslaan als edge al bestaat)
+- Statistieken en samenvatting
+
+**Acceptatiecriteria:**
+- [x] Script werkt met --dry-run
+- [x] Script werkt met --apply
+- [x] Duidelijke output met statistics
+- [x] Help text beschikbaar
+
+---
+
+#### 22.8.6 Integration Test E2E
+
+**Status:** ✅ COMPLEET (2026-01-14)
+
+**Wat:** End-to-end test van volledige dedup flow.
+
+**Geïmplementeerd:**
+- Comprehensive integration test file aangemaakt (500+ lines)
+- Mocked WikiNodeEmbeddingService en WikiAiService
+- Test suites voor alle matching methods:
+  - Exact match flow (case insensitive, whitespace handling)
+  - Fuzzy match flow (MinHash/LSH, low-entropy filtering)
+  - Embedding match flow (vector similarity, threshold handling)
+  - LLM match flow (AI resolution, useLlm flag)
+- Complete pipeline tests (all methods in order)
+- Workspace duplicate detection flow tests
+- Edge cases (empty nodes, special chars, unicode, type variations)
+- Statistics verification tests
+
+**Locatie:** `apps/api/src/lib/ai/wiki/WikiDeduplicationService.integration.test.ts`
+
+**Acceptatiecriteria:**
+- [x] E2E test voor complete flow
+- [x] Mocked dependencies (geen echte DB/LLM calls)
+- [x] Alle matching methods getest (exact, fuzzy, embedding, llm)
+- [x] Statistics verification getest
+
+---
+
+#### Taak Tabel 22.8
+
+| # | Taak | Status | Dependency | Notities |
+|---|------|--------|------------|----------|
+| 1 | `resolveWithLlm()` | ✅ | - | KRITIEK - core functionaliteit |
+| 2 | `syncWikiPage()` uitbreiden | ✅ | #1 | Hangt af van resolveWithLlm |
+| 3 | FalkorDB Indexes | ✅ | - | Kan parallel |
+| 4 | LLM Prompt Tests | ✅ | - | Kan parallel |
+| 5 | `detect-duplicates.ts` | ✅ | #1, #2 | Na core implementatie |
+| 6 | Integration Test E2E | ✅ | #1, #2 | Als laatste |
+
+---
+
+#### Acceptatiecriteria 22.8
+
+- [x] Alle 6 items geïmplementeerd
+- [x] Alle items gedocumenteerd
+- [x] Alle tests passing
+- [x] ROADMAP-STATUS.md up-to-date
+
+---
+
 ### Changelog Fase 22
 
 | Datum | Actie |
@@ -8817,6 +9040,14 @@ git revert <commit-hash>
 | 2026-01-14 | Fase 22.7 voltooid - 50 unit tests passing |
 | 2026-01-14 | UI components toegevoegd: WikiDuplicateBadge, WikiDuplicateManager + shadcn/ui components |
 | 2026-01-14 | WikiSidebar integratie: GitMerge button + WikiDuplicateManager dialog (workspaceId/projectId props) |
+| 2026-01-14 | Fase 22.8 aangemaakt - Plan voor completering uitgestelde items |
+| 2026-01-14 | Fase 22.8.1 voltooid - resolveWithLlm() implementatie |
+| 2026-01-14 | Fase 22.8.2 voltooid - syncWikiPage() met dedup parameter |
+| 2026-01-14 | Fase 22.8.3 voltooid - FalkorDB indexes |
+| 2026-01-14 | Fase 22.8.4 voltooid - LLM Prompt Unit Tests |
+| 2026-01-14 | Fase 22.8.5 voltooid - detect-duplicates.ts CLI script |
+| 2026-01-14 | Fase 22.8.6 voltooid - Integration Test E2E |
+| 2026-01-14 | **Fase 22.8 COMPLEET** - Alle 6 uitgestelde items geïmplementeerd |
 
 ---
 
