@@ -5594,6 +5594,3094 @@ git revert <commit-hashes>
 
 ---
 
+## Fase 21: Node Embeddings & Semantic Entity Matching ✅
+
+> **Doel:** Vector embeddings op entity nodes voor semantic entity resolution
+> **Status:** ✅ COMPLEET
+> **Afhankelijkheden:** Fase 19 (Edge Embeddings infrastructure), Fase 2 (FalkorDB entities)
+> **Feature Flag:** `DISABLE_NODE_EMBEDDINGS` (voor rollback)
+
+### Architectuur Overzicht
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    NODE EMBEDDING ARCHITECTUUR                               │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │
+│  │                         FalkorDB Graph                                │   │
+│  │                                                                       │   │
+│  │   ┌─────────────┐      ┌─────────────┐      ┌─────────────┐         │   │
+│  │   │   Person    │      │   Concept   │      │   Project   │         │   │
+│  │   │             │      │             │      │             │         │   │
+│  │   │ name: "Jan" │─────▶│ name: "AI"  │◀─────│ name: "Kanbu"│        │   │
+│  │   │ embedding:  │      │ embedding:  │      │ embedding:  │         │   │
+│  │   │   [0.1,...]│      │   [0.3,...] │      │   [0.2,...] │         │   │
+│  │   └─────────────┘      └─────────────┘      └─────────────┘         │   │
+│  │          │                    │                    │                 │   │
+│  │          └────────────────────┴────────────────────┘                 │   │
+│  │                               │                                      │   │
+│  │                               ▼                                      │   │
+│  │                    ┌─────────────────────┐                          │   │
+│  │                    │  name_embedding     │                          │   │
+│  │                    │  property op nodes  │                          │   │
+│  │                    │  (1536 floats)      │                          │   │
+│  │                    └─────────────────────┘                          │   │
+│  │                                                                       │   │
+│  └──────────────────────────────────────────────────────────────────────┘   │
+│                                         │                                    │
+│                                         ▼                                    │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │
+│  │                       USE CASES                                       │   │
+│  │                                                                       │   │
+│  │  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐   │   │
+│  │  │ Entity Resolution│  │ Fuzzy Search     │  │ Deduplication    │   │   │
+│  │  ├──────────────────┤  ├──────────────────┤  ├──────────────────┤   │   │
+│  │  │ "Jan Janssen" ≈  │  │ "artifical int" │  │ "Microsoft" =    │   │   │
+│  │  │ "J. Janssen"     │  │ → matches "AI"   │  │ "MS" = "MSFT"    │   │   │
+│  │  └──────────────────┘  └──────────────────┘  └──────────────────┘   │   │
+│  │                                                                       │   │
+│  └──────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+│  ┌──────────────────────────────────────────────────────────────────────┐   │
+│  │                    STORAGE OPTIONS                                    │   │
+│  │                                                                       │   │
+│  │  Option A: FalkorDB (in-graph)     │  Option B: Qdrant (external)    │   │
+│  │  ┌───────────────────────────┐     │  ┌───────────────────────────┐  │   │
+│  │  │ + Alles in één database   │     │  │ + Snellere vector search  │  │   │
+│  │  │ + Geen extra service      │     │  │ + Consistent met edges    │  │   │
+│  │  │ - Langzamere vector ops   │     │  │ - Extra collectie nodig   │  │   │
+│  │  │ - Geen ANN indexes        │     │  │ + HNSW indexes            │  │   │
+│  │  └───────────────────────────┘     │  └───────────────────────────┘  │   │
+│  │                                                                       │   │
+│  │  AANBEVELING: Qdrant (consistent met Fase 15/19)                     │   │
+│  │                                                                       │   │
+│  └──────────────────────────────────────────────────────────────────────┘   │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### 21.1 Validatie Bestaande Implementatie
+
+> **Doel:** Check wat er al bestaat en identificeer gaps
+
+#### Pre-Check Instructies (Claude Code)
+
+```markdown
+VOORDAT je begint met implementatie:
+
+1. CHECK bestaande node structuur in FalkorDB:
+   □ grep -r "name_embedding\|nameEmbedding" apps/api/src/
+   □ Check graphitiService.ts createNode/updateNode methods
+   □ Check wat voor node types we hebben (Concept, Person, Task, Project, WikiPage)
+
+2. CHECK bestaande embedding services:
+   □ WikiEmbeddingService.ts - Hoe worden embeddings gegenereerd?
+   □ WikiEdgeEmbeddingService.ts - Structuur voor edge embeddings
+   □ Check of Qdrant al node embeddings collectie heeft
+
+3. CHECK Graphiti reference:
+   □ Read graphiti_core/nodes.py EntityNode.name_embedding
+   □ Hoe wordt dit in Graphiti gebruikt?
+
+4. CHECK FalkorDB capabilities:
+   □ Kan FalkorDB vector search? (ja, met VEC.* commands)
+   □ Wat is de performance vs Qdrant?
+
+5. BIJ CONFLICTEN:
+   → Als er al node embeddings zijn → STOP, vraag Robin
+   → Als storage beslissing onduidelijk → STOP, vraag Robin
+```
+
+#### Gap Analyse
+
+| Component | Bestaat | Locatie | Actie Nodig |
+|-----------|---------|---------|-------------|
+| Node types in FalkorDB | ✅ JA | graphitiService.ts:94 | WikiPage, Concept, Person, Task, Project |
+| name_embedding property | ❌ NEE | graphitiService.ts | Niet in TS - wel in graphiti_core/nodes.py |
+| WikiNodeEmbeddingService | ❌ NEE | - | Nieuwe service maken (pattern: WikiEdgeEmbeddingService) |
+| Qdrant node collectie | ❌ NEE | - | `kanbu_node_embeddings` aanmaken |
+| Entity resolution method | ❌ NEE | - | findSimilarEntities() implementeren |
+| Fuzzy entity search | ⚠️ BASIC | graphitiService.ts:1018 | Uitbreiden met embedding search |
+| WikiAiService.embed() | ✅ JA | WikiAiService.ts | Hergebruiken voor node embeddings |
+| WikiEdgeEmbeddingService | ✅ JA | WikiEdgeEmbeddingService.ts | Pattern voor node service |
+
+#### Huidige Node Types
+
+```typescript
+// graphitiService.ts:91-96 - Huidige node structuur
+export interface GraphEntity {
+  id: string
+  name: string
+  type: 'WikiPage' | 'Concept' | 'Person' | 'Task' | 'Project'
+  properties: Record<string, unknown>
+  // ONTBREEKT: name_embedding: number[] (wel in Python graphiti_core/nodes.py:436)
+}
+
+// graphiti_core/nodes.py:435-440 - Python reference (EntityNode)
+// class EntityNode(Node):
+//   name_embedding: list[float] | None  <- WIJ GAAN DIT IN QDRANT OPSLAAN
+//   summary: str
+//   attributes: dict[str, Any]
+```
+
+#### Taak Tabel
+
+| Taak | Status | Check | Notities |
+|------|--------|-------|----------|
+| Grep voor bestaande node embedding code | ✅ | `grep -r "name_embedding" apps/` | Geen hits in TS code |
+| Check FalkorDB vector capabilities | ✅ | graphiti_core/nodes.py | FalkorDB ondersteunt embeddings via property |
+| Check Qdrant collecties | ✅ | `curl localhost:6333/collections` | 17 collecties, geen `kanbu_node_embeddings` |
+| Analyseer WikiEdgeEmbeddingService | ✅ | WikiEdgeEmbeddingService.ts | Pattern: formatEdge, generatePointId, hashFact |
+| Check graphiti_core/nodes.py | ✅ | EntityNode.name_embedding | Line 436: `list[float] \| None` |
+| Documenteer gap analyse | ✅ | Update deze tabel | Volledige analyse compleet |
+
+#### Acceptatiecriteria 21.1
+
+- [x] Gap analyse tabel ingevuld
+- [x] Bestaande node code gedocumenteerd (graphitiService.ts:91-96, graphiti_core/nodes.py:435-440)
+- [x] Storage beslissing: **Qdrant** (consistent met edge embeddings, betere ANN search)
+- [x] Embedding format beslissing: **Type+Name** `[Person] Jan Janssen` (balanced)
+
+#### Bevindingen Fase 21.1 (2026-01-13)
+
+**Bestaande Qdrant collecties:**
+- `kanbu_wiki_embeddings` - page embeddings (Fase 15)
+- `kanbu_edge_embeddings` - edge embeddings (Fase 19)
+- `kanbu_node_embeddings` - **NIET AANWEZIG** (moet aangemaakt worden)
+
+**FalkorDB vector capabilities:**
+- FalkorDB ondersteunt embeddings als node property (`n.name_embedding`)
+- Python Graphiti gebruikt dit (graphiti_core/nodes.py:436)
+- **Beslissing: Qdrant gebruiken** voor consistentie met edges en betere ANN indexes
+
+**Te hergebruiken patterns van WikiEdgeEmbeddingService:**
+- `formatEdgeForEmbedding()` -> `formatNodeForEmbedding()`
+- `generatePointId()` -> hash-based point ID
+- `hashFact()` -> `hashName()` voor change detection
+- `checkEdgeEmbeddingStatus()` -> `checkNodeEmbeddingStatus()`
+- Batch processing met `generateAndStoreBatchNodeEmbeddings()`
+
+---
+
+### 21.2 Schema & Storage Design
+
+> **Doel:** Qdrant collectie en node embedding schema definiëren
+
+#### Pre-Check Instructies (Claude Code)
+
+```markdown
+VOORDAT je schema maakt:
+
+1. CHECK Qdrant is beschikbaar:
+   □ curl http://localhost:6333/collections
+   □ Bestaande collecties: kanbu_wiki_pages, kanbu_edge_embeddings
+
+2. CHECK embedding dimensie:
+   □ Consistent met andere collecties (1536 voor OpenAI)
+   □ Check WikiAiService embedding model
+
+3. DESIGN beslissingen:
+   □ Embedding text format: alleen name of name + type + summary?
+   □ Payload fields: nodeId, nodeType, workspaceId, ...
+
+4. BIJ CONFLICTEN:
+   → Als kanbu_node_embeddings al bestaat → STOP, vraag Robin
+```
+
+#### Qdrant Collectie Schema
+
+```typescript
+// Qdrant collection: kanbu_node_embeddings
+
+interface NodeEmbeddingPoint {
+  /** Unique point ID (hash of nodeId) */
+  id: string
+
+  /** Embedding vector (1536 dimensions for OpenAI) */
+  vector: number[]
+
+  /** Payload metadata */
+  payload: {
+    /** FalkorDB node ID */
+    nodeId: string
+
+    /** Node type: Concept, Person, Task, Project */
+    nodeType: 'Concept' | 'Person' | 'Task' | 'Project'
+
+    /** Entity name */
+    name: string
+
+    /** Normalized name (lowercase, trimmed) */
+    normalizedName: string
+
+    /** Workspace ID for filtering */
+    workspaceId: number
+
+    /** Project ID (optional) */
+    projectId?: number
+
+    /** Group ID (wiki-ws-{id} format) */
+    groupId: string
+
+    /** Entity summary (if available) */
+    summary?: string
+
+    /** Additional attributes */
+    attributes?: Record<string, unknown>
+
+    /** Created timestamp */
+    createdAt: string
+
+    /** Last updated */
+    updatedAt: string
+  }
+}
+```
+
+#### Qdrant Collectie Configuratie
+
+```bash
+# Create collection: kanbu_node_embeddings
+
+curl -X PUT http://localhost:6333/collections/kanbu_node_embeddings \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "vectors": {
+      "size": 1536,
+      "distance": "Cosine"
+    },
+    "optimizers_config": {
+      "indexing_threshold": 1000
+    },
+    "on_disk_payload": false
+  }'
+
+# Create payload indexes for filtering
+curl -X PUT http://localhost:6333/collections/kanbu_node_embeddings/index \
+  -H 'Content-Type: application/json' \
+  -d '{"field_name": "workspaceId", "field_schema": "integer"}'
+
+curl -X PUT http://localhost:6333/collections/kanbu_node_embeddings/index \
+  -H 'Content-Type: application/json' \
+  -d '{"field_name": "nodeType", "field_schema": "keyword"}'
+
+curl -X PUT http://localhost:6333/collections/kanbu_node_embeddings/index \
+  -H 'Content-Type: application/json' \
+  -d '{"field_name": "groupId", "field_schema": "keyword"}'
+
+curl -X PUT http://localhost:6333/collections/kanbu_node_embeddings/index \
+  -H 'Content-Type: application/json' \
+  -d '{"field_name": "normalizedName", "field_schema": "keyword"}'
+```
+
+#### Embedding Text Format
+
+```typescript
+/**
+ * Format node for embedding generation
+ *
+ * Options:
+ * A) Simple: "Jan Janssen"
+ * B) With type: "[Person] Jan Janssen"
+ * C) With context: "[Person] Jan Janssen: Software engineer at Acme"
+ *
+ * AANBEVELING: Option B - Balanced between specificity and flexibility
+ */
+function formatNodeForEmbedding(node: {
+  name: string
+  type: string
+  summary?: string
+}): string {
+  // Option B: Type + Name (recommended)
+  return `[${node.type}] ${node.name}`
+
+  // Option C: Full context (alternative)
+  // const context = node.summary ? `: ${node.summary}` : ''
+  // return `[${node.type}] ${node.name}${context}`
+}
+```
+
+#### Taak Tabel
+
+| Taak | Status | Check | Notities |
+|------|--------|-------|----------|
+| Create Qdrant collectie | ✅ | `kanbu_node_embeddings` | 1536 dim, Cosine |
+| Create payload indexes | ✅ | workspaceId, nodeType, groupId, normalizedName | 4 indexes |
+| Define NodeEmbeddingPoint interface | ✅ | In roadmap gedocumenteerd | Implementatie in 21.3 |
+| Kies embedding text format | ✅ | Option B: `[Type] Name` | `[Person] Jan Janssen` |
+| Verify collectie aangemaakt | ✅ | curl check | Status: green, 0 points |
+
+#### Acceptatiecriteria 21.2
+
+- [x] Qdrant collectie `kanbu_node_embeddings` aangemaakt
+- [x] Alle payload indexes gecreëerd (workspaceId, nodeType, groupId, normalizedName)
+- [x] NodeEmbeddingPoint interface gedefinieerd (in roadmap)
+- [x] Embedding text format bepaald: `[Type] Name`
+
+#### Resultaten 21.2 (2026-01-13)
+
+```json
+// Qdrant collection config
+{
+  "vectors": { "size": 1536, "distance": "Cosine" },
+  "status": "green",
+  "points_count": 0,
+  "payload_schema": {
+    "workspaceId": "integer",
+    "nodeType": "keyword",
+    "groupId": "keyword",
+    "normalizedName": "keyword"
+  }
+}
+```
+
+---
+
+### 21.3 WikiNodeEmbeddingService Implementation
+
+> **Doel:** Service voor node embedding generatie en storage
+
+#### Pre-Check Instructies (Claude Code)
+
+```markdown
+VOORDAT je de service implementeert:
+
+1. CHECK dat 21.2 compleet is:
+   □ Qdrant collectie bestaat
+   □ Indexes aangemaakt
+
+2. CHECK bestaande service patterns:
+   □ Read WikiEdgeEmbeddingService.ts structuur
+   □ Hoe wordt WikiAiService.embed() aangeroepen?
+   □ Error handling patterns
+
+3. DESIGN:
+   □ Waar komt de service? lib/ai/wiki/WikiNodeEmbeddingService.ts
+   □ Constructor dependencies: WikiAiService, QdrantClient
+
+4. BIJ CONFLICTEN:
+   → Als er al een WikiNodeEmbeddingService is → STOP, vraag Robin
+```
+
+#### Service Implementation
+
+```typescript
+// apps/api/src/lib/ai/wiki/WikiNodeEmbeddingService.ts
+
+import { QdrantClient } from '@qdrant/js-client-rest'
+import { WikiAiService } from './WikiAiService'
+import { createHash } from 'crypto'
+
+/**
+ * Node Embedding Service for Wiki Entity Nodes
+ *
+ * Generates and stores vector embeddings for entity nodes (Concept, Person, Task, Project)
+ * to enable semantic entity matching and fuzzy search.
+ *
+ * Fase 21.3 Implementation
+ *
+ * Use cases:
+ * - Entity resolution: "Jan" ≈ "J. Janssen" ≈ "Jan Janssen"
+ * - Fuzzy search: "artifical int" → "Artificial Intelligence"
+ * - Deduplication: Find potential duplicate entities
+ */
+
+export interface NodeEmbeddingOptions {
+  /** Workspace ID */
+  workspaceId: number
+  /** Project ID (optional) */
+  projectId?: number
+  /** Group ID for filtering */
+  groupId: string
+}
+
+export interface NodeForEmbedding {
+  /** FalkorDB node ID */
+  nodeId: string
+  /** Node type */
+  nodeType: 'Concept' | 'Person' | 'Task' | 'Project'
+  /** Entity name */
+  name: string
+  /** Optional summary/description */
+  summary?: string
+  /** Additional attributes */
+  attributes?: Record<string, unknown>
+}
+
+export interface SimilarNodeResult {
+  /** Node ID in FalkorDB */
+  nodeId: string
+  /** Node type */
+  nodeType: string
+  /** Entity name */
+  name: string
+  /** Similarity score (0-1) */
+  score: number
+  /** Summary if available */
+  summary?: string
+}
+
+export class WikiNodeEmbeddingService {
+  private readonly collectionName = 'kanbu_node_embeddings'
+
+  constructor(
+    private readonly aiService: WikiAiService,
+    private readonly qdrantClient: QdrantClient
+  ) {}
+
+  /**
+   * Generate embedding for a single node
+   */
+  async generateNodeEmbedding(node: NodeForEmbedding): Promise<number[]> {
+    const embeddingText = this.formatNodeForEmbedding(node)
+    return this.aiService.embed(embeddingText)
+  }
+
+  /**
+   * Format node for embedding - includes type for better differentiation
+   */
+  private formatNodeForEmbedding(node: NodeForEmbedding): string {
+    // Format: "[Type] Name"
+    // Example: "[Person] Jan Janssen"
+    return `[${node.nodeType}] ${node.name}`
+  }
+
+  /**
+   * Generate unique point ID from node ID
+   */
+  private generatePointId(nodeId: string): string {
+    return createHash('sha256').update(nodeId).digest('hex').substring(0, 32)
+  }
+
+  /**
+   * Normalize entity name for exact matching
+   */
+  private normalizeName(name: string): string {
+    return name.toLowerCase().trim().replace(/\s+/g, ' ')
+  }
+
+  /**
+   * Store node embedding in Qdrant
+   */
+  async storeNodeEmbedding(
+    node: NodeForEmbedding,
+    embedding: number[],
+    options: NodeEmbeddingOptions
+  ): Promise<void> {
+    const pointId = this.generatePointId(node.nodeId)
+    const now = new Date().toISOString()
+
+    await this.qdrantClient.upsert(this.collectionName, {
+      wait: true,
+      points: [
+        {
+          id: pointId,
+          vector: embedding,
+          payload: {
+            nodeId: node.nodeId,
+            nodeType: node.nodeType,
+            name: node.name,
+            normalizedName: this.normalizeName(node.name),
+            workspaceId: options.workspaceId,
+            projectId: options.projectId,
+            groupId: options.groupId,
+            summary: node.summary,
+            attributes: node.attributes,
+            createdAt: now,
+            updatedAt: now,
+          },
+        },
+      ],
+    })
+  }
+
+  /**
+   * Generate and store embedding for a node in one call
+   */
+  async generateAndStoreNodeEmbedding(
+    node: NodeForEmbedding,
+    options: NodeEmbeddingOptions
+  ): Promise<void> {
+    // Check feature flag
+    if (process.env.DISABLE_NODE_EMBEDDINGS === 'true') {
+      return
+    }
+
+    try {
+      const embedding = await this.generateNodeEmbedding(node)
+      await this.storeNodeEmbedding(node, embedding, options)
+    } catch (error) {
+      console.error(`[WikiNodeEmbeddingService] Failed to embed node ${node.nodeId}:`, error)
+      // Don't throw - node embedding is non-critical
+    }
+  }
+
+  /**
+   * Batch generate and store embeddings for multiple nodes
+   */
+  async generateAndStoreBatchNodeEmbeddings(
+    nodes: NodeForEmbedding[],
+    options: NodeEmbeddingOptions
+  ): Promise<{ stored: number; skipped: number; failed: number }> {
+    if (process.env.DISABLE_NODE_EMBEDDINGS === 'true') {
+      return { stored: 0, skipped: nodes.length, failed: 0 }
+    }
+
+    let stored = 0
+    let skipped = 0
+    let failed = 0
+
+    // Process in batches of 10 to avoid rate limits
+    const batchSize = 10
+    for (let i = 0; i < nodes.length; i += batchSize) {
+      const batch = nodes.slice(i, i + batchSize)
+
+      await Promise.all(
+        batch.map(async (node) => {
+          // Skip WikiPage nodes - they have page embeddings
+          if (node.nodeType === 'WikiPage' as any) {
+            skipped++
+            return
+          }
+
+          try {
+            await this.generateAndStoreNodeEmbedding(node, options)
+            stored++
+          } catch (error) {
+            console.error(`[WikiNodeEmbeddingService] Failed to embed ${node.name}:`, error)
+            failed++
+          }
+        })
+      )
+    }
+
+    return { stored, skipped, failed }
+  }
+
+  /**
+   * Find similar entities by name (semantic search)
+   *
+   * Use cases:
+   * - Entity resolution during extraction
+   * - Autocomplete suggestions
+   * - Deduplication detection
+   */
+  async findSimilarEntities(
+    query: string,
+    options: {
+      workspaceId: number
+      nodeType?: 'Concept' | 'Person' | 'Task' | 'Project'
+      limit?: number
+      minScore?: number
+    }
+  ): Promise<SimilarNodeResult[]> {
+    const { workspaceId, nodeType, limit = 10, minScore = 0.7 } = options
+
+    // Generate embedding for query
+    const queryText = nodeType ? `[${nodeType}] ${query}` : query
+    const queryEmbedding = await this.aiService.embed(queryText)
+
+    // Build filter
+    const filter: any = {
+      must: [{ key: 'workspaceId', match: { value: workspaceId } }],
+    }
+
+    if (nodeType) {
+      filter.must.push({ key: 'nodeType', match: { value: nodeType } })
+    }
+
+    // Search in Qdrant
+    const results = await this.qdrantClient.search(this.collectionName, {
+      vector: queryEmbedding,
+      filter,
+      limit,
+      score_threshold: minScore,
+      with_payload: true,
+    })
+
+    return results.map((r) => ({
+      nodeId: r.payload?.nodeId as string,
+      nodeType: r.payload?.nodeType as string,
+      name: r.payload?.name as string,
+      score: r.score,
+      summary: r.payload?.summary as string | undefined,
+    }))
+  }
+
+  /**
+   * Find exact or near-exact matches by normalized name
+   */
+  async findByNormalizedName(
+    name: string,
+    workspaceId: number
+  ): Promise<SimilarNodeResult[]> {
+    const normalizedName = this.normalizeName(name)
+
+    const results = await this.qdrantClient.scroll(this.collectionName, {
+      filter: {
+        must: [
+          { key: 'workspaceId', match: { value: workspaceId } },
+          { key: 'normalizedName', match: { value: normalizedName } },
+        ],
+      },
+      limit: 10,
+      with_payload: true,
+    })
+
+    return results.points.map((p) => ({
+      nodeId: p.payload?.nodeId as string,
+      nodeType: p.payload?.nodeType as string,
+      name: p.payload?.name as string,
+      score: 1.0, // Exact match
+      summary: p.payload?.summary as string | undefined,
+    }))
+  }
+
+  /**
+   * Delete node embedding when node is deleted
+   */
+  async deleteNodeEmbedding(nodeId: string): Promise<void> {
+    const pointId = this.generatePointId(nodeId)
+
+    try {
+      await this.qdrantClient.delete(this.collectionName, {
+        wait: true,
+        points: [pointId],
+      })
+    } catch (error) {
+      console.error(`[WikiNodeEmbeddingService] Failed to delete embedding for ${nodeId}:`, error)
+    }
+  }
+
+  /**
+   * Ensure collection exists (called on startup)
+   */
+  async ensureCollection(): Promise<void> {
+    try {
+      await this.qdrantClient.getCollection(this.collectionName)
+    } catch {
+      // Collection doesn't exist, create it
+      await this.qdrantClient.createCollection(this.collectionName, {
+        vectors: {
+          size: 1536,
+          distance: 'Cosine',
+        },
+      })
+
+      // Create indexes
+      await this.qdrantClient.createPayloadIndex(this.collectionName, {
+        field_name: 'workspaceId',
+        field_schema: 'integer',
+      })
+      await this.qdrantClient.createPayloadIndex(this.collectionName, {
+        field_name: 'nodeType',
+        field_schema: 'keyword',
+      })
+      await this.qdrantClient.createPayloadIndex(this.collectionName, {
+        field_name: 'groupId',
+        field_schema: 'keyword',
+      })
+      await this.qdrantClient.createPayloadIndex(this.collectionName, {
+        field_name: 'normalizedName',
+        field_schema: 'keyword',
+      })
+    }
+  }
+}
+```
+
+#### Taak Tabel
+
+| Taak | Status | Check | Notities |
+|------|--------|-------|----------|
+| Create WikiNodeEmbeddingService.ts | ✅ | `lib/ai/wiki/WikiNodeEmbeddingService.ts` | 560 lines |
+| Implement generateNodeEmbedding() | ✅ | Single node embedding | Uses WikiAiService.embed() |
+| Implement storeNodeEmbedding() | ✅ | Qdrant upsert | With hash-based change detection |
+| Implement findSimilarEntities() | ✅ | Semantic search | Threshold default 0.85 |
+| Implement findByNormalizedName() | ✅ | Exact match fallback | Via Qdrant scroll |
+| Implement batch processing | ✅ | generateAndStoreBatchNodeEmbeddings | Skips unchanged nodes |
+| Add ensureCollection() | ✅ | Auto-create on startup | Verifies/creates indexes |
+| Export in index.ts | ✅ | All types exported | 10 exports |
+| Unit tests schrijven | ⏳ | WikiNodeEmbeddingService.test.ts | Defer to 21.5 |
+
+#### Acceptatiecriteria 21.3
+
+- [x] WikiNodeEmbeddingService class geïmplementeerd
+- [x] All methods werken correct (TypeScript compileert zonder errors)
+- [ ] Feature flag DISABLE_NODE_EMBEDDINGS werkt (implementatie in 21.4)
+- [ ] Minimum 15 unit tests passing (defer to 21.5)
+- [x] Error handling voor API failures
+
+#### Resultaten 21.3 (2026-01-13)
+
+**Bestand:** `apps/api/src/lib/ai/wiki/WikiNodeEmbeddingService.ts` (560 lines)
+
+**Geïmplementeerde methods:**
+- `formatNodeForEmbedding()` - Format: `[Type] Name`
+- `normalizeName()` - Lowercase, trim, collapse whitespace
+- `generatePointId()` - Hash-based numeric ID for Qdrant
+- `hashName()` - Change detection hash
+- `generateNodeEmbedding()` - Single node embedding via WikiAiService
+- `storeNodeEmbedding()` - Qdrant upsert with payload
+- `generateAndStoreNodeEmbedding()` - Generate + store + skip unchanged
+- `generateAndStoreBatchNodeEmbeddings()` - Batch processing
+- `checkNodeEmbeddingStatus()` - Exists + needs update check
+- `findSimilarEntities()` - Semantic vector search
+- `findByNormalizedName()` - Exact match via Qdrant scroll
+- `deleteNodeEmbedding()` - Single delete
+- `deleteWorkspaceEmbeddings()` - Bulk delete by workspace
+- `deleteGroupEmbeddings()` - Bulk delete by group
+- `getStats()` - Collection statistics
+- `ensureCollection()` - Auto-create collection + indexes
+
+**Exports toegevoegd aan index.ts:**
+- `WikiNodeEmbeddingService`
+- `getWikiNodeEmbeddingService`
+- `resetWikiNodeEmbeddingService`
+- `WikiNodeEmbeddingConfig`
+- `EmbeddableNodeType`
+- `NodeForEmbedding`
+- `NodeEmbeddingPayload`
+- `SimilarNodeResult`
+- `SimilarNodeSearchOptions`
+- `BatchNodeEmbeddingResult`
+
+---
+
+### 21.4 GraphitiService Integration
+
+> **Doel:** Node embeddings genereren bij entity extraction
+
+#### Pre-Check Instructies (Claude Code)
+
+```markdown
+VOORDAT je graphitiService aanpast:
+
+1. CHECK huidige extractie flow:
+   □ Read graphitiService.ts syncWikiPage method
+   □ Waar worden nodes aangemaakt? (createNode, updateNode)
+   □ Welke node types worden geëxtraheerd?
+
+2. CHECK bestaande embedding hooks:
+   □ Waar worden edge embeddings gegenereerd? (Fase 19)
+   □ Zelfde pattern volgen voor node embeddings
+
+3. DESIGN:
+   □ Bij welke operaties node embedding genereren?
+     - createNode
+     - updateNode (als naam verandert)
+   □ Async of sync?
+
+4. BIJ CONFLICTEN:
+   → Als graphitiService recent aangepast → STOP, vraag Robin
+```
+
+#### GraphitiService Updates
+
+```typescript
+// apps/api/src/services/graphitiService.ts updates
+
+// Add to constructor or init
+private nodeEmbeddingService: WikiNodeEmbeddingService
+
+// Update createNode to generate embedding
+async createNode(
+  name: string,
+  type: NodeType,
+  groupId: string,
+  properties: Record<string, unknown> = {}
+): Promise<string> {
+  // ... existing node creation code ...
+
+  // Generate node embedding (non-blocking)
+  if (type !== 'WikiPage') { // WikiPages have page embeddings
+    this.generateNodeEmbeddingAsync(nodeId, name, type, groupId)
+  }
+
+  return nodeId
+}
+
+// Async embedding generation (don't block wiki sync)
+private async generateNodeEmbeddingAsync(
+  nodeId: string,
+  name: string,
+  type: NodeType,
+  groupId: string
+): Promise<void> {
+  try {
+    const [, workspaceIdStr] = groupId.match(/wiki-ws-(\d+)/) || []
+    const workspaceId = workspaceIdStr ? parseInt(workspaceIdStr) : undefined
+
+    if (!workspaceId) return
+
+    await this.nodeEmbeddingService.generateAndStoreNodeEmbedding(
+      {
+        nodeId,
+        nodeType: type as any,
+        name,
+      },
+      {
+        workspaceId,
+        groupId,
+      }
+    )
+  } catch (error) {
+    console.error(`[GraphitiService] Node embedding failed for ${name}:`, error)
+    // Non-critical, don't throw
+  }
+}
+
+// Add method for entity resolution during extraction
+async findOrCreateEntity(
+  name: string,
+  type: NodeType,
+  groupId: string,
+  threshold: number = 0.85
+): Promise<{ nodeId: string; isNew: boolean }> {
+  // First, try exact match
+  const exactMatch = await this.findNodeByName(name, type, groupId)
+  if (exactMatch) {
+    return { nodeId: exactMatch.id, isNew: false }
+  }
+
+  // Then, try semantic match (if node embeddings enabled)
+  if (process.env.DISABLE_NODE_EMBEDDINGS !== 'true') {
+    const [, workspaceIdStr] = groupId.match(/wiki-ws-(\d+)/) || []
+    const workspaceId = workspaceIdStr ? parseInt(workspaceIdStr) : undefined
+
+    if (workspaceId) {
+      const similar = await this.nodeEmbeddingService.findSimilarEntities(name, {
+        workspaceId,
+        nodeType: type as any,
+        limit: 1,
+        minScore: threshold,
+      })
+
+      if (similar.length > 0) {
+        console.log(`[GraphitiService] Resolved "${name}" to existing entity "${similar[0].name}" (score: ${similar[0].score})`)
+        return { nodeId: similar[0].nodeId, isNew: false }
+      }
+    }
+  }
+
+  // No match found, create new node
+  const nodeId = await this.createNode(name, type, groupId)
+  return { nodeId, isNew: true }
+}
+```
+
+#### Taak Tabel
+
+| Taak | Status | Check | Notities |
+|------|--------|-------|----------|
+| Add nodeEmbeddingService to GraphitiService | ✅ | Constructor + setPrisma | Line 207, 230, 261 |
+| Add enableNodeEmbeddings config flag | ✅ | DISABLE_NODE_EMBEDDINGS env var | Line 75-82 |
+| Collect nodes during entity extraction | ✅ | nodesForEmbedding array | Line 548, 565-575 |
+| Generate batch embeddings after sync | ✅ | generateAndStoreBatchNodeEmbeddings | Line 809-828 |
+| Skip WikiPage nodes | ✅ | Only Concept/Person/Task/Project | Line 566 |
+| Test entity resolution | ⏳ | "Jan" → "Jan Janssen" | Defer to 21.5 |
+| Integration test | ⏳ | Full sync with embeddings | Defer to 21.5 |
+
+#### Acceptatiecriteria 21.4
+
+- [x] GraphitiService genereert node embeddings bij extractie
+- [ ] Entity resolution werkt (semantic matching) - service beschikbaar, UI in 21.5
+- [x] Async generation blokkeert wiki sync niet (batch na sync)
+- [x] Logging voor node embeddings ("stored, skipped")
+- [ ] Integration test passing - defer to 21.5
+
+#### Resultaten 21.4 (2026-01-13)
+
+**Bestand:** `apps/api/src/services/graphitiService.ts` (Version 3.7.0)
+
+**Wijzigingen:**
+1. **Import toegevoegd:** `WikiNodeEmbeddingService`, `getWikiNodeEmbeddingService`, `NodeForEmbedding`, `EmbeddableNodeType`
+2. **Config optie:** `enableNodeEmbeddings?: boolean` (default: true)
+3. **Private property:** `wikiNodeEmbeddingService: WikiNodeEmbeddingService | null`
+4. **Feature flag:** `DISABLE_NODE_EMBEDDINGS` env var
+5. **Constructor init:** `getWikiNodeEmbeddingService(prisma)`
+6. **setPrisma update:** Initialiseert ook `wikiNodeEmbeddingService`
+7. **syncWikiPageWithAiService:**
+   - `nodesForEmbedding` array geïntroduceerd
+   - Nodes verzameld na MERGE query (skip WikiPage)
+   - Batch embedding generatie na edge embeddings
+   - Error handling (non-blocking)
+
+**Logging output:**
+```
+[GraphitiService] Node embeddings for page 123: 5 stored, 2 skipped
+```
+
+---
+
+### 21.5 Entity Resolution UI & Testing
+
+> **Doel:** UI voor entity suggestions en volledige test suite
+
+#### Pre-Check Instructies (Claude Code)
+
+```markdown
+VOORDAT je UI aanpast:
+
+1. CHECK waar entity autocomplete nodig is:
+   □ @mentions dropdown
+   □ Wiki link suggestions
+   □ Entity search in graph view
+
+2. CHECK bestaande autocomplete:
+   □ MentionPlugin.tsx
+   □ WikiLinkPlugin.tsx
+   □ Hoe worden suggestions gefetched?
+
+3. BIJ CONFLICTEN:
+   → STOP als plugins recent aangepast zijn
+   → Vraag Robin over UI scope
+```
+
+#### Entity Autocomplete Enhancement
+
+```typescript
+// apps/api/src/trpc/procedures/graphiti.ts additions
+
+// Add semantic entity search endpoint
+entitySuggest: protectedProcedure
+  .input(z.object({
+    query: z.string().min(1),
+    workspaceId: z.number(),
+    nodeType: z.enum(['Concept', 'Person', 'Task', 'Project']).optional(),
+    limit: z.number().default(5),
+  }))
+  .query(async ({ input, ctx }) => {
+    await checkWorkspaceAccess(ctx.prisma, ctx.user.id, input.workspaceId, 'READ')
+
+    const nodeEmbeddingService = new WikiNodeEmbeddingService(
+      ctx.aiService,
+      ctx.qdrantClient
+    )
+
+    return nodeEmbeddingService.findSimilarEntities(input.query, {
+      workspaceId: input.workspaceId,
+      nodeType: input.nodeType,
+      limit: input.limit,
+      minScore: 0.6, // Lower threshold for suggestions
+    })
+  }),
+
+// Add deduplication check endpoint
+findDuplicates: protectedProcedure
+  .input(z.object({
+    workspaceId: z.number(),
+    nodeType: z.enum(['Concept', 'Person', 'Task', 'Project']).optional(),
+    threshold: z.number().default(0.9),
+    limit: z.number().default(20),
+  }))
+  .query(async ({ input, ctx }) => {
+    // Implementation: compare all nodes pairwise
+    // Return potential duplicates above threshold
+  }),
+```
+
+#### Test Suite
+
+```typescript
+// apps/api/src/lib/ai/wiki/__tests__/WikiNodeEmbeddingService.test.ts
+
+describe('WikiNodeEmbeddingService', () => {
+  describe('formatNodeForEmbedding', () => {
+    it('should format person node correctly', () => {
+      const result = service.formatNodeForEmbedding({
+        nodeId: '1',
+        nodeType: 'Person',
+        name: 'Jan Janssen'
+      })
+      expect(result).toBe('[Person] Jan Janssen')
+    })
+
+    it('should format concept node correctly', () => {
+      const result = service.formatNodeForEmbedding({
+        nodeId: '2',
+        nodeType: 'Concept',
+        name: 'Machine Learning'
+      })
+      expect(result).toBe('[Concept] Machine Learning')
+    })
+  })
+
+  describe('findSimilarEntities', () => {
+    it('should find similar entities by name', async () => {
+      // Setup: create "Jan Janssen" embedding
+      await service.generateAndStoreNodeEmbedding(
+        { nodeId: '1', nodeType: 'Person', name: 'Jan Janssen' },
+        { workspaceId: 1, groupId: 'wiki-ws-1' }
+      )
+
+      // Search for "J. Janssen"
+      const results = await service.findSimilarEntities('J. Janssen', {
+        workspaceId: 1,
+        nodeType: 'Person'
+      })
+
+      expect(results.length).toBeGreaterThan(0)
+      expect(results[0].name).toBe('Jan Janssen')
+      expect(results[0].score).toBeGreaterThan(0.7)
+    })
+
+    it('should filter by node type', async () => {
+      // Setup: create Person and Concept with similar names
+      await service.generateAndStoreNodeEmbedding(
+        { nodeId: '1', nodeType: 'Person', name: 'AI Expert' },
+        { workspaceId: 1, groupId: 'wiki-ws-1' }
+      )
+      await service.generateAndStoreNodeEmbedding(
+        { nodeId: '2', nodeType: 'Concept', name: 'AI' },
+        { workspaceId: 1, groupId: 'wiki-ws-1' }
+      )
+
+      // Search for Concepts only
+      const results = await service.findSimilarEntities('AI', {
+        workspaceId: 1,
+        nodeType: 'Concept'
+      })
+
+      expect(results.every(r => r.nodeType === 'Concept')).toBe(true)
+    })
+  })
+
+  describe('findByNormalizedName', () => {
+    it('should find exact matches case-insensitively', async () => {
+      await service.generateAndStoreNodeEmbedding(
+        { nodeId: '1', nodeType: 'Person', name: 'Jan Janssen' },
+        { workspaceId: 1, groupId: 'wiki-ws-1' }
+      )
+
+      const results = await service.findByNormalizedName('JAN JANSSEN', 1)
+
+      expect(results.length).toBe(1)
+      expect(results[0].name).toBe('Jan Janssen')
+    })
+  })
+})
+
+// scripts/test-node-embeddings.ts - Integration test
+
+async function testNodeEmbeddings() {
+  console.log('🧪 Testing Node Embeddings...\n')
+
+  // Test 1: Generate embedding
+  console.log('Test 1: Generate node embedding')
+  await nodeService.generateAndStoreNodeEmbedding(
+    { nodeId: 'test-1', nodeType: 'Person', name: 'Robin Waslander' },
+    { workspaceId: 1, groupId: 'wiki-ws-1' }
+  )
+  console.log('  ✅ Embedding stored')
+
+  // Test 2: Similar entity search
+  console.log('\nTest 2: Find similar entities')
+  const similar = await nodeService.findSimilarEntities('R. Waslander', {
+    workspaceId: 1,
+    nodeType: 'Person'
+  })
+  console.log(`  Found ${similar.length} similar entities`)
+  console.log(`  Top match: ${similar[0]?.name} (score: ${similar[0]?.score})`)
+
+  // Test 3: Entity resolution
+  console.log('\nTest 3: Entity resolution in extraction')
+  const resolved = await graphitiService.findOrCreateEntity(
+    'Robin',
+    'Person',
+    'wiki-ws-1',
+    0.8
+  )
+  console.log(`  Resolved: ${resolved.isNew ? 'NEW' : 'EXISTING'} (${resolved.nodeId})`)
+
+  // Test 4: Performance
+  console.log('\nTest 4: Performance')
+  const start = Date.now()
+  for (let i = 0; i < 10; i++) {
+    await nodeService.findSimilarEntities('test', { workspaceId: 1 })
+  }
+  const avgTime = (Date.now() - start) / 10
+  console.log(`  Average search time: ${avgTime}ms`)
+
+  console.log('\n✅ All node embedding tests completed!')
+}
+```
+
+#### Migration Script
+
+```typescript
+// scripts/migrate-node-embeddings.ts
+
+/**
+ * Migrate existing FalkorDB nodes to Qdrant embeddings
+ *
+ * Usage: npx ts-node scripts/migrate-node-embeddings.ts
+ */
+
+async function migrateNodeEmbeddings() {
+  console.log('🚀 Starting node embedding migration...\n')
+
+  const workspaceId = 1 // GenX workspace
+  const groupId = 'wiki-ws-1'
+
+  // Get all nodes from FalkorDB
+  const nodes = await graphitiService.getAllNodes(groupId)
+  console.log(`Found ${nodes.length} nodes to migrate`)
+
+  // Filter to entity nodes only (skip WikiPage)
+  const entityNodes = nodes.filter(n =>
+    ['Concept', 'Person', 'Task', 'Project'].includes(n.type)
+  )
+  console.log(`Filtering to ${entityNodes.length} entity nodes`)
+
+  // Batch migrate
+  const result = await nodeService.generateAndStoreBatchNodeEmbeddings(
+    entityNodes.map(n => ({
+      nodeId: n.id,
+      nodeType: n.type as any,
+      name: n.name,
+    })),
+    { workspaceId, groupId }
+  )
+
+  console.log('\n📊 Migration Results:')
+  console.log(`  Stored: ${result.stored}`)
+  console.log(`  Skipped: ${result.skipped}`)
+  console.log(`  Failed: ${result.failed}`)
+
+  // Verify
+  const count = await qdrantClient.count('kanbu_node_embeddings')
+  console.log(`\n✅ Total embeddings in Qdrant: ${count.count}`)
+}
+
+migrateNodeEmbeddings().catch(console.error)
+```
+
+#### Taak Tabel
+
+| Taak | Status | Check | Notities |
+|------|--------|-------|----------|
+| Add graphiti.entitySuggest tRPC | ✅ | Semantic suggestions | graphiti.ts v2.2.0 |
+| Add graphiti.findDuplicates tRPC | ✅ | Deduplication check | graphiti.ts v2.2.0 |
+| WikiNodeEmbeddingService.test.ts | ✅ | Unit tests | 25+ tests |
+| test-node-embeddings.ts | ✅ | Integration test | 13 tests |
+| migrate-node-embeddings.ts | ✅ | Migration script | Batch support |
+| Performance benchmark | ✅ | < 200ms target | In integration test |
+| Run migration | ✅ | Existing nodes | 402/404 nodes migrated |
+
+#### Acceptatiecriteria 21.5
+
+- [x] graphiti.entitySuggest endpoint werkt
+- [x] Minimum 20 unit tests passing (25+ tests)
+- [x] Integration test script passing
+- [x] Migration van bestaande nodes succesvol (402 nodes, 0 errors)
+- [x] Performance < 200ms voor similarity search
+- [x] Entity resolution tijdens extraction werkt
+
+---
+
+### Rollback Plan
+
+> **Als Fase 21 issues veroorzaakt:**
+
+```bash
+# 1. Disable feature via environment
+export DISABLE_NODE_EMBEDDINGS=true
+# Restart API server
+
+# 2. Delete Qdrant collection (if needed)
+curl -X DELETE http://localhost:6333/collections/kanbu_node_embeddings
+
+# 3. Revert code changes
+git log --oneline --grep="Fase 21"
+git revert <commit-hashes>
+```
+
+---
+
+### Beslispunten voor Robin
+
+> **STOP hier en vraag Robin bij deze beslissingen:**
+
+| Vraag | Opties | Aanbeveling |
+|-------|--------|-------------|
+| Storage voor node embeddings? | Qdrant / FalkorDB | Qdrant (consistent met edges) |
+| Embedding text format? | Name only / Type+Name / Full context | Type+Name (balanced) |
+| Entity resolution threshold? | 0.7 / 0.8 / 0.9 | 0.85 (avoid false positives) |
+| UI scope? | Autocomplete only / Full dedup UI | Autocomplete only (v1) |
+| Migrate existing nodes? | Yes / No / Later | Yes (enable immediate use) |
+
+---
+
+### Kosten Analyse
+
+> **Node embeddings zijn relatief goedkoop**
+
+**Schatting per workspace:**
+- Gemiddeld 50-100 unieke entities per workspace
+- text-embedding-3-small: $0.00002 per 1K tokens
+- ~10 tokens per entity name
+- **Eenmalige migratie: ~$0.00002 × 100 = $0.002 per workspace**
+
+**Ongoing kosten:**
+- ~5 nieuwe entities per dag
+- **$0.0001 per dag per active workspace**
+
+**Vergelijking:**
+| Embedding Type | Aantal | Kosten/maand |
+|----------------|--------|--------------|
+| Page embeddings | ~100 | ~$0.02 |
+| Edge embeddings | ~500 | ~$0.005 |
+| Node embeddings | ~100 | ~$0.002 |
+
+**Conclusie:** Node embeddings zijn 4x goedkoper dan edge embeddings vanwege kortere tekst.
+
+---
+
+### Changelog
+
+| Datum | Actie |
+|-------|-------|
+| 2026-01-13 | Fase 21 plan aangemaakt |
+| 2026-01-13 | Fase 21.1 compleet - Gap analyse gedocumenteerd, beslissingen genomen |
+| 2026-01-13 | Fase 21.2 compleet - Qdrant collectie `kanbu_node_embeddings` aangemaakt met 4 indexes |
+| 2026-01-13 | Fase 21.3 compleet - WikiNodeEmbeddingService.ts geïmplementeerd (560 lines, 16 methods) |
+| 2026-01-13 | Fase 21.4 compleet - GraphitiService integratie (v3.7.0), node embeddings bij entity extraction |
+| 2026-01-13 | Fase 21.5 compleet - graphiti.ts v2.2.0, 25+ unit tests, integration test, migration script |
+| 2026-01-13 | Fase 21 VOLTOOID - Migration uitgevoerd: 402/404 nodes naar Qdrant (227 Concept, 39 Person, 40 Project, 98 Task) |
+
+---
+
+## Fase 22: Entity Deduplication & Graph Cleanup ⏳
+
+> **Doel:** Detecteer duplicate entities en edges, LLM-based fuzzy matching, IS_DUPLICATE_OF edges, en graph cleanup
+> **Dependency:** Fase 21 (Node Embeddings - voor similarity matching)
+> **Bron:** Graphiti `dedup_helpers.py`, `dedupe_nodes.py`, `dedupe_edges.py`, `node_operations.py`
+
+---
+
+### 22.1 Validatie Bestaande Implementatie
+
+#### Pre-Check (Claude Code Sessie)
+
+**VOORDAT je begint met implementeren, voer deze checks uit:**
+
+```bash
+# 1. Check bestaande dedup code
+grep -r "dedupe\|duplicate\|dedup" apps/api/src/ --include="*.ts" -l
+
+# 2. Check IS_DUPLICATE_OF edge type
+grep -r "IS_DUPLICATE_OF\|DUPLICATE" apps/api/src/ --include="*.ts"
+
+# 3. Check graphitiService.ts voor dedup logic
+grep -n "dedupe\|duplicate\|merge.*entity" apps/api/src/services/graphitiService.ts
+
+# 4. Check WikiNodeEmbeddingService.ts voor similarity
+grep -n "findSimilar\|similarity" apps/api/src/lib/ai/wiki/WikiNodeEmbeddingService.ts
+
+# 5. Check edge dedup
+grep -r "dedupe.*edge\|edge.*dedupe" apps/api/src/ --include="*.ts"
+
+# 6. Check FalkorDB schema voor duplicate edges
+grep -n "IS_DUPLICATE_OF" apps/api/src/services/graphitiService.ts
+```
+
+**⚠️ STOP en rapporteer als:**
+- Er al deduplication logic bestaat in graphitiService.ts
+- IS_DUPLICATE_OF edge type al bestaat
+- Er al merge/consolidate functies zijn
+
+#### Gap Analyse
+
+| Component | Python Graphiti | Kanbu Huidige | Status |
+|-----------|-----------------|---------------|--------|
+| **Node Deduplication** |
+| Exact match (normalized) | ✅ `_normalize_string_exact()` | ❌ Geen | 🔧 Toe te voegen |
+| Fuzzy match (MinHash/LSH) | ✅ `_minhash_signature()`, `_lsh_bands()` | ❌ Geen | 🔧 Toe te voegen |
+| Jaccard similarity | ✅ `_jaccard_similarity()` | ⚠️ Cosine in Qdrant | ✅ Hergebruik Qdrant |
+| Entropy filtering | ✅ `_has_high_entropy()` | ❌ Geen | 🔧 Toe te voegen |
+| LLM dedup | ✅ `dedupe_nodes.nodes()` | ❌ Geen | 🔧 Toe te voegen |
+| IS_DUPLICATE_OF edges | ✅ `filter_existing_duplicate_of_edges()` | ❌ Geen | 🔧 Toe te voegen |
+| **Edge Deduplication** |
+| Edge fact comparison | ✅ `dedupe_edges.edge()` | ❌ Geen | 🔧 Toe te voegen |
+| Batch edge dedup | ✅ `dedupe_edges.edge_list()` | ❌ Geen | 🔧 Toe te voegen |
+| **Resolution Flow** |
+| `resolve_extracted_nodes()` | ✅ Full workflow | ❌ Geen | 🔧 Toe te voegen |
+| `DedupCandidateIndexes` | ✅ Precomputed lookups | ❌ Geen | 🔧 Toe te voegen |
+| `DedupResolutionState` | ✅ Mutable state | ❌ Geen | 🔧 Toe te voegen |
+
+#### Taak Tabel
+
+| Taak | Status | Check | Notities |
+|------|--------|-------|----------|
+| Check bestaande dedup code | ⏳ | `grep -r "dedupe\|duplicate"` | Verwacht: geen matches |
+| Check IS_DUPLICATE_OF edges | ⏳ | FalkorDB schema | Verwacht: bestaat niet |
+| Analyseer Python Graphiti dedup | ⏳ | `dedup_helpers.py` gelezen | Volledig gedocumenteerd |
+| Check WikiNodeEmbeddingService | ⏳ | `findSimilarEntities()` | Kan hergebruikt worden |
+| Documenteer gap analyse | ⏳ | Dit document | |
+
+#### Acceptatiecriteria 22.1
+- [ ] Alle bestaande dedup code geïdentificeerd
+- [ ] Geen conflicten met bestaande code
+- [ ] Gap analyse compleet
+- [ ] Beslispunten gedocumenteerd voor Robin
+
+---
+
+### 22.2 Schema & Data Structures
+
+#### Pre-Check (Claude Code Sessie)
+
+```bash
+# 1. Check edge types in FalkorDB
+node -e "
+  const redis = require('ioredis');
+  const client = new redis();
+  client.call('GRAPH.QUERY', 'kanbu',
+    'MATCH ()-[r]->() RETURN DISTINCT type(r) AS relType').then(console.log);
+"
+
+# 2. Check voor IS_DUPLICATE_OF
+grep -rn "IS_DUPLICATE_OF" apps/api/src/
+
+# 3. Check DuplicateNode interface
+grep -rn "DuplicateNode\|NodeDuplicate" apps/api/src/ --include="*.ts"
+```
+
+#### Beslispunten voor Robin
+
+| Vraag | Opties | Aanbeveling |
+|-------|--------|-------------|
+| IS_DUPLICATE_OF edge richting? | A: Nieuw → Oud, B: Oud → Nieuw | **A** - Nieuwe node wijst naar canonical |
+| Duplicates behouden of mergen? | A: IS_DUPLICATE_OF edges, B: Hard delete | **A** - Behoud voor audit trail |
+| Similarity threshold voor auto-merge? | A: 0.95, B: 0.90, C: 0.85 | **B** - 0.90 (balans precision/recall) |
+| Entropy threshold voor fuzzy match? | A: 1.5 (strict), B: 1.2 (relaxed) | **A** - 1.5 (Graphiti default) |
+
+#### TypeScript Interfaces
+
+```typescript
+// apps/api/src/lib/ai/wiki/types/deduplication.ts
+
+/**
+ * Represents a potential duplicate node pair
+ */
+export interface DuplicateCandidate {
+  /** The new/extracted node that might be a duplicate */
+  sourceNode: {
+    uuid: string;
+    name: string;
+    type: string;
+    groupId: string;
+  };
+  /** The existing node that might be the canonical version */
+  targetNode: {
+    uuid: string;
+    name: string;
+    type: string;
+    groupId: string;
+  };
+  /** How the match was determined */
+  matchType: 'exact' | 'fuzzy' | 'llm' | 'embedding';
+  /** Confidence score 0.0 - 1.0 */
+  confidence: number;
+  /** Similarity metrics */
+  metrics: {
+    jaccardSimilarity?: number;
+    cosineSimilarity?: number;
+    normalizedEditDistance?: number;
+  };
+}
+
+/**
+ * Resolution decision for a duplicate pair
+ */
+export interface DuplicateResolution {
+  sourceUuid: string;
+  targetUuid: string;
+  action: 'merge' | 'keep_both' | 'defer';
+  /** UUID of the canonical node (winner) */
+  canonicalUuid: string;
+  /** Reason for the decision */
+  reason: string;
+  /** User who made the decision (null for auto) */
+  resolvedBy: string | null;
+  resolvedAt: Date;
+}
+
+/**
+ * Precomputed lookup structures for deduplication
+ * Equivalent to Python's DedupCandidateIndexes
+ */
+export interface DedupCandidateIndexes {
+  /** All existing nodes in the workspace */
+  existingNodes: EntityNodeInfo[];
+  /** UUID → Node lookup */
+  nodesByUuid: Map<string, EntityNodeInfo>;
+  /** Normalized name → Nodes with that name */
+  normalizedExisting: Map<string, EntityNodeInfo[]>;
+  /** UUID → Shingles for fuzzy matching */
+  shinglesByNode: Map<string, Set<string>>;
+  /** LSH band → UUIDs that hash to that band */
+  lshBuckets: Map<string, string[]>;
+}
+
+/**
+ * Mutable state during deduplication resolution
+ * Equivalent to Python's DedupResolutionState
+ */
+export interface DedupResolutionState {
+  /** Resolved nodes (null if not yet resolved) */
+  resolvedNodes: (EntityNodeInfo | null)[];
+  /** Extracted UUID → Resolved UUID mapping */
+  uuidMap: Map<string, string>;
+  /** Indices of nodes that need LLM resolution */
+  unresolvedIndices: number[];
+  /** Detected duplicate pairs */
+  duplicatePairs: DuplicateCandidate[];
+}
+
+/**
+ * LLM response for node deduplication
+ */
+export interface NodeDuplicateResponse {
+  id: number;
+  duplicateIdx: number;  // -1 if no duplicate
+  name: string;          // Best name for the entity
+  duplicates: number[];  // All duplicate indices
+}
+
+export interface NodeResolutionsResponse {
+  entityResolutions: NodeDuplicateResponse[];
+}
+
+/**
+ * Edge duplicate detection result
+ */
+export interface EdgeDuplicateResponse {
+  duplicateFacts: number[];      // Indices of duplicate facts
+  contradictedFacts: number[];   // Indices of contradicted facts
+  factType: string;              // Edge type classification
+}
+```
+
+#### FalkorDB Schema Extension
+
+```cypher
+-- IS_DUPLICATE_OF edge type
+-- Direction: NewNode -[:IS_DUPLICATE_OF]-> CanonicalNode
+-- Properties:
+--   confidence: FLOAT - Match confidence (0.0 - 1.0)
+--   matchType: STRING - How match was determined
+--   detectedAt: DATETIME - When duplicate was detected
+--   resolvedBy: STRING | NULL - User who resolved (null = auto)
+
+-- Index voor duplicate lookups
+CREATE INDEX ON :Entity(uuid)
+CREATE INDEX ON :Concept(uuid)
+CREATE INDEX ON :Person(uuid)
+
+-- Constraint: Geen dubbele IS_DUPLICATE_OF edges
+-- (wordt via applicatielogica afgedwongen)
+```
+
+#### Taak Tabel
+
+| Taak | Status | Check | Notities |
+|------|--------|-------|----------|
+| Maak `types/deduplication.ts` | ⏳ | `ls apps/api/src/lib/ai/wiki/types/` | Nieuwe file |
+| Definieer DuplicateCandidate | ⏳ | Interface in types file | |
+| Definieer DedupCandidateIndexes | ⏳ | Interface in types file | Port van Python |
+| Definieer DedupResolutionState | ⏳ | Interface in types file | Port van Python |
+| Definieer LLM response types | ⏳ | NodeResolutionsResponse | |
+| Check Robin beslispunten | ⏳ | 4 vragen | Wacht op feedback |
+| Index aanmaken FalkorDB | ⏳ | Via graphitiService | Na beslissing |
+
+#### Acceptatiecriteria 22.2
+- [ ] Alle TypeScript interfaces gedefinieerd
+- [ ] Beslispunten beantwoord door Robin
+- [ ] FalkorDB schema extension gedocumenteerd
+- [ ] IS_DUPLICATE_OF edge type klaar voor gebruik
+
+---
+
+### 22.3 WikiDeduplicationService Implementation
+
+#### Pre-Check (Claude Code Sessie)
+
+```bash
+# 1. Check of service al bestaat
+ls -la apps/api/src/lib/ai/wiki/WikiDeduplicationService.ts
+
+# 2. Check dependencies beschikbaar
+grep -l "WikiNodeEmbeddingService\|WikiAiService" apps/api/src/lib/ai/wiki/
+
+# 3. Check graphitiService voor node creation
+grep -n "createNode\|saveNode" apps/api/src/services/graphitiService.ts
+
+# 4. Check of findSimilarEntities beschikbaar is
+grep -n "findSimilarEntities" apps/api/src/lib/ai/wiki/WikiNodeEmbeddingService.ts
+```
+
+#### WikiDeduplicationService.ts Template
+
+```typescript
+// apps/api/src/lib/ai/wiki/WikiDeduplicationService.ts
+
+import { Logger } from '../../logger';
+import { WikiAiService } from './WikiAiService';
+import { WikiNodeEmbeddingService } from './WikiNodeEmbeddingService';
+import type {
+  DuplicateCandidate,
+  DuplicateResolution,
+  DedupCandidateIndexes,
+  DedupResolutionState,
+  NodeResolutionsResponse,
+  EdgeDuplicateResponse,
+} from './types/deduplication';
+
+// Constants from Python Graphiti
+const NAME_ENTROPY_THRESHOLD = 1.5;
+const MIN_NAME_LENGTH = 6;
+const MIN_TOKEN_COUNT = 2;
+const FUZZY_JACCARD_THRESHOLD = 0.9;
+const MINHASH_PERMUTATIONS = 32;
+const MINHASH_BAND_SIZE = 4;
+
+interface EntityNodeInfo {
+  uuid: string;
+  name: string;
+  type: string;
+  groupId: string;
+  summary?: string;
+  attributes?: Record<string, unknown>;
+}
+
+export class WikiDeduplicationService {
+  private logger = new Logger('WikiDeduplicationService');
+  private wikiAiService: WikiAiService;
+  private nodeEmbeddingService: WikiNodeEmbeddingService;
+
+  constructor(
+    wikiAiService: WikiAiService,
+    nodeEmbeddingService: WikiNodeEmbeddingService
+  ) {
+    this.wikiAiService = wikiAiService;
+    this.nodeEmbeddingService = nodeEmbeddingService;
+  }
+
+  // ========================================
+  // STRING NORMALIZATION
+  // ========================================
+
+  /**
+   * Normalize string for exact matching
+   * Lowercase and collapse whitespace
+   */
+  normalizeStringExact(name: string): string {
+    return name.toLowerCase().replace(/\s+/g, ' ').trim();
+  }
+
+  /**
+   * Normalize string for fuzzy matching
+   * Keep alphanumerics and apostrophes only
+   */
+  normalizeNameForFuzzy(name: string): string {
+    const exact = this.normalizeStringExact(name);
+    return exact.replace(/[^a-z0-9' ]/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+
+  // ========================================
+  // ENTROPY CALCULATION
+  // ========================================
+
+  /**
+   * Calculate Shannon entropy of a string
+   * Higher entropy = more "information" = more reliable for matching
+   */
+  calculateNameEntropy(normalizedName: string): number {
+    if (!normalizedName) return 0;
+
+    const chars = normalizedName.replace(/\s/g, '');
+    if (chars.length === 0) return 0;
+
+    const counts = new Map<string, number>();
+    for (const char of chars) {
+      counts.set(char, (counts.get(char) || 0) + 1);
+    }
+
+    const total = chars.length;
+    let entropy = 0;
+
+    for (const count of counts.values()) {
+      const probability = count / total;
+      entropy -= probability * Math.log2(probability);
+    }
+
+    return entropy;
+  }
+
+  /**
+   * Check if name has enough entropy for reliable fuzzy matching
+   * Short or repetitive names are unreliable
+   */
+  hasHighEntropy(normalizedName: string): boolean {
+    const tokenCount = normalizedName.split(' ').length;
+    if (normalizedName.length < MIN_NAME_LENGTH && tokenCount < MIN_TOKEN_COUNT) {
+      return false;
+    }
+    return this.calculateNameEntropy(normalizedName) >= NAME_ENTROPY_THRESHOLD;
+  }
+
+  // ========================================
+  // SHINGLING & MINHASH
+  // ========================================
+
+  /**
+   * Create 3-gram shingles from normalized name
+   */
+  createShingles(normalizedName: string): Set<string> {
+    const cleaned = normalizedName.replace(/\s/g, '');
+    if (cleaned.length < 3) {
+      return cleaned ? new Set([cleaned]) : new Set();
+    }
+
+    const shingles = new Set<string>();
+    for (let i = 0; i <= cleaned.length - 3; i++) {
+      shingles.add(cleaned.slice(i, i + 3));
+    }
+    return shingles;
+  }
+
+  /**
+   * Compute MinHash signature for shingle set
+   * Uses simple hash function (no crypto needed for this purpose)
+   */
+  computeMinHashSignature(shingles: Set<string>): number[] {
+    if (shingles.size === 0) return [];
+
+    const signature: number[] = [];
+    const shingleArray = Array.from(shingles);
+
+    for (let seed = 0; seed < MINHASH_PERMUTATIONS; seed++) {
+      let minHash = Infinity;
+      for (const shingle of shingleArray) {
+        const hash = this.hashShingle(shingle, seed);
+        if (hash < minHash) minHash = hash;
+      }
+      signature.push(minHash);
+    }
+
+    return signature;
+  }
+
+  /**
+   * Simple hash function for shingles
+   */
+  private hashShingle(shingle: string, seed: number): number {
+    // Simple FNV-1a-like hash
+    const str = `${seed}:${shingle}`;
+    let hash = 2166136261;
+    for (let i = 0; i < str.length; i++) {
+      hash ^= str.charCodeAt(i);
+      hash = (hash * 16777619) >>> 0;  // Keep as 32-bit
+    }
+    return hash;
+  }
+
+  /**
+   * Split MinHash signature into LSH bands
+   */
+  getLshBands(signature: number[]): number[][] {
+    const bands: number[][] = [];
+    for (let start = 0; start < signature.length; start += MINHASH_BAND_SIZE) {
+      const band = signature.slice(start, start + MINHASH_BAND_SIZE);
+      if (band.length === MINHASH_BAND_SIZE) {
+        bands.push(band);
+      }
+    }
+    return bands;
+  }
+
+  /**
+   * Calculate Jaccard similarity between two shingle sets
+   */
+  jaccardSimilarity(a: Set<string>, b: Set<string>): number {
+    if (a.size === 0 && b.size === 0) return 1;
+    if (a.size === 0 || b.size === 0) return 0;
+
+    let intersection = 0;
+    for (const item of a) {
+      if (b.has(item)) intersection++;
+    }
+
+    const union = a.size + b.size - intersection;
+    return union > 0 ? intersection / union : 0;
+  }
+
+  // ========================================
+  // CANDIDATE INDEX BUILDING
+  // ========================================
+
+  /**
+   * Build precomputed lookup structures for deduplication
+   * Equivalent to Python's _build_candidate_indexes()
+   */
+  buildCandidateIndexes(existingNodes: EntityNodeInfo[]): DedupCandidateIndexes {
+    const normalizedExisting = new Map<string, EntityNodeInfo[]>();
+    const nodesByUuid = new Map<string, EntityNodeInfo>();
+    const shinglesByNode = new Map<string, Set<string>>();
+    const lshBuckets = new Map<string, string[]>();
+
+    for (const node of existingNodes) {
+      // Exact match index
+      const normalized = this.normalizeStringExact(node.name);
+      const existing = normalizedExisting.get(normalized) || [];
+      existing.push(node);
+      normalizedExisting.set(normalized, existing);
+
+      // UUID lookup
+      nodesByUuid.set(node.uuid, node);
+
+      // Shingles for fuzzy matching
+      const shingles = this.createShingles(this.normalizeNameForFuzzy(node.name));
+      shinglesByNode.set(node.uuid, shingles);
+
+      // LSH bands for fast candidate retrieval
+      const signature = this.computeMinHashSignature(shingles);
+      const bands = this.getLshBands(signature);
+      for (let bandIndex = 0; bandIndex < bands.length; bandIndex++) {
+        const bandKey = `${bandIndex}:${bands[bandIndex].join(',')}`;
+        const bucket = lshBuckets.get(bandKey) || [];
+        bucket.push(node.uuid);
+        lshBuckets.set(bandKey, bucket);
+      }
+    }
+
+    return {
+      existingNodes,
+      nodesByUuid,
+      normalizedExisting,
+      shinglesByNode,
+      lshBuckets,
+    };
+  }
+
+  // ========================================
+  // DETERMINISTIC RESOLUTION
+  // ========================================
+
+  /**
+   * Attempt deterministic resolution using exact name hits and fuzzy matching
+   * Equivalent to Python's _resolve_with_similarity()
+   */
+  resolveWithSimilarity(
+    extractedNodes: EntityNodeInfo[],
+    indexes: DedupCandidateIndexes,
+    state: DedupResolutionState
+  ): void {
+    for (let idx = 0; idx < extractedNodes.length; idx++) {
+      const node = extractedNodes[idx];
+      const normalizedExact = this.normalizeStringExact(node.name);
+      const normalizedFuzzy = this.normalizeNameForFuzzy(node.name);
+
+      // Skip low-entropy names - defer to LLM
+      if (!this.hasHighEntropy(normalizedFuzzy)) {
+        state.unresolvedIndices.push(idx);
+        continue;
+      }
+
+      // Try exact match first
+      const exactMatches = indexes.normalizedExisting.get(normalizedExact) || [];
+      if (exactMatches.length === 1) {
+        const match = exactMatches[0];
+        state.resolvedNodes[idx] = match;
+        state.uuidMap.set(node.uuid, match.uuid);
+        if (match.uuid !== node.uuid) {
+          state.duplicatePairs.push({
+            sourceNode: node,
+            targetNode: match,
+            matchType: 'exact',
+            confidence: 1.0,
+            metrics: { normalizedEditDistance: 0 },
+          });
+        }
+        continue;
+      }
+
+      // Multiple exact matches - defer to LLM
+      if (exactMatches.length > 1) {
+        state.unresolvedIndices.push(idx);
+        continue;
+      }
+
+      // Try fuzzy match via LSH
+      const shingles = this.createShingles(normalizedFuzzy);
+      const signature = this.computeMinHashSignature(shingles);
+      const bands = this.getLshBands(signature);
+
+      const candidateIds = new Set<string>();
+      for (let bandIndex = 0; bandIndex < bands.length; bandIndex++) {
+        const bandKey = `${bandIndex}:${bands[bandIndex].join(',')}`;
+        const bucket = indexes.lshBuckets.get(bandKey) || [];
+        for (const uuid of bucket) {
+          candidateIds.add(uuid);
+        }
+      }
+
+      // Find best fuzzy match
+      let bestCandidate: EntityNodeInfo | null = null;
+      let bestScore = 0;
+
+      for (const candidateId of candidateIds) {
+        const candidateShingles = indexes.shinglesByNode.get(candidateId);
+        if (!candidateShingles) continue;
+
+        const score = this.jaccardSimilarity(shingles, candidateShingles);
+        if (score > bestScore) {
+          bestScore = score;
+          bestCandidate = indexes.nodesByUuid.get(candidateId) || null;
+        }
+      }
+
+      if (bestCandidate && bestScore >= FUZZY_JACCARD_THRESHOLD) {
+        state.resolvedNodes[idx] = bestCandidate;
+        state.uuidMap.set(node.uuid, bestCandidate.uuid);
+        if (bestCandidate.uuid !== node.uuid) {
+          state.duplicatePairs.push({
+            sourceNode: node,
+            targetNode: bestCandidate,
+            matchType: 'fuzzy',
+            confidence: bestScore,
+            metrics: { jaccardSimilarity: bestScore },
+          });
+        }
+        continue;
+      }
+
+      // No match found - defer to LLM
+      state.unresolvedIndices.push(idx);
+    }
+  }
+
+  // ========================================
+  // LLM RESOLUTION
+  // ========================================
+
+  /**
+   * Resolve unresolved nodes using LLM
+   * Equivalent to Python's _resolve_with_llm()
+   */
+  async resolveWithLlm(
+    extractedNodes: EntityNodeInfo[],
+    indexes: DedupCandidateIndexes,
+    state: DedupResolutionState,
+    episodeContent?: string,
+    previousEpisodes?: string[]
+  ): Promise<void> {
+    if (state.unresolvedIndices.length === 0) return;
+
+    const llmExtractedNodes = state.unresolvedIndices.map(i => extractedNodes[i]);
+
+    // Build context for LLM
+    const extractedNodesContext = llmExtractedNodes.map((node, i) => ({
+      id: i,
+      name: node.name,
+      entity_type: [node.type],
+      entity_type_description: `Entity of type ${node.type}`,
+    }));
+
+    const existingNodesContext = indexes.existingNodes.map((node, i) => ({
+      idx: i,
+      name: node.name,
+      entity_types: [node.type],
+      summary: node.summary || '',
+    }));
+
+    // Call LLM for deduplication
+    const response = await this.wikiAiService.detectNodeDuplicates({
+      extractedNodes: extractedNodesContext,
+      existingNodes: existingNodesContext,
+      episodeContent: episodeContent || '',
+      previousEpisodes: previousEpisodes || [],
+    });
+
+    // Process LLM response
+    const validRange = new Set(
+      Array.from({ length: state.unresolvedIndices.length }, (_, i) => i)
+    );
+
+    for (const resolution of response.entityResolutions) {
+      const relativeId = resolution.id;
+      const duplicateIdx = resolution.duplicateIdx;
+
+      if (!validRange.has(relativeId)) {
+        this.logger.warn(`Invalid LLM dedupe id ${relativeId}, skipping`);
+        continue;
+      }
+
+      const originalIndex = state.unresolvedIndices[relativeId];
+      const extractedNode = extractedNodes[originalIndex];
+
+      let resolvedNode: EntityNodeInfo;
+      if (duplicateIdx === -1) {
+        // No duplicate found
+        resolvedNode = extractedNode;
+      } else if (duplicateIdx >= 0 && duplicateIdx < indexes.existingNodes.length) {
+        // Found duplicate
+        resolvedNode = indexes.existingNodes[duplicateIdx];
+      } else {
+        this.logger.warn(`Invalid duplicate_idx ${duplicateIdx}, treating as no duplicate`);
+        resolvedNode = extractedNode;
+      }
+
+      state.resolvedNodes[originalIndex] = resolvedNode;
+      state.uuidMap.set(extractedNode.uuid, resolvedNode.uuid);
+
+      if (resolvedNode.uuid !== extractedNode.uuid) {
+        state.duplicatePairs.push({
+          sourceNode: extractedNode,
+          targetNode: resolvedNode,
+          matchType: 'llm',
+          confidence: 0.8,  // LLM confidence is harder to quantify
+          metrics: {},
+        });
+      }
+    }
+  }
+
+  // ========================================
+  // EMBEDDING-BASED RESOLUTION
+  // ========================================
+
+  /**
+   * Use node embeddings for additional similarity matching
+   * Leverages WikiNodeEmbeddingService from Fase 21
+   */
+  async resolveWithEmbeddings(
+    extractedNodes: EntityNodeInfo[],
+    state: DedupResolutionState,
+    workspaceId: number,
+    threshold: number = 0.85
+  ): Promise<void> {
+    // Process only unresolved nodes
+    const stillUnresolved: number[] = [];
+
+    for (const idx of state.unresolvedIndices) {
+      if (state.resolvedNodes[idx] !== null) continue;
+
+      const node = extractedNodes[idx];
+
+      // Search for similar entities using embeddings
+      const similar = await this.nodeEmbeddingService.findSimilarEntities(
+        node.name,
+        {
+          workspaceId,
+          nodeType: node.type,
+          limit: 5,
+          threshold,
+        }
+      );
+
+      if (similar.length > 0 && similar[0].score >= threshold) {
+        const match = similar[0];
+        const matchNode: EntityNodeInfo = {
+          uuid: match.nodeId,
+          name: match.name,
+          type: match.nodeType,
+          groupId: node.groupId,
+        };
+
+        state.resolvedNodes[idx] = matchNode;
+        state.uuidMap.set(node.uuid, match.nodeId);
+        state.duplicatePairs.push({
+          sourceNode: node,
+          targetNode: matchNode,
+          matchType: 'embedding',
+          confidence: match.score,
+          metrics: { cosineSimilarity: match.score },
+        });
+      } else {
+        stillUnresolved.push(idx);
+      }
+    }
+
+    // Update unresolved indices
+    state.unresolvedIndices = stillUnresolved;
+  }
+
+  // ========================================
+  // MAIN RESOLUTION FLOW
+  // ========================================
+
+  /**
+   * Main entry point for node deduplication
+   * Combines exact, fuzzy, embedding, and LLM matching
+   */
+  async resolveExtractedNodes(
+    extractedNodes: EntityNodeInfo[],
+    existingNodes: EntityNodeInfo[],
+    options: {
+      workspaceId: number;
+      episodeContent?: string;
+      previousEpisodes?: string[];
+      useLlm?: boolean;
+      useEmbeddings?: boolean;
+    }
+  ): Promise<{
+    resolvedNodes: EntityNodeInfo[];
+    uuidMap: Map<string, string>;
+    duplicatePairs: DuplicateCandidate[];
+  }> {
+    const { workspaceId, episodeContent, previousEpisodes, useLlm = true, useEmbeddings = true } = options;
+
+    // Build indexes
+    const indexes = this.buildCandidateIndexes(existingNodes);
+
+    // Initialize state
+    const state: DedupResolutionState = {
+      resolvedNodes: new Array(extractedNodes.length).fill(null),
+      uuidMap: new Map(),
+      unresolvedIndices: [],
+      duplicatePairs: [],
+    };
+
+    // Step 1: Deterministic resolution (exact + fuzzy)
+    this.logger.info(`Starting dedup for ${extractedNodes.length} nodes against ${existingNodes.length} existing`);
+    this.resolveWithSimilarity(extractedNodes, indexes, state);
+    this.logger.info(`After deterministic: ${state.unresolvedIndices.length} unresolved`);
+
+    // Step 2: Embedding-based resolution
+    if (useEmbeddings && state.unresolvedIndices.length > 0) {
+      await this.resolveWithEmbeddings(extractedNodes, state, workspaceId);
+      this.logger.info(`After embeddings: ${state.unresolvedIndices.length} unresolved`);
+    }
+
+    // Step 3: LLM resolution for remaining
+    if (useLlm && state.unresolvedIndices.length > 0) {
+      await this.resolveWithLlm(
+        extractedNodes,
+        indexes,
+        state,
+        episodeContent,
+        previousEpisodes
+      );
+      this.logger.info(`After LLM: ${state.unresolvedIndices.length} unresolved`);
+    }
+
+    // Fill in any remaining unresolved nodes
+    for (let idx = 0; idx < extractedNodes.length; idx++) {
+      if (state.resolvedNodes[idx] === null) {
+        state.resolvedNodes[idx] = extractedNodes[idx];
+        state.uuidMap.set(extractedNodes[idx].uuid, extractedNodes[idx].uuid);
+      }
+    }
+
+    return {
+      resolvedNodes: state.resolvedNodes.filter((n): n is EntityNodeInfo => n !== null),
+      uuidMap: state.uuidMap,
+      duplicatePairs: state.duplicatePairs,
+    };
+  }
+
+  // ========================================
+  // IS_DUPLICATE_OF EDGE MANAGEMENT
+  // ========================================
+
+  /**
+   * Create IS_DUPLICATE_OF edge in FalkorDB
+   */
+  async createDuplicateEdge(
+    sourceUuid: string,
+    targetUuid: string,
+    confidence: number,
+    matchType: 'exact' | 'fuzzy' | 'llm' | 'embedding',
+    resolvedBy: string | null = null
+  ): Promise<void> {
+    // This will be implemented in graphitiService integration
+    this.logger.info(
+      `Creating IS_DUPLICATE_OF: ${sourceUuid} -> ${targetUuid} (${matchType}, conf=${confidence})`
+    );
+  }
+
+  /**
+   * Check if IS_DUPLICATE_OF edge already exists
+   */
+  async duplicateEdgeExists(sourceUuid: string, targetUuid: string): Promise<boolean> {
+    // This will be implemented in graphitiService integration
+    return false;
+  }
+
+  /**
+   * Get all duplicates of a node (follow IS_DUPLICATE_OF edges)
+   */
+  async getDuplicatesOf(uuid: string): Promise<EntityNodeInfo[]> {
+    // This will be implemented in graphitiService integration
+    return [];
+  }
+
+  /**
+   * Get canonical node (follow IS_DUPLICATE_OF to root)
+   */
+  async getCanonicalNode(uuid: string): Promise<EntityNodeInfo | null> {
+    // This will be implemented in graphitiService integration
+    return null;
+  }
+}
+```
+
+#### Taak Tabel
+
+| Taak | Status | Check | Notities |
+|------|--------|-------|----------|
+| Maak WikiDeduplicationService.ts | ⏳ | `ls apps/api/src/lib/ai/wiki/` | Nieuwe file |
+| Implementeer string normalization | ⏳ | `normalizeStringExact()`, `normalizeNameForFuzzy()` | Port van Python |
+| Implementeer entropy calculation | ⏳ | `calculateNameEntropy()`, `hasHighEntropy()` | Port van Python |
+| Implementeer MinHash/LSH | ⏳ | `computeMinHashSignature()`, `getLshBands()` | Port van Python |
+| Implementeer Jaccard similarity | ⏳ | `jaccardSimilarity()` | Port van Python |
+| Implementeer candidate indexing | ⏳ | `buildCandidateIndexes()` | Port van Python |
+| Implementeer deterministic resolution | ⏳ | `resolveWithSimilarity()` | Port van Python |
+| Implementeer embedding resolution | ⏳ | `resolveWithEmbeddings()` | Uses Fase 21 |
+| Stub LLM resolution | ⏳ | `resolveWithLlm()` | Needs WikiAiService |
+| Implementeer main flow | ⏳ | `resolveExtractedNodes()` | Combines all methods |
+| Export in index.ts | ⏳ | `apps/api/src/lib/ai/wiki/index.ts` | |
+| Unit tests | ⏳ | `WikiDeduplicationService.test.ts` | Minimaal 20 tests |
+
+#### Acceptatiecriteria 22.3
+- [ ] WikiDeduplicationService.ts geïmplementeerd
+- [ ] Alle string normalization functies werken
+- [ ] Entropy calculation correct
+- [ ] MinHash/LSH matching werkt
+- [ ] Jaccard similarity correct
+- [ ] Service exported in index.ts
+- [ ] 20+ unit tests passing
+
+---
+
+### 22.4 WikiAiService & LLM Prompts
+
+#### Pre-Check (Claude Code Sessie)
+
+```bash
+# 1. Check WikiAiService methods
+grep -n "detect\|dedupe\|duplicate" apps/api/src/lib/ai/wiki/WikiAiService.ts
+
+# 2. Check bestaande prompts
+ls apps/api/src/lib/ai/wiki/prompts/
+
+# 3. Check prompt template format
+head -50 apps/api/src/lib/ai/wiki/prompts/extractEntities.ts
+```
+
+#### LLM Prompt Templates
+
+```typescript
+// apps/api/src/lib/ai/wiki/prompts/deduplicateNodes.ts
+
+import type { PromptTemplate } from './types';
+
+/**
+ * Prompt for single node deduplication
+ */
+export const deduplicateNodePrompt: PromptTemplate = {
+  system: `You are a helpful assistant that determines whether or not a NEW ENTITY is a duplicate of any EXISTING ENTITIES.
+
+You must carefully analyze the context to determine if entities refer to the same real-world object or concept.`,
+
+  user: `<PREVIOUS MESSAGES>
+{previousEpisodes}
+</PREVIOUS MESSAGES>
+
+<CURRENT MESSAGE>
+{episodeContent}
+</CURRENT MESSAGE>
+
+<NEW ENTITY>
+{extractedNode}
+</NEW ENTITY>
+
+<EXISTING ENTITIES>
+{existingNodes}
+</EXISTING ENTITIES>
+
+Given the above EXISTING ENTITIES and their attributes, MESSAGE, and PREVIOUS MESSAGES:
+Determine if the NEW ENTITY extracted from the conversation is a duplicate entity of one of the EXISTING ENTITIES.
+
+Entities should only be considered duplicates if they refer to the *same real-world object or concept*.
+Semantic Equivalence: if a descriptive label in existing_entities clearly refers to a named entity in context, treat them as duplicates.
+
+Do NOT mark entities as duplicates if:
+- They are related but distinct.
+- They have similar names or purposes but refer to separate instances or concepts.
+
+TASK:
+1. Compare the NEW ENTITY against each item in EXISTING ENTITIES.
+2. If it refers to the same real-world object or concept, collect its index.
+3. Let duplicate_idx = the smallest collected index, or -1 if none.
+4. Let duplicates = the sorted list of all collected indices (empty list if none).
+
+Respond with a JSON object:
+{
+  "entityResolutions": [
+    {
+      "id": 0,
+      "name": "the best full name for the entity",
+      "duplicateIdx": -1 or index of best duplicate,
+      "duplicates": []
+    }
+  ]
+}
+
+Only reference indices that appear in EXISTING ENTITIES, and return [] / -1 when unsure.`,
+};
+
+/**
+ * Prompt for batch node deduplication
+ */
+export const deduplicateNodesPrompt: PromptTemplate = {
+  system: `You are a helpful assistant that determines whether or not ENTITIES extracted from a conversation are duplicates of existing entities.`,
+
+  user: `<PREVIOUS MESSAGES>
+{previousEpisodes}
+</PREVIOUS MESSAGES>
+
+<CURRENT MESSAGE>
+{episodeContent}
+</CURRENT MESSAGE>
+
+<ENTITIES>
+{extractedNodes}
+</ENTITIES>
+
+<EXISTING ENTITIES>
+{existingNodes}
+</EXISTING ENTITIES>
+
+For each entity in ENTITIES, determine if it is a duplicate of any entity in EXISTING ENTITIES.
+
+Entities should only be considered duplicates if they refer to the *same real-world object or concept*.
+
+Do NOT mark entities as duplicates if:
+- They are related but distinct.
+- They have similar names or purposes but refer to separate instances or concepts.
+
+TASK:
+For every entity in ENTITIES (IDs 0 through {entityCount}), return:
+{
+  "id": integer id from ENTITIES,
+  "name": the best full name for the entity,
+  "duplicateIdx": the idx of the EXISTING ENTITY that is the best duplicate match, or -1 if no duplicate,
+  "duplicates": sorted list of all idx values from EXISTING ENTITIES that are duplicates (use [] when none)
+}
+
+Respond with:
+{
+  "entityResolutions": [
+    { "id": 0, "name": "...", "duplicateIdx": -1, "duplicates": [] },
+    { "id": 1, "name": "...", "duplicateIdx": 2, "duplicates": [2] },
+    ...
+  ]
+}
+
+IMPORTANT: Your response MUST include exactly {entityCount} resolutions with IDs 0 through {entityCountMinus1}.`,
+};
+
+/**
+ * Prompt for edge deduplication
+ */
+export const deduplicateEdgePrompt: PromptTemplate = {
+  system: `You are a helpful assistant that de-duplicates facts and determines which existing facts are contradicted by new facts.`,
+
+  user: `<EXISTING FACTS>
+{existingEdges}
+</EXISTING FACTS>
+
+<NEW FACT>
+{newEdge}
+</NEW FACT>
+
+TASK:
+1. DUPLICATE DETECTION:
+   - If the NEW FACT represents identical factual information as any fact in EXISTING FACTS, return those idx values in duplicateFacts.
+   - Facts with similar information that contain key differences should NOT be marked as duplicates.
+   - Return [] if no duplicates.
+
+2. CONTRADICTION DETECTION:
+   - Determine which facts in EXISTING FACTS the NEW FACT contradicts.
+   - Return idx values of contradicted facts.
+   - Return [] if no contradictions.
+
+Respond with:
+{
+  "duplicateFacts": [idx1, idx2, ...],
+  "contradictedFacts": [idx1, idx2, ...],
+  "factType": "DEFAULT or specific type"
+}
+
+Guidelines:
+- Some facts may be very similar but have key differences (especially numeric values). Do not mark these as duplicates.
+- Only mark as contradicted if the new fact makes the old fact false.`,
+};
+```
+
+#### WikiAiService Extensions
+
+```typescript
+// Add to apps/api/src/lib/ai/wiki/WikiAiService.ts
+
+import { deduplicateNodesPrompt, deduplicateEdgePrompt } from './prompts/deduplicateNodes';
+
+// Add these methods to WikiAiService class:
+
+/**
+ * Detect duplicate nodes using LLM
+ */
+async detectNodeDuplicates(context: {
+  extractedNodes: Array<{ id: number; name: string; entity_type: string[] }>;
+  existingNodes: Array<{ idx: number; name: string; entity_types: string[] }>;
+  episodeContent: string;
+  previousEpisodes: string[];
+}): Promise<NodeResolutionsResponse> {
+  const prompt = this.buildPrompt(deduplicateNodesPrompt, {
+    previousEpisodes: JSON.stringify(context.previousEpisodes, null, 2),
+    episodeContent: context.episodeContent,
+    extractedNodes: JSON.stringify(context.extractedNodes, null, 2),
+    existingNodes: JSON.stringify(context.existingNodes, null, 2),
+    entityCount: context.extractedNodes.length,
+    entityCountMinus1: context.extractedNodes.length - 1,
+  });
+
+  const response = await this.llmProvider.generateJson<NodeResolutionsResponse>(
+    prompt,
+    { temperature: 0.1 }
+  );
+
+  return response;
+}
+
+/**
+ * Detect duplicate edges using LLM
+ */
+async detectEdgeDuplicates(context: {
+  existingEdges: Array<{ idx: number; fact: string; sourceUuid: string; targetUuid: string }>;
+  newEdge: { fact: string; sourceUuid: string; targetUuid: string };
+}): Promise<EdgeDuplicateResponse> {
+  const prompt = this.buildPrompt(deduplicateEdgePrompt, {
+    existingEdges: JSON.stringify(context.existingEdges, null, 2),
+    newEdge: JSON.stringify(context.newEdge, null, 2),
+  });
+
+  const response = await this.llmProvider.generateJson<EdgeDuplicateResponse>(
+    prompt,
+    { temperature: 0.1 }
+  );
+
+  return response;
+}
+```
+
+#### Taak Tabel
+
+| Taak | Status | Check | Notities |
+|------|--------|-------|----------|
+| Maak `prompts/deduplicateNodes.ts` | ⏳ | `ls apps/api/src/lib/ai/wiki/prompts/` | Nieuwe file |
+| Implementeer single node prompt | ⏳ | `deduplicateNodePrompt` | Port van Python |
+| Implementeer batch nodes prompt | ⏳ | `deduplicateNodesPrompt` | Port van Python |
+| Implementeer edge dedup prompt | ⏳ | `deduplicateEdgePrompt` | Port van Python |
+| Add `detectNodeDuplicates()` to WikiAiService | ⏳ | Method signature | |
+| Add `detectEdgeDuplicates()` to WikiAiService | ⏳ | Method signature | |
+| Unit tests voor LLM prompts | ⏳ | Mock LLM responses | |
+
+#### Acceptatiecriteria 22.4
+- [ ] Alle LLM prompts gedefinieerd
+- [ ] WikiAiService.detectNodeDuplicates() werkt
+- [ ] WikiAiService.detectEdgeDuplicates() werkt
+- [ ] Prompts getest met mock responses
+- [ ] Error handling voor malformed LLM responses
+
+---
+
+### 22.5 GraphitiService Integration
+
+#### Pre-Check (Claude Code Sessie)
+
+```bash
+# 1. Check huidige graphitiService versie
+grep -n "version\|v3\." apps/api/src/services/graphitiService.ts | head -5
+
+# 2. Check createNode/saveNode methods
+grep -n "createNode\|saveNode\|upsertNode" apps/api/src/services/graphitiService.ts
+
+# 3. Check entity extraction flow
+grep -n "extractEntities\|syncWikiPage" apps/api/src/services/graphitiService.ts
+
+# 4. Check edge creation
+grep -n "createEdge\|MENTIONS" apps/api/src/services/graphitiService.ts
+```
+
+#### GraphitiService Updates
+
+```typescript
+// Updates voor apps/api/src/services/graphitiService.ts
+
+// Add import
+import { WikiDeduplicationService } from '../lib/ai/wiki/WikiDeduplicationService';
+
+// Add to class properties
+private deduplicationService: WikiDeduplicationService | null = null;
+
+// Add initialization in constructor or init method
+initDeduplicationService(
+  wikiAiService: WikiAiService,
+  nodeEmbeddingService: WikiNodeEmbeddingService
+): void {
+  this.deduplicationService = new WikiDeduplicationService(
+    wikiAiService,
+    nodeEmbeddingService
+  );
+}
+
+/**
+ * Create IS_DUPLICATE_OF edge in FalkorDB
+ */
+async createDuplicateOfEdge(
+  sourceUuid: string,
+  targetUuid: string,
+  confidence: number,
+  matchType: 'exact' | 'fuzzy' | 'llm' | 'embedding',
+  resolvedBy: string | null = null
+): Promise<void> {
+  const query = `
+    MATCH (source {uuid: $sourceUuid})
+    MATCH (target {uuid: $targetUuid})
+    MERGE (source)-[r:IS_DUPLICATE_OF]->(target)
+    SET r.confidence = $confidence,
+        r.matchType = $matchType,
+        r.detectedAt = datetime(),
+        r.resolvedBy = $resolvedBy
+  `;
+
+  await this.executeQuery(query, {
+    sourceUuid,
+    targetUuid,
+    confidence,
+    matchType,
+    resolvedBy,
+  });
+
+  this.logger.info(
+    `Created IS_DUPLICATE_OF: ${sourceUuid} -> ${targetUuid} (${matchType}, conf=${confidence})`
+  );
+}
+
+/**
+ * Check if IS_DUPLICATE_OF edge exists
+ */
+async duplicateEdgeExists(sourceUuid: string, targetUuid: string): Promise<boolean> {
+  const query = `
+    MATCH (source {uuid: $sourceUuid})-[r:IS_DUPLICATE_OF]->(target {uuid: $targetUuid})
+    RETURN count(r) as count
+  `;
+
+  const result = await this.executeQuery(query, { sourceUuid, targetUuid });
+  return (result[0]?.count || 0) > 0;
+}
+
+/**
+ * Get all nodes that are duplicates of given node
+ */
+async getDuplicatesOf(uuid: string): Promise<Array<{ uuid: string; name: string; type: string }>> {
+  const query = `
+    MATCH (source)-[r:IS_DUPLICATE_OF]->(target {uuid: $uuid})
+    RETURN source.uuid as uuid, source.name as name, labels(source)[0] as type
+    UNION
+    MATCH (source {uuid: $uuid})-[r:IS_DUPLICATE_OF]->(target)
+    RETURN target.uuid as uuid, target.name as name, labels(target)[0] as type
+  `;
+
+  const result = await this.executeQuery(query, { uuid });
+  return result.map(r => ({ uuid: r.uuid, name: r.name, type: r.type }));
+}
+
+/**
+ * Get canonical node (follow IS_DUPLICATE_OF chain to root)
+ */
+async getCanonicalNode(uuid: string): Promise<{ uuid: string; name: string; type: string } | null> {
+  // Follow IS_DUPLICATE_OF edges until we find a node with no outgoing IS_DUPLICATE_OF
+  const query = `
+    MATCH path = (start {uuid: $uuid})-[:IS_DUPLICATE_OF*0..10]->(canonical)
+    WHERE NOT (canonical)-[:IS_DUPLICATE_OF]->()
+    RETURN canonical.uuid as uuid, canonical.name as name, labels(canonical)[0] as type
+    ORDER BY length(path) DESC
+    LIMIT 1
+  `;
+
+  const result = await this.executeQuery(query, { uuid });
+  return result[0] || null;
+}
+
+/**
+ * Enhanced syncWikiPage with deduplication
+ */
+async syncWikiPageWithDedup(
+  pageId: number,
+  workspaceId: number,
+  content: string,
+  options: {
+    enableDedup?: boolean;
+    dedupThreshold?: number;
+  } = {}
+): Promise<SyncResult> {
+  const { enableDedup = true, dedupThreshold = 0.85 } = options;
+
+  // 1. Extract entities as before
+  const extractedEntities = await this.extractEntities(content, workspaceId);
+
+  if (!enableDedup || !this.deduplicationService) {
+    // Fall back to existing behavior
+    return this.syncWikiPage(pageId, workspaceId, content);
+  }
+
+  // 2. Get existing nodes for this workspace
+  const existingNodes = await this.getWorkspaceNodes(workspaceId);
+
+  // 3. Run deduplication
+  const { resolvedNodes, uuidMap, duplicatePairs } =
+    await this.deduplicationService.resolveExtractedNodes(
+      extractedEntities,
+      existingNodes,
+      {
+        workspaceId,
+        episodeContent: content,
+        useLlm: true,
+        useEmbeddings: true,
+      }
+    );
+
+  // 4. Create IS_DUPLICATE_OF edges for detected duplicates
+  for (const pair of duplicatePairs) {
+    const exists = await this.duplicateEdgeExists(pair.sourceNode.uuid, pair.targetNode.uuid);
+    if (!exists) {
+      await this.createDuplicateOfEdge(
+        pair.sourceNode.uuid,
+        pair.targetNode.uuid,
+        pair.confidence,
+        pair.matchType,
+        null  // Auto-detected
+      );
+    }
+  }
+
+  // 5. Continue with resolved nodes (using canonical UUIDs)
+  // ... rest of sync logic using uuidMap to redirect to canonical nodes
+
+  return {
+    nodesCreated: resolvedNodes.filter(n => !uuidMap.has(n.uuid) || uuidMap.get(n.uuid) === n.uuid).length,
+    nodesDeduplicated: duplicatePairs.length,
+    // ... other stats
+  };
+}
+
+/**
+ * Get all nodes in a workspace
+ */
+async getWorkspaceNodes(workspaceId: number): Promise<EntityNodeInfo[]> {
+  const query = `
+    MATCH (n)
+    WHERE n.groupId = $groupId
+    AND (n:Concept OR n:Person OR n:Task OR n:Project)
+    RETURN n.uuid as uuid, n.name as name, labels(n)[0] as type, n.groupId as groupId, n.summary as summary
+  `;
+
+  const groupId = `workspace_${workspaceId}`;
+  const result = await this.executeQuery(query, { groupId });
+  return result;
+}
+```
+
+#### Taak Tabel
+
+| Taak | Status | Check | Notities |
+|------|--------|-------|----------|
+| Check graphitiService versie | ⏳ | Verwacht v3.7.x | Update naar v3.8.0 |
+| Add WikiDeduplicationService import | ⏳ | Import statement | |
+| Add deduplicationService property | ⏳ | Class property | |
+| Implementeer `initDeduplicationService()` | ⏳ | Init method | |
+| Implementeer `createDuplicateOfEdge()` | ⏳ | FalkorDB query | |
+| Implementeer `duplicateEdgeExists()` | ⏳ | FalkorDB query | |
+| Implementeer `getDuplicatesOf()` | ⏳ | FalkorDB query | |
+| Implementeer `getCanonicalNode()` | ⏳ | FalkorDB query | |
+| Implementeer `syncWikiPageWithDedup()` | ⏳ | Enhanced sync | |
+| Implementeer `getWorkspaceNodes()` | ⏳ | FalkorDB query | |
+| Update versie naar v3.8.0 | ⏳ | Version bump | |
+| Integration tests | ⏳ | Test dedup flow | |
+
+#### Acceptatiecriteria 22.5
+- [ ] GraphitiService v3.8.0 met dedup support
+- [ ] IS_DUPLICATE_OF edges kunnen worden aangemaakt
+- [ ] Canonical node resolution werkt
+- [ ] syncWikiPageWithDedup() integreert dedup in sync flow
+- [ ] Integration tests passing
+
+---
+
+### 22.6 tRPC Endpoints & UI
+
+#### Pre-Check (Claude Code Sessie)
+
+```bash
+# 1. Check graphiti.ts procedures
+grep -n "procedure\|mutation\|query" apps/api/src/trpc/procedures/graphiti.ts | head -30
+
+# 2. Check bestaande entity endpoints
+grep -n "entity\|node" apps/api/src/trpc/procedures/graphiti.ts
+
+# 3. Check web components voor entity management
+ls apps/web/src/components/wiki/ | grep -i entity
+```
+
+#### tRPC Procedures
+
+```typescript
+// Add to apps/api/src/trpc/procedures/graphiti.ts
+
+/**
+ * Find duplicate candidates for a node
+ */
+findDuplicates: protectedProcedure
+  .input(z.object({
+    workspaceId: z.number(),
+    nodeUuid: z.string(),
+    threshold: z.number().optional().default(0.7),
+  }))
+  .query(async ({ ctx, input }) => {
+    const { workspaceId, nodeUuid, threshold } = input;
+
+    // Get the node
+    const node = await ctx.graphitiService.getNodeByUuid(nodeUuid);
+    if (!node) throw new TRPCError({ code: 'NOT_FOUND' });
+
+    // Find similar nodes using embeddings
+    const similar = await ctx.nodeEmbeddingService.findSimilarEntities(
+      node.name,
+      { workspaceId, threshold, limit: 10 }
+    );
+
+    // Exclude self
+    return similar.filter(s => s.nodeId !== nodeUuid);
+  }),
+
+/**
+ * Get all duplicates of a node
+ */
+getDuplicatesOf: protectedProcedure
+  .input(z.object({
+    nodeUuid: z.string(),
+  }))
+  .query(async ({ ctx, input }) => {
+    return ctx.graphitiService.getDuplicatesOf(input.nodeUuid);
+  }),
+
+/**
+ * Get canonical node for a duplicate
+ */
+getCanonicalNode: protectedProcedure
+  .input(z.object({
+    nodeUuid: z.string(),
+  }))
+  .query(async ({ ctx, input }) => {
+    return ctx.graphitiService.getCanonicalNode(input.nodeUuid);
+  }),
+
+/**
+ * Mark two nodes as duplicates
+ */
+markAsDuplicate: protectedProcedure
+  .input(z.object({
+    sourceUuid: z.string(),
+    targetUuid: z.string(),
+    confidence: z.number().optional().default(1.0),
+  }))
+  .mutation(async ({ ctx, input }) => {
+    const { sourceUuid, targetUuid, confidence } = input;
+
+    // Create IS_DUPLICATE_OF edge
+    await ctx.graphitiService.createDuplicateOfEdge(
+      sourceUuid,
+      targetUuid,
+      confidence,
+      'manual',  // User-initiated
+      ctx.user.id.toString()
+    );
+
+    return { success: true };
+  }),
+
+/**
+ * Remove duplicate relationship
+ */
+unmarkDuplicate: protectedProcedure
+  .input(z.object({
+    sourceUuid: z.string(),
+    targetUuid: z.string(),
+  }))
+  .mutation(async ({ ctx, input }) => {
+    await ctx.graphitiService.removeDuplicateEdge(
+      input.sourceUuid,
+      input.targetUuid
+    );
+    return { success: true };
+  }),
+
+/**
+ * Merge duplicate nodes (consolidate into canonical)
+ */
+mergeDuplicates: protectedProcedure
+  .input(z.object({
+    sourceUuid: z.string(),
+    targetUuid: z.string(),
+    keepTarget: z.boolean().optional().default(true),
+  }))
+  .mutation(async ({ ctx, input }) => {
+    const { sourceUuid, targetUuid, keepTarget } = input;
+
+    // Transfer all edges from source to target (or vice versa)
+    const canonicalUuid = keepTarget ? targetUuid : sourceUuid;
+    const duplicateUuid = keepTarget ? sourceUuid : targetUuid;
+
+    await ctx.graphitiService.mergeNodes(duplicateUuid, canonicalUuid);
+
+    return {
+      success: true,
+      canonicalUuid,
+      mergedUuid: duplicateUuid,
+    };
+  }),
+
+/**
+ * Run batch deduplication for workspace
+ */
+runBatchDedup: protectedProcedure
+  .input(z.object({
+    workspaceId: z.number(),
+    dryRun: z.boolean().optional().default(true),
+    threshold: z.number().optional().default(0.85),
+  }))
+  .mutation(async ({ ctx, input }) => {
+    const { workspaceId, dryRun, threshold } = input;
+
+    // Get all nodes in workspace
+    const nodes = await ctx.graphitiService.getWorkspaceNodes(workspaceId);
+
+    // Run deduplication
+    const result = await ctx.deduplicationService.runBatchDeduplication(
+      nodes,
+      { workspaceId, threshold, dryRun }
+    );
+
+    return result;
+  }),
+```
+
+#### UI Components (Sketch)
+
+```typescript
+// apps/web/src/components/wiki/WikiDuplicateManager.tsx
+
+interface WikiDuplicateManagerProps {
+  workspaceId: number;
+  nodeUuid?: string;
+}
+
+export function WikiDuplicateManager({ workspaceId, nodeUuid }: WikiDuplicateManagerProps) {
+  // Show duplicate candidates
+  // Allow manual merge/unmark
+  // Show merge history
+}
+
+// apps/web/src/components/wiki/WikiDuplicateBadge.tsx
+
+interface WikiDuplicateBadgeProps {
+  nodeUuid: string;
+}
+
+export function WikiDuplicateBadge({ nodeUuid }: WikiDuplicateBadgeProps) {
+  // Show badge if node is marked as duplicate
+  // Link to canonical node
+}
+```
+
+#### Taak Tabel
+
+| Taak | Status | Check | Notities |
+|------|--------|-------|----------|
+| Add `findDuplicates` procedure | ⏳ | graphiti.ts | Query |
+| Add `getDuplicatesOf` procedure | ⏳ | graphiti.ts | Query |
+| Add `getCanonicalNode` procedure | ⏳ | graphiti.ts | Query |
+| Add `markAsDuplicate` procedure | ⏳ | graphiti.ts | Mutation |
+| Add `unmarkDuplicate` procedure | ⏳ | graphiti.ts | Mutation |
+| Add `mergeDuplicates` procedure | ⏳ | graphiti.ts | Mutation |
+| Add `runBatchDedup` procedure | ⏳ | graphiti.ts | Mutation |
+| Implementeer WikiDuplicateManager | ⏳ | React component | Optional |
+| Implementeer WikiDuplicateBadge | ⏳ | React component | Optional |
+| Update graphiti.ts versie | ⏳ | v2.3.0 | |
+
+#### Acceptatiecriteria 22.6
+- [ ] Alle tRPC procedures geïmplementeerd
+- [ ] Procedures tested via tRPC panel
+- [ ] UI components (optional) voor duplicate management
+- [ ] Batch dedup endpoint werkt
+
+---
+
+### 22.7 Testing & Migration
+
+#### Pre-Check (Claude Code Sessie)
+
+```bash
+# 1. Check bestaande test files
+ls apps/api/src/lib/ai/wiki/*.test.ts
+
+# 2. Check scripts directory
+ls scripts/ | grep -i dedup
+
+# 3. Check huidige node count
+# (via FalkorDB CLI or script)
+```
+
+#### Test Suite
+
+```typescript
+// apps/api/src/lib/ai/wiki/WikiDeduplicationService.test.ts
+
+describe('WikiDeduplicationService', () => {
+  describe('String Normalization', () => {
+    it('normalizes strings for exact matching', () => {
+      const service = new WikiDeduplicationService(/* ... */);
+      expect(service.normalizeStringExact('  Hello   World  ')).toBe('hello world');
+      expect(service.normalizeStringExact('UPPERCASE')).toBe('uppercase');
+    });
+
+    it('normalizes strings for fuzzy matching', () => {
+      const service = new WikiDeduplicationService(/* ... */);
+      expect(service.normalizeNameForFuzzy("John's Company")).toBe("john's company");
+      expect(service.normalizeNameForFuzzy('Test@#$Name')).toBe('test name');
+    });
+  });
+
+  describe('Entropy Calculation', () => {
+    it('calculates entropy correctly', () => {
+      const service = new WikiDeduplicationService(/* ... */);
+      // "aaaaaa" has low entropy (repetitive)
+      expect(service.calculateNameEntropy('aaaaaa')).toBeLessThan(1);
+      // "abcdef" has higher entropy (diverse)
+      expect(service.calculateNameEntropy('abcdef')).toBeGreaterThan(2);
+    });
+
+    it('identifies high entropy names', () => {
+      const service = new WikiDeduplicationService(/* ... */);
+      expect(service.hasHighEntropy('john smith')).toBe(true);
+      expect(service.hasHighEntropy('aa')).toBe(false);  // Too short
+    });
+  });
+
+  describe('Shingling', () => {
+    it('creates 3-gram shingles', () => {
+      const service = new WikiDeduplicationService(/* ... */);
+      const shingles = service.createShingles('hello');
+      expect(shingles).toContain('hel');
+      expect(shingles).toContain('ell');
+      expect(shingles).toContain('llo');
+    });
+  });
+
+  describe('Jaccard Similarity', () => {
+    it('calculates similarity correctly', () => {
+      const service = new WikiDeduplicationService(/* ... */);
+      const a = new Set(['a', 'b', 'c']);
+      const b = new Set(['b', 'c', 'd']);
+      // Intersection: {b, c} = 2, Union: {a, b, c, d} = 4
+      expect(service.jaccardSimilarity(a, b)).toBe(0.5);
+    });
+
+    it('returns 1 for identical sets', () => {
+      const service = new WikiDeduplicationService(/* ... */);
+      const a = new Set(['a', 'b']);
+      expect(service.jaccardSimilarity(a, a)).toBe(1);
+    });
+  });
+
+  describe('MinHash/LSH', () => {
+    it('computes MinHash signatures', () => {
+      const service = new WikiDeduplicationService(/* ... */);
+      const shingles = new Set(['abc', 'bcd', 'cde']);
+      const signature = service.computeMinHashSignature(shingles);
+      expect(signature.length).toBe(32);  // MINHASH_PERMUTATIONS
+    });
+
+    it('creates LSH bands', () => {
+      const service = new WikiDeduplicationService(/* ... */);
+      const signature = Array(32).fill(0).map((_, i) => i);
+      const bands = service.getLshBands(signature);
+      expect(bands.length).toBe(8);  // 32 / MINHASH_BAND_SIZE
+    });
+  });
+
+  describe('Candidate Indexing', () => {
+    it('builds indexes correctly', () => {
+      const service = new WikiDeduplicationService(/* ... */);
+      const nodes = [
+        { uuid: '1', name: 'John Smith', type: 'Person', groupId: 'ws_1' },
+        { uuid: '2', name: 'john smith', type: 'Person', groupId: 'ws_1' },
+      ];
+      const indexes = service.buildCandidateIndexes(nodes);
+
+      // Exact match should find both (same normalized name)
+      expect(indexes.normalizedExisting.get('john smith')?.length).toBe(2);
+    });
+  });
+
+  describe('Deterministic Resolution', () => {
+    it('resolves exact matches', () => {
+      const service = new WikiDeduplicationService(/* ... */);
+      const extracted = [{ uuid: 'new', name: 'John Smith', type: 'Person', groupId: 'ws_1' }];
+      const existing = [{ uuid: 'old', name: 'john smith', type: 'Person', groupId: 'ws_1' }];
+
+      const indexes = service.buildCandidateIndexes(existing);
+      const state = {
+        resolvedNodes: [null],
+        uuidMap: new Map(),
+        unresolvedIndices: [],
+        duplicatePairs: [],
+      };
+
+      service.resolveWithSimilarity(extracted, indexes, state);
+
+      expect(state.resolvedNodes[0]?.uuid).toBe('old');
+      expect(state.duplicatePairs.length).toBe(1);
+    });
+  });
+
+  // ... more tests for LLM resolution, embedding resolution, etc.
+});
+```
+
+#### Migration Script
+
+```typescript
+// scripts/detect-duplicates.ts
+
+/**
+ * Detect and report duplicate entities across workspace
+ *
+ * Usage:
+ *   npx ts-node scripts/detect-duplicates.ts --workspace=1 --dry-run
+ *   npx ts-node scripts/detect-duplicates.ts --workspace=1 --threshold=0.85 --apply
+ */
+
+import { program } from 'commander';
+import { PrismaClient } from '@prisma/client';
+
+program
+  .option('--workspace <id>', 'Workspace ID')
+  .option('--threshold <number>', 'Similarity threshold (0.0-1.0)', '0.85')
+  .option('--dry-run', 'Only report, do not create edges')
+  .option('--apply', 'Apply deduplication (create IS_DUPLICATE_OF edges)')
+  .parse();
+
+const options = program.opts();
+
+async function main() {
+  const prisma = new PrismaClient();
+
+  console.log('=== Duplicate Detection Script ===');
+  console.log(`Workspace: ${options.workspace}`);
+  console.log(`Threshold: ${options.threshold}`);
+  console.log(`Mode: ${options.apply ? 'APPLY' : 'DRY RUN'}`);
+  console.log('');
+
+  // ... implementation
+}
+
+main().catch(console.error);
+```
+
+#### Taak Tabel
+
+| Taak | Status | Check | Notities |
+|------|--------|-------|----------|
+| Maak WikiDeduplicationService.test.ts | ⏳ | Test file | 30+ tests |
+| Test string normalization | ⏳ | 5 tests | |
+| Test entropy calculation | ⏳ | 5 tests | |
+| Test shingling | ⏳ | 3 tests | |
+| Test Jaccard similarity | ⏳ | 5 tests | |
+| Test MinHash/LSH | ⏳ | 5 tests | |
+| Test candidate indexing | ⏳ | 3 tests | |
+| Test deterministic resolution | ⏳ | 5 tests | |
+| Maak detect-duplicates.ts script | ⏳ | Migration script | |
+| Integration test | ⏳ | End-to-end | |
+
+#### Acceptatiecriteria 22.7
+- [ ] 30+ unit tests passing
+- [ ] detect-duplicates.ts script werkt
+- [ ] Integration test voor volledige dedup flow
+- [ ] Dry-run mode rapporteert duplicates correct
+- [ ] Apply mode maakt IS_DUPLICATE_OF edges
+
+---
+
+### Kosten & Performance Analyse
+
+#### Kosten
+
+| Component | Kosten | Frequentie | Notities |
+|-----------|--------|------------|----------|
+| LLM calls voor dedup | ~$0.01 per batch | Per page sync | Alleen voor unresolved nodes |
+| Embedding lookups | Gratis | Per entity | Via Qdrant (lokaal) |
+| FalkorDB queries | Gratis | Per dedup check | Lokale database |
+
+#### Performance
+
+| Operatie | Geschatte tijd | Notities |
+|----------|----------------|----------|
+| Exact match check | <1ms | Map lookup |
+| Fuzzy match (MinHash) | ~5ms per 100 nodes | Precomputed indexes |
+| Embedding search | ~50ms | Qdrant vector search |
+| LLM dedup batch | ~2-5s | For 10-20 unresolved nodes |
+
+---
+
+### Rollback Plan
+
+> **Als Fase 22 issues veroorzaakt:**
+
+```bash
+# 1. Disable deduplication in graphitiService
+# Set environment variable:
+export DISABLE_ENTITY_DEDUP=true
+
+# 2. Remove IS_DUPLICATE_OF edges (if needed)
+# Via FalkorDB CLI:
+GRAPH.QUERY kanbu "MATCH ()-[r:IS_DUPLICATE_OF]->() DELETE r"
+
+# 3. Rollback code changes
+git log --oneline --grep="Fase 22"
+git revert <commit-hash>
+```
+
+---
+
+### Changelog Fase 22
+
+| Datum | Actie |
+|-------|-------|
+| 2026-01-14 | Fase 22 plan aangemaakt |
+| | |
+
+---
+
 ## Graphiti Architectuur
 
 ```

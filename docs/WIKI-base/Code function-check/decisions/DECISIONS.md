@@ -14,8 +14,8 @@
 | Edge Embeddings | 🔄 FASE 19 | 2026-01-13 | MEDIUM |
 | Community Detection | ⏳ PENDING | 2026-01-13 | LAAG |
 | BM25 Search | 🔄 FASE 20 | 2026-01-13 | MEDIUM |
-| Node Embeddings | ⏳ PENDING | 2026-01-13 | LAAG |
-| Deduplication | ⏳ PENDING | 2026-01-13 | MEDIUM |
+| Node Embeddings | 🔄 FASE 21 | 2026-01-13 | MEDIUM |
+| Deduplication | 🔄 FASE 22 | 2026-01-13 | MEDIUM |
 | Reflexion Extraction | ⏳ PENDING | 2026-01-13 | LAAG |
 
 **Legenda:**
@@ -212,42 +212,104 @@
 
 ### Node Embeddings
 
-**Status:** ⏳ PENDING
+**Status:** 🔄 GEPLAND (Fase 21)
 
 **Wat:**
 - Vector embedding per entity naam
-- Semantic entity matching
+- Semantic entity matching & resolution
+- Opslag in Qdrant (aparte collection)
+
+**Bestaande Infrastructuur:**
+- ✅ WikiEmbeddingService - Page embeddings in Qdrant
+- ✅ Qdrant client configuratie
+- ✅ WikiAiService.embed() method
+- ✅ FalkorDB nodes (Concept, Person, Task, Project, WikiPage)
+- ⚠️ Nodes hebben geen `name_embedding` property
+- ⚠️ Geen entity resolution bij node creation
+
+**Wat Fase 21 toevoegt:**
+- 🔄 21.1 Validatie Bestaande Implementatie
+- 🔄 21.2 Schema & Storage Design (Qdrant `kanbu_node_embeddings` collection)
+- 🔄 21.3 WikiNodeEmbeddingService Implementation
+- 🔄 21.4 GraphitiService Integration (findOrCreateEntity met similarity)
+- 🔄 21.5 Entity Resolution UI & Testing
+
+**Nieuwe Componenten:**
+- `WikiNodeEmbeddingService.ts` - Node embedding generatie & storage
+- `NodeEmbeddingPoint` interface - Qdrant payload format
+- `SimilarNodeResult` interface - Entity matching resultaten
+- `findOrCreateEntity()` method - Hergebruik bestaande entities
+- `graphiti.entitySuggest` tRPC endpoint - UI autocomplete
+- `migrate-node-embeddings.ts` - Migration script
 
 **Argumenten VOOR:**
-- Betere entity resolution
-- Fuzzy matching
+- Betere entity resolution ("Jan" ≈ "J. Janssen")
+- Fuzzy matching voorkomt duplicates
+- Schonere graph met minder redundantie
+- Autocomplete suggesties tijdens editing
 
 **Argumenten TEGEN:**
-- Edge embeddings zijn belangrijker
-- Extra storage
+- Extra storage kosten (Qdrant vectors)
+- Extra API calls voor embedding generatie
+- Threshold tuning nodig (false positives vs misses)
 
-**Beslissing:** _Te bepalen door Robin_
+**Beslissing:** ✅ IMPLEMENTEREN in Fase 21
+
+**Zie:** [ROADMAP-STATUS.md - Fase 21](../ROADMAP-STATUS.md#fase-21-node-embeddings--semantic-entity-matching-)
 
 ---
 
 ### Deduplication
 
-**Status:** ⏳ PENDING
+**Status:** 🔄 GEPLAND (Fase 22)
 
 **Wat:**
-- Detecteer duplicate entities
-- LLM-based fuzzy matching
-- IS_DUPLICATE_OF edges
+- Detecteer duplicate entities en edges
+- Multi-layer matching: Exact → Fuzzy (MinHash/LSH) → Embedding → LLM
+- IS_DUPLICATE_OF edges voor audit trail
+- Graph cleanup en consolidatie
+
+**Bestaande Infrastructuur:**
+- ✅ WikiNodeEmbeddingService (Fase 21) - Embedding-based similarity
+- ✅ WikiAiService - LLM calls infrastructure
+- ✅ FalkorDB nodes (Concept, Person, Task, Project, WikiPage)
+- ⚠️ Geen IS_DUPLICATE_OF edge type
+- ⚠️ Geen dedup logic in syncWikiPage flow
+- ⚠️ Geen MinHash/LSH implementatie
+
+**Wat Fase 22 toevoegt:**
+- 🔄 22.1 Validatie Bestaande Implementatie
+- 🔄 22.2 Schema & Data Structures (IS_DUPLICATE_OF, interfaces)
+- 🔄 22.3 WikiDeduplicationService Implementation
+- 🔄 22.4 WikiAiService & LLM Prompts (detectNodeDuplicates, detectEdgeDuplicates)
+- 🔄 22.5 GraphitiService Integration (syncWikiPageWithDedup)
+- 🔄 22.6 tRPC Endpoints & UI (markAsDuplicate, mergeDuplicates, runBatchDedup)
+- 🔄 22.7 Testing & Migration (detect-duplicates.ts)
+
+**Nieuwe Componenten:**
+- `WikiDeduplicationService.ts` - Main dedup service met MinHash/LSH
+- `types/deduplication.ts` - TypeScript interfaces
+- `prompts/deduplicateNodes.ts` - LLM prompts voor node dedup
+- `IS_DUPLICATE_OF` edge type in FalkorDB
+- `graphiti.findDuplicates` tRPC endpoint
+- `graphiti.markAsDuplicate` tRPC endpoint
+- `graphiti.mergeDuplicates` tRPC endpoint
+- `detect-duplicates.ts` - Migration script
 
 **Argumenten VOOR:**
-- Schonere graph
-- Minder data redundantie
+- Schonere graph met minder redundantie
+- Automatische cleanup tijdens sync
+- Meerdere matching layers voor hoge precision
+- Audit trail via IS_DUPLICATE_OF edges
 
 **Argumenten TEGEN:**
-- Complex te implementeren
-- Merging is lastig
+- Complex te implementeren (maar geport van Python Graphiti)
+- Extra LLM calls voor onzekere matches
+- Threshold tuning nodig
 
-**Beslissing:** _Te bepalen door Robin_
+**Beslissing:** ✅ IMPLEMENTEREN in Fase 22
+
+**Zie:** [ROADMAP-STATUS.md - Fase 22](../ROADMAP-STATUS.md#fase-22-entity-deduplication--graph-cleanup-)
 
 ---
 
@@ -280,6 +342,8 @@
 | 2026-01-13 | Contradiction Detection | ✅ JA | Robin | Gepland voor Fase 17 |
 | 2026-01-13 | Edge Embeddings | ✅ JA | Robin | Gepland voor Fase 19 |
 | 2026-01-13 | BM25 Search | ✅ JA | Robin | Gepland voor Fase 20 |
+| 2026-01-13 | Node Embeddings | ✅ JA | Robin | Gepland voor Fase 21 |
+| 2026-01-14 | Deduplication | ✅ JA | Robin | Gepland voor Fase 22 |
 
 ---
 

@@ -1,6 +1,6 @@
 /*
  * Graphiti Service
- * Version: 3.6.0
+ * Version: 3.7.0
  *
  * Knowledge graph service for Wiki using FalkorDB.
  * Integrates with Python Graphiti service for LLM-based entity extraction.
@@ -17,6 +17,7 @@
  * Change: Fase 16.3 - Contradiction detection and resolution (invalidates outdated facts)
  * Change: Fase 16.4 - Temporal queries with FalkorDB fallback (getFactsAsOf, temporalSearch)
  * Change: Fase 19.3 - Edge embedding generation (WikiEdgeEmbeddingService integration)
+ * Change: Fase 21.4 - Node embedding generation (WikiNodeEmbeddingService integration for entity resolution)
  * ===================================================================
  */
 
@@ -35,6 +36,8 @@ import {
   getWikiEmbeddingService,
   WikiEdgeEmbeddingService,
   getWikiEdgeEmbeddingService,
+  WikiNodeEmbeddingService,
+  getWikiNodeEmbeddingService,
   getContradictionAuditService,
   ContradictionCategory,
   type ContradictionAuditEntry,
@@ -42,6 +45,8 @@ import {
   type SemanticSearchResult,
   type ExistingFact,
   type EdgeForEmbedding,
+  type NodeForEmbedding,
+  type EmbeddableNodeType,
 } from '../lib/ai/wiki'
 
 // =============================================================================
@@ -68,6 +73,14 @@ export interface GraphitiConfig {
    * @default true
    */
   enableEdgeEmbeddings?: boolean
+  /**
+   * Enable node embedding generation (Fase 21.4)
+   * When enabled, generates vector embeddings for entity names during sync
+   * Stored in Qdrant collection 'kanbu_node_embeddings' for entity resolution
+   * Can be disabled via DISABLE_NODE_EMBEDDINGS=true env var
+   * @default true
+   */
+  enableNodeEmbeddings?: boolean
 }
 
 export interface WikiEpisode {
@@ -192,9 +205,11 @@ export class GraphitiService {
   private wikiAiService: WikiAiService | null = null
   private wikiEmbeddingService: WikiEmbeddingService | null = null
   private wikiEdgeEmbeddingService: WikiEdgeEmbeddingService | null = null // Fase 19.3
+  private wikiNodeEmbeddingService: WikiNodeEmbeddingService | null = null // Fase 21.4
   private prisma: PrismaClient | null = null
   private enableDateExtraction: boolean = true // Fase 16.2
   private enableEdgeEmbeddings: boolean = true // Fase 19.3
+  private enableNodeEmbeddings: boolean = true // Fase 21.4
 
   constructor(config?: Partial<GraphitiConfig>, prisma?: PrismaClient) {
     const host = config?.host ?? process.env.FALKORDB_HOST ?? 'localhost'
@@ -202,16 +217,18 @@ export class GraphitiService {
     this.graphName = config?.graphName ?? 'kanbu_wiki'
     this.enableDateExtraction = config?.enableDateExtraction ?? (process.env.DISABLE_DATE_EXTRACTION !== 'true')
     this.enableEdgeEmbeddings = config?.enableEdgeEmbeddings ?? (process.env.DISABLE_EDGE_EMBEDDINGS !== 'true')
+    this.enableNodeEmbeddings = config?.enableNodeEmbeddings ?? (process.env.DISABLE_NODE_EMBEDDINGS !== 'true')
 
     // Initialize Python service client
     this.pythonClient = getGraphitiClient()
 
-    // Initialize WikiAiService, WikiEmbeddingService, and WikiEdgeEmbeddingService if Prisma is provided
+    // Initialize WikiAiService, WikiEmbeddingService, WikiEdgeEmbeddingService, and WikiNodeEmbeddingService if Prisma is provided
     if (prisma) {
       this.prisma = prisma
       this.wikiAiService = getWikiAiService(prisma)
       this.wikiEmbeddingService = getWikiEmbeddingService(prisma)
       this.wikiEdgeEmbeddingService = getWikiEdgeEmbeddingService(prisma) // Fase 19.3
+      this.wikiNodeEmbeddingService = getWikiNodeEmbeddingService(prisma) // Fase 21.4
     }
 
     this.redis = new Redis({
@@ -242,6 +259,7 @@ export class GraphitiService {
     this.wikiAiService = getWikiAiService(prisma)
     this.wikiEmbeddingService = getWikiEmbeddingService(prisma)
     this.wikiEdgeEmbeddingService = getWikiEdgeEmbeddingService(prisma) // Fase 19.3
+    this.wikiNodeEmbeddingService = getWikiNodeEmbeddingService(prisma) // Fase 21.4
   }
 
   // ===========================================================================
@@ -474,7 +492,7 @@ export class GraphitiService {
 
     await this.initialize()
 
-    const { pageId, title, content, oldContent, timestamp, userId, workspaceId, projectId } = episode
+    const { pageId, title, content, oldContent, timestamp, userId, workspaceId, projectId, groupId } = episode
 
     // Fase 17.3.1: Calculate diff for incremental extraction
     const isUpdate = !!oldContent
@@ -527,6 +545,9 @@ export class GraphitiService {
     // Fase 19.3: Collect edges for embedding generation
     const edgesForEmbedding: EdgeForEmbedding[] = []
 
+    // Fase 21.4: Collect nodes for embedding generation (entity resolution)
+    const nodesForEmbedding: NodeForEmbedding[] = []
+
     for (const entity of extractionResult.entities) {
       // Map entity type to graph label
       const graphType = this.mapEntityTypeToGraphLabel(entity.type)
@@ -541,6 +562,18 @@ export class GraphitiService {
         SET e.lastSeen = '${timestamp.toISOString()}',
             e.confidence = ${entity.confidence}
       `)
+
+      // Fase 21.4: Collect node for embedding generation (skip WikiPage - they have page embeddings)
+      if (this.enableNodeEmbeddings && graphType !== 'WikiPage') {
+        // Generate a stable node ID based on groupId and name
+        const nodeId = `node-${groupId}-${graphType}-${entity.name}`.replace(/[^a-zA-Z0-9-]/g, '_')
+        nodesForEmbedding.push({
+          id: nodeId,
+          name: entity.name,
+          type: graphType as EmbeddableNodeType,
+          groupId,
+        })
+      }
 
       // Generate fact description
       // Fase 17.4: Use actual context from content for meaningful contradiction detection
@@ -770,6 +803,27 @@ export class GraphitiService {
         console.warn(
           `[GraphitiService] Failed to store edge embeddings for page ${pageId}: ` +
           `${edgeEmbeddingError instanceof Error ? edgeEmbeddingError.message : 'Unknown error'}`
+        )
+      }
+    }
+
+    // Fase 21.4: Generate node embeddings for entity resolution
+    if (this.enableNodeEmbeddings && this.wikiNodeEmbeddingService && capabilities.embedding && nodesForEmbedding.length > 0) {
+      try {
+        const nodeResult = await this.wikiNodeEmbeddingService.generateAndStoreBatchNodeEmbeddings(
+          context,
+          nodesForEmbedding
+        )
+        if (nodeResult.stored > 0 || nodeResult.skipped > 0) {
+          console.log(
+            `[GraphitiService] Node embeddings for page ${pageId}: ${nodeResult.stored} stored, ${nodeResult.skipped} skipped`
+          )
+        }
+      } catch (nodeEmbeddingError) {
+        // Don't fail the sync if node embedding storage fails
+        console.warn(
+          `[GraphitiService] Failed to store node embeddings for page ${pageId}: ` +
+          `${nodeEmbeddingError instanceof Error ? nodeEmbeddingError.message : 'Unknown error'}`
         )
       }
     }
