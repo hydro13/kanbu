@@ -3,6 +3,7 @@
  *
  * Fase 22 - Entity Deduplication UI
  * Fase 22.8 - Added loading of existing confirmed duplicates
+ * Fase 22.9 - Added graph visualization toggle with bidirectional selection
  *
  * A dialog for managing duplicate entities in the knowledge graph.
  * Features:
@@ -11,9 +12,12 @@
  * - Review and approve duplicate pairs
  * - Merge or unlink duplicates
  * - Batch operations
+ * - Toggle graph visualization panel (Fase 22.9)
+ * - Highlight duplicate pairs in graph (Fase 22.9)
+ * - Bidirectional selection between list and graph (Fase 22.9)
  */
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import {
   Copy,
   GitMerge,
@@ -26,6 +30,9 @@ import {
   ChevronRight,
   ChevronDown,
   LinkIcon,
+  Network,
+  PanelRightOpen,
+  PanelRightClose,
 } from 'lucide-react'
 import {
   Dialog,
@@ -56,6 +63,7 @@ import {
 import { trpc } from '@/lib/trpc'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { WikiGraphView } from './WikiGraphView'
 
 // =============================================================================
 // Types
@@ -142,6 +150,10 @@ export function WikiDuplicateManager({
   const [isScanning, setIsScanning] = useState(false)
   const [activeTab, setActiveTab] = useState<'confirmed' | 'scan'>('confirmed')
   const [showLinked, setShowLinked] = useState(false)
+
+  // Fase 22.9: Graph visualization state
+  const [showGraph, setShowGraph] = useState(false)
+  const [selectedPair, setSelectedPair] = useState<{ sourceUuid: string; targetUuid: string } | null>(null)
 
   // tRPC utils
   const utils = trpc.useUtils()
@@ -259,6 +271,23 @@ export function WikiDuplicateManager({
     })
   }, [])
 
+  // Fase 22.9: Handle selecting a duplicate pair for graph highlighting
+  const handleSelectPair = useCallback((sourceUuid: string, targetUuid: string) => {
+    setSelectedPair((prev) => {
+      // Toggle off if same pair is clicked
+      if (prev?.sourceUuid === sourceUuid && prev?.targetUuid === targetUuid) {
+        return null
+      }
+      return { sourceUuid, targetUuid }
+    })
+  }, [])
+
+  // Fase 22.9: Calculate highlighted node IDs for graph
+  const highlightedNodeIds = useMemo(() => {
+    if (!selectedPair) return []
+    return [selectedPair.sourceUuid, selectedPair.targetUuid]
+  }, [selectedPair])
+
   // Results from scan
   const scanData = scanMutation.data
   const allScanCandidates: DuplicateCandidate[] =
@@ -275,6 +304,21 @@ export function WikiDuplicateManager({
     ? allScanCandidates
     : allScanCandidates.filter((c) => !c.alreadyLinked)
 
+  // Fase 22.9: Handle click on highlighted node in graph
+  const handleHighlightedNodeClick = useCallback((nodeId: string) => {
+    // Find the duplicate pair containing this node and expand it
+    const allDuplicates = [...confirmedDuplicates, ...allScanCandidates]
+    const pair = allDuplicates.find(
+      (dup) => dup.sourceUuid === nodeId || dup.targetUuid === nodeId
+    )
+    if (pair) {
+      const key = `${pair.sourceUuid}-${pair.targetUuid}`
+      if (!expandedPairs.has(key)) {
+        toggleExpanded(key)
+      }
+    }
+  }, [confirmedDuplicates, allScanCandidates, expandedPairs, toggleExpanded])
+
   // Render a duplicate pair row
   const renderDuplicateRow = (
     dup: DuplicateCandidate | ConfirmedDuplicate,
@@ -283,6 +327,8 @@ export function WikiDuplicateManager({
     const key = `${dup.sourceUuid}-${dup.targetUuid}`
     const isExpanded = expandedPairs.has(key)
     const isLinked = isConfirmed || dup.alreadyLinked
+    // Fase 22.9: Check if this pair is selected for graph highlighting
+    const isSelected = selectedPair?.sourceUuid === dup.sourceUuid && selectedPair?.targetUuid === dup.targetUuid
 
     return (
       <Collapsible
@@ -290,46 +336,69 @@ export function WikiDuplicateManager({
         open={isExpanded}
         onOpenChange={() => toggleExpanded(key)}
       >
-        <div className="py-2">
-          <CollapsibleTrigger asChild>
-            <div className="flex items-center justify-between cursor-pointer hover:bg-muted/50 px-2 py-1 rounded">
-              <div className="flex items-center gap-2">
-                {isExpanded ? (
-                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                ) : (
-                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+        <div className={cn(
+          "py-2",
+          isSelected && showGraph && "bg-amber-50 dark:bg-amber-900/20 rounded-lg"
+        )}>
+          <div className="flex items-center gap-2">
+            {/* Fase 22.9: Graph highlight button */}
+            {showGraph && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn(
+                  "h-6 w-6 shrink-0",
+                  isSelected && "text-amber-600 dark:text-amber-400"
                 )}
-                <span className="font-medium">{dup.sourceName}</span>
-                <span className="text-muted-foreground">≈</span>
-                <span className="font-medium">{dup.targetName}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                {isLinked && (
-                  <Badge variant="secondary" className="text-xs">
-                    <LinkIcon className="h-3 w-3 mr-1" />
-                    Linked
+                onClick={(e) => {
+                  e.stopPropagation()
+                  handleSelectPair(dup.sourceUuid, dup.targetUuid)
+                }}
+                title={isSelected ? "Hide in graph" : "Show in graph"}
+              >
+                <Network className="h-4 w-4" />
+              </Button>
+            )}
+            <CollapsibleTrigger asChild>
+              <div className="flex-1 flex items-center justify-between cursor-pointer hover:bg-muted/50 px-2 py-1 rounded">
+                <div className="flex items-center gap-2">
+                  {isExpanded ? (
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  )}
+                  <span className="font-medium">{dup.sourceName}</span>
+                  <span className="text-muted-foreground">≈</span>
+                  <span className="font-medium">{dup.targetName}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {isLinked && (
+                    <Badge variant="secondary" className="text-xs">
+                      <LinkIcon className="h-3 w-3 mr-1" />
+                      Linked
+                    </Badge>
+                  )}
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      'text-xs',
+                      getMatchTypeBadgeClass(dup.matchType)
+                    )}
+                  >
+                    {dup.matchType}
                   </Badge>
-                )}
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    'text-xs',
-                    getMatchTypeBadgeClass(dup.matchType)
-                  )}
-                >
-                  {dup.matchType}
-                </Badge>
-                <span
-                  className={cn(
-                    'text-sm font-medium',
-                    getConfidenceColor(dup.confidence)
-                  )}
-                >
-                  {Math.round(dup.confidence * 100)}%
-                </span>
+                  <span
+                    className={cn(
+                      'text-sm font-medium',
+                      getConfidenceColor(dup.confidence)
+                    )}
+                  >
+                    {Math.round(dup.confidence * 100)}%
+                  </span>
+                </div>
               </div>
-            </div>
-          </CollapsibleTrigger>
+            </CollapsibleTrigger>
+          </div>
 
           <CollapsibleContent>
             <div className="flex items-center justify-between mt-2 ml-6 text-sm text-muted-foreground">
@@ -398,28 +467,67 @@ export function WikiDuplicateManager({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
+      <DialogContent
+        className={cn(
+          "max-h-[90vh] flex flex-col transition-all duration-300 ease-in-out",
+          showGraph ? "max-w-[95vw] w-[1600px]" : "max-w-3xl"
+        )}
+      >
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Copy className="h-5 w-5" />
-            Duplicate Entity Manager
-          </DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="flex items-center gap-2">
+              <Copy className="h-5 w-5" />
+              Duplicate Entity Manager
+            </DialogTitle>
+            {/* Fase 22.9: Graph toggle button */}
+            <Button
+              variant={showGraph ? "default" : "outline"}
+              size="sm"
+              onClick={() => setShowGraph(!showGraph)}
+              className={cn(
+                "transition-colors",
+                showGraph && "bg-amber-600 hover:bg-amber-700"
+              )}
+            >
+              {showGraph ? (
+                <>
+                  <PanelRightClose className="h-4 w-4 mr-2" />
+                  Hide Graph
+                </>
+              ) : (
+                <>
+                  <PanelRightOpen className="h-4 w-4 mr-2" />
+                  Show Graph
+                </>
+              )}
+            </Button>
+          </div>
           <DialogDescription>
             Manage duplicate entities in your knowledge graph.
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className="flex flex-col flex-1 overflow-hidden">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="confirmed" className="flex items-center gap-2">
-              <LinkIcon className="h-4 w-4" />
-              Confirmed ({confirmedDuplicates.length})
-            </TabsTrigger>
-            <TabsTrigger value="scan" className="flex items-center gap-2">
-              <Search className="h-4 w-4" />
-              Scan {scanCandidates.length > 0 && `(${scanCandidates.length})`}
-            </TabsTrigger>
-          </TabsList>
+        {/* Fase 22.9: Main content area with optional graph panel */}
+        <div className={cn(
+          "flex flex-1 gap-4 overflow-hidden",
+          showGraph ? "flex-row" : "flex-col"
+        )}>
+          {/* Left side: Duplicate management */}
+          <div className={cn(
+            "flex flex-col flex-1 overflow-hidden",
+            showGraph && "max-w-[600px]"
+          )}>
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className="flex flex-col flex-1 overflow-hidden">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="confirmed" className="flex items-center gap-2">
+                  <LinkIcon className="h-4 w-4" />
+                  Confirmed ({confirmedDuplicates.length})
+                </TabsTrigger>
+                <TabsTrigger value="scan" className="flex items-center gap-2">
+                  <Search className="h-4 w-4" />
+                  Scan {scanCandidates.length > 0 && `(${scanCandidates.length})`}
+                </TabsTrigger>
+              </TabsList>
 
           {/* Confirmed Duplicates Tab */}
           <TabsContent value="confirmed" className="flex-1 overflow-hidden mt-4">
@@ -598,7 +706,22 @@ export function WikiDuplicateManager({
               </Card>
             )}
           </TabsContent>
-        </Tabs>
+            </Tabs>
+          </div>
+
+          {/* Fase 22.9: Right side: Graph visualization */}
+          {showGraph && (
+            <div className="flex-1 min-w-[500px] border rounded-lg overflow-hidden bg-slate-50 dark:bg-slate-900">
+              <WikiGraphView
+                workspaceId={workspaceId}
+                basePath={`/wiki/${workspaceId}`}
+                height={550}
+                highlightedNodeIds={highlightedNodeIds}
+                onHighlightedNodeClick={handleHighlightedNodeClick}
+              />
+            </div>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   )

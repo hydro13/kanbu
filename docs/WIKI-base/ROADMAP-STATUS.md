@@ -9026,6 +9026,32 @@ npx tsx ../../scripts/detect-duplicates.ts --help
 
 ---
 
+### 22.9 [TITEL NOG TE BEPALEN] 🚧
+
+> **Doel:** [Te bepalen na discussie]
+> **Datum:** 2026-01-14
+> **Status:** 🚧 IN PLANNING
+
+#### Beschrijving
+
+[Beschrijf hier de nieuwe functionaliteit na discussie]
+
+#### Technische Aanpak
+
+**Frontend:**
+- [ ] [UI component wijzigingen]
+
+**Backend:**
+- [ ] [API/service wijzigingen]
+
+#### Acceptatiecriteria
+
+- [ ] [Criterium 1]
+- [ ] [Criterium 2]
+- [ ] [Criterium 3]
+
+---
+
 ### Changelog Fase 22
 
 | Datum | Actie |
@@ -9048,6 +9074,26 @@ npx tsx ../../scripts/detect-duplicates.ts --help
 | 2026-01-14 | Fase 22.8.5 voltooid - detect-duplicates.ts CLI script |
 | 2026-01-14 | Fase 22.8.6 voltooid - Integration Test E2E |
 | 2026-01-14 | **Fase 22.8 COMPLEET** - Alle 6 uitgestelde items geïmplementeerd |
+| 2026-01-14 | Fase 22.9 aangemaakt - Graph visualisatie in Duplicate Manager |
+| 2026-01-14 | Fase 22.9 voltooid - Graph toggle, highlighting, bidirectionele selectie |
+
+### Fase 22.9 - Graph Visualization in Duplicate Manager ✅
+
+**Doel:** Interactieve graph visualisatie toevoegen aan de Duplicate Manager voor visuele analyse van duplicaten.
+
+**Geïmplementeerde features:**
+1. **Graph Toggle Button** - In dialog header, schakelt graph panel aan/uit
+2. **Expanderende Dialog** - Dialog breidt uit van max-w-3xl naar max-w-[95vw] met CSS transition
+3. **WikiGraphView Integratie** - Hergebruik van bestaande graph component
+4. **Node Highlighting** - Geselecteerde duplicate pairs worden in amber getoond in graph
+5. **Bidirectionele Selectie:**
+   - Klik op duplicate pair → highlight nodes in graph
+   - Klik op highlighted node in graph → expand duplicate pair in lijst
+6. **Visuele Feedback** - Selected pair krijgt amber achtergrond, network icon per row
+
+**Gewijzigde bestanden:**
+- `apps/web/src/components/wiki/WikiGraphView.tsx` - highlightedNodeIds + onHighlightedNodeClick props
+- `apps/web/src/components/wiki/WikiDuplicateManager.tsx` - Graph toggle, highlighting, selectie logica
 
 ---
 

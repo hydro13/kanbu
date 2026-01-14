@@ -43,6 +43,10 @@
  *
  * Modified: 2026-01-12
  * Change: Fase 15.5 - Added progressive loading with node limit for large graphs
+ *
+ * Modified: 2026-01-14
+ * Change: Fase 22.9 - Added highlightedNodeIds and onHighlightedNodeClick props
+ *         for duplicate entity highlighting in WikiDuplicateManager
  * ===================================================================
  */
 
@@ -137,6 +141,10 @@ interface WikiGraphViewProps {
   onToggleFullscreen?: () => void
   /** Callback when "Ask about this node" is triggered */
   onAskAboutNode?: (nodeLabel: string, nodeType: string) => void
+  /** Node IDs to highlight (e.g., for duplicate pairs) */
+  highlightedNodeIds?: string[]
+  /** Callback when a highlighted node is clicked */
+  onHighlightedNodeClick?: (nodeId: string) => void
 }
 
 interface HoverCardData {
@@ -825,6 +833,8 @@ export function WikiGraphView({
   fullscreen = false,
   onToggleFullscreen,
   onAskAboutNode,
+  highlightedNodeIds = [],
+  onHighlightedNodeClick,
 }: WikiGraphViewProps) {
   const navigate = useNavigate()
   const containerRef = useRef<HTMLDivElement>(null)
@@ -841,6 +851,12 @@ export function WikiGraphView({
   const [pathEnd, setPathEnd] = useState<GraphNode | null>(null)
   const [pathNodes, setPathNodes] = useState<Set<string>>(new Set())
   const [pathSteps, setPathSteps] = useState<PathStep[]>([])
+
+  // Memoize highlighted node IDs set for efficient lookup
+  const highlightedNodeIdsSet = useMemo(
+    () => new Set(highlightedNodeIds),
+    [highlightedNodeIds]
+  )
   const [layoutType, setLayoutType] = useState<LayoutType>('force')
   const [showMiniMap, setShowMiniMap] = useState(false)
   const [showSidebar, setShowSidebar] = useState(false)
@@ -1372,12 +1388,14 @@ export function WikiGraphView({
     // Add circles
     node.append('circle')
       .attr('r', d => {
+        if (highlightedNodeIdsSet.has(d.id)) return 16
         if (pathNodes.has(d.id)) return 16
         if (d.isHighlighted) return 14
         if (d.type === 'WikiPage') return 12
         return 8
       })
       .attr('fill', d => {
+        if (highlightedNodeIdsSet.has(d.id)) return '#f59e0b' // Amber for duplicate highlights
         if (pathNodes.has(d.id)) return '#22c55e'
         if (filters.showClusters && d.cluster !== undefined) {
           return CLUSTER_COLORS[d.cluster % CLUSTER_COLORS.length] || NODE_COLORS[d.type]
@@ -1385,16 +1403,22 @@ export function WikiGraphView({
         return NODE_COLORS[d.type]
       })
       .attr('stroke', d => {
+        if (highlightedNodeIdsSet.has(d.id)) return '#fff'
         if (d.isHighlighted) return '#fff'
         if (selectedNode?.id === d.id) return '#3b82f6'
         return 'rgba(255,255,255,0.5)'
       })
       .attr('stroke-width', d => {
+        if (highlightedNodeIdsSet.has(d.id)) return 3
         if (d.isHighlighted || selectedNode?.id === d.id) return 3
         return 2
       })
       .on('click', (event, d) => {
         event.stopPropagation()
+        // If this node is highlighted (part of duplicate pair), trigger callback
+        if (highlightedNodeIdsSet.has(d.id) && onHighlightedNodeClick) {
+          onHighlightedNodeClick(d.id)
+        }
         handleNodeClick(d)
       })
       .on('dblclick', (event, d) => {
@@ -1436,7 +1460,7 @@ export function WikiGraphView({
     return () => {
       simulation.stop()
     }
-  }, [processedData, height, fullscreen, handleNodeClick, handleNodeHover, handleNavigate, pathNodes, layoutType, timelineMode, timeBounds, filters.showClusters, selectedNode, showSidebar])
+  }, [processedData, height, fullscreen, handleNodeClick, handleNodeHover, handleNavigate, pathNodes, layoutType, timelineMode, timeBounds, filters.showClusters, selectedNode, showSidebar, highlightedNodeIdsSet, onHighlightedNodeClick])
 
   // Handle window resize
   useEffect(() => {
