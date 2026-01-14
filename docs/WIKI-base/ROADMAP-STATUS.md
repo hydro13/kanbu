@@ -9218,6 +9218,1527 @@ const actualHeight = fullscreen
 
 ---
 
+## Fase 23: Reflexion Extraction (Multi-Pass Entity Extraction) ⏳
+
+**Status:** ⏳ GEPLAND
+
+**Doel:** Implementeer multi-pass entity extraction dat gemiste entities detecteert en extraheert voor completere knowledge graphs.
+
+**Architecturale Context:**
+- Kanbu is een **multi-user omgeving** met workspaces en projecten
+- Wiki draait momenteel op **workspace niveau** (`wiki-ws-{id}`)
+- Toekomstig: projecten binnen workspaces kunnen **eigen wiki** hebben (`wiki-proj-{id}`)
+- Alle AI calls gebruiken `WikiContext` met `workspaceId` en optioneel `projectId`
+- Reflexion extraction moet **scoped** zijn per workspace/project (geen cross-tenant leakage)
+
+**Referentie:** Python Graphiti implementatie in:
+- `graphiti_core/prompts/extract_nodes.py` - `reflexion()` prompt (line 199-220)
+- `graphiti_core/prompts/extract_edges.py` - `reflexion()` prompt (line 139-164)
+- `graphiti_core/utils/maintenance/node_operations.py` - `extract_nodes_reflexion()` (line 69-91)
+
+---
+
+### 🚀 UITVOERINGSPLAN VOOR CLAUDE CODE SESSIE
+
+**Dit is een cold-start instructie. Volg deze stappen exact in de aangegeven volgorde.**
+
+#### Afhankelijkheidsdiagram
+
+```
+                    ┌─────────────────────────────────┐
+                    │  STAP 1: 23.1 Validatie         │
+                    │  (MOET EERST - informeert alles)│
+                    └─────────────┬───────────────────┘
+                                  │
+                                  ▼
+              ┌───────────────────────────────────────┐
+              │  STAP 2: 23.2 Types + 23.3 Prompts    │
+              │  (PARALLEL - geen onderlinge deps)    │
+              └───────────────────┬───────────────────┘
+                                  │
+                                  ▼
+                   ┌──────────────────────────┐
+                   │  STAP 3: 23.4 WikiAiSvc  │
+                   │  (hangt af van 2+3)      │
+                   └────────────┬─────────────┘
+                                │
+              ┌─────────────────┼─────────────────┐
+              ▼                 ▼                 ▼
+    ┌─────────────────┐ ┌─────────────┐ ┌─────────────────┐
+    │ STAP 4a: 23.5   │ │ STAP 4b:    │ │ STAP 4c: 23.7   │
+    │ GraphitiService │ │ 23.6 tRPC   │ │ Unit Tests      │
+    │                 │ │ Endpoints   │ │ (basis)         │
+    └────────┬────────┘ └─────────────┘ └─────────────────┘
+             │           (PARALLEL)
+             ▼
+    ┌─────────────────┐
+    │  STAP 5: 23.8   │
+    │  Migration      │
+    └─────────────────┘
+```
+
+#### Stap-voor-Stap Uitvoering
+
+**📋 STAP 1: Validatie (23.1) - VERPLICHT EERST**
+
+```bash
+# Navigeer naar kanbu directory
+cd /home/robin/genx/v6/dev/kanbu
+
+# Voer ALLE pre-checks uit voordat je verder gaat
+grep -r "reflexion\|multi.?pass\|missed.?entit" apps/api/src --include="*.ts"
+grep -n "extractEntities" apps/api/src/lib/ai/wiki/WikiAiService.ts
+ls -la apps/api/src/lib/ai/wiki/prompts/
+ls -la apps/api/src/lib/ai/wiki/types/
+```
+
+**⚠️ STOP CRITERIA:** Als je bestaande reflexion code vindt → STOP en vraag Robin.
+
+**Verwachte uitkomst:** Geen reflexion code gevonden, alleen bestaande prompts en types.
+
+---
+
+**📋 STAP 2: Types + Prompts (23.2 + 23.3) - PARALLEL MOGELIJK**
+
+Deze twee sub-fases hebben GEEN onderlinge afhankelijkheid. Je kunt ze in willekeurige volgorde of parallel doen.
+
+**2A. Eerst Types (23.2):**
+```bash
+# Maak het types bestand
+touch apps/api/src/lib/ai/wiki/types/reflexion.ts
+```
+- Implementeer interfaces: `MissedEntity`, `NodeReflexionResult`, `MissedFact`, `EdgeReflexionResult`, `ReflexionConfig`, `ReflexionSyncResult`
+- Update `types/index.ts` met export
+
+**2B. Dan Prompts (23.3):**
+```bash
+# Maak prompt bestanden
+touch apps/api/src/lib/ai/wiki/prompts/reflexionNodes.ts
+touch apps/api/src/lib/ai/wiki/prompts/reflexionEdges.ts
+```
+- Port Python prompts naar TypeScript
+- Implementeer `getReflexionNodesSystemPrompt()`, `getReflexionNodesUserPrompt()`, `parseReflexionNodesResponse()`
+- Implementeer `getReflexionEdgesSystemPrompt()`, `getReflexionEdgesUserPrompt()`, `parseReflexionEdgesResponse()`
+- Update `prompts/index.ts` met exports
+
+**✅ CHECKPOINT:** Verifieer dat types en prompts compileren:
+```bash
+cd apps/api && pnpm tsc --noEmit
+```
+
+---
+
+**📋 STAP 3: WikiAiService Methods (23.4) - WACHT OP STAP 2**
+
+**⚠️ Vereist:** Stap 2 moet VOLLEDIG compleet zijn.
+
+Bestand: `apps/api/src/lib/ai/wiki/WikiAiService.ts`
+
+Toevoegen:
+1. Imports voor nieuwe prompts en types
+2. `extractNodesReflexion()` method
+3. `extractEdgesReflexion()` method
+4. Exports voor nieuwe types
+
+**✅ CHECKPOINT:** Test dat methods bestaan en compileren:
+```bash
+grep -n "extractNodesReflexion\|extractEdgesReflexion" apps/api/src/lib/ai/wiki/WikiAiService.ts
+cd apps/api && pnpm tsc --noEmit
+```
+
+---
+
+**📋 STAP 4: Parallel taken (23.5 + 23.6 + 23.7) - WACHT OP STAP 3**
+
+**⚠️ Vereist:** Stap 3 moet VOLLEDIG compleet zijn.
+
+Deze drie sub-fases kunnen PARALLEL uitgevoerd worden:
+
+**4A. GraphitiService Integration (23.5):**
+- Bestand: `apps/api/src/services/graphitiService.ts`
+- Add `enableReflexionExtraction` config
+- Add `enableReflexion` en `maxReflexionPasses` aan `SyncWikiPageOptions`
+- Add `reflexionRecovered` en `reflexionPasses` aan `SyncWikiPageResult`
+- Implementeer reflexion loop in `syncWikiPage()`
+
+**4B. tRPC Endpoints (23.6):**
+- Bestand: `apps/api/src/trpc/procedures/graphiti.ts`
+- Add `graphiti.reflexionNodes` endpoint
+- Add `graphiti.reflexionEdges` endpoint
+
+**4C. Unit Tests (23.7):**
+- Maak `prompts/__tests__/reflexionNodes.test.ts`
+- Maak `prompts/__tests__/reflexionEdges.test.ts`
+- Run: `cd apps/api && pnpm test`
+
+**✅ CHECKPOINT:** Alle tests passing:
+```bash
+cd apps/api && pnpm test
+```
+
+---
+
+**📋 STAP 5: Migration Script (23.8) - WACHT OP STAP 4A**
+
+**⚠️ Vereist:** 23.5 (GraphitiService) moet compleet zijn.
+
+- Maak `apps/api/scripts/reflexion-extraction.ts`
+- Test met: `pnpm tsx scripts/reflexion-extraction.ts --help`
+- Dry-run test: `pnpm tsx scripts/reflexion-extraction.ts --workspace 1 --dry-run`
+
+---
+
+#### Critical Path (minimale doorlooptijd)
+
+```
+23.1 → 23.2 → 23.4 → 23.5 → 23.8
+       ↓
+      23.3 (parallel met 23.2)
+              ↓
+             23.6 (parallel met 23.5)
+             23.7 (parallel met 23.5)
+```
+
+#### Samenvatting Afhankelijkheden
+
+| Sub-fase | Moet WACHTEN op | Kan PARALLEL met |
+|----------|-----------------|------------------|
+| 23.1 | - | - |
+| 23.2 | 23.1 | 23.3 |
+| 23.3 | 23.1 | 23.2 |
+| 23.4 | **23.2 + 23.3 beide!** | - |
+| 23.5 | 23.4 | 23.6, 23.7 |
+| 23.6 | 23.4 | 23.5, 23.7 |
+| 23.7 | 23.4 | 23.5, 23.6 |
+| 23.8 | **23.5** | 23.7 |
+
+---
+
+### Pre-Check Instructies (Detail)
+
+**VOORDAT je begint met implementatie, voer deze checks uit:**
+
+```bash
+# Check 1: Bestaande reflexion-gerelateerde code in Kanbu
+grep -r "reflexion\|multi.?pass\|missed.?entit\|second.?pass" apps/api/src --include="*.ts"
+
+# Check 2: Huidige extractEntities implementatie
+grep -n "extractEntities" apps/api/src/lib/ai/wiki/WikiAiService.ts
+
+# Check 3: Bestaande prompts structuur
+ls -la apps/api/src/lib/ai/wiki/prompts/
+
+# Check 4: Python Graphiti reflexion prompt
+cat apps/graphiti/graphiti_core/prompts/extract_nodes.py | grep -A 25 "def reflexion"
+
+# Check 5: GraphitiService extractie flow
+grep -n "extractEntities\|syncWikiPage" apps/api/src/services/graphitiService.ts | head -20
+
+# Check 6: WikiContext scope handling
+grep -n "WikiContext\|workspaceId\|projectId" apps/api/src/lib/ai/wiki/WikiAiService.ts | head -15
+```
+
+**Bij conflicten of onverwachte bevindingen:**
+1. **STOP** de implementatie
+2. **Documenteer** wat je gevonden hebt
+3. **Vraag Robin** om beslissing via overleg
+
+---
+
+### Gap Analyse
+
+| Component | Python Graphiti | Kanbu Status | Gap |
+|-----------|-----------------|--------------|-----|
+| `MissedEntities` type | ✅ `prompts/extract_nodes.py:40` | ❌ Niet aanwezig | Moet aanmaken |
+| `reflexion` prompt (nodes) | ✅ `extract_nodes.py:199-220` | ❌ Niet aanwezig | Moet porten |
+| `reflexion` prompt (edges) | ✅ `extract_edges.py:139-164` | ❌ Niet aanwezig | Moet porten |
+| `extract_nodes_reflexion()` | ✅ `node_operations.py:69-91` | ❌ Niet aanwezig | Moet implementeren in WikiAiService |
+| Workspace/project scoping | ✅ via `group_id` parameter | ✅ via `WikiContext` | Behouden |
+| Multi-user isolation | ⚠️ Basic via groupId | ✅ Via provider registry | Behouden |
+| Feature flag | ❌ Niet aanwezig | ❌ Niet aanwezig | Moet toevoegen |
+
+---
+
+### Fase 23.1: Validatie & Pre-Checks
+
+**Status:** ⏳ TODO
+
+**Doel:** Verifieer huidige implementatie en documenteer exacte gaps.
+
+**Taken:**
+
+| # | Taak | Status | Check | Notes |
+|---|------|--------|-------|-------|
+| 1.1 | Run pre-check bash commands | ⬜ | `grep` output geanalyseerd | |
+| 1.2 | Lees huidige WikiAiService.extractEntities() | ⬜ | Single-pass extractie bevestigd | |
+| 1.3 | Lees Python reflexion prompt (nodes) | ⬜ | Context en output format gedocumenteerd | |
+| 1.4 | Lees Python reflexion prompt (edges) | ⬜ | Context en output format gedocumenteerd | |
+| 1.5 | Check syncWikiPage flow | ⬜ | Insertion point voor reflexion bepaald | |
+| 1.6 | Documenteer WikiContext scope | ⬜ | workspaceId/projectId usage bevestigd | |
+
+**Beslispunt Robin:**
+- [ ] Hoeveel reflexion passes maximaal? (Python: 1 extra pass, configureerbaar maken?)
+- [ ] Reflexion voor beide nodes EN edges, of alleen nodes?
+- [ ] Cost threshold? (extra LLM calls per sync)
+
+---
+
+### Fase 23.2: TypeScript Types & Interfaces
+
+**Status:** ⏳ TODO
+
+**Doel:** Definieer TypeScript interfaces voor reflexion extraction.
+
+**Nieuwe Bestanden:**
+
+```
+apps/api/src/lib/ai/wiki/types/reflexion.ts
+```
+
+**Te Implementeren Interfaces:**
+
+```typescript
+// apps/api/src/lib/ai/wiki/types/reflexion.ts
+
+/**
+ * Reflexion Extraction Types (Fase 23.2)
+ *
+ * Types for multi-pass entity extraction to detect missed entities.
+ * Ported from Python Graphiti: extract_nodes.py, extract_edges.py
+ *
+ * Multi-tenant Considerations:
+ * - All reflexion calls are scoped to WikiContext (workspaceId, projectId)
+ * - No cross-workspace entity leakage
+ * - Provider selection based on workspace/project configuration
+ */
+
+/**
+ * Missed entity from reflexion pass
+ * Represents an entity that wasn't extracted in the initial pass
+ */
+export interface MissedEntity {
+  /** Name of the missed entity */
+  name: string
+  /** Why this entity was missed (optional explanation) */
+  reason?: string
+  /** Suggested entity type based on context */
+  suggestedType?: string
+}
+
+/**
+ * Result from reflexion extraction for nodes
+ */
+export interface NodeReflexionResult {
+  /** List of missed entity names */
+  missedEntities: MissedEntity[]
+  /** Reasoning for the detection */
+  reasoning: string
+  /** Provider used */
+  provider: string
+  /** Model used */
+  model: string
+}
+
+/**
+ * Missed fact/edge from reflexion pass
+ */
+export interface MissedFact {
+  /** Source entity name */
+  sourceName: string
+  /** Target entity name */
+  targetName: string
+  /** Relationship type */
+  relationType: string
+  /** Human-readable fact description */
+  fact: string
+  /** Why this fact was missed */
+  reason?: string
+}
+
+/**
+ * Result from reflexion extraction for edges
+ */
+export interface EdgeReflexionResult {
+  /** List of missed facts */
+  missedFacts: MissedFact[]
+  /** Reasoning for the detection */
+  reasoning: string
+  /** Provider used */
+  provider: string
+  /** Model used */
+  model: string
+}
+
+/**
+ * Configuration for reflexion extraction
+ */
+export interface ReflexionConfig {
+  /** Enable reflexion for nodes (default: true) */
+  enableNodeReflexion?: boolean
+  /** Enable reflexion for edges (default: true) */
+  enableEdgeReflexion?: boolean
+  /** Maximum number of reflexion passes (default: 1) */
+  maxPasses?: number
+  /** Minimum missed entities to trigger re-extraction (default: 1) */
+  minMissedThreshold?: number
+}
+
+/**
+ * Combined reflexion result for syncWikiPage
+ */
+export interface ReflexionSyncResult {
+  /** Missed nodes detected and re-extracted */
+  nodesRecovered: number
+  /** Missed edges detected and re-extracted */
+  edgesRecovered: number
+  /** Total reflexion passes executed */
+  passesExecuted: number
+  /** Whether reflexion was skipped (e.g., no initial entities) */
+  skipped: boolean
+  /** Skip reason if applicable */
+  skipReason?: string
+}
+```
+
+**Export toevoegen aan index:**
+
+```typescript
+// apps/api/src/lib/ai/wiki/types/index.ts
+export * from './reflexion'
+```
+
+**Taken:**
+
+| # | Taak | Status | Check | Notes |
+|---|------|--------|-------|-------|
+| 2.1 | Maak reflexion.ts bestand | ⬜ | `cat types/reflexion.ts` | |
+| 2.2 | MissedEntity interface | ⬜ | Bevat name, reason, suggestedType | |
+| 2.3 | NodeReflexionResult interface | ⬜ | Bevat missedEntities array | |
+| 2.4 | MissedFact interface | ⬜ | Bevat source, target, relation, fact | |
+| 2.5 | EdgeReflexionResult interface | ⬜ | Bevat missedFacts array | |
+| 2.6 | ReflexionConfig interface | ⬜ | Feature flags voor control | |
+| 2.7 | Update index.ts exports | ⬜ | `grep reflexion types/index.ts` | |
+
+---
+
+### Fase 23.3: LLM Prompts voor Reflexion
+
+**Status:** ⏳ TODO
+
+**Doel:** Port Python reflexion prompts naar TypeScript.
+
+**Nieuwe Bestanden:**
+
+```
+apps/api/src/lib/ai/wiki/prompts/reflexionNodes.ts
+apps/api/src/lib/ai/wiki/prompts/reflexionEdges.ts
+```
+
+**Te Implementeren - reflexionNodes.ts:**
+
+```typescript
+// apps/api/src/lib/ai/wiki/prompts/reflexionNodes.ts
+
+/**
+ * Reflexion Prompt for Node Extraction (Fase 23.3)
+ *
+ * Ported from Python Graphiti: extract_nodes.py reflexion()
+ *
+ * This prompt determines which entities were NOT extracted in the initial pass.
+ * Used for multi-pass extraction to improve entity recall.
+ */
+
+/**
+ * Get system prompt for node reflexion
+ */
+export function getReflexionNodesSystemPrompt(): string {
+  return `You are an AI assistant that determines which entities have not been extracted from the given context.
+
+Your task is to review the extracted entities and identify any significant entities, concepts, or actors that were missed during the initial extraction.
+
+Guidelines:
+1. Focus on entities explicitly or implicitly mentioned in the CURRENT MESSAGE
+2. Do NOT include entities only mentioned in PREVIOUS MESSAGES (context only)
+3. Do NOT include relationships or actions as entities
+4. Do NOT include temporal information (dates, times) as entities
+5. Be specific - use full names when available
+6. Only report genuinely missed entities, not variations of already extracted ones`
+}
+
+/**
+ * Get user prompt for node reflexion
+ */
+export function getReflexionNodesUserPrompt(params: {
+  episodeContent: string
+  previousEpisodes?: string[]
+  extractedEntities: string[]
+}): string {
+  const { episodeContent, previousEpisodes = [], extractedEntities } = params
+
+  const previousSection = previousEpisodes.length > 0
+    ? `<PREVIOUS MESSAGES>
+${previousEpisodes.map((ep, i) => `[${i + 1}] ${ep}`).join('\n')}
+</PREVIOUS MESSAGES>`
+    : ''
+
+  return `${previousSection}
+<CURRENT MESSAGE>
+${episodeContent}
+</CURRENT MESSAGE>
+
+<EXTRACTED ENTITIES>
+${extractedEntities.length > 0 ? extractedEntities.map((e, i) => `${i + 1}. ${e}`).join('\n') : '(none extracted)'}
+</EXTRACTED ENTITIES>
+
+Given the above previous messages, current message, and list of extracted entities; determine if any entities haven't been extracted.
+
+Respond with a JSON object:
+{
+  "missed_entities": [
+    {
+      "name": "Entity Name",
+      "reason": "Why this was missed",
+      "suggested_type": "Person|Concept|WikiPage|Task|Project"
+    }
+  ],
+  "reasoning": "Overall explanation of the analysis"
+}
+
+If no entities were missed, return an empty missed_entities array.`
+}
+
+/**
+ * Parse LLM response for node reflexion
+ */
+export function parseReflexionNodesResponse(response: string): {
+  missedEntities: Array<{ name: string; reason?: string; suggestedType?: string }>
+  reasoning: string
+} {
+  try {
+    // Try to parse as JSON directly
+    const parsed = JSON.parse(response)
+
+    const missedEntities = (parsed.missed_entities || []).map((e: unknown) => {
+      if (typeof e === 'string') {
+        return { name: e }
+      }
+      if (typeof e === 'object' && e !== null) {
+        const obj = e as Record<string, unknown>
+        return {
+          name: String(obj.name || ''),
+          reason: obj.reason ? String(obj.reason) : undefined,
+          suggestedType: obj.suggested_type ? String(obj.suggested_type) : undefined,
+        }
+      }
+      return null
+    }).filter((e: unknown): e is { name: string; reason?: string; suggestedType?: string } =>
+      e !== null && typeof e === 'object' && 'name' in e && (e as { name: string }).name.trim() !== ''
+    )
+
+    return {
+      missedEntities,
+      reasoning: parsed.reasoning || '',
+    }
+  } catch {
+    // If JSON parsing fails, try to extract entity names from text
+    const lines = response.split('\n').filter(line => line.trim())
+    const missedEntities = lines
+      .filter(line => /^[-*•]\s*/.test(line) || /^\d+\.\s*/.test(line))
+      .map(line => ({
+        name: line.replace(/^[-*•\d.]\s*/, '').trim(),
+      }))
+      .filter(e => e.name !== '')
+
+    return {
+      missedEntities,
+      reasoning: 'Parsed from unstructured response',
+    }
+  }
+}
+```
+
+**Te Implementeren - reflexionEdges.ts:**
+
+```typescript
+// apps/api/src/lib/ai/wiki/prompts/reflexionEdges.ts
+
+/**
+ * Reflexion Prompt for Edge/Fact Extraction (Fase 23.3)
+ *
+ * Ported from Python Graphiti: extract_edges.py reflexion()
+ *
+ * This prompt determines which facts/relationships were NOT extracted
+ * in the initial pass. Used for multi-pass extraction to improve recall.
+ */
+
+/**
+ * Get system prompt for edge reflexion
+ */
+export function getReflexionEdgesSystemPrompt(): string {
+  return `You are an AI assistant that determines which facts have not been extracted from the given context.
+
+Your task is to review the extracted entities and facts, then identify any significant relationships or facts that were missed during the initial extraction.
+
+Guidelines:
+1. Focus on relationships between the extracted entities
+2. Look for implicit relationships that weren't captured
+3. Consider temporal relationships (before, after, during)
+4. Consider causal relationships (caused, led to, resulted in)
+5. Consider membership relationships (part of, belongs to, member of)
+6. Do NOT invent facts not supported by the content
+7. Only report genuinely missed facts, not paraphrases of existing ones`
+}
+
+/**
+ * Get user prompt for edge reflexion
+ */
+export function getReflexionEdgesUserPrompt(params: {
+  episodeContent: string
+  previousEpisodes?: string[]
+  extractedNodes: string[]
+  extractedFacts: Array<{ source: string; target: string; fact: string }>
+}): string {
+  const { episodeContent, previousEpisodes = [], extractedNodes, extractedFacts } = params
+
+  const previousSection = previousEpisodes.length > 0
+    ? `<PREVIOUS MESSAGES>
+${previousEpisodes.map((ep, i) => `[${i + 1}] ${ep}`).join('\n')}
+</PREVIOUS MESSAGES>`
+    : ''
+
+  const factsSection = extractedFacts.length > 0
+    ? extractedFacts.map((f, i) =>
+        `${i + 1}. ${f.source} → ${f.target}: "${f.fact}"`
+      ).join('\n')
+    : '(no facts extracted)'
+
+  return `${previousSection}
+<CURRENT MESSAGE>
+${episodeContent}
+</CURRENT MESSAGE>
+
+<EXTRACTED ENTITIES>
+${extractedNodes.length > 0 ? extractedNodes.map((n, i) => `${i + 1}. ${n}`).join('\n') : '(none)'}
+</EXTRACTED ENTITIES>
+
+<EXTRACTED FACTS>
+${factsSection}
+</EXTRACTED FACTS>
+
+Given the above MESSAGES, list of EXTRACTED ENTITIES, and list of EXTRACTED FACTS;
+determine if any facts haven't been extracted.
+
+Respond with a JSON object:
+{
+  "missed_facts": [
+    {
+      "source_name": "Source Entity",
+      "target_name": "Target Entity",
+      "relation_type": "RELATES_TO|WORKS_WITH|BELONGS_TO|etc",
+      "fact": "Human-readable fact description",
+      "reason": "Why this was missed"
+    }
+  ],
+  "reasoning": "Overall explanation of the analysis"
+}
+
+If no facts were missed, return an empty missed_facts array.`
+}
+
+/**
+ * Parse LLM response for edge reflexion
+ */
+export function parseReflexionEdgesResponse(response: string): {
+  missedFacts: Array<{
+    sourceName: string
+    targetName: string
+    relationType: string
+    fact: string
+    reason?: string
+  }>
+  reasoning: string
+} {
+  try {
+    const parsed = JSON.parse(response)
+
+    const missedFacts = (parsed.missed_facts || []).map((f: unknown) => {
+      if (typeof f !== 'object' || f === null) return null
+      const obj = f as Record<string, unknown>
+      return {
+        sourceName: String(obj.source_name || ''),
+        targetName: String(obj.target_name || ''),
+        relationType: String(obj.relation_type || 'RELATES_TO'),
+        fact: String(obj.fact || ''),
+        reason: obj.reason ? String(obj.reason) : undefined,
+      }
+    }).filter((f: unknown): f is {
+      sourceName: string
+      targetName: string
+      relationType: string
+      fact: string
+      reason?: string
+    } => f !== null && (f as { sourceName: string }).sourceName.trim() !== '' && (f as { targetName: string }).targetName.trim() !== '')
+
+    return {
+      missedFacts,
+      reasoning: parsed.reasoning || '',
+    }
+  } catch {
+    return {
+      missedFacts: [],
+      reasoning: 'Failed to parse response',
+    }
+  }
+}
+```
+
+**Export toevoegen aan prompts/index.ts:**
+
+```typescript
+// Toevoegen aan apps/api/src/lib/ai/wiki/prompts/index.ts
+export * from './reflexionNodes'
+export * from './reflexionEdges'
+```
+
+**Taken:**
+
+| # | Taak | Status | Check | Notes |
+|---|------|--------|-------|-------|
+| 3.1 | Maak reflexionNodes.ts | ⬜ | `cat prompts/reflexionNodes.ts` | |
+| 3.2 | Implementeer getReflexionNodesSystemPrompt | ⬜ | Guidelines geport van Python | |
+| 3.3 | Implementeer getReflexionNodesUserPrompt | ⬜ | Context format matched Python | |
+| 3.4 | Implementeer parseReflexionNodesResponse | ⬜ | Robust JSON + fallback parsing | |
+| 3.5 | Maak reflexionEdges.ts | ⬜ | `cat prompts/reflexionEdges.ts` | |
+| 3.6 | Implementeer getReflexionEdgesSystemPrompt | ⬜ | Guidelines geport van Python | |
+| 3.7 | Implementeer getReflexionEdgesUserPrompt | ⬜ | Includes nodes + facts context | |
+| 3.8 | Implementeer parseReflexionEdgesResponse | ⬜ | Robust parsing | |
+| 3.9 | Update prompts/index.ts exports | ⬜ | `grep reflexion prompts/index.ts` | |
+
+---
+
+### Fase 23.4: WikiAiService Reflexion Methods
+
+**Status:** ⏳ TODO
+
+**Doel:** Voeg reflexion extraction methods toe aan WikiAiService.
+
+**Bestand:** `apps/api/src/lib/ai/wiki/WikiAiService.ts`
+
+**Te Implementeren Methods:**
+
+```typescript
+// Toe te voegen aan WikiAiService class
+
+/**
+ * Detect missed entities using reflexion (Fase 23.4)
+ *
+ * Performs a second-pass LLM call to identify entities that were
+ * missed during initial extraction. Uses WikiContext for scoping.
+ *
+ * @param context - Wiki context (workspace/project) for provider selection
+ * @param episodeContent - Current wiki page content
+ * @param extractedEntities - Entities extracted in first pass
+ * @param previousEpisodes - Optional previous content for context
+ */
+async extractNodesReflexion(
+  context: WikiContext,
+  episodeContent: string,
+  extractedEntities: string[],
+  previousEpisodes?: string[]
+): Promise<NodeReflexionResult> {
+  const provider = await this.getReasoningProviderOrThrow(context)
+
+  const systemPrompt = getReflexionNodesSystemPrompt()
+  const userPrompt = getReflexionNodesUserPrompt({
+    episodeContent,
+    previousEpisodes,
+    extractedEntities,
+  })
+
+  try {
+    const response = await provider.chat(
+      [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
+      {
+        temperature: 0.1,
+        maxTokens: 1000,
+      }
+    )
+
+    const parsed = parseReflexionNodesResponse(response)
+
+    return {
+      missedEntities: parsed.missedEntities.map(e => ({
+        name: e.name,
+        reason: e.reason,
+        suggestedType: e.suggestedType,
+      })),
+      reasoning: parsed.reasoning,
+      provider: provider.type,
+      model: provider.getReasoningModel(),
+    }
+  } catch (error) {
+    console.warn(
+      `[WikiAiService] extractNodesReflexion failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+    )
+    return {
+      missedEntities: [],
+      reasoning: 'Reflexion failed - fallback to no missed entities',
+      provider: provider.type,
+      model: provider.getReasoningModel(),
+    }
+  }
+}
+
+/**
+ * Detect missed facts/edges using reflexion (Fase 23.4)
+ *
+ * Performs a second-pass LLM call to identify relationships that were
+ * missed during initial extraction.
+ *
+ * @param context - Wiki context (workspace/project) for provider selection
+ * @param episodeContent - Current wiki page content
+ * @param extractedNodes - Entity names extracted
+ * @param extractedFacts - Facts extracted in first pass
+ * @param previousEpisodes - Optional previous content for context
+ */
+async extractEdgesReflexion(
+  context: WikiContext,
+  episodeContent: string,
+  extractedNodes: string[],
+  extractedFacts: Array<{ source: string; target: string; fact: string }>,
+  previousEpisodes?: string[]
+): Promise<EdgeReflexionResult> {
+  const provider = await this.getReasoningProviderOrThrow(context)
+
+  const systemPrompt = getReflexionEdgesSystemPrompt()
+  const userPrompt = getReflexionEdgesUserPrompt({
+    episodeContent,
+    previousEpisodes,
+    extractedNodes,
+    extractedFacts,
+  })
+
+  try {
+    const response = await provider.chat(
+      [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
+      ],
+      {
+        temperature: 0.1,
+        maxTokens: 1500,
+      }
+    )
+
+    const parsed = parseReflexionEdgesResponse(response)
+
+    return {
+      missedFacts: parsed.missedFacts,
+      reasoning: parsed.reasoning,
+      provider: provider.type,
+      model: provider.getReasoningModel(),
+    }
+  } catch (error) {
+    console.warn(
+      `[WikiAiService] extractEdgesReflexion failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+    )
+    return {
+      missedFacts: [],
+      reasoning: 'Reflexion failed - fallback to no missed facts',
+      provider: provider.type,
+      model: provider.getReasoningModel(),
+    }
+  }
+}
+```
+
+**Import/Export Updates:**
+
+```typescript
+// Toevoegen aan imports in WikiAiService.ts
+import {
+  getReflexionNodesSystemPrompt,
+  getReflexionNodesUserPrompt,
+  parseReflexionNodesResponse,
+  getReflexionEdgesSystemPrompt,
+  getReflexionEdgesUserPrompt,
+  parseReflexionEdgesResponse,
+} from './prompts'
+
+import type {
+  NodeReflexionResult,
+  EdgeReflexionResult,
+} from './types'
+
+// Toevoegen aan exports
+export type {
+  NodeReflexionResult,
+  EdgeReflexionResult,
+}
+```
+
+**Taken:**
+
+| # | Taak | Status | Check | Notes |
+|---|------|--------|-------|-------|
+| 4.1 | Add imports voor reflexion prompts | ⬜ | `grep reflexion WikiAiService.ts` | |
+| 4.2 | Add imports voor reflexion types | ⬜ | NodeReflexionResult, EdgeReflexionResult | |
+| 4.3 | Implementeer extractNodesReflexion() | ⬜ | Method in WikiAiService class | |
+| 4.4 | Implementeer extractEdgesReflexion() | ⬜ | Method in WikiAiService class | |
+| 4.5 | Add exports voor types | ⬜ | `grep "export type" WikiAiService.ts` | |
+| 4.6 | Update lib/ai/wiki/index.ts | ⬜ | Export reflexion types | |
+
+---
+
+### Fase 23.5: GraphitiService Integration
+
+**Status:** ⏳ TODO
+
+**Doel:** Integreer reflexion in syncWikiPage flow met feature flag.
+
+**Bestand:** `apps/api/src/services/graphitiService.ts`
+
+**Te Implementeren:**
+
+1. **Feature Flag toevoegen aan GraphitiConfig:**
+
+```typescript
+export interface GraphitiConfig {
+  // ... bestaande config
+  /**
+   * Enable reflexion extraction for missed entities (Fase 23.5)
+   * When enabled, performs second-pass LLM call to detect missed entities
+   * Performance impact: +1-2 LLM calls per sync
+   * Can be disabled via DISABLE_REFLEXION_EXTRACTION=true env var
+   * @default false (opt-in during rollout)
+   */
+  enableReflexionExtraction?: boolean
+}
+```
+
+2. **SyncWikiPageOptions uitbreiden:**
+
+```typescript
+export interface SyncWikiPageOptions {
+  // ... bestaande opties
+  /**
+   * Enable reflexion extraction for this sync (default: false)
+   * Overrides global enableReflexionExtraction config
+   */
+  enableReflexion?: boolean
+  /**
+   * Max reflexion passes (default: 1)
+   */
+  maxReflexionPasses?: number
+}
+```
+
+3. **SyncWikiPageResult uitbreiden:**
+
+```typescript
+export interface SyncWikiPageResult {
+  // ... bestaande velden
+  /** Fase 23.5: Entities recovered via reflexion */
+  reflexionRecovered?: number
+  /** Fase 23.5: Reflexion passes executed */
+  reflexionPasses?: number
+}
+```
+
+4. **Reflexion logic in syncWikiPage:**
+
+```typescript
+// In syncWikiPage method, na initiële extractie:
+
+// Fase 23.5: Reflexion extraction (opt-in)
+let reflexionRecovered = 0
+let reflexionPasses = 0
+
+const shouldDoReflexion = options?.enableReflexion ?? this.enableReflexionExtraction
+const maxPasses = options?.maxReflexionPasses ?? 1
+
+if (shouldDoReflexion && this.wikiAiService && extractedEntities.length > 0) {
+  const wikiContext: WikiContext = {
+    workspaceId: episode.workspaceId ?? 0,
+    projectId: episode.projectId,
+  }
+
+  for (let pass = 0; pass < maxPasses; pass++) {
+    const extractedNames = extractedEntities.map(e => e.name)
+
+    const reflexionResult = await this.wikiAiService.extractNodesReflexion(
+      wikiContext,
+      episode.content,
+      extractedNames
+    )
+
+    if (reflexionResult.missedEntities.length === 0) {
+      console.log(`[GraphitiService] Reflexion pass ${pass + 1}: no missed entities`)
+      break
+    }
+
+    console.log(
+      `[GraphitiService] Reflexion pass ${pass + 1}: found ${reflexionResult.missedEntities.length} missed entities`
+    )
+
+    // Re-extract missed entities
+    for (const missed of reflexionResult.missedEntities) {
+      // Add to extraction queue for processing
+      // (depends on extraction pipeline implementation)
+    }
+
+    reflexionRecovered += reflexionResult.missedEntities.length
+    reflexionPasses++
+  }
+}
+
+return {
+  entitiesExtracted: extractedEntities.length,
+  contradictionsResolved: contradictions.length,
+  contradictions: auditEntries,
+  duplicatesFound: duplicatesFound,
+  reflexionRecovered,
+  reflexionPasses,
+}
+```
+
+**Taken:**
+
+| # | Taak | Status | Check | Notes |
+|---|------|--------|-------|-------|
+| 5.1 | Add enableReflexionExtraction config | ⬜ | `grep enableReflexion graphitiService.ts` | |
+| 5.2 | Update constructor voor env var | ⬜ | DISABLE_REFLEXION_EXTRACTION | |
+| 5.3 | Extend SyncWikiPageOptions | ⬜ | enableReflexion, maxReflexionPasses | |
+| 5.4 | Extend SyncWikiPageResult | ⬜ | reflexionRecovered, reflexionPasses | |
+| 5.5 | Add reflexion logic in syncWikiPage | ⬜ | Na extractie, voor contradictions | |
+| 5.6 | Add logging voor reflexion | ⬜ | Pass count, missed entities | |
+| 5.7 | Add to version header | ⬜ | Fase 23.5 comment | |
+
+---
+
+### Fase 23.6: tRPC Endpoints
+
+**Status:** ⏳ TODO
+
+**Doel:** Expose reflexion via tRPC voor testing en manual triggers.
+
+**Bestand:** `apps/api/src/trpc/procedures/graphiti.ts`
+
+**Te Implementeren Endpoints:**
+
+```typescript
+// graphiti.reflexionNodes - Test reflexion voor nodes
+reflexionNodes: workspaceWriteProcedure
+  .input(z.object({
+    workspaceId: z.number(),
+    projectId: z.number().optional(),
+    content: z.string(),
+    extractedEntities: z.array(z.string()),
+  }))
+  .mutation(async ({ input, ctx }) => {
+    const wikiAiService = getWikiAiService(ctx.prisma)
+
+    const result = await wikiAiService.extractNodesReflexion(
+      { workspaceId: input.workspaceId, projectId: input.projectId },
+      input.content,
+      input.extractedEntities
+    )
+
+    return result
+  })
+
+// graphiti.reflexionEdges - Test reflexion voor edges
+reflexionEdges: workspaceWriteProcedure
+  .input(z.object({
+    workspaceId: z.number(),
+    projectId: z.number().optional(),
+    content: z.string(),
+    extractedNodes: z.array(z.string()),
+    extractedFacts: z.array(z.object({
+      source: z.string(),
+      target: z.string(),
+      fact: z.string(),
+    })),
+  }))
+  .mutation(async ({ input, ctx }) => {
+    const wikiAiService = getWikiAiService(ctx.prisma)
+
+    const result = await wikiAiService.extractEdgesReflexion(
+      { workspaceId: input.workspaceId, projectId: input.projectId },
+      input.content,
+      input.extractedNodes,
+      input.extractedFacts
+    )
+
+    return result
+  })
+```
+
+**Taken:**
+
+| # | Taak | Status | Check | Notes |
+|---|------|--------|-------|-------|
+| 6.1 | Add graphiti.reflexionNodes endpoint | ⬜ | `grep reflexionNodes graphiti.ts` | |
+| 6.2 | Add graphiti.reflexionEdges endpoint | ⬜ | `grep reflexionEdges graphiti.ts` | |
+| 6.3 | Add Zod schemas voor input | ⬜ | Proper validation | |
+| 6.4 | Test endpoints via tRPC panel | ⬜ | Manual test | |
+
+---
+
+### Fase 23.7: Unit Tests
+
+**Status:** ⏳ TODO
+
+**Doel:** Schrijf unit tests voor reflexion extraction.
+
+**Test Bestanden:**
+
+```
+apps/api/src/lib/ai/wiki/prompts/__tests__/reflexionNodes.test.ts
+apps/api/src/lib/ai/wiki/prompts/__tests__/reflexionEdges.test.ts
+apps/api/src/lib/ai/wiki/__tests__/WikiAiService.reflexion.test.ts
+```
+
+**Te Implementeren Tests:**
+
+```typescript
+// reflexionNodes.test.ts
+
+describe('reflexionNodes prompts', () => {
+  describe('getReflexionNodesSystemPrompt', () => {
+    it('returns guidelines for missed entity detection', () => {
+      const prompt = getReflexionNodesSystemPrompt()
+      expect(prompt).toContain('entities have not been extracted')
+      expect(prompt).toContain('Guidelines')
+    })
+  })
+
+  describe('getReflexionNodesUserPrompt', () => {
+    it('includes episode content', () => {
+      const prompt = getReflexionNodesUserPrompt({
+        episodeContent: 'John works at Acme Corp',
+        extractedEntities: ['John'],
+      })
+      expect(prompt).toContain('John works at Acme Corp')
+      expect(prompt).toContain('CURRENT MESSAGE')
+    })
+
+    it('includes extracted entities list', () => {
+      const prompt = getReflexionNodesUserPrompt({
+        episodeContent: 'Test content',
+        extractedEntities: ['Entity A', 'Entity B'],
+      })
+      expect(prompt).toContain('Entity A')
+      expect(prompt).toContain('Entity B')
+      expect(prompt).toContain('EXTRACTED ENTITIES')
+    })
+
+    it('handles empty extracted entities', () => {
+      const prompt = getReflexionNodesUserPrompt({
+        episodeContent: 'Test content',
+        extractedEntities: [],
+      })
+      expect(prompt).toContain('(none extracted)')
+    })
+
+    it('includes previous episodes when provided', () => {
+      const prompt = getReflexionNodesUserPrompt({
+        episodeContent: 'Current content',
+        extractedEntities: ['Test'],
+        previousEpisodes: ['Previous content 1', 'Previous content 2'],
+      })
+      expect(prompt).toContain('PREVIOUS MESSAGES')
+      expect(prompt).toContain('Previous content 1')
+    })
+  })
+
+  describe('parseReflexionNodesResponse', () => {
+    it('parses valid JSON response', () => {
+      const response = JSON.stringify({
+        missed_entities: [
+          { name: 'Acme Corp', reason: 'Company mentioned', suggested_type: 'Concept' },
+        ],
+        reasoning: 'Found one missed company',
+      })
+
+      const result = parseReflexionNodesResponse(response)
+
+      expect(result.missedEntities).toHaveLength(1)
+      expect(result.missedEntities[0].name).toBe('Acme Corp')
+      expect(result.missedEntities[0].reason).toBe('Company mentioned')
+      expect(result.reasoning).toBe('Found one missed company')
+    })
+
+    it('handles string-only missed entities', () => {
+      const response = JSON.stringify({
+        missed_entities: ['Entity A', 'Entity B'],
+        reasoning: 'Simple list',
+      })
+
+      const result = parseReflexionNodesResponse(response)
+
+      expect(result.missedEntities).toHaveLength(2)
+      expect(result.missedEntities[0].name).toBe('Entity A')
+    })
+
+    it('filters empty names', () => {
+      const response = JSON.stringify({
+        missed_entities: [{ name: '' }, { name: 'Valid' }, { name: '  ' }],
+        reasoning: 'Test',
+      })
+
+      const result = parseReflexionNodesResponse(response)
+
+      expect(result.missedEntities).toHaveLength(1)
+      expect(result.missedEntities[0].name).toBe('Valid')
+    })
+
+    it('handles malformed JSON with fallback parsing', () => {
+      const response = `Some text before
+- Entity One
+- Entity Two
+* Entity Three`
+
+      const result = parseReflexionNodesResponse(response)
+
+      expect(result.missedEntities.length).toBeGreaterThan(0)
+      expect(result.missedEntities.some(e => e.name.includes('Entity'))).toBe(true)
+    })
+
+    it('returns empty for completely invalid response', () => {
+      const response = 'random gibberish without any structure'
+
+      const result = parseReflexionNodesResponse(response)
+
+      expect(result.missedEntities).toHaveLength(0)
+    })
+  })
+})
+```
+
+**Taken:**
+
+| # | Taak | Status | Check | Notes |
+|---|------|--------|-------|-------|
+| 7.1 | Maak reflexionNodes.test.ts | ⬜ | Prompt generation tests | |
+| 7.2 | Maak reflexionEdges.test.ts | ⬜ | Prompt generation tests | |
+| 7.3 | Test parseReflexionNodesResponse | ⬜ | JSON + fallback parsing | |
+| 7.4 | Test parseReflexionEdgesResponse | ⬜ | JSON + fallback parsing | |
+| 7.5 | WikiAiService.reflexion.test.ts | ⬜ | Integration met mocked provider | |
+| 7.6 | Run all tests | ⬜ | `pnpm test --filter api` | |
+
+**Verwachte Test Counts:**
+
+| Suite | Tests |
+|-------|-------|
+| reflexionNodes.test.ts | 8-10 tests |
+| reflexionEdges.test.ts | 8-10 tests |
+| WikiAiService.reflexion.test.ts | 6-8 tests |
+| **Totaal** | ~24-28 tests |
+
+---
+
+### Fase 23.8: Migration Script
+
+**Status:** ⏳ TODO
+
+**Doel:** Script voor batch reflexion op bestaande pages.
+
+**Bestand:** `apps/api/scripts/reflexion-extraction.ts`
+
+**Te Implementeren:**
+
+```typescript
+#!/usr/bin/env npx ts-node
+
+/**
+ * Reflexion Extraction Script (Fase 23.8)
+ *
+ * Run reflexion extraction on existing wiki pages to detect missed entities.
+ *
+ * Usage:
+ *   pnpm tsx scripts/reflexion-extraction.ts --workspace 1
+ *   pnpm tsx scripts/reflexion-extraction.ts --workspace 1 --project 5
+ *   pnpm tsx scripts/reflexion-extraction.ts --workspace 1 --dry-run
+ *   pnpm tsx scripts/reflexion-extraction.ts --workspace 1 --limit 10
+ */
+
+import { program } from 'commander'
+import { prisma } from '../src/lib/prisma'
+import { getWikiAiService } from '../src/lib/ai/wiki'
+import { getGraphitiService } from '../src/services/graphitiService'
+
+program
+  .requiredOption('-w, --workspace <id>', 'Workspace ID', parseInt)
+  .option('-p, --project <id>', 'Project ID (optional)', parseInt)
+  .option('-l, --limit <count>', 'Limit pages to process', parseInt, 100)
+  .option('-d, --dry-run', 'Show what would be extracted without saving')
+  .option('-v, --verbose', 'Verbose output')
+  .parse()
+
+const opts = program.opts()
+
+async function main() {
+  console.log(`\n🔍 Reflexion Extraction Script`)
+  console.log(`   Workspace: ${opts.workspace}`)
+  if (opts.project) console.log(`   Project: ${opts.project}`)
+  console.log(`   Limit: ${opts.limit}`)
+  console.log(`   Dry run: ${opts.dryRun ? 'Yes' : 'No'}`)
+  console.log()
+
+  const wikiAiService = getWikiAiService(prisma)
+  const graphitiService = getGraphitiService(prisma)
+
+  // Fetch wiki pages
+  const pages = await prisma.wikiPage.findMany({
+    where: {
+      workspaceId: opts.workspace,
+      ...(opts.project ? { projectId: opts.project } : {}),
+    },
+    take: opts.limit,
+    orderBy: { updatedAt: 'desc' },
+  })
+
+  console.log(`Found ${pages.length} pages to process\n`)
+
+  let totalMissed = 0
+  let pagesWithMissed = 0
+
+  for (const page of pages) {
+    if (opts.verbose) {
+      console.log(`Processing: ${page.title} (id: ${page.id})`)
+    }
+
+    // Get current extracted entities from graph
+    const currentEntities = await graphitiService.getEntitiesForPage(page.id)
+    const entityNames = currentEntities.map(e => e.name)
+
+    // Run reflexion
+    const result = await wikiAiService.extractNodesReflexion(
+      { workspaceId: opts.workspace, projectId: opts.project },
+      page.content,
+      entityNames
+    )
+
+    if (result.missedEntities.length > 0) {
+      pagesWithMissed++
+      totalMissed += result.missedEntities.length
+
+      console.log(`\n📄 ${page.title}`)
+      console.log(`   Missed entities: ${result.missedEntities.length}`)
+      for (const missed of result.missedEntities) {
+        console.log(`   - ${missed.name}${missed.suggestedType ? ` (${missed.suggestedType})` : ''}`)
+        if (opts.verbose && missed.reason) {
+          console.log(`     Reason: ${missed.reason}`)
+        }
+      }
+
+      if (!opts.dryRun) {
+        // Re-sync page with reflexion enabled
+        await graphitiService.syncWikiPage({
+          pageId: page.id,
+          title: page.title,
+          slug: page.slug,
+          content: page.content,
+          workspaceId: opts.workspace,
+          projectId: opts.project,
+          groupId: opts.project ? `wiki-proj-${opts.project}` : `wiki-ws-${opts.workspace}`,
+          userId: page.createdBy,
+          timestamp: new Date(),
+        }, {
+          enableReflexion: true,
+          maxReflexionPasses: 1,
+        })
+      }
+    }
+  }
+
+  console.log(`\n📊 Summary`)
+  console.log(`   Pages processed: ${pages.length}`)
+  console.log(`   Pages with missed entities: ${pagesWithMissed}`)
+  console.log(`   Total missed entities: ${totalMissed}`)
+  console.log(`   Mode: ${opts.dryRun ? 'DRY RUN (no changes)' : 'LIVE (entities added)'}`)
+}
+
+main()
+  .then(() => process.exit(0))
+  .catch((err) => {
+    console.error('Error:', err)
+    process.exit(1)
+  })
+```
+
+**Taken:**
+
+| # | Taak | Status | Check | Notes |
+|---|------|--------|-------|-------|
+| 8.1 | Maak reflexion-extraction.ts | ⬜ | `ls scripts/reflexion*` | |
+| 8.2 | Add CLI arguments | ⬜ | workspace, project, limit, dry-run | |
+| 8.3 | Implement page fetching | ⬜ | Prisma query met scope | |
+| 8.4 | Implement reflexion loop | ⬜ | Per-page processing | |
+| 8.5 | Add dry-run mode | ⬜ | Show without saving | |
+| 8.6 | Add summary output | ⬜ | Stats at end | |
+| 8.7 | Test script | ⬜ | `pnpm tsx scripts/reflexion-extraction.ts --help` | |
+
+---
+
+### Kosten Analyse
+
+**LLM Token Usage per Wiki Page Sync:**
+
+| Fase | Calls | Input Tokens | Output Tokens | Provider |
+|------|-------|--------------|---------------|----------|
+| Initial Extraction | 1 | ~2000 | ~500 | Reasoning |
+| Node Reflexion | 0-1 | ~2500 | ~300 | Reasoning |
+| Edge Reflexion | 0-1 | ~3000 | ~500 | Reasoning |
+| **Totaal (max)** | **3** | **~7500** | **~1300** | |
+
+**Cost Impact (met reflexion enabled):**
+- OpenAI GPT-4o: +$0.04-0.08 per page sync
+- Claude: +$0.03-0.06 per page sync
+- Gemini: +$0.02-0.04 per page sync
+
+**Recommendation:**
+- Reflexion default: **OFF** (opt-in)
+- Enable via:
+  - Per-sync: `syncWikiPage(..., { enableReflexion: true })`
+  - Global: `ENABLE_REFLEXION_EXTRACTION=true`
+  - Batch: `reflexion-extraction.ts` script
+
+---
+
+### Rollback Plan
+
+**Bij Problemen:**
+
+1. **Disable Feature Flag:**
+   ```bash
+   # In .env
+   DISABLE_REFLEXION_EXTRACTION=true
+   ```
+
+2. **Skip in syncWikiPage:**
+   ```typescript
+   await graphitiService.syncWikiPage(episode, {
+     enableReflexion: false,  // Explicit disable
+   })
+   ```
+
+3. **Remove tRPC Endpoints:**
+   - Comment out `graphiti.reflexionNodes`
+   - Comment out `graphiti.reflexionEdges`
+
+4. **Revert Code:**
+   - Geen database schema changes → geen migratie nodig
+   - Geen FalkorDB schema changes → clean revert mogelijk
+
+---
+
+### Multi-Tenant Architectuur Overwegingen
+
+**Huidige Implementatie:**
+
+| Aspect | Implementatie |
+|--------|---------------|
+| Provider Selection | Via `WikiContext.workspaceId/projectId` |
+| Data Isolation | Via `groupId` in FalkorDB queries |
+| API Key Scope | Workspace-level (via provider registry) |
+
+**Toekomstige Project Wiki:**
+
+```typescript
+// Huidige groupId formaat
+groupId: `wiki-ws-${workspaceId}`     // Workspace wiki
+
+// Toekomstig project wiki formaat (backwards compatible)
+groupId: `wiki-proj-${projectId}`     // Project wiki
+```
+
+**Reflexion Scoping:**
+
+```typescript
+// WikiContext bepaalt scope
+const context: WikiContext = {
+  workspaceId: episode.workspaceId ?? 0,
+  projectId: episode.projectId,  // undefined voor workspace wiki
+}
+
+// Provider selectie respecteert scope hierarchy:
+// 1. Project-level provider (indien geconfigureerd)
+// 2. Workspace-level provider (fallback)
+// 3. Global provider (laatste fallback)
+```
+
+**Geen Cross-Tenant Leakage:**
+- Reflexion calls bevatten alleen content van huidige page
+- Previous episodes gefilterd op zelfde groupId
+- FalkorDB queries scoped naar groupId
+- Qdrant queries scoped naar workspace
+
+---
+
+### Verificatie Checklist
+
+**Fase 23 Compleet wanneer:**
+
+- [ ] **23.1** Pre-checks uitgevoerd, geen conflicten
+- [ ] **23.2** TypeScript types aangemaakt in `types/reflexion.ts`
+- [ ] **23.3** Prompts geïmplementeerd in `prompts/reflexion*.ts`
+- [ ] **23.4** WikiAiService methods werken
+- [ ] **23.5** GraphitiService integration met feature flag
+- [ ] **23.6** tRPC endpoints exposed en testbaar
+- [ ] **23.7** Unit tests passing (~24-28 tests)
+- [ ] **23.8** Migration script werkt met dry-run
+
+**Handmatige Test:**
+
+```bash
+# 1. Start API server
+bash scripts/api.sh restart
+
+# 2. Test reflexion endpoint
+curl -X POST http://localhost:3001/trpc/graphiti.reflexionNodes \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workspaceId": 1,
+    "content": "John Smith works at Acme Corp as a senior developer.",
+    "extractedEntities": ["John Smith"]
+  }'
+
+# Expected: { "missedEntities": [{ "name": "Acme Corp", ... }], ... }
+
+# 3. Test via UI
+# - Open Wiki page
+# - Edit content met meerdere entities
+# - Save met reflexion enabled
+# - Check dat extra entities verschijnen
+```
+
+---
+
+### Beslispunten voor Robin
+
+| # | Vraag | Opties | Default |
+|---|-------|--------|---------|
+| 1 | Reflexion default enabled? | On/Off | **Off** (opt-in) |
+| 2 | Max reflexion passes? | 1-3 | **1** |
+| 3 | Edge reflexion ook implementeren? | Ja/Nee | **Ja** (beide) |
+| 4 | Cost threshold per page? | $0.05-0.20 | Geen limit |
+| 5 | UI indicator voor reflexion? | Badge/Toast/None | **None** (silent) |
+
+---
+
+### Changelog Fase 23
+
+| Datum | Actie |
+|-------|-------|
+| 2026-01-14 | Fase 23 plan aangemaakt |
+
+---
+
 ## Graphiti Architectuur
 
 ```
