@@ -115,6 +115,8 @@ interface GraphNode extends d3.SimulationNodeDatum {
   pageId?: number
   slug?: string
   updatedAt?: string
+  /** FalkorDB internal ID for entity nodes (used for duplicate matching) */
+  uuid?: string
   // Enhanced properties
   connectionCount?: number
   isHighlighted?: boolean
@@ -867,9 +869,16 @@ export function WikiGraphView({
     [highlightedNodeIds]
   )
 
+  // Helper function to check if a node should be highlighted
+  // Checks both id and uuid (FalkorDB internal ID) for duplicate matching
+  const isNodeHighlighted = useCallback((node: GraphNode): boolean => {
+    return highlightedNodeIdsSet.has(node.id) || (node.uuid !== undefined && highlightedNodeIdsSet.has(node.uuid))
+  }, [highlightedNodeIdsSet])
+
   // Refs for highlighted nodes to avoid re-rendering entire graph on highlight changes
   const highlightedNodeIdsSetRef = useRef(highlightedNodeIdsSet)
   const onHighlightedNodeClickRef = useRef(onHighlightedNodeClick)
+  const isNodeHighlightedRef = useRef(isNodeHighlighted)
 
   // Keep refs in sync
   useEffect(() => {
@@ -879,6 +888,10 @@ export function WikiGraphView({
   useEffect(() => {
     onHighlightedNodeClickRef.current = onHighlightedNodeClick
   }, [onHighlightedNodeClick])
+
+  useEffect(() => {
+    isNodeHighlightedRef.current = isNodeHighlighted
+  }, [isNodeHighlighted])
 
   const [layoutType, setLayoutType] = useState<LayoutType>('force')
   const [showMiniMap, setShowMiniMap] = useState(false)
@@ -1417,14 +1430,14 @@ export function WikiGraphView({
     // Add circles and store reference for highlight updates
     const circles = node.append('circle')
       .attr('r', d => {
-        if (highlightedNodeIdsSet.has(d.id)) return 16
+        if (isNodeHighlighted(d)) return 16
         if (pathNodes.has(d.id)) return 16
         if (d.isHighlighted) return 14
         if (d.type === 'WikiPage') return 12
         return 8
       })
       .attr('fill', d => {
-        if (highlightedNodeIdsSet.has(d.id)) return '#f59e0b' // Amber for duplicate highlights
+        if (isNodeHighlighted(d)) return '#f59e0b' // Amber for duplicate highlights
         if (pathNodes.has(d.id)) return '#22c55e'
         if (filters.showClusters && d.cluster !== undefined) {
           return CLUSTER_COLORS[d.cluster % CLUSTER_COLORS.length] || NODE_COLORS[d.type]
@@ -1432,13 +1445,13 @@ export function WikiGraphView({
         return NODE_COLORS[d.type]
       })
       .attr('stroke', d => {
-        if (highlightedNodeIdsSet.has(d.id)) return '#fff'
+        if (isNodeHighlighted(d)) return '#fff'
         if (d.isHighlighted) return '#fff'
         if (selectedNode?.id === d.id) return '#3b82f6'
         return 'rgba(255,255,255,0.5)'
       })
       .attr('stroke-width', d => {
-        if (highlightedNodeIdsSet.has(d.id)) return 3
+        if (isNodeHighlighted(d)) return 3
         if (d.isHighlighted || selectedNode?.id === d.id) return 3
         return 2
       })
@@ -1446,8 +1459,9 @@ export function WikiGraphView({
         event.stopPropagation()
         // If this node is highlighted (part of duplicate pair), trigger callback
         // Use refs to avoid re-rendering entire graph when highlights change
-        if (highlightedNodeIdsSetRef.current.has(d.id) && onHighlightedNodeClickRef.current) {
-          onHighlightedNodeClickRef.current(d.id)
+        if (isNodeHighlightedRef.current(d) && onHighlightedNodeClickRef.current) {
+          // Pass uuid if available (for entity nodes), otherwise id
+          onHighlightedNodeClickRef.current(d.uuid || d.id)
         }
         handleNodeClick(d)
       })
@@ -1502,14 +1516,14 @@ export function WikiGraphView({
 
     nodeCirclesRef.current
       .attr('r', d => {
-        if (highlightedNodeIdsSet.has(d.id)) return 16
+        if (isNodeHighlighted(d)) return 16
         if (pathNodes.has(d.id)) return 16
         if (d.isHighlighted) return 14
         if (d.type === 'WikiPage') return 12
         return 8
       })
       .attr('fill', d => {
-        if (highlightedNodeIdsSet.has(d.id)) return '#f59e0b' // Amber for duplicate highlights
+        if (isNodeHighlighted(d)) return '#f59e0b' // Amber for duplicate highlights
         if (pathNodes.has(d.id)) return '#22c55e'
         if (filters.showClusters && d.cluster !== undefined) {
           return CLUSTER_COLORS[d.cluster % CLUSTER_COLORS.length] || NODE_COLORS[d.type]
@@ -1517,13 +1531,13 @@ export function WikiGraphView({
         return NODE_COLORS[d.type]
       })
       .attr('stroke', d => {
-        if (highlightedNodeIdsSet.has(d.id)) return '#fff'
+        if (isNodeHighlighted(d)) return '#fff'
         if (d.isHighlighted) return '#fff'
         if (selectedNode?.id === d.id) return '#3b82f6'
         return 'rgba(255,255,255,0.5)'
       })
       .attr('stroke-width', d => {
-        if (highlightedNodeIdsSet.has(d.id)) return 3
+        if (isNodeHighlighted(d)) return 3
         if (d.isHighlighted || selectedNode?.id === d.id) return 3
         return 2
       })

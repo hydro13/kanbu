@@ -9022,8 +9022,16 @@ npx tsx ../../scripts/detect-duplicates.ts --help
 - [x] Alle 6 items geïmplementeerd
 - [x] Alle items gedocumenteerd
 - [x] Alle tests passing
-- [ ] Alle Bugs gefixt
+- [x] Alle Bugs gefixt
 - [x] ROADMAP-STATUS.md up-to-date
+
+
+#### Bugs List Robin 22.8
+
+- [x] Bug Grap crasched nu stand-alone...
+- [x] bug bij elke node die ik aan klik in de duplicate manager rnderd de graph opnieuw, maar hij reset zich ook,
+- [x] Geselecteerde dups Highlighten niet in de Graph 
+
 
 ---
 
