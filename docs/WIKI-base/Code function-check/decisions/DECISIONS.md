@@ -1,7 +1,7 @@
 # Feature Beslissingen - Graphiti vs Kanbu
 
 > **Doel:** Track welke Graphiti features we wel/niet gaan implementeren
-> **Laatst bijgewerkt:** 2026-01-13
+> **Laatst bijgewerkt:** 2026-01-14
 
 ---
 
@@ -16,7 +16,7 @@
 | BM25 Search | 🔄 FASE 20 | 2026-01-13 | MEDIUM |
 | Node Embeddings | 🔄 FASE 21 | 2026-01-13 | MEDIUM |
 | Deduplication | 🔄 FASE 22 | 2026-01-13 | MEDIUM |
-| Reflexion Extraction | ⏳ PENDING | 2026-01-13 | LAAG |
+| Reflexion Extraction | 🔄 FASE 23 | 2026-01-14 | LAAG |
 
 **Legenda:**
 - ✅ JA - Gaan we implementeren
@@ -315,21 +315,49 @@
 
 ### Reflexion Extraction
 
-**Status:** ⏳ PENDING
+**Status:** 🔄 GEPLAND (Fase 23)
 
 **Wat:**
-- Multi-pass extraction
-- Detecteer gemiste entities
+- Multi-pass extraction met LLM reflexion
+- Detecteer gemiste entities na initiële extractie
+- Second-pass voor edges/facts
+
+**Bestaande Infrastructuur:**
+- ✅ WikiAiService - AI provider abstraction
+- ✅ GraphitiService - Entity extraction pipeline
+- ✅ WikiContext scope handling (workspaceId, projectId)
+- ⚠️ Geen reflexion prompts in Kanbu (moet porten van Python Graphiti)
+- ⚠️ Geen MissedEntities type
+
+**Wat Fase 23 toevoegt:**
+- 🔄 23.1 Validatie Bestaande Implementatie
+- 🔄 23.2 TypeScript Types (MissedEntity, NodeReflexionResult, etc.)
+- 🔄 23.3 LLM Prompts (reflexionNodes.ts, reflexionEdges.ts)
+- 🔄 23.4 WikiAiService Methods (extractNodesReflexion, extractEdgesReflexion)
+- 🔄 23.5 GraphitiService Integration (syncWikiPage met reflexion flag)
+- 🔄 23.6 tRPC Endpoints (graphiti.reflexionNodes, graphiti.reflexionEdges)
+- 🔄 23.7 Unit Tests (~24-28 tests)
+- 🔄 23.8 Migration Script (reflexion-extraction.ts)
+
+**Multi-Tenant Overwegingen:**
+- Workspace-level wiki: `wiki-ws-{id}` (huidige implementatie)
+- Project-level wiki: `wiki-proj-{id}` (toekomstig, backwards compatible)
+- Provider selectie via WikiContext scope hierarchy
+- Geen cross-tenant data leakage
 
 **Argumenten VOOR:**
-- Completere graph
-- Minder gemiste info
+- Completere knowledge graph
+- Minder gemiste entities/relaties
+- Geport van bewezen Python Graphiti implementatie
+- Opt-in via feature flag (geen impact op bestaande workflows)
 
 **Argumenten TEGEN:**
-- Extra LLM calls
-- Huidige extraction voldoende
+- Extra LLM calls (+1-2 per sync, +$0.02-0.08 per page)
+- Complexiteit in extraction pipeline
 
-**Beslissing:** _Te bepalen door Robin_
+**Beslissing:** ✅ IMPLEMENTEREN in Fase 23
+
+**Zie:** [ROADMAP-STATUS.md - Fase 23](../ROADMAP-STATUS.md#fase-23-reflexion-extraction-multi-pass-entity-extraction-)
 
 ---
 
@@ -344,6 +372,7 @@
 | 2026-01-13 | BM25 Search | ✅ JA | Robin | Gepland voor Fase 20 |
 | 2026-01-13 | Node Embeddings | ✅ JA | Robin | Gepland voor Fase 21 |
 | 2026-01-14 | Deduplication | ✅ JA | Robin | Gepland voor Fase 22 |
+| 2026-01-14 | Reflexion Extraction | ✅ JA | Robin | Gepland voor Fase 23 |
 
 ---
 
@@ -359,4 +388,4 @@
 
 ---
 
-*Laatst bijgewerkt door: Claude Code - 2026-01-13*
+*Laatst bijgewerkt door: Claude Code - 2026-01-14*
