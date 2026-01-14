@@ -822,6 +822,13 @@ interface FilterState {
 }
 
 // =============================================================================
+// Constants
+// =============================================================================
+
+// Stable empty array reference to prevent infinite re-renders when no highlightedNodeIds prop is passed
+const EMPTY_HIGHLIGHTED_IDS: string[] = []
+
+// =============================================================================
 // Main Component
 // =============================================================================
 
@@ -833,13 +840,15 @@ export function WikiGraphView({
   fullscreen = false,
   onToggleFullscreen,
   onAskAboutNode,
-  highlightedNodeIds = [],
+  highlightedNodeIds = EMPTY_HIGHLIGHTED_IDS,
   onHighlightedNodeClick,
 }: WikiGraphViewProps) {
   const navigate = useNavigate()
   const containerRef = useRef<HTMLDivElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
   const simulationRef = useRef<d3.Simulation<GraphNode, GraphEdge> | null>(null)
+  // Ref to store the node circles selection for highlight updates
+  const nodeCirclesRef = useRef<d3.Selection<SVGCircleElement, GraphNode, SVGGElement, unknown> | null>(null)
 
   // State
   const [isInitialized, setIsInitialized] = useState(false)
@@ -857,6 +866,20 @@ export function WikiGraphView({
     () => new Set(highlightedNodeIds),
     [highlightedNodeIds]
   )
+
+  // Refs for highlighted nodes to avoid re-rendering entire graph on highlight changes
+  const highlightedNodeIdsSetRef = useRef(highlightedNodeIdsSet)
+  const onHighlightedNodeClickRef = useRef(onHighlightedNodeClick)
+
+  // Keep refs in sync
+  useEffect(() => {
+    highlightedNodeIdsSetRef.current = highlightedNodeIdsSet
+  }, [highlightedNodeIdsSet])
+
+  useEffect(() => {
+    onHighlightedNodeClickRef.current = onHighlightedNodeClick
+  }, [onHighlightedNodeClick])
+
   const [layoutType, setLayoutType] = useState<LayoutType>('force')
   const [showMiniMap, setShowMiniMap] = useState(false)
   const [showSidebar, setShowSidebar] = useState(false)
@@ -1194,7 +1217,13 @@ export function WikiGraphView({
     const svg = d3.select(svgRef.current)
     const container = containerRef.current
     const width = container.clientWidth - (showSidebar ? 320 : 0) || 800
-    const actualHeight = fullscreen ? window.innerHeight - 100 : height
+    // Use container height if available (for flex layouts), otherwise fall back to prop or default
+    const containerHeight = container.clientHeight
+    const actualHeight = fullscreen
+      ? window.innerHeight - 100
+      : containerHeight > 100
+        ? containerHeight
+        : height
 
     // Update viewBox state
     setViewBox({ x: 0, y: 0, width, height: actualHeight })
@@ -1385,8 +1414,8 @@ export function WikiGraphView({
           }
         }))
 
-    // Add circles
-    node.append('circle')
+    // Add circles and store reference for highlight updates
+    const circles = node.append('circle')
       .attr('r', d => {
         if (highlightedNodeIdsSet.has(d.id)) return 16
         if (pathNodes.has(d.id)) return 16
@@ -1416,8 +1445,9 @@ export function WikiGraphView({
       .on('click', (event, d) => {
         event.stopPropagation()
         // If this node is highlighted (part of duplicate pair), trigger callback
-        if (highlightedNodeIdsSet.has(d.id) && onHighlightedNodeClick) {
-          onHighlightedNodeClick(d.id)
+        // Use refs to avoid re-rendering entire graph when highlights change
+        if (highlightedNodeIdsSetRef.current.has(d.id) && onHighlightedNodeClickRef.current) {
+          onHighlightedNodeClickRef.current(d.id)
         }
         handleNodeClick(d)
       })
@@ -1433,6 +1463,9 @@ export function WikiGraphView({
       .on('mouseleave', () => {
         handleNodeHover(null)
       })
+
+    // Store circles selection for highlight updates
+    nodeCirclesRef.current = circles
 
     // Add labels
     node.append('text')
@@ -1460,7 +1493,41 @@ export function WikiGraphView({
     return () => {
       simulation.stop()
     }
-  }, [processedData, height, fullscreen, handleNodeClick, handleNodeHover, handleNavigate, pathNodes, layoutType, timelineMode, timeBounds, filters.showClusters, selectedNode, showSidebar, highlightedNodeIdsSet, onHighlightedNodeClick])
+  }, [processedData, height, fullscreen, handleNodeClick, handleNodeHover, handleNavigate, pathNodes, layoutType, timelineMode, timeBounds, filters.showClusters, selectedNode, showSidebar])
+
+  // Separate effect for updating highlighted node styles without re-rendering entire graph
+  useEffect(() => {
+    // Use the stored circles selection ref for efficient updates
+    if (!nodeCirclesRef.current || !isInitialized) return
+
+    nodeCirclesRef.current
+      .attr('r', d => {
+        if (highlightedNodeIdsSet.has(d.id)) return 16
+        if (pathNodes.has(d.id)) return 16
+        if (d.isHighlighted) return 14
+        if (d.type === 'WikiPage') return 12
+        return 8
+      })
+      .attr('fill', d => {
+        if (highlightedNodeIdsSet.has(d.id)) return '#f59e0b' // Amber for duplicate highlights
+        if (pathNodes.has(d.id)) return '#22c55e'
+        if (filters.showClusters && d.cluster !== undefined) {
+          return CLUSTER_COLORS[d.cluster % CLUSTER_COLORS.length] || NODE_COLORS[d.type]
+        }
+        return NODE_COLORS[d.type]
+      })
+      .attr('stroke', d => {
+        if (highlightedNodeIdsSet.has(d.id)) return '#fff'
+        if (d.isHighlighted) return '#fff'
+        if (selectedNode?.id === d.id) return '#3b82f6'
+        return 'rgba(255,255,255,0.5)'
+      })
+      .attr('stroke-width', d => {
+        if (highlightedNodeIdsSet.has(d.id)) return 3
+        if (d.isHighlighted || selectedNode?.id === d.id) return 3
+        return 2
+      })
+  }, [highlightedNodeIdsSet, isInitialized, pathNodes, filters.showClusters, selectedNode])
 
   // Handle window resize
   useEffect(() => {
@@ -1471,7 +1538,12 @@ export function WikiGraphView({
       if (!container) return
 
       const width = container.clientWidth - (showSidebar ? 320 : 0)
-      const actualHeight = fullscreen ? window.innerHeight - 100 : height
+      const containerHeight = container.clientHeight
+      const actualHeight = fullscreen
+        ? window.innerHeight - 100
+        : containerHeight > 100
+          ? containerHeight
+          : height
 
       d3.select(svgRef.current)
         .attr('viewBox', `0 0 ${width} ${actualHeight}`)

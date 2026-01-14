@@ -711,11 +711,11 @@ export function WikiDuplicateManager({
 
           {/* Fase 22.9: Right side: Graph visualization */}
           {showGraph && (
-            <div className="flex-1 min-w-[500px] border rounded-lg overflow-hidden bg-slate-50 dark:bg-slate-900">
+            <div className="flex-1 min-w-[500px] min-h-[400px] border rounded-lg overflow-hidden bg-slate-50 dark:bg-slate-900 flex flex-col">
               <WikiGraphView
                 workspaceId={workspaceId}
                 basePath={`/wiki/${workspaceId}`}
-                height={550}
+                className="flex-1"
                 highlightedNodeIds={highlightedNodeIds}
                 onHighlightedNodeClick={handleHighlightedNodeClick}
               />
