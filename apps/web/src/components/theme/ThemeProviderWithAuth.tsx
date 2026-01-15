@@ -1,6 +1,6 @@
 /*
  * Theme Provider with Auth Integration
- * Version: 1.1.0
+ * Version: 1.2.0
  *
  * Wrapper that connects ThemeProvider to Redux auth state and tRPC user profile.
  * This bridges the gap between the generic ThemeContext and Kanbu's auth system.
@@ -10,12 +10,13 @@
  * Session: MAX-2026-01-15
  * Change: Initial implementation (Fase 3.1 - Theme Infrastructure)
  * Modified: Added accent color support (Fase 3.2)
+ * Modified: Enabled backend accent persistence (Fase 4)
  * ===================================================================
  */
 
 import { useCallback, type ReactNode } from 'react'
 import { ThemeProvider, type ThemeMode, type AccentName } from '@/contexts/ThemeContext'
-// import { isValidAccent } from '@/lib/themes/accents' // TODO: Uncomment when backend supports accent
+import { isValidAccent } from '@/lib/themes/accents'
 import { useAppSelector } from '@/store'
 import { selectIsAuthenticated } from '@/store/authSlice'
 import { trpc } from '@/lib/trpc'
@@ -53,21 +54,17 @@ export function ThemeProviderWithAuth({ children }: ThemeProviderWithAuthProps) 
   )
 
   // Callback when accent changes
-  // NOTE: Backend doesn't support accent field yet - changes are persisted to localStorage only
-  // When backend is updated, uncomment the mutateAsync call below
   const handleAccentChange = useCallback(
-    async (_accent: AccentName) => {
-      // TODO: Enable when backend supports accent field
-      // await updateProfile.mutateAsync({ accent })
-      // For now, accent is stored in localStorage via ThemeContext
+    async (accent: AccentName) => {
+      await updateProfile.mutateAsync({ accent })
     },
-    []
+    [updateProfile]
   )
 
-  // Extract theme from profile
-  // NOTE: accent is not stored in backend yet, will use localStorage cache
+  // Extract theme and accent from profile
   const userTheme = profile?.theme as ThemeMode | undefined
-  const userAccent: AccentName | undefined = undefined // Backend doesn't have accent yet
+  const userAccent =
+    profile?.accent && isValidAccent(profile.accent) ? profile.accent : undefined
 
   return (
     <ThemeProvider

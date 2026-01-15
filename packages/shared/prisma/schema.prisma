@@ -90,6 +90,7 @@ model User {
   notificationsEnabled Boolean                   @default(true) @map("notifications_enabled")
   publicToken          String?                   @unique @map("public_token") @db.VarChar(64)
   theme                String                    @default("system") @db.VarChar(20)
+  accent               String                    @default("blue") @db.VarChar(20)
   twofactorActivated   Boolean                   @default(false) @map("twofactor_activated")
   twofactorSecret      String?                   @map("twofactor_secret") @db.Char(16)
   role                 AppRole                   @default(USER)
