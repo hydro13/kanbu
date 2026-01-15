@@ -12432,24 +12432,47 @@ main().catch((err) => {
 });
 ```
 
-**CHECKPOINT 6:** ✅ Migration script werkt met --dry-run → Fase 24 COMPLEET
+**CHECKPOINT 6:** ✅ Migration script werkt met --dry-run → Fase 24.9 COMPLEET
+
+**Waarom alleen dry-run?**
+- Dit is een **validatie & cleanup tool**, GEEN data migratie script
+- Er zijn 0 communities (nieuwe feature, geen oude data om te migreren)
+- Script valideert schema en detecteert corrupt data
+- Live run met `--cleanup` alleen nodig bij: backup restores, productie bugs, schema violations
+- Communities worden automatisch aangemaakt via `detectCommunities()` in correcte format
+
+**Bewijs van werking:**
+```bash
+npx tsx scripts/migrate-community-detection.ts --dry-run --verbose
+# Output:
+# ✅ Connected to FalkorDB
+# ✅ Graph "kanbu_wiki" exists
+# Total communities: 0 (fresh install - correct!)
+# ✅ Schema validated
+```
 
 ---
 
 ### Gap Analyse
 
-| Component | Python Graphiti | Kanbu Status | Actie |
-|-----------|-----------------|--------------|-------|
-| `CommunityNode` | `nodes.py:591` | ❌ Niet aanwezig | 24.2 - Types + FalkorDB |
-| `CommunityEdge` (HAS_MEMBER) | `edges.py:480` | ❌ Niet aanwezig | 24.2 - Types + FalkorDB |
-| `label_propagation()` | `community_operations.py:86` | ❌ Niet aanwezig | 24.3 - Algorithm |
-| `summarize_pair()` | `community_operations.py:134` | ❌ Niet aanwezig | 24.4 - Prompts |
-| `summary_description()` | `community_operations.py:151` | ❌ Niet aanwezig | 24.4 - Prompts |
-| `build_communities()` | `community_operations.py:209` | ❌ Niet aanwezig | 24.5 - Service |
-| `update_community()` | `community_operations.py:304` | ❌ Niet aanwezig | 24.5 - Service |
-| `remove_communities()` | `community_operations.py:237` | ❌ Niet aanwezig | 24.5 - Service |
-| tRPC endpoints | N/A | ❌ Niet aanwezig | 24.6 - Endpoints |
-| UI components | N/A | ⚠️ Basis graph view | 24.7 - Enhanced |
+**Update 2026-01-15:** Alle componenten zijn nu compleet! ✅
+
+| Component | Python Graphiti | Kanbu Status | Fase | Locatie |
+|-----------|-----------------|--------------|------|---------|
+| `CommunityNode` | `nodes.py:591` | ✅ **COMPLEET** | 24.2 | `types/community.ts` |
+| `CommunityEdge` (HAS_MEMBER) | `edges.py:480` | ✅ **COMPLEET** | 24.2 | FalkorDB schema |
+| `label_propagation()` | `community_operations.py:86` | ✅ **COMPLEET** | 24.3 | `algorithms/labelPropagation.ts` |
+| `summarize_pair()` | `community_operations.py:134` | ✅ **COMPLEET** | 24.4 | `prompts/community.ts` |
+| `summary_description()` | `community_operations.py:151` | ✅ **COMPLEET** | 24.4 | `prompts/community.ts` |
+| `build_communities()` | `community_operations.py:209` | ✅ **COMPLEET** | 24.5 | `WikiClusterService.detectCommunities()` |
+| `update_community()` | `community_operations.py:304` | ✅ **COMPLEET** | 24.5 | `WikiClusterService.updateCommunities()` |
+| `remove_communities()` | `community_operations.py:237` | ✅ **COMPLEET** | 24.5 | `WikiClusterService.deleteCommunitiesForGroup()` |
+| tRPC endpoints | N/A | ✅ **COMPLEET** | 24.6 | `wiki.router.ts` (community endpoints) |
+| UI components | N/A | ✅ **COMPLEET** | 24.7 | `ClusterLegend`, `ClusterDetailPanel` |
+| Tests (49 tests) | N/A | ✅ **100% PASSING** | 24.8 | `*.test.ts` (25 + 24 tests) |
+| Migration script | N/A | ✅ **COMPLEET** | 24.9 | `scripts/migrate-community-detection.ts` |
+
+**Remaining:** Fase 24.10 - UI Integration in WikiGraphView (plan klaar, implementatie pending)
 
 ---
 
