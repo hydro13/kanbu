@@ -39,6 +39,7 @@ const updateProfileSchema = z.object({
   timezone: z.string().max(50).optional(),
   language: z.string().max(10).optional(),
   theme: z.enum(['light', 'dark', 'system']).optional(),
+  accent: z.enum(['slate', 'blue', 'teal', 'violet', 'rose', 'amber']).optional(),
   defaultFilter: z.string().optional(),
 })
 
@@ -134,6 +135,7 @@ export const userRouter = router({
         gitlabId: true,
         // Preferences
         theme: true,
+        accent: true,
         defaultFilter: true,
         // Public access
         publicToken: true,
@@ -222,6 +224,7 @@ export const userRouter = router({
           timezone: true,
           language: true,
           theme: true,
+          accent: true,
           defaultFilter: true,
           updatedAt: true,
         },
