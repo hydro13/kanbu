@@ -86,7 +86,7 @@ export function Metadata() {
 
   return (
     <ProfileLayout title="Metadata" description="Custom key-value data for your profile">
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+      <div className="bg-card rounded-card border border-border">
         {/* Add New Metadata - inline form */}
         <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
           <div className="flex items-center gap-2">

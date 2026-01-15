@@ -77,7 +77,7 @@ export function TwoFactorAuth() {
   if (backupCodes) {
     return (
       <ProfileLayout title="Two-Factor Authentication" description="Secure your account with 2FA">
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <div className="bg-card rounded-card border border-border">
           <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
             <h3 className="text-sm font-semibold text-green-600 dark:text-green-400">2FA Enabled Successfully!</h3>
             <p className="text-xs text-muted-foreground mt-0.5">Save these backup codes - use them if you lose your device</p>
@@ -101,7 +101,7 @@ export function TwoFactorAuth() {
   if (setupData) {
     return (
       <ProfileLayout title="Two-Factor Authentication" description="Secure your account with 2FA">
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <div className="bg-card rounded-card border border-border">
           <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
             <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Setup 2FA</h3>
             <p className="text-xs text-muted-foreground mt-0.5">Scan with Google Authenticator, Authy, etc.</p>
@@ -156,7 +156,7 @@ export function TwoFactorAuth() {
   // Main view - enabled or disabled state
   return (
     <ProfileLayout title="Two-Factor Authentication" description="Secure your account with 2FA">
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+      <div className="bg-card rounded-card border border-border">
         <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
           <div>
             <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Two-Factor Authentication</h3>

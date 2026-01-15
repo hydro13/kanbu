@@ -213,7 +213,7 @@ function ReviewItem({ review }: { review: Review }) {
     : null
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
+    <div className="bg-card rounded-card border border-border p-3">
       <div className="flex items-start justify-between mb-2">
         <div className="flex items-center gap-2">
           <img

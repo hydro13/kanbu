@@ -164,7 +164,7 @@ export function NotificationSettings() {
       {/* Content */}
       <div className="max-w-4xl mx-auto px-4 py-6">
         {/* Master Controls */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6 mb-6">
+        <div className="bg-card rounded-card border border-border p-6 mb-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
             Master Controls
           </h2>
@@ -228,7 +228,7 @@ export function NotificationSettings() {
         </div>
 
         {/* Individual Preferences */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="bg-card rounded-card border border-border overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
               Notification Types

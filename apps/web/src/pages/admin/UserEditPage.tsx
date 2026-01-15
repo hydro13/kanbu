@@ -438,7 +438,7 @@ export function UserEditPage() {
       {activeTab === 'groups' && (
         <div className="max-w-3xl space-y-6">
           {/* Current Groups */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+          <div className="bg-card rounded-card border border-border">
             <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
               <h3 className="font-medium text-gray-900 dark:text-white">Group Memberships</h3>
               <p className="text-sm text-gray-500 mt-1">Groups this user belongs to</p>
@@ -492,7 +492,7 @@ export function UserEditPage() {
           </div>
 
           {/* Add to Group */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+          <div className="bg-card rounded-card border border-border p-6">
             <h3 className="font-medium text-gray-900 dark:text-white mb-4">Add to Group</h3>
             {allGroupsData?.groups && allGroupsData.groups.length > 0 ? (
               <div className="space-y-4">
@@ -558,7 +558,7 @@ export function UserEditPage() {
       {activeTab === 'security' && (
         <div className="max-w-2xl space-y-8">
           {/* Account Status */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+          <div className="bg-card rounded-card border border-border p-6">
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Account Status</h3>
             <div className="grid gap-4">
               <div className="flex justify-between items-center">
@@ -624,7 +624,7 @@ export function UserEditPage() {
           </div>
 
           {/* Reset Password */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+          <div className="bg-card rounded-card border border-border p-6">
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Reset Password</h3>
             <form onSubmit={handlePasswordSubmit} className="space-y-4">
               {passwordError && (
@@ -669,7 +669,7 @@ export function UserEditPage() {
           </div>
 
           {/* OAuth Connections */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+          <div className="bg-card rounded-card border border-border p-6">
             <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">OAuth Connections</h3>
             <div className="grid gap-3">
               <div className="flex justify-between items-center">
@@ -700,22 +700,22 @@ export function UserEditPage() {
         <div className="space-y-6">
           {/* Session stats */}
           <div className="grid grid-cols-3 gap-4">
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+            <div className="bg-card rounded-card border border-border p-4">
               <div className="text-2xl font-bold text-gray-900 dark:text-white">{user.sessionCount}</div>
               <div className="text-sm text-gray-500">Active sessions</div>
             </div>
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+            <div className="bg-card rounded-card border border-border p-4">
               <div className="text-2xl font-bold text-gray-900 dark:text-white">{user.loginCount}</div>
               <div className="text-sm text-gray-500">Total logins</div>
             </div>
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+            <div className="bg-card rounded-card border border-border p-4">
               <div className="text-2xl font-bold text-gray-900 dark:text-white">{user.workspaceCount}</div>
               <div className="text-sm text-gray-500">Workspaces</div>
             </div>
           </div>
 
           {/* Recent logins */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+          <div className="bg-card rounded-card border border-border">
             <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
               <h3 className="font-medium text-gray-900 dark:text-white">Recent Logins</h3>
             </div>

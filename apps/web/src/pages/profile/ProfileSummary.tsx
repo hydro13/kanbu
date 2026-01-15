@@ -73,7 +73,7 @@ function RoleBadge({ role }: { role: string }) {
 
 function Section({ title, children, className = '' }: { title: string; children: React.ReactNode; className?: string }) {
   return (
-    <div className={`bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 ${className}`}>
+    <div className={`bg-card rounded-card border border-border ${className}`}>
       <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
         <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{title}</h3>
       </div>
@@ -129,7 +129,7 @@ export function ProfileSummary() {
       {/* Top Row: Profile Card + Workspaces + Projects */}
       <div className="grid grid-cols-3 gap-4 mb-4">
         {/* Profile Card */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+        <div className="bg-card rounded-card border border-border p-4">
           <div className="flex items-center gap-4">
             {profile.avatarUrl ? (
               <img
@@ -151,7 +151,7 @@ export function ProfileSummary() {
         </div>
 
         {/* Workspaces */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+        <div className="bg-card rounded-card border border-border p-4">
           <div className="flex items-center gap-2 mb-3">
             <BuildingIcon className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm font-medium text-gray-900 dark:text-white">Workspaces</span>
@@ -174,7 +174,7 @@ export function ProfileSummary() {
         </div>
 
         {/* Recent Projects */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+        <div className="bg-card rounded-card border border-border p-4">
           <div className="flex items-center gap-2 mb-3">
             <FolderIcon className="h-4 w-4 text-muted-foreground" />
             <span className="text-sm font-medium text-gray-900 dark:text-white">Recent Projects</span>

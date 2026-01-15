@@ -247,14 +247,14 @@ export function AuditLogsPage() {
         {/* Stats Cards */}
         {statsData && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+            <div className="bg-card rounded-card border border-border p-4">
               <div className="text-sm text-gray-500 dark:text-gray-400">Total Events</div>
               <div className="text-2xl font-semibold text-gray-900 dark:text-white mt-1">
                 {statsData.totalLogs.toLocaleString()}
               </div>
             </div>
             {Object.entries(statsData.byCategory).map(([category, count]) => (
-              <div key={category} className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+              <div key={category} className="bg-card rounded-card border border-border p-4">
                 <div className="text-sm text-gray-500 dark:text-gray-400">{category}</div>
                 <div className="text-2xl font-semibold text-gray-900 dark:text-white mt-1">
                   {(count as number).toLocaleString()}
@@ -265,7 +265,7 @@ export function AuditLogsPage() {
         )}
 
         {/* Filters */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+        <div className="bg-card rounded-card border border-border p-4">
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {/* Search */}
             <div className="md:col-span-2">
@@ -358,7 +358,7 @@ export function AuditLogsPage() {
         </div>
 
         {/* Audit Logs Table */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="bg-card rounded-card border border-border overflow-hidden">
           {isLoading ? (
             <div className="p-8 text-center text-gray-500 dark:text-gray-400">
               Loading audit logs...

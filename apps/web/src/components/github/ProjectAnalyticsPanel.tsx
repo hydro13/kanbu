@@ -80,7 +80,7 @@ function MetricCard({
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+    <div className="bg-card rounded-card border border-border p-4">
       <div className="flex items-center gap-3 mb-2">
         <div className={`p-2 rounded-lg ${colorClasses[color]}`}>
           <Icon className="w-5 h-5" />
@@ -374,7 +374,7 @@ export function ProjectAnalyticsPanel({ projectId }: ProjectAnalyticsPanelProps)
 
       {/* Throughput Chart */}
       {throughput.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+        <div className="bg-card rounded-card border border-border p-4">
           <h4 className="font-medium text-gray-900 dark:text-white mb-4">
             Weekly Throughput
           </h4>
@@ -384,7 +384,7 @@ export function ProjectAnalyticsPanel({ projectId }: ProjectAnalyticsPanelProps)
 
       {/* Top Contributors */}
       {contributors.length > 0 && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+        <div className="bg-card rounded-card border border-border p-4">
           <h4 className="font-medium text-gray-900 dark:text-white mb-4">
             Top Contributors
           </h4>

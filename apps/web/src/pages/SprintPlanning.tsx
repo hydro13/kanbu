@@ -571,7 +571,7 @@ export function SprintPlanning() {
         {/* Sprint List */}
         <div className="space-y-4">
           {filteredSprints.length === 0 ? (
-            <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+            <div className="text-center py-12 bg-card rounded-card border border-border">
               <Calendar className="w-12 h-12 mx-auto text-gray-400 mb-3" />
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-1">
                 No {activeTab} sprints

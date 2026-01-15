@@ -170,7 +170,7 @@ export function EditProfile() {
         {/* 2-Column Layout */}
         <div className="grid grid-cols-2 gap-4 mb-4">
           {/* Left Column: Basic Information */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+          <div className="bg-card rounded-card border border-border">
             <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Basic Information</h3>
             </div>
@@ -201,7 +201,7 @@ export function EditProfile() {
           </div>
 
           {/* Right Column: Preferences */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+          <div className="bg-card rounded-card border border-border">
             <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Preferences</h3>
             </div>

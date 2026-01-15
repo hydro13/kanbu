@@ -169,7 +169,7 @@ export function GitHubAdminPage() {
         )}
 
         {/* Tabs */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <div className="bg-card rounded-card border border-border">
           <div className="border-b border-gray-200 dark:border-gray-700">
             <nav className="flex gap-1 px-4">
               {tabs.map((tab) => {
@@ -357,7 +357,7 @@ function StatCard({ title, value, icon: Icon, color }: StatCardProps) {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+    <div className="bg-card rounded-card border border-border p-4">
       <div className="flex items-center gap-3">
         <div className={`p-2 rounded-lg ${colorClasses[color]}`}>
           <Icon className="h-5 w-5" />

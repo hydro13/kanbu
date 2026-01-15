@@ -258,7 +258,7 @@ export function PermissionMatrixPage() {
     >
       <div className="space-y-4">
         {/* Filters */}
-        <div className="flex flex-wrap gap-3 items-center bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
+        <div className="flex flex-wrap gap-3 items-center bg-card rounded-card border border-border p-3">
           <FilterIcon className="w-4 h-4 text-gray-400" />
 
           {/* Resource Type Filter */}
@@ -351,7 +351,7 @@ export function PermissionMatrixPage() {
             No data to display. Try adjusting the filters.
           </div>
         ) : (
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="bg-card rounded-card border border-border overflow-hidden">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                 {/* Header */}

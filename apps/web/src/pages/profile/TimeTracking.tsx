@@ -69,15 +69,15 @@ export function TimeTracking() {
     <ProfileLayout title="Time Tracking" description="Overview of your logged hours">
       {/* Compact Stats Row */}
       <div className="grid grid-cols-3 gap-4 mb-4">
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-center">
+        <div className="bg-card rounded-card border border-border p-3 text-center">
           <p className="text-xl font-bold text-blue-600 dark:text-blue-400">{formatHours(data.totalSpent)}</p>
           <p className="text-xs text-muted-foreground">Time Spent</p>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-center">
+        <div className="bg-card rounded-card border border-border p-3 text-center">
           <p className="text-xl font-bold text-gray-600 dark:text-gray-400">{formatHours(data.totalEstimated)}</p>
           <p className="text-xs text-muted-foreground">Estimated</p>
         </div>
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-3 text-center">
+        <div className="bg-card rounded-card border border-border p-3 text-center">
           <p className={`text-xl font-bold ${efficiency <= 100 ? 'text-green-600 dark:text-green-400' : 'text-orange-600 dark:text-orange-400'}`}>
             {efficiency}%
           </p>
@@ -88,7 +88,7 @@ export function TimeTracking() {
       {/* Two Column Layout: Projects + Recent Entries */}
       <div className="grid grid-cols-2 gap-4">
         {/* Time by Project */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <div className="bg-card rounded-card border border-border">
           <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
             <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Time by Project</h3>
           </div>
@@ -124,7 +124,7 @@ export function TimeTracking() {
         </div>
 
         {/* Recent Entries */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <div className="bg-card rounded-card border border-border">
           <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
             <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Recent Entries</h3>
           </div>

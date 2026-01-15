@@ -98,7 +98,7 @@ export function NotificationPreferences() {
         {/* Left column: Filter + Delivery */}
         <div className="space-y-4">
           {/* Task Filter */}
-          <div className={`bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 ${!settings?.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
+          <div className={`bg-card rounded-card border border-border ${!settings?.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
             <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Task Filter</h3>
             </div>
@@ -127,7 +127,7 @@ export function NotificationPreferences() {
           </div>
 
           {/* Delivery Methods */}
-          <div className={`bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 ${!settings?.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
+          <div className={`bg-card rounded-card border border-border ${!settings?.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
             <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Delivery Methods</h3>
             </div>
@@ -152,7 +152,7 @@ export function NotificationPreferences() {
         </div>
 
         {/* Right column: Master toggle */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 h-fit">
+        <div className="bg-card rounded-card border border-border h-fit">
           <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
             <div>
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Notifications</h3>

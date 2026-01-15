@@ -329,7 +329,7 @@ export function SystemSettingsPage() {
 
       {/* Settings content */}
       {data && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <div className="bg-card rounded-card border border-border">
           {/* Tabs */}
           <div className="border-b border-gray-200 dark:border-gray-700">
             <nav className="flex gap-4 px-6">
@@ -416,13 +416,13 @@ export function SystemSettingsPage() {
           </div>
 
           {customSettings.length === 0 && !showAddCustom && (
-            <div className="text-center py-8 text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400 bg-card rounded-card border border-border">
               No custom settings defined
             </div>
           )}
 
           {(customSettings.length > 0 || showAddCustom) && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 divide-y divide-gray-100 dark:divide-gray-700">
+            <div className="bg-card rounded-card border border-border divide-y divide-gray-100 dark:divide-gray-700">
               {/* Add new form */}
               {showAddCustom && (
                 <div className="px-6 py-4">

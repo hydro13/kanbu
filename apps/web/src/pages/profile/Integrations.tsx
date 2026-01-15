@@ -76,7 +76,7 @@ const availableIntegrations: IntegrationConfig[] = [
 export function Integrations() {
   return (
     <ProfileLayout title="Integrations" description="Connect external services to your account">
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+      <div className="bg-card rounded-card border border-border">
         <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
           <div>
             <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Integrations</h3>
