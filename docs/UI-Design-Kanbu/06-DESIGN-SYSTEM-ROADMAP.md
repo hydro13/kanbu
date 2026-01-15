@@ -1,8 +1,8 @@
 # Kanbu Design System - Implementatie Roadmap
 
-**Versie:** 2.0.0
-**Laatst bijgewerkt:** 2026-01-15
-**Status:** ✅ Design System v2.0.0 Voltooid
+**Versie:** 2.1.0
+**Laatst bijgewerkt:** 2026-01-16
+**Status:** ✅ Design System v2.0.0 Voltooid | Fase 7-9 Gedocumenteerd
 
 ---
 
@@ -269,40 +269,1341 @@ ce26b0c0 feat(design-system): Complete design token system (Fase 6)
 
 ## Toekomstige Fases (Gepland)
 
-### Fase 7: Component Library Audit (Niet Gestart)
+---
 
-**Doel:** Alle shadcn/ui componenten doorlopen en design tokens toepassen.
+## FASE 7: Component Library Audit (Niet Gestart)
 
-| Component | Status | Notities |
-|-----------|--------|----------|
-| Button | [ ] | Primaire varianten |
-| Card | [ ] | Padding varianten |
-| Dialog | [ ] | Overlay kleur |
-| Input | [ ] | Focus states |
-| Badge | [ ] | Nieuwe kleuren |
-| Toast | [ ] | Status kleuren |
+**Doel:** Alle shadcn/ui componenten doorlopen en design tokens toepassen voor consistente styling.
 
-### Fase 8: Advanced Theming (Niet Gestart)
+**Geschatte complexiteit:** Medium | **Geschatte duur:** 2-3 dagen
 
-**Doel:** Stijl en layout aanpasbaar maken.
+### Pre-flight Checks
 
-| Feature | Status |
-|---------|--------|
-| Custom color picker | [ ] |
-| Density settings (compact/normal/spacious) | [ ] |
-| Sidebar position (left/right) | [ ] |
-| Theme import/export | [ ] |
+```bash
+# Inventariseer huidige shadcn/ui componenten
+ls apps/web/src/components/ui/
 
-### Fase 9: Documentation (Niet Gestart)
+# Check welke tokens al gedefinieerd zijn
+grep -c "^--" apps/web/src/styles/globals.css
 
-**Doel:** Developer documentation genereren.
+# Zoek hardcoded kleuren in ui/ directory
+grep -r "bg-\(gray\|blue\|red\|green\)" apps/web/src/components/ui/ | wc -l
+```
 
-| Item | Status |
-|------|--------|
-| Token reference guide | [ ] |
-| Usage examples | [ ] |
-| Migration guide | [ ] |
-| Storybook integration | [ ] |
+### Fase 7.1: Button Component Audit
+
+**Doel:** Button varianten afstemmen op design tokens.
+
+**Taken:**
+- [ ] Audit bestaande Button varianten (default, destructive, outline, secondary, ghost, link)
+- [ ] Vervang hardcoded kleuren door semantic tokens
+- [ ] Voeg ontbrekende varianten toe (success, warning)
+- [ ] Implementeer consistent focus ring gedrag
+- [ ] Test alle varianten in light/dark mode
+
+**Huidige staat analyseren:**
+
+```bash
+# Check Button component
+cat apps/web/src/components/ui/button.tsx
+```
+
+**Gewenste implementatie:**
+
+```tsx
+// button.tsx - Token-based variants
+const buttonVariants = cva(
+  "inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  {
+    variants: {
+      variant: {
+        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        destructive: "bg-error text-error-foreground hover:bg-error/90",
+        success: "bg-success text-success-foreground hover:bg-success/90",
+        warning: "bg-warning text-warning-foreground hover:bg-warning/90",
+        outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        ghost: "hover:bg-accent hover:text-accent-foreground",
+        link: "text-primary underline-offset-4 hover:underline",
+      },
+      size: {
+        default: "h-10 px-4 py-2",
+        sm: "h-9 rounded-md px-3",
+        lg: "h-11 rounded-md px-8",
+        icon: "h-10 w-10",
+      },
+    },
+  }
+)
+```
+
+**Acceptatiecriteria:**
+- [ ] Geen hardcoded kleuren in Button component
+- [ ] Alle varianten werken in light/dark mode
+- [ ] Focus ring consistent met design system
+- [ ] Visuele regressie test passed
+
+---
+
+### Fase 7.2: Card Component Audit
+
+**Doel:** Card component consistent maken met surface tokens.
+
+**Taken:**
+- [ ] Vervang `bg-card` door `bg-surface-1`
+- [ ] Implementeer Card padding varianten (compact, default, spacious)
+- [ ] Voeg Card hover state toe
+- [ ] Consistent border radius via tokens
+
+**Huidige staat analyseren:**
+
+```bash
+cat apps/web/src/components/ui/card.tsx
+```
+
+**Gewenste implementatie:**
+
+```tsx
+// card.tsx - Token-based styling
+const Card = React.forwardRef<HTMLDivElement, CardProps & { variant?: 'default' | 'compact' | 'spacious' }>(
+  ({ className, variant = 'default', ...props }, ref) => {
+    const paddingClasses = {
+      compact: 'p-4',
+      default: 'p-6',
+      spacious: 'p-8',
+    }
+
+    return (
+      <div
+        ref={ref}
+        className={cn(
+          "rounded-lg border border-border bg-surface-1 text-foreground shadow-sm",
+          "transition-shadow duration-fast hover:shadow-md",
+          paddingClasses[variant],
+          className
+        )}
+        {...props}
+      />
+    )
+  }
+)
+```
+
+**Acceptatiecriteria:**
+- [ ] Card gebruikt `--surface-1` token
+- [ ] Padding varianten beschikbaar
+- [ ] Hover state met shadow transition
+- [ ] Consistent in light/dark mode
+
+---
+
+### Fase 7.3: Dialog/Modal Component Audit
+
+**Doel:** Dialog overlay en content consistent met design tokens.
+
+**Taken:**
+- [ ] Overlay kleur via `--modal-overlay`
+- [ ] Content achtergrond via `--modal-bg`
+- [ ] Border via `--modal-border`
+- [ ] Z-index via `--z-modal`
+- [ ] Focus trap en keyboard navigation verificatie
+
+**Gewenste implementatie:**
+
+```tsx
+// dialog.tsx - Token-based overlay
+const DialogOverlay = React.forwardRef<
+  React.ElementRef<typeof DialogPrimitive.Overlay>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
+>(({ className, ...props }, ref) => (
+  <DialogPrimitive.Overlay
+    ref={ref}
+    className={cn(
+      "fixed inset-0 z-modal bg-modal-overlay",
+      "data-[state=open]:animate-in data-[state=closed]:animate-out",
+      "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      className
+    )}
+    {...props}
+  />
+))
+
+const DialogContent = React.forwardRef<...>(({ className, children, ...props }, ref) => (
+  <DialogPortal>
+    <DialogOverlay />
+    <DialogPrimitive.Content
+      ref={ref}
+      className={cn(
+        "fixed left-1/2 top-1/2 z-modal -translate-x-1/2 -translate-y-1/2",
+        "w-full max-w-lg bg-modal-bg border border-modal-border rounded-lg shadow-lg",
+        "duration-normal data-[state=open]:animate-in data-[state=closed]:animate-out",
+        className
+      )}
+      {...props}
+    >
+      {children}
+    </DialogPrimitive.Content>
+  </DialogPortal>
+))
+```
+
+**Acceptatiecriteria:**
+- [ ] Overlay gebruikt `--modal-overlay` token
+- [ ] Content background en border via tokens
+- [ ] Z-index consistent met z-index scale
+- [ ] Animaties via duration tokens
+
+---
+
+### Fase 7.4: Input/Form Elements Audit
+
+**Doel:** Alle form elementen consistent maken.
+
+**Taken:**
+- [ ] Input border kleuren via tokens
+- [ ] Focus ring via `--focus-ring-*` tokens
+- [ ] Error state via `--error` tokens
+- [ ] Disabled state styling
+- [ ] Placeholder kleur via `--text-muted`
+
+**Componenten:**
+
+| Component | Bestand | Status |
+|-----------|---------|--------|
+| Input | `input.tsx` | [ ] |
+| Textarea | `textarea.tsx` | [ ] |
+| Select | `select.tsx` | [ ] |
+| Checkbox | `checkbox.tsx` | [ ] |
+| Switch | `switch.tsx` | [ ] |
+| Slider | `slider.tsx` | [ ] |
+
+**Gewenste implementatie:**
+
+```tsx
+// input.tsx - Token-based styling
+const Input = React.forwardRef<HTMLInputElement, InputProps>(
+  ({ className, type, ...props }, ref) => {
+    return (
+      <input
+        type={type}
+        className={cn(
+          "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2",
+          "text-sm text-foreground placeholder:text-muted-foreground",
+          "ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+          "disabled:cursor-not-allowed disabled:opacity-50",
+          "transition-colors duration-fast",
+          className
+        )}
+        ref={ref}
+        {...props}
+      />
+    )
+  }
+)
+```
+
+**Acceptatiecriteria:**
+- [ ] Alle form elementen gebruiken design tokens
+- [ ] Focus states consistent
+- [ ] Error states werken met `--error` token
+- [ ] Disabled states correct gestyled
+
+---
+
+### Fase 7.5: Badge Component Audit
+
+**Doel:** Badge kleuren via semantic tokens.
+
+**Taken:**
+- [ ] Gebruik `--badge-*` tokens uit globals.css
+- [ ] Voeg status varianten toe (success, warning, error, info)
+- [ ] Priority varianten (low, medium, high, urgent)
+
+**Gewenste implementatie:**
+
+```tsx
+// badge.tsx - Complete variant set
+const badgeVariants = cva(
+  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  {
+    variants: {
+      variant: {
+        default: "border-transparent bg-primary text-primary-foreground",
+        secondary: "border-transparent bg-secondary text-secondary-foreground",
+        destructive: "border-transparent bg-error text-error-foreground",
+        outline: "text-foreground border-border",
+        // Status variants
+        success: "border-transparent bg-success/10 text-success",
+        warning: "border-transparent bg-warning/10 text-warning",
+        error: "border-transparent bg-error/10 text-error",
+        info: "border-transparent bg-info/10 text-info",
+        // Priority variants
+        "priority-low": "border-transparent bg-priority-low-light text-priority-low",
+        "priority-medium": "border-transparent bg-priority-medium-light text-priority-medium",
+        "priority-high": "border-transparent bg-priority-high-light text-priority-high",
+        "priority-urgent": "border-transparent bg-priority-urgent-light text-priority-urgent",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+    },
+  }
+)
+```
+
+**Acceptatiecriteria:**
+- [ ] Alle badge varianten beschikbaar
+- [ ] Priority badges consistent met rest van app
+- [ ] Status badges voor feedback berichten
+
+---
+
+### Fase 7.6: Toast/Sonner Component Audit
+
+**Doel:** Toast notificaties consistent met design system.
+
+**Taken:**
+- [ ] Toast achtergrond via `--toast-bg`
+- [ ] Status kleuren (success, error, warning, info)
+- [ ] Z-index via `--z-toast`
+- [ ] Animaties via duration tokens
+
+**Gewenste implementatie:**
+
+```tsx
+// sonner.tsx of toast.tsx - Token-based
+<Toaster
+  toastOptions={{
+    classNames: {
+      toast: "bg-toast-bg border-toast-border text-foreground shadow-lg",
+      success: "bg-toast-success-bg border-success/20 text-success-foreground",
+      error: "bg-toast-error-bg border-error/20 text-error-foreground",
+      warning: "bg-toast-warning-bg border-warning/20 text-warning-foreground",
+      info: "bg-toast-info-bg border-info/20 text-info-foreground",
+    },
+  }}
+/>
+```
+
+**Acceptatiecriteria:**
+- [ ] Toast gebruikt design tokens
+- [ ] Alle status varianten werken
+- [ ] Correct z-index niveau
+
+---
+
+### Fase 7.7: Dropdown Menu Audit
+
+**Doel:** Dropdown consistent met popover tokens.
+
+**Taken:**
+- [ ] Background via `--dropdown-bg`
+- [ ] Border via `--dropdown-border`
+- [ ] Item hover via `--dropdown-item-hover`
+- [ ] Z-index via `--z-dropdown`
+
+**Acceptatiecriteria:**
+- [ ] Dropdown styling via tokens
+- [ ] Hover states consistent
+- [ ] Separator via `--dropdown-separator`
+
+---
+
+### Fase 7.8: Tooltip Component Audit
+
+**Doel:** Tooltip consistent met design system.
+
+**Taken:**
+- [ ] Background via `--tooltip-bg`
+- [ ] Text via `--tooltip-text`
+- [ ] Z-index via `--z-tooltip`
+
+**Acceptatiecriteria:**
+- [ ] Tooltip gebruikt tokens
+- [ ] Correct z-index (boven modals)
+- [ ] Arrow kleur consistent
+
+---
+
+### Fase 7 Commit Template
+
+```
+refactor(ui): Migrate component library to design tokens (Fase 7)
+
+- Button: Add success/warning variants, token-based colors
+- Card: Surface tokens, padding variants
+- Dialog: Modal overlay/bg tokens, z-index scale
+- Input: Focus ring tokens, error states
+- Badge: Status and priority variants
+- Toast: Status color tokens
+- Dropdown: Popover tokens
+- Tooltip: Tooltip tokens
+
+Signed-off-by: Robin Waslander <R.Waslander@gmail.com>
+```
+
+---
+
+## FASE 8: Advanced Theming (Niet Gestart)
+
+**Doel:** Uitgebreide themecustomization opties voor eindgebruikers.
+
+**Geschatte complexiteit:** Hoog | **Geschatte duur:** 3-5 dagen
+
+### Pre-flight Checks
+
+```bash
+# Bekijk huidige ThemeContext implementatie
+cat apps/web/src/contexts/ThemeContext.tsx
+
+# Check beschikbare accent colors
+cat apps/web/src/lib/themes/accents.ts
+
+# Bekijk User model velden
+grep -A5 "theme" apps/api/prisma/schema.prisma
+```
+
+### Fase 8.1: Custom Accent Color Picker
+
+**Doel:** Gebruikers kunnen eigen accent kleur kiezen buiten de 6 presets.
+
+**Taken:**
+- [ ] Color picker component bouwen (HSL input)
+- [ ] Live preview van custom accent
+- [ ] Validatie van kleur contrast (WCAG)
+- [ ] Opslaan custom kleur in database
+- [ ] CSS variable injection voor custom color
+
+**Database wijziging:**
+
+```prisma
+// schema.prisma
+model User {
+  // Bestaande velden
+  theme       String?   @default("system")
+  accent      String?   @default("blue")
+
+  // Nieuwe velden
+  customAccentHue        Int?      // 0-360
+  customAccentSaturation Int?      // 0-100
+  customAccentLightness  Int?      // 0-100
+}
+```
+
+**Component implementatie:**
+
+```tsx
+// components/theme/CustomColorPicker.tsx
+interface CustomColorPickerProps {
+  currentHue: number;
+  currentSaturation: number;
+  currentLightness: number;
+  onChange: (hsl: { h: number; s: number; l: number }) => void;
+}
+
+export function CustomColorPicker({
+  currentHue,
+  currentSaturation,
+  currentLightness,
+  onChange
+}: CustomColorPickerProps) {
+  const [hue, setHue] = useState(currentHue);
+  const [saturation, setSaturation] = useState(currentSaturation);
+  const [lightness, setLightness] = useState(currentLightness);
+
+  // Preview kleur
+  const previewColor = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+
+  // Contrast check
+  const contrastRatio = calculateContrastRatio(previewColor, '#ffffff');
+  const meetsWCAG = contrastRatio >= 4.5;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-4">
+        <div
+          className="w-16 h-16 rounded-lg border"
+          style={{ backgroundColor: previewColor }}
+        />
+        <div className="flex-1">
+          <Label>Hue (0-360)</Label>
+          <Slider value={[hue]} onValueChange={([v]) => setHue(v)} max={360} />
+        </div>
+      </div>
+
+      <div>
+        <Label>Saturation (0-100%)</Label>
+        <Slider value={[saturation]} onValueChange={([v]) => setSaturation(v)} max={100} />
+      </div>
+
+      <div>
+        <Label>Lightness (0-100%)</Label>
+        <Slider value={[lightness]} onValueChange={([v]) => setLightness(v)} max={100} />
+      </div>
+
+      {!meetsWCAG && (
+        <Alert variant="warning">
+          Kleur heeft onvoldoende contrast. Pas de lightness aan.
+        </Alert>
+      )}
+
+      <Button onClick={() => onChange({ h: hue, s: saturation, l: lightness })}>
+        Toepassen
+      </Button>
+    </div>
+  );
+}
+```
+
+**CSS Injection:**
+
+```tsx
+// ThemeContext.tsx uitbreiding
+useEffect(() => {
+  if (customAccent) {
+    const { h, s, l } = customAccent;
+    document.documentElement.style.setProperty('--accent', `${h} ${s}% ${l}%`);
+    document.documentElement.style.setProperty('--accent-foreground', l > 50 ? '222 47% 11%' : '0 0% 100%');
+  }
+}, [customAccent]);
+```
+
+**Acceptatiecriteria:**
+- [ ] Custom color picker werkt met HSL
+- [ ] Live preview beschikbaar
+- [ ] Contrast validatie (WCAG AA)
+- [ ] Opslag in database
+- [ ] Sync tussen devices
+
+---
+
+### Fase 8.2: Density Settings
+
+**Doel:** Gebruikers kunnen UI dichtheid kiezen (compact/normal/spacious).
+
+**Taken:**
+- [ ] Density tokens definiëren
+- [ ] DensityContext implementeren
+- [ ] Sidebar padding aanpassen
+- [ ] Card padding aanpassen
+- [ ] Table row height aanpassen
+- [ ] Database veld toevoegen
+
+**Density tokens:**
+
+```css
+/* globals.css - Density tokens */
+:root {
+  /* Default (normal) */
+  --density-spacing-xs: 0.25rem;
+  --density-spacing-sm: 0.5rem;
+  --density-spacing-md: 1rem;
+  --density-spacing-lg: 1.5rem;
+  --density-spacing-xl: 2rem;
+
+  --density-row-height: 2.5rem;
+  --density-card-padding: 1.5rem;
+  --density-sidebar-padding: 1rem;
+}
+
+[data-density="compact"] {
+  --density-spacing-xs: 0.125rem;
+  --density-spacing-sm: 0.25rem;
+  --density-spacing-md: 0.5rem;
+  --density-spacing-lg: 1rem;
+  --density-spacing-xl: 1.5rem;
+
+  --density-row-height: 2rem;
+  --density-card-padding: 1rem;
+  --density-sidebar-padding: 0.75rem;
+}
+
+[data-density="spacious"] {
+  --density-spacing-xs: 0.5rem;
+  --density-spacing-sm: 0.75rem;
+  --density-spacing-md: 1.5rem;
+  --density-spacing-lg: 2rem;
+  --density-spacing-xl: 3rem;
+
+  --density-row-height: 3rem;
+  --density-card-padding: 2rem;
+  --density-sidebar-padding: 1.5rem;
+}
+```
+
+**Database wijziging:**
+
+```prisma
+model User {
+  // ...
+  density     String?   @default("normal") // compact | normal | spacious
+}
+```
+
+**Context implementatie:**
+
+```tsx
+// contexts/DensityContext.tsx
+type Density = 'compact' | 'normal' | 'spacious';
+
+interface DensityContextType {
+  density: Density;
+  setDensity: (density: Density) => void;
+}
+
+export function DensityProvider({ children }: { children: ReactNode }) {
+  const [density, setDensityState] = useState<Density>('normal');
+
+  useEffect(() => {
+    document.documentElement.dataset.density = density;
+  }, [density]);
+
+  const setDensity = (newDensity: Density) => {
+    setDensityState(newDensity);
+    localStorage.setItem('kanbu-density', newDensity);
+    // Backend sync
+  };
+
+  return (
+    <DensityContext.Provider value={{ density, setDensity }}>
+      {children}
+    </DensityContext.Provider>
+  );
+}
+```
+
+**Selector component:**
+
+```tsx
+// components/theme/DensityPicker.tsx
+export function DensityPicker() {
+  const { density, setDensity } = useDensity();
+
+  return (
+    <div className="space-y-2">
+      <Label>Interface Dichtheid</Label>
+      <div className="flex gap-2">
+        {(['compact', 'normal', 'spacious'] as const).map((d) => (
+          <Button
+            key={d}
+            variant={density === d ? 'default' : 'outline'}
+            onClick={() => setDensity(d)}
+            className="flex-1"
+          >
+            {d === 'compact' && <Minimize2 className="mr-2 h-4 w-4" />}
+            {d === 'normal' && <Square className="mr-2 h-4 w-4" />}
+            {d === 'spacious' && <Maximize2 className="mr-2 h-4 w-4" />}
+            {d.charAt(0).toUpperCase() + d.slice(1)}
+          </Button>
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+**Acceptatiecriteria:**
+- [ ] 3 density levels beschikbaar
+- [ ] Consistent toegepast op alle componenten
+- [ ] Opgeslagen in database
+- [ ] Geen layout breaking bij wisselen
+
+---
+
+### Fase 8.3: Sidebar Position Setting
+
+**Doel:** Sidebar links of rechts kunnen plaatsen.
+
+**Taken:**
+- [ ] SidebarPosition context
+- [ ] Layout component aanpassen
+- [ ] CSS voor rechter sidebar
+- [ ] Database veld toevoegen
+- [ ] Animatie bij wisselen
+
+**Database wijziging:**
+
+```prisma
+model User {
+  // ...
+  sidebarPosition String? @default("left") // left | right
+}
+```
+
+**Layout aanpassing:**
+
+```tsx
+// components/layout/DashboardLayout.tsx
+export function DashboardLayout({ children }: { children: ReactNode }) {
+  const { sidebarPosition } = useSidebarPosition();
+
+  return (
+    <div className={cn(
+      "flex min-h-screen",
+      sidebarPosition === 'right' && "flex-row-reverse"
+    )}>
+      <Sidebar />
+      <main className="flex-1">{children}</main>
+    </div>
+  );
+}
+```
+
+**Acceptatiecriteria:**
+- [ ] Sidebar kan links/rechts staan
+- [ ] Smooth transitie bij wisselen
+- [ ] Keyboard shortcuts respecteren positie
+- [ ] Opgeslagen in database
+
+---
+
+### Fase 8.4: Theme Import/Export
+
+**Doel:** Gebruikers kunnen theme settings exporteren en delen.
+
+**Taken:**
+- [ ] Export functie (JSON format)
+- [ ] Import functie met validatie
+- [ ] Share URL generatie
+- [ ] Community presets pagina (optioneel)
+
+**Export format:**
+
+```typescript
+interface ThemeExport {
+  version: '1.0';
+  theme: 'light' | 'dark' | 'system';
+  accent: string;
+  customAccent?: { h: number; s: number; l: number };
+  density: 'compact' | 'normal' | 'spacious';
+  sidebarPosition: 'left' | 'right';
+}
+```
+
+**Export/Import functies:**
+
+```tsx
+// lib/theme-export.ts
+export function exportTheme(): string {
+  const settings: ThemeExport = {
+    version: '1.0',
+    theme: localStorage.getItem('kanbu-theme') as any || 'system',
+    accent: localStorage.getItem('kanbu-accent') || 'blue',
+    density: localStorage.getItem('kanbu-density') as any || 'normal',
+    sidebarPosition: localStorage.getItem('kanbu-sidebar-position') as any || 'left',
+  };
+
+  return btoa(JSON.stringify(settings));
+}
+
+export function importTheme(encoded: string): ThemeExport | null {
+  try {
+    const decoded = JSON.parse(atob(encoded));
+    if (decoded.version !== '1.0') return null;
+    return decoded as ThemeExport;
+  } catch {
+    return null;
+  }
+}
+```
+
+**UI Component:**
+
+```tsx
+// components/theme/ThemeExportImport.tsx
+export function ThemeExportImport() {
+  const [importCode, setImportCode] = useState('');
+
+  const handleExport = () => {
+    const code = exportTheme();
+    navigator.clipboard.writeText(code);
+    toast.success('Theme gekopieerd naar klembord');
+  };
+
+  const handleImport = () => {
+    const settings = importTheme(importCode);
+    if (!settings) {
+      toast.error('Ongeldige theme code');
+      return;
+    }
+    applyThemeSettings(settings);
+    toast.success('Theme toegepast');
+  };
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <Label>Exporteren</Label>
+        <Button onClick={handleExport}>
+          <Download className="mr-2 h-4 w-4" />
+          Kopieer Theme Code
+        </Button>
+      </div>
+
+      <div>
+        <Label>Importeren</Label>
+        <div className="flex gap-2">
+          <Input
+            placeholder="Plak theme code..."
+            value={importCode}
+            onChange={(e) => setImportCode(e.target.value)}
+          />
+          <Button onClick={handleImport}>
+            <Upload className="mr-2 h-4 w-4" />
+            Importeren
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+```
+
+**Acceptatiecriteria:**
+- [ ] Export genereert shareable code
+- [ ] Import valideert en past toe
+- [ ] Foutafhandeling voor ongeldige codes
+- [ ] Versioning voor backwards compatibility
+
+---
+
+### Fase 8 Commit Template
+
+```
+feat(theme): Add advanced theming options (Fase 8)
+
+- Custom accent color picker with HSL controls
+- WCAG contrast validation for accessibility
+- Density settings (compact/normal/spacious)
+- Sidebar position toggle (left/right)
+- Theme import/export functionality
+
+Database: Added customAccentHue, customAccentSaturation,
+customAccentLightness, density, sidebarPosition fields
+
+Signed-off-by: Robin Waslander <R.Waslander@gmail.com>
+```
+
+---
+
+## FASE 9: Documentation & Storybook (Niet Gestart)
+
+**Doel:** Uitgebreide developer documentatie en component showcase.
+
+**Geschatte complexiteit:** Medium | **Geschatte duur:** 3-4 dagen
+
+### Pre-flight Checks
+
+```bash
+# Check of Storybook al geconfigureerd is
+ls apps/web/.storybook/ 2>/dev/null || echo "Storybook niet geïnstalleerd"
+
+# Check package.json voor storybook dependencies
+grep -i storybook apps/web/package.json
+
+# Bekijk huidige docs structuur
+ls -la docs/UI-Design-Kanbu/
+```
+
+### Fase 9.1: Token Reference Guide
+
+**Doel:** Complete referentie van alle design tokens met voorbeelden.
+
+**Taken:**
+- [ ] Genereer token overzicht uit globals.css
+- [ ] Categoriseer tokens (colors, typography, spacing, etc.)
+- [ ] Voeg voorbeelden toe per token
+- [ ] Light/dark mode vergelijking
+- [ ] Tailwind class mapping
+
+**Document structuur:**
+
+```markdown
+# Design Token Reference Guide
+
+## Quick Reference
+
+| Category | Count | Example |
+|----------|-------|---------|
+| Color Scales | 10 | `--color-blue-500` |
+| Semantic Colors | 40+ | `--surface-1` |
+| Typography | 15 | `--text-sm` |
+| Spacing | 12 | `--spacing-4` |
+| Shadows | 6 | `--shadow-md` |
+| Animation | 14 | `--duration-normal` |
+| Z-Index | 11 | `--z-modal` |
+
+## Color Tokens
+
+### Primitive Colors
+
+#### Gray Scale
+| Token | Light Value | Usage |
+|-------|-------------|-------|
+| `--color-gray-50` | #f9fafb | Background subtle |
+| `--color-gray-100` | #f3f4f6 | Background muted |
+| ... | ... | ... |
+
+### Semantic Colors
+
+#### Surfaces
+| Token | Light | Dark | Tailwind |
+|-------|-------|------|----------|
+| `--background` | white | gray-950 | `bg-background` |
+| `--surface-1` | white | gray-900 | `bg-surface-1` |
+| `--surface-2` | gray-50 | gray-800 | `bg-surface-2` |
+| `--surface-3` | gray-100 | gray-700 | `bg-surface-3` |
+
+## Usage Examples
+
+### Background Colors
+```tsx
+// ✅ Correct
+<div className="bg-surface-1">
+<div className="bg-background">
+
+// ❌ Vermijden
+<div className="bg-white dark:bg-gray-900">
+<div className="bg-gray-50">
+```
+
+### Text Colors
+```tsx
+// ✅ Correct
+<p className="text-foreground">Primary text</p>
+<p className="text-muted-foreground">Secondary text</p>
+
+// ❌ Vermijden
+<p className="text-gray-900 dark:text-gray-100">
+```
+```
+
+**Acceptatiecriteria:**
+- [ ] Alle tokens gedocumenteerd
+- [ ] Voorbeelden voor elke categorie
+- [ ] Tailwind class mapping
+- [ ] Doorzoekbaar formaat
+
+---
+
+### Fase 9.2: Component Usage Examples
+
+**Doel:** Praktische voorbeelden van component gebruik.
+
+**Taken:**
+- [ ] Voorbeeld pagina's per component category
+- [ ] Do's and Don'ts
+- [ ] Accessibility guidelines
+- [ ] Responsive patterns
+
+**Document structuur:**
+
+```markdown
+# Component Usage Guide
+
+## Buttons
+
+### Basic Usage
+```tsx
+import { Button } from '@/components/ui/button'
+
+// Primary action
+<Button>Save Changes</Button>
+
+// Destructive action
+<Button variant="destructive">Delete</Button>
+
+// Status buttons
+<Button variant="success">Approve</Button>
+<Button variant="warning">Review Required</Button>
+```
+
+### Button Sizes
+```tsx
+<Button size="sm">Small</Button>
+<Button size="default">Default</Button>
+<Button size="lg">Large</Button>
+<Button size="icon"><Plus /></Button>
+```
+
+### Do's and Don'ts
+
+✅ **Do:**
+- Use `variant="destructive"` for delete actions
+- Use `variant="success"` for confirmations
+- Provide clear action labels
+
+❌ **Don't:**
+- Use custom colors: `className="bg-red-500"`
+- Mix icon-only with text buttons in same group
+- Use destructive style for non-destructive actions
+
+### Accessibility
+- Buttons must have accessible names
+- Icon-only buttons need `aria-label`
+- Disabled buttons should explain why
+
+```tsx
+// ✅ Accessible icon button
+<Button size="icon" aria-label="Add new item">
+  <Plus className="h-4 w-4" />
+</Button>
+```
+```
+
+**Acceptatiecriteria:**
+- [ ] Voorbeelden voor alle componenten
+- [ ] Do's and Don'ts per component
+- [ ] Accessibility guidelines
+- [ ] Copy-paste ready code
+
+---
+
+### Fase 9.3: Migration Guide
+
+**Doel:** Guide voor migratie van oude code naar design tokens.
+
+**Taken:**
+- [ ] Mapping van oude naar nieuwe classes
+- [ ] Regex patronen voor bulk migration
+- [ ] Common pitfalls en oplossingen
+- [ ] Checklist voor code review
+
+**Document structuur:**
+
+```markdown
+# Migration Guide: Hardcoded Colors to Design Tokens
+
+## Quick Migration Table
+
+| Old Pattern | New Pattern |
+|-------------|-------------|
+| `bg-white dark:bg-gray-900` | `bg-background` |
+| `bg-gray-50 dark:bg-gray-800` | `bg-surface-2` |
+| `bg-gray-100 dark:bg-gray-700` | `bg-surface-3` |
+| `text-gray-900 dark:text-gray-100` | `text-foreground` |
+| `text-gray-500 dark:text-gray-400` | `text-muted-foreground` |
+| `border-gray-200 dark:border-gray-700` | `border-border` |
+
+## Regex Search Patterns
+
+### Find hardcoded backgrounds
+```regex
+bg-(white|black|gray|blue|red|green|orange|yellow)-\d{2,3}
+```
+
+### Find hardcoded text colors
+```regex
+text-(gray|blue|red|green|orange|yellow)-\d{2,3}
+```
+
+### Find dark mode overrides
+```regex
+dark:(bg|text|border)-\w+-\d{2,3}
+```
+
+## Common Migrations
+
+### Card backgrounds
+```tsx
+// Before
+<div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
+
+// After
+<div className="bg-surface-1 border border-border">
+```
+
+### Status colors
+```tsx
+// Before
+<span className="text-green-500">Success</span>
+<span className="text-red-500">Error</span>
+
+// After
+<span className="text-success">Success</span>
+<span className="text-error">Error</span>
+```
+
+## Checklist voor Code Review
+
+- [ ] Geen hardcoded kleuren (bg-gray-*, text-blue-*, etc.)
+- [ ] Geen `dark:` prefixes voor kleuren
+- [ ] Semantic tokens gebruikt waar mogelijk
+- [ ] Priority kleuren via `--priority-*` tokens
+- [ ] State kleuren via `--success/warning/error/info`
+```
+
+**Acceptatiecriteria:**
+- [ ] Complete mapping tabel
+- [ ] Werkende regex patronen
+- [ ] Praktische voorbeelden
+- [ ] Code review checklist
+
+---
+
+### Fase 9.4: Storybook Integration
+
+**Doel:** Interactive component documentation met Storybook.
+
+**Taken:**
+- [ ] Storybook installeren en configureren
+- [ ] Stories schrijven voor alle ui/ componenten
+- [ ] Theme switcher addon
+- [ ] A11y addon voor accessibility testing
+- [ ] Chromatic voor visual regression (optioneel)
+
+**Installatie:**
+
+```bash
+cd apps/web
+
+# Installeer Storybook
+pnpm dlx storybook@latest init
+
+# Installeer addons
+pnpm add -D @storybook/addon-a11y @storybook/addon-themes
+```
+
+**Configuratie:**
+
+```typescript
+// .storybook/main.ts
+import type { StorybookConfig } from '@storybook/react-vite';
+
+const config: StorybookConfig = {
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  addons: [
+    '@storybook/addon-links',
+    '@storybook/addon-essentials',
+    '@storybook/addon-a11y',
+    '@storybook/addon-themes',
+  ],
+  framework: {
+    name: '@storybook/react-vite',
+    options: {},
+  },
+};
+
+export default config;
+```
+
+```typescript
+// .storybook/preview.ts
+import type { Preview } from '@storybook/react';
+import { withThemeByDataAttribute } from '@storybook/addon-themes';
+import '../src/styles/globals.css';
+import '../src/styles/accents.css';
+
+const preview: Preview = {
+  decorators: [
+    withThemeByDataAttribute({
+      themes: {
+        light: '',
+        dark: 'dark',
+      },
+      defaultTheme: 'light',
+      attributeName: 'class',
+    }),
+  ],
+};
+
+export default preview;
+```
+
+**Voorbeeld story:**
+
+```tsx
+// src/components/ui/button.stories.tsx
+import type { Meta, StoryObj } from '@storybook/react';
+import { Button } from './button';
+
+const meta: Meta<typeof Button> = {
+  title: 'UI/Button',
+  component: Button,
+  tags: ['autodocs'],
+  argTypes: {
+    variant: {
+      control: 'select',
+      options: ['default', 'destructive', 'outline', 'secondary', 'ghost', 'link', 'success', 'warning'],
+    },
+    size: {
+      control: 'select',
+      options: ['default', 'sm', 'lg', 'icon'],
+    },
+  },
+};
+
+export default meta;
+type Story = StoryObj<typeof Button>;
+
+export const Default: Story = {
+  args: {
+    children: 'Button',
+    variant: 'default',
+  },
+};
+
+export const Destructive: Story = {
+  args: {
+    children: 'Delete',
+    variant: 'destructive',
+  },
+};
+
+export const Success: Story = {
+  args: {
+    children: 'Approve',
+    variant: 'success',
+  },
+};
+
+export const AllVariants: Story = {
+  render: () => (
+    <div className="flex flex-wrap gap-4">
+      <Button variant="default">Default</Button>
+      <Button variant="secondary">Secondary</Button>
+      <Button variant="outline">Outline</Button>
+      <Button variant="ghost">Ghost</Button>
+      <Button variant="link">Link</Button>
+      <Button variant="destructive">Destructive</Button>
+      <Button variant="success">Success</Button>
+      <Button variant="warning">Warning</Button>
+    </div>
+  ),
+};
+```
+
+**Package.json scripts:**
+
+```json
+{
+  "scripts": {
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
+  }
+}
+```
+
+**Acceptatiecriteria:**
+- [ ] Storybook draait lokaal
+- [ ] Stories voor alle ui/ componenten
+- [ ] Theme switching werkt
+- [ ] A11y tests beschikbaar
+- [ ] Autodocs generatie werkt
+
+---
+
+### Fase 9.5: Token Documentation Generator (Optioneel)
+
+**Doel:** Automatisch token documentatie genereren uit CSS.
+
+**Taken:**
+- [ ] Script schrijven dat globals.css parsed
+- [ ] JSON/TypeScript output voor tokens
+- [ ] Markdown generator voor docs
+- [ ] CI integration voor automatische updates
+
+**Generator script:**
+
+```typescript
+// scripts/generate-token-docs.ts
+import fs from 'fs';
+import path from 'path';
+
+interface Token {
+  name: string;
+  value: string;
+  category: string;
+  lightValue?: string;
+  darkValue?: string;
+}
+
+function parseGlobalsCss(): Token[] {
+  const content = fs.readFileSync(
+    path.join(__dirname, '../src/styles/globals.css'),
+    'utf-8'
+  );
+
+  const tokens: Token[] = [];
+  const rootMatch = content.match(/:root\s*{([^}]+)}/);
+  const darkMatch = content.match(/\.dark\s*{([^}]+)}/);
+
+  if (rootMatch) {
+    const lines = rootMatch[1].split('\n');
+    for (const line of lines) {
+      const match = line.match(/--([^:]+):\s*([^;]+);/);
+      if (match) {
+        tokens.push({
+          name: `--${match[1].trim()}`,
+          value: match[2].trim(),
+          category: categorizeToken(match[1].trim()),
+        });
+      }
+    }
+  }
+
+  return tokens;
+}
+
+function categorizeToken(name: string): string {
+  if (name.startsWith('color-')) return 'colors';
+  if (name.startsWith('text-')) return 'typography';
+  if (name.startsWith('spacing-')) return 'spacing';
+  if (name.startsWith('shadow-')) return 'shadows';
+  if (name.startsWith('duration-') || name.startsWith('ease-')) return 'animation';
+  if (name.startsWith('z-')) return 'z-index';
+  return 'other';
+}
+
+function generateMarkdown(tokens: Token[]): string {
+  // Generate markdown documentation
+  // ...
+}
+
+// Run generator
+const tokens = parseGlobalsCss();
+const markdown = generateMarkdown(tokens);
+fs.writeFileSync('docs/UI-Design-Kanbu/TOKEN-REFERENCE.md', markdown);
+```
+
+**Acceptatiecriteria:**
+- [ ] Script parsed globals.css correct
+- [ ] Output is accuraat en compleet
+- [ ] Kan in CI draaien
+- [ ] Documenteert light/dark verschillen
+
+---
+
+### Fase 9 Commit Template
+
+```
+docs(design-system): Add comprehensive documentation (Fase 9)
+
+- Token reference guide with all CSS variables
+- Component usage examples with do's and don'ts
+- Migration guide for hardcoded colors
+- Storybook integration with theme switching
+- A11y testing addon configured
+
+Signed-off-by: Robin Waslander <R.Waslander@gmail.com>
+```
+
+---
+
+## Overzicht Toekomstige Fases
+
+| Fase | Complexiteit | Geschatte Duur | Afhankelijkheden |
+|------|--------------|----------------|------------------|
+| Fase 7 | Medium | 2-3 dagen | Geen |
+| Fase 8 | Hoog | 3-5 dagen | Fase 7 (aanbevolen) |
+| Fase 9 | Medium | 3-4 dagen | Fase 7 (vereist) |
+
+### Aanbevolen Volgorde
+
+1. **Fase 7 eerst** - Component audit zorgt voor consistente basis
+2. **Fase 9 parallel** - Documentatie kan tijdens Fase 8 starten
+3. **Fase 8 laatste** - Advanced features bouwen op stabiele basis
 
 ---
 
