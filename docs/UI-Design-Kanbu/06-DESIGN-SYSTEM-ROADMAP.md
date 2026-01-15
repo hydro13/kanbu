@@ -446,7 +446,7 @@ feat(design-system): Add semantic tokens for surfaces, text, and borders
 
 ### Fase 1.5: Component Tokens
 
-**Status:** [ ] Niet gestart
+**Status:** [x] Voltooid (2026-01-15)
 
 **Wat:** Definieer component-specifieke tokens.
 
@@ -454,11 +454,13 @@ feat(design-system): Add semantic tokens for surfaces, text, and borders
 - `apps/web/src/styles/globals.css`
 
 **Taken:**
-- [ ] Card tokens
-- [ ] Button tokens
-- [ ] Input tokens
-- [ ] Page layout tokens
-- [ ] Sidebar tokens
+- [x] Card tokens
+- [x] Button tokens
+- [x] Input tokens
+- [x] Page layout tokens
+- [x] Sidebar tokens
+- [x] Table tokens
+- [x] Modal tokens
 
 **Code toe te voegen:**
 ```css
