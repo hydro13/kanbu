@@ -96,7 +96,7 @@ pnpm dev &
 
 ### Fase 1.1: Primitive Color Tokens
 
-**Status:** [ ] Niet gestart
+**Status:** [x] Voltooid (2026-01-15)
 
 **Wat:** Definieer alle basis kleuren als CSS variabelen.
 
@@ -104,12 +104,12 @@ pnpm dev &
 - `apps/web/src/styles/globals.css`
 
 **Taken:**
-- [ ] Gray scale (50-900) toevoegen
-- [ ] Blue scale toevoegen
-- [ ] Orange scale toevoegen
-- [ ] Red scale toevoegen
-- [ ] Green scale toevoegen
-- [ ] Amber/Yellow scale toevoegen
+- [x] Gray scale (50-900) toevoegen
+- [x] Blue scale toevoegen
+- [x] Orange scale toevoegen
+- [x] Red scale toevoegen
+- [x] Green scale toevoegen
+- [x] Amber/Yellow scale toevoegen
 
 **Code toe te voegen aan globals.css:**
 ```css
