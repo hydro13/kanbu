@@ -194,7 +194,7 @@ export function UserListPage() {
               <thead>
                 <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
                   <th
-                    className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+                    className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer hover:bg-accent"
                     onClick={() => handleSort('id')}
                   >
                     ID <SortIcon field="id" />
@@ -203,7 +203,7 @@ export function UserListPage() {
                     User
                   </th>
                   <th
-                    className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+                    className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer hover:bg-accent"
                     onClick={() => handleSort('email')}
                   >
                     Email <SortIcon field="email" />
@@ -215,13 +215,13 @@ export function UserListPage() {
                     Status
                   </th>
                   <th
-                    className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+                    className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer hover:bg-accent"
                     onClick={() => handleSort('lastLoginAt')}
                   >
                     Last Login <SortIcon field="lastLoginAt" />
                   </th>
                   <th
-                    className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800"
+                    className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer hover:bg-accent"
                     onClick={() => handleSort('createdAt')}
                   >
                     Created <SortIcon field="createdAt" />
