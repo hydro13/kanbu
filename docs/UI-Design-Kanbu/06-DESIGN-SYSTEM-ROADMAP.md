@@ -643,7 +643,7 @@ feat(design-system): Update Tailwind config to use CSS custom properties
 
 ### Fase 1.7: Design Tokens TypeScript Update
 
-**Status:** [ ] Niet gestart
+**Status:** [x] Voltooid (2026-01-15)
 
 **Wat:** design-tokens.ts updaten met nieuwe tokens.
 
@@ -651,9 +651,12 @@ feat(design-system): Update Tailwind config to use CSS custom properties
 - `apps/web/src/lib/design-tokens.ts`
 
 **Taken:**
-- [ ] TypeScript types toevoegen voor tokens
-- [ ] Helper functies updaten
-- [ ] Documentatie toevoegen
+- [x] Update version to 2.0.0
+- [x] Update typography to use Tailwind custom classes
+- [x] Update cards to use new Tailwind classes
+- [x] Update pageLayout to use new classes
+- [x] Update sidebar with width tokens
+- [x] Add CSS Custom Properties documentation
 
 **Commit message:**
 ```
