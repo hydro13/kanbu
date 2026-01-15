@@ -553,18 +553,20 @@ feat(design-system): Add component tokens for card, button, input, page, sidebar
 
 ### Fase 1.6: Tailwind Config Update
 
-**Status:** [ ] Niet gestart
+**Status:** [x] Voltooid (2026-01-15)
 
 **Wat:** Tailwind config aanpassen om tokens te gebruiken.
 
 **Bestanden:**
-- `apps/web/tailwind.config.ts`
+- `apps/web/tailwind.config.js`
 
 **Taken:**
-- [ ] Custom colors toevoegen
-- [ ] Custom spacing toevoegen
-- [ ] Custom border-radius toevoegen
-- [ ] Custom font-sizes toevoegen
+- [x] Custom colors toevoegen (surface, text-color)
+- [x] Custom padding toevoegen (card variants)
+- [x] Custom border-radius toevoegen (card, button, input)
+- [x] Custom font-sizes toevoegen (page-title, section-title)
+- [x] Custom widths toevoegen (sidebar)
+- [x] Custom max-widths toevoegen (page, page-narrow)
 
 **BACKUP EERST:**
 ```bash
