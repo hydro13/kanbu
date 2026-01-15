@@ -1,9 +1,32 @@
+/*
+ * Kanbu Design System - Global Styles & Design Tokens
+ * Version: 2.0.0
+ *
+ * Complete design token system for consistent UI across the application.
+ * Organized in layers: Primitives → Semantic → Component tokens.
+ *
+ * Token Categories:
+ * - Primitive: Raw values (colors, spacing, typography)
+ * - Semantic: Contextual meaning (surfaces, text, borders)
+ * - Component: Specific UI elements (card, button, input)
+ *
+ * ===================================================================
+ * AI Architect: Robin Waslander <R.Waslander@gmail.com>
+ * Session: MAX-2026-01-15
+ * Change: Complete design token system (Fase 6)
+ * ===================================================================
+ */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
+    /* =================================================================
+       SHADCN/UI COMPATIBILITY TOKENS
+       These maintain compatibility with shadcn/ui components
+       ================================================================= */
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
@@ -25,22 +48,37 @@
     --ring: 222.2 84% 4.9%;
     --radius: 0.5rem;
 
-    /* Priority Colors - STANDAARD: HIGH = ORANGE */
+    /* =================================================================
+       KANBU SEMANTIC COLORS
+       Application-specific semantic colors
+       ================================================================= */
+
+    /* Priority Colors */
     --priority-low: 156 15% 62%;
     --priority-medium: 217 91% 60%;
     --priority-high: 25 95% 53%;
     --priority-urgent: 0 84% 60%;
 
-    /* Semantic Colors */
+    /* State Colors - Light Mode */
     --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+    --success-muted: 142 76% 95%;
     --warning: 38 92% 50%;
+    --warning-foreground: 26 83% 14%;
+    --warning-muted: 48 100% 95%;
+    --error: 0 84% 60%;
+    --error-foreground: 0 0% 100%;
+    --error-muted: 0 86% 97%;
     --info: 217 91% 60%;
+    --info-foreground: 0 0% 100%;
+    --info-muted: 214 100% 97%;
 
     /* ═══════════════════════════════════════════════════════════════
        PRIMITIVE TOKENS - Color Palette
+       Complete color scales for design flexibility
        ═══════════════════════════════════════════════════════════════ */
 
-    /* Gray Scale */
+    /* Gray Scale - Neutral foundation */
     --color-gray-50: 210 40% 98%;
     --color-gray-100: 210 40% 96%;
     --color-gray-200: 214 32% 91%;
@@ -51,8 +89,9 @@
     --color-gray-700: 215 25% 27%;
     --color-gray-800: 217 33% 17%;
     --color-gray-900: 222 84% 5%;
+    --color-gray-950: 229 84% 5%;
 
-    /* Blue Scale */
+    /* Blue Scale - Primary brand color */
     --color-blue-50: 214 100% 97%;
     --color-blue-100: 214 95% 93%;
     --color-blue-200: 213 97% 87%;
@@ -63,8 +102,48 @@
     --color-blue-700: 224 76% 48%;
     --color-blue-800: 226 71% 40%;
     --color-blue-900: 224 64% 33%;
+    --color-blue-950: 226 57% 21%;
 
-    /* Orange Scale */
+    /* Teal Scale - Fresh and modern */
+    --color-teal-50: 166 76% 97%;
+    --color-teal-100: 167 85% 93%;
+    --color-teal-200: 168 84% 85%;
+    --color-teal-300: 171 77% 72%;
+    --color-teal-400: 172 66% 58%;
+    --color-teal-500: 173 80% 40%;
+    --color-teal-600: 175 84% 32%;
+    --color-teal-700: 175 77% 26%;
+    --color-teal-800: 176 69% 22%;
+    --color-teal-900: 176 61% 19%;
+    --color-teal-950: 179 84% 10%;
+
+    /* Violet Scale - Creative and premium */
+    --color-violet-50: 250 100% 98%;
+    --color-violet-100: 251 91% 95%;
+    --color-violet-200: 251 95% 92%;
+    --color-violet-300: 252 95% 85%;
+    --color-violet-400: 255 92% 76%;
+    --color-violet-500: 258 90% 66%;
+    --color-violet-600: 262 83% 58%;
+    --color-violet-700: 263 70% 50%;
+    --color-violet-800: 263 69% 42%;
+    --color-violet-900: 264 67% 35%;
+    --color-violet-950: 265 61% 22%;
+
+    /* Rose Scale - Bold and energetic */
+    --color-rose-50: 356 100% 97%;
+    --color-rose-100: 356 100% 95%;
+    --color-rose-200: 353 96% 90%;
+    --color-rose-300: 353 96% 82%;
+    --color-rose-400: 351 95% 71%;
+    --color-rose-500: 349 89% 60%;
+    --color-rose-600: 347 77% 50%;
+    --color-rose-700: 345 83% 41%;
+    --color-rose-800: 343 80% 35%;
+    --color-rose-900: 342 75% 30%;
+    --color-rose-950: 343 88% 16%;
+
+    /* Orange Scale - Attention and warmth */
     --color-orange-50: 33 100% 96%;
     --color-orange-100: 34 100% 92%;
     --color-orange-200: 32 98% 83%;
@@ -75,32 +154,9 @@
     --color-orange-700: 17 88% 40%;
     --color-orange-800: 15 79% 34%;
     --color-orange-900: 15 75% 28%;
+    --color-orange-950: 13 81% 15%;
 
-    /* Red Scale */
-    --color-red-50: 0 86% 97%;
-    --color-red-100: 0 93% 94%;
-    --color-red-200: 0 96% 89%;
-    --color-red-300: 0 94% 82%;
-    --color-red-400: 0 91% 71%;
-    --color-red-500: 0 84% 60%;
-    --color-red-600: 0 72% 51%;
-    --color-red-700: 0 74% 42%;
-    --color-red-800: 0 70% 35%;
-    --color-red-900: 0 63% 31%;
-
-    /* Green Scale */
-    --color-green-50: 138 76% 97%;
-    --color-green-100: 141 84% 93%;
-    --color-green-200: 141 79% 85%;
-    --color-green-300: 142 77% 73%;
-    --color-green-400: 142 69% 58%;
-    --color-green-500: 142 71% 45%;
-    --color-green-600: 142 76% 36%;
-    --color-green-700: 142 72% 29%;
-    --color-green-800: 143 64% 24%;
-    --color-green-900: 144 61% 20%;
-
-    /* Amber Scale */
+    /* Amber Scale - Warm and friendly */
     --color-amber-50: 48 100% 96%;
     --color-amber-100: 48 96% 89%;
     --color-amber-200: 48 97% 77%;
@@ -111,12 +167,53 @@
     --color-amber-700: 26 90% 37%;
     --color-amber-800: 23 83% 31%;
     --color-amber-900: 22 78% 26%;
+    --color-amber-950: 21 92% 14%;
+
+    /* Red Scale - Danger and errors */
+    --color-red-50: 0 86% 97%;
+    --color-red-100: 0 93% 94%;
+    --color-red-200: 0 96% 89%;
+    --color-red-300: 0 94% 82%;
+    --color-red-400: 0 91% 71%;
+    --color-red-500: 0 84% 60%;
+    --color-red-600: 0 72% 51%;
+    --color-red-700: 0 74% 42%;
+    --color-red-800: 0 70% 35%;
+    --color-red-900: 0 63% 31%;
+    --color-red-950: 0 75% 15%;
+
+    /* Green Scale - Success and positive */
+    --color-green-50: 138 76% 97%;
+    --color-green-100: 141 84% 93%;
+    --color-green-200: 141 79% 85%;
+    --color-green-300: 142 77% 73%;
+    --color-green-400: 142 69% 58%;
+    --color-green-500: 142 71% 45%;
+    --color-green-600: 142 76% 36%;
+    --color-green-700: 142 72% 29%;
+    --color-green-800: 143 64% 24%;
+    --color-green-900: 144 61% 20%;
+    --color-green-950: 145 80% 10%;
+
+    /* Cyan Scale - Information and links */
+    --color-cyan-50: 183 100% 96%;
+    --color-cyan-100: 185 96% 90%;
+    --color-cyan-200: 186 94% 82%;
+    --color-cyan-300: 187 92% 69%;
+    --color-cyan-400: 188 86% 53%;
+    --color-cyan-500: 189 94% 43%;
+    --color-cyan-600: 192 91% 36%;
+    --color-cyan-700: 193 82% 31%;
+    --color-cyan-800: 194 70% 27%;
+    --color-cyan-900: 196 64% 24%;
+    --color-cyan-950: 197 79% 15%;
 
     /* ═══════════════════════════════════════════════════════════════
        PRIMITIVE TOKENS - Typography
        ═══════════════════════════════════════════════════════════════ */
 
     /* Font Sizes */
+    --font-size-2xs: 0.625rem;   /* 10px */
     --font-size-xs: 0.75rem;     /* 12px */
     --font-size-sm: 0.875rem;    /* 14px */
     --font-size-base: 1rem;      /* 16px */
@@ -125,12 +222,17 @@
     --font-size-2xl: 1.5rem;     /* 24px */
     --font-size-3xl: 1.875rem;   /* 30px */
     --font-size-4xl: 2.25rem;    /* 36px */
+    --font-size-5xl: 3rem;       /* 48px */
+    --font-size-6xl: 3.75rem;    /* 60px */
 
     /* Font Weights */
+    --font-weight-thin: 100;
+    --font-weight-light: 300;
     --font-weight-normal: 400;
     --font-weight-medium: 500;
     --font-weight-semibold: 600;
     --font-weight-bold: 700;
+    --font-weight-extrabold: 800;
 
     /* Line Heights */
     --line-height-none: 1;
@@ -146,12 +248,13 @@
     --letter-spacing-normal: 0;
     --letter-spacing-wide: 0.025em;
     --letter-spacing-wider: 0.05em;
+    --letter-spacing-widest: 0.1em;
 
     /* ═══════════════════════════════════════════════════════════════
        PRIMITIVE TOKENS - Spacing & Layout
        ═══════════════════════════════════════════════════════════════ */
 
-    /* Spacing Scale */
+    /* Spacing Scale (4px base) */
     --space-0: 0;
     --space-px: 1px;
     --space-0-5: 0.125rem;  /* 2px */
@@ -168,10 +271,14 @@
     --space-8: 2rem;        /* 32px */
     --space-9: 2.25rem;     /* 36px */
     --space-10: 2.5rem;     /* 40px */
+    --space-11: 2.75rem;    /* 44px */
     --space-12: 3rem;       /* 48px */
     --space-14: 3.5rem;     /* 56px */
     --space-16: 4rem;       /* 64px */
     --space-20: 5rem;       /* 80px */
+    --space-24: 6rem;       /* 96px */
+    --space-28: 7rem;       /* 112px */
+    --space-32: 8rem;       /* 128px */
 
     /* Border Radius */
     --radius-none: 0;
@@ -184,7 +291,7 @@
     --radius-3xl: 1.5rem;    /* 24px */
     --radius-full: 9999px;
 
-    /* Shadows */
+    /* Shadows - Light Mode */
     --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
     --shadow-default: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
@@ -196,7 +303,63 @@
     --shadow-none: none;
 
     /* ═══════════════════════════════════════════════════════════════
+       PRIMITIVE TOKENS - Animation & Motion
+       ═══════════════════════════════════════════════════════════════ */
+
+    /* Durations */
+    --duration-instant: 0ms;
+    --duration-fastest: 50ms;
+    --duration-faster: 100ms;
+    --duration-fast: 150ms;
+    --duration-normal: 200ms;
+    --duration-slow: 300ms;
+    --duration-slower: 400ms;
+    --duration-slowest: 500ms;
+
+    /* Easing Functions */
+    --ease-linear: linear;
+    --ease-in: cubic-bezier(0.4, 0, 1, 1);
+    --ease-out: cubic-bezier(0, 0, 0.2, 1);
+    --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+    /* Common Transitions */
+    --transition-colors: color, background-color, border-color, text-decoration-color, fill, stroke;
+    --transition-opacity: opacity;
+    --transition-shadow: box-shadow;
+    --transition-transform: transform;
+    --transition-all: all;
+
+    /* ═══════════════════════════════════════════════════════════════
+       PRIMITIVE TOKENS - Z-Index Scale
+       ═══════════════════════════════════════════════════════════════ */
+
+    --z-base: 0;
+    --z-docked: 10;
+    --z-dropdown: 1000;
+    --z-sticky: 1100;
+    --z-banner: 1200;
+    --z-overlay: 1300;
+    --z-modal: 1400;
+    --z-popover: 1500;
+    --z-toast: 1600;
+    --z-tooltip: 1700;
+    --z-max: 9999;
+
+    /* ═══════════════════════════════════════════════════════════════
+       PRIMITIVE TOKENS - Focus & Accessibility
+       ═══════════════════════════════════════════════════════════════ */
+
+    /* Focus Ring */
+    --focus-ring-width: 2px;
+    --focus-ring-offset: 2px;
+    --focus-ring-color: var(--color-blue-500);
+    --focus-ring-style: solid;
+
+    /* ═══════════════════════════════════════════════════════════════
        SEMANTIC TOKENS - Light Mode
+       Contextual meaning for UI elements
        ═══════════════════════════════════════════════════════════════ */
 
     /* Surfaces */
@@ -205,29 +368,38 @@
     --surface-2: var(--color-gray-50);
     --surface-3: var(--color-gray-100);
     --surface-elevated: 0 0% 100%;
+    --surface-sunken: var(--color-gray-100);
+    --surface-overlay: rgb(0 0 0 / 0.5);
 
     /* Text */
     --text-primary: var(--color-gray-900);
     --text-secondary: var(--color-gray-600);
     --text-tertiary: var(--color-gray-500);
     --text-muted: var(--color-gray-400);
+    --text-disabled: var(--color-gray-300);
     --text-inverse: var(--color-gray-50);
     --text-link: var(--color-blue-600);
     --text-link-hover: var(--color-blue-700);
+    --text-success: var(--color-green-600);
+    --text-warning: var(--color-amber-600);
+    --text-error: var(--color-red-600);
 
     /* Borders */
     --border-default: var(--color-gray-200);
     --border-muted: var(--color-gray-100);
     --border-strong: var(--color-gray-300);
     --border-focus: var(--color-blue-500);
+    --border-error: var(--color-red-500);
+    --border-success: var(--color-green-500);
 
-    /* Interactive */
+    /* Interactive States */
     --interactive-hover: rgb(0 0 0 / 0.04);
     --interactive-active: rgb(0 0 0 / 0.08);
     --interactive-selected: var(--color-blue-50);
+    --interactive-disabled: var(--color-gray-100);
 
     /* ═══════════════════════════════════════════════════════════════
-       COMPONENT TOKENS
+       COMPONENT TOKENS - Reusable UI Components
        ═══════════════════════════════════════════════════════════════ */
 
     /* Card */
@@ -249,21 +421,82 @@
     --button-padding-y-lg: var(--space-3);
     --button-font-weight: var(--font-weight-medium);
     --button-font-size: var(--font-size-sm);
+    --button-font-size-sm: var(--font-size-xs);
+    --button-font-size-lg: var(--font-size-base);
+    --button-transition: var(--duration-fast) var(--ease-out);
 
     /* Input */
     --input-radius: var(--radius-md);
     --input-border: var(--border-default);
     --input-border-focus: var(--border-focus);
+    --input-border-error: var(--border-error);
     --input-padding-x: var(--space-3);
     --input-padding-y: var(--space-2);
     --input-font-size: var(--font-size-sm);
     --input-background: var(--surface-background);
+    --input-placeholder: var(--text-muted);
+    --input-transition: var(--duration-fast) var(--ease-out);
 
-    /* Page */
+    /* Badge */
+    --badge-radius: var(--radius-full);
+    --badge-padding-x: var(--space-2-5);
+    --badge-padding-y: var(--space-0-5);
+    --badge-font-size: var(--font-size-xs);
+    --badge-font-weight: var(--font-weight-medium);
+
+    /* Avatar */
+    --avatar-size-xs: 1.5rem;   /* 24px */
+    --avatar-size-sm: 2rem;     /* 32px */
+    --avatar-size-md: 2.5rem;   /* 40px */
+    --avatar-size-lg: 3rem;     /* 48px */
+    --avatar-size-xl: 4rem;     /* 64px */
+    --avatar-radius: var(--radius-full);
+    --avatar-border: var(--border-default);
+
+    /* Tooltip */
+    --tooltip-background: var(--color-gray-900);
+    --tooltip-foreground: var(--color-gray-50);
+    --tooltip-radius: var(--radius-md);
+    --tooltip-padding-x: var(--space-3);
+    --tooltip-padding-y: var(--space-1-5);
+    --tooltip-font-size: var(--font-size-xs);
+    --tooltip-shadow: var(--shadow-lg);
+    --tooltip-z: var(--z-tooltip);
+
+    /* Toast / Notification */
+    --toast-background: var(--surface-1);
+    --toast-border: var(--border-default);
+    --toast-radius: var(--radius-lg);
+    --toast-padding: var(--space-4);
+    --toast-shadow: var(--shadow-lg);
+    --toast-z: var(--z-toast);
+    --toast-max-width: 24rem;
+
+    /* Tabs */
+    --tabs-radius: var(--radius-md);
+    --tabs-padding-x: var(--space-4);
+    --tabs-padding-y: var(--space-2);
+    --tabs-font-size: var(--font-size-sm);
+    --tabs-font-weight: var(--font-weight-medium);
+    --tabs-indicator-height: 2px;
+
+    /* Dropdown / Menu */
+    --dropdown-background: var(--surface-1);
+    --dropdown-border: var(--border-default);
+    --dropdown-radius: var(--radius-lg);
+    --dropdown-padding: var(--space-1);
+    --dropdown-shadow: var(--shadow-lg);
+    --dropdown-z: var(--z-dropdown);
+    --dropdown-item-radius: var(--radius-md);
+    --dropdown-item-padding-x: var(--space-3);
+    --dropdown-item-padding-y: var(--space-2);
+
+    /* Page Layout */
     --page-padding-x: var(--space-6);
     --page-padding-y: var(--space-8);
     --page-max-width: 80rem;
     --page-max-width-narrow: 48rem;
+    --page-max-width-wide: 96rem;
 
     /* Page Title */
     --page-title-size: var(--font-size-2xl);
@@ -283,6 +516,7 @@
     --sidebar-item-radius: var(--radius-md);
     --sidebar-item-padding-x: var(--space-3);
     --sidebar-item-padding-y: var(--space-2);
+    --sidebar-transition: var(--duration-normal) var(--ease-out);
 
     /* Table */
     --table-header-background: var(--surface-2);
@@ -290,16 +524,38 @@
     --table-border: var(--border-default);
     --table-cell-padding-x: var(--space-4);
     --table-cell-padding-y: var(--space-3);
+    --table-radius: var(--radius-lg);
 
-    /* Modal */
+    /* Modal / Dialog */
     --modal-background: var(--surface-1);
     --modal-overlay: rgb(0 0 0 / 0.5);
     --modal-radius: var(--radius-lg);
     --modal-shadow: var(--shadow-xl);
     --modal-padding: var(--space-6);
+    --modal-z: var(--z-modal);
+    --modal-max-width: 32rem;
+    --modal-max-width-sm: 24rem;
+    --modal-max-width-lg: 48rem;
+    --modal-max-width-xl: 64rem;
+
+    /* Popover */
+    --popover-background: var(--surface-1);
+    --popover-border: var(--border-default);
+    --popover-radius: var(--radius-lg);
+    --popover-shadow: var(--shadow-lg);
+    --popover-padding: var(--space-4);
+    --popover-z: var(--z-popover);
+
+    /* Skeleton / Loading */
+    --skeleton-background: var(--color-gray-200);
+    --skeleton-highlight: var(--color-gray-100);
   }
 
+  /* =================================================================
+     DARK MODE OVERRIDES
+     ================================================================= */
   .dark {
+    /* Shadcn/UI Compatibility */
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
     --card: 222.2 84% 4.9%;
@@ -320,49 +576,86 @@
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
 
-    /* Priority Colors - Dark mode */
+    /* Priority Colors */
     --priority-low: 156 10% 50%;
     --priority-medium: 217 80% 55%;
     --priority-high: 25 90% 55%;
     --priority-urgent: 0 75% 50%;
 
-    /* Semantic Colors - Dark mode */
+    /* State Colors - Dark Mode */
     --success: 142 60% 40%;
+    --success-foreground: 0 0% 100%;
+    --success-muted: 143 64% 15%;
     --warning: 38 85% 45%;
+    --warning-foreground: 26 83% 14%;
+    --warning-muted: 26 90% 15%;
+    --error: 0 75% 50%;
+    --error-foreground: 0 0% 100%;
+    --error-muted: 0 63% 18%;
     --info: 217 80% 55%;
+    --info-foreground: 0 0% 100%;
+    --info-muted: 224 64% 20%;
 
-    /* ═══════════════════════════════════════════════════════════════
-       SEMANTIC TOKENS - Dark Mode
-       ═══════════════════════════════════════════════════════════════ */
+    /* Shadows - Dark Mode (subtle glow effect) */
+    --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+    --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.4);
+    --shadow-default: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.4);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.4);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
+    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.5);
+    --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.6);
+    --shadow-inner: inset 0 2px 4px 0 rgb(0 0 0 / 0.3);
 
-    /* Surfaces */
+    /* Focus Ring - Dark Mode */
+    --focus-ring-color: var(--color-blue-400);
+
+    /* Surfaces - Dark Mode */
     --surface-background: var(--color-gray-900);
     --surface-1: var(--color-gray-800);
     --surface-2: var(--color-gray-700);
     --surface-3: var(--color-gray-600);
     --surface-elevated: var(--color-gray-800);
+    --surface-sunken: var(--color-gray-950);
+    --surface-overlay: rgb(0 0 0 / 0.7);
 
-    /* Text */
+    /* Text - Dark Mode */
     --text-primary: var(--color-gray-50);
     --text-secondary: var(--color-gray-300);
     --text-tertiary: var(--color-gray-400);
     --text-muted: var(--color-gray-500);
+    --text-disabled: var(--color-gray-600);
     --text-inverse: var(--color-gray-900);
     --text-link: var(--color-blue-400);
     --text-link-hover: var(--color-blue-300);
+    --text-success: var(--color-green-400);
+    --text-warning: var(--color-amber-400);
+    --text-error: var(--color-red-400);
 
-    /* Borders */
+    /* Borders - Dark Mode */
     --border-default: var(--color-gray-700);
     --border-muted: var(--color-gray-800);
     --border-strong: var(--color-gray-600);
+    --border-error: var(--color-red-500);
+    --border-success: var(--color-green-500);
 
-    /* Interactive */
+    /* Interactive - Dark Mode */
     --interactive-hover: rgb(255 255 255 / 0.04);
     --interactive-active: rgb(255 255 255 / 0.08);
     --interactive-selected: rgb(59 130 246 / 0.2);
+    --interactive-disabled: var(--color-gray-800);
+
+    /* Component Overrides - Dark Mode */
+    --tooltip-background: var(--color-gray-700);
+    --tooltip-foreground: var(--color-gray-100);
+    --modal-overlay: rgb(0 0 0 / 0.7);
+    --skeleton-background: var(--color-gray-700);
+    --skeleton-highlight: var(--color-gray-600);
   }
 }
 
+/* =================================================================
+   BASE STYLES
+   ================================================================= */
 @layer base {
   * {
     @apply border-border;
@@ -372,5 +665,92 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* Focus visible styles */
+  :focus-visible {
+    outline: var(--focus-ring-width) var(--focus-ring-style) hsl(var(--focus-ring-color));
+    outline-offset: var(--focus-ring-offset);
+  }
+
+  /* Remove focus outline for mouse users */
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Reduced motion preference */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+    html {
+      scroll-behavior: auto;
+    }
+  }
+}
+
+/* =================================================================
+   UTILITY CLASSES
+   Custom utilities built on design tokens
+   ================================================================= */
+@layer utilities {
+  /* Animation utilities */
+  .transition-colors-fast {
+    transition-property: var(--transition-colors);
+    transition-duration: var(--duration-fast);
+    transition-timing-function: var(--ease-out);
+  }
+
+  .transition-all-normal {
+    transition-property: var(--transition-all);
+    transition-duration: var(--duration-normal);
+    transition-timing-function: var(--ease-out);
+  }
+
+  /* Surface utilities */
+  .surface-1 {
+    background-color: hsl(var(--surface-1));
+  }
+
+  .surface-2 {
+    background-color: hsl(var(--surface-2));
+  }
+
+  .surface-3 {
+    background-color: hsl(var(--surface-3));
+  }
+
+  .surface-elevated {
+    background-color: hsl(var(--surface-elevated));
+    box-shadow: var(--shadow-lg);
+  }
+
+  /* Text color utilities */
+  .text-color-primary {
+    color: hsl(var(--text-primary));
+  }
+
+  .text-color-secondary {
+    color: hsl(var(--text-secondary));
+  }
+
+  .text-color-tertiary {
+    color: hsl(var(--text-tertiary));
+  }
+
+  /* Focus ring utility */
+  .focus-ring {
+    --tw-ring-offset-width: var(--focus-ring-offset);
+    --tw-ring-color: hsl(var(--focus-ring-color));
   }
 }
