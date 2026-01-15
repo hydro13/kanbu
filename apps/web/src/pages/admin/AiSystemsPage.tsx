@@ -309,7 +309,7 @@ export function AiSystemsPage() {
 
           {/* Empty state */}
           {data.providers.length === 0 && (
-            <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+            <div className="text-center py-12 bg-card rounded-card border border-border">
               <p className="text-gray-500 dark:text-gray-400 mb-4">
                 No AI providers configured yet.
               </p>
@@ -453,7 +453,7 @@ function ProviderCard({
 
   return (
     <div className={cn(
-      'bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4',
+      'bg-card rounded-card border border-border p-4',
       !provider.isActive && 'opacity-60'
     )}>
       <div className="flex items-start justify-between gap-4">

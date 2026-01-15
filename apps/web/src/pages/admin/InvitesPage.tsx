@@ -246,7 +246,7 @@ export function InvitesPage() {
       {/* Invites table */}
       {data && (
         <>
-          <div className="overflow-x-auto bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+          <div className="overflow-x-auto bg-card rounded-card border border-border">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">

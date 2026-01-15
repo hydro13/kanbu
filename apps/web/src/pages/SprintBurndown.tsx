@@ -127,7 +127,7 @@ export function SprintBurndown() {
 
           {/* Sprint Stats */}
           <div className="grid grid-cols-4 gap-4">
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+            <div className="bg-card rounded-card border border-border p-4">
               <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 mb-1">
                 <Calendar className="w-4 h-4" />
                 <span className="text-xs font-medium uppercase">Duration</span>
@@ -140,7 +140,7 @@ export function SprintBurndown() {
               </p>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+            <div className="bg-card rounded-card border border-border p-4">
               <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 mb-1">
                 <Clock className="w-4 h-4" />
                 <span className="text-xs font-medium uppercase">Time Left</span>
@@ -155,7 +155,7 @@ export function SprintBurndown() {
               )}
             </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+            <div className="bg-card rounded-card border border-border p-4">
               <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 mb-1">
                 <CheckSquare className="w-4 h-4" />
                 <span className="text-xs font-medium uppercase">Tasks</span>
@@ -168,7 +168,7 @@ export function SprintBurndown() {
               </p>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+            <div className="bg-card rounded-card border border-border p-4">
               <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 mb-1">
                 <span className="text-xs font-medium uppercase">Progress</span>
               </div>

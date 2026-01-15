@@ -61,7 +61,7 @@ function formatHours(hours: number): string {
 export function TaskCountWidget({ stats, isLoading }: TaskCountWidgetProps) {
   if (isLoading) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+      <div className="bg-card rounded-card border border-border p-6">
         <div className="flex items-center justify-center h-32">
           <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
         </div>
@@ -71,14 +71,14 @@ export function TaskCountWidget({ stats, isLoading }: TaskCountWidgetProps) {
 
   if (!stats) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+      <div className="bg-card rounded-card border border-border p-6">
         <p className="text-gray-500 dark:text-gray-400 text-center">No data available</p>
       </div>
     )
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+    <div className="bg-card rounded-card border border-border p-6">
       {/* Main Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-6">
         {/* Total Tasks */}

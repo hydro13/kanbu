@@ -285,7 +285,7 @@ export function SocialLinksEditor() {
 
   if (isLoading) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+      <div className="bg-card rounded-card border border-border p-4">
         <p className="text-sm text-muted-foreground">Loading social links...</p>
       </div>
     )
@@ -293,7 +293,7 @@ export function SocialLinksEditor() {
 
   return (
     <form onSubmit={handleSubmit}>
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+      <div className="bg-card rounded-card border border-border">
         <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
           <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
             Social Links

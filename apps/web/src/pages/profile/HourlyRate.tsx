@@ -75,7 +75,7 @@ export function HourlyRate() {
     <ProfileLayout title="Hourly Rate" description="Set your hourly rate for cost calculations">
       <div className="grid grid-cols-2 gap-4">
         {/* Left: Rate Setting */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <div className="bg-card rounded-card border border-border">
           <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
             <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Your Rate</h3>
             <p className="text-xs text-muted-foreground mt-0.5">Used for cost calculations</p>
@@ -124,7 +124,7 @@ export function HourlyRate() {
         <div className="space-y-4">
           {/* Cost Preview */}
           {numericRate > 0 && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+            <div className="bg-card rounded-card border border-border">
               <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Cost Preview</h3>
               </div>
@@ -146,7 +146,7 @@ export function HourlyRate() {
           )}
 
           {/* Info */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+          <div className="bg-card rounded-card border border-border">
             <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white">About Rates</h3>
             </div>

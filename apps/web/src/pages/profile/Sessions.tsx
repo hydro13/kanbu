@@ -112,7 +112,7 @@ export function Sessions() {
     <ProfileLayout title="Persistent Connections" description="Manage your active sessions">
       <div className="grid grid-cols-2 gap-4">
         {/* Active Sessions */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <div className="bg-card rounded-card border border-border">
           <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
             <div>
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Active Sessions</h3>
@@ -170,7 +170,7 @@ export function Sessions() {
         </div>
 
         {/* Remember Tokens */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <div className="bg-card rounded-card border border-border">
           <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
             <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Remember Me Tokens</h3>
             <p className="text-xs text-muted-foreground">Auto-login tokens</p>

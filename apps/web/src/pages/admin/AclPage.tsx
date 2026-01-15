@@ -389,7 +389,7 @@ export function AclPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Resource Selector */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="bg-card rounded-card border border-border overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
             <h2 className="font-medium text-gray-900 dark:text-white">Select Resource</h2>
           </div>
@@ -410,7 +410,7 @@ export function AclPage() {
         </div>
 
         {/* ACL Entries */}
-        <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="lg:col-span-2 bg-card rounded-card border border-border overflow-hidden">
           <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex items-center justify-between">
             <h2 className="font-medium text-gray-900 dark:text-white">
               {selectedResource

@@ -420,7 +420,7 @@ export function GroupMembersPanel({ groupId, groupName, groupPath, onGroupDelete
                   {membersData.members.map((member) => (
                     <div
                       key={member.id}
-                      className="flex items-center justify-between p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
+                      className="flex items-center justify-between p-3 bg-card rounded-card border border-border"
                     >
                       <Link
                         to={`/admin/users/${member.user.id}`}

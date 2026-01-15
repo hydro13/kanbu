@@ -119,7 +119,7 @@ export function QuickAddTask({
     <div
       data-quick-add
       className={cn(
-        'p-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm',
+        'p-2 bg-card rounded-card border border-border shadow-sm',
         className
       )}
     >

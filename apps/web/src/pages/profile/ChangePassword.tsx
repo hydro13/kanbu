@@ -72,7 +72,7 @@ export function ChangePassword() {
       title="Change Password"
       description="Update your account password"
     >
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+      <div className="bg-card rounded-card border border-border">
         <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
           <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Password</h3>
           <p className="text-xs text-muted-foreground mt-0.5">Enter current password and choose a new one</p>

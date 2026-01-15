@@ -157,7 +157,7 @@ export function WorkspaceCreatePage() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+          <div className="bg-card rounded-card border border-border p-6">
             {/* Workspace Logo Upload */}
             <div className="flex items-start gap-4 mb-6 pb-6 border-b border-gray-200 dark:border-gray-700">
               <div className="relative">

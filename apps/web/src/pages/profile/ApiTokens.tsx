@@ -147,7 +147,7 @@ export function ApiTokens() {
   if (newlyCreatedKey) {
     return (
       <ProfileLayout title="API Tokens" description="Manage your personal access tokens">
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <div className="bg-card rounded-card border border-border">
           <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
             <h3 className="text-sm font-semibold text-green-600 dark:text-green-400">Token Created!</h3>
             <p className="text-xs text-muted-foreground mt-0.5">Copy now - won't be shown again</p>
@@ -170,7 +170,7 @@ export function ApiTokens() {
 
   return (
     <ProfileLayout title="API Tokens" description="Manage your personal access tokens">
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+      <div className="bg-card rounded-card border border-border">
         <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
           <div>
             <h3 className="text-sm font-semibold text-gray-900 dark:text-white">API Tokens</h3>

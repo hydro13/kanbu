@@ -282,7 +282,7 @@ export function WebhookSettings() {
         </div>
 
         {/* Webhooks List */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="bg-card rounded-card border border-border overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
               Configured Webhooks

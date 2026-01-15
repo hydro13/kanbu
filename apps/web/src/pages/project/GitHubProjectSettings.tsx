@@ -386,7 +386,7 @@ function RepositoryTab({
   return (
     <div className="space-y-6">
       {/* Repository Info Card */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+      <div className="bg-card rounded-card border border-border p-6">
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
@@ -440,7 +440,7 @@ function RepositoryTab({
 
       {/* Sync Status */}
       {syncStatus && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
+        <div className="bg-card rounded-card border border-border p-6">
           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Sync Status</h3>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
@@ -618,7 +618,7 @@ function SettingsTab({ linkedRepo, onSave, onToggleSync, isSaving }: SettingsTab
   return (
     <div className="space-y-3">
       {/* Global Sync Toggle */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-2">
+      <div className="bg-card rounded-card border border-border px-4 py-2">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-sm font-medium text-gray-900 dark:text-white">Sync Enabled</h3>
@@ -635,7 +635,7 @@ function SettingsTab({ linkedRepo, onSave, onToggleSync, isSaving }: SettingsTab
       </div>
 
       {/* Issue Sync Settings */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-2">
+      <div className="bg-card rounded-card border border-border px-4 py-2">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-sm font-medium text-gray-900 dark:text-white">Issue Sync</h3>
           <Toggle
@@ -665,7 +665,7 @@ function SettingsTab({ linkedRepo, onSave, onToggleSync, isSaving }: SettingsTab
       </div>
 
       {/* PR Tracking Settings */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-2">
+      <div className="bg-card rounded-card border border-border px-4 py-2">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-sm font-medium text-gray-900 dark:text-white">Pull Request Tracking</h3>
           <Toggle
@@ -690,7 +690,7 @@ function SettingsTab({ linkedRepo, onSave, onToggleSync, isSaving }: SettingsTab
       </div>
 
       {/* Commit Tracking Settings */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-2">
+      <div className="bg-card rounded-card border border-border px-4 py-2">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-sm font-medium text-gray-900 dark:text-white">Commit Tracking</h3>
           <Toggle
@@ -715,7 +715,7 @@ function SettingsTab({ linkedRepo, onSave, onToggleSync, isSaving }: SettingsTab
       </div>
 
       {/* Automation Settings */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 px-4 py-2">
+      <div className="bg-card rounded-card border border-border px-4 py-2">
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-sm font-medium text-gray-900 dark:text-white">Automation</h3>
           <Toggle
@@ -817,7 +817,7 @@ function LogsTab({ logs, total }: LogsTabProps) {
         Showing {logs.length} of {total} sync events
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="bg-card rounded-card border border-border overflow-hidden">
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead className="bg-gray-50 dark:bg-gray-900">
             <tr>
