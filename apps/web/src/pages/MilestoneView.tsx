@@ -434,11 +434,11 @@ export function MilestoneViewPage() {
               <ArrowLeftIcon />
             </button>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+              <h1 className="text-page-title text-foreground flex items-center gap-2">
                 <FlagIcon className="h-6 w-6 text-blue-500" />
                 Milestones
               </h1>
-              <p className="text-gray-500">{project?.name}</p>
+              <p className="text-muted-foreground">{project?.name}</p>
             </div>
           </div>
 

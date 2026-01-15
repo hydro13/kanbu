@@ -152,8 +152,8 @@ function PageHeader({ totalSubtasks, statusFilter, onStatusFilterChange }: PageH
   return (
     <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-t-lg">
       <div>
-        <h1 className="text-xl font-semibold text-gray-900 dark:text-white">My Subtasks</h1>
-        <span className="text-sm text-gray-500 dark:text-gray-400">
+        <h1 className="text-section-title text-foreground">My Subtasks</h1>
+        <span className="text-sm text-muted-foreground">
           {totalSubtasks} subtask{totalSubtasks !== 1 ? 's' : ''} across all projects
         </span>
       </div>

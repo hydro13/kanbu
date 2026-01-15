@@ -147,7 +147,7 @@ export function WorkspacePage() {
               </div>
             )}
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">{workspace.name}</h1>
+              <h1 className="text-page-title-lg tracking-tight text-foreground">{workspace.name}</h1>
               <p className="text-muted-foreground">
                 {getPlainDescription(workspace.description)}
               </p>

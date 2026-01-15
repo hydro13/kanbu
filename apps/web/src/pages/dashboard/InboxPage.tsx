@@ -196,7 +196,7 @@ export function InboxPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
+            <h1 className="text-page-title-lg tracking-tight text-foreground flex items-center gap-3">
               Inbox
               {unreadCount > 0 && (
                 <span className="inline-flex items-center justify-center h-6 min-w-6 px-2 text-sm font-medium rounded-full bg-primary text-primary-foreground">

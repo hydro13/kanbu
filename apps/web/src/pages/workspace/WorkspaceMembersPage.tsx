@@ -109,7 +109,7 @@ export function WorkspaceMembersPage() {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
+          <h1 className="text-page-title-lg tracking-tight text-foreground flex items-center gap-3">
             <Users className="h-8 w-8" />
             Members
           </h1>

@@ -373,7 +373,7 @@ export function WorkspaceSettingsPage() {
     <WorkspaceLayout>
       <div className="space-y-6 max-w-4xl">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Workspace Settings</h1>
+          <h1 className="text-page-title-lg tracking-tight text-foreground">Workspace Settings</h1>
           <p className="text-muted-foreground">
             Manage {currentWorkspace.name}
           </p>

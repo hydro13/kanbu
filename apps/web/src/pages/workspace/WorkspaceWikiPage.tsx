@@ -798,7 +798,7 @@ function WikiHome({ workspace, pages, onCreatePage }: WikiHomeProps) {
   return (
     <div className="max-w-3xl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
+        <h1 className="text-page-title-lg tracking-tight text-foreground flex items-center gap-3">
           <BookOpen className="h-8 w-8" />
           {workspace.name} Wiki
         </h1>

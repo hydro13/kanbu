@@ -143,7 +143,7 @@ export function UserProfilePage() {
     <Layout>
       <div className="space-y-6 max-w-2xl">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Profile Settings</h1>
+          <h1 className="text-page-title-lg tracking-tight text-foreground">Profile Settings</h1>
           <p className="text-muted-foreground">
             Manage your account settings and preferences
           </p>

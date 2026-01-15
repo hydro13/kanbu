@@ -25,7 +25,7 @@ export function NotesPage() {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Notes</h1>
+          <h1 className="text-page-title-lg tracking-tight text-foreground">Notes</h1>
           <p className="text-muted-foreground">
             Your personal sticky notes
           </p>

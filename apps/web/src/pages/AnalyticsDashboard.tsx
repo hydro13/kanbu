@@ -198,11 +198,11 @@ export function AnalyticsDashboard() {
               <div>
                 <div className="flex items-center gap-2">
                   <BarChart3 className="w-6 h-6 text-blue-500" />
-                  <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
+                  <h1 className="text-page-title text-foreground">
                     Analytics
                   </h1>
                 </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+                <p className="text-sm text-muted-foreground">
                   {project.name}
                 </p>
               </div>
