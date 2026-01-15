@@ -72,6 +72,20 @@ function getDateRange(preset: DateRangePreset): { dateFrom?: string; dateTo?: st
   return { dateFrom: dateFrom.toISOString(), dateTo }
 }
 
+function getVelocityParams(preset: DateRangePreset): { days?: number; weeks?: number; granularity: 'day' | 'week' } {
+  switch (preset) {
+    case '7d':
+      return { days: 7, granularity: 'day' }
+    case '30d':
+      return { days: 30, granularity: 'day' }
+    case '90d':
+      return { weeks: 13, granularity: 'week' }
+    case 'all':
+    default:
+      return { weeks: 52, granularity: 'week' }
+  }
+}
+
 // =============================================================================
 // Main Component
 // =============================================================================
@@ -97,8 +111,9 @@ export function AnalyticsDashboard() {
     { enabled: projectIdNum > 0 }
   )
 
+  const velocityParams = useMemo(() => getVelocityParams(dateRange), [dateRange])
   const { data: velocity, isLoading: isVelocityLoading } = trpc.analytics.getVelocity.useQuery(
-    { projectId: projectIdNum, weeks: 8 },
+    { projectId: projectIdNum, ...velocityParams },
     { enabled: projectIdNum > 0 }
   )
 

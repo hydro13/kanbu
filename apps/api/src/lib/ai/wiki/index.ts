@@ -15,6 +15,7 @@
  * Fase 22 - Entity Deduplication & Graph Cleanup
  * Fase 23 - Reflexion Extraction (Multi-Pass)
  * Fase 24 - Community Detection (Label Propagation)
+ * Fase 25 - Text Chunking (Large Content Support)
  */
 
 export {
@@ -40,6 +41,8 @@ export {
   // Fase 17.2 - Category Handling
   ResolutionAction,
   type CategoryHandlingConfig,
+  // Fase 25 - Text Chunking
+  type ChunkedExtractionOptions,
 } from './WikiAiService'
 
 // Fase 16.2 - Date Extraction Prompts
@@ -276,3 +279,15 @@ export {
   getWikiClusterService,
   resetWikiClusterService,
 } from './WikiClusterService'
+
+// Fase 25.1 - Text Chunking Service
+export {
+  ChunkingService,
+  getChunkingService,
+  resetChunkingService,
+  CHUNK_CONFIG,
+  type ChunkingConfig,
+  type ContentChunk,
+  type ChunkContext,
+  type ChunkingResult,
+} from './ChunkingService'

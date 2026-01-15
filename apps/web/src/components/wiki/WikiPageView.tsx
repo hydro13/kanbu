@@ -636,8 +636,7 @@ export function WikiPageView({
       {/* Content + Backlinks */}
       <div
         ref={contentRef}
-        className="flex-1 min-h-0 overflow-y-auto relative [&::-webkit-scrollbar]:hidden"
-        style={{ scrollbarWidth: 'none' }}
+        className="flex-1 min-h-0 overflow-y-auto relative"
         onContextMenu={handleContextMenu}
       >
         {/* Key excludes updatedAt to prevent editor remount on auto-save refetch */}

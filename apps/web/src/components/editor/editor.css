@@ -703,6 +703,8 @@
   margin: 1rem 0;
   border-collapse: collapse;
   table-layout: auto;
+  display: block;
+  overflow-x: auto;
 }
 
 .lexical-table-row {
@@ -730,6 +732,8 @@
   margin: 1rem 0;
   border-collapse: collapse;
   table-layout: auto;
+  display: block;
+  overflow-x: auto;
 }
 
 .lexical-content-editable th,

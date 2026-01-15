@@ -1,6 +1,6 @@
 /**
  * Wiki AI Procedures
- * Version: 1.5.0
+ * Version: 1.6.0
  *
  * tRPC procedures for Wiki AI features.
  * Provides access to embeddings, entity extraction, text operations,
@@ -13,6 +13,7 @@
  * Fase: 15.5 - Background Indexing
  * Fase: 19.4 - Edge Search Integration
  * Fase: 20.5 - BM25 Keyword Search & RRF Hybrid Search
+ * Fase: 25.1 - Text Chunking Support (increased limits)
  *
  * =============================================================================
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
@@ -25,6 +26,9 @@
  *
  * Modified: 2026-01-13
  * Change: Fase 20.5 - Added keywordSearch and rrfHybridSearch endpoints
+ *
+ * Modified: 2026-01-15
+ * Change: Fase 25.1 - Increased text limits from 100K to 1M chars for chunking support
  * =============================================================================
  */
 
@@ -56,19 +60,19 @@ const wikiContextSchema = z.object({
 const embedSchema = z.object({
   workspaceId: z.number(),
   projectId: z.number().optional(),
-  text: z.string().min(1).max(100000),
+  text: z.string().min(1).max(1000000),
 })
 
 const embedBatchSchema = z.object({
   workspaceId: z.number(),
   projectId: z.number().optional(),
-  texts: z.array(z.string().min(1).max(100000)).min(1).max(100),
+  texts: z.array(z.string().min(1).max(1000000)).min(1).max(100),
 })
 
 const extractEntitiesSchema = z.object({
   workspaceId: z.number(),
   projectId: z.number().optional(),
-  text: z.string().min(1).max(100000),
+  text: z.string().min(1).max(1000000),
   entityTypes: z
     .array(z.string())
     .optional()
@@ -78,7 +82,7 @@ const extractEntitiesSchema = z.object({
 const summarizeSchema = z.object({
   workspaceId: z.number(),
   projectId: z.number().optional(),
-  text: z.string().min(1).max(100000),
+  text: z.string().min(1).max(1000000),
   maxLength: z.number().min(50).max(10000).optional(),
 })
 
