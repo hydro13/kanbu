@@ -188,7 +188,7 @@ function BoardError({ message, onRetry }: { message: string; onRetry: () => void
     <div className="flex items-center justify-center h-96">
       <div className="text-center">
         <AlertIcon />
-        <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-white">
+        <h3 className="mt-4 text-lg font-medium text-foreground">
           Failed to load board
         </h3>
         <p className="mt-2 text-gray-500 dark:text-gray-400">{message}</p>
@@ -227,7 +227,7 @@ function BoardEmpty({ projectName }: { projectName: string }) {
             />
           </svg>
         </div>
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+        <h3 className="text-lg font-medium text-foreground">
           No columns yet
         </h3>
         <p className="mt-2 text-gray-500 dark:text-gray-400">
@@ -295,7 +295,7 @@ function BoardToolbar({
               onClick={() => setIsFilterOpen(false)}
             />
             {/* Dropdown */}
-            <div className="absolute right-0 top-full mt-1 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
+            <div className="absolute right-0 top-full mt-1 w-64 bg-card rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
               <div className="p-2 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                   Filter by Tag
@@ -556,7 +556,7 @@ export function BoardViewPage() {
   if (columns.length === 0) {
     return (
       <ProjectLayout>
-        <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+        <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 bg-card">
           <ViewSwitcher projectIdentifier={project.identifier ?? ''} workspaceSlug={workspaceSlug || project.workspace?.slug || ''} className="border-b-0" />
           <div className="pr-4">
             <BoardToolbar
@@ -576,7 +576,7 @@ export function BoardViewPage() {
   return (
     <ProjectLayout>
       <div className="flex flex-col h-full" ref={boardContainerRef}>
-        <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+        <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 bg-card">
           <ViewSwitcher projectIdentifier={project.identifier ?? ''} workspaceSlug={workspaceSlug || project.workspace?.slug || ''} className="border-b-0" />
           <div className="flex items-center gap-4 pr-4">
             <BoardToolbar

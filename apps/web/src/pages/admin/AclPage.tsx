@@ -368,19 +368,19 @@ export function AclPage() {
       {/* Stats Overview */}
       {stats && (
         <div className="mb-6 grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">{stats.total}</div>
+          <div className="bg-card rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+            <div className="text-2xl font-bold text-foreground">{stats.total}</div>
             <div className="text-sm text-gray-500">Total ACL Entries</div>
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+          <div className="bg-card rounded-lg p-4 border border-gray-200 dark:border-gray-700">
             <div className="text-2xl font-bold text-green-600">{stats.allowCount}</div>
             <div className="text-sm text-gray-500">Allow Entries</div>
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+          <div className="bg-card rounded-lg p-4 border border-gray-200 dark:border-gray-700">
             <div className="text-2xl font-bold text-red-600">{stats.denyCount}</div>
             <div className="text-sm text-gray-500">Deny Entries</div>
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+          <div className="bg-card rounded-lg p-4 border border-gray-200 dark:border-gray-700">
             <div className="text-2xl font-bold text-blue-600">{stats.byType.workspace ?? 0}</div>
             <div className="text-sm text-gray-500">Workspace ACLs</div>
           </div>
@@ -390,8 +390,8 @@ export function AclPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Resource Selector */}
         <div className="bg-card rounded-card border border-border overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
-            <h2 className="font-medium text-gray-900 dark:text-white">Select Resource</h2>
+          <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-muted/50">
+            <h2 className="font-medium text-foreground">Select Resource</h2>
           </div>
           <div className="p-2 max-h-[500px] overflow-y-auto">
             <ResourceTree
@@ -411,8 +411,8 @@ export function AclPage() {
 
         {/* ACL Entries */}
         <div className="lg:col-span-2 bg-card rounded-card border border-border overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex items-center justify-between">
-            <h2 className="font-medium text-gray-900 dark:text-white">
+          <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-muted/50 flex items-center justify-between">
+            <h2 className="font-medium text-foreground">
               {selectedResource
                 ? selectedResource.type === 'group' && selectedResource.id
                   ? `Members: ${selectedResource.name}`
@@ -445,7 +445,7 @@ export function AclPage() {
                       <path d="M6 9l6 6 6-6" />
                     </svg>
                   </button>
-                  <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
+                  <div className="absolute right-0 top-full mt-1 w-48 bg-card rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
                     <button
                       onClick={() => setBulkDialogMode('grant')}
                       className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-accent flex items-center gap-2"
@@ -486,7 +486,7 @@ export function AclPage() {
                       <path d="M6 9l6 6 6-6" />
                     </svg>
                   </button>
-                  <div className="absolute right-0 top-full mt-1 w-52 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
+                  <div className="absolute right-0 top-full mt-1 w-52 bg-card rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
                     <button
                       onClick={() => setShowEffectivePanel(true)}
                       className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-accent flex items-center gap-2"
@@ -564,7 +564,7 @@ export function AclPage() {
                         </svg>
                       </div>
                       <div>
-                        <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+                        <h3 className="text-xl font-semibold text-foreground">
                           Create Security Group
                         </h3>
                         <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -589,7 +589,7 @@ export function AclPage() {
                           value={newGroupName}
                           onChange={(e) => setNewGroupName(e.target.value.replace(/\s/g, '-').toLowerCase())}
                           placeholder="e.g., senior-developers"
-                          className="w-full px-3 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
+                          className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-indigo-500"
                         />
                         <p className="text-xs text-gray-500 mt-1">Unique identifier (no spaces, lowercase)</p>
                       </div>
@@ -603,7 +603,7 @@ export function AclPage() {
                           value={newGroupDisplayName}
                           onChange={(e) => setNewGroupDisplayName(e.target.value)}
                           placeholder="e.g., Senior Developers"
-                          className="w-full px-3 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
+                          className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-indigo-500"
                         />
                       </div>
 
@@ -616,7 +616,7 @@ export function AclPage() {
                           onChange={(e) => setNewGroupDescription(e.target.value)}
                           placeholder="What is this group for?"
                           rows={3}
-                          className="w-full px-3 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 resize-none"
+                          className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-indigo-500 resize-none"
                         />
                       </div>
 
@@ -661,7 +661,7 @@ export function AclPage() {
                         </svg>
                       </div>
                       <div>
-                        <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                        <h3 className="text-xl font-semibold text-foreground mb-2">
                           Security Groups
                         </h3>
                         <p className="text-gray-600 dark:text-gray-400 leading-relaxed">
@@ -722,7 +722,7 @@ export function AclPage() {
 
                       {/* Principal info */}
                       <div>
-                        <div className="font-medium text-gray-900 dark:text-white">
+                        <div className="font-medium text-foreground">
                           {entry.principalDisplayName}
                         </div>
                         <div className="text-xs text-gray-500">
@@ -938,7 +938,7 @@ function AclDialog({
 }: AclDialogProps) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+      <div className="bg-card rounded-lg shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
         <div className={cn(
           'px-6 py-4 border-b border-gray-200 dark:border-gray-700',
           type === 'deny' ? 'bg-red-50 dark:bg-red-900/20' : 'bg-green-50 dark:bg-green-900/20'
@@ -989,7 +989,7 @@ function AclDialog({
               value={searchPrincipal}
               onChange={(e) => setSearchPrincipal(e.target.value)}
               placeholder="Search..."
-              className="w-full px-3 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 mb-2"
+              className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-blue-500 mb-2"
             />
             <div className="max-h-32 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg">
               {formData.principalType === 'user' ? (
@@ -1002,7 +1002,7 @@ function AclDialog({
                       formData.principalId === user.id && 'bg-blue-100 dark:bg-blue-900/30'
                     )}
                   >
-                    <div className="font-medium text-gray-900 dark:text-white">{user.displayName}</div>
+                    <div className="font-medium text-foreground">{user.displayName}</div>
                     <div className="text-xs text-gray-500">{user.name} • {user.email}</div>
                   </button>
                 ))
@@ -1016,7 +1016,7 @@ function AclDialog({
                       formData.principalId === group.id && 'bg-blue-100 dark:bg-blue-900/30'
                     )}
                   >
-                    <div className="font-medium text-gray-900 dark:text-white">{group.displayName}</div>
+                    <div className="font-medium text-foreground">{group.displayName}</div>
                     <div className="text-xs text-gray-500">{group.name}</div>
                   </button>
                 ))
@@ -1032,7 +1032,7 @@ function AclDialog({
             <select
               value={formData.permissions}
               onChange={(e) => setFormData({ ...formData, permissions: parseInt(e.target.value) })}
-              className="w-full px-3 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-blue-500"
             >
               {Object.entries(PRESETS).map(([key, preset]) => (
                 <option key={key} value={preset.value}>

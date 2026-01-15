@@ -177,7 +177,7 @@ function SubtaskItem({
       <div className="flex-1 min-w-0">
         <span
           className={`text-sm ${
-            isDone ? 'text-gray-400 line-through' : 'text-gray-900 dark:text-white'
+            isDone ? 'text-gray-400 line-through' : 'text-foreground'
           }`}
         >
           {subtask.title}

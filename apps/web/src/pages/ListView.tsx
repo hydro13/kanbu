@@ -114,7 +114,7 @@ function ListError({ message, onRetry }: { message: string; onRetry: () => void 
   return (
     <div className="flex items-center justify-center h-96">
       <div className="text-center">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white">Failed to load tasks</h3>
+        <h3 className="text-lg font-medium text-foreground">Failed to load tasks</h3>
         <p className="mt-2 text-gray-500 dark:text-gray-400">{message}</p>
         <button
           onClick={onRetry}
@@ -131,7 +131,7 @@ function ListEmpty() {
   return (
     <div className="flex items-center justify-center h-96">
       <div className="text-center">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white">No tasks found</h3>
+        <h3 className="text-lg font-medium text-foreground">No tasks found</h3>
         <p className="mt-2 text-gray-500 dark:text-gray-400">Create your first task to get started.</p>
       </div>
     </div>
@@ -278,7 +278,7 @@ function TaskRow({ task, selected, onSelect, onTaskClick }: TaskRowProps) {
               <CheckIcon />
             </span>
           )}
-          <span className={`text-sm font-medium ${task.isActive ? 'text-gray-900 dark:text-white' : 'line-through text-gray-500'}`}>
+          <span className={`text-sm font-medium ${task.isActive ? 'text-foreground' : 'line-through text-gray-500'}`}>
             {task.title}
           </span>
         </div>
@@ -463,7 +463,7 @@ export function ListViewPage() {
   return (
     <ProjectLayout>
       <div className="flex flex-col h-full" ref={listContainerRef}>
-        <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+        <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 bg-card">
           <ViewSwitcher projectIdentifier={project.identifier ?? ''} workspaceSlug={workspaceSlug || project.workspace?.slug || ''} className="border-b-0" />
           <div className="flex items-center gap-4 pr-4">
             <ListToolbar

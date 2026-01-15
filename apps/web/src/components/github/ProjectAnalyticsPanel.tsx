@@ -89,7 +89,7 @@ function MetricCard({
           {title}
         </span>
       </div>
-      <div className="text-2xl font-bold text-gray-900 dark:text-white">
+      <div className="text-2xl font-bold text-foreground">
         {value}
       </div>
       {subtitle && (
@@ -114,7 +114,7 @@ function ContributorRow({ contributor }: { contributor: ContributorStats }) {
           alt={contributor.login}
           className="w-8 h-8 rounded-full"
         />
-        <span className="font-medium text-gray-900 dark:text-white">
+        <span className="font-medium text-foreground">
           {contributor.login}
         </span>
       </div>
@@ -195,7 +195,7 @@ function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
       <BarChart3 className="w-12 h-12 text-gray-300 dark:text-gray-600 mb-4" />
-      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+      <h3 className="text-lg font-medium text-foreground mb-2">
         No analytics data
       </h3>
       <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm">
@@ -219,7 +219,7 @@ function ErrorState({
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
       <AlertCircle className="w-12 h-12 text-red-400 mb-4" />
-      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+      <h3 className="text-lg font-medium text-foreground mb-2">
         Failed to load analytics
       </h3>
       <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{message}</p>
@@ -287,7 +287,7 @@ export function ProjectAnalyticsPanel({ projectId }: ProjectAnalyticsPanelProps)
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+        <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
           <BarChart3 className="w-5 h-5" />
           Project Analytics
         </h3>
@@ -340,7 +340,7 @@ export function ProjectAnalyticsPanel({ projectId }: ProjectAnalyticsPanelProps)
       {/* Cycle Time Details */}
       {cycleTime.totalCompleted > 0 && (
         <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
-          <h4 className="font-medium text-gray-900 dark:text-white mb-3">
+          <h4 className="font-medium text-foreground mb-3">
             Cycle Time Breakdown
           </h4>
           <div className="grid grid-cols-3 gap-4 text-center">
@@ -375,7 +375,7 @@ export function ProjectAnalyticsPanel({ projectId }: ProjectAnalyticsPanelProps)
       {/* Throughput Chart */}
       {throughput.length > 0 && (
         <div className="bg-card rounded-card border border-border p-4">
-          <h4 className="font-medium text-gray-900 dark:text-white mb-4">
+          <h4 className="font-medium text-foreground mb-4">
             Weekly Throughput
           </h4>
           <ThroughputChart data={throughput as ThroughputStats[]} />
@@ -385,7 +385,7 @@ export function ProjectAnalyticsPanel({ projectId }: ProjectAnalyticsPanelProps)
       {/* Top Contributors */}
       {contributors.length > 0 && (
         <div className="bg-card rounded-card border border-border p-4">
-          <h4 className="font-medium text-gray-900 dark:text-white mb-4">
+          <h4 className="font-medium text-foreground mb-4">
             Top Contributors
           </h4>
           <div className="space-y-1">

@@ -154,7 +154,7 @@ export function ApiTokens() {
           </div>
           <div className="p-4 space-y-3">
             <div className="flex gap-2">
-              <code className="flex-1 px-2 py-1.5 bg-gray-50 dark:bg-gray-900 rounded font-mono text-xs break-all border">
+              <code className="flex-1 px-2 py-1.5 bg-muted rounded font-mono text-xs break-all border">
                 {newlyCreatedKey}
               </code>
               <Button size="sm" onClick={() => copyToClipboard(newlyCreatedKey)} variant="outline">
@@ -173,7 +173,7 @@ export function ApiTokens() {
       <div className="bg-card rounded-card border border-border">
         <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">API Tokens</h3>
+            <h3 className="text-sm font-semibold text-foreground">API Tokens</h3>
             <p className="text-xs text-muted-foreground mt-0.5">{keys?.length ?? 0} tokens</p>
           </div>
           {!showCreate && (

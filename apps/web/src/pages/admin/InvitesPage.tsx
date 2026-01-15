@@ -210,7 +210,7 @@ export function InvitesPage() {
               setStatusFilter(e.target.value as InviteStatus)
               setPage(0)
             }}
-            className="px-4 py-2 border border-input rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="px-4 py-2 border border-input rounded-lg bg-card text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
             <option value="all">All invites</option>
             <option value="pending">Pending</option>
@@ -249,7 +249,7 @@ export function InvitesPage() {
           <div className="overflow-x-auto bg-card rounded-card border border-border">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+                <tr className="border-b border-gray-200 dark:border-gray-700 bg-muted">
                   <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                     Email
                   </th>
@@ -282,7 +282,7 @@ export function InvitesPage() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <MailIcon className="h-4 w-4 text-gray-400" />
-                        <span className="font-medium text-gray-900 dark:text-white">
+                        <span className="font-medium text-foreground">
                           {invite.email}
                         </span>
                       </div>
@@ -394,9 +394,9 @@ export function InvitesPage() {
       {/* Send Invite Modal */}
       {showSendModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4">
+          <div className="bg-card rounded-lg shadow-xl max-w-md w-full mx-4">
             <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+              <h3 className="text-lg font-semibold text-foreground">
                 Send Invites
               </h3>
             </div>
@@ -412,7 +412,7 @@ export function InvitesPage() {
                   onChange={(e) => setEmailInput(e.target.value)}
                   placeholder="Enter email addresses (one per line or comma-separated)"
                   rows={4}
-                  className="w-full px-3 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                   Up to 20 emails at once
@@ -427,7 +427,7 @@ export function InvitesPage() {
                 <select
                   value={selectedRole}
                   onChange={(e) => setSelectedRole(e.target.value as 'ADMIN' | 'MANAGER' | 'USER')}
-                  className="w-full px-3 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="USER">User</option>
                   <option value="MANAGER">Manager</option>
@@ -443,7 +443,7 @@ export function InvitesPage() {
                 <select
                   value={expiresInDays}
                   onChange={(e) => setExpiresInDays(Number(e.target.value))}
-                  className="w-full px-3 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value={1}>1 day</option>
                   <option value={3}>3 days</option>

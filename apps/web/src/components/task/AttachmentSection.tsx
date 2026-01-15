@@ -180,7 +180,7 @@ function AttachmentItem({ attachment, canDelete, onDelete, isDeleting }: Attachm
 
         {/* File Info */}
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+          <p className="text-sm font-medium text-foreground truncate">
             {attachment.name}
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -280,7 +280,7 @@ export function AttachmentSection({
       {/* Header */}
       <div className="flex items-center gap-2 mb-4">
         <PaperClipIcon className="h-5 w-5 text-gray-400" />
-        <h3 className="text-sm font-medium text-gray-900 dark:text-white">
+        <h3 className="text-sm font-medium text-foreground">
           Attachments
           {hasAttachments && (
             <span className="ml-1.5 text-gray-400">({attachmentList.length})</span>

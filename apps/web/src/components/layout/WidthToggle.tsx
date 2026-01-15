@@ -135,12 +135,12 @@ export function WidthToggle({ className = '' }: WidthToggleProps) {
       {showDropdown && (
         <div
           ref={dropdownRef}
-          className="absolute right-0 top-full mt-2 w-52 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-[100]"
+          className="absolute right-0 top-full mt-2 w-52 bg-card border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-[100]"
         >
           {/* Current state indicator */}
           <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-900 dark:text-white">
+              <span className="text-sm font-medium text-foreground">
                 Page Width
               </span>
               <span className={`text-xs px-2 py-0.5 rounded-full ${
@@ -179,7 +179,7 @@ export function WidthToggle({ className = '' }: WidthToggleProps) {
           </div>
 
           {/* Arrow */}
-          <div className="absolute -top-1 right-4 w-2 h-2 bg-white dark:bg-gray-800 border-l border-t border-gray-200 dark:border-gray-700 rotate-45" />
+          <div className="absolute -top-1 right-4 w-2 h-2 bg-card border-l border-t border-gray-200 dark:border-gray-700 rotate-45" />
         </div>
       )}
     </div>

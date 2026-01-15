@@ -93,7 +93,7 @@ export function ViewSwitcher({ projectIdentifier, workspaceSlug, className }: Vi
   const isActive = (path: string) => location.pathname === path
 
   return (
-    <div className={cn('flex items-center gap-1 px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800', className)}>
+    <div className={cn('flex items-center gap-1 px-4 py-2 border-b border-gray-200 dark:border-gray-700 bg-card', className)}>
       {views.map((view) => {
         const Icon = view.icon
         return (

@@ -339,7 +339,7 @@ export function SearchInput({
                 <ResultTypeIcon type={result.type} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                    <span className="text-sm font-medium text-foreground truncate">
                       {result.title}
                     </span>
                     <span className="text-xs text-gray-400 uppercase">

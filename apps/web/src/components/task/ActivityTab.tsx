@@ -205,7 +205,7 @@ function ActivityItem({ activity }: { activity: Activity }) {
           )}
 
           {/* User name */}
-          <span className="text-sm font-medium text-gray-900 dark:text-white">
+          <span className="text-sm font-medium text-foreground">
             {user?.name ?? user?.username ?? 'System'}
           </span>
 

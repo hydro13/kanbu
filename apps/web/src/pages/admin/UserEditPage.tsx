@@ -312,7 +312,7 @@ export function UserEditPage() {
                 id="email"
                 value={profileData.email}
                 onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
-                className="w-full px-4 py-2 border border-input rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-input rounded-lg bg-card text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
 
@@ -326,7 +326,7 @@ export function UserEditPage() {
                 id="username"
                 value={profileData.username}
                 onChange={(e) => setProfileData({ ...profileData, username: e.target.value })}
-                className="w-full px-4 py-2 border border-input rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-input rounded-lg bg-card text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
 
@@ -340,7 +340,7 @@ export function UserEditPage() {
                 id="name"
                 value={profileData.name}
                 onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
-                className="w-full px-4 py-2 border border-input rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-input rounded-lg bg-card text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
 
@@ -354,7 +354,7 @@ export function UserEditPage() {
                 id="timezone"
                 value={profileData.timezone}
                 onChange={(e) => setProfileData({ ...profileData, timezone: e.target.value })}
-                className="w-full px-4 py-2 border border-input rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-input rounded-lg bg-card text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Europe/Amsterdam"
               />
             </div>
@@ -369,7 +369,7 @@ export function UserEditPage() {
                 id="language"
                 value={profileData.language}
                 onChange={(e) => setProfileData({ ...profileData, language: e.target.value })}
-                className="w-full px-4 py-2 border border-input rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-input rounded-lg bg-card text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="en"
               />
             </div>
@@ -440,7 +440,7 @@ export function UserEditPage() {
           {/* Current Groups */}
           <div className="bg-card rounded-card border border-border">
             <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="font-medium text-gray-900 dark:text-white">Group Memberships</h3>
+              <h3 className="font-medium text-foreground">Group Memberships</h3>
               <p className="text-sm text-gray-500 mt-1">Groups this user belongs to</p>
             </div>
             {isGroupsLoading ? (
@@ -451,7 +451,7 @@ export function UserEditPage() {
                   <div key={group.groupId} className="px-4 py-3 flex items-center justify-between">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-medium text-gray-900 dark:text-white">
+                        <span className="font-medium text-foreground">
                           {group.displayName}
                         </span>
                         <span className={cn(
@@ -493,12 +493,12 @@ export function UserEditPage() {
 
           {/* Add to Group */}
           <div className="bg-card rounded-card border border-border p-6">
-            <h3 className="font-medium text-gray-900 dark:text-white mb-4">Add to Group</h3>
+            <h3 className="font-medium text-foreground mb-4">Add to Group</h3>
             {allGroupsData?.groups && allGroupsData.groups.length > 0 ? (
               <div className="space-y-4">
                 <select
                   id="addGroupSelect"
-                  className="w-full px-4 py-2 border border-input rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-input rounded-lg bg-card text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   defaultValue=""
                   onChange={(e) => {
                     const groupId = parseInt(e.target.value, 10)
@@ -559,7 +559,7 @@ export function UserEditPage() {
         <div className="max-w-2xl space-y-8">
           {/* Account Status */}
           <div className="bg-card rounded-card border border-border p-6">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Account Status</h3>
+            <h3 className="text-lg font-medium text-foreground mb-4">Account Status</h3>
             <div className="grid gap-4">
               <div className="flex justify-between items-center">
                 <span className="text-gray-600 dark:text-gray-400">Email verified</span>
@@ -625,7 +625,7 @@ export function UserEditPage() {
 
           {/* Reset Password */}
           <div className="bg-card rounded-card border border-border p-6">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Reset Password</h3>
+            <h3 className="text-lg font-medium text-foreground mb-4">Reset Password</h3>
             <form onSubmit={handlePasswordSubmit} className="space-y-4">
               {passwordError && (
                 <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg text-sm">
@@ -641,7 +641,7 @@ export function UserEditPage() {
                   id="newPassword"
                   value={passwordData.newPassword}
                   onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
-                  className="w-full px-4 py-2 border border-input rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-input rounded-lg bg-card text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Minimum 8 characters"
                 />
               </div>
@@ -654,7 +654,7 @@ export function UserEditPage() {
                   id="confirmPassword"
                   value={passwordData.confirmPassword}
                   onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
-                  className="w-full px-4 py-2 border border-input rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-2 border border-input rounded-lg bg-card text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Repeat password"
                 />
               </div>
@@ -670,7 +670,7 @@ export function UserEditPage() {
 
           {/* OAuth Connections */}
           <div className="bg-card rounded-card border border-border p-6">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">OAuth Connections</h3>
+            <h3 className="text-lg font-medium text-foreground mb-4">OAuth Connections</h3>
             <div className="grid gap-3">
               <div className="flex justify-between items-center">
                 <span className="text-gray-600 dark:text-gray-400">Google</span>
@@ -701,15 +701,15 @@ export function UserEditPage() {
           {/* Session stats */}
           <div className="grid grid-cols-3 gap-4">
             <div className="bg-card rounded-card border border-border p-4">
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">{user.sessionCount}</div>
+              <div className="text-2xl font-bold text-foreground">{user.sessionCount}</div>
               <div className="text-sm text-gray-500">Active sessions</div>
             </div>
             <div className="bg-card rounded-card border border-border p-4">
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">{user.loginCount}</div>
+              <div className="text-2xl font-bold text-foreground">{user.loginCount}</div>
               <div className="text-sm text-gray-500">Total logins</div>
             </div>
             <div className="bg-card rounded-card border border-border p-4">
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">{user.workspaceCount}</div>
+              <div className="text-2xl font-bold text-foreground">{user.workspaceCount}</div>
               <div className="text-sm text-gray-500">Workspaces</div>
             </div>
           </div>
@@ -717,7 +717,7 @@ export function UserEditPage() {
           {/* Recent logins */}
           <div className="bg-card rounded-card border border-border">
             <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="font-medium text-gray-900 dark:text-white">Recent Logins</h3>
+              <h3 className="font-medium text-foreground">Recent Logins</h3>
             </div>
             {loginsData?.logins && loginsData.logins.length > 0 ? (
               <table className="w-full">

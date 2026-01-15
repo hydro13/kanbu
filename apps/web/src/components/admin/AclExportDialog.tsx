@@ -128,7 +128,7 @@ export function AclExportDialog({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
       <div
-        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-4"
+        className="bg-card rounded-lg shadow-xl w-full max-w-md mx-4"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -136,7 +136,7 @@ export function AclExportDialog({
           <div className="flex items-center gap-2">
             <DocumentIcon className="w-5 h-5 text-green-500" />
             <div>
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Export ACL Configuration</h3>
+              <h3 className="text-sm font-semibold text-foreground">Export ACL Configuration</h3>
               <p className="text-xs text-gray-500">Download ACL entries as JSON or CSV</p>
             </div>
           </div>
@@ -159,7 +159,7 @@ export function AclExportDialog({
                 setScope(e.target.value as ResourceScope)
                 setResourceId(null)
               }}
-              className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-gray-900 dark:text-white"
+              className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-foreground"
             >
               <option value="all">All ACL Entries</option>
               <option value="workspace">Specific Workspace</option>
@@ -176,7 +176,7 @@ export function AclExportDialog({
               <select
                 value={resourceId ?? ''}
                 onChange={(e) => setResourceId(e.target.value ? Number(e.target.value) : null)}
-                className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-gray-900 dark:text-white"
+                className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-foreground"
               >
                 <option value="">Select...</option>
                 {workspacesData?.workspaces.map(ws => (
@@ -231,7 +231,7 @@ export function AclExportDialog({
           )}
 
           {/* Info */}
-          <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-3 text-xs text-gray-500">
+          <div className="bg-muted rounded-lg p-3 text-xs text-gray-500">
             <p>
               {format === 'json'
                 ? 'JSON export includes full metadata and can be imported back. Perfect for backups and environment migration.'

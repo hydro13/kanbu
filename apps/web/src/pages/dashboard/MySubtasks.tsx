@@ -93,7 +93,7 @@ function SubtasksError({ message, onRetry }: { message: string; onRetry: () => v
   return (
     <div className="flex items-center justify-center h-96">
       <div className="text-center">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white">Failed to load subtasks</h3>
+        <h3 className="text-lg font-medium text-foreground">Failed to load subtasks</h3>
         <p className="mt-2 text-gray-500 dark:text-gray-400">{message}</p>
         <button
           onClick={onRetry}
@@ -110,7 +110,7 @@ function SubtasksEmpty() {
   return (
     <div className="flex items-center justify-center h-96">
       <div className="text-center">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white">No subtasks assigned</h3>
+        <h3 className="text-lg font-medium text-foreground">No subtasks assigned</h3>
         <p className="mt-2 text-gray-500 dark:text-gray-400">You don't have any subtasks assigned to you yet.</p>
       </div>
     </div>
@@ -150,7 +150,7 @@ interface PageHeaderProps {
 
 function PageHeader({ totalSubtasks, statusFilter, onStatusFilterChange }: PageHeaderProps) {
   return (
-    <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-t-lg">
+    <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-card rounded-t-lg">
       <div>
         <h1 className="text-section-title text-foreground">My Subtasks</h1>
         <span className="text-sm text-muted-foreground">
@@ -256,7 +256,7 @@ function SubtaskRow({ subtask, onTaskClick }: SubtaskRowProps) {
       )}
     >
       <td className="px-4 py-3">
-        <span className={`text-sm font-medium ${subtask.status === 'DONE' ? 'line-through text-gray-500' : 'text-gray-900 dark:text-white'}`}>
+        <span className={`text-sm font-medium ${subtask.status === 'DONE' ? 'line-through text-gray-500' : 'text-foreground'}`}>
           {subtask.title}
         </span>
       </td>

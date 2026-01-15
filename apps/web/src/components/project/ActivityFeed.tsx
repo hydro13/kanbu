@@ -169,7 +169,7 @@ function ActivityFeedItem({
         <div className="w-5 h-5 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center shrink-0">
           {getEventIcon(activity.eventType, true)}
         </div>
-        <span className="font-medium text-gray-900 dark:text-white truncate">
+        <span className="font-medium text-foreground truncate">
           {user?.name ?? user?.username ?? 'System'}
         </span>
         <span className="text-gray-500 dark:text-gray-400 truncate flex-1">
@@ -200,7 +200,7 @@ function ActivityFeedItem({
       {/* Content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-medium text-gray-900 dark:text-white">
+          <span className="font-medium text-foreground">
             {user?.name ?? user?.username ?? 'System'}
           </span>
           <span className="text-gray-600 dark:text-gray-400">

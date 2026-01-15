@@ -95,7 +95,7 @@ function CalendarError({ message, onRetry }: { message: string; onRetry: () => v
   return (
     <div className="flex items-center justify-center h-96">
       <div className="text-center">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white">Failed to load calendar</h3>
+        <h3 className="text-lg font-medium text-foreground">Failed to load calendar</h3>
         <p className="mt-2 text-gray-500 dark:text-gray-400">{message}</p>
         <button onClick={onRetry} className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
           Try Again
@@ -188,7 +188,7 @@ function CalendarToolbar({
         >
           <ChevronLeftIcon />
         </button>
-        <span className="text-sm font-medium text-gray-900 dark:text-white min-w-[140px] text-center">
+        <span className="text-sm font-medium text-foreground min-w-[140px] text-center">
           {formatMonthYear(currentDate)}
         </span>
         <button
@@ -215,7 +215,7 @@ function CalendarToolbar({
             className={`px-3 py-1.5 text-sm ${
               viewMode === mode
                 ? 'bg-blue-500 text-white'
-                : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                : 'bg-card text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
             }`}
           >
             {mode.charAt(0).toUpperCase() + mode.slice(1)}
@@ -437,7 +437,7 @@ function MonthView({ days, currentDate, tasksByDate, onTaskClick, onDayClick, on
               } cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/30`}
               onClick={() => handleDayClickInternal(day)}
             >
-              <div className={`text-sm font-medium mb-1 ${isToday ? 'w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center' : isCurrentMonth ? 'text-gray-900 dark:text-white' : 'text-gray-400 dark:text-gray-500'}`}>
+              <div className={`text-sm font-medium mb-1 ${isToday ? 'w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center' : isCurrentMonth ? 'text-foreground' : 'text-gray-400 dark:text-gray-500'}`}>
                 {day.getDate()}
               </div>
               <div className="space-y-0.5 overflow-hidden">
@@ -615,7 +615,7 @@ function WeekView({ days, tasksByDate, onTaskClick, onNavigate, onZoom }: WeekVi
                 <div className="text-sm text-gray-500 dark:text-gray-400">
                   {day.toLocaleDateString('en-US', { weekday: 'short' })}
                 </div>
-                <div className={`text-lg font-medium ${isToday ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-white'}`}>
+                <div className={`text-lg font-medium ${isToday ? 'text-blue-600 dark:text-blue-400' : 'text-foreground'}`}>
                   {day.getDate()}
                 </div>
               </div>
@@ -627,11 +627,11 @@ function WeekView({ days, tasksByDate, onTaskClick, onNavigate, onZoom }: WeekVi
                     key={task.id}
                     data-task-card
                     onClick={() => onTaskClick(task.id)}
-                    className={`p-2 rounded border-l-4 bg-white dark:bg-gray-800 shadow-sm cursor-pointer hover:shadow-md transition-shadow ${
+                    className={`p-2 rounded border-l-4 bg-card shadow-sm cursor-pointer hover:shadow-md transition-shadow ${
                       task.priority === 3 ? 'border-red-500' : task.priority === 2 ? 'border-orange-500' : task.priority === 1 ? 'border-blue-500' : 'border-gray-300'
                     } ${!task.isActive ? 'opacity-50' : ''}`}
                   >
-                    <div className={`text-sm font-medium text-gray-900 dark:text-white ${!task.isActive ? 'line-through' : ''}`}>
+                    <div className={`text-sm font-medium text-foreground ${!task.isActive ? 'line-through' : ''}`}>
                       {task.title}
                     </div>
                     {task.column && (
@@ -783,7 +783,7 @@ function DayView({ date, tasks, onTaskClick, onNavigate, onZoom }: DayViewProps)
           <div className="text-sm text-gray-500 dark:text-gray-400">
             {date.toLocaleDateString('en-US', { weekday: 'long' })}
           </div>
-          <div className={`text-3xl font-bold ${isToday ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-white'}`}>
+          <div className={`text-3xl font-bold ${isToday ? 'text-blue-600 dark:text-blue-400' : 'text-foreground'}`}>
             {date.getDate()}
           </div>
           <div className="text-sm text-gray-500 dark:text-gray-400">
@@ -801,14 +801,14 @@ function DayView({ date, tasks, onTaskClick, onNavigate, onZoom }: DayViewProps)
                 key={task.id}
                 data-task-card
                 onClick={() => onTaskClick(task.id)}
-                className={`p-4 rounded-lg border bg-white dark:bg-gray-800 cursor-pointer hover:shadow-md transition-shadow ${
+                className={`p-4 rounded-lg border bg-card cursor-pointer hover:shadow-md transition-shadow ${
                   !task.isActive ? 'opacity-50' : ''
                 }`}
               >
                 <div className="flex items-center gap-3">
                   <PriorityBadge priority={task.priority} />
                   <div className="flex-1">
-                    <div className={`font-medium text-gray-900 dark:text-white ${!task.isActive ? 'line-through' : ''}`}>
+                    <div className={`font-medium text-foreground ${!task.isActive ? 'line-through' : ''}`}>
                       {task.title}
                     </div>
                     {task.column && (
@@ -1004,7 +1004,7 @@ export function CalendarViewPage() {
   return (
     <ProjectLayout>
       <div className="flex flex-col h-full" ref={calendarContainerRef}>
-        <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+        <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 bg-card">
           <div className="flex items-center">
             <ViewSwitcher projectIdentifier={project.identifier ?? ''} workspaceSlug={workspaceSlug || project.workspace?.slug || ''} className="border-b-0" />
             <UndoRedoButtons projectId={project.id} className="ml-2" />

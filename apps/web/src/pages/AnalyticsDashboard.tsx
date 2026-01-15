@@ -168,7 +168,7 @@ export function AnalyticsDashboard() {
       <ProjectLayout>
         <div className="flex flex-col items-center justify-center h-64 gap-4">
           <AlertCircle className="w-12 h-12 text-red-500" />
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+          <h2 className="text-xl font-semibold text-foreground">
             Project not found
           </h2>
           <Link
@@ -211,7 +211,7 @@ export function AnalyticsDashboard() {
             {/* Controls */}
             <div className="flex items-center gap-3">
               {/* Date Range Selector */}
-              <div className="flex items-center gap-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-1">
+              <div className="flex items-center gap-2 bg-card border border-gray-200 dark:border-gray-700 rounded-lg p-1">
                 <Calendar className="w-4 h-4 text-gray-400 ml-2" />
                 {(['all', '7d', '30d', '90d'] as DateRangePreset[]).map((preset) => (
                   <button
@@ -232,7 +232,7 @@ export function AnalyticsDashboard() {
               <button
                 onClick={handleExport}
                 disabled={!stats}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-card border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
               >
                 <Download className="w-4 h-4" />
                 Export
@@ -255,7 +255,7 @@ export function AnalyticsDashboard() {
           <div className="bg-card rounded-card border border-border p-6">
             <div className="flex items-center gap-2 mb-4">
               <TrendingUp className="w-5 h-5 text-green-500" />
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+              <h3 className="text-lg font-semibold text-foreground">
                 Velocity
               </h3>
             </div>
@@ -269,7 +269,7 @@ export function AnalyticsDashboard() {
           <div className="bg-card rounded-card border border-border p-6">
             <div className="flex items-center gap-2 mb-4">
               <Clock className="w-5 h-5 text-orange-500" />
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+              <h3 className="text-lg font-semibold text-foreground">
                 Cycle Time
               </h3>
             </div>
@@ -283,7 +283,7 @@ export function AnalyticsDashboard() {
           <div className="lg:col-span-2 bg-card rounded-card border border-border p-6">
             <div className="flex items-center gap-2 mb-4">
               <Users className="w-5 h-5 text-purple-500" />
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+              <h3 className="text-lg font-semibold text-foreground">
                 Team Workload
               </h3>
             </div>

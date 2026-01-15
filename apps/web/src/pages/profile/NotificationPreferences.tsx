@@ -100,7 +100,7 @@ export function NotificationPreferences() {
           {/* Task Filter */}
           <div className={`bg-card rounded-card border border-border ${!settings?.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
             <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Task Filter</h3>
+              <h3 className="text-sm font-semibold text-foreground">Task Filter</h3>
             </div>
             <div className="p-4 space-y-1.5">
               {filterOptions.map((option) => (
@@ -129,7 +129,7 @@ export function NotificationPreferences() {
           {/* Delivery Methods */}
           <div className={`bg-card rounded-card border border-border ${!settings?.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
             <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Delivery Methods</h3>
+              <h3 className="text-sm font-semibold text-foreground">Delivery Methods</h3>
             </div>
             <div className="p-4 space-y-2">
               {settings?.types.map((typeSetting) => (
@@ -155,7 +155,7 @@ export function NotificationPreferences() {
         <div className="bg-card rounded-card border border-border h-fit">
           <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Notifications</h3>
+              <h3 className="text-sm font-semibold text-foreground">Notifications</h3>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {settings?.enabled ? 'Active' : 'All disabled'}
               </p>

@@ -267,7 +267,7 @@ export function WhatIfSimulator({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
       <div
-        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-hidden flex flex-col"
+        className="bg-card rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -275,7 +275,7 @@ export function WhatIfSimulator({
           <div className="flex items-center gap-2">
             <PlayIcon className="w-5 h-5 text-purple-500" />
             <div>
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">What-If Simulator</h3>
+              <h3 className="text-sm font-semibold text-foreground">What-If Simulator</h3>
               <p className="text-xs text-gray-500">Preview ACL changes before applying</p>
             </div>
           </div>
@@ -288,7 +288,7 @@ export function WhatIfSimulator({
         </div>
 
         {/* Form */}
-        <div className="px-4 py-3 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+        <div className="px-4 py-3 bg-muted border-b border-gray-200 dark:border-gray-700">
           <div className="grid grid-cols-2 gap-3">
             {/* Action */}
             <div>
@@ -296,7 +296,7 @@ export function WhatIfSimulator({
               <select
                 value={action}
                 onChange={(e) => setAction(e.target.value as SimulationAction)}
-                className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-gray-900 dark:text-white"
+                className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-foreground"
               >
                 <option value="grant">Grant</option>
                 <option value="deny">Deny</option>
@@ -312,7 +312,7 @@ export function WhatIfSimulator({
                 <select
                   value={selectedPreset}
                   onChange={(e) => setSelectedPreset(e.target.value as PermissionPreset)}
-                  className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-gray-900 dark:text-white"
+                  className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-foreground"
                 >
                   {Object.entries(PERMISSION_PRESETS).map(([key, preset]) => (
                     <option key={key} value={key}>{preset.label} ({preset.bits})</option>
@@ -332,7 +332,7 @@ export function WhatIfSimulator({
                   setResourceType(e.target.value as ResourceType)
                   setResourceId(null)
                 }}
-                className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-gray-900 dark:text-white"
+                className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-foreground"
               >
                 <option value="workspace">Workspace</option>
                 <option value="project">Project</option>
@@ -349,7 +349,7 @@ export function WhatIfSimulator({
                 <select
                   value={resourceId ?? ''}
                   onChange={(e) => setResourceId(e.target.value ? Number(e.target.value) : null)}
-                  className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-gray-900 dark:text-white"
+                  className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-foreground"
                 >
                   <option value="">Select...</option>
                   {workspacesData?.workspaces.map(ws => (
@@ -448,7 +448,7 @@ export function WhatIfSimulator({
 
               {/* Changes Detail */}
               <div className="border border-gray-200 dark:border-gray-700 rounded-lg divide-y divide-gray-200 dark:divide-gray-700">
-                <div className="px-3 py-2 bg-gray-50 dark:bg-gray-900 rounded-t-lg">
+                <div className="px-3 py-2 bg-muted rounded-t-lg">
                   <h4 className="text-xs font-medium text-gray-600 dark:text-gray-400">Changes Preview</h4>
                 </div>
                 {simulationResult.changes.map((change, idx) => (
@@ -459,7 +459,7 @@ export function WhatIfSimulator({
                       ) : (
                         <UsersIcon className="w-4 h-4 text-indigo-400" />
                       )}
-                      <span className="text-sm text-gray-900 dark:text-white">{change.principal.name}</span>
+                      <span className="text-sm text-foreground">{change.principal.name}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       {/* Before */}
@@ -562,7 +562,7 @@ function SummaryCard({
   }
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-2">
+    <div className="bg-muted rounded-lg p-2">
       <div className={cn('text-xl font-bold', colorClasses[color])}>{value}</div>
       <div className="text-xs text-gray-500">{label}</div>
     </div>
@@ -591,11 +591,11 @@ function PrincipalSelector({
   return (
     <div className="absolute inset-0 bg-black/50 flex items-center justify-center" onClick={onClose}>
       <div
-        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-sm mx-4"
+        className="bg-card rounded-lg shadow-xl w-full max-w-sm mx-4"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-          <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Add Principal</h4>
+          <h4 className="text-sm font-semibold text-foreground">Add Principal</h4>
         </div>
         <div className="px-4 py-3">
           {/* Type Toggle */}
@@ -634,7 +634,7 @@ function PrincipalSelector({
                   className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 text-left"
                 >
                   <UserIcon className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm text-gray-900 dark:text-white">{user.name || user.email}</span>
+                  <span className="text-sm text-foreground">{user.name || user.email}</span>
                 </button>
               ))
             ) : (
@@ -645,7 +645,7 @@ function PrincipalSelector({
                   className="w-full flex items-center gap-2 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 text-left"
                 >
                   <UsersIcon className="w-4 h-4 text-indigo-400" />
-                  <span className="text-sm text-gray-900 dark:text-white">{group.displayName}</span>
+                  <span className="text-sm text-foreground">{group.displayName}</span>
                 </button>
               ))
             )}

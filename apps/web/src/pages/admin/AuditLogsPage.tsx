@@ -231,14 +231,14 @@ export function AuditLogsPage() {
           <button
             onClick={() => handleExport('csv')}
             disabled={exporting}
-            className="px-4 py-2 text-sm bg-white dark:bg-gray-800 border border-input rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+            className="px-4 py-2 text-sm bg-card border border-input rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
           >
             {exporting ? 'Exporting...' : 'Export CSV'}
           </button>
           <button
             onClick={() => handleExport('json')}
             disabled={exporting}
-            className="px-4 py-2 text-sm bg-white dark:bg-gray-800 border border-input rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+            className="px-4 py-2 text-sm bg-card border border-input rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
           >
             Export JSON
           </button>
@@ -249,14 +249,14 @@ export function AuditLogsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="bg-card rounded-card border border-border p-4">
               <div className="text-sm text-gray-500 dark:text-gray-400">Total Events</div>
-              <div className="text-2xl font-semibold text-gray-900 dark:text-white mt-1">
+              <div className="text-2xl font-semibold text-foreground mt-1">
                 {statsData.totalLogs.toLocaleString()}
               </div>
             </div>
             {Object.entries(statsData.byCategory).map(([category, count]) => (
               <div key={category} className="bg-card rounded-card border border-border p-4">
                 <div className="text-sm text-gray-500 dark:text-gray-400">{category}</div>
-                <div className="text-2xl font-semibold text-gray-900 dark:text-white mt-1">
+                <div className="text-2xl font-semibold text-foreground mt-1">
                   {(count as number).toLocaleString()}
                 </div>
               </div>
@@ -277,7 +277,7 @@ export function AuditLogsPage() {
                 placeholder="Search in resource, target, action..."
                 value={filters.search || ''}
                 onChange={(e) => handleFilterChange('search', e.target.value)}
-                className="w-full px-3 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
 
@@ -289,7 +289,7 @@ export function AuditLogsPage() {
               <select
                 value={filters.category || ''}
                 onChange={(e) => handleFilterChange('category', e.target.value as AuditCategory)}
-                className="w-full px-3 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">All Categories</option>
                 <optgroup label="Security">
@@ -316,7 +316,7 @@ export function AuditLogsPage() {
               <select
                 value={filters.workspaceId || ''}
                 onChange={(e) => handleFilterChange('workspaceId', e.target.value ? Number(e.target.value) : undefined)}
-                className="w-full px-3 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">All Workspaces</option>
                 {workspaces?.map((ws) => (
@@ -372,7 +372,7 @@ export function AuditLogsPage() {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+                    <tr className="bg-muted border-b border-gray-200 dark:border-gray-700">
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                         Time
                       </th>
@@ -407,7 +407,7 @@ export function AuditLogsPage() {
                         className="hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors"
                       >
                         <td className="px-4 py-3">
-                          <div className="text-sm text-gray-900 dark:text-white">
+                          <div className="text-sm text-foreground">
                             {formatTimeAgo(log.createdAt)}
                           </div>
                           <div className="text-xs text-gray-500 dark:text-gray-400">
@@ -423,7 +423,7 @@ export function AuditLogsPage() {
                             {log.category}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-900 dark:text-white font-mono">
+                        <td className="px-4 py-3 text-sm text-foreground font-mono">
                           {log.action}
                         </td>
                         <td className="px-4 py-3">
@@ -439,7 +439,7 @@ export function AuditLogsPage() {
                           )}
                         </td>
                         <td className="px-4 py-3">
-                          <div className="text-sm text-gray-900 dark:text-white">
+                          <div className="text-sm text-foreground">
                             {log.resourceName || '-'}
                           </div>
                           <div className="text-xs text-gray-500 dark:text-gray-400">
@@ -449,7 +449,7 @@ export function AuditLogsPage() {
                         <td className="px-4 py-3">
                           {log.targetName ? (
                             <>
-                              <div className="text-sm text-gray-900 dark:text-white">
+                              <div className="text-sm text-foreground">
                                 {log.targetName}
                               </div>
                               <div className="text-xs text-gray-500 dark:text-gray-400">
@@ -473,7 +473,7 @@ export function AuditLogsPage() {
                                 {(log.user?.name?.[0] || log.user?.username?.[0] || '?').toUpperCase()}
                               </div>
                             )}
-                            <div className="text-sm text-gray-900 dark:text-white">
+                            <div className="text-sm text-foreground">
                               {log.user?.name || log.user?.username || `User #${log.userId}`}
                             </div>
                           </div>
@@ -489,15 +489,15 @@ export function AuditLogsPage() {
 
               {/* Expanded Details */}
               {expandedLogData && (
-                <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-900">
+                <div className="border-t border-gray-200 dark:border-gray-700 p-4 bg-muted">
                   <div className="space-y-3">
                     <div className="flex items-center gap-4 text-sm">
                       <span className="text-gray-500 dark:text-gray-400">ID:</span>
-                      <span className="font-mono text-gray-900 dark:text-white">{expandedLogData.id}</span>
+                      <span className="font-mono text-foreground">{expandedLogData.id}</span>
                       {expandedLogData.ipAddress && (
                         <>
                           <span className="text-gray-500 dark:text-gray-400">IP:</span>
-                          <span className="font-mono text-gray-900 dark:text-white">{expandedLogData.ipAddress}</span>
+                          <span className="font-mono text-foreground">{expandedLogData.ipAddress}</span>
                         </>
                       )}
                     </div>
@@ -514,19 +514,19 @@ export function AuditLogsPage() {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
                           <div>
                             <span className="text-violet-600 dark:text-violet-400">Machine:</span>{' '}
-                            <span className="text-gray-900 dark:text-white font-mono">
+                            <span className="text-foreground font-mono">
                               {String((expandedLogData.metadata as Record<string, unknown>)?.machineName || 'Unknown')}
                             </span>
                           </div>
                           <div>
                             <span className="text-violet-600 dark:text-violet-400">Machine ID:</span>{' '}
-                            <span className="text-gray-900 dark:text-white font-mono text-xs">
+                            <span className="text-foreground font-mono text-xs">
                               {String((expandedLogData.metadata as Record<string, unknown>)?.machineId || 'Unknown')}
                             </span>
                           </div>
                           <div>
                             <span className="text-violet-600 dark:text-violet-400">Binding ID:</span>{' '}
-                            <span className="text-gray-900 dark:text-white font-mono">
+                            <span className="text-foreground font-mono">
                               {String((expandedLogData.metadata as Record<string, unknown>)?.bindingId || 'Unknown')}
                             </span>
                           </div>
@@ -536,7 +536,7 @@ export function AuditLogsPage() {
                     {/* Other Metadata */}
                     {expandedLogData.metadata && Object.keys(expandedLogData.metadata).length > 0 &&
                      (expandedLogData.metadata as Record<string, unknown>)?.via !== 'assistant' && (
-                      <div className="p-3 bg-white dark:bg-gray-800 rounded-lg text-sm">
+                      <div className="p-3 bg-card rounded-lg text-sm">
                         <div className="font-medium text-gray-700 dark:text-gray-300 mb-2">Metadata:</div>
                         <pre className="text-xs text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
                           {JSON.stringify(expandedLogData.metadata, null, 2)}
@@ -548,7 +548,7 @@ export function AuditLogsPage() {
               )}
 
               {/* Pagination */}
-              <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between bg-gray-50 dark:bg-gray-900">
+              <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between bg-muted">
                 <div className="text-sm text-gray-500 dark:text-gray-400">
                   Showing {page * limit + 1} - {Math.min((page + 1) * limit, auditData.total)} of {auditData.total} logs
                 </div>

@@ -71,7 +71,7 @@ export function ConflictWarningModal({
         <div className="py-4">
           <p className="text-sm text-gray-600 dark:text-gray-400">
             This task was modified by{' '}
-            <span className="font-medium text-gray-900 dark:text-white">
+            <span className="font-medium text-foreground">
               {modifiedByUsername ?? 'another user'}
             </span>{' '}
             while you were editing. Your changes could not be saved to prevent

@@ -136,9 +136,9 @@ function CreateSprintModal({ projectId, isOpen, onClose, onSuccess }: CreateSpri
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md p-6">
+      <div className="relative bg-card rounded-lg shadow-xl w-full max-w-md p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+          <h2 className="text-lg font-semibold text-foreground">
             Create Sprint
           </h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
@@ -155,7 +155,7 @@ function CreateSprintModal({ projectId, isOpen, onClose, onSuccess }: CreateSpri
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-3 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-blue-500"
               placeholder="Sprint 1"
               required
             />
@@ -168,7 +168,7 @@ function CreateSprintModal({ projectId, isOpen, onClose, onSuccess }: CreateSpri
             <textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-3 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-blue-500"
               placeholder="Sprint goals and scope..."
               rows={3}
             />
@@ -183,7 +183,7 @@ function CreateSprintModal({ projectId, isOpen, onClose, onSuccess }: CreateSpri
                 type="date"
                 value={formData.dateStart}
                 onChange={(e) => setFormData({ ...formData, dateStart: e.target.value })}
-                className="w-full px-3 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-blue-500"
                 required
               />
             </div>
@@ -195,7 +195,7 @@ function CreateSprintModal({ projectId, isOpen, onClose, onSuccess }: CreateSpri
                 type="date"
                 value={formData.dateEnd}
                 onChange={(e) => setFormData({ ...formData, dateEnd: e.target.value })}
-                className="w-full px-3 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-blue-500"
                 required
               />
             </div>
@@ -290,7 +290,7 @@ function SprintCard({ sprint, projectId, onRefresh }: SprintCardProps) {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+    <div className="bg-card border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
       {/* Header */}
       <div className="px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -306,7 +306,7 @@ function SprintCard({ sprint, projectId, onRefresh }: SprintCardProps) {
           </button>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-medium text-gray-900 dark:text-white">
+              <h3 className="font-medium text-foreground">
                 {sprint.name}
               </h3>
               {getStatusBadge(sprint.status)}
@@ -490,7 +490,7 @@ export function SprintPlanning() {
       <ProjectLayout>
         <div className="flex flex-col items-center justify-center h-64 gap-4">
           <AlertCircle className="w-12 h-12 text-red-500" />
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+          <h2 className="text-xl font-semibold text-foreground">
             Project not found
           </h2>
           <Link
@@ -540,7 +540,7 @@ export function SprintPlanning() {
             onClick={() => setActiveTab('active')}
             className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
               activeTab === 'active'
-                ? 'bg-background text-gray-900 dark:text-white shadow-sm'
+                ? 'bg-background text-foreground shadow-sm'
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
             }`}
           >
@@ -550,7 +550,7 @@ export function SprintPlanning() {
             onClick={() => setActiveTab('planning')}
             className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
               activeTab === 'planning'
-                ? 'bg-background text-gray-900 dark:text-white shadow-sm'
+                ? 'bg-background text-foreground shadow-sm'
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
             }`}
           >
@@ -560,7 +560,7 @@ export function SprintPlanning() {
             onClick={() => setActiveTab('completed')}
             className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
               activeTab === 'completed'
-                ? 'bg-background text-gray-900 dark:text-white shadow-sm'
+                ? 'bg-background text-foreground shadow-sm'
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
             }`}
           >
@@ -573,7 +573,7 @@ export function SprintPlanning() {
           {filteredSprints.length === 0 ? (
             <div className="text-center py-12 bg-card rounded-card border border-border">
               <Calendar className="w-12 h-12 mx-auto text-gray-400 mb-3" />
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-1">
+              <h3 className="text-lg font-medium text-foreground mb-1">
                 No {activeTab} sprints
               </h3>
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">

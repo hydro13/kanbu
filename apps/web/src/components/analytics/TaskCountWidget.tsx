@@ -87,7 +87,7 @@ export function TaskCountWidget({ stats, isLoading }: TaskCountWidgetProps) {
             <ListTodo className="w-4 h-4" />
             <span className="text-xs font-medium uppercase">Total Tasks</span>
           </div>
-          <p className="text-3xl font-bold text-gray-900 dark:text-white">
+          <p className="text-3xl font-bold text-foreground">
             {stats.totalTasks}
           </p>
         </div>
@@ -120,7 +120,7 @@ export function TaskCountWidget({ stats, isLoading }: TaskCountWidgetProps) {
             <span className="text-xs font-medium uppercase">Completion Rate</span>
           </div>
           <div className="flex items-center gap-2">
-            <p className="text-3xl font-bold text-gray-900 dark:text-white">
+            <p className="text-3xl font-bold text-foreground">
               {stats.completionRate}%
             </p>
             {stats.trend !== 0 && (

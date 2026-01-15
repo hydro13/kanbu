@@ -105,7 +105,7 @@ export function StickyNoteList({ className }: StickyNoteListProps) {
     <div className={`${className}`}>
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+        <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
           <NoteIcon className="h-5 w-5" />
           Sticky Notes
         </h2>

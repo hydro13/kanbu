@@ -239,7 +239,7 @@ export function HoverPopover({
   const popoverContent = isOpen && coords && (
     <div
       ref={popoverRef}
-      className={`fixed z-[9999] bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden animate-in fade-in-0 zoom-in-95 duration-150 ${popoverClassName}`}
+      className={`fixed z-[9999] bg-card rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden animate-in fade-in-0 zoom-in-95 duration-150 ${popoverClassName}`}
       style={{
         top: coords.top,
         left: coords.left,

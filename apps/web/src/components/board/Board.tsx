@@ -354,7 +354,7 @@ export function Board({ columns, swimlanes, tasks, projectId }: BoardProps) {
 
       <div
         ref={containerRef}
-        className="h-full overflow-auto bg-gray-50 dark:bg-gray-900 select-none"
+        className="h-full overflow-auto bg-muted select-none"
         style={{ cursor: 'grab' }}
         onWheel={handleWheel}
         onMouseDown={handlePanStart}

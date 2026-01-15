@@ -93,14 +93,14 @@ function DropdownSelector<T>({
         }`}
       >
         <span className="text-gray-600 dark:text-gray-400">{label}:</span>
-        <span className="flex items-center gap-1 text-gray-900 dark:text-white">
+        <span className="flex items-center gap-1 text-foreground">
           {value}
           {!disabled && <ChevronDown className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />}
         </span>
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 z-50 mt-1 w-48 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-48 overflow-auto">
+        <div className="absolute right-0 z-50 mt-1 w-48 bg-card border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-48 overflow-auto">
           {isLoading ? (
             <div className="flex items-center justify-center py-4">
               <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
@@ -120,7 +120,7 @@ function DropdownSelector<T>({
                     className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-left text-sm transition-colors ${
                       isSelected
                         ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                        : 'hover:bg-accent text-gray-900 dark:text-white'
+                        : 'hover:bg-accent text-foreground'
                     }`}
                   >
                     {getOptionLabel(option)}

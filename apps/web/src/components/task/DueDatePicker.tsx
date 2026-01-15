@@ -212,12 +212,12 @@ export function DueDatePicker({
         className={`w-full flex items-center gap-2 px-3 py-2 text-sm border rounded-lg transition-colors ${
           disabled
             ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed'
-            : 'bg-white dark:bg-gray-800 hover:border-gray-400 dark:hover:border-gray-500'
+            : 'bg-card hover:border-gray-400 dark:hover:border-gray-500'
         } border-input`}
       >
         <Calendar className="w-4 h-4 text-gray-400" />
         {parsedDueDate ? (
-          <span className="flex-1 text-left text-gray-900 dark:text-white">
+          <span className="flex-1 text-left text-foreground">
             {formatDueDateDisplay(parsedDueDate)}
           </span>
         ) : (
@@ -243,7 +243,7 @@ export function DueDatePicker({
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute z-50 mt-1 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
+        <div className="absolute z-50 mt-1 w-64 bg-card border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
           {/* Quick Options */}
           <div className="p-2 space-y-1">
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 px-2 py-1">
@@ -257,7 +257,7 @@ export function DueDatePicker({
                 className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-left text-sm hover:bg-accent transition-colors"
               >
                 {option.icon}
-                <span className="text-gray-900 dark:text-white">{option.label}</span>
+                <span className="text-foreground">{option.label}</span>
               </button>
             ))}
           </div>
@@ -275,7 +275,7 @@ export function DueDatePicker({
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
@@ -299,7 +299,7 @@ export function DueDatePicker({
                 type="time"
                 value={selectedTime}
                 onChange={(e) => setSelectedTime(e.target.value)}
-                className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             )}
 

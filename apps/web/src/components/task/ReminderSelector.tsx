@@ -245,7 +245,7 @@ export function ReminderSelector({
         className={`w-full flex items-center gap-2 px-3 py-2 text-sm border rounded-lg transition-colors ${
           disabled
             ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed'
-            : 'bg-white dark:bg-gray-800 hover:border-gray-400 dark:hover:border-gray-500'
+            : 'bg-card hover:border-gray-400 dark:hover:border-gray-500'
         } border-input`}
       >
         {parsedReminder ? (
@@ -255,7 +255,7 @@ export function ReminderSelector({
         )}
         <span
           className={`flex-1 text-left ${
-            parsedReminder ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'
+            parsedReminder ? 'text-foreground' : 'text-gray-500 dark:text-gray-400'
           }`}
         >
           {formatReminderDisplay(parsedReminder, parsedDueDate)}
@@ -280,7 +280,7 @@ export function ReminderSelector({
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute z-50 mt-1 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
+        <div className="absolute z-50 mt-1 w-64 bg-card border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
           {/* Warning if no due date */}
           {hasNoDueDate && (
             <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border-b border-yellow-200 dark:border-yellow-800">
@@ -315,7 +315,7 @@ export function ReminderSelector({
                     <Bell className="w-4 h-4 text-gray-400" />
                   )}
                   <div className="flex-1">
-                    <p className="text-gray-900 dark:text-white">{option.label}</p>
+                    <p className="text-foreground">{option.label}</p>
                     <p className="text-xs text-gray-500 dark:text-gray-400">{option.description}</p>
                   </div>
                   {isSelected && <Check className="w-4 h-4 text-blue-500" />}
@@ -340,7 +340,7 @@ export function ReminderSelector({
               type="datetime-local"
               value={customDateTime}
               onChange={(e) => setCustomDateTime(e.target.value)}
-              className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
 
             <button

@@ -94,7 +94,7 @@ function TasksError({ message, onRetry }: { message: string; onRetry: () => void
   return (
     <div className="flex items-center justify-center h-96">
       <div className="text-center">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white">Failed to load tasks</h3>
+        <h3 className="text-lg font-medium text-foreground">Failed to load tasks</h3>
         <p className="mt-2 text-gray-500 dark:text-gray-400">{message}</p>
         <button
           onClick={onRetry}
@@ -111,7 +111,7 @@ function TasksEmpty() {
   return (
     <div className="flex items-center justify-center h-96">
       <div className="text-center">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white">No tasks assigned</h3>
+        <h3 className="text-lg font-medium text-foreground">No tasks assigned</h3>
         <p className="mt-2 text-gray-500 dark:text-gray-400">You don't have any tasks assigned to you yet.</p>
       </div>
     </div>
@@ -130,7 +130,7 @@ interface PageHeaderProps {
 
 function PageHeader({ totalTasks, includeCompleted, onToggleCompleted }: PageHeaderProps) {
   return (
-    <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-t-lg">
+    <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-card rounded-t-lg">
       <div>
         <h1 className="text-section-title text-foreground">My Tasks</h1>
         <span className="text-sm text-muted-foreground">
@@ -223,7 +223,7 @@ function TaskRow({ task, onTaskClick }: TaskRowProps) {
       onClick={() => onTaskClick(task.project.workspace.slug, task.project.identifier ?? String(task.project.id), task.id)}
     >
       <td className="px-4 py-3">
-        <span className={`text-sm font-medium ${task.isActive ? 'text-gray-900 dark:text-white' : 'line-through text-gray-500'}`}>
+        <span className={`text-sm font-medium ${task.isActive ? 'text-foreground' : 'line-through text-gray-500'}`}>
           {task.title}
         </span>
       </td>

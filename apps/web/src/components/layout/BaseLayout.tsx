@@ -418,7 +418,7 @@ export function BaseLayout({
           {/* Sidebar - hidden on mobile */}
           {sidebar && (
             <div
-              className="hidden md:flex flex-col flex-shrink-0 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 transition-all duration-200"
+              className="hidden md:flex flex-col flex-shrink-0 border-r border-gray-200 dark:border-gray-700 bg-muted transition-all duration-200"
               style={{ width: sidebarWidth }}
             >
               {/* Sidebar header with collapse toggle */}
@@ -481,7 +481,7 @@ export function BaseLayout({
               className="md:hidden fixed inset-0 z-40 bg-black/50"
               onClick={() => setMobileMenuOpen(false)}
             >
-              <div className="w-56 h-full bg-gray-50 dark:bg-gray-900" onClick={(e) => e.stopPropagation()}>
+              <div className="w-56 h-full bg-muted" onClick={(e) => e.stopPropagation()}>
                 {isValidElement(sidebar)
                   ? cloneElement(sidebar as React.ReactElement<{ collapsed?: boolean }>, { collapsed: false })
                   : sidebar}

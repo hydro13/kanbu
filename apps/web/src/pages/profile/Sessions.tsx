@@ -115,7 +115,7 @@ export function Sessions() {
         <div className="bg-card rounded-card border border-border">
           <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
             <div>
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Active Sessions</h3>
+              <h3 className="text-sm font-semibold text-foreground">Active Sessions</h3>
               <p className="text-xs text-muted-foreground">Stay logged in across browser restarts</p>
             </div>
             {sessions && sessions.length > 0 && (
@@ -172,7 +172,7 @@ export function Sessions() {
         {/* Remember Tokens */}
         <div className="bg-card rounded-card border border-border">
           <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Remember Me Tokens</h3>
+            <h3 className="text-sm font-semibold text-foreground">Remember Me Tokens</h3>
             <p className="text-xs text-muted-foreground">Auto-login tokens</p>
           </div>
           <div className="p-4">

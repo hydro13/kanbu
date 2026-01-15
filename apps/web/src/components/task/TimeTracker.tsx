@@ -150,7 +150,7 @@ function ManualTimeInput({
             error
               ? 'border-red-500 focus:border-red-500'
               : 'border-input focus:border-blue-500'
-          } bg-white dark:bg-gray-800 focus:outline-none`}
+          } bg-card focus:outline-none`}
           autoFocus
           disabled={isPending}
         />

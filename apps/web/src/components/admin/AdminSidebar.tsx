@@ -281,14 +281,14 @@ export function AdminSidebar({ collapsed = false }: AdminSidebarProps) {
   return (
     <aside
       className={cn(
-        'flex flex-col h-full border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 transition-all',
+        'flex flex-col h-full border-r border-gray-200 dark:border-gray-700 bg-muted transition-all',
         collapsed ? 'w-sidebar-collapsed' : 'w-sidebar'
       )}
     >
       {/* Header */}
       {!collapsed && (
         <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="font-semibold text-gray-900 dark:text-white">
+          <h2 className="font-semibold text-foreground">
             {isDomainAdmin ? 'Domain Admin' : isWorkspaceAdmin ? 'Workspace Admin' : 'Admin'}
           </h2>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">

@@ -177,10 +177,10 @@ export function StickyNoteModal({ isOpen, onClose, note }: StickyNoteModalProps)
       />
 
       {/* Modal */}
-      <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-auto">
+      <div className="relative bg-card rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+          <h2 className="text-lg font-semibold text-foreground">
             {note ? 'Edit Sticky Note' : 'New Sticky Note'}
           </h2>
           <button
@@ -203,7 +203,7 @@ export function StickyNoteModal({ isOpen, onClose, note }: StickyNoteModalProps)
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Note title..."
-              className="w-full px-3 py-2 border border-input rounded-md bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               maxLength={255}
             />
           </div>

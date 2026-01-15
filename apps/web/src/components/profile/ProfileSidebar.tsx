@@ -218,14 +218,14 @@ export function ProfileSidebar({ collapsed = false }: ProfileSidebarProps) {
   return (
     <aside
       className={cn(
-        'flex flex-col h-full border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 transition-all',
+        'flex flex-col h-full border-r border-gray-200 dark:border-gray-700 bg-muted transition-all',
         collapsed ? 'w-sidebar-collapsed' : 'w-sidebar'
       )}
     >
       {/* Header */}
       {!collapsed && (
         <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="font-semibold text-gray-900 dark:text-white">
+          <h2 className="font-semibold text-foreground">
             Profile Settings
           </h2>
         </div>

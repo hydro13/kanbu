@@ -172,7 +172,7 @@ export function EditProfile() {
           {/* Left Column: Basic Information */}
           <div className="bg-card rounded-card border border-border">
             <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Basic Information</h3>
+              <h3 className="text-sm font-semibold text-foreground">Basic Information</h3>
             </div>
             <div className="p-4 space-y-3">
               <CompactInput
@@ -203,7 +203,7 @@ export function EditProfile() {
           {/* Right Column: Preferences */}
           <div className="bg-card rounded-card border border-border">
             <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Preferences</h3>
+              <h3 className="text-sm font-semibold text-foreground">Preferences</h3>
             </div>
             <div className="p-4 space-y-3">
               <CompactSelect

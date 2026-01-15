@@ -197,7 +197,7 @@ export function PermissionMatrixPage() {
   // Get cell color based on permissions
   const getCellColor = (cell: MatrixCell | undefined) => {
     if (!cell || cell.effectivePermissions === 0) {
-      return 'bg-gray-50 dark:bg-gray-900 text-gray-400'
+      return 'bg-muted text-gray-400'
     }
     if (cell.isDenied) {
       return 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'
@@ -265,7 +265,7 @@ export function PermissionMatrixPage() {
           <select
             value={resourceTypeFilter}
             onChange={(e) => setResourceTypeFilter(e.target.value as ResourceTypeFilter)}
-            className="px-2 py-1.5 text-sm border border-input rounded bg-background text-gray-900 dark:text-white"
+            className="px-2 py-1.5 text-sm border border-input rounded bg-background text-foreground"
           >
             <option value="all">All Resource Types</option>
             <option value="workspace">Workspaces</option>
@@ -278,7 +278,7 @@ export function PermissionMatrixPage() {
           <select
             value={workspaceFilter ?? ''}
             onChange={(e) => setWorkspaceFilter(e.target.value ? Number(e.target.value) : null)}
-            className="px-2 py-1.5 text-sm border border-input rounded bg-background text-gray-900 dark:text-white"
+            className="px-2 py-1.5 text-sm border border-input rounded bg-background text-foreground"
           >
             <option value="">All Workspaces</option>
             {workspacesData?.workspaces.map(ws => (
@@ -290,7 +290,7 @@ export function PermissionMatrixPage() {
           <select
             value={principalTypeFilter}
             onChange={(e) => setPrincipalTypeFilter(e.target.value as PrincipalTypeFilter)}
-            className="px-2 py-1.5 text-sm border border-input rounded bg-background text-gray-900 dark:text-white"
+            className="px-2 py-1.5 text-sm border border-input rounded bg-background text-foreground"
           >
             <option value="all">All Principals</option>
             <option value="user">Users Only</option>
@@ -336,7 +336,7 @@ export function PermissionMatrixPage() {
             Denied
           </span>
           <span className="flex items-center gap-1">
-            <span className="w-4 h-4 rounded bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700" />
+            <span className="w-4 h-4 rounded bg-muted border border-gray-200 dark:border-gray-700" />
             No Access
           </span>
         </div>
@@ -355,9 +355,9 @@ export function PermissionMatrixPage() {
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
                 {/* Header */}
-                <thead className="bg-gray-50 dark:bg-gray-900">
+                <thead className="bg-muted">
                   <tr>
-                    <th className="sticky left-0 z-10 bg-gray-50 dark:bg-gray-900 px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-r border-gray-200 dark:border-gray-700">
+                    <th className="sticky left-0 z-10 bg-muted px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider border-r border-gray-200 dark:border-gray-700">
                       Principal
                     </th>
                     {matrixData.resources.map((resource) => (
@@ -380,14 +380,14 @@ export function PermissionMatrixPage() {
                   {matrixData.principals.map((principal) => (
                     <tr key={`${principal.type}-${principal.id}`} className="hover:bg-gray-50 dark:hover:bg-gray-750">
                       {/* Principal Name */}
-                      <td className="sticky left-0 z-10 bg-white dark:bg-gray-800 px-4 py-2 text-sm border-r border-gray-200 dark:border-gray-700">
+                      <td className="sticky left-0 z-10 bg-card px-4 py-2 text-sm border-r border-gray-200 dark:border-gray-700">
                         <div className="flex items-center gap-2">
                           {principal.type === 'user' ? (
                             <UserIcon className="w-4 h-4 text-gray-400" />
                           ) : (
                             <UsersIcon className="w-4 h-4 text-indigo-400" />
                           )}
-                          <span className="font-medium text-gray-900 dark:text-white truncate max-w-[150px]" title={principal.displayName}>
+                          <span className="font-medium text-foreground truncate max-w-[150px]" title={principal.displayName}>
                             {principal.displayName}
                           </span>
                           <span className="text-xs text-gray-400">{principal.name}</span>
@@ -423,7 +423,7 @@ export function PermissionMatrixPage() {
             </div>
 
             {/* Totals */}
-            <div className="px-4 py-2 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 text-xs text-gray-500">
+            <div className="px-4 py-2 bg-muted border-t border-gray-200 dark:border-gray-700 text-xs text-gray-500">
               Showing {matrixData.principals.length} of {matrixData.totals.principals} principals,{' '}
               {matrixData.resources.length} of {matrixData.totals.resources} resources
             </div>
@@ -453,13 +453,13 @@ function CellDetailDialog({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
       <div
-        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md mx-4"
+        className="bg-card rounded-lg shadow-xl w-full max-w-md mx-4"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Permission Details</h3>
+            <h3 className="text-sm font-semibold text-foreground">Permission Details</h3>
             <p className="text-xs text-gray-500 mt-0.5">{cell.principalName}</p>
           </div>
           <button
@@ -475,7 +475,7 @@ function CellDetailDialog({
           {/* Resource Info */}
           <div>
             <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Resource</label>
-            <p className="text-sm text-gray-900 dark:text-white">
+            <p className="text-sm text-foreground">
               {cell.resourceType}: {cell.resourceName}
             </p>
           </div>
@@ -484,7 +484,7 @@ function CellDetailDialog({
           <div>
             <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Effective Permissions</label>
             <div className="flex items-center gap-2 mt-1">
-              <span className="font-mono text-lg font-bold text-gray-900 dark:text-white">
+              <span className="font-mono text-lg font-bold text-foreground">
                 {formatPermissionBits(cell.effectivePermissions)}
               </span>
               <span className="text-sm text-gray-500">
@@ -521,7 +521,7 @@ function CellDetailDialog({
           <div className="flex gap-4">
             <div>
               <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Source</label>
-              <p className="text-sm text-gray-900 dark:text-white">
+              <p className="text-sm text-foreground">
                 {cell.isDirect ? 'Direct entry' : cell.inheritedFrom ? `Inherited from ${cell.inheritedFrom}` : 'Inherited'}
               </p>
             </div>

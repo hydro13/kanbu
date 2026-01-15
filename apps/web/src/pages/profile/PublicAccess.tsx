@@ -64,7 +64,7 @@ export function PublicAccess() {
       <div className="bg-card rounded-card border border-border">
         <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Public Access</h3>
+            <h3 className="text-sm font-semibold text-foreground">Public Access</h3>
             <p className="text-xs text-muted-foreground mt-0.5">
               {access?.enabled ? 'Feeds are accessible via URLs below' : 'Get RSS and iCal feed URLs'}
             </p>
@@ -88,7 +88,7 @@ export function PublicAccess() {
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-muted-foreground w-12">RSS:</span>
-                  <code className="flex-1 px-2 py-1 bg-gray-50 dark:bg-gray-900 rounded font-mono text-xs truncate">
+                  <code className="flex-1 px-2 py-1 bg-muted rounded font-mono text-xs truncate">
                     {baseUrl}/api/feed/user/{access.token}
                   </code>
                   <Button variant="ghost" size="sm" onClick={() => copyToClipboard(`${baseUrl}/api/feed/user/${access.token}`, 'rss')} className="h-7 px-2 text-xs">
@@ -97,7 +97,7 @@ export function PublicAccess() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-muted-foreground w-12">iCal:</span>
-                  <code className="flex-1 px-2 py-1 bg-gray-50 dark:bg-gray-900 rounded font-mono text-xs truncate">
+                  <code className="flex-1 px-2 py-1 bg-muted rounded font-mono text-xs truncate">
                     {baseUrl}/api/ical/user/{access.token}
                   </code>
                   <Button variant="ghost" size="sm" onClick={() => copyToClipboard(`${baseUrl}/api/ical/user/${access.token}`, 'ical')} className="h-7 px-2 text-xs">

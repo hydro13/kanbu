@@ -155,7 +155,7 @@ export function UserCreatePage() {
               id="email"
               value={formData.email}
               onChange={handleChange('email')}
-              className={`w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+              className={`w-full px-4 py-2 border rounded-lg bg-card text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                 errors.email ? 'border-red-500' : 'border-input'
               }`}
               placeholder="user@example.com"
@@ -175,7 +175,7 @@ export function UserCreatePage() {
               id="username"
               value={formData.username}
               onChange={handleChange('username')}
-              className={`w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+              className={`w-full px-4 py-2 border rounded-lg bg-card text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                 errors.username ? 'border-red-500' : 'border-input'
               }`}
               placeholder="johndoe"
@@ -195,7 +195,7 @@ export function UserCreatePage() {
               id="name"
               value={formData.name}
               onChange={handleChange('name')}
-              className={`w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+              className={`w-full px-4 py-2 border rounded-lg bg-card text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                 errors.name ? 'border-red-500' : 'border-input'
               }`}
               placeholder="John Doe"
@@ -215,7 +215,7 @@ export function UserCreatePage() {
               id="password"
               value={formData.password}
               onChange={handleChange('password')}
-              className={`w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+              className={`w-full px-4 py-2 border rounded-lg bg-card text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                 errors.password ? 'border-red-500' : 'border-input'
               }`}
               placeholder="Minimum 8 characters"
@@ -235,7 +235,7 @@ export function UserCreatePage() {
               id="confirmPassword"
               value={formData.confirmPassword}
               onChange={handleChange('confirmPassword')}
-              className={`w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+              className={`w-full px-4 py-2 border rounded-lg bg-card text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                 errors.confirmPassword ? 'border-red-500' : 'border-input'
               }`}
               placeholder="Repeat password"

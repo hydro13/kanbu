@@ -107,7 +107,7 @@ export function ViewSwitcher({ projectId, compact = false, className = '' }: Vie
             className={`flex items-center gap-1.5 px-3 py-1.5 text-sm transition-colors ${
               isActive
                 ? 'bg-blue-500 text-white'
-                : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                : 'bg-card text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
             }`}
             title={view.label}
           >
@@ -145,7 +145,7 @@ export function ViewSwitcherDropdown({ projectId, className = '' }: ViewSwitcher
 
   return (
     <div className={`relative group ${className}`}>
-      <button className="flex items-center gap-2 px-3 py-1.5 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
+      <button className="flex items-center gap-2 px-3 py-1.5 text-sm bg-card border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
         <CurrentIcon />
         <span>{currentConfig.label}</span>
         <svg className="h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -153,7 +153,7 @@ export function ViewSwitcherDropdown({ projectId, className = '' }: ViewSwitcher
         </svg>
       </button>
 
-      <div className="absolute left-0 top-full mt-1 w-40 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+      <div className="absolute left-0 top-full mt-1 w-40 bg-card border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
         {views.map((view) => {
           const Icon = view.icon
           const isActive = currentView === view.type
