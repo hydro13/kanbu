@@ -194,6 +194,37 @@
     --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
     --shadow-inner: inset 0 2px 4px 0 rgb(0 0 0 / 0.05);
     --shadow-none: none;
+
+    /* ═══════════════════════════════════════════════════════════════
+       SEMANTIC TOKENS - Light Mode
+       ═══════════════════════════════════════════════════════════════ */
+
+    /* Surfaces */
+    --surface-background: 0 0% 100%;
+    --surface-1: 0 0% 100%;
+    --surface-2: var(--color-gray-50);
+    --surface-3: var(--color-gray-100);
+    --surface-elevated: 0 0% 100%;
+
+    /* Text */
+    --text-primary: var(--color-gray-900);
+    --text-secondary: var(--color-gray-600);
+    --text-tertiary: var(--color-gray-500);
+    --text-muted: var(--color-gray-400);
+    --text-inverse: var(--color-gray-50);
+    --text-link: var(--color-blue-600);
+    --text-link-hover: var(--color-blue-700);
+
+    /* Borders */
+    --border-default: var(--color-gray-200);
+    --border-muted: var(--color-gray-100);
+    --border-strong: var(--color-gray-300);
+    --border-focus: var(--color-blue-500);
+
+    /* Interactive */
+    --interactive-hover: rgb(0 0 0 / 0.04);
+    --interactive-active: rgb(0 0 0 / 0.08);
+    --interactive-selected: var(--color-blue-50);
   }
 
   .dark {
@@ -227,6 +258,36 @@
     --success: 142 60% 40%;
     --warning: 38 85% 45%;
     --info: 217 80% 55%;
+
+    /* ═══════════════════════════════════════════════════════════════
+       SEMANTIC TOKENS - Dark Mode
+       ═══════════════════════════════════════════════════════════════ */
+
+    /* Surfaces */
+    --surface-background: var(--color-gray-900);
+    --surface-1: var(--color-gray-800);
+    --surface-2: var(--color-gray-700);
+    --surface-3: var(--color-gray-600);
+    --surface-elevated: var(--color-gray-800);
+
+    /* Text */
+    --text-primary: var(--color-gray-50);
+    --text-secondary: var(--color-gray-300);
+    --text-tertiary: var(--color-gray-400);
+    --text-muted: var(--color-gray-500);
+    --text-inverse: var(--color-gray-900);
+    --text-link: var(--color-blue-400);
+    --text-link-hover: var(--color-blue-300);
+
+    /* Borders */
+    --border-default: var(--color-gray-700);
+    --border-muted: var(--color-gray-800);
+    --border-strong: var(--color-gray-600);
+
+    /* Interactive */
+    --interactive-hover: rgb(255 255 255 / 0.04);
+    --interactive-active: rgb(255 255 255 / 0.08);
+    --interactive-selected: rgb(59 130 246 / 0.2);
   }
 }
 

@@ -346,7 +346,7 @@ feat(design-system): Add spacing, radius, and shadow tokens
 
 ### Fase 1.4: Semantic Tokens
 
-**Status:** [ ] Niet gestart
+**Status:** [x] Voltooid (2026-01-15)
 
 **Wat:** Definieer semantic tokens die naar primitives verwijzen.
 
@@ -354,10 +354,10 @@ feat(design-system): Add spacing, radius, and shadow tokens
 - `apps/web/src/styles/globals.css`
 
 **Taken:**
-- [ ] Surface/background tokens
-- [ ] Text color tokens
-- [ ] Border tokens
-- [ ] Interactive state tokens
+- [x] Surface/background tokens
+- [x] Text color tokens
+- [x] Border tokens
+- [x] Interactive state tokens
 
 **Code toe te voegen (in :root):**
 ```css
