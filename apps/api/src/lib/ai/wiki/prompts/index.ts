@@ -91,3 +91,13 @@ export {
   type ReflexionEdgesContext,
   type ReflexionEdgesResponse,
 } from './reflexionEdges'
+
+// Fase 24.4 - Community Summarization
+export {
+  getSummarizePairSystemPrompt,
+  getSummarizePairUserPrompt,
+  parseSummarizePairResponse,
+  getGenerateCommunityNameSystemPrompt,
+  getGenerateCommunityNameUserPrompt,
+  parseGenerateCommunityNameResponse,
+} from './communitySummarization'

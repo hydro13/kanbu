@@ -1,6 +1,6 @@
 /*
  * Graphiti Service
- * Version: 3.7.0
+ * Version: 3.8.0
  *
  * Knowledge graph service for Wiki using FalkorDB.
  * Integrates with Python Graphiti service for LLM-based entity extraction.
@@ -18,6 +18,7 @@
  * Change: Fase 16.4 - Temporal queries with FalkorDB fallback (getFactsAsOf, temporalSearch)
  * Change: Fase 19.3 - Edge embedding generation (WikiEdgeEmbeddingService integration)
  * Change: Fase 21.4 - Node embedding generation (WikiNodeEmbeddingService integration for entity resolution)
+ * Change: Fase 24.2 - Community Detection schema (indexes for Community nodes)
  * ===================================================================
  */
 
@@ -387,8 +388,13 @@ export class GraphitiService {
       await this.createIndexSafe('Task', 'name')
       await this.createIndexSafe('Project', 'name')
 
+      // Fase 24.2: Community Detection indexes
+      await this.createIndexSafe('Community', 'uuid')
+      await this.createIndexSafe('Community', 'groupId')
+      await this.createIndexSafe('Community', 'name')
+
       this.initialized = true
-      console.log('[GraphitiService] Graph initialized with dedup indexes')
+      console.log('[GraphitiService] Graph initialized with dedup + community indexes')
     } catch (error) {
       console.error('[GraphitiService] Failed to initialize graph:', error)
       // Don't throw - allow service to work even if indexes fail
