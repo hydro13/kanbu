@@ -246,7 +246,7 @@ export function ReminderSelector({
           disabled
             ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed'
             : 'bg-white dark:bg-gray-800 hover:border-gray-400 dark:hover:border-gray-500'
-        } border-gray-300 dark:border-gray-600`}
+        } border-input`}
       >
         {parsedReminder ? (
           <Bell className="w-4 h-4 text-blue-500" />
@@ -340,7 +340,7 @@ export function ReminderSelector({
               type="datetime-local"
               value={customDateTime}
               onChange={(e) => setCustomDateTime(e.target.value)}
-              className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
 
             <button

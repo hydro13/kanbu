@@ -161,7 +161,7 @@ function PageHeader({ totalSubtasks, statusFilter, onStatusFilterChange }: PageH
         <select
           value={statusFilter}
           onChange={(e) => onStatusFilterChange(e.target.value as StatusFilter)}
-          className="text-sm border border-gray-300 dark:border-gray-600 rounded-md px-3 py-1.5 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:ring-blue-500 focus:border-blue-500"
+          className="text-sm border border-input rounded-md px-3 py-1.5 bg-background text-gray-700 dark:text-gray-300 focus:ring-blue-500 focus:border-blue-500"
         >
           <option value="all">All Status</option>
           <option value="todo">To Do</option>

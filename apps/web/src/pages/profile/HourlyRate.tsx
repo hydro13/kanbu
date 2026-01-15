@@ -89,7 +89,7 @@ export function HourlyRate() {
                 value={rate}
                 onChange={(e) => handleRateChange(e.target.value)}
                 placeholder="0.00"
-                className="flex-1 h-9 px-3 text-sm text-right font-mono rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="flex-1 h-9 px-3 text-sm text-right font-mono rounded border border-input bg-white dark:bg-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
               <span className="text-xs text-muted-foreground">/hour</span>
             </div>

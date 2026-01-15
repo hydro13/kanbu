@@ -654,7 +654,7 @@ function SettingsTab({ linkedRepo, onSave, onToggleSync, isSaving }: SettingsTab
               value={settings.issues?.direction ?? 'bidirectional'}
               onChange={(e) => updateIssueSettings('direction', e.target.value as 'bidirectional' | 'github_to_kanbu' | 'kanbu_to_github')}
               disabled={isSaving || !(settings.issues?.enabled ?? true)}
-              className="block w-40 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-3 py-1.5 text-sm text-gray-900 dark:text-white focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50"
+              className="block w-40 rounded-md border border-input bg-background px-3 py-1.5 text-sm text-gray-900 dark:text-white focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50"
             >
               <option value="bidirectional">Bidirectional</option>
               <option value="github_to_kanbu">GitHub → Kanbu</option>

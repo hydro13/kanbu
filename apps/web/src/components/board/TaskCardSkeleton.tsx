@@ -54,7 +54,7 @@ export function TaskCardSkeleton({
   showAssignees = true,
 }: TaskCardSkeletonProps) {
   return (
-    <div className="bg-white dark:bg-gray-700 rounded-lg p-3 shadow-sm border border-gray-100 dark:border-gray-600">
+    <div className="bg-background rounded-lg p-3 shadow-sm border border-gray-100 dark:border-gray-600">
       {/* Header: Reference + Priority */}
       <div className="flex items-center justify-between gap-2 mb-2">
         <SkeletonBox className="h-3 w-16" />

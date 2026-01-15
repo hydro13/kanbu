@@ -175,7 +175,7 @@ export function CycleTimeChart({ data, isLoading }: CycleTimeChartProps) {
                 style={{ opacity: 0.3 + (column.avgHours / chartData.maxHours) * 0.7 }}
               />
               {index < chartData.columns.length - 1 && (
-                <div className="w-2 h-0 border-t-2 border-gray-300 dark:border-gray-600" />
+                <div className="w-2 h-0 border-t-2 border-input" />
               )}
             </div>
           ))}

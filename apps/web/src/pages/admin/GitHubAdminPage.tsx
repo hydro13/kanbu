@@ -238,7 +238,7 @@ function WorkspaceSelector({ selectedId, onSelect }: WorkspaceSelectorProps) {
       <select
         value={selectedId ?? ''}
         onChange={(e) => onSelect(e.target.value ? Number(e.target.value) : null)}
-        className="px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+        className="px-3 py-2 bg-white dark:bg-gray-800 border border-input rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
       >
         <option value="">Select Workspace</option>
         {workspaces?.workspaces.map((ws: { id: number; name: string }) => (
@@ -666,7 +666,7 @@ function UserMappingsTab({ workspaceId }: TabProps) {
                 value={newGitHubLogin}
                 onChange={(e) => setNewGitHubLogin(e.target.value)}
                 placeholder="e.g. octocat"
-                className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm"
+                className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-input rounded-lg text-sm"
               />
             </div>
             <div>
@@ -676,7 +676,7 @@ function UserMappingsTab({ workspaceId }: TabProps) {
               <select
                 value={newUserId ?? ''}
                 onChange={(e) => setNewUserId(e.target.value ? Number(e.target.value) : null)}
-                className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm"
+                className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-input rounded-lg text-sm"
               >
                 <option value="">Select user...</option>
                 {workspaceUsers?.users.map((user) => (

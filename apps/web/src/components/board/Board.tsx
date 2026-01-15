@@ -397,7 +397,7 @@ export function Board({ columns, swimlanes, tasks, projectId }: BoardProps) {
             style={{ width: columnWidth }}
           >
             <button
-              className="w-full h-12 flex items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+              className="w-full h-12 flex items-center justify-center gap-2 rounded-lg border-2 border-dashed border-input text-gray-500 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
               onClick={() => {
                 // TODO: Open add column modal
                 console.log('Add column clicked')

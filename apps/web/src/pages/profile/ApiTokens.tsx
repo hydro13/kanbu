@@ -189,12 +189,12 @@ export function ApiTokens() {
                 value={newKeyName}
                 onChange={(e) => setNewKeyName(e.target.value)}
                 placeholder="Token name"
-                className="flex-1 h-8 px-2 text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="flex-1 h-8 px-2 text-sm rounded border border-input bg-white dark:bg-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
               <select
                 value={expiresIn}
                 onChange={(e) => setExpiresIn(e.target.value)}
-                className="h-8 px-2 text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
+                className="h-8 px-2 text-sm rounded border border-input bg-white dark:bg-gray-900"
               >
                 <option value="never">No expiry</option>
                 <option value="30">30 days</option>
@@ -214,7 +214,7 @@ export function ApiTokens() {
                     setSelectedWorkspaceId(null)
                     setSelectedProjectId(null)
                   }}
-                  className="h-8 px-2 text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
+                  className="h-8 px-2 text-sm rounded border border-input bg-white dark:bg-gray-900"
                 >
                   <option value="USER">Full User Access</option>
                   <option value="WORKSPACE">Workspace Only</option>
@@ -229,7 +229,7 @@ export function ApiTokens() {
                       setSelectedWorkspaceId(e.target.value ? Number(e.target.value) : null)
                       setSelectedProjectId(null)
                     }}
-                    className="flex-1 h-8 px-2 text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
+                    className="flex-1 h-8 px-2 text-sm rounded border border-input bg-white dark:bg-gray-900"
                   >
                     <option value="">Select workspace...</option>
                     {workspaces?.map((ws) => (
@@ -243,7 +243,7 @@ export function ApiTokens() {
                   <select
                     value={selectedProjectId ?? ''}
                     onChange={(e) => setSelectedProjectId(e.target.value ? Number(e.target.value) : null)}
-                    className="flex-1 h-8 px-2 text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900"
+                    className="flex-1 h-8 px-2 text-sm rounded border border-input bg-white dark:bg-gray-900"
                   >
                     <option value="">Select project...</option>
                     {projects?.map((proj) => (
@@ -270,7 +270,7 @@ export function ApiTokens() {
                   value={serviceAccountName}
                   onChange={(e) => setServiceAccountName(e.target.value)}
                   placeholder="Service account name (e.g., CI/CD Bot)"
-                  className="w-full h-8 px-2 text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full h-8 px-2 text-sm rounded border border-input bg-white dark:bg-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
               )}
             </div>

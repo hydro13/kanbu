@@ -149,7 +149,7 @@ function ManualTimeInput({
           className={`w-20 px-2 py-1 text-xs border rounded ${
             error
               ? 'border-red-500 focus:border-red-500'
-              : 'border-gray-300 dark:border-gray-600 focus:border-blue-500'
+              : 'border-input focus:border-blue-500'
           } bg-white dark:bg-gray-800 focus:outline-none`}
           autoFocus
           disabled={isPending}

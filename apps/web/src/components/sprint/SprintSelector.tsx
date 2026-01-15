@@ -132,7 +132,7 @@ export function SprintSelector({
       {/* Trigger button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between gap-2 px-3 py-2 w-full min-w-[200px] bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
+        className="flex items-center justify-between gap-2 px-3 py-2 w-full min-w-[200px] bg-white dark:bg-gray-800 border border-input rounded-lg hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
       >
         {isLoading ? (
           <span className="text-gray-400">Loading...</span>

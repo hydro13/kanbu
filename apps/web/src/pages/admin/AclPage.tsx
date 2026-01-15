@@ -589,7 +589,7 @@ export function AclPage() {
                           value={newGroupName}
                           onChange={(e) => setNewGroupName(e.target.value.replace(/\s/g, '-').toLowerCase())}
                           placeholder="e.g., senior-developers"
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
+                          className="w-full px-3 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
                         />
                         <p className="text-xs text-gray-500 mt-1">Unique identifier (no spaces, lowercase)</p>
                       </div>
@@ -603,7 +603,7 @@ export function AclPage() {
                           value={newGroupDisplayName}
                           onChange={(e) => setNewGroupDisplayName(e.target.value)}
                           placeholder="e.g., Senior Developers"
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
+                          className="w-full px-3 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
                         />
                       </div>
 
@@ -616,7 +616,7 @@ export function AclPage() {
                           onChange={(e) => setNewGroupDescription(e.target.value)}
                           placeholder="What is this group for?"
                           rows={3}
-                          className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 resize-none"
+                          className="w-full px-3 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 resize-none"
                         />
                       </div>
 
@@ -989,7 +989,7 @@ function AclDialog({
               value={searchPrincipal}
               onChange={(e) => setSearchPrincipal(e.target.value)}
               placeholder="Search..."
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 mb-2"
+              className="w-full px-3 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 mb-2"
             />
             <div className="max-h-32 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg">
               {formData.principalType === 'user' ? (
@@ -1032,7 +1032,7 @@ function AclDialog({
             <select
               value={formData.permissions}
               onChange={(e) => setFormData({ ...formData, permissions: parseInt(e.target.value) })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
             >
               {Object.entries(PRESETS).map(([key, preset]) => (
                 <option key={key} value={preset.value}>

@@ -79,7 +79,7 @@ const STATUS_CYCLE: Record<SubtaskStatus, SubtaskStatus> = {
 const STATUS_COLORS: Record<SubtaskStatus, { bg: string; border: string; text: string }> = {
   TODO: {
     bg: '',
-    border: 'border-gray-300 dark:border-gray-600',
+    border: 'border-input',
     text: 'text-gray-500',
   },
   IN_PROGRESS: {
@@ -304,7 +304,7 @@ function AddSubtaskForm({
 
   return (
     <div className="flex items-center gap-2 p-2">
-      <div className="w-5 h-5 rounded border-2 border-gray-300 dark:border-gray-600" />
+      <div className="w-5 h-5 rounded border-2 border-input" />
       <input
         type="text"
         value={title}
@@ -314,7 +314,7 @@ function AddSubtaskForm({
         }}
         onKeyDown={handleKeyDown}
         placeholder="Subtask title..."
-        className="flex-1 bg-transparent border-b border-gray-300 dark:border-gray-600 focus:border-blue-500 focus:outline-none text-sm"
+        className="flex-1 bg-transparent border-b border-input focus:border-blue-500 focus:outline-none text-sm"
         autoFocus
         disabled={isCreating}
       />

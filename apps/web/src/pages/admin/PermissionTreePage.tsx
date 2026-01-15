@@ -377,7 +377,7 @@ export function PermissionTreePage() {
               <select
                 value={selectedUserId ?? ''}
                 onChange={(e) => setSelectedUserId(e.target.value ? Number(e.target.value) : null)}
-                className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-gray-900 dark:text-white"
               >
                 <option value="">Choose a user...</option>
                 {nonAdminUsers.map(user => (
@@ -409,7 +409,7 @@ export function PermissionTreePage() {
               <select
                 value={selectedGroupId ?? ''}
                 onChange={(e) => setSelectedGroupId(e.target.value ? Number(e.target.value) : null)}
-                className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-gray-900 dark:text-white"
               >
                 <option value="">Choose a group...</option>
                 {securityGroups.map(group => (
@@ -422,7 +422,7 @@ export function PermissionTreePage() {
               <select
                 value={selectedRole}
                 onChange={(e) => setSelectedRole(e.target.value as 'VIEWER' | 'MEMBER' | 'MANAGER' | 'ADMIN')}
-                className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-gray-900 dark:text-white"
               >
                 <option value="VIEWER">Viewer</option>
                 <option value="MEMBER">Member</option>
@@ -696,7 +696,7 @@ function ExpandableSecurityGroup({
               <select
                 value={selectedUserId ?? ''}
                 onChange={(e) => setSelectedUserId(e.target.value ? Number(e.target.value) : null)}
-                className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-gray-900 dark:text-white"
               >
                 <option value="">Choose a user...</option>
                 {availableUsers.map(user => (
@@ -943,7 +943,7 @@ function ExpandableGroup({
               <select
                 value={selectedUserId ?? ''}
                 onChange={(e) => setSelectedUserId(e.target.value ? Number(e.target.value) : null)}
-                className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-gray-900 dark:text-white"
               >
                 <option value="">Choose a user...</option>
                 {availableUsers.map(user => (
@@ -1166,7 +1166,7 @@ function ExpandableProjectGroup({
               <select
                 value={selectedUserId ?? ''}
                 onChange={(e) => setSelectedUserId(e.target.value ? Number(e.target.value) : null)}
-                className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-gray-900 dark:text-white"
               >
                 <option value="">Choose a user...</option>
                 {availableUsers.map(user => (

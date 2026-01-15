@@ -128,7 +128,7 @@ export function TwoFactorAuth() {
                       onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                       placeholder="000000"
                       maxLength={6}
-                      className="flex-1 h-9 px-3 text-sm font-mono text-center tracking-widest rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="flex-1 h-9 px-3 text-sm font-mono text-center tracking-widest rounded-md border border-input bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                     <Button
                       size="sm"
@@ -190,7 +190,7 @@ export function TwoFactorAuth() {
                   value={disablePassword}
                   onChange={(e) => setDisablePassword(e.target.value)}
                   placeholder="Your password"
-                  className="flex-1 h-8 px-2 text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="flex-1 h-8 px-2 text-sm rounded border border-input bg-white dark:bg-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
                 <Button size="sm" variant="outline" onClick={() => { setShowDisable(false); setDisablePassword('') }} className="h-8">
                   Cancel

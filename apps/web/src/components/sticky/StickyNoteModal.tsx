@@ -203,7 +203,7 @@ export function StickyNoteModal({ isOpen, onClose, note }: StickyNoteModalProps)
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Note title..."
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-input rounded-md bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               maxLength={255}
             />
           </div>

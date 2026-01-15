@@ -159,7 +159,7 @@ export function AclExportDialog({
                 setScope(e.target.value as ResourceScope)
                 setResourceId(null)
               }}
-              className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-gray-900 dark:text-white"
             >
               <option value="all">All ACL Entries</option>
               <option value="workspace">Specific Workspace</option>
@@ -176,7 +176,7 @@ export function AclExportDialog({
               <select
                 value={resourceId ?? ''}
                 onChange={(e) => setResourceId(e.target.value ? Number(e.target.value) : null)}
-                className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-gray-900 dark:text-white"
               >
                 <option value="">Select...</option>
                 {workspacesData?.workspaces.map(ws => (
@@ -196,7 +196,7 @@ export function AclExportDialog({
                   'flex-1 py-2 text-sm rounded border',
                   format === 'json'
                     ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-500 text-blue-700 dark:text-blue-400'
-                    : 'bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400'
+                    : 'bg-gray-50 dark:bg-gray-700 border-input text-gray-600 dark:text-gray-400'
                 )}
               >
                 JSON
@@ -208,7 +208,7 @@ export function AclExportDialog({
                   'flex-1 py-2 text-sm rounded border',
                   format === 'csv'
                     ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-500 text-blue-700 dark:text-blue-400'
-                    : 'bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400'
+                    : 'bg-gray-50 dark:bg-gray-700 border-input text-gray-600 dark:text-gray-400'
                 )}
               >
                 CSV

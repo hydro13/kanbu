@@ -241,7 +241,7 @@ export function TaskCard({ task, projectId, onTaskClick, onContextMenu }: TaskCa
 
   return (
     <div
-      className="relative bg-white dark:bg-gray-700 rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer border border-transparent hover:border-blue-300 dark:hover:border-blue-600"
+      className="relative bg-background rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer border border-transparent hover:border-blue-300 dark:hover:border-blue-600"
       onClick={handleClick}
       onContextMenu={handleContextMenu}
       onMouseEnter={() => setIsHovered(true)}

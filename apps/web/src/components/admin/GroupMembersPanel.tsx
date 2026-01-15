@@ -140,7 +140,7 @@ function AddMemberDialog({ groupId, groupName, onClose, onSuccess }: AddMemberDi
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search users by name or email..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
+              className="w-full pl-10 pr-4 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500"
               autoFocus
             />
           </div>
@@ -471,7 +471,7 @@ export function GroupMembersPanel({ groupId, groupName, groupPath, onGroupDelete
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8 text-gray-500 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-dashed border-gray-300 dark:border-gray-600">
+                <div className="text-center py-8 text-gray-500 bg-gray-50 dark:bg-gray-800/50 rounded-lg border border-dashed border-input">
                   <UsersIcon className="w-8 h-8 mx-auto mb-2 opacity-50" />
                   <p>No members in this group</p>
                   {canManage && (

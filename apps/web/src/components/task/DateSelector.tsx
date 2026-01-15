@@ -177,7 +177,7 @@ export function DateSelector({
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
           disabled={updateMutation.isPending}
-          className="flex-1 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="flex-1 px-2 py-1 text-sm border border-input rounded bg-background text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         {updateMutation.isPending && (
           <Loader2 className="w-4 h-4 animate-spin text-gray-400" />

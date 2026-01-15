@@ -202,7 +202,7 @@ export function AclImportDialog({
               {/* File Upload Area */}
               <div
                 onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 transition-colors"
+                className="border-2 border-dashed border-input rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 transition-colors"
               >
                 <input
                   ref={fileInputRef}
@@ -231,7 +231,7 @@ export function AclImportDialog({
                   value={data}
                   onChange={(e) => setData(e.target.value)}
                   placeholder="Paste JSON or CSV content here..."
-                  className="w-full h-32 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white font-mono"
+                  className="w-full h-32 px-3 py-2 text-sm border border-input rounded bg-background text-gray-900 dark:text-white font-mono"
                 />
               </div>
 
@@ -245,7 +245,7 @@ export function AclImportDialog({
                       'flex-1 py-2 text-sm rounded border',
                       format === 'json'
                         ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-500 text-blue-700 dark:text-blue-400'
-                        : 'bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400'
+                        : 'bg-gray-50 dark:bg-gray-700 border-input text-gray-600 dark:text-gray-400'
                     )}
                   >
                     JSON
@@ -256,7 +256,7 @@ export function AclImportDialog({
                       'flex-1 py-2 text-sm rounded border',
                       format === 'csv'
                         ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-500 text-blue-700 dark:text-blue-400'
-                        : 'bg-gray-50 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400'
+                        : 'bg-gray-50 dark:bg-gray-700 border-input text-gray-600 dark:text-gray-400'
                     )}
                   >
                     CSV
@@ -272,7 +272,7 @@ export function AclImportDialog({
                 <select
                   value={mode}
                   onChange={(e) => setMode(e.target.value as ImportMode)}
-                  className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-gray-900 dark:text-white"
                 >
                   <option value="skip">Skip existing entries</option>
                   <option value="overwrite">Overwrite existing entries</option>

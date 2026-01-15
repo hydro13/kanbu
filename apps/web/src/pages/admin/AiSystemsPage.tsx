@@ -690,7 +690,7 @@ function ProviderModal({ onClose, onSubmit, isLoading }: ProviderModalProps) {
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
               placeholder={`My ${config.label} Provider`}
               required
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
@@ -705,7 +705,7 @@ function ProviderModal({ onClose, onSubmit, isLoading }: ProviderModalProps) {
               onChange={(e) => setFormData(prev => ({ ...prev, baseUrl: e.target.value }))}
               placeholder={config.defaultUrl}
               required
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
@@ -720,7 +720,7 @@ function ProviderModal({ onClose, onSubmit, isLoading }: ProviderModalProps) {
                 value={formData.apiKey}
                 onChange={(e) => setFormData(prev => ({ ...prev, apiKey: e.target.value }))}
                 placeholder="sk-..."
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
           )}
@@ -759,7 +759,7 @@ function ProviderModal({ onClose, onSubmit, isLoading }: ProviderModalProps) {
                 type="text"
                 value={formData.embeddingModel}
                 onChange={(e) => setFormData(prev => ({ ...prev, embeddingModel: e.target.value }))}
-                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 text-sm border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
             <div>
@@ -770,7 +770,7 @@ function ProviderModal({ onClose, onSubmit, isLoading }: ProviderModalProps) {
                 type="text"
                 value={formData.reasoningModel}
                 onChange={(e) => setFormData(prev => ({ ...prev, reasoningModel: e.target.value }))}
-                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 text-sm border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
             <div>
@@ -781,7 +781,7 @@ function ProviderModal({ onClose, onSubmit, isLoading }: ProviderModalProps) {
                 type="text"
                 value={formData.visionModel}
                 onChange={(e) => setFormData(prev => ({ ...prev, visionModel: e.target.value }))}
-                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 text-sm border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
           </div>
@@ -797,7 +797,7 @@ function ProviderModal({ onClose, onSubmit, isLoading }: ProviderModalProps) {
               onChange={(e) => setFormData(prev => ({ ...prev, priority: parseInt(e.target.value) || 0 }))}
               min={0}
               max={1000}
-              className="w-32 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-32 px-3 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
@@ -947,7 +947,7 @@ function EditProviderModal({ providerId, onClose, onSubmit, isLoading }: EditPro
               value={formData.name ?? provider.name}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
               required
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
@@ -960,7 +960,7 @@ function EditProviderModal({ providerId, onClose, onSubmit, isLoading }: EditPro
               type="url"
               value={formData.baseUrl ?? provider.baseUrl ?? ''}
               onChange={(e) => setFormData(prev => ({ ...prev, baseUrl: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 
@@ -975,7 +975,7 @@ function EditProviderModal({ providerId, onClose, onSubmit, isLoading }: EditPro
                 value={formData.apiKey ?? ''}
                 onChange={(e) => setFormData(prev => ({ ...prev, apiKey: e.target.value }))}
                 placeholder={provider.apiKey ? '••••••••' : 'sk-...'}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
           )}
@@ -1014,7 +1014,7 @@ function EditProviderModal({ providerId, onClose, onSubmit, isLoading }: EditPro
                 type="text"
                 value={formData.embeddingModel ?? provider.embeddingModel ?? ''}
                 onChange={(e) => setFormData(prev => ({ ...prev, embeddingModel: e.target.value }))}
-                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 text-sm border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
             <div>
@@ -1025,7 +1025,7 @@ function EditProviderModal({ providerId, onClose, onSubmit, isLoading }: EditPro
                 type="text"
                 value={formData.reasoningModel ?? provider.reasoningModel ?? ''}
                 onChange={(e) => setFormData(prev => ({ ...prev, reasoningModel: e.target.value }))}
-                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 text-sm border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
             <div>
@@ -1036,7 +1036,7 @@ function EditProviderModal({ providerId, onClose, onSubmit, isLoading }: EditPro
                 type="text"
                 value={formData.visionModel ?? provider.visionModel ?? ''}
                 onChange={(e) => setFormData(prev => ({ ...prev, visionModel: e.target.value }))}
-                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 text-sm border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
           </div>
@@ -1052,7 +1052,7 @@ function EditProviderModal({ providerId, onClose, onSubmit, isLoading }: EditPro
               onChange={(e) => setFormData(prev => ({ ...prev, priority: parseInt(e.target.value) || 0 }))}
               min={0}
               max={1000}
-              className="w-32 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-32 px-3 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
 

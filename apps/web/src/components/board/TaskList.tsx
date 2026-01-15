@@ -49,7 +49,7 @@ export interface TaskListProps {
 
 function TaskSkeleton() {
   return (
-    <div className="bg-white dark:bg-gray-700 rounded-lg p-3 shadow-sm animate-pulse">
+    <div className="bg-background rounded-lg p-3 shadow-sm animate-pulse">
       <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-3/4 mb-2" />
       <div className="h-3 bg-gray-200 dark:bg-gray-600 rounded w-1/2" />
     </div>
