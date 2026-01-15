@@ -231,7 +231,7 @@ function CalendarToolbar({
 // =============================================================================
 
 function TaskChip({ task, onClick }: { task: CalendarTask; onClick: () => void }) {
-  const priorityColors = ['bg-gray-100 dark:bg-gray-700', 'bg-blue-100 dark:bg-blue-900/30', 'bg-yellow-100 dark:bg-yellow-900/30', 'bg-red-100 dark:bg-red-900/30']
+  const priorityColors = ['bg-gray-100 dark:bg-gray-700', 'bg-blue-100 dark:bg-blue-900/30', 'bg-orange-100 dark:bg-orange-900/30', 'bg-red-100 dark:bg-red-900/30']
 
   return (
     <button
@@ -628,7 +628,7 @@ function WeekView({ days, tasksByDate, onTaskClick, onNavigate, onZoom }: WeekVi
                     data-task-card
                     onClick={() => onTaskClick(task.id)}
                     className={`p-2 rounded border-l-4 bg-white dark:bg-gray-800 shadow-sm cursor-pointer hover:shadow-md transition-shadow ${
-                      task.priority === 3 ? 'border-red-500' : task.priority === 2 ? 'border-yellow-500' : task.priority === 1 ? 'border-blue-500' : 'border-gray-300'
+                      task.priority === 3 ? 'border-red-500' : task.priority === 2 ? 'border-orange-500' : task.priority === 1 ? 'border-blue-500' : 'border-gray-300'
                     } ${!task.isActive ? 'opacity-50' : ''}`}
                   >
                     <div className={`text-sm font-medium text-gray-900 dark:text-white ${!task.isActive ? 'line-through' : ''}`}>
