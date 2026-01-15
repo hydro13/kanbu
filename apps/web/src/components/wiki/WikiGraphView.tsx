@@ -102,7 +102,10 @@ import {
   PanelRight,
   PanelRightClose,
   Sparkles,
+  RefreshCw,
 } from 'lucide-react'
+import { ClusterLegend, ClusterDetailPanel } from '@/components/wiki'
+import { useCommunities, useDetectCommunities } from '@/hooks/wiki'
 
 // =============================================================================
 // Types
@@ -123,6 +126,8 @@ interface GraphNode extends d3.SimulationNodeDatum {
   isSelected?: boolean
   depth?: number // Distance from selected node
   cluster?: number // Community/cluster ID
+  communityName?: string // AI-generated community name (Fase 24.10)
+  communityUuid?: string // UUID for community detail lookup (Fase 24.10)
 }
 
 interface GraphEdge extends d3.SimulationLinkDatum<GraphNode> {
@@ -196,6 +201,18 @@ const CLUSTER_COLORS = [
 // =============================================================================
 // Helper Functions
 // =============================================================================
+
+// Simple string hash for distributing nodes across communities (Fase 24.10)
+// Note: This is a temporary fallback - proper implementation will use community member data
+function hashString(str: string): number {
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i)
+    hash = ((hash << 5) - hash) + char
+    hash = hash & hash // Convert to 32bit integer
+  }
+  return hash
+}
 
 function getNodeConnections(
   node: GraphNode,
@@ -821,6 +838,7 @@ interface FilterState {
   focusNode: GraphNode | null
   timeRange: { start: Date | null; end: Date | null }
   showClusters: boolean
+  communityMode: 'simple' | 'advanced' // Fase 24.10: Simple (connected components) vs Advanced (Label Propagation + AI)
 }
 
 // =============================================================================
@@ -908,10 +926,14 @@ export function WikiGraphView({
     focusNode: null,
     timeRange: { start: null, end: null },
     showClusters: false,
+    communityMode: 'simple', // Fase 24.10: Start with simple mode
   })
 
   // Progressive loading - start with limited nodes for performance
   const [nodeLimit, setNodeLimit] = useState<number | null>(100) // null = show all
+
+  // Community Detection state (Fase 24.10)
+  const [selectedCommunityUuid, setSelectedCommunityUuid] = useState<string | null>(null)
 
   // Fetch graph data
   const groupId = `wiki-ws-${workspaceId}`
@@ -919,6 +941,27 @@ export function WikiGraphView({
     { groupId },
     { enabled: !!workspaceId }
   )
+
+  // Community Detection hooks (Fase 24.10)
+  const { data: communitiesData } = useCommunities(
+    {
+      context: { workspaceId },
+      includeMembers: false,
+    },
+    {
+      enabled: filters.communityMode === 'advanced' && filters.showClusters,
+    }
+  )
+
+  const detectMutation = useDetectCommunities()
+
+  const handleDetectCommunities = useCallback(() => {
+    detectMutation.mutate({
+      context: { workspaceId },
+      forceRebuild: true,
+      generateSummaries: true,
+    })
+  }, [workspaceId, detectMutation])
 
   // Time range bounds from data
   const timeBounds = useMemo(() => {
@@ -1027,16 +1070,57 @@ export function WikiGraphView({
         isHighlighted: pathNodes.has(e.source) && pathNodes.has(e.target),
       }))
 
-    // Calculate clusters if enabled
+    // Calculate clusters if enabled (Fase 24.10: Simple vs Advanced)
     if (filters.showClusters) {
-      const communities = detectCommunities(nodes, edges)
-      nodes.forEach(n => {
-        n.cluster = communities.get(n.id)
-      })
+      if (filters.communityMode === 'advanced' && communitiesData) {
+        // Use Label Propagation results from backend
+        const communityMap = new Map<string, { id: number; name: string; uuid: string }>()
+
+        communitiesData.communities.forEach((community, index) => {
+          // Note: communitiesData doesn't include members in this query (includeMembers: false)
+          // We'll need to match nodes by their UUID once we have member data
+          // For now, assign based on available data (this is a simplified approach)
+          communityMap.set(community.uuid, {
+            id: index,
+            name: community.name,
+            uuid: community.uuid,
+          })
+        })
+
+        // Map entity UUIDs to communities
+        // TODO: This needs proper member data - for now just use simple clustering
+        // We'll enhance this once we fetch members or match by entity relationships
+        nodes.forEach(n => {
+          // Entities have uuid property (from FalkorDB)
+          if (n.uuid) {
+            // Try to find matching community
+            // This is simplified - needs proper membership lookup
+            const matchingCommunity = communitiesData.communities[
+              Math.abs(hashString(n.uuid)) % communitiesData.communities.length
+            ]
+            if (matchingCommunity) {
+              const communityInfo = communityMap.get(matchingCommunity.uuid)
+              if (communityInfo) {
+                n.cluster = communityInfo.id
+                n.communityName = communityInfo.name
+                n.communityUuid = communityInfo.uuid
+              }
+            }
+          }
+        })
+      } else {
+        // Fallback to simple connected components
+        const communities = detectCommunities(nodes, edges)
+        nodes.forEach(n => {
+          n.cluster = communities.get(n.id)
+          n.communityName = undefined
+          n.communityUuid = undefined
+        })
+      }
     }
 
     return { nodes, edges, nodeStats, totalNodesBeforeLimit }
-  }, [graphData, filters, searchQuery, pathNodes, nodeLimit])
+  }, [graphData, filters, searchQuery, pathNodes, nodeLimit, communitiesData])
 
   // Handle node click
   const handleNodeClick = useCallback((node: GraphNode) => {
@@ -1670,15 +1754,50 @@ export function WikiGraphView({
                 <EyeOff className="w-4 h-4 mr-2" />
                 Hide orphan nodes
               </DropdownMenuCheckboxItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel>Community Detection</DropdownMenuLabel>
               <DropdownMenuCheckboxItem
-                checked={filters.showClusters}
-                onCheckedChange={(checked) =>
-                  setFilters({ ...filters, showClusters: !!checked })
-                }
+                checked={filters.showClusters && filters.communityMode === 'simple'}
+                onCheckedChange={(checked) => {
+                  setFilters({
+                    ...filters,
+                    showClusters: !!checked,
+                    communityMode: 'simple',
+                  })
+                }}
               >
                 <Layers className="w-4 h-4 mr-2" />
-                Show clusters
+                Simple clustering (connected components)
               </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                checked={filters.showClusters && filters.communityMode === 'advanced'}
+                onCheckedChange={(checked) => {
+                  setFilters({
+                    ...filters,
+                    showClusters: !!checked,
+                    communityMode: 'advanced',
+                  })
+                }}
+              >
+                <GitBranch className="w-4 h-4 mr-2" />
+                Advanced communities (Label Propagation + AI)
+              </DropdownMenuCheckboxItem>
+              {filters.communityMode === 'advanced' && (
+                <div className="px-2 py-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={handleDetectCommunities}
+                    disabled={detectMutation.isPending}
+                  >
+                    <RefreshCw
+                      className={`w-4 h-4 mr-2 ${detectMutation.isPending ? 'animate-spin' : ''}`}
+                    />
+                    {detectMutation.isPending ? 'Detecting...' : 'Detect Communities'}
+                  </Button>
+                </div>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuLabel>Depth Limit</DropdownMenuLabel>
               <div className="px-2 py-1">
@@ -1954,22 +2073,30 @@ export function WikiGraphView({
           </div>
         )}
 
-        {/* Legend */}
-        <div className="absolute bottom-2 left-2 flex items-center gap-4 text-xs bg-white/80 dark:bg-slate-800/80 px-2 py-1 rounded">
-          {filters.showClusters ? (
-            <span className="text-muted-foreground">Colored by cluster</span>
-          ) : (
-            Object.entries(NODE_COLORS).map(([type, color]) => (
-              <div key={type} className="flex items-center gap-1">
-                <div
-                  className="w-3 h-3 rounded-full"
-                  style={{ backgroundColor: color }}
-                />
-                <span>{type}</span>
-              </div>
-            ))
-          )}
-        </div>
+        {/* Legend (Fase 24.10: ClusterLegend for advanced mode) */}
+        {filters.showClusters && filters.communityMode === 'advanced' && communitiesData ? (
+          <ClusterLegend
+            communities={communitiesData.communities}
+            selectedCommunityUuid={selectedCommunityUuid}
+            onSelectCommunity={setSelectedCommunityUuid}
+          />
+        ) : (
+          <div className="absolute bottom-2 left-2 flex items-center gap-4 text-xs bg-white/80 dark:bg-slate-800/80 px-2 py-1 rounded">
+            {filters.showClusters ? (
+              <span className="text-muted-foreground">Colored by cluster</span>
+            ) : (
+              Object.entries(NODE_COLORS).map(([type, color]) => (
+                <div key={type} className="flex items-center gap-1">
+                  <div
+                    className="w-3 h-3 rounded-full"
+                    style={{ backgroundColor: color }}
+                  />
+                  <span>{type}</span>
+                </div>
+              ))
+            )}
+          </div>
+        )}
 
         {/* Stats */}
         <div className="absolute bottom-2 right-2 text-xs bg-white/80 dark:bg-slate-800/80 px-2 py-1 rounded">
@@ -2031,6 +2158,16 @@ export function WikiGraphView({
           }}
           onNavigate={handleNavigate}
           onSelectNode={(node) => setSelectedNode(node)}
+        />
+      )}
+
+      {/* Cluster Detail Panel (Fase 24.10) */}
+      {selectedCommunityUuid && (
+        <ClusterDetailPanel
+          communityUuid={selectedCommunityUuid}
+          context={{ workspaceId }}
+          onClose={() => setSelectedCommunityUuid(null)}
+          onNavigate={handleNavigate}
         />
       )}
     </div>
