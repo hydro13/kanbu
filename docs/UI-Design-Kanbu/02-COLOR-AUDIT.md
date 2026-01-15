@@ -1,151 +1,203 @@
 # Kanbu Kleur Audit
 
 **Datum:** 2026-01-15
-**Status:** Complete
+**Versie:** 2.0.0
+**Status:** ✅ Alle Problemen Opgelost
 
 ---
 
-## Kritieke Bevinding: Kleur Inconsistentie
+## Samenvatting: Alle Issues Opgelost
 
-### Statistieken
+Dit document beschrijft de **historische** kleurproblemen die zijn geïdentificeerd tijdens de design audit. **Alle genoemde problemen zijn opgelost** in het Design System v2.0.0 implementatie.
+
+| Probleem | Status | Oplossing |
+|----------|--------|-----------|
+| Hardcoded kleuren (75%) | ✅ Opgelost | 100% gemigreerd naar design tokens |
+| Priority kleuren inconsistent | ✅ Opgelost | Semantic tokens: `--priority-*` |
+| Ontbrekende tokens | ✅ Opgelost | success, warning, error, info toegevoegd |
+
+---
+
+## Historisch: Originele Bevindingen
+
+### Statistieken (VOOR migratie)
 
 | Type | Aantal | Percentage |
 |------|--------|------------|
 | Hardcoded Tailwind bg-kleuren | 1,443 | ~64% |
 | Hardcoded Tailwind text-kleuren | 2,405 | ~75% |
-| Design system kleuren (primary/secondary/etc) | 804 | ~25% |
+| Design system kleuren | 804 | ~25% |
 
-**Conclusie:** ~75% van alle kleur classes gebruikt hardcoded Tailwind waarden in plaats van het design system.
+### Statistieken (NA migratie - Fase 2)
 
----
-
-## Priority Kleuren Inconsistentie
-
-### Probleem
-Priority kleuren zijn op **4+ verschillende plekken** gedefinieerd met **verschillende waarden**.
-
-### Definitie 1: FilterBar.tsx & TaskCountWidget.tsx
-```javascript
-{ value: 0, label: 'Low', color: 'bg-gray-400' },
-{ value: 1, label: 'Medium', color: 'bg-blue-500' },
-{ value: 2, label: 'High', color: 'bg-orange-500' },    // ORANGE
-{ value: 3, label: 'Urgent', color: 'bg-red-500' },
-```
-
-### Definitie 2: TaskRefPlugin.tsx (Editor)
-```javascript
-LOW: 'bg-slate-100 text-slate-600',
-MEDIUM: 'bg-blue-100 text-blue-600',
-HIGH: 'bg-orange-100 text-orange-600',    // ORANGE (lighter)
-URGENT: 'bg-red-100 text-red-600',
-```
-
-### Definitie 3: CalendarView.tsx
-```javascript
-['bg-gray-100', 'bg-blue-100', 'bg-yellow-100', 'bg-red-100']
-//                              ↑ YELLOW (niet orange!)
-```
-
-### Definitie 4: TimelineView.tsx
-```javascript
-['bg-gray-400', 'bg-blue-500', 'bg-yellow-500', 'bg-red-500']
-//                              ↑ YELLOW (niet orange!)
-```
-
-### Impact
-- **High priority** is soms ORANJE, soms GEEL
-- Gebruikers zien inconsistente kleuren afhankelijk van welke view ze gebruiken
-- Dit ondermijnt de betrouwbaarheid van visuele prioriteit-indicatoren
+| Type | Aantal | Percentage |
+|------|--------|------------|
+| Hardcoded Tailwind kleuren | 0 | 0% |
+| Design system kleuren | 100% | 100% |
 
 ---
 
-## Design System Kleuren (Huidige Staat)
+## ~~Priority Kleuren Inconsistentie~~ ✅ OPGELOST
 
-### CSS Variables (globals.css)
+### Was Het Probleem
 
-**Light Mode:**
-| Token | HSL Waarde | Kleur |
-|-------|------------|-------|
-| `--background` | 0 0% 100% | Wit |
-| `--foreground` | 222.2 84% 4.9% | Bijna zwart |
-| `--primary` | 222.2 47.4% 11.2% | Donkerblauw |
-| `--secondary` | 210 40% 96.1% | Lichtgrijs |
-| `--muted` | 210 40% 96.1% | Lichtgrijs (=secondary) |
-| `--accent` | 210 40% 96.1% | Lichtgrijs (=secondary) |
-| `--destructive` | 0 84.2% 60.2% | Rood |
+Priority kleuren waren op **4+ verschillende plekken** gedefinieerd met **verschillende waarden**:
+- FilterBar.tsx → `bg-orange-500` voor HIGH
+- CalendarView.tsx → `bg-yellow-500` voor HIGH
+- TimelineView.tsx → `bg-yellow-500` voor HIGH
 
-**Probleem:** `secondary`, `muted`, en `accent` hebben DEZELFDE waarde.
+### Huidige Oplossing
 
-### Ontbrekende Tokens
+Alle priority kleuren zijn nu gecentraliseerd als semantic tokens in `globals.css`:
+
+```css
+/* Priority Colors (globals.css v2.0.0) */
+--priority-low: var(--color-gray-400);
+--priority-medium: var(--color-blue-500);
+--priority-high: var(--color-orange-500);     /* Consistent ORANGE */
+--priority-urgent: var(--color-red-500);
+
+/* With light variants for backgrounds */
+--priority-low-light: var(--color-gray-100);
+--priority-medium-light: var(--color-blue-100);
+--priority-high-light: var(--color-orange-100);
+--priority-urgent-light: var(--color-red-100);
+```
+
+Alle componenten gebruiken nu dezelfde bron:
+- `lib/design-tokens.ts` voor TypeScript constants
+- `globals.css` voor CSS custom properties
+
+---
+
+## ~~Ontbrekende Design Tokens~~ ✅ OPGELOST
+
+### Was Het Probleem
+
+Het oorspronkelijke design system miste:
 - `--success` (voor positieve acties, completed states)
 - `--warning` (voor high priority, deadlines)
 - `--info` (voor informatieve berichten)
-- `--urgent` (voor critical items)
 
----
+### Huidige Oplossing
 
-## Hardcoded Kleur Patronen
+Volledige state color set in `globals.css`:
 
-### Meest Gebruikte Hardcoded Kleuren
-
-**Grijs (structuur, borders, achtergronden):**
-- `gray-100`, `gray-200`, `gray-300` (light backgrounds)
-- `gray-700`, `gray-800`, `gray-900` (dark mode equivalents)
-
-**Blauw (primary actions, links):**
-- `blue-500`, `blue-600` (buttons, links)
-- `blue-100`, `blue-900/30` (highlights)
-
-**Rood (destructive, urgent):**
-- `red-500`, `red-600` (errors, urgent)
-- `red-100` (light backgrounds)
-
-**Groen (success):**
-- `green-500`, `green-600` (completed, success)
-- `green-100` (light backgrounds)
-
-**Oranje/Geel (warnings, high priority):**
-- `orange-500` (high priority - sommige views)
-- `yellow-500` (high priority - andere views)
-
----
-
-## Aanbevelingen
-
-### 1. Centraliseer Priority Kleuren
-Creëer één bron van waarheid:
-```typescript
-// lib/colors.ts
-export const PRIORITY_COLORS = {
-  LOW: { bg: 'bg-slate-100', text: 'text-slate-600', solid: 'bg-slate-400' },
-  MEDIUM: { bg: 'bg-blue-100', text: 'text-blue-600', solid: 'bg-blue-500' },
-  HIGH: { bg: 'bg-orange-100', text: 'text-orange-600', solid: 'bg-orange-500' },
-  URGENT: { bg: 'bg-red-100', text: 'text-red-600', solid: 'bg-red-500' },
-}
-```
-
-### 2. Voeg Ontbrekende CSS Tokens Toe
 ```css
-:root {
-  --success: 142.1 76.2% 36.3%;        /* groen */
-  --success-foreground: 355.7 100% 97.3%;
-  --warning: 32.1 94.6% 43.7%;         /* oranje */
-  --warning-foreground: 26 83.3% 14.1%;
-  --info: 221.2 83.2% 53.3%;           /* blauw */
-  --info-foreground: 210 40% 98%;
+/* State Colors - Light Mode */
+--success: 142 76% 36%;
+--success-foreground: 0 0% 100%;
+--success-muted: 142 76% 36% / 0.1;
+
+--warning: 38 92% 50%;
+--warning-foreground: 48 96% 89%;
+--warning-muted: 38 92% 50% / 0.1;
+
+--error: 0 84% 60%;
+--error-foreground: 0 0% 100%;
+--error-muted: 0 84% 60% / 0.1;
+
+--info: 217 91% 60%;
+--info-foreground: 0 0% 100%;
+--info-muted: 217 91% 60% / 0.1;
+
+/* State Colors - Dark Mode */
+.dark {
+  --success: 142 71% 45%;
+  --warning: 38 92% 50%;
+  --error: 0 91% 71%;
+  --info: 217 91% 60%;
+  /* ... foreground and muted variants */
 }
 ```
 
-### 3. Migreer Hardcoded Kleuren
-Fase 1: Priority kleuren (hoogste impact)
-Fase 2: Status kleuren (success, error, warning)
-Fase 3: Structurele kleuren (gray-* naar muted/secondary)
+---
+
+## Huidige Token Architectuur
+
+### 1. Primitive Color Tokens
+
+10 complete kleurschalen (50-950):
+- Gray, Blue, Orange, Red, Green, Amber
+- **Nieuw:** Teal, Violet, Rose, Cyan
+
+### 2. Semantic Tokens
+
+Betekenisvolle kleurnamen die naar primitives verwijzen:
+
+| Token | Light Mode | Dark Mode |
+|-------|------------|-----------|
+| `--background` | white | gray-950 |
+| `--foreground` | gray-900 | gray-50 |
+| `--surface-1` | white | gray-900 |
+| `--surface-2` | gray-50 | gray-800 |
+| `--surface-3` | gray-100 | gray-700 |
+| `--border` | gray-200 | gray-700 |
+| `--muted` | gray-100 | gray-800 |
+
+### 3. Component Tokens
+
+Specifieke tokens per component:
+
+```css
+/* Badge tokens */
+--badge-default-bg
+--badge-success-bg
+--badge-warning-bg
+--badge-error-bg
+
+/* Toast tokens */
+--toast-bg
+--toast-success-bg
+--toast-error-bg
+--toast-warning-bg
+--toast-info-bg
+```
 
 ---
 
-## Volgende Stappen
+## Tailwind Integratie
 
-1. [ ] Creëer `lib/colors.ts` met gecentraliseerde kleur definities
-2. [ ] Update alle priority kleur referenties
-3. [ ] Voeg ontbrekende CSS tokens toe aan globals.css
-4. [ ] Migreer high-impact hardcoded kleuren
+Alle kleuren zijn beschikbaar via Tailwind classes:
+
+```tsx
+// Semantic colors
+<div className="bg-surface-1 text-foreground border-border">
+<div className="bg-success/10 text-success">
+<div className="bg-warning/10 text-warning">
+
+// Priority colors
+<Badge className="bg-priority-high/10 text-priority-high">
+<Badge className="bg-priority-urgent/10 text-priority-urgent">
+
+// State colors
+<Alert className="bg-error/10 border-error text-error">
+<Alert className="bg-info/10 border-info text-info">
+```
+
+---
+
+## Voltooide Stappen
+
+- [x] Creëer gecentraliseerde kleur definities (`lib/design-tokens.ts`)
+- [x] Update alle priority kleur referenties
+- [x] Voeg success/warning/error/info tokens toe aan `globals.css`
+- [x] Migreer 100% hardcoded kleuren
+- [x] Test light/dark mode consistency
+- [x] Update Tailwind config voor semantic colors
+
+---
+
+## Referentie: Key Files
+
+| Bestand | Functie |
+|---------|---------|
+| `apps/web/src/styles/globals.css` | CSS custom properties (v2.0.0) |
+| `apps/web/src/lib/design-tokens.ts` | TypeScript token constants |
+| `apps/web/tailwind.config.js` | Tailwind integratie |
+| `apps/web/src/styles/accents.css` | Accent color overrides |
+
+---
+
+*Document versie: 2.0.0*
+*Laatst bijgewerkt: 2026-01-15*

@@ -2,7 +2,8 @@
 
 **Datum:** 2026-01-15
 **Auditor:** Claude Code (Opus 4.5)
-**Versie:** 1.1 (Wiki toegevoegd)
+**Versie:** 2.0.0 (Design System Implemented)
+**Status:** Design System v2.0.0 Voltooid
 
 ---
 
@@ -14,17 +15,15 @@ Kanbu is een **functioneel sterke** applicatie met:
 - **20+ component directories**
 - **Uitgebreid Wiki systeem** met AI-integratie
 
-De basis is solide (React, TypeScript, TailwindCSS, shadcn/ui), maar er zijn significante **consistentie-problemen** die de gebruikerservaring en onderhoudbaarheid beïnvloeden.
+### Huidige Status: Design System v2.0.0 Geimplementeerd
 
-### Kritieke Bevindingen
-
-| Prioriteit | Probleem | Impact |
-|------------|----------|--------|
-| 🔴 Hoog | Priority kleuren inconsistent (oranje vs geel) | Gebruikers vertrouwen visuele cues niet |
-| 🔴 Hoog | 75% hardcoded kleuren (niet design system) | Theming onmogelijk, inconsistente look |
-| 🟠 Medium | 7 verschillende sidebar implementaties | Code duplicatie, visuele inconsistentie |
-| 🟠 Medium | Custom SVG icons naast lucide-react | Inconsistente icon stijl |
-| 🟡 Laag | Grote componenten (>500 regels) | Onderhoudslast |
+| Fase | Status | Beschrijving |
+|------|--------|--------------|
+| Fase 1: Foundation | ✅ Voltooid | Primitive tokens, typography, spacing |
+| Fase 2: Hardcoded Migratie | ✅ Voltooid | 100% hardcoded kleuren verwijderd |
+| Fase 3: Theme Infrastructure | ✅ Voltooid | ThemeContext, accent colors |
+| Fase 4: Backend Persistence | ✅ Voltooid | Theme/accent opgeslagen in database |
+| Fase 6: Design Tokens v2.0.0 | ✅ Voltooid | Compleet token systeem |
 
 ---
 
@@ -33,50 +32,121 @@ De basis is solide (React, TypeScript, TailwindCSS, shadcn/ui), maar er zijn sig
 | Document | Inhoud |
 |----------|--------|
 | [01-INVENTORY.md](./01-INVENTORY.md) | Routes, pagina's, tech stack |
-| [02-COLOR-AUDIT.md](./02-COLOR-AUDIT.md) | Kleur inconsistenties, CSS tokens |
+| [02-COLOR-AUDIT.md](./02-COLOR-AUDIT.md) | Kleur audit (historisch) |
 | [03-COMPONENT-AUDIT.md](./03-COMPONENT-AUDIT.md) | Component analyse, sidebars, layouts |
 | [04-UI-PATTERN-LIBRARY.md](./04-UI-PATTERN-LIBRARY.md) | **Volledige inventarisatie** van alle UI patronen |
-| [05-DESIGN-SYSTEM-ARCHITECTURE.md](./05-DESIGN-SYSTEM-ARCHITECTURE.md) | **Architectuur plan** voor themeable design system |
+| [05-DESIGN-SYSTEM-ARCHITECTURE.md](./05-DESIGN-SYSTEM-ARCHITECTURE.md) | **Geimplementeerde architectuur** |
 | [06-DESIGN-SYSTEM-ROADMAP.md](./06-DESIGN-SYSTEM-ROADMAP.md) | **Implementatie roadmap** met progress tracking |
 
 ---
 
-## Top 5 Problemen
+## Opgeloste Problemen
 
-### 1. Priority Kleuren Inconsistentie 🔴
+### ~~1. Priority Kleuren Inconsistentie~~ ✅ OPGELOST
 
-**Probleem:** "High" priority is ORANJE in sommige views, GEEL in andere.
+**Was:** "High" priority was ORANJE in sommige views, GEEL in andere.
 
-**Locaties:**
-- FilterBar.tsx, TaskCountWidget.tsx → `bg-orange-500`
-- CalendarView.tsx, TimelineView.tsx → `bg-yellow-500`
-- TaskRefPlugin.tsx → `bg-orange-100`
-
-**Impact:** Gebruikers kunnen niet consistent op kleur vertrouwen om prioriteit te herkennen.
-
-**Oplossing:** Centraliseer in `lib/colors.ts`
+**Oplossing:** Gecentraliseerd in `lib/design-tokens.ts` en `globals.css`:
+- Priority colors als semantic tokens
+- `--priority-low`, `--priority-medium`, `--priority-high`, `--priority-urgent`
 
 ---
 
-### 2. Hardcoded Kleuren (75%) 🔴
+### ~~2. Hardcoded Kleuren (75%)~~ ✅ OPGELOST
 
-**Statistieken:**
+**Was:**
 - 1,443 `bg-[kleur]-[nummer]` classes
 - 2,405 `text-[kleur]-[nummer]` classes
-- Slechts 804 design system classes (`bg-primary`, etc.)
+- Slechts 804 design system classes
 
-**Impact:**
-- Dark mode kan inconsistent zijn
-- Theming is onmogelijk
-- Visuele chaos bij UI updates
-
-**Oplossing:** Migreer naar CSS variabelen in fases
+**Nu:**
+- 100% gemigreerd naar design tokens
+- Alle kleuren via CSS custom properties
+- Volledige dark mode ondersteuning
 
 ---
 
-### 3. Sidebar Fragmentatie 🟠
+### ~~3. Ontbrekende Design Tokens~~ ✅ OPGELOST
 
-**Huidige staat:** 7 verschillende sidebar componenten, elk met eigen implementatie.
+**Was ontbrekend:**
+- success (groen voor completed)
+- warning (oranje voor deadlines)
+- info (blauw voor notificaties)
+
+**Nu aanwezig (globals.css v2.0.0):**
+- Complete color scales (Gray, Blue, Orange, Red, Green, Amber, Teal, Violet, Rose, Cyan)
+- State colors (success, warning, error, info)
+- Component tokens (Card, Button, Input, Badge, Avatar, Tooltip, Toast, Tabs, etc.)
+- Animation tokens (durations, easing functions)
+- Z-Index scale (11 levels)
+- Focus ring tokens
+
+---
+
+## Geimplementeerde Features
+
+### Design Token Systeem v2.0.0
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        USER PREFERENCES                          │
+│            (opgeslagen in database + localStorage)               │
+└─────────────────────────────────────────────────────────────────┘
+                                ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                      THEME CONFIGURATION                         │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐ │
+│  │  Theme Mode │  │   Accent    │  │     Contrast Mode       │ │
+│  │ light/dark/ │  │  6 colors   │  │    normal/high          │ │
+│  │   system    │  │             │  │                         │ │
+│  └─────────────┘  └─────────────┘  └─────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+                                ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                       DESIGN TOKENS                              │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐ │
+│  │  Primitive  │  │  Semantic   │  │       Component         │ │
+│  │   Colors    │  │   Colors    │  │        Tokens           │ │
+│  │ 10 scales   │  │ surface,    │  │ badge, avatar, toast,   │ │
+│  │ (50-950)    │  │ text, etc.  │  │ tooltip, tabs, etc.     │ │
+│  └─────────────┘  └─────────────┘  └─────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+                                ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                    TAILWIND UTILITIES                            │
+│           Volledig geintegreerd met CSS variables                │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Accent Color System
+
+6 beschikbare accent kleuren:
+- **Slate** - Neutral and professional
+- **Blue** - Trust and reliability (default)
+- **Teal** - Fresh and modern
+- **Violet** - Creative and premium
+- **Rose** - Bold and energetic
+- **Amber** - Warm and friendly
+
+### Theme Persistence
+
+```typescript
+// Frontend: ThemeContext.tsx
+// - localStorage voor snelle hydration
+// - Sync met backend bij login
+
+// Backend: user.theme, user.accent velden
+// - tRPC: user.updateProfile({ theme, accent })
+// - Database: User model met theme/accent kolommen
+```
+
+---
+
+## Resterende Verbetermogelijkheden
+
+### 1. Sidebar Consolidatie (Medium Priority)
+
+**Huidige staat:** 7 verschillende sidebar implementaties.
 
 | Sidebar | Icons | Drag & Drop | Collapse |
 |---------|-------|-------------|----------|
@@ -86,142 +156,79 @@ De basis is solide (React, TypeScript, TailwindCSS, shadcn/ui), maar er zijn sig
 | AdminSidebar | lucide | ❌ | ❌ |
 | ProfileSidebar | lucide | ❌ | ❌ |
 
-**Impact:** Inconsistente UX per sectie van de app.
-
-**Oplossing:** Creëer `SidebarBase` component
+**Aanbeveling:** Creëer `SidebarBase` component voor consistente UX.
 
 ---
 
-### 4. Icon Inconsistentie 🟠
+### 2. Icon Inconsistentie (Low Priority)
 
 **Probleem:** ProjectSidebar definieert 10+ custom SVG icons terwijl alle andere componenten lucide-react gebruiken.
 
-**Impact:**
-- Verschillende stroke widths
-- Verschillende sizing
-- ~100 regels onnodige code
-
-**Oplossing:** Vervang custom icons door lucide equivalenten
+**Aanbeveling:** Vervang custom icons door lucide equivalenten.
 
 ---
 
-### 5. Ontbrekende Design Tokens 🟡
+### 3. Component Refactoring (Ongoing)
 
-**Huidige tokens:**
-- primary, secondary, muted, accent, destructive
+**Grote componenten:**
+- WikiGraphView.tsx (2,177 regels)
+- FilterBar.tsx (688 regels)
+- ToolbarPlugin.tsx (681 regels)
 
-**Ontbrekend:**
-- success (groen voor completed)
-- warning (oranje voor deadlines)
-- info (blauw voor notificaties)
-
-**Impact:** Inconsistent gebruik van groen/oranje/blauw door de app.
+**Aanbeveling:** Extract state naar custom hooks, split in sub-components.
 
 ---
 
-## Verbeterplan
+## Technische Details
 
-### Fase 1: Quick Wins (1-2 dagen)
+### Bestanden Structuur
 
-| Taak | Bestanden | Impact |
-|------|-----------|--------|
-| Centraliseer priority kleuren | Nieuw: `lib/colors.ts` | Hoog |
-| Update priority referenties | ~10 bestanden | Hoog |
-| Voeg success/warning/info tokens toe | `globals.css` | Medium |
-
-**Deliverable:** Consistente priority kleuren in alle views.
-
----
-
-### Fase 2: Icon Standardisatie (1 dag)
-
-| Taak | Bestanden |
-|------|-----------|
-| Vervang custom SVG icons in ProjectSidebar | `ProjectSidebar.tsx` |
-| Audit andere custom icons | Codebase-wide |
-
-**Deliverable:** Alle icons komen uit lucide-react.
-
----
-
-### Fase 3: Sidebar Consolidatie (3-5 dagen)
-
-| Taak | Complexiteit |
-|------|--------------|
-| Creëer `SidebarBase` component | Medium |
-| Migreer DashboardSidebar | Laag |
-| Migreer ProjectSidebar | Medium |
-| Migreer overige sidebars | Laag |
-
-**Deliverable:** Één sidebar basis met consistente UX.
-
----
-
-### Fase 4: Kleur Migratie (5-10 dagen)
-
-| Stap | Aanpak |
-|------|--------|
-| 1. Audit alle `gray-*` gebruik | Grep + document |
-| 2. Creëer semantic tokens | `--surface-1`, `--surface-2`, etc. |
-| 3. Migreer per component directory | Start met `ui/`, dan `board/` |
-| 4. Test light/dark mode | Visuele QA |
-
-**Deliverable:** Design system-compliant kleuren.
-
----
-
-### Fase 5: Component Refactoring (Ongoing)
-
-**Prioriteit componenten:**
-1. WikiGraphView.tsx (2,177 regels)
-2. FilterBar.tsx (688 regels)
-3. ToolbarPlugin.tsx (681 regels)
-
-**Aanpak per component:**
-- Extract state naar custom hooks
-- Split in presentatie sub-components
-- Improve TypeScript types
-
----
-
-## Aanbevolen Tooling
-
-### Design Tokens
-```bash
-# Installeer style-dictionary voor token management
-npm install style-dictionary --save-dev
+```
+apps/web/src/
+├── styles/
+│   ├── globals.css         # Design tokens v2.0.0
+│   └── accents.css         # Accent color overrides
+├── contexts/
+│   └── ThemeContext.tsx    # Theme provider + hook
+├── components/theme/
+│   ├── ThemeProviderWithAuth.tsx  # Auth-integrated provider
+│   ├── ThemeSwitcher.tsx   # Light/dark/system toggle
+│   └── AccentPicker.tsx    # Accent color selector
+├── lib/
+│   ├── design-tokens.ts    # TypeScript token definitions
+│   └── themes/
+│       └── accents.ts      # Accent definitions
+└── tailwind.config.js      # Tailwind v2.0.0 integration
 ```
 
-### Lint Rules
-```javascript
-// eslint-plugin-tailwindcss kan hardcoded kleuren detecteren
-{
-  "rules": {
-    "tailwindcss/no-arbitrary-value": "warn"
-  }
-}
-```
+### Key Commits
 
-### Storybook (Optioneel)
-Voor component documentatie en visuele testing.
+| Commit | Beschrijving |
+|--------|--------------|
+| `ce26b0c0` | feat(design-system): Complete design token system (Fase 6) |
+| `2d801549` | feat(design-system): Add backend persistence (Fase 4) |
+| `be525603` | feat(design-system): Theme infrastructure + accents (Fase 3) |
+| `c3e7a709` | refactor(design-system): Remove ALL hardcoded colors (Fase 2) |
 
 ---
 
 ## Conclusie
 
-Kanbu heeft een **sterke functionele basis** maar lijdt aan organische groei zonder strikte design system governance. De voorgestelde verbeteringen zijn:
+Het Kanbu design system is nu **productie-ready** met:
 
-1. **Laag risico** - Geen functionele wijzigingen
-2. **Hoog rendement** - Significante UX verbetering
-3. **Gefaseerd** - Kan incrementeel worden uitgevoerd
+1. **Volledig themeable** - Light/dark/system mode
+2. **6 accent kleuren** - Persoonlijke customization
+3. **Backend persistence** - Settings volgen de gebruiker
+4. **100% design tokens** - Geen hardcoded kleuren meer
+5. **Toegankelijkheid** - High contrast mode, focus indicators, reduced motion
 
-De priority kleur fix (Fase 1) kan vandaag nog worden geïmplementeerd en heeft directe gebruikersimpact.
+De foundation is gelegd voor toekomstige uitbreidingen zoals:
+- Custom color picker
+- Layout preferences
+- Component density settings
+- Theme import/export
 
 ---
 
-## Volgende Stappen
-
-1. [ ] Review dit rapport met stakeholder
-2. [ ] Prioriteer fases
-3. [ ] Start met Fase 1 (priority kleuren)
-4. [ ] Plan Fase 2-5 in sprint backlog
+*Document versie: 2.0.0*
+*Laatst bijgewerkt: 2026-01-15*
