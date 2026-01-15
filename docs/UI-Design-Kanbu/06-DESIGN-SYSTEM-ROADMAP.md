@@ -208,7 +208,7 @@ feat(design-system): Add primitive color tokens to globals.css
 
 ### Fase 1.2: Typography Tokens
 
-**Status:** [ ] Niet gestart
+**Status:** [x] Voltooid (2026-01-15)
 
 **Wat:** Definieer typography scale als CSS variabelen.
 
@@ -216,10 +216,10 @@ feat(design-system): Add primitive color tokens to globals.css
 - `apps/web/src/styles/globals.css`
 
 **Taken:**
-- [ ] Font size scale toevoegen
-- [ ] Font weight tokens toevoegen
-- [ ] Line height tokens toevoegen
-- [ ] Letter spacing tokens toevoegen
+- [x] Font size scale toevoegen
+- [x] Font weight tokens toevoegen
+- [x] Line height tokens toevoegen
+- [x] Letter spacing tokens toevoegen
 
 **Code toe te voegen:**
 ```css
