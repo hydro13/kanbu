@@ -36,6 +36,8 @@ De basis is solide (React, TypeScript, TailwindCSS, shadcn/ui), maar er zijn sig
 | [02-COLOR-AUDIT.md](./02-COLOR-AUDIT.md) | Kleur inconsistenties, CSS tokens |
 | [03-COMPONENT-AUDIT.md](./03-COMPONENT-AUDIT.md) | Component analyse, sidebars, layouts |
 | [04-UI-PATTERN-LIBRARY.md](./04-UI-PATTERN-LIBRARY.md) | **Volledige inventarisatie** van alle UI patronen |
+| [05-DESIGN-SYSTEM-ARCHITECTURE.md](./05-DESIGN-SYSTEM-ARCHITECTURE.md) | **Architectuur plan** voor themeable design system |
+| [06-DESIGN-SYSTEM-ROADMAP.md](./06-DESIGN-SYSTEM-ROADMAP.md) | **Implementatie roadmap** met progress tracking |
 
 ---
 
