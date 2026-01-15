@@ -48,11 +48,52 @@ export default {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
+        // Design System: Semantic surface colors
+        surface: {
+          DEFAULT: 'hsl(var(--surface-1))',
+          1: 'hsl(var(--surface-1))',
+          2: 'hsl(var(--surface-2))',
+          3: 'hsl(var(--surface-3))',
+          elevated: 'hsl(var(--surface-elevated))',
+        },
+        // Design System: Text colors
+        'text-color': {
+          primary: 'hsl(var(--text-primary))',
+          secondary: 'hsl(var(--text-secondary))',
+          tertiary: 'hsl(var(--text-tertiary))',
+          muted: 'hsl(var(--text-muted))',
+        },
       },
       borderRadius: {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
+        // Design System: Component-specific radii
+        card: 'var(--card-radius)',
+        button: 'var(--button-radius)',
+        input: 'var(--input-radius)',
+      },
+      // Design System: Custom font sizes
+      fontSize: {
+        'page-title': ['var(--page-title-size)', { fontWeight: 'var(--page-title-weight)' }],
+        'page-title-lg': ['var(--page-title-size-lg)', { fontWeight: 'var(--page-title-weight-lg)' }],
+        'section-title': ['var(--section-title-size)', { fontWeight: 'var(--section-title-weight)' }],
+      },
+      // Design System: Custom widths
+      width: {
+        sidebar: 'var(--sidebar-width)',
+        'sidebar-collapsed': 'var(--sidebar-width-collapsed)',
+      },
+      // Design System: Custom max-widths
+      maxWidth: {
+        page: 'var(--page-max-width)',
+        'page-narrow': 'var(--page-max-width-narrow)',
+      },
+      // Design System: Custom padding
+      padding: {
+        card: 'var(--card-padding)',
+        'card-sm': 'var(--card-padding-sm)',
+        'card-lg': 'var(--card-padding-lg)',
       },
     },
   },
