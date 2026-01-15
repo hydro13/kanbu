@@ -72,7 +72,7 @@ function MilestoneCard({ milestone }: { milestone: MilestoneInfo }) {
             <CheckCircle2 className="w-5 h-5 text-green-500" />
           )}
           <div>
-            <h4 className="font-medium text-gray-900 dark:text-white">
+            <h4 className="font-medium text-foreground">
               {milestone.title}
             </h4>
             {dueDate && (
@@ -143,7 +143,7 @@ function StatsSummary({ stats }: { stats: { total: number; open: number; closed:
   return (
     <div className="grid grid-cols-4 gap-3 mb-4">
       <div className="text-center p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-        <div className="text-xl font-bold text-gray-900 dark:text-white">{stats.total}</div>
+        <div className="text-xl font-bold text-foreground">{stats.total}</div>
         <div className="text-xs text-gray-500 dark:text-gray-400">Total</div>
       </div>
       <div className="text-center p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
@@ -182,7 +182,7 @@ function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
       <Target className="w-12 h-12 text-gray-300 dark:text-gray-600 mb-4" />
-      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+      <h3 className="text-lg font-medium text-foreground mb-2">
         No milestones found
       </h3>
       <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm">
@@ -200,7 +200,7 @@ function ErrorState({ message, onRetry }: { message: string; onRetry: () => void
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
       <AlertCircle className="w-12 h-12 text-red-400 mb-4" />
-      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+      <h3 className="text-lg font-medium text-foreground mb-2">
         Failed to load milestones
       </h3>
       <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{message}</p>
@@ -274,7 +274,7 @@ export function ProjectMilestonesPanel({ projectId }: ProjectMilestonesPanelProp
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+        <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
           <Target className="w-5 h-5" />
           Milestones
         </h3>
@@ -282,7 +282,7 @@ export function ProjectMilestonesPanel({ projectId }: ProjectMilestonesPanelProp
           <select
             value={stateFilter}
             onChange={(e) => setStateFilter(e.target.value as 'all' | 'open' | 'closed')}
-            className="text-sm border border-gray-200 dark:border-gray-700 rounded-md px-2 py-1 bg-white dark:bg-gray-800"
+            className="text-sm border border-gray-200 dark:border-gray-700 rounded-md px-2 py-1 bg-card"
           >
             <option value="all">All</option>
             <option value="open">Open</option>

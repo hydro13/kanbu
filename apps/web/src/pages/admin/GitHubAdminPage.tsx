@@ -238,7 +238,7 @@ function WorkspaceSelector({ selectedId, onSelect }: WorkspaceSelectorProps) {
       <select
         value={selectedId ?? ''}
         onChange={(e) => onSelect(e.target.value ? Number(e.target.value) : null)}
-        className="px-3 py-2 bg-white dark:bg-gray-800 border border-input rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+        className="px-3 py-2 bg-card border border-input rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
       >
         <option value="">Select Workspace</option>
         {workspaces?.workspaces.map((ws: { id: number; name: string }) => (
@@ -317,10 +317,10 @@ function OverviewTab({ workspaceId }: TabProps) {
       {/* Recent Activity */}
       {data?.recentActivity && data.recentActivity.length > 0 && (
         <div>
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+          <h3 className="text-sm font-semibold text-foreground mb-3">
             Recent Sync Activity
           </h3>
-          <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4">
+          <div className="bg-muted/50 rounded-lg p-4">
             <ul className="space-y-2 text-sm">
               {data.recentActivity.map((activity, idx) => (
                 <li key={idx} className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
@@ -363,7 +363,7 @@ function StatCard({ title, value, icon: Icon, color }: StatCardProps) {
           <Icon className="h-5 w-5" />
         </div>
         <div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
+          <p className="text-2xl font-bold text-foreground">{value}</p>
           <p className="text-sm text-gray-500 dark:text-gray-400">{title}</p>
         </div>
       </div>
@@ -465,7 +465,7 @@ function InstallationsTab({ workspaceId }: TabProps) {
                     <GitHubIcon className="h-5 w-5 text-gray-500 dark:text-gray-400" />
                   </div>
                   <div>
-                    <div className="font-medium text-gray-900 dark:text-white">
+                    <div className="font-medium text-foreground">
                       {installation.accountLogin}
                     </div>
                     <div className="text-sm text-gray-500 dark:text-gray-400">
@@ -654,8 +654,8 @@ function UserMappingsTab({ workspaceId }: TabProps) {
 
       {/* Add Form */}
       {showAddForm && (
-        <div className="bg-gray-50 dark:bg-gray-900/50 rounded-lg p-4 space-y-3">
-          <h4 className="font-medium text-gray-900 dark:text-white">New User Mapping</h4>
+        <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+          <h4 className="font-medium text-foreground">New User Mapping</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
@@ -666,7 +666,7 @@ function UserMappingsTab({ workspaceId }: TabProps) {
                 value={newGitHubLogin}
                 onChange={(e) => setNewGitHubLogin(e.target.value)}
                 placeholder="e.g. octocat"
-                className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-input rounded-lg text-sm"
+                className="w-full px-3 py-2 bg-card border border-input rounded-lg text-sm"
               />
             </div>
             <div>
@@ -676,7 +676,7 @@ function UserMappingsTab({ workspaceId }: TabProps) {
               <select
                 value={newUserId ?? ''}
                 onChange={(e) => setNewUserId(e.target.value ? Number(e.target.value) : null)}
-                className="w-full px-3 py-2 bg-white dark:bg-gray-800 border border-input rounded-lg text-sm"
+                className="w-full px-3 py-2 bg-card border border-input rounded-lg text-sm"
               >
                 <option value="">Select user...</option>
                 {workspaceUsers?.users.map((user) => (
@@ -712,7 +712,7 @@ function UserMappingsTab({ workspaceId }: TabProps) {
                   {/* GitHub side */}
                   <div className="flex items-center gap-2">
                     <GitHubIcon className="h-5 w-5 text-gray-500" />
-                    <span className="font-medium text-gray-900 dark:text-white">
+                    <span className="font-medium text-foreground">
                       {mapping.githubLogin}
                     </span>
                   </div>

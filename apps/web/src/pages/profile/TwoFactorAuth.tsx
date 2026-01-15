@@ -85,7 +85,7 @@ export function TwoFactorAuth() {
           <div className="p-4 space-y-3">
             <div className="grid grid-cols-4 gap-2">
               {backupCodes.map((code, index) => (
-                <code key={index} className="font-mono text-xs p-1.5 bg-gray-50 dark:bg-gray-900 rounded border text-center">
+                <code key={index} className="font-mono text-xs p-1.5 bg-muted rounded border text-center">
                   {code}
                 </code>
               ))}
@@ -103,7 +103,7 @@ export function TwoFactorAuth() {
       <ProfileLayout title="Two-Factor Authentication" description="Secure your account with 2FA">
         <div className="bg-card rounded-card border border-border">
           <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Setup 2FA</h3>
+            <h3 className="text-sm font-semibold text-foreground">Setup 2FA</h3>
             <p className="text-xs text-muted-foreground mt-0.5">Scan with Google Authenticator, Authy, etc.</p>
           </div>
           <div className="p-4">
@@ -159,7 +159,7 @@ export function TwoFactorAuth() {
       <div className="bg-card rounded-card border border-border">
         <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Two-Factor Authentication</h3>
+            <h3 className="text-sm font-semibold text-foreground">Two-Factor Authentication</h3>
             <p className="text-xs text-muted-foreground mt-0.5">
               {status?.enabled ? 'Your account is protected with 2FA' : 'Add extra security to your account'}
             </p>

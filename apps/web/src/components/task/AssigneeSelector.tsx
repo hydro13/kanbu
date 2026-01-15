@@ -159,7 +159,7 @@ export function AssigneeSelector({
           assignees.map((user) => (
             <div key={user.id} className="flex items-center gap-2 group">
               <UserAvatar user={user} />
-              <span className="text-sm text-gray-900 dark:text-white flex-1">
+              <span className="text-sm text-foreground flex-1">
                 {user.name ?? user.username}
               </span>
               {!disabled && (
@@ -197,7 +197,7 @@ export function AssigneeSelector({
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute z-50 mt-2 w-56 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-60 overflow-auto">
+        <div className="absolute z-50 mt-2 w-56 bg-card border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg max-h-60 overflow-auto">
           {isLoadingMembers ? (
             <div className="flex items-center justify-center py-4">
               <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
@@ -233,7 +233,7 @@ export function AssigneeSelector({
                       }}
                     />
                     <div className="flex-1 min-w-0">
-                      <div className="text-gray-900 dark:text-white truncate">
+                      <div className="text-foreground truncate">
                         {member.name ?? member.username}
                       </div>
                       {member.name && (

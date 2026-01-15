@@ -133,7 +133,7 @@ export function ContextMenu({
     <div
       ref={menuRef}
       className={cn(
-        'fixed z-50 bg-white dark:bg-gray-800 rounded-lg shadow-lg',
+        'fixed z-50 bg-card rounded-lg shadow-lg',
         'border border-gray-200 dark:border-gray-700 py-1',
         className
       )}
@@ -174,7 +174,7 @@ export function ContextMenu({
               <div
                 className={cn(
                   'absolute left-full top-0 min-w-[140px]',
-                  'bg-white dark:bg-gray-800 rounded-lg shadow-lg',
+                  'bg-card rounded-lg shadow-lg',
                   'border border-gray-200 dark:border-gray-700 py-1 ml-1'
                 )}
               >

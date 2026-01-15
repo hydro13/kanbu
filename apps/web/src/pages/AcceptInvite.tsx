@@ -120,7 +120,7 @@ export function AcceptInvitePage() {
     const errorMessage = (validation as any)?.error || 'This invite link is not valid.'
     return (
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center p-4">
-        <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 text-center">
+        <div className="max-w-md w-full bg-card rounded-lg shadow-lg p-8 text-center">
           <XCircleIcon className="h-16 w-16 mx-auto text-red-500 mb-4" />
           <h1 className="text-page-title text-foreground mb-2">
             Invalid Invite
@@ -151,7 +151,7 @@ export function AcceptInvitePage() {
   // Valid invite - show registration form
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
+      <div className="max-w-md w-full bg-card rounded-lg shadow-lg p-8">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 dark:bg-blue-900/40 rounded-full mb-4">
@@ -169,13 +169,13 @@ export function AcceptInvitePage() {
         <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm text-gray-500 dark:text-gray-400">Email</span>
-            <span className="text-sm font-medium text-gray-900 dark:text-white">
+            <span className="text-sm font-medium text-foreground">
               {invite.email}
             </span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-sm text-gray-500 dark:text-gray-400">Role</span>
-            <span className="text-sm font-medium text-gray-900 dark:text-white">
+            <span className="text-sm font-medium text-foreground">
               {invite.role}
             </span>
           </div>
@@ -196,7 +196,7 @@ export function AcceptInvitePage() {
               minLength={3}
               maxLength={50}
               pattern="^[a-zA-Z0-9_-]+$"
-              className="w-full px-4 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Choose a username"
             />
           </div>
@@ -212,7 +212,7 @@ export function AcceptInvitePage() {
               onChange={(e) => setName(e.target.value)}
               required
               maxLength={255}
-              className="w-full px-4 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Your full name"
             />
           </div>
@@ -229,7 +229,7 @@ export function AcceptInvitePage() {
               required
               minLength={8}
               maxLength={128}
-              className="w-full px-4 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Create a password"
             />
           </div>
@@ -246,7 +246,7 @@ export function AcceptInvitePage() {
               required
               minLength={8}
               maxLength={128}
-              className="w-full px-4 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-2 border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Confirm your password"
             />
           </div>

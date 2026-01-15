@@ -117,7 +117,7 @@ export function BurndownChart({ data, totalTasks, className = '' }: BurndownChar
       <div className={`bg-card rounded-card border border-border p-6 ${className}`}>
         <div className="flex items-center gap-2 mb-4">
           <TrendingDown className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+          <h3 className="text-lg font-semibold text-foreground">
             Burndown Chart
           </h3>
         </div>
@@ -135,7 +135,7 @@ export function BurndownChart({ data, totalTasks, className = '' }: BurndownChar
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <TrendingDown className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+          <h3 className="text-lg font-semibold text-foreground">
             Burndown Chart
           </h3>
         </div>
@@ -155,13 +155,13 @@ export function BurndownChart({ data, totalTasks, className = '' }: BurndownChar
       <div className="flex items-center gap-6 mb-4 text-sm">
         <div>
           <span className="text-gray-500 dark:text-gray-400">Progress:</span>
-          <span className="ml-1.5 font-medium text-gray-900 dark:text-white">
+          <span className="ml-1.5 font-medium text-foreground">
             {progressPercent}%
           </span>
         </div>
         <div>
           <span className="text-gray-500 dark:text-gray-400">Remaining:</span>
-          <span className="ml-1.5 font-medium text-gray-900 dark:text-white">
+          <span className="ml-1.5 font-medium text-foreground">
             {currentRemaining} tasks
           </span>
         </div>

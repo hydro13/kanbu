@@ -91,13 +91,13 @@ export function WorkloadChart({ data, isLoading }: WorkloadChartProps) {
       <div className="flex items-center gap-6 mb-4 text-sm">
         <div>
           <span className="text-gray-500 dark:text-gray-400">Team Size:</span>
-          <span className="ml-1.5 font-medium text-gray-900 dark:text-white">
+          <span className="ml-1.5 font-medium text-foreground">
             {data.totalTeamMembers} members
           </span>
         </div>
         <div>
           <span className="text-gray-500 dark:text-gray-400">Avg Tasks:</span>
-          <span className="ml-1.5 font-medium text-gray-900 dark:text-white">
+          <span className="ml-1.5 font-medium text-foreground">
             {data.avgTasksPerPerson} per person
           </span>
         </div>
@@ -138,7 +138,7 @@ export function WorkloadChart({ data, isLoading }: WorkloadChartProps) {
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-gray-900 dark:text-white truncate">
+                  <p className="font-medium text-foreground truncate">
                     {member.name}
                   </p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
@@ -152,7 +152,7 @@ export function WorkloadChart({ data, isLoading }: WorkloadChartProps) {
 
               {/* Task Count */}
               <div className="flex items-center justify-between mb-2">
-                <span className="text-2xl font-bold text-gray-900 dark:text-white">
+                <span className="text-2xl font-bold text-foreground">
                   {member.totalTasks}
                 </span>
                 <span className="text-xs text-gray-500 dark:text-gray-400">tasks</span>
@@ -210,7 +210,7 @@ export function WorkloadChart({ data, isLoading }: WorkloadChartProps) {
                 <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
               </div>
               <div>
-                <p className="font-medium text-gray-900 dark:text-white">
+                <p className="font-medium text-foreground">
                   Unassigned
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">

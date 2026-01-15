@@ -178,7 +178,7 @@ export function TagSelector({
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute z-50 mt-1 w-64 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
+        <div className="absolute z-50 mt-1 w-64 bg-card border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
           {/* Available Tags */}
           <div className="max-h-48 overflow-y-auto p-2">
             {isLoading ? (
@@ -204,7 +204,7 @@ export function TagSelector({
                         className="w-3 h-3 rounded-full"
                         style={{ backgroundColor: tag.color ?? '#6B7280' }}
                       />
-                      <span className="flex-1 text-gray-900 dark:text-white">{tag.name}</span>
+                      <span className="flex-1 text-foreground">{tag.name}</span>
                       {isSelected && <Check className="w-4 h-4 text-blue-500" />}
                     </button>
                   )
@@ -228,7 +228,7 @@ export function TagSelector({
                 value={newTagName}
                 onChange={(e) => setNewTagName(e.target.value)}
                 placeholder="Tag name"
-                className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-foreground placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleCreateTag()
                   if (e.key === 'Escape') setIsCreating(false)

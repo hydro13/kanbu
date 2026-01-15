@@ -152,7 +152,7 @@ function PriorityDropdown({
   if (!isOpen) return null
 
   return (
-    <div className="absolute top-full left-0 mt-1 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50 min-w-[120px]">
+    <div className="absolute top-full left-0 mt-1 bg-card rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50 min-w-[120px]">
       {PRIORITIES.map((priority) => (
         <button
           key={priority.value}

@@ -132,7 +132,7 @@ export function WorkspaceListPage() {
               setSearch(e.target.value)
               setPage(0)
             }}
-            className="w-full pl-10 pr-4 py-2 border border-input rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full pl-10 pr-4 py-2 border border-input rounded-lg bg-card text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
 
@@ -144,7 +144,7 @@ export function WorkspaceListPage() {
             setStatusFilter(val === '' ? undefined : val === 'active')
             setPage(0)
           }}
-          className="px-4 py-2 border border-input rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="px-4 py-2 border border-input rounded-lg bg-card text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         >
           <option value="">All statuses</option>
           <option value="active">Active</option>
@@ -180,7 +180,7 @@ export function WorkspaceListPage() {
           <div className="overflow-x-auto bg-card rounded-card border border-border">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+                <tr className="border-b border-gray-200 dark:border-gray-700 bg-muted">
                   <th
                     className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer hover:bg-accent"
                     onClick={() => handleSort('id')}
@@ -243,7 +243,7 @@ export function WorkspaceListPage() {
                           </div>
                         )}
                         <div>
-                          <div className="font-medium text-gray-900 dark:text-white">
+                          <div className="font-medium text-foreground">
                             {workspace.name}
                           </div>
                           {workspace.description && (

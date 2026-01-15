@@ -137,7 +137,7 @@ export function CategorySelector({
         className={`w-full flex items-center gap-2 px-3 py-2 text-sm border rounded-lg transition-colors ${
           disabled
             ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed'
-            : 'bg-white dark:bg-gray-800 hover:border-gray-400 dark:hover:border-gray-500'
+            : 'bg-card hover:border-gray-400 dark:hover:border-gray-500'
         } border-input`}
       >
         {selectedCategory ? (
@@ -146,7 +146,7 @@ export function CategorySelector({
               className="w-3 h-3 rounded-full"
               style={{ backgroundColor: selectedCategory.color ?? '#6B7280' }}
             />
-            <span className="flex-1 text-left text-gray-900 dark:text-white">
+            <span className="flex-1 text-left text-foreground">
               {selectedCategory.name}
             </span>
           </>
@@ -167,7 +167,7 @@ export function CategorySelector({
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute z-50 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
+        <div className="absolute z-50 mt-1 w-full bg-card border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
           {/* Available Categories */}
           <div className="max-h-48 overflow-y-auto p-2">
             {/* No Category Option */}
@@ -220,7 +220,7 @@ export function CategorySelector({
                         className="w-3 h-3 rounded-full"
                         style={{ backgroundColor: category.color ?? '#6B7280' }}
                       />
-                      <span className="flex-1 text-gray-900 dark:text-white">{category.name}</span>
+                      <span className="flex-1 text-foreground">{category.name}</span>
                       {isSelected && <Check className="w-4 h-4 text-blue-500" />}
                     </button>
                   )
@@ -240,7 +240,7 @@ export function CategorySelector({
                 value={newCategoryName}
                 onChange={(e) => setNewCategoryName(e.target.value)}
                 placeholder="Category name"
-                className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-foreground placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleCreateCategory()
                   if (e.key === 'Escape') setIsCreating(false)

@@ -106,12 +106,12 @@ function SprintHeader({
   const progressColor = getProgressColor(sprint.progress)
 
   return (
-    <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+    <div className="bg-card border-b border-gray-200 dark:border-gray-700 px-6 py-4">
       <div className="flex items-start justify-between gap-4">
         {/* Sprint info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white truncate">
+            <h2 className="text-xl font-semibold text-foreground truncate">
               {sprint.name}
             </h2>
             <span
@@ -190,7 +190,7 @@ function SprintHeader({
                 />
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                <span className="text-sm font-semibold text-foreground">
                   {sprint.progress}%
                 </span>
               </div>
@@ -364,7 +364,7 @@ export function SprintBoard() {
       <ProjectLayout>
         <div className="flex flex-col items-center justify-center h-64 gap-4">
           <AlertCircle className="w-12 h-12 text-red-500" />
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+          <h2 className="text-xl font-semibold text-foreground">
             Project not found
           </h2>
           <Link
@@ -387,7 +387,7 @@ export function SprintBoard() {
     <ProjectLayout>
       <div className="flex flex-col h-full" ref={sprintContainerRef}>
         {/* Header */}
-        <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+        <div className="bg-card border-b border-gray-200 dark:border-gray-700 px-6 py-4">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <Link

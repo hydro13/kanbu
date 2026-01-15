@@ -256,7 +256,7 @@ export function BulkAclDialog({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-card rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className={cn(
           'px-6 py-4 border-b border-gray-200 dark:border-gray-700',
@@ -287,7 +287,7 @@ export function BulkAclDialog({
                 ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800'
                 : 'bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800'
             )}>
-              <div className="font-medium text-gray-900 dark:text-white">Operation completed</div>
+              <div className="font-medium text-foreground">Operation completed</div>
               <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                 {result.success !== undefined && <span>Success: {result.success}</span>}
                 {result.failed !== undefined && result.failed > 0 && <span className="ml-3 text-red-600">Failed: {result.failed}</span>}
@@ -313,7 +313,7 @@ export function BulkAclDialog({
                 <select
                   value={permissions}
                   onChange={e => setPermissions(parseInt(e.target.value))}
-                  className="w-full px-3 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
+                  className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-green-500"
                 >
                   {Object.entries(PRESETS).map(([key, preset]) => (
                     <option key={key} value={preset.value}>
@@ -417,7 +417,7 @@ export function BulkAclDialog({
                         onChange={() => toggleTarget('workspace', ws.id, ws.name)}
                         className="rounded text-blue-600"
                       />
-                      <span className="text-sm text-gray-900 dark:text-white">{ws.name}</span>
+                      <span className="text-sm text-foreground">{ws.name}</span>
                       <span className="text-xs text-gray-500">workspace</span>
                     </label>
                   ))}
@@ -436,7 +436,7 @@ export function BulkAclDialog({
                         onChange={() => toggleTarget('project', proj.id, proj.name)}
                         className="rounded text-blue-600"
                       />
-                      <span className="text-sm text-gray-900 dark:text-white">{proj.name}</span>
+                      <span className="text-sm text-foreground">{proj.name}</span>
                       <span className="text-xs text-gray-500">project in {proj.workspaceName}</span>
                     </label>
                   ))}
@@ -484,7 +484,7 @@ export function BulkAclDialog({
                           : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
                       )}
                     >
-                      <div className="font-medium text-gray-900 dark:text-white">{tmpl.label}</div>
+                      <div className="font-medium text-foreground">{tmpl.label}</div>
                       <div className="text-xs text-gray-500 mt-1">Permissions: {tmpl.permissions}</div>
                     </button>
                   ))}

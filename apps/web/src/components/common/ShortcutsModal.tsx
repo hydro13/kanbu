@@ -106,7 +106,7 @@ export function ShortcutsModal({ isOpen, onClose }: ShortcutsModalProps) {
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-2xl max-h-[80vh] bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="relative w-full max-w-2xl max-h-[80vh] bg-card rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-3">
@@ -114,7 +114,7 @@ export function ShortcutsModal({ isOpen, onClose }: ShortcutsModalProps) {
               <KeyboardIcon />
             </span>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              <h2 className="text-lg font-semibold text-foreground">
                 Keyboard Shortcuts
               </h2>
               <p className="text-sm text-gray-500 dark:text-gray-400">

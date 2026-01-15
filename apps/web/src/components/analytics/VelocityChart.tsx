@@ -93,13 +93,13 @@ export function VelocityChart({ data, isLoading }: VelocityChartProps) {
       <div className="flex items-center gap-6 mb-4 text-sm">
         <div>
           <span className="text-gray-500 dark:text-gray-400">Avg Velocity:</span>
-          <span className="ml-1.5 font-medium text-gray-900 dark:text-white">
+          <span className="ml-1.5 font-medium text-foreground">
             {chartData.avgVelocity} tasks/{chartData.periodLabel}
           </span>
         </div>
         <div>
           <span className="text-gray-500 dark:text-gray-400">Total:</span>
-          <span className="ml-1.5 font-medium text-gray-900 dark:text-white">
+          <span className="ml-1.5 font-medium text-foreground">
             {chartData.totalCompleted} completed
           </span>
         </div>

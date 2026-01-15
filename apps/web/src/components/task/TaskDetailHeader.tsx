@@ -148,7 +148,7 @@ export function TaskDetailHeader({
               onChange={(e) => setEditedTitle(e.target.value)}
               onKeyDown={handleTitleKeyDown}
               onBlur={handleTitleSubmit}
-              className="flex-1 text-xl font-semibold bg-transparent border-b-2 border-blue-500 focus:outline-none text-gray-900 dark:text-white"
+              className="flex-1 text-xl font-semibold bg-transparent border-b-2 border-blue-500 focus:outline-none text-foreground"
               disabled={isUpdating}
             />
             <Button
@@ -172,7 +172,7 @@ export function TaskDetailHeader({
           </div>
         ) : (
           <h2
-            className="flex-1 text-xl font-semibold text-gray-900 dark:text-white cursor-pointer hover:text-blue-600 dark:hover:text-blue-400"
+            className="flex-1 text-xl font-semibold text-foreground cursor-pointer hover:text-blue-600 dark:hover:text-blue-400"
             onClick={() => setIsEditingTitle(true)}
           >
             {task.title}
@@ -205,7 +205,7 @@ export function TaskDetailHeader({
           </button>
 
           {showPriorityDropdown && (
-            <div className="absolute z-10 mt-1 w-36 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700">
+            <div className="absolute z-10 mt-1 w-36 bg-card rounded-md shadow-lg border border-gray-200 dark:border-gray-700">
               {PRIORITY_OPTIONS.map((option) => (
                 <button
                   key={option.value}

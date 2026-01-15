@@ -70,7 +70,7 @@ function ReleaseCard({ release }: { release: ReleaseInfo }) {
           <Tag className="w-5 h-5 text-blue-500" />
           <div>
             <div className="flex items-center gap-2">
-              <h4 className="font-medium text-gray-900 dark:text-white">
+              <h4 className="font-medium text-foreground">
                 {release.name || release.tagName}
               </h4>
               {release.draft && (
@@ -156,7 +156,7 @@ function LatestReleaseHighlight({ release }: { release: ReleaseInfo }) {
           <span className="text-xs font-medium text-blue-600 dark:text-blue-400 uppercase tracking-wide">
             Latest Release
           </span>
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mt-1">
+          <h3 className="text-xl font-bold text-foreground mt-1">
             {release.name || release.tagName}
           </h3>
           <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mt-1">
@@ -189,7 +189,7 @@ function StatsSummary({ stats }: { stats: { total: number; published: number; dr
   return (
     <div className="grid grid-cols-4 gap-3 mb-4">
       <div className="text-center p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-        <div className="text-xl font-bold text-gray-900 dark:text-white">{stats.total}</div>
+        <div className="text-xl font-bold text-foreground">{stats.total}</div>
         <div className="text-xs text-gray-500 dark:text-gray-400">Total</div>
       </div>
       <div className="text-center p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
@@ -236,7 +236,7 @@ function ReleaseNotesGenerator({ projectId }: { projectId: number }) {
   return (
     <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 mb-4">
       <div className="flex items-center justify-between mb-3">
-        <h4 className="font-medium text-gray-900 dark:text-white flex items-center gap-2">
+        <h4 className="font-medium text-foreground flex items-center gap-2">
           <FileText className="w-4 h-4" />
           Generated Release Notes
         </h4>
@@ -249,7 +249,7 @@ function ReleaseNotesGenerator({ projectId }: { projectId: number }) {
           <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
         </div>
       ) : notesQuery.data ? (
-        <div className="bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 p-3">
+        <div className="bg-card rounded border border-gray-200 dark:border-gray-700 p-3">
           <pre className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap font-mono">
             {notesQuery.data}
           </pre>
@@ -287,7 +287,7 @@ function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
       <Tag className="w-12 h-12 text-gray-300 dark:text-gray-600 mb-4" />
-      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+      <h3 className="text-lg font-medium text-foreground mb-2">
         No releases found
       </h3>
       <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm">
@@ -305,7 +305,7 @@ function ErrorState({ message, onRetry }: { message: string; onRetry: () => void
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
       <AlertCircle className="w-12 h-12 text-red-400 mb-4" />
-      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+      <h3 className="text-lg font-medium text-foreground mb-2">
         Failed to load releases
       </h3>
       <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{message}</p>
@@ -378,7 +378,7 @@ export function ProjectReleasesPanel({ projectId }: ProjectReleasesPanelProps) {
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+        <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
           <Tag className="w-5 h-5" />
           Releases
         </h3>

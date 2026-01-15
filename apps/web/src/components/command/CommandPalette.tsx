@@ -704,7 +704,7 @@ export function CommandPalette({ projectId: propProjectId, onOpenTaskDetail }: C
       />
 
       {/* Palette */}
-      <div className="relative w-full max-w-xl bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="relative w-full max-w-xl bg-card rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
         {/* Search Input */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200 dark:border-gray-700">
           <SearchIcon />
@@ -715,7 +715,7 @@ export function CommandPalette({ projectId: propProjectId, onOpenTaskDetail }: C
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Search tasks, navigate, or run actions..."
-            className="flex-1 bg-transparent text-gray-900 dark:text-white placeholder-gray-400 outline-none text-sm"
+            className="flex-1 bg-transparent text-foreground placeholder-gray-400 outline-none text-sm"
           />
           <kbd className="hidden sm:inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-400 bg-gray-100 dark:bg-gray-700 rounded">
             ESC

@@ -87,7 +87,7 @@ export function SprintBurndown() {
       <ProjectLayout>
         <div className="flex flex-col items-center justify-center h-64 gap-4">
           <AlertCircle className="w-12 h-12 text-red-500" />
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+          <h2 className="text-xl font-semibold text-foreground">
             Sprint not found
           </h2>
           <Link
@@ -132,7 +132,7 @@ export function SprintBurndown() {
                 <Calendar className="w-4 h-4" />
                 <span className="text-xs font-medium uppercase">Duration</span>
               </div>
-              <p className="text-sm text-gray-900 dark:text-white">
+              <p className="text-sm text-foreground">
                 {formatDate(sprint.dateStart)}
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -145,7 +145,7 @@ export function SprintBurndown() {
                 <Clock className="w-4 h-4" />
                 <span className="text-xs font-medium uppercase">Time Left</span>
               </div>
-              <p className="text-lg font-semibold text-gray-900 dark:text-white">
+              <p className="text-lg font-semibold text-foreground">
                 {daysRemaining > 0 ? `${daysRemaining} days` : daysRemaining === 0 ? 'Today' : 'Ended'}
               </p>
               {sprint.status === 'ACTIVE' && daysRemaining < 0 && (
@@ -160,7 +160,7 @@ export function SprintBurndown() {
                 <CheckSquare className="w-4 h-4" />
                 <span className="text-xs font-medium uppercase">Tasks</span>
               </div>
-              <p className="text-lg font-semibold text-gray-900 dark:text-white">
+              <p className="text-lg font-semibold text-foreground">
                 {sprint.completedTasks} / {sprint.totalTasks}
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -172,7 +172,7 @@ export function SprintBurndown() {
               <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 mb-1">
                 <span className="text-xs font-medium uppercase">Progress</span>
               </div>
-              <p className="text-lg font-semibold text-gray-900 dark:text-white">
+              <p className="text-lg font-semibold text-foreground">
                 {sprint.progress}%
               </p>
               <div className="mt-1 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">

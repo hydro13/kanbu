@@ -358,7 +358,7 @@ export function ImportExportPage() {
                   <div className="mx-auto w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-4">
                     <CheckIcon className="h-8 w-8 text-green-600 dark:text-green-400" />
                   </div>
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                  <h2 className="text-xl font-bold text-foreground mb-2">
                     Import Complete
                   </h2>
                   <div className="text-gray-600 dark:text-gray-300 space-y-1 mb-6">
@@ -400,7 +400,7 @@ export function ImportExportPage() {
                 <CardContent className="py-8">
                   <div className="text-center mb-6">
                     <FileIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                    <p className="font-medium text-gray-900 dark:text-white">{fileName}</p>
+                    <p className="font-medium text-foreground">{fileName}</p>
                     <p className="text-sm text-gray-500 dark:text-gray-400">
                       {Math.round(fileContent.length / 1024)} KB
                     </p>
@@ -484,7 +484,7 @@ export function ImportExportPage() {
             ) : (
               // Source Selection
               <div>
-                <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">
+                <h2 className="text-lg font-medium text-foreground mb-4">
                   Select Import Source
                 </h2>
                 <div className="grid grid-cols-3 gap-4">
@@ -496,7 +496,7 @@ export function ImportExportPage() {
                     >
                       <CardContent className="py-6 text-center">
                         <span className="text-3xl">{source.icon}</span>
-                        <h3 className="mt-2 font-medium text-gray-900 dark:text-white">
+                        <h3 className="mt-2 font-medium text-foreground">
                           {source.name}
                         </h3>
                         <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -513,7 +513,7 @@ export function ImportExportPage() {
           {/* Export Tab */}
           <TabsContent value="export">
             <div className="space-y-4">
-              <h2 className="text-lg font-medium text-gray-900 dark:text-white">
+              <h2 className="text-lg font-medium text-foreground">
                 Export Project Data
               </h2>
               <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -529,7 +529,7 @@ export function ImportExportPage() {
                           <FileIcon className="h-5 w-5 text-gray-600 dark:text-gray-400" />
                         </div>
                         <div>
-                          <h3 className="font-medium text-gray-900 dark:text-white">
+                          <h3 className="font-medium text-foreground">
                             {format.name}
                           </h3>
                           <p className="text-xs text-gray-500">{format.extension}</p>

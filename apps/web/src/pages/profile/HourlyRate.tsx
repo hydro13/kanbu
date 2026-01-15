@@ -77,7 +77,7 @@ export function HourlyRate() {
         {/* Left: Rate Setting */}
         <div className="bg-card rounded-card border border-border">
           <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Your Rate</h3>
+            <h3 className="text-sm font-semibold text-foreground">Your Rate</h3>
             <p className="text-xs text-muted-foreground mt-0.5">Used for cost calculations</p>
           </div>
           <form onSubmit={handleSubmit} className="p-4 space-y-3">
@@ -126,7 +126,7 @@ export function HourlyRate() {
           {numericRate > 0 && (
             <div className="bg-card rounded-card border border-border">
               <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Cost Preview</h3>
+                <h3 className="text-sm font-semibold text-foreground">Cost Preview</h3>
               </div>
               <div className="p-4 space-y-1.5">
                 <div className="flex justify-between text-sm">
@@ -148,7 +148,7 @@ export function HourlyRate() {
           {/* Info */}
           <div className="bg-card rounded-card border border-border">
             <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">About Rates</h3>
+              <h3 className="text-sm font-semibold text-foreground">About Rates</h3>
             </div>
             <div className="p-4 space-y-2 text-xs text-muted-foreground">
               <p><strong>Time Tracking:</strong> Rate × time = cost per task</p>

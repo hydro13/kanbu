@@ -174,7 +174,7 @@ export function ImportPreview({
           <div className="grid grid-cols-4 gap-4 text-sm">
             <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
               <p className="text-gray-500 dark:text-gray-400">Total Rows</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              <p className="text-2xl font-bold text-foreground">
                 {preview.summary.totalRows}
               </p>
             </div>
@@ -224,7 +224,7 @@ export function ImportPreview({
                   }`}
                 >
                   <div className="flex-1">
-                    <p className="font-medium text-gray-900 dark:text-white">
+                    <p className="font-medium text-foreground">
                       {header}
                     </p>
                     {hasSuggestion && !currentMapping && (
@@ -237,7 +237,7 @@ export function ImportPreview({
                   <select
                     value={currentMapping ?? '_skip'}
                     onChange={(e) => handleMappingChange(header, e.target.value)}
-                    className="flex-1 px-3 py-2 border border-input rounded-md bg-background text-gray-900 dark:text-white text-sm"
+                    className="flex-1 px-3 py-2 border border-input rounded-md bg-background text-foreground text-sm"
                   >
                     <option value="_skip">(Skip this field)</option>
                     {TARGET_FIELDS.filter((f) => f.value !== '_skip').map((field) => (
@@ -319,7 +319,7 @@ export function ImportPreview({
                         <XIcon className="h-4 w-4 text-red-500" />
                       )}
                     </td>
-                    <td className="px-3 py-2 font-medium text-gray-900 dark:text-white">
+                    <td className="px-3 py-2 font-medium text-foreground">
                       {String(row.mapped.title ?? row.original.title ?? '-')}
                     </td>
                     <td className="px-3 py-2 text-gray-600 dark:text-gray-300">

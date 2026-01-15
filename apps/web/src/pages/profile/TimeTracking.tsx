@@ -90,7 +90,7 @@ export function TimeTracking() {
         {/* Time by Project */}
         <div className="bg-card rounded-card border border-border">
           <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Time by Project</h3>
+            <h3 className="text-sm font-semibold text-foreground">Time by Project</h3>
           </div>
           <div className="p-4">
             {data.byProject.length === 0 ? (
@@ -126,7 +126,7 @@ export function TimeTracking() {
         {/* Recent Entries */}
         <div className="bg-card rounded-card border border-border">
           <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Recent Entries</h3>
+            <h3 className="text-sm font-semibold text-foreground">Recent Entries</h3>
           </div>
           <div className="p-4">
             {data.recentEntries.length === 0 ? (

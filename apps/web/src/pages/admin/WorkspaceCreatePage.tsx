@@ -184,7 +184,7 @@ export function WorkspaceCreatePage() {
                 )}
               </div>
               <div className="flex-1">
-                <h3 className="font-medium text-gray-900 dark:text-white mb-1">
+                <h3 className="font-medium text-foreground mb-1">
                   Workspace Logo
                 </h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
@@ -222,7 +222,7 @@ export function WorkspaceCreatePage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="My Organisation"
-                className="w-full px-4 py-2 border border-input rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-2 border border-input rounded-lg bg-card text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
               />
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
@@ -244,7 +244,7 @@ export function WorkspaceCreatePage() {
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Optional description..."
                 rows={3}
-                className="w-full px-4 py-2 border border-input rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                className="w-full px-4 py-2 border border-input rounded-lg bg-card text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
               />
             </div>
           </div>

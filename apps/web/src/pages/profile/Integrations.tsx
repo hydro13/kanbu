@@ -79,7 +79,7 @@ export function Integrations() {
       <div className="bg-card rounded-card border border-border">
         <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Integrations</h3>
+            <h3 className="text-sm font-semibold text-foreground">Integrations</h3>
             <p className="text-xs text-muted-foreground mt-0.5">Automate your workflow</p>
           </div>
           <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">

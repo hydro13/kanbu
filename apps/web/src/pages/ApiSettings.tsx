@@ -178,9 +178,9 @@ export function ApiSettings() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-muted">
       {/* Header */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+      <div className="bg-card border-b border-gray-200 dark:border-gray-700">
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -238,7 +238,7 @@ export function ApiSettings() {
         {/* API Keys List */}
         <div className="bg-card rounded-card border border-border overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+            <h2 className="text-lg font-semibold text-foreground">
               Your API Keys
             </h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -253,7 +253,7 @@ export function ApiSettings() {
           ) : !keys || keys.length === 0 ? (
             <div className="text-center py-12 px-4">
               <Key className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+              <h3 className="text-lg font-medium text-foreground mb-2">
                 No API keys yet
               </h3>
               <p className="text-gray-500 dark:text-gray-400 mb-4">
@@ -274,7 +274,7 @@ export function ApiSettings() {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <h3 className="font-medium text-gray-900 dark:text-white">
+                        <h3 className="font-medium text-foreground">
                           {key.name}
                         </h3>
                         {!key.isActive && (
@@ -342,9 +342,9 @@ export function ApiSettings() {
       {/* Create Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-card rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              <h2 className="text-lg font-semibold text-foreground">
                 {createdKey ? 'API Key Created' : 'Create API Key'}
               </h2>
             </div>
@@ -361,7 +361,7 @@ export function ApiSettings() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-700 rounded-lg p-3">
-                    <code className="flex-1 text-sm font-mono break-all text-gray-900 dark:text-white">
+                    <code className="flex-1 text-sm font-mono break-all text-foreground">
                       {createdKey}
                     </code>
                     <button
@@ -388,7 +388,7 @@ export function ApiSettings() {
                       value={newKey.name}
                       onChange={(e) => setNewKey((prev) => ({ ...prev, name: e.target.value }))}
                       placeholder="e.g., CI/CD Pipeline"
-                      className="w-full px-3 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
 
@@ -416,7 +416,7 @@ export function ApiSettings() {
                                   className="mt-1 rounded border-input text-blue-500 focus:ring-blue-500"
                                 />
                                 <div>
-                                  <span className="text-sm font-medium text-gray-900 dark:text-white">
+                                  <span className="text-sm font-medium text-foreground">
                                     {perm.label}
                                   </span>
                                   <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -444,7 +444,7 @@ export function ApiSettings() {
                           expiresIn: e.target.value ? Number(e.target.value) : null,
                         }))
                       }
-                      className="w-full px-3 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                       {EXPIRY_OPTIONS.map((opt) => (
                         <option key={opt.label} value={opt.value ?? ''}>
@@ -467,7 +467,7 @@ export function ApiSettings() {
                       }
                       min={1}
                       max={1000}
-                      className="w-full px-3 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
                 </div>

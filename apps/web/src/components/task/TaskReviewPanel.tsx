@@ -124,7 +124,7 @@ function ReviewSummaryCard({ summary }: { summary: ReviewSummary }) {
   return (
     <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 mb-4">
       <div className="flex items-center justify-between mb-3">
-        <h4 className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
+        <h4 className="text-sm font-medium text-foreground flex items-center gap-2">
           <GitPullRequest className="w-4 h-4" />
           Review Summary
         </h4>
@@ -133,25 +133,25 @@ function ReviewSummaryCard({ summary }: { summary: ReviewSummary }) {
 
       {/* Stats grid */}
       <div className="grid grid-cols-4 gap-2 mb-3">
-        <div className="text-center p-2 bg-white dark:bg-gray-800 rounded">
+        <div className="text-center p-2 bg-card rounded">
           <div className="text-lg font-semibold text-green-600 dark:text-green-400">
             {summary.approved}
           </div>
           <div className="text-xs text-gray-500 dark:text-gray-400">Approved</div>
         </div>
-        <div className="text-center p-2 bg-white dark:bg-gray-800 rounded">
+        <div className="text-center p-2 bg-card rounded">
           <div className="text-lg font-semibold text-red-600 dark:text-red-400">
             {summary.changesRequested}
           </div>
           <div className="text-xs text-gray-500 dark:text-gray-400">Changes</div>
         </div>
-        <div className="text-center p-2 bg-white dark:bg-gray-800 rounded">
+        <div className="text-center p-2 bg-card rounded">
           <div className="text-lg font-semibold text-blue-600 dark:text-blue-400">
             {summary.commented}
           </div>
           <div className="text-xs text-gray-500 dark:text-gray-400">Comments</div>
         </div>
-        <div className="text-center p-2 bg-white dark:bg-gray-800 rounded">
+        <div className="text-center p-2 bg-card rounded">
           <div className="text-lg font-semibold text-yellow-600 dark:text-yellow-400">
             {summary.pending}
           </div>
@@ -222,7 +222,7 @@ function ReviewItem({ review }: { review: Review }) {
             className="w-6 h-6 rounded-full"
           />
           <div>
-            <span className="text-sm font-medium text-gray-900 dark:text-white">
+            <span className="text-sm font-medium text-foreground">
               {review.authorLogin}
             </span>
             {submittedDate && (
@@ -264,7 +264,7 @@ function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
       <GitPullRequest className="w-12 h-12 text-gray-300 dark:text-gray-600 mb-4" />
-      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+      <h3 className="text-lg font-medium text-foreground mb-2">
         No reviews found
       </h3>
       <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm">
@@ -294,7 +294,7 @@ function ErrorState({ message, onRetry }: { message: string; onRetry: () => void
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
       <AlertCircle className="w-12 h-12 text-red-400 mb-4" />
-      <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+      <h3 className="text-lg font-medium text-foreground mb-2">
         Failed to load reviews
       </h3>
       <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{message}</p>

@@ -270,7 +270,7 @@ export function TaskCard({ task, projectId, onTaskClick, onContextMenu }: TaskCa
       </div>
 
       {/* Title */}
-      <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-2 line-clamp-2">
+      <h4 className="text-sm font-medium text-foreground mb-2 line-clamp-2">
         {task.title}
       </h4>
 

@@ -197,7 +197,7 @@ export function EffectivePermissionsPanel({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
       <div
-        className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-hidden flex flex-col"
+        className="bg-card rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -205,7 +205,7 @@ export function EffectivePermissionsPanel({
           <div className="flex items-center gap-2">
             <CalculatorIcon className="w-5 h-5 text-blue-500" />
             <div>
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Effective Permissions Calculator</h3>
+              <h3 className="text-sm font-semibold text-foreground">Effective Permissions Calculator</h3>
               <p className="text-xs text-gray-500">Debug why a user has specific permissions</p>
             </div>
           </div>
@@ -218,7 +218,7 @@ export function EffectivePermissionsPanel({
         </div>
 
         {/* Selection Inputs */}
-        <div className="px-4 py-3 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+        <div className="px-4 py-3 bg-muted border-b border-gray-200 dark:border-gray-700">
           <div className="grid grid-cols-2 gap-3">
             {/* User Selection */}
             <div>
@@ -226,7 +226,7 @@ export function EffectivePermissionsPanel({
               <select
                 value={selectedUserId ?? ''}
                 onChange={(e) => setSelectedUserId(e.target.value ? Number(e.target.value) : null)}
-                className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-gray-900 dark:text-white"
+                className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-foreground"
               >
                 <option value="">Select a user...</option>
                 {usersData?.users.map(user => (
@@ -244,7 +244,7 @@ export function EffectivePermissionsPanel({
                   setSelectedResourceType(e.target.value as ResourceType)
                   setSelectedResourceId(null)
                 }}
-                className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-gray-900 dark:text-white"
+                className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-foreground"
               >
                 <option value="root">Root</option>
                 <option value="system">System</option>
@@ -265,7 +265,7 @@ export function EffectivePermissionsPanel({
               <select
                 value={selectedResourceId ?? ''}
                 onChange={(e) => setSelectedResourceId(e.target.value ? Number(e.target.value) : null)}
-                className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-gray-900 dark:text-white"
+                className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-foreground"
               >
                 <option value="">Select {selectedResourceType}...</option>
                 {selectedResourceType === 'workspace' && workspacesData?.workspaces.map(ws => (
@@ -295,11 +295,11 @@ export function EffectivePermissionsPanel({
               <div className="flex items-center justify-between">
                 <div>
                   <span className="text-xs text-gray-500">User:</span>
-                  <span className="ml-2 text-sm font-medium text-gray-900 dark:text-white">{effectiveData.user.name}</span>
+                  <span className="ml-2 text-sm font-medium text-foreground">{effectiveData.user.name}</span>
                 </div>
                 <div>
                   <span className="text-xs text-gray-500">Resource:</span>
-                  <span className="ml-2 text-sm font-medium text-gray-900 dark:text-white">
+                  <span className="ml-2 text-sm font-medium text-foreground">
                     {effectiveData.resource.type}: {effectiveData.resource.name}
                   </span>
                 </div>
@@ -400,7 +400,7 @@ export function EffectivePermissionsPanel({
               {effectiveData.calculation && (
                 <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-3 mt-4">
                   <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Calculation</span>
-                  <div className="font-mono text-sm text-gray-900 dark:text-white mt-1">
+                  <div className="font-mono text-sm text-foreground mt-1">
                     {effectiveData.calculation.formula}
                   </div>
                   <div className="text-xs text-gray-500 mt-1">
@@ -448,7 +448,7 @@ function BreakdownSection({
 }) {
   return (
     <div className="border border-gray-200 dark:border-gray-700 rounded-lg">
-      <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 rounded-t-lg">
+      <div className="flex items-center gap-2 px-3 py-2 bg-muted border-b border-gray-200 dark:border-gray-700 rounded-t-lg">
         {icon}
         <span className="text-xs font-medium text-gray-600 dark:text-gray-400">{title}</span>
       </div>

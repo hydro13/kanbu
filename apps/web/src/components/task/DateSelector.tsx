@@ -177,7 +177,7 @@ export function DateSelector({
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
           disabled={updateMutation.isPending}
-          className="flex-1 px-2 py-1 text-sm border border-input rounded bg-background text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="flex-1 px-2 py-1 text-sm border border-input rounded bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         {updateMutation.isPending && (
           <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
@@ -202,7 +202,7 @@ export function DateSelector({
           </span>
         ) : currentDate ? (
           <div className="flex items-center gap-2 flex-1">
-            <span className={`text-sm ${overdue ? 'text-red-500 font-medium' : 'text-gray-900 dark:text-white'}`}>
+            <span className={`text-sm ${overdue ? 'text-red-500 font-medium' : 'text-foreground'}`}>
               {formatDateForDisplay(currentDate)}
               {overdue && ' (Overdue)'}
             </span>

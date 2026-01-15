@@ -120,7 +120,7 @@ export function MultiPrincipalSelector({
     <div className="space-y-3">
       {/* Selected badges */}
       {selected.length > 0 && (
-        <div className="p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
+        <div className="p-3 bg-muted/50 rounded-lg">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Selected ({selected.length}/{maxSelections})
@@ -204,7 +204,7 @@ export function MultiPrincipalSelector({
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder={`Search ${activeTab === 'user' ? 'users' : 'groups'}...`}
-          className="w-full pl-10 pr-3 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-blue-500"
+          className="w-full pl-10 pr-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm focus:ring-2 focus:ring-blue-500"
         />
       </div>
 
@@ -254,7 +254,7 @@ export function MultiPrincipalSelector({
                   {user.displayName.charAt(0).toUpperCase()}
                 </div>
                 <div className="text-left flex-1 min-w-0">
-                  <div className="font-medium text-gray-900 dark:text-white truncate">
+                  <div className="font-medium text-foreground truncate">
                     {user.displayName}
                   </div>
                   <div className="text-xs text-gray-500 truncate">
@@ -295,7 +295,7 @@ export function MultiPrincipalSelector({
                   G
                 </div>
                 <div className="text-left flex-1 min-w-0">
-                  <div className="font-medium text-gray-900 dark:text-white truncate">
+                  <div className="font-medium text-foreground truncate">
                     {group.displayName}
                   </div>
                   <div className="text-xs text-gray-500 truncate">

@@ -98,13 +98,13 @@ export function CycleTimeChart({ data, isLoading }: CycleTimeChartProps) {
       <div className="flex items-center gap-6 mb-4 text-sm">
         <div>
           <span className="text-gray-500 dark:text-gray-400">Avg Total Cycle:</span>
-          <span className="ml-1.5 font-medium text-gray-900 dark:text-white">
+          <span className="ml-1.5 font-medium text-foreground">
             {formatDuration(chartData.avgTotalCycleHours)}
           </span>
         </div>
         <div>
           <span className="text-gray-500 dark:text-gray-400">Tasks Analyzed:</span>
-          <span className="ml-1.5 font-medium text-gray-900 dark:text-white">
+          <span className="ml-1.5 font-medium text-foreground">
             {chartData.completedTasksAnalyzed}
           </span>
         </div>
@@ -136,7 +136,7 @@ export function CycleTimeChart({ data, isLoading }: CycleTimeChartProps) {
                     <AlertTriangle className="w-3 h-3 text-orange-500" />
                   )}
                 </span>
-                <span className="text-sm font-medium text-gray-900 dark:text-white">
+                <span className="text-sm font-medium text-foreground">
                   {formatDuration(column.avgHours)}
                 </span>
               </div>

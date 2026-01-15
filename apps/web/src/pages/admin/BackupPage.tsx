@@ -65,7 +65,7 @@ export function BackupPage() {
         {/* Database Backup Card */}
         <div className="bg-card rounded-card border border-border">
           <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Database Backup</h3>
+            <h3 className="text-sm font-semibold text-foreground">Database Backup</h3>
             <p className="text-xs text-muted-foreground mt-0.5">
               Create a PostgreSQL dump and save to Google Drive
             </p>
@@ -78,7 +78,7 @@ export function BackupPage() {
                 </svg>
               </div>
               <div className="flex-1">
-                <h4 className="text-sm font-medium text-gray-900 dark:text-white">Database Dump</h4>
+                <h4 className="text-sm font-medium text-foreground">Database Dump</h4>
                 <p className="text-xs text-muted-foreground mt-1">
                   Creates a full PostgreSQL backup of all data.
                   Stored in <code className="bg-gray-100 dark:bg-gray-700 px-1 rounded">max-backups/kanbu_backup_*.sql</code>
@@ -119,7 +119,7 @@ export function BackupPage() {
 
             {/* Last DB Backup Info */}
             {lastDbBackup && (
-              <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg">
+              <div className="mt-3 p-3 bg-muted/50 rounded-lg">
                 <div className="space-y-1.5 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">File:</span>
@@ -144,7 +144,7 @@ export function BackupPage() {
         {/* Source Code Backup Card */}
         <div className="bg-card rounded-card border border-border">
           <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Source Code Backup</h3>
+            <h3 className="text-sm font-semibold text-foreground">Source Code Backup</h3>
             <p className="text-xs text-muted-foreground mt-0.5">
               Create a full source code archive for deployment on another machine
             </p>
@@ -157,7 +157,7 @@ export function BackupPage() {
                 </svg>
               </div>
               <div className="flex-1">
-                <h4 className="text-sm font-medium text-gray-900 dark:text-white">Full Source Archive</h4>
+                <h4 className="text-sm font-medium text-foreground">Full Source Archive</h4>
                 <p className="text-xs text-muted-foreground mt-1">
                   Creates a tar.gz with all source code, configs, and Docker files.
                   Excludes node_modules, .git, and build artifacts for clean deployment.
@@ -199,7 +199,7 @@ export function BackupPage() {
 
             {/* Last Source Backup Info */}
             {lastSourceBackup && (
-              <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-900/50 rounded-lg space-y-3">
+              <div className="mt-3 p-3 bg-muted/50 rounded-lg space-y-3">
                 <div className="space-y-1.5 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">File:</span>

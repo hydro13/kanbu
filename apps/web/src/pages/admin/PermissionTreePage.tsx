@@ -255,7 +255,7 @@ export function PermissionTreePage() {
           </div>
 
           {/* Tree Container */}
-          <div className="bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 font-mono text-[11px] leading-tight">
+          <div className="bg-card rounded border border-gray-200 dark:border-gray-700 font-mono text-[11px] leading-tight">
             <div className="p-2">
               {/* Domain Level */}
               <div>
@@ -263,7 +263,7 @@ export function PermissionTreePage() {
                   onClick={() => toggleExpand('domain')}
                   expanded={expanded.domain}
                   icon={<Icon type="globe" className="text-purple-500" />}
-                  label={<span className="font-semibold text-gray-900 dark:text-white">Kanbu Domain</span>}
+                  label={<span className="font-semibold text-foreground">Kanbu Domain</span>}
                   meta="root of all permissions"
                 />
 
@@ -377,7 +377,7 @@ export function PermissionTreePage() {
               <select
                 value={selectedUserId ?? ''}
                 onChange={(e) => setSelectedUserId(e.target.value ? Number(e.target.value) : null)}
-                className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-gray-900 dark:text-white"
+                className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-foreground"
               >
                 <option value="">Choose a user...</option>
                 {nonAdminUsers.map(user => (
@@ -409,7 +409,7 @@ export function PermissionTreePage() {
               <select
                 value={selectedGroupId ?? ''}
                 onChange={(e) => setSelectedGroupId(e.target.value ? Number(e.target.value) : null)}
-                className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-gray-900 dark:text-white"
+                className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-foreground"
               >
                 <option value="">Choose a group...</option>
                 {securityGroups.map(group => (
@@ -422,7 +422,7 @@ export function PermissionTreePage() {
               <select
                 value={selectedRole}
                 onChange={(e) => setSelectedRole(e.target.value as 'VIEWER' | 'MEMBER' | 'MANAGER' | 'ADMIN')}
-                className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-gray-900 dark:text-white"
+                className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-foreground"
               >
                 <option value="VIEWER">Viewer</option>
                 <option value="MEMBER">Member</option>
@@ -497,9 +497,9 @@ function Row({
 function Stat({ value, label, color }: { value: number; label: string; color?: 'indigo' | 'purple' }) {
   const valueColor = color === 'indigo' ? 'text-indigo-600 dark:text-indigo-400'
     : color === 'purple' ? 'text-purple-600 dark:text-purple-400'
-    : 'text-gray-900 dark:text-white'
+    : 'text-foreground'
   return (
-    <div className="bg-white dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700 py-2 px-3">
+    <div className="bg-card rounded border border-gray-200 dark:border-gray-700 py-2 px-3">
       <div className={cn('text-lg font-bold', valueColor)}>{value}</div>
       <div className="text-gray-500">{label}</div>
     </div>
@@ -509,9 +509,9 @@ function Stat({ value, label, color }: { value: number; label: string; color?: '
 function Dialog({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-sm mx-4">
+      <div className="bg-card rounded-lg shadow-xl w-full max-w-sm mx-4">
         <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{title}</h2>
+          <h2 className="text-sm font-semibold text-foreground">{title}</h2>
           {subtitle && <p className="text-xs text-gray-500 mt-0.5">{subtitle}</p>}
         </div>
         <div className="px-4 py-3">{children}</div>
@@ -696,7 +696,7 @@ function ExpandableSecurityGroup({
               <select
                 value={selectedUserId ?? ''}
                 onChange={(e) => setSelectedUserId(e.target.value ? Number(e.target.value) : null)}
-                className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-gray-900 dark:text-white"
+                className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-foreground"
               >
                 <option value="">Choose a user...</option>
                 {availableUsers.map(user => (
@@ -943,7 +943,7 @@ function ExpandableGroup({
               <select
                 value={selectedUserId ?? ''}
                 onChange={(e) => setSelectedUserId(e.target.value ? Number(e.target.value) : null)}
-                className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-gray-900 dark:text-white"
+                className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-foreground"
               >
                 <option value="">Choose a user...</option>
                 {availableUsers.map(user => (
@@ -1166,7 +1166,7 @@ function ExpandableProjectGroup({
               <select
                 value={selectedUserId ?? ''}
                 onChange={(e) => setSelectedUserId(e.target.value ? Number(e.target.value) : null)}
-                className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-gray-900 dark:text-white"
+                className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-foreground"
               >
                 <option value="">Choose a user...</option>
                 {availableUsers.map(user => (

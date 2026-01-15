@@ -75,7 +75,7 @@ function Section({ title, children, className = '' }: { title: string; children:
   return (
     <div className={`bg-card rounded-card border border-border ${className}`}>
       <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{title}</h3>
+        <h3 className="text-sm font-semibold text-foreground">{title}</h3>
       </div>
       <div className="p-4">
         {children}
@@ -143,7 +143,7 @@ export function ProfileSummary() {
               </div>
             )}
             <div className="min-w-0 flex-1">
-              <p className="font-semibold text-gray-900 dark:text-white truncate">{profile.name}</p>
+              <p className="font-semibold text-foreground truncate">{profile.name}</p>
               <p className="text-sm text-muted-foreground truncate">@{profile.username}</p>
               <p className="text-xs text-muted-foreground truncate">{profile.email}</p>
             </div>
@@ -154,7 +154,7 @@ export function ProfileSummary() {
         <div className="bg-card rounded-card border border-border p-4">
           <div className="flex items-center gap-2 mb-3">
             <BuildingIcon className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium text-gray-900 dark:text-white">Workspaces</span>
+            <span className="text-sm font-medium text-foreground">Workspaces</span>
           </div>
           {profile.workspaces && profile.workspaces.length > 0 ? (
             <div className="space-y-2">
@@ -177,7 +177,7 @@ export function ProfileSummary() {
         <div className="bg-card rounded-card border border-border p-4">
           <div className="flex items-center gap-2 mb-3">
             <FolderIcon className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium text-gray-900 dark:text-white">Recent Projects</span>
+            <span className="text-sm font-medium text-foreground">Recent Projects</span>
           </div>
           {profile.recentProjects && profile.recentProjects.length > 0 ? (
             <div className="space-y-2">

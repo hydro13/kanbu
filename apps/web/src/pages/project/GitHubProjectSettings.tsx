@@ -360,7 +360,7 @@ function RepositoryTab({
     return (
       <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-8 text-center">
         <GitHubIcon className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+        <h3 className="text-lg font-medium text-foreground mb-2">
           No Repository Linked
         </h3>
         <p className="text-gray-600 dark:text-gray-400 mb-6">
@@ -397,7 +397,7 @@ function RepositoryTab({
                 href={`https://github.com/${linkedRepo.fullName}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-lg font-semibold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400"
+                className="text-lg font-semibold text-foreground hover:text-blue-600 dark:hover:text-blue-400"
               >
                 {linkedRepo.fullName}
               </a>
@@ -441,29 +441,29 @@ function RepositoryTab({
       {/* Sync Status */}
       {syncStatus && (
         <div className="bg-card rounded-card border border-border p-6">
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Sync Status</h3>
+          <h3 className="text-lg font-medium text-foreground mb-4">Sync Status</h3>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
             <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">
+              <div className="text-2xl font-bold text-foreground">
                 {syncStatus.counts.issues}
               </div>
               <div className="text-sm text-gray-600 dark:text-gray-400">Issues</div>
             </div>
             <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">
+              <div className="text-2xl font-bold text-foreground">
                 {syncStatus.counts.pullRequests}
               </div>
               <div className="text-sm text-gray-600 dark:text-gray-400">Pull Requests</div>
             </div>
             <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">
+              <div className="text-2xl font-bold text-foreground">
                 {syncStatus.counts.commits}
               </div>
               <div className="text-sm text-gray-600 dark:text-gray-400">Commits</div>
             </div>
             <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">
+              <div className="text-2xl font-bold text-foreground">
                 {syncStatus.counts.syncLogs}
               </div>
               <div className="text-sm text-gray-600 dark:text-gray-400">Sync Events</div>
@@ -551,7 +551,7 @@ function SettingRow({
   return (
     <div className="flex items-center justify-between py-2">
       <div>
-        <div className="text-sm font-medium text-gray-900 dark:text-white">{label}</div>
+        <div className="text-sm font-medium text-foreground">{label}</div>
         {description && (
           <div className="text-xs text-gray-500 dark:text-gray-400">{description}</div>
         )}
@@ -621,7 +621,7 @@ function SettingsTab({ linkedRepo, onSave, onToggleSync, isSaving }: SettingsTab
       <div className="bg-card rounded-card border border-border px-4 py-2">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-sm font-medium text-gray-900 dark:text-white">Sync Enabled</h3>
+            <h3 className="text-sm font-medium text-foreground">Sync Enabled</h3>
             <p className="text-xs text-gray-600 dark:text-gray-400">
               Enable or disable all sync operations for this repository
             </p>
@@ -637,7 +637,7 @@ function SettingsTab({ linkedRepo, onSave, onToggleSync, isSaving }: SettingsTab
       {/* Issue Sync Settings */}
       <div className="bg-card rounded-card border border-border px-4 py-2">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-sm font-medium text-gray-900 dark:text-white">Issue Sync</h3>
+          <h3 className="text-sm font-medium text-foreground">Issue Sync</h3>
           <Toggle
             enabled={settings.issues?.enabled ?? true}
             onChange={(v) => updateIssueSettings('enabled', v)}
@@ -654,7 +654,7 @@ function SettingsTab({ linkedRepo, onSave, onToggleSync, isSaving }: SettingsTab
               value={settings.issues?.direction ?? 'bidirectional'}
               onChange={(e) => updateIssueSettings('direction', e.target.value as 'bidirectional' | 'github_to_kanbu' | 'kanbu_to_github')}
               disabled={isSaving || !(settings.issues?.enabled ?? true)}
-              className="block w-40 rounded-md border border-input bg-background px-3 py-1.5 text-sm text-gray-900 dark:text-white focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50"
+              className="block w-40 rounded-md border border-input bg-background px-3 py-1.5 text-sm text-foreground focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50"
             >
               <option value="bidirectional">Bidirectional</option>
               <option value="github_to_kanbu">GitHub → Kanbu</option>
@@ -667,7 +667,7 @@ function SettingsTab({ linkedRepo, onSave, onToggleSync, isSaving }: SettingsTab
       {/* PR Tracking Settings */}
       <div className="bg-card rounded-card border border-border px-4 py-2">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-sm font-medium text-gray-900 dark:text-white">Pull Request Tracking</h3>
+          <h3 className="text-sm font-medium text-foreground">Pull Request Tracking</h3>
           <Toggle
             enabled={settings.pullRequests?.enabled ?? true}
             onChange={(v) => updatePRSettings('enabled', v)}
@@ -692,7 +692,7 @@ function SettingsTab({ linkedRepo, onSave, onToggleSync, isSaving }: SettingsTab
       {/* Commit Tracking Settings */}
       <div className="bg-card rounded-card border border-border px-4 py-2">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-sm font-medium text-gray-900 dark:text-white">Commit Tracking</h3>
+          <h3 className="text-sm font-medium text-foreground">Commit Tracking</h3>
           <Toggle
             enabled={settings.commits?.enabled ?? true}
             onChange={(v) => updateCommitSettings('enabled', v)}
@@ -717,7 +717,7 @@ function SettingsTab({ linkedRepo, onSave, onToggleSync, isSaving }: SettingsTab
       {/* Automation Settings */}
       <div className="bg-card rounded-card border border-border px-4 py-2">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-sm font-medium text-gray-900 dark:text-white">Automation</h3>
+          <h3 className="text-sm font-medium text-foreground">Automation</h3>
           <Toggle
             enabled={settings.automation?.enabled ?? false}
             onChange={(v) => updateAutomationSettings('enabled', v)}
@@ -801,7 +801,7 @@ function LogsTab({ logs, total }: LogsTabProps) {
     return (
       <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-8 text-center">
         <ClockIcon className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+        <h3 className="text-lg font-medium text-foreground mb-2">
           No Sync Logs Yet
         </h3>
         <p className="text-gray-600 dark:text-gray-400">
@@ -819,7 +819,7 @@ function LogsTab({ logs, total }: LogsTabProps) {
 
       <div className="bg-card rounded-card border border-border overflow-hidden">
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-          <thead className="bg-gray-50 dark:bg-gray-900">
+          <thead className="bg-muted">
             <tr>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Time</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Action</th>
@@ -833,7 +833,7 @@ function LogsTab({ logs, total }: LogsTabProps) {
                 <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">
                   {new Date(log.createdAt).toLocaleString()}
                 </td>
-                <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                <td className="px-4 py-3 text-sm text-foreground">
                   {log.action}
                   {log.entityId && (
                     <span className="text-gray-500 dark:text-gray-400 ml-2">

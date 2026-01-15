@@ -134,7 +134,7 @@ export function Avatar() {
     <ProfileLayout title="Avatar" description="Manage your profile picture">
       <div className="bg-card rounded-card border border-border">
         <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Profile Picture</h3>
+          <h3 className="text-sm font-semibold text-foreground">Profile Picture</h3>
           <p className="text-xs text-muted-foreground mt-0.5">JPEG, PNG, GIF, WebP. Max 5MB.</p>
         </div>
         <div className="p-4">

@@ -182,7 +182,7 @@ export function TimeEstimatedSelector({
           onKeyDown={handleKeyDown}
           disabled={updateMutation.isPending}
           placeholder="e.g. 2h, 30m, 2h 30m"
-          className="flex-1 px-2 py-1 text-sm border border-input rounded bg-background text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="flex-1 px-2 py-1 text-sm border border-input rounded bg-background text-foreground placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         {updateMutation.isPending && (
           <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
@@ -207,7 +207,7 @@ export function TimeEstimatedSelector({
           </span>
         ) : (
           <>
-            <span className={`text-sm ${currentHours === 0 ? 'text-gray-500 dark:text-gray-400' : 'text-gray-900 dark:text-white'}`}>
+            <span className={`text-sm ${currentHours === 0 ? 'text-gray-500 dark:text-gray-400' : 'text-foreground'}`}>
               {formatTimeForDisplay(currentHours)}
             </span>
             {currentHours > 0 && !disabled && (

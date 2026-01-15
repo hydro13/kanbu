@@ -222,7 +222,7 @@ export function TaskContextMenu({
   return (
     <div
       ref={menuRef}
-      className="fixed z-50 min-w-[180px] bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1"
+      className="fixed z-50 min-w-[180px] bg-card rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1"
       style={{ left: adjustedPosition.x, top: adjustedPosition.y }}
     >
       {menuItems.map((item, index) =>
@@ -248,7 +248,7 @@ export function TaskContextMenu({
               <ChevronRightIcon />
             </button>
             {activeSubmenu === item.label && (
-              <div className="absolute left-full top-0 min-w-[140px] bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 ml-1">
+              <div className="absolute left-full top-0 min-w-[140px] bg-card rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 ml-1">
                 {item.submenu.map((subitem, subindex) => (
                   <button
                     key={subindex}

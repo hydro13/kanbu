@@ -132,7 +132,7 @@ export function SprintSelector({
       {/* Trigger button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center justify-between gap-2 px-3 py-2 w-full min-w-[200px] bg-white dark:bg-gray-800 border border-input rounded-lg hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
+        className="flex items-center justify-between gap-2 px-3 py-2 w-full min-w-[200px] bg-card border border-input rounded-lg hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
       >
         {isLoading ? (
           <span className="text-gray-400">Loading...</span>
@@ -146,7 +146,7 @@ export function SprintSelector({
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute z-50 mt-1 w-full min-w-[280px] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg overflow-hidden">
+        <div className="absolute z-50 mt-1 w-full min-w-[280px] bg-card border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg overflow-hidden">
           {/* All sprints option */}
           {showAllOption && (
             <button

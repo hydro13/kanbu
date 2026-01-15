@@ -295,7 +295,7 @@ export function SocialLinksEditor() {
     <form onSubmit={handleSubmit}>
       <div className="bg-card rounded-card border border-border">
         <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+          <h3 className="text-sm font-semibold text-foreground">
             Social Links
           </h3>
           <p className="text-xs text-muted-foreground mt-0.5">

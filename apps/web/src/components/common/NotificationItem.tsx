@@ -156,7 +156,7 @@ export function NotificationItem({
       onClick={handleClick}
       className={`w-full flex items-start gap-3 p-3 text-left transition-colors ${
         notification.isRead
-          ? 'bg-white dark:bg-gray-800'
+          ? 'bg-card'
           : 'bg-blue-50 dark:bg-blue-900/20'
       } hover:bg-gray-50 dark:hover:bg-gray-700`}
     >
@@ -171,7 +171,7 @@ export function NotificationItem({
           className={`text-sm ${
             notification.isRead
               ? 'text-gray-700 dark:text-gray-300'
-              : 'text-gray-900 dark:text-white font-medium'
+              : 'text-foreground font-medium'
           }`}
         >
           {notification.title}

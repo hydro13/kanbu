@@ -355,7 +355,7 @@ export function SystemSettingsPage() {
               <div key={setting.key} className="px-6 py-4">
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
-                    <label className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
+                    <label className="block text-sm font-medium text-foreground mb-1">
                       {setting.label}
                     </label>
                     <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
@@ -381,14 +381,14 @@ export function SystemSettingsPage() {
                         value={localSettings[setting.key] || ''}
                         onChange={(e) => handleChange(setting.key, e.target.value)}
                         rows={2}
-                        className="w-full px-3 py-2 text-sm border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-3 py-2 text-sm border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     ) : (
                       <input
                         type={setting.type}
                         value={localSettings[setting.key] || ''}
                         onChange={(e) => handleChange(setting.key, e.target.value)}
-                        className="w-full px-3 py-2 text-sm border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-3 py-2 text-sm border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     )}
                   </div>
@@ -403,7 +403,7 @@ export function SystemSettingsPage() {
       {data && (
         <div className="mt-8">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+            <h3 className="text-lg font-semibold text-foreground">
               Custom Settings
             </h3>
             <button
@@ -433,7 +433,7 @@ export function SystemSettingsPage() {
                         value={customKey}
                         onChange={(e) => setCustomKey(e.target.value)}
                         placeholder="Setting key"
-                        className="w-full px-3 py-2 text-sm border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-3 py-2 text-sm border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
                     <div className="flex-1">
@@ -442,7 +442,7 @@ export function SystemSettingsPage() {
                         value={customValue}
                         onChange={(e) => setCustomValue(e.target.value)}
                         placeholder="Value"
-                        className="w-full px-3 py-2 text-sm border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-3 py-2 text-sm border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
                     <button
@@ -471,7 +471,7 @@ export function SystemSettingsPage() {
                 <div key={setting.key} className="px-6 py-4">
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex-1">
-                      <code className="text-sm font-medium text-gray-900 dark:text-white">
+                      <code className="text-sm font-medium text-foreground">
                         {setting.key}
                       </code>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -483,7 +483,7 @@ export function SystemSettingsPage() {
                         type="text"
                         value={localSettings[setting.key] || setting.value || ''}
                         onChange={(e) => handleChange(setting.key, e.target.value)}
-                        className="w-64 px-3 py-2 text-sm border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-64 px-3 py-2 text-sm border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                       <button
                         onClick={() => handleDeleteCustom(setting.key)}

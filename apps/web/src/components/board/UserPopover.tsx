@@ -272,7 +272,7 @@ function UserContent({ user, onUserClick }: { user: UserInfo; onUserClick?: (use
         {/* Info */}
         <div className="flex-1 min-w-0">
           {/* Name */}
-          <h4 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+          <h4 className="text-sm font-semibold text-foreground truncate">
             {user.name ?? user.username}
           </h4>
 

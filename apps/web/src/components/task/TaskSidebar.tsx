@@ -215,7 +215,7 @@ export function TaskSidebar({
           />
           <div className="flex justify-between">
             <span className="text-gray-600 dark:text-gray-400">Spent:</span>
-            <span className="text-gray-900 dark:text-white">{formatTime(task.timeSpent)}</span>
+            <span className="text-foreground">{formatTime(task.timeSpent)}</span>
           </div>
         </div>
       </SidebarSection>

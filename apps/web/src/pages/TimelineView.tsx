@@ -83,7 +83,7 @@ function TimelineError({ message, onRetry }: { message: string; onRetry: () => v
   return (
     <div className="flex items-center justify-center h-96">
       <div className="text-center">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white">Failed to load timeline</h3>
+        <h3 className="text-lg font-medium text-foreground">Failed to load timeline</h3>
         <p className="mt-2 text-gray-500 dark:text-gray-400">{message}</p>
         <button onClick={onRetry} className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
           Try Again
@@ -97,7 +97,7 @@ function TimelineEmpty() {
   return (
     <div className="flex items-center justify-center h-96">
       <div className="text-center">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white">No tasks with dates</h3>
+        <h3 className="text-lg font-medium text-foreground">No tasks with dates</h3>
         <p className="mt-2 text-gray-500 dark:text-gray-400">Add start or due dates to your tasks to see them on the timeline.</p>
       </div>
     </div>
@@ -187,7 +187,7 @@ function TimelineToolbar({ zoomLevel, onZoomChange, onScrollToToday }: TimelineT
             className={`px-3 py-1.5 text-sm ${
               zoomLevel === level
                 ? 'bg-blue-500 text-white'
-                : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                : 'bg-card text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
             }`}
           >
             {level.charAt(0).toUpperCase() + level.slice(1)}
@@ -482,7 +482,7 @@ function TimelineGrid({ days, tasks, startDate, cellWidth, onTaskClick, todayRef
   return (
     <div className="flex h-full">
       {/* Task labels column */}
-      <div className="w-64 flex-shrink-0 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+      <div className="w-64 flex-shrink-0 border-r border-gray-200 dark:border-gray-700 bg-card">
         {/* Header spacer */}
         <div className="h-16 border-b border-gray-200 dark:border-gray-700" />
 
@@ -494,7 +494,7 @@ function TimelineGrid({ days, tasks, startDate, cellWidth, onTaskClick, todayRef
             onClick={() => onTaskClick(task.id)}
           >
             <PriorityBadge priority={task.priority} size="sm" />
-            <span className={`text-sm truncate ${!task.isActive ? 'line-through text-gray-400' : 'text-gray-900 dark:text-white'}`}>
+            <span className={`text-sm truncate ${!task.isActive ? 'line-through text-gray-400' : 'text-foreground'}`}>
               {task.title}
             </span>
           </div>
@@ -905,7 +905,7 @@ export function TimelineViewPage() {
   return (
     <ProjectLayout>
       <div className="flex flex-col h-full" ref={timelineContainerRef}>
-        <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+        <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 bg-card">
           <div className="flex items-center">
             <ViewSwitcher projectIdentifier={project.identifier ?? ''} workspaceSlug={workspaceSlug || project.workspace?.slug || ''} className="border-b-0" />
             <UndoRedoButtons projectId={project.id} className="ml-2" />

@@ -166,7 +166,7 @@ function CommentItem({
       <div className="flex-1 min-w-0">
         {/* Header */}
         <div className="flex items-center gap-2 mb-1">
-          <span className="text-sm font-medium text-gray-900 dark:text-white">
+          <span className="text-sm font-medium text-foreground">
             {comment.user.name ?? comment.user.username}
           </span>
           <span className="text-xs text-gray-500 dark:text-gray-400">
@@ -186,7 +186,7 @@ function CommentItem({
             </button>
 
             {showMenu && (
-              <div className="absolute right-0 z-10 mt-1 w-32 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700">
+              <div className="absolute right-0 z-10 mt-1 w-32 bg-card rounded-md shadow-lg border border-gray-200 dark:border-gray-700">
                 <button
                   onClick={handleStartEdit}
                   className="w-full text-left px-3 py-2 text-sm hover:bg-accent flex items-center gap-2"
