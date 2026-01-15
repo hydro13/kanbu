@@ -91,7 +91,7 @@ export function ChangePassword() {
                 onChange={(e) => setCurrentPassword(e.target.value)}
                 placeholder="Enter current password"
                 autoComplete="current-password"
-                className="w-full h-9 px-3 text-sm rounded-md border border-gray-300 dark:border-gray-600
+                className="w-full h-9 px-3 text-sm rounded-md border border-input
                   bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -107,7 +107,7 @@ export function ChangePassword() {
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="Min. 8 characters"
                 autoComplete="new-password"
-                className="w-full h-9 px-3 text-sm rounded-md border border-gray-300 dark:border-gray-600
+                className="w-full h-9 px-3 text-sm rounded-md border border-input
                   bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -123,7 +123,7 @@ export function ChangePassword() {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Confirm new password"
                 autoComplete="new-password"
-                className="w-full h-9 px-3 text-sm rounded-md border border-gray-300 dark:border-gray-600
+                className="w-full h-9 px-3 text-sm rounded-md border border-input
                   bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>

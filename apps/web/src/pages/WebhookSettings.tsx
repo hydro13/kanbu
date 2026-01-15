@@ -493,7 +493,7 @@ export function WebhookSettings() {
                   value={formData.name}
                   onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
                   placeholder="e.g., Slack Integration"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
 
@@ -507,7 +507,7 @@ export function WebhookSettings() {
                   value={formData.url}
                   onChange={(e) => setFormData((prev) => ({ ...prev, url: e.target.value }))}
                   placeholder="https://example.com/webhook"
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-3 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
 
@@ -572,7 +572,7 @@ export function WebhookSettings() {
                               type="checkbox"
                               checked={formData.events.includes(event.id)}
                               onChange={() => toggleEvent(event.id)}
-                              className="rounded border-gray-300 dark:border-gray-600 text-blue-500 focus:ring-blue-500"
+                              className="rounded border-input text-blue-500 focus:ring-blue-500"
                             />
                             <span className="text-sm text-gray-700 dark:text-gray-300">
                               {event.label}

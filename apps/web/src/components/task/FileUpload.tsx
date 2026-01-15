@@ -247,7 +247,7 @@ export function FileUpload({
           transition-colors duration-200
           ${isDragging
             ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-            : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+            : 'border-input hover:border-gray-400 dark:hover:border-gray-500'
           }
           ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
         `}

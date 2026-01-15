@@ -155,7 +155,7 @@ function CreateSprintModal({ projectId, isOpen, onClose, onSuccess }: CreateSpri
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
               placeholder="Sprint 1"
               required
             />
@@ -168,7 +168,7 @@ function CreateSprintModal({ projectId, isOpen, onClose, onSuccess }: CreateSpri
             <textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
               placeholder="Sprint goals and scope..."
               rows={3}
             />
@@ -183,7 +183,7 @@ function CreateSprintModal({ projectId, isOpen, onClose, onSuccess }: CreateSpri
                 type="date"
                 value={formData.dateStart}
                 onChange={(e) => setFormData({ ...formData, dateStart: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                 required
               />
             </div>
@@ -195,7 +195,7 @@ function CreateSprintModal({ projectId, isOpen, onClose, onSuccess }: CreateSpri
                 type="date"
                 value={formData.dateEnd}
                 onChange={(e) => setFormData({ ...formData, dateEnd: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
                 required
               />
             </div>
@@ -540,7 +540,7 @@ export function SprintPlanning() {
             onClick={() => setActiveTab('active')}
             className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
               activeTab === 'active'
-                ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                ? 'bg-background text-gray-900 dark:text-white shadow-sm'
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
             }`}
           >
@@ -550,7 +550,7 @@ export function SprintPlanning() {
             onClick={() => setActiveTab('planning')}
             className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
               activeTab === 'planning'
-                ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                ? 'bg-background text-gray-900 dark:text-white shadow-sm'
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
             }`}
           >
@@ -560,7 +560,7 @@ export function SprintPlanning() {
             onClick={() => setActiveTab('completed')}
             className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
               activeTab === 'completed'
-                ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                ? 'bg-background text-gray-900 dark:text-white shadow-sm'
                 : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
             }`}
           >

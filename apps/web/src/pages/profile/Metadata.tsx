@@ -94,13 +94,13 @@ export function Metadata() {
               placeholder="Key"
               value={newKey}
               onChange={(e) => setNewKey(e.target.value)}
-              className="w-32 h-8 px-2 text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-32 h-8 px-2 text-sm rounded border border-input bg-white dark:bg-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
             <input
               placeholder="Value"
               value={newValue}
               onChange={(e) => setNewValue(e.target.value)}
-              className="flex-1 h-8 px-2 text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="flex-1 h-8 px-2 text-sm rounded border border-input bg-white dark:bg-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
             <Button
               size="sm"
@@ -133,7 +133,7 @@ export function Metadata() {
                       <input
                         value={editValue}
                         onChange={(e) => setEditValue(e.target.value)}
-                        className="flex-1 h-7 px-2 text-sm rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        className="flex-1 h-7 px-2 text-sm rounded border border-input bg-white dark:bg-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
                         autoFocus
                       />
                       <Button size="sm" onClick={() => handleEdit(item.key)} disabled={setMetadata.isPending} className="h-7 px-2 text-xs">

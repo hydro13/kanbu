@@ -265,7 +265,7 @@ export function PermissionMatrixPage() {
           <select
             value={resourceTypeFilter}
             onChange={(e) => setResourceTypeFilter(e.target.value as ResourceTypeFilter)}
-            className="px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            className="px-2 py-1.5 text-sm border border-input rounded bg-background text-gray-900 dark:text-white"
           >
             <option value="all">All Resource Types</option>
             <option value="workspace">Workspaces</option>
@@ -278,7 +278,7 @@ export function PermissionMatrixPage() {
           <select
             value={workspaceFilter ?? ''}
             onChange={(e) => setWorkspaceFilter(e.target.value ? Number(e.target.value) : null)}
-            className="px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            className="px-2 py-1.5 text-sm border border-input rounded bg-background text-gray-900 dark:text-white"
           >
             <option value="">All Workspaces</option>
             {workspacesData?.workspaces.map(ws => (
@@ -290,7 +290,7 @@ export function PermissionMatrixPage() {
           <select
             value={principalTypeFilter}
             onChange={(e) => setPrincipalTypeFilter(e.target.value as PrincipalTypeFilter)}
-            className="px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            className="px-2 py-1.5 text-sm border border-input rounded bg-background text-gray-900 dark:text-white"
           >
             <option value="all">All Principals</option>
             <option value="user">Users Only</option>

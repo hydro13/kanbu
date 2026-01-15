@@ -156,7 +156,7 @@ export function UserCreatePage() {
               value={formData.email}
               onChange={handleChange('email')}
               className={`w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                errors.email ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                errors.email ? 'border-red-500' : 'border-input'
               }`}
               placeholder="user@example.com"
             />
@@ -176,7 +176,7 @@ export function UserCreatePage() {
               value={formData.username}
               onChange={handleChange('username')}
               className={`w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                errors.username ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                errors.username ? 'border-red-500' : 'border-input'
               }`}
               placeholder="johndoe"
             />
@@ -196,7 +196,7 @@ export function UserCreatePage() {
               value={formData.name}
               onChange={handleChange('name')}
               className={`w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                errors.name ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                errors.name ? 'border-red-500' : 'border-input'
               }`}
               placeholder="John Doe"
             />
@@ -216,7 +216,7 @@ export function UserCreatePage() {
               value={formData.password}
               onChange={handleChange('password')}
               className={`w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                errors.password ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                errors.password ? 'border-red-500' : 'border-input'
               }`}
               placeholder="Minimum 8 characters"
             />
@@ -236,7 +236,7 @@ export function UserCreatePage() {
               value={formData.confirmPassword}
               onChange={handleChange('confirmPassword')}
               className={`w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                errors.confirmPassword ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                errors.confirmPassword ? 'border-red-500' : 'border-input'
               }`}
               placeholder="Repeat password"
             />
@@ -257,7 +257,7 @@ export function UserCreatePage() {
             <button
               type="button"
               onClick={() => navigate('/admin/users')}
-              className="px-6 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+              className="px-6 py-2 border border-input text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
             >
               Cancel
             </button>

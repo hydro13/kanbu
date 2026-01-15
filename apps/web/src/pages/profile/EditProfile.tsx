@@ -49,7 +49,7 @@ function CompactInput({
         onChange={onChange ? (e) => onChange(e.target.value) : undefined}
         disabled={disabled}
         placeholder={placeholder}
-        className={`w-full h-9 px-3 text-sm rounded-md border border-gray-300 dark:border-gray-600
+        className={`w-full h-9 px-3 text-sm rounded-md border border-input
           ${disabled ? 'bg-gray-50 dark:bg-gray-800 text-gray-500' : 'bg-white dark:bg-gray-900'}
           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
       />
@@ -80,7 +80,7 @@ function CompactSelect({
         id={id}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full h-9 px-3 text-sm rounded-md border border-gray-300 dark:border-gray-600
+        className="w-full h-9 px-3 text-sm rounded-md border border-input
           bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
         {options.map((opt) => (

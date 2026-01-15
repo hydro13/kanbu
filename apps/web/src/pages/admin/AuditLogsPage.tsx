@@ -231,14 +231,14 @@ export function AuditLogsPage() {
           <button
             onClick={() => handleExport('csv')}
             disabled={exporting}
-            className="px-4 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+            className="px-4 py-2 text-sm bg-white dark:bg-gray-800 border border-input rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
           >
             {exporting ? 'Exporting...' : 'Export CSV'}
           </button>
           <button
             onClick={() => handleExport('json')}
             disabled={exporting}
-            className="px-4 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+            className="px-4 py-2 text-sm bg-white dark:bg-gray-800 border border-input rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
           >
             Export JSON
           </button>
@@ -277,7 +277,7 @@ export function AuditLogsPage() {
                 placeholder="Search in resource, target, action..."
                 value={filters.search || ''}
                 onChange={(e) => handleFilterChange('search', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
 
@@ -289,7 +289,7 @@ export function AuditLogsPage() {
               <select
                 value={filters.category || ''}
                 onChange={(e) => handleFilterChange('category', e.target.value as AuditCategory)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">All Categories</option>
                 <optgroup label="Security">
@@ -316,7 +316,7 @@ export function AuditLogsPage() {
               <select
                 value={filters.workspaceId || ''}
                 onChange={(e) => handleFilterChange('workspaceId', e.target.value ? Number(e.target.value) : undefined)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-3 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">All Workspaces</option>
                 {workspaces?.map((ws) => (
@@ -329,7 +329,7 @@ export function AuditLogsPage() {
 
             {/* MCP Only Filter */}
             <div className="flex items-end">
-              <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors w-full">
+              <label className="flex items-center gap-2 px-3 py-2 rounded-lg border border-input bg-background cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors w-full">
                 <input
                   type="checkbox"
                   checked={filters.mcpOnly || false}
@@ -349,7 +349,7 @@ export function AuditLogsPage() {
                   setFilters({})
                   setPage(0)
                 }}
-                className="w-full px-4 py-2 text-sm text-gray-600 dark:text-gray-400 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                className="w-full px-4 py-2 text-sm text-gray-600 dark:text-gray-400 border border-input rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
                 Clear Filters
               </button>
@@ -556,14 +556,14 @@ export function AuditLogsPage() {
                   <button
                     onClick={() => setPage(p => Math.max(0, p - 1))}
                     disabled={page === 0}
-                    className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="px-3 py-1 text-sm border border-input rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     Previous
                   </button>
                   <button
                     onClick={() => setPage(p => p + 1)}
                     disabled={!auditData.hasMore}
-                    className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="px-3 py-1 text-sm border border-input rounded hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     Next
                   </button>

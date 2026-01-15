@@ -282,7 +282,7 @@ export function TaskDescription({
           className={`p-4 text-sm rounded-lg border-2 border-dashed transition-all ${
             isLockedByOther
               ? 'text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-700 cursor-not-allowed'
-              : 'text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 border-gray-300 dark:border-gray-600 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-750'
+              : 'text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 border-input cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-750'
           }`}
           onClick={handleStartEditing}
           title={isLockedByOther ? `${editorDisplayName} is currently editing this field` : undefined}

@@ -335,7 +335,7 @@ export function BoardDndContext({ children, tasks, onTaskMove }: DndContextProps
 
 function DragOverlayCard({ task }: { task: BoardTask }) {
   return (
-    <div className="bg-white dark:bg-gray-700 rounded-lg p-3 shadow-xl border-2 border-blue-400 dark:border-blue-500 opacity-90 w-64">
+    <div className="bg-background rounded-lg p-3 shadow-xl border-2 border-blue-400 dark:border-blue-500 opacity-90 w-64">
       <div className="text-sm font-medium text-gray-900 dark:text-white line-clamp-2">
         {task.title}
       </div>

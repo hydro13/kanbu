@@ -388,7 +388,7 @@ export function ApiSettings() {
                       value={newKey.name}
                       onChange={(e) => setNewKey((prev) => ({ ...prev, name: e.target.value }))}
                       placeholder="e.g., CI/CD Pipeline"
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
 
@@ -413,7 +413,7 @@ export function ApiSettings() {
                                   type="checkbox"
                                   checked={newKey.permissions.includes(perm.id)}
                                   onChange={() => togglePermission(perm.id)}
-                                  className="mt-1 rounded border-gray-300 dark:border-gray-600 text-blue-500 focus:ring-blue-500"
+                                  className="mt-1 rounded border-input text-blue-500 focus:ring-blue-500"
                                 />
                                 <div>
                                   <span className="text-sm font-medium text-gray-900 dark:text-white">
@@ -444,7 +444,7 @@ export function ApiSettings() {
                           expiresIn: e.target.value ? Number(e.target.value) : null,
                         }))
                       }
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
                       {EXPIRY_OPTIONS.map((opt) => (
                         <option key={opt.label} value={opt.value ?? ''}>
@@ -467,7 +467,7 @@ export function ApiSettings() {
                       }
                       min={1}
                       max={1000}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-3 py-2 border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                   </div>
                 </div>

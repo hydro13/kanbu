@@ -182,7 +182,7 @@ export function TimeEstimatedSelector({
           onKeyDown={handleKeyDown}
           disabled={updateMutation.isPending}
           placeholder="e.g. 2h, 30m, 2h 30m"
-          className="flex-1 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="flex-1 px-2 py-1 text-sm border border-input rounded bg-background text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         {updateMutation.isPending && (
           <Loader2 className="w-4 h-4 animate-spin text-gray-400" />

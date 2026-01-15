@@ -138,7 +138,7 @@ export function CategorySelector({
           disabled
             ? 'bg-gray-100 dark:bg-gray-800 cursor-not-allowed'
             : 'bg-white dark:bg-gray-800 hover:border-gray-400 dark:hover:border-gray-500'
-        } border-gray-300 dark:border-gray-600`}
+        } border-input`}
       >
         {selectedCategory ? (
           <>
@@ -240,7 +240,7 @@ export function CategorySelector({
                 value={newCategoryName}
                 onChange={(e) => setNewCategoryName(e.target.value)}
                 placeholder="Category name"
-                className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleCreateCategory()
                   if (e.key === 'Escape') setIsCreating(false)

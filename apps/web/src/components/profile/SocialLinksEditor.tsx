@@ -334,7 +334,7 @@ export function SocialLinksEditor() {
                           value={currentValue}
                           onChange={(e) => handleValueChange(platform.key, e.target.value)}
                           placeholder={platform.placeholder}
-                          className="flex-1 h-9 px-3 text-sm rounded-md border border-gray-300 dark:border-gray-600
+                          className="flex-1 h-9 px-3 text-sm rounded-md border border-input
                             bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                         />
 

@@ -226,7 +226,7 @@ export function EffectivePermissionsPanel({
               <select
                 value={selectedUserId ?? ''}
                 onChange={(e) => setSelectedUserId(e.target.value ? Number(e.target.value) : null)}
-                className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-gray-900 dark:text-white"
               >
                 <option value="">Select a user...</option>
                 {usersData?.users.map(user => (
@@ -244,7 +244,7 @@ export function EffectivePermissionsPanel({
                   setSelectedResourceType(e.target.value as ResourceType)
                   setSelectedResourceId(null)
                 }}
-                className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-gray-900 dark:text-white"
               >
                 <option value="root">Root</option>
                 <option value="system">System</option>
@@ -265,7 +265,7 @@ export function EffectivePermissionsPanel({
               <select
                 value={selectedResourceId ?? ''}
                 onChange={(e) => setSelectedResourceId(e.target.value ? Number(e.target.value) : null)}
-                className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-gray-900 dark:text-white"
               >
                 <option value="">Select {selectedResourceType}...</option>
                 {selectedResourceType === 'workspace' && workspacesData?.workspaces.map(ws => (

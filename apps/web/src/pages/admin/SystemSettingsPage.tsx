@@ -381,14 +381,14 @@ export function SystemSettingsPage() {
                         value={localSettings[setting.key] || ''}
                         onChange={(e) => handleChange(setting.key, e.target.value)}
                         rows={2}
-                        className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-3 py-2 text-sm border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     ) : (
                       <input
                         type={setting.type}
                         value={localSettings[setting.key] || ''}
                         onChange={(e) => handleChange(setting.key, e.target.value)}
-                        className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-3 py-2 text-sm border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     )}
                   </div>
@@ -433,7 +433,7 @@ export function SystemSettingsPage() {
                         value={customKey}
                         onChange={(e) => setCustomKey(e.target.value)}
                         placeholder="Setting key"
-                        className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-3 py-2 text-sm border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
                     <div className="flex-1">
@@ -442,7 +442,7 @@ export function SystemSettingsPage() {
                         value={customValue}
                         onChange={(e) => setCustomValue(e.target.value)}
                         placeholder="Value"
-                        className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-full px-3 py-2 text-sm border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                     </div>
                     <button
@@ -483,7 +483,7 @@ export function SystemSettingsPage() {
                         type="text"
                         value={localSettings[setting.key] || setting.value || ''}
                         onChange={(e) => handleChange(setting.key, e.target.value)}
-                        className="w-64 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        className="w-64 px-3 py-2 text-sm border border-input rounded-lg bg-background text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       />
                       <button
                         onClick={() => handleDeleteCustom(setting.key)}

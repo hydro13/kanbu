@@ -220,7 +220,7 @@ export function TaskQuickActions({
   return (
     <div
       className={cn(
-        'absolute top-1 right-1 flex items-center gap-0.5 bg-white dark:bg-gray-700 rounded shadow-sm border border-gray-200 dark:border-gray-600',
+        'absolute top-1 right-1 flex items-center gap-0.5 bg-background rounded shadow-sm border border-gray-200 dark:border-gray-600',
         className
       )}
       onClick={(e) => e.stopPropagation()}

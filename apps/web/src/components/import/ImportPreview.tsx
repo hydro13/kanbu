@@ -237,7 +237,7 @@ export function ImportPreview({
                   <select
                     value={currentMapping ?? '_skip'}
                     onChange={(e) => handleMappingChange(header, e.target.value)}
-                    className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                    className="flex-1 px-3 py-2 border border-input rounded-md bg-background text-gray-900 dark:text-white text-sm"
                   >
                     <option value="_skip">(Skip this field)</option>
                     {TARGET_FIELDS.filter((f) => f.value !== '_skip').map((field) => (

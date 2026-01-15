@@ -296,7 +296,7 @@ export function WhatIfSimulator({
               <select
                 value={action}
                 onChange={(e) => setAction(e.target.value as SimulationAction)}
-                className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-gray-900 dark:text-white"
               >
                 <option value="grant">Grant</option>
                 <option value="deny">Deny</option>
@@ -312,7 +312,7 @@ export function WhatIfSimulator({
                 <select
                   value={selectedPreset}
                   onChange={(e) => setSelectedPreset(e.target.value as PermissionPreset)}
-                  className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-gray-900 dark:text-white"
                 >
                   {Object.entries(PERMISSION_PRESETS).map(([key, preset]) => (
                     <option key={key} value={key}>{preset.label} ({preset.bits})</option>
@@ -332,7 +332,7 @@ export function WhatIfSimulator({
                   setResourceType(e.target.value as ResourceType)
                   setResourceId(null)
                 }}
-                className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-gray-900 dark:text-white"
               >
                 <option value="workspace">Workspace</option>
                 <option value="project">Project</option>
@@ -349,7 +349,7 @@ export function WhatIfSimulator({
                 <select
                   value={resourceId ?? ''}
                   onChange={(e) => setResourceId(e.target.value ? Number(e.target.value) : null)}
-                  className="w-full px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-gray-900 dark:text-white"
                 >
                   <option value="">Select...</option>
                   {workspacesData?.workspaces.map(ws => (
@@ -372,7 +372,7 @@ export function WhatIfSimulator({
                 Add
               </button>
             </div>
-            <div className="flex flex-wrap gap-2 min-h-[32px] p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded">
+            <div className="flex flex-wrap gap-2 min-h-[32px] p-2 bg-background border border-input rounded">
               {selectedPrincipals.length === 0 ? (
                 <span className="text-xs text-gray-400">Click "Add" to select users or groups</span>
               ) : (
