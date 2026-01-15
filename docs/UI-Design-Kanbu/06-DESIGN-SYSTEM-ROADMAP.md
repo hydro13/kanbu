@@ -274,7 +274,7 @@ feat(design-system): Add typography tokens to globals.css
 
 ### Fase 1.3: Spacing Tokens
 
-**Status:** [ ] Niet gestart
+**Status:** [x] Voltooid (2026-01-15)
 
 **Wat:** Definieer spacing scale als CSS variabelen.
 
@@ -282,9 +282,9 @@ feat(design-system): Add typography tokens to globals.css
 - `apps/web/src/styles/globals.css`
 
 **Taken:**
-- [ ] Spacing scale (0-16) toevoegen
-- [ ] Radius tokens toevoegen
-- [ ] Shadow tokens toevoegen
+- [x] Spacing scale (0-20) toevoegen
+- [x] Radius tokens toevoegen
+- [x] Shadow tokens toevoegen
 
 **Code toe te voegen:**
 ```css
