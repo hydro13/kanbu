@@ -226,7 +226,7 @@ function TreeItem({
         'flex items-center gap-1 py-1.5 px-2 rounded-md cursor-pointer transition-colors group',
         isSelected
           ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300'
-          : 'hover:bg-gray-100 dark:hover:bg-gray-700/50 text-gray-700 dark:text-gray-300',
+          : 'hover:bg-accent/50 text-gray-700 dark:text-gray-300',
         className
       )}
       style={{ paddingLeft: `${depth * 16 + 8}px` }}

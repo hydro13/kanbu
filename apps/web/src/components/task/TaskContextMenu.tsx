@@ -239,7 +239,7 @@ export function TaskContextMenu({
             onMouseLeave={() => setActiveSubmenu(null)}
           >
             <button
-              className="w-full px-3 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-between"
+              className="w-full px-3 py-2 text-sm text-left hover:bg-accent flex items-center justify-between"
             >
               <span className="flex items-center gap-2">
                 {item.icon}
@@ -256,7 +256,7 @@ export function TaskContextMenu({
                       'w-full px-3 py-2 text-sm text-left flex items-center gap-2',
                       subitem.disabled
                         ? 'opacity-50 cursor-not-allowed'
-                        : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                        : 'hover:bg-accent'
                     )}
                     onClick={subitem.disabled ? undefined : subitem.onClick}
                     disabled={subitem.disabled}
@@ -275,7 +275,7 @@ export function TaskContextMenu({
               'w-full px-3 py-2 text-sm text-left flex items-center gap-2',
               item.danger
                 ? 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
-                : 'hover:bg-gray-100 dark:hover:bg-gray-700',
+                : 'hover:bg-accent',
               item.disabled && 'opacity-50 cursor-not-allowed'
             )}
             onClick={item.disabled ? undefined : item.onClick}

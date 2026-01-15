@@ -536,7 +536,7 @@ function DialogFooter({
   const colorClass = confirmColor === 'purple' ? 'bg-purple-600 hover:bg-purple-700' : 'bg-indigo-600 hover:bg-indigo-700'
   return (
     <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-2 -mx-4 -mb-3 mt-3">
-      <button onClick={onCancel} className="px-3 py-1.5 text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+      <button onClick={onCancel} className="px-3 py-1.5 text-xs text-gray-700 dark:text-gray-300 hover:bg-accent rounded">
         Cancel
       </button>
       <button

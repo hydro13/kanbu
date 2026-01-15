@@ -281,7 +281,7 @@ export function WhatIfSimulator({
           </div>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+            className="p-1 hover:bg-accent rounded"
           >
             <XIcon className="w-4 h-4 text-gray-500" />
           </button>

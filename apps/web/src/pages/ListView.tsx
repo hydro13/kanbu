@@ -216,7 +216,7 @@ function TableHeader({ sortConfig, onSort, allSelected, onSelectAll }: TableHead
         {columns.map((col) => (
           <th
             key={col.field}
-            className={`${col.width} px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700`}
+            className={`${col.width} px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-accent`}
             onClick={() => onSort(col.field)}
           >
             <div className="flex items-center gap-1">

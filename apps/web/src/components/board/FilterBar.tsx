@@ -329,7 +329,7 @@ export function FilterBar({
                 <button
                   key={tag.id}
                   onClick={() => onToggleTag(tag.id)}
-                  className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
+                  className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent"
                 >
                   <span
                     className="w-3 h-3 rounded-full flex-shrink-0"
@@ -375,7 +375,7 @@ export function FilterBar({
                 onFilterChange('priority', priority.value)
                 closeDropdown()
               }}
-              className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent"
             >
               <span className={`w-2 h-2 rounded-full ${priority.color}`} />
               <span className="flex-1 text-left text-gray-700 dark:text-gray-300">
@@ -416,7 +416,7 @@ export function FilterBar({
                   onFilterChange('assigneeId', currentUserId)
                   closeDropdown()
                 }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent"
               >
                 <span className="flex-1 text-left text-gray-700 dark:text-gray-300 font-medium">
                   Assigned to me
@@ -435,7 +435,7 @@ export function FilterBar({
                 onFilterChange('assigneeId', user.id)
                 closeDropdown()
               }}
-              className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent"
             >
               {user.avatarUrl ? (
                 <img
@@ -487,7 +487,7 @@ export function FilterBar({
                   onFilterChange('columnId', column.id)
                   closeDropdown()
                 }}
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700"
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent"
               >
                 <span className="flex-1 text-left text-gray-700 dark:text-gray-300">
                   {column.title}
@@ -647,7 +647,7 @@ export function FilterBar({
               savedFilters.map((sf) => (
                 <div
                   key={sf.id}
-                  className="flex items-center gap-1 px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  className="flex items-center gap-1 px-3 py-2 hover:bg-accent"
                 >
                   <button
                     onClick={() => {

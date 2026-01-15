@@ -306,7 +306,7 @@ export function ReminderSelector({
                       ? 'bg-blue-50 dark:bg-blue-900/30'
                       : isDisabled
                         ? 'opacity-50 cursor-not-allowed'
-                        : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                        : 'hover:bg-accent'
                   }`}
                 >
                   {option.value === 'none' ? (

@@ -160,7 +160,7 @@ function SocialLinks({ userId }: { userId: number }) {
           target="_blank"
           rel="noopener noreferrer"
           onClick={(e) => e.stopPropagation()}
-          className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          className="p-1.5 rounded-full hover:bg-accent transition-colors"
           title="GitHub"
         >
           <Github className="h-4 w-4 text-gray-800 dark:text-gray-200" />

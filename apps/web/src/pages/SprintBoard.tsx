@@ -392,7 +392,7 @@ export function SprintBoard() {
             <div className="flex items-center gap-4">
               <Link
                 to={`/project/${projectIdNum}/board`}
-                className="p-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                className="p-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-accent rounded-lg transition-colors"
               >
                 <ArrowLeft className="w-5 h-5" />
               </Link>
@@ -415,7 +415,7 @@ export function SprintBoard() {
               />
               <Link
                 to={`/project/${projectIdNum}/settings`}
-                className="p-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                className="p-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-accent rounded-lg transition-colors"
               >
                 <Settings className="w-5 h-5" />
               </Link>

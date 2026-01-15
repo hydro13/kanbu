@@ -186,7 +186,7 @@ export function ApiSettings() {
             <div className="flex items-center gap-4">
               <button
                 onClick={() => navigate(-1)}
-                className="p-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                className="p-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-accent rounded-lg transition-colors"
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
@@ -477,7 +477,7 @@ export function ApiSettings() {
             <div className="p-6 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
               <button
                 onClick={handleCloseModal}
-                className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-accent rounded-lg transition-colors"
               >
                 {createdKey ? 'Done' : 'Cancel'}
               </button>

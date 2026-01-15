@@ -254,7 +254,7 @@ export function DueDatePicker({
                 key={option.label}
                 onClick={() => handleQuickOption(option)}
                 disabled={isMutating}
-                className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-left text-sm hover:bg-accent transition-colors"
               >
                 {option.icon}
                 <span className="text-gray-900 dark:text-white">{option.label}</span>
