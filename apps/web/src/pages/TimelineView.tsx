@@ -477,7 +477,7 @@ function TimelineGrid({ days, tasks, startDate, cellWidth, onTaskClick, todayRef
     return m
   }, [days])
 
-  const priorityColors = ['bg-gray-400', 'bg-blue-500', 'bg-yellow-500', 'bg-red-500']
+  const priorityColors = ['bg-gray-400', 'bg-blue-500', 'bg-orange-500', 'bg-red-500']
 
   return (
     <div className="flex h-full">
