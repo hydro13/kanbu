@@ -157,7 +157,7 @@ function PriorityDropdown({
         <button
           key={priority.value}
           className={cn(
-            'w-full px-3 py-1.5 text-left text-sm flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-gray-700',
+            'w-full px-3 py-1.5 text-left text-sm flex items-center gap-2 hover:bg-accent',
             currentPriority === priority.value && 'bg-gray-50 dark:bg-gray-700/50'
           )}
           onClick={() => {
@@ -229,7 +229,7 @@ export function TaskQuickActions({
       <Button
         variant="ghost"
         size="sm"
-        className="h-6 w-6 p-0 hover:bg-gray-100 dark:hover:bg-gray-600"
+        className="h-6 w-6 p-0 hover:bg-accent"
         onClick={handleEditClick}
         title="Open task details"
       >
@@ -241,7 +241,7 @@ export function TaskQuickActions({
         <Button
           variant="ghost"
           size="sm"
-          className="h-6 w-6 p-0 hover:bg-gray-100 dark:hover:bg-gray-600"
+          className="h-6 w-6 p-0 hover:bg-accent"
           onClick={handlePriorityClick}
           title="Change priority"
         >
@@ -260,7 +260,7 @@ export function TaskQuickActions({
       <Button
         variant="ghost"
         size="sm"
-        className="h-6 w-6 p-0 hover:bg-gray-100 dark:hover:bg-gray-600"
+        className="h-6 w-6 p-0 hover:bg-accent"
         onClick={handleMoreClick}
         title="More actions"
       >

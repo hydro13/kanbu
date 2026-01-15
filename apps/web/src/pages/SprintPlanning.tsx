@@ -209,7 +209,7 @@ function CreateSprintModal({ projectId, isOpen, onClose, onSuccess }: CreateSpri
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-accent rounded-lg transition-colors"
             >
               Cancel
             </button>
@@ -356,14 +356,14 @@ function SprintCard({ sprint, projectId, onRefresh }: SprintCardProps) {
           )}
           <Link
             to={`/project/${projectId}/sprint/${sprint.id}`}
-            className="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            className="p-2 text-gray-500 hover:bg-accent rounded-lg transition-colors"
             title="View Sprint Board"
           >
             <Users className="w-4 h-4" />
           </Link>
           <button
             onClick={() => navigate(`/project/${projectId}/sprint/${sprint.id}/edit`)}
-            className="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            className="p-2 text-gray-500 hover:bg-accent rounded-lg transition-colors"
             title="Edit Sprint"
           >
             <Edit2 className="w-4 h-4" />
@@ -512,7 +512,7 @@ export function SprintPlanning() {
           <div className="flex items-center gap-4">
             <Link
               to={`/project/${projectIdNum}/board`}
-              className="p-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              className="p-2 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-accent rounded-lg transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
             </Link>

@@ -265,7 +265,7 @@ export function BaseLayout({
               {sidebar && (
                 <button
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className="p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors md:hidden"
+                  className="p-1 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-md hover:bg-accent transition-colors md:hidden"
                   title={mobileMenuOpen ? 'Hide sidebar' : 'Show sidebar'}
                 >
                   {mobileMenuOpen ? <CloseIcon /> : <MenuIcon />}
@@ -321,7 +321,7 @@ export function BaseLayout({
               {/* Keyboard shortcuts help */}
               <button
                 onClick={() => setShortcutsOpen(true)}
-                className="p-1.5 rounded-md text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="p-1.5 rounded-md text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-accent transition-colors"
                 title="Keyboard shortcuts (?)"
               >
                 <QuestionMarkIcon className="h-5 w-5" />

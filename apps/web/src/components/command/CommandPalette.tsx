@@ -748,7 +748,7 @@ export function CommandPalette({ projectId: propProjectId, onOpenTaskDetail }: C
                           'w-full flex items-center gap-3 px-4 py-2 text-left transition-colors',
                           selectedIndex === itemIndex
                             ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                            : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
+                            : 'hover:bg-accent text-gray-700 dark:text-gray-300'
                         )}
                         onClick={item.onSelect}
                         onMouseEnter={() => setSelectedIndex(itemIndex)}

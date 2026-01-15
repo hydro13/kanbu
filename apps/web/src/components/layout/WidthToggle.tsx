@@ -108,7 +108,7 @@ export function WidthToggle({ className = '' }: WidthToggleProps) {
           onClick={toggle}
           className={`
             p-1.5 rounded-l-md transition-colors border-r border-gray-200 dark:border-gray-600
-            hover:bg-gray-100 dark:hover:bg-gray-700
+            hover:bg-accent
             ${isFullWidth ? 'text-blue-500 bg-blue-50 dark:bg-blue-900/30' : 'text-gray-400 dark:text-gray-500'}
             ${pulseClass}
           `}
@@ -122,7 +122,7 @@ export function WidthToggle({ className = '' }: WidthToggleProps) {
           onClick={() => setShowDropdown(!showDropdown)}
           className={`
             p-1.5 rounded-r-md transition-colors
-            hover:bg-gray-100 dark:hover:bg-gray-700
+            hover:bg-accent
             ${isFullWidth ? 'text-blue-500' : 'text-gray-400 dark:text-gray-500'}
           `}
           title="Options"
@@ -164,7 +164,7 @@ export function WidthToggle({ className = '' }: WidthToggleProps) {
                 w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-colors
                 ${isPinned
                   ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                  : 'text-gray-600 dark:text-gray-400 hover:bg-accent'
                 }
               `}
             >

@@ -448,28 +448,28 @@ export function AclPage() {
                   <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
                     <button
                       onClick={() => setBulkDialogMode('grant')}
-                      className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                      className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-accent flex items-center gap-2"
                     >
                       <span className="w-2 h-2 rounded-full bg-green-500" />
                       Bulk Grant
                     </button>
                     <button
                       onClick={() => setBulkDialogMode('revoke')}
-                      className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                      className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-accent flex items-center gap-2"
                     >
                       <span className="w-2 h-2 rounded-full bg-red-500" />
                       Bulk Revoke
                     </button>
                     <button
                       onClick={() => setBulkDialogMode('copy')}
-                      className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                      className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-accent flex items-center gap-2"
                     >
                       <span className="w-2 h-2 rounded-full bg-blue-500" />
                       Copy Permissions
                     </button>
                     <button
                       onClick={() => setBulkDialogMode('template')}
-                      className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                      className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-accent flex items-center gap-2"
                     >
                       <span className="w-2 h-2 rounded-full bg-purple-500" />
                       Apply Template
@@ -489,7 +489,7 @@ export function AclPage() {
                   <div className="absolute right-0 top-full mt-1 w-52 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
                     <button
                       onClick={() => setShowEffectivePanel(true)}
-                      className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                      className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-accent flex items-center gap-2"
                     >
                       <svg className="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
@@ -498,7 +498,7 @@ export function AclPage() {
                     </button>
                     <button
                       onClick={() => setShowWhatIfSimulator(true)}
-                      className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                      className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-accent flex items-center gap-2"
                     >
                       <svg className="w-4 h-4 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
@@ -509,7 +509,7 @@ export function AclPage() {
                     <div className="border-t border-gray-200 dark:border-gray-700 my-1" />
                     <button
                       onClick={() => setShowExportDialog(true)}
-                      className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                      className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-accent flex items-center gap-2"
                     >
                       <svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -518,7 +518,7 @@ export function AclPage() {
                     </button>
                     <button
                       onClick={() => setShowImportDialog(true)}
-                      className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                      className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-accent flex items-center gap-2"
                     >
                       <svg className="w-4 h-4 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
@@ -632,7 +632,7 @@ export function AclPage() {
                       <div className="flex justify-end gap-3 pt-2">
                         <button
                           onClick={cancelCreateGroup}
-                          className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                          className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-accent rounded-lg transition-colors"
                         >
                           Cancel
                         </button>
@@ -998,7 +998,7 @@ function AclDialog({
                     key={user.id}
                     onClick={() => setFormData({ ...formData, principalId: user.id })}
                     className={cn(
-                      'w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700',
+                      'w-full text-left px-3 py-2 text-sm hover:bg-accent',
                       formData.principalId === user.id && 'bg-blue-100 dark:bg-blue-900/30'
                     )}
                   >
@@ -1012,7 +1012,7 @@ function AclDialog({
                     key={group.id}
                     onClick={() => setFormData({ ...formData, principalId: group.id })}
                     className={cn(
-                      'w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700',
+                      'w-full text-left px-3 py-2 text-sm hover:bg-accent',
                       formData.principalId === group.id && 'bg-blue-100 dark:bg-blue-900/30'
                     )}
                   >
@@ -1088,7 +1088,7 @@ function AclDialog({
         <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-accent rounded-lg transition-colors"
           >
             Cancel
           </button>

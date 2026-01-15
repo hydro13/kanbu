@@ -184,7 +184,7 @@ function CalendarToolbar({
       <div className="flex items-center gap-2">
         <button
           onClick={onPrevious}
-          className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+          className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded hover:bg-accent"
         >
           <ChevronLeftIcon />
         </button>
@@ -193,7 +193,7 @@ function CalendarToolbar({
         </span>
         <button
           onClick={onNext}
-          className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+          className="p-1.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded hover:bg-accent"
         >
           <ChevronRightIcon />
         </button>

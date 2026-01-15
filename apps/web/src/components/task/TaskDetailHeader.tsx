@@ -210,7 +210,7 @@ export function TaskDetailHeader({
                 <button
                   key={option.value}
                   onClick={() => handlePrioritySelect(option.value)}
-                  className={`w-full text-left px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 first:rounded-t-md last:rounded-b-md ${
+                  className={`w-full text-left px-3 py-2 text-sm hover:bg-accent first:rounded-t-md last:rounded-b-md ${
                     option.value === task.priority ? 'bg-gray-50 dark:bg-gray-750' : ''
                   }`}
                 >

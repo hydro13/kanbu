@@ -539,14 +539,14 @@ function ProviderCard({
           <button
             onClick={onTest}
             disabled={isTesting}
-            className="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors disabled:opacity-50"
+            className="p-2 text-gray-500 hover:bg-accent rounded transition-colors disabled:opacity-50"
             title="Test connection"
           >
             <RefreshIcon className={cn('h-4 w-4', isTesting && 'animate-spin')} />
           </button>
           <button
             onClick={onToggleActive}
-            className="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+            className="p-2 text-gray-500 hover:bg-accent rounded transition-colors"
             title={provider.isActive ? 'Deactivate' : 'Activate'}
           >
             {provider.isActive ? (
@@ -557,7 +557,7 @@ function ProviderCard({
           </button>
           <button
             onClick={onEdit}
-            className="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+            className="p-2 text-gray-500 hover:bg-accent rounded transition-colors"
             title="Edit"
           >
             <PencilIcon className="h-4 w-4" />
@@ -821,7 +821,7 @@ function ProviderModal({ onClose, onSubmit, isLoading }: ProviderModalProps) {
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-accent rounded-lg transition-colors"
           >
             Cancel
           </button>
@@ -1076,7 +1076,7 @@ function EditProviderModal({ providerId, onClose, onSubmit, isLoading }: EditPro
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-accent rounded-lg transition-colors"
           >
             Cancel
           </button>

@@ -170,7 +170,7 @@ export function UndoRedoButtons({ projectId, className }: UndoRedoButtonsProps) 
           className={cn(
             'p-1.5 rounded transition-colors',
             canUndo && !isProcessing
-              ? 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
+              ? 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-accent'
               : 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
           )}
           title="Undo (Ctrl+Z)"
@@ -184,7 +184,7 @@ export function UndoRedoButtons({ projectId, className }: UndoRedoButtonsProps) 
           className={cn(
             'p-1.5 rounded transition-colors',
             canRedo && !isProcessing
-              ? 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700'
+              ? 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-accent'
               : 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
           )}
           title="Redo (Ctrl+Shift+Z)"
