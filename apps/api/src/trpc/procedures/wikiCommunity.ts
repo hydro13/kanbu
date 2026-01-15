@@ -169,15 +169,35 @@ export const wikiCommunityRouter = router({
       try {
         const clusterService = getWikiClusterService(ctx.prisma)
 
-        // Query FalkorDB directly for the community
-        // TODO: Add method to WikiClusterService for getting single community
-        // For now, return error
-        throw new TRPCError({
-          code: 'NOT_IMPLEMENTED',
-          message: 'Get single community not yet implemented',
-        })
+        const community = await clusterService.getCommunity(input.communityUuid)
+
+        if (!community) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Community not found',
+          })
+        }
+
+        return {
+          community: {
+            uuid: community.uuid,
+            name: community.name,
+            summary: community.summary,
+            memberCount: community.memberCount,
+            createdAt: community.createdAt,
+            updatedAt: community.updatedAt,
+          },
+          members: (community.members || []).map((m) => ({
+            uuid: m.uuid,
+            name: m.name,
+            type: m.type,
+          })),
+        }
       } catch (error) {
         console.error('[wikiCommunityRouter] get error:', error)
+        if (error instanceof TRPCError) {
+          throw error
+        }
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: error instanceof Error ? error.message : 'Failed to fetch community',

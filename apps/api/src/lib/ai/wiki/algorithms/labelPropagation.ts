@@ -259,28 +259,93 @@ function shuffleArray<T>(array: T[], random: () => number): T[] {
 // ============================================================================
 
 /**
- * Build projection map from FalkorDB query results
+ * Build projection map from FalkorDB query results or test data
  *
- * @param edges - Array of edges from FalkorDB query
+ * Supports two signatures:
+ * 1. buildProjectionFromEdges(edges) - backward compatible
+ * 2. buildProjectionFromEdges(nodeUuids, edges) - for testing with node initialization
+ *
+ * @param nodeUuidsOrEdges - Either array of node UUIDs or array of edges
+ * @param edgesOrUndefined - Array of edges (if first param is nodeUuids)
  * @returns Projection map for Label Propagation
  *
  * @example
  * ```typescript
- * // FalkorDB query result format
+ * // FalkorDB query result format (backward compatible)
  * const edges = [
  *   { source: 'uuid-1', target: 'uuid-2', count: 2 },
  *   { source: 'uuid-1', target: 'uuid-3', count: 1 },
  * ]
  * const projection = buildProjectionFromEdges(edges)
+ *
+ * // Test format with node initialization
+ * const nodeUuids = ['uuid-1', 'uuid-2', 'uuid-3']
+ * const edges2 = [
+ *   { sourceUuid: 'uuid-1', targetUuid: 'uuid-2', edgeCount: 2 },
+ * ]
+ * const projection2 = buildProjectionFromEdges(nodeUuids, edges2)
  * ```
  */
 export function buildProjectionFromEdges(
-  edges: Array<{ source: string; target: string; count?: number }>
+  nodeUuidsOrEdges:
+    | string[]
+    | Array<{ source: string; target: string; count?: number }>,
+  edgesOrUndefined?: Array<{
+    sourceUuid?: string
+    targetUuid?: string
+    source?: string
+    target?: string
+    edgeCount?: number
+    count?: number
+  }>
 ): LPProjectionMap {
   const projection: LPProjectionMap = {}
 
+  // Determine which signature is being used
+  let nodeUuids: string[] | null = null
+  let edges: Array<{
+    sourceUuid?: string
+    targetUuid?: string
+    source?: string
+    target?: string
+    edgeCount?: number
+    count?: number
+  }>
+
+  if (edgesOrUndefined !== undefined) {
+    // Two-parameter signature: (nodeUuids, edges)
+    nodeUuids = nodeUuidsOrEdges as string[]
+    edges = edgesOrUndefined
+  } else {
+    // Single-parameter signature: (edges)
+    edges = nodeUuidsOrEdges as Array<{ source: string; target: string; count?: number }>
+  }
+
+  // Pre-initialize all nodes if nodeUuids provided
+  if (nodeUuids) {
+    for (const uuid of nodeUuids) {
+      projection[uuid] = []
+    }
+  }
+
+  // Create a Set for efficient nodeUuid filtering (if provided)
+  const nodeUuidSet = nodeUuids ? new Set(nodeUuids) : null
+
+  // Process edges
   for (const edge of edges) {
-    const { source, target, count = 1 } = edge
+    // Support both property name formats
+    const source = edge.source ?? edge.sourceUuid
+    const target = edge.target ?? edge.targetUuid
+    const count = edge.count ?? edge.edgeCount ?? 1
+
+    if (!source || !target) {
+      continue // Skip invalid edges
+    }
+
+    // If nodeUuids provided, filter edges to only include nodes in the set
+    if (nodeUuidSet && (!nodeUuidSet.has(source) || !nodeUuidSet.has(target))) {
+      continue // Skip edges with nodes not in nodeUuids
+    }
 
     // Add source -> target
     if (!projection[source]) {

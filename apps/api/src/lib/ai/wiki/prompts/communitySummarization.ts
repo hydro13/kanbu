@@ -225,7 +225,7 @@ export function parseGenerateCommunityNameResponse(
 
     // Fallback: extract first line as name
     const lines = trimmedResponse.split('\n')
-    let name = lines[0].trim()
+    let name = (lines[0] || '').trim()
 
     // Remove common prefixes (match "Name:", "Community Name:", etc.)
     name = name.replace(/^(Name|Community\s*Name|Community|Title)\s*:\s*/i, '')
