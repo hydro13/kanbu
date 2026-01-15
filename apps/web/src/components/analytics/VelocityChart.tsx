@@ -23,11 +23,13 @@ import { Loader2, Info } from 'lucide-react'
 interface VelocityData {
   dataPoints: Array<{
     weekStart: string
+    periodStart?: string
     tasksCompleted: number
     pointsCompleted: number
   }>
   avgVelocity: number
   totalCompleted: number
+  granularity?: 'day' | 'week'
 }
 
 export interface VelocityChartProps {
@@ -39,8 +41,11 @@ export interface VelocityChartProps {
 // Helpers
 // =============================================================================
 
-function formatWeekLabel(dateStr: string): string {
+function formatPeriodLabel(dateStr: string, granularity: 'day' | 'week'): string {
   const date = new Date(dateStr)
+  if (granularity === 'day') {
+    return date.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' })
+  }
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
@@ -53,12 +58,15 @@ export function VelocityChart({ data, isLoading }: VelocityChartProps) {
     if (!data?.dataPoints || data.dataPoints.length === 0) return null
 
     const maxValue = Math.max(...data.dataPoints.map((d) => d.tasksCompleted), 1)
+    const granularity = data.granularity ?? 'week'
 
     return {
       points: data.dataPoints,
       maxValue,
       avgVelocity: data.avgVelocity,
       totalCompleted: data.totalCompleted,
+      granularity,
+      periodLabel: granularity === 'day' ? 'day' : 'week',
     }
   }, [data])
 
@@ -86,7 +94,7 @@ export function VelocityChart({ data, isLoading }: VelocityChartProps) {
         <div>
           <span className="text-gray-500 dark:text-gray-400">Avg Velocity:</span>
           <span className="ml-1.5 font-medium text-gray-900 dark:text-white">
-            {chartData.avgVelocity} tasks/week
+            {chartData.avgVelocity} tasks/{chartData.periodLabel}
           </span>
         </div>
         <div>
@@ -97,7 +105,7 @@ export function VelocityChart({ data, isLoading }: VelocityChartProps) {
         </div>
       </div>
 
-      {/* Bar Chart */}
+      {/* Line Chart */}
       <div className="relative h-48">
         {/* Y-axis grid lines */}
         <div className="absolute inset-0 flex flex-col justify-between pb-6">
@@ -111,61 +119,85 @@ export function VelocityChart({ data, isLoading }: VelocityChartProps) {
           ))}
         </div>
 
-        {/* Bars */}
-        <div className="absolute inset-0 flex items-end gap-1 pl-8 pb-6">
+        {/* SVG Line Chart */}
+        <div className="absolute inset-0 pl-8 pb-6">
+          <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+            {/* Velocity line */}
+            <polyline
+              fill="none"
+              stroke="#3b82f6"
+              strokeWidth="2"
+              vectorEffect="non-scaling-stroke"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              points={chartData.points
+                .map((point, index) => {
+                  const x = (index / (chartData.points.length - 1 || 1)) * 100
+                  const y = 100 - (point.tasksCompleted / chartData.maxValue) * 100
+                  return `${x},${y}`
+                })
+                .join(' ')}
+            />
+            {/* Data points */}
+            {chartData.points.map((point, index) => {
+              const x = (index / (chartData.points.length - 1 || 1)) * 100
+              const y = 100 - (point.tasksCompleted / chartData.maxValue) * 100
+              const isAboveAvg = point.tasksCompleted >= chartData.avgVelocity
+              return (
+                <circle
+                  key={point.weekStart}
+                  cx={x}
+                  cy={y}
+                  r="3"
+                  fill={isAboveAvg ? '#22c55e' : '#3b82f6'}
+                  stroke="white"
+                  strokeWidth="1.5"
+                  vectorEffect="non-scaling-stroke"
+                  className="cursor-pointer"
+                >
+                  <title>
+                    {formatPeriodLabel(point.periodStart ?? point.weekStart, chartData.granularity)}: {point.tasksCompleted} tasks
+                  </title>
+                </circle>
+              )
+            })}
+            {/* Average line */}
+            {chartData.avgVelocity > 0 && (
+              <line
+                x1="0"
+                y1={100 - (chartData.avgVelocity / chartData.maxValue) * 100}
+                x2="100"
+                y2={100 - (chartData.avgVelocity / chartData.maxValue) * 100}
+                stroke="#f97316"
+                strokeWidth="2"
+                strokeDasharray="6,4"
+                vectorEffect="non-scaling-stroke"
+              />
+            )}
+          </svg>
+        </div>
+
+        {/* X-axis labels */}
+        <div className="absolute bottom-0 left-8 right-0 flex justify-between">
           {chartData.points.map((point, index) => {
-            const heightPercent = (point.tasksCompleted / chartData.maxValue) * 100
-            const isAboveAvg = point.tasksCompleted >= chartData.avgVelocity
-
+            const totalPoints = chartData.points.length
+            const labelInterval = totalPoints > 14 ? Math.ceil(totalPoints / 6) : totalPoints > 7 ? 2 : 1
+            if (index % labelInterval !== 0 && index !== totalPoints - 1) return null
             return (
-              <div
+              <span
                 key={point.weekStart}
-                className="flex-1 flex flex-col items-center group"
+                className="text-xs text-gray-500 dark:text-gray-400 truncate"
+                style={{
+                  position: 'absolute',
+                  left: `${(index / (totalPoints - 1 || 1)) * 100}%`,
+                  transform: 'translateX(-50%)'
+                }}
               >
-                {/* Bar */}
-                <div className="w-full relative" style={{ height: '100%' }}>
-                  <div
-                    className={`absolute bottom-0 left-1 right-1 rounded-t transition-all ${
-                      isAboveAvg
-                        ? 'bg-green-500 group-hover:bg-green-400'
-                        : 'bg-blue-500 group-hover:bg-blue-400'
-                    }`}
-                    style={{ height: `${heightPercent}%`, minHeight: point.tasksCompleted > 0 ? '4px' : '0' }}
-                  />
-
-                  {/* Tooltip */}
-                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                    <div className="bg-gray-900 text-white text-xs rounded px-2 py-1 whitespace-nowrap">
-                      {point.tasksCompleted} tasks
-                      {point.pointsCompleted > 0 && ` (${point.pointsCompleted} pts)`}
-                    </div>
-                  </div>
-                </div>
-
-                {/* X-axis label */}
-                {index % 2 === 0 && (
-                  <span className="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate max-w-full">
-                    {formatWeekLabel(point.weekStart)}
-                  </span>
-                )}
-              </div>
+                {formatPeriodLabel(point.periodStart ?? point.weekStart, chartData.granularity)}
+              </span>
             )
           })}
         </div>
-
-        {/* Average line */}
-        {chartData.avgVelocity > 0 && (
-          <div
-            className="absolute left-8 right-0 border-t-2 border-dashed border-orange-400"
-            style={{
-              bottom: `calc(${(chartData.avgVelocity / chartData.maxValue) * 100}% + 24px)`,
-            }}
-          >
-            <span className="absolute right-0 -top-4 text-xs text-orange-500 font-medium">
-              avg
-            </span>
-          </div>
-        )}
       </div>
 
       {/* Legend */}

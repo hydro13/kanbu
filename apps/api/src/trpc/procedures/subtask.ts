@@ -23,7 +23,7 @@ import { TRPCError } from '@trpc/server'
 import { router, protectedProcedure } from '../router'
 import { permissionService } from '../../services'
 import { auditService, AUDIT_ACTIONS } from '../../services/auditService'
-import { updateTaskProgress } from '../../lib/task'
+import { updateTaskProgress, recalculateTaskTime } from '../../lib/task'
 import { calculateNewPositions } from '../../lib/board'
 import { addTime, formatTimeDisplay } from '../../lib/timeTracking'
 import {
@@ -326,6 +326,11 @@ export const subtaskRouter = router({
         await updateTaskProgress(taskId)
       }
 
+      // If timeSpent changed, recalculate task total
+      if (input.timeSpent !== undefined) {
+        await recalculateTaskTime(taskId)
+      }
+
       // Emit WebSocket event for real-time sync
       emitSubtaskUpdated({
         subtaskId: input.subtaskId,
@@ -546,6 +551,9 @@ export const subtaskRouter = router({
 
       await updateTaskProgress(taskId)
 
+      // Recalculate task total timeSpent from subtasks
+      await recalculateTaskTime(taskId)
+
       return {
         ...updated,
         timeSpentDisplay: formatTimeDisplay(updated.timeSpent),
@@ -563,7 +571,7 @@ export const subtaskRouter = router({
       hours: z.number().positive(), // Time to add in hours
     }))
     .mutation(async ({ ctx, input }) => {
-      const { projectId } = await getSubtaskTaskId(ctx.prisma, input.subtaskId)
+      const { taskId, projectId } = await getSubtaskTaskId(ctx.prisma, input.subtaskId)
       await permissionService.requireProjectAccess(ctx.user.id, projectId, 'MEMBER')
 
       // Get current time spent
@@ -583,6 +591,9 @@ export const subtaskRouter = router({
           updatedAt: true,
         },
       })
+
+      // Recalculate task total timeSpent from subtasks
+      await recalculateTaskTime(taskId)
 
       return {
         ...updated,

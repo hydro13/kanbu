@@ -28,6 +28,7 @@
 import { QdrantClient } from '@qdrant/js-client-rest'
 import type { PrismaClient } from '@prisma/client'
 import { getWikiAiService, type WikiAiService, type WikiContext } from './WikiAiService'
+import { ChunkingService } from './ChunkingService'
 
 // =============================================================================
 // Types
@@ -458,15 +459,37 @@ export class WikiEmbeddingService {
 
   /**
    * Create text for embedding from title and content
-   * Truncates content to reasonable size for embedding
+   *
+   * Fase 25: Uses ChunkingService for intelligent content handling
+   * - Small content: uses as-is
+   * - Large content: uses first chunk + indicator of remaining sections
+   *
+   * @param title - Page title
+   * @param content - Page content
    */
   private createEmbeddingText(title: string, content: string): string {
-    const maxContentLength = 8000 // Most embedding models handle ~8K tokens
-    const truncatedContent = content.length > maxContentLength
-      ? content.substring(0, maxContentLength) + '...'
-      : content
+    const chunkingService = new ChunkingService()
 
-    return `${title}\n\n${truncatedContent}`
+    // Small content - use as-is
+    if (!chunkingService.needsChunking(content)) {
+      return `${title}\n\n${content}`
+    }
+
+    // Large content - use first chunk with context about total size
+    const result = chunkingService.chunkMarkdown(content)
+    const firstChunk = result.chunks[0]?.text ?? content
+
+    // Add note about remaining content if multiple chunks
+    const suffix = result.chunks.length > 1
+      ? `\n\n[...${result.chunks.length - 1} more sections, ${result.totalTokens} total tokens]`
+      : ''
+
+    console.log(
+      `[WikiEmbeddingService] Large content chunked: ${result.totalTokens} tokens → ` +
+      `using first chunk (${result.chunks[0]?.tokenCount ?? 0} tokens)`
+    )
+
+    return `${title}\n\n${firstChunk}${suffix}`
   }
 
   /**

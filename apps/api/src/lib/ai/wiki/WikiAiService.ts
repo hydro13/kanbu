@@ -70,6 +70,10 @@ import type {
   MissedEntity,
   MissedFact,
 } from './types'
+import {
+  ChunkingService,
+  type ChunkingConfig,
+} from './ChunkingService'
 
 // =============================================================================
 // Types
@@ -92,6 +96,18 @@ export interface EntityExtractionResult {
   entities: ExtractedEntity[]
   provider: string
   model: string
+  /** Number of chunks processed (Fase 25 - only set when chunking was used) */
+  chunksProcessed?: number
+}
+
+/**
+ * Options for chunked entity extraction (Fase 25)
+ */
+export interface ChunkedExtractionOptions {
+  /** Enable chunking for large content (default: true, respects DISABLE_TEXT_CHUNKING env) */
+  enableChunking?: boolean
+  /** Custom chunking configuration */
+  chunkingConfig?: ChunkingConfig
 }
 
 export interface SummarizeResult {
@@ -370,27 +386,106 @@ export class WikiAiService {
   }
 
   // ===========================================================================
-  // Entity Extraction
+  // Entity Extraction (Fase 25 - Chunking Support)
   // ===========================================================================
 
   /**
    * Extract entities from wiki page content
    * Uses the configured reasoning provider for LLM-based extraction
+   *
+   * Fase 25: Supports chunking for large content (>1000 tokens)
+   * - Splits content into chunks with overlap
+   * - Extracts entities from each chunk in parallel
+   * - Deduplicates entities across chunks
+   *
+   * @param context - Wiki context (workspace/project)
+   * @param text - Text content to extract entities from
+   * @param entityTypes - Types of entities to extract
+   * @param options - Chunking options (Fase 25)
    */
   async extractEntities(
     context: WikiContext,
     text: string,
-    entityTypes: string[] = ['WikiPage', 'Task', 'User', 'Project', 'Concept']
+    entityTypes: string[] = ['WikiPage', 'Task', 'User', 'Project', 'Concept'],
+    options?: ChunkedExtractionOptions
   ): Promise<EntityExtractionResult> {
     const provider = await this.getReasoningProviderOrThrow(context)
 
-    const entities = await provider.extractEntities(text, entityTypes)
+    // Check if chunking is enabled (default: true, unless DISABLE_TEXT_CHUNKING=true)
+    const enableChunking = options?.enableChunking ??
+      (process.env.DISABLE_TEXT_CHUNKING !== 'true')
+
+    // Create chunking service with optional custom config
+    const chunkingService = new ChunkingService(options?.chunkingConfig)
+
+    // If chunking disabled or content is small, use original behavior
+    if (!enableChunking || !chunkingService.needsChunking(text)) {
+      const entities = await provider.extractEntities(text, entityTypes)
+      return {
+        entities,
+        provider: provider.type,
+        model: provider.getReasoningModel(),
+      }
+    }
+
+    // Chunk the content using Markdown-aware splitting
+    const chunkResult = chunkingService.chunkMarkdown(text)
+
+    console.log(
+      `[WikiAiService] Chunking large content: ${chunkResult.totalTokens} tokens → ${chunkResult.chunks.length} chunks`
+    )
+
+    // Extract entities from each chunk in parallel
+    const chunkEntities = await Promise.all(
+      chunkResult.chunks.map(async (chunk) => {
+        try {
+          return await provider.extractEntities(chunk.text, entityTypes)
+        } catch (error) {
+          console.warn(
+            `[WikiAiService] Entity extraction failed for chunk ${chunk.index}: ${error instanceof Error ? error.message : 'Unknown error'}`
+          )
+          return []
+        }
+      })
+    )
+
+    // Merge and deduplicate entities across all chunks
+    const mergedEntities = this.deduplicateEntities(chunkEntities.flat())
+
+    console.log(
+      `[WikiAiService] Extracted ${chunkEntities.flat().length} entities, ` +
+      `${mergedEntities.length} after deduplication`
+    )
 
     return {
-      entities,
+      entities: mergedEntities,
       provider: provider.type,
       model: provider.getReasoningModel(),
+      chunksProcessed: chunkResult.chunks.length,
     }
+  }
+
+  /**
+   * Deduplicate entities by normalized name and type (Fase 25)
+   *
+   * When duplicates are found, keeps the one with highest confidence.
+   * Normalization: lowercase, trimmed, keyed by "type:name"
+   */
+  private deduplicateEntities(entities: ExtractedEntity[]): ExtractedEntity[] {
+    const entityMap = new Map<string, ExtractedEntity>()
+
+    for (const entity of entities) {
+      // Create normalized key: "Type:normalized_name"
+      const key = `${entity.type}:${entity.name.toLowerCase().trim()}`
+
+      const existing = entityMap.get(key)
+      if (!existing || entity.confidence > existing.confidence) {
+        // Keep entity with highest confidence
+        entityMap.set(key, entity)
+      }
+    }
+
+    return Array.from(entityMap.values())
   }
 
   // ===========================================================================

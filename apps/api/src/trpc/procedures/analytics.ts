@@ -39,7 +39,9 @@ const dateRangeSchema = z.object({
 
 const velocitySchema = z.object({
   projectId: z.number(),
-  weeks: z.number().min(1).max(52).default(8),
+  days: z.number().min(1).max(365).optional(),
+  weeks: z.number().min(1).max(52).optional(),
+  granularity: z.enum(['day', 'week']).default('week'),
 })
 
 // =============================================================================
@@ -54,6 +56,15 @@ function getWeekStart(date: Date): Date {
   const day = d.getDay()
   const diff = d.getDate() - day + (day === 0 ? -6 : 1) // Monday
   d.setDate(diff)
+  d.setHours(0, 0, 0, 0)
+  return d
+}
+
+/**
+ * Get start of day for a given date
+ */
+function getDayStart(date: Date): Date {
+  const d = new Date(date)
   d.setHours(0, 0, 0, 0)
   return d
 }
@@ -205,22 +216,26 @@ export const analyticsRouter = router({
     }),
 
   /**
-   * Get velocity - tasks completed per week
+   * Get velocity - tasks completed per day or week
+   * Supports both daily and weekly granularity via the `granularity` parameter
    */
   getVelocity: protectedProcedure
     .input(velocitySchema)
     .query(async ({ ctx, input }) => {
       await permissionService.requireProjectAccess(ctx.user.id, input.projectId, 'VIEWER')
 
-      const weeksAgo = new Date()
-      weeksAgo.setDate(weeksAgo.getDate() - input.weeks * 7)
+      const isDaily = input.granularity === 'day'
+      const periods = isDaily ? (input.days ?? 7) : (input.weeks ?? 8)
+
+      const startDate = new Date()
+      startDate.setDate(startDate.getDate() - (isDaily ? periods : periods * 7))
 
       // Get all completed tasks in the date range
       const completedTasks = await ctx.prisma.task.findMany({
         where: {
           projectId: input.projectId,
           isActive: false,
-          dateCompleted: { gte: weeksAgo },
+          dateCompleted: { gte: startDate },
         },
         select: {
           id: true,
@@ -230,24 +245,28 @@ export const analyticsRouter = router({
         },
       })
 
-      // Group by week
-      const weeklyData = new Map<string, { count: number; points: number }>()
+      // Group by day or week
+      const periodData = new Map<string, { count: number; points: number }>()
 
-      // Initialize all weeks
-      for (let i = 0; i < input.weeks; i++) {
-        const weekStart = new Date()
-        weekStart.setDate(weekStart.getDate() - i * 7)
-        const weekKey = formatDateKey(getWeekStart(weekStart))
-        weeklyData.set(weekKey, { count: 0, points: 0 })
+      // Initialize all periods
+      for (let i = 0; i < periods; i++) {
+        const periodStart = new Date()
+        periodStart.setDate(periodStart.getDate() - (isDaily ? i : i * 7))
+        const periodKey = isDaily
+          ? formatDateKey(getDayStart(periodStart))
+          : formatDateKey(getWeekStart(periodStart))
+        periodData.set(periodKey, { count: 0, points: 0 })
       }
 
-      // Count tasks per week
+      // Count tasks per period
       for (const task of completedTasks) {
         if (task.dateCompleted) {
-          const weekKey = formatDateKey(getWeekStart(task.dateCompleted))
-          const current = weeklyData.get(weekKey) ?? { count: 0, points: 0 }
+          const periodKey = isDaily
+            ? formatDateKey(getDayStart(task.dateCompleted))
+            : formatDateKey(getWeekStart(task.dateCompleted))
+          const current = periodData.get(periodKey) ?? { count: 0, points: 0 }
           const points = task.score > 0 ? task.score : task.timeEstimated
-          weeklyData.set(weekKey, {
+          periodData.set(periodKey, {
             count: current.count + 1,
             points: current.points + points,
           })
@@ -255,20 +274,23 @@ export const analyticsRouter = router({
       }
 
       // Convert to array sorted by date (oldest first)
-      const dataPoints = Array.from(weeklyData.entries())
-        .map(([weekStart, data]) => ({
-          weekStart,
+      const dataPoints = Array.from(periodData.entries())
+        .map(([periodStart, data]) => ({
+          periodStart,
+          // Keep weekStart for backwards compatibility
+          weekStart: periodStart,
           tasksCompleted: data.count,
           pointsCompleted: Math.round(data.points * 10) / 10,
         }))
-        .sort((a, b) => a.weekStart.localeCompare(b.weekStart))
+        .sort((a, b) => a.periodStart.localeCompare(b.periodStart))
 
-      // Calculate rolling average (last 4 weeks)
-      const recentWeeks = dataPoints.slice(-4)
+      // Calculate rolling average (last 4 periods for weekly, last 7 for daily)
+      const avgPeriods = isDaily ? 7 : 4
+      const recentPeriods = dataPoints.slice(-avgPeriods)
       const avgVelocity =
-        recentWeeks.length > 0
+        recentPeriods.length > 0
           ? Math.round(
-              (recentWeeks.reduce((sum, w) => sum + w.tasksCompleted, 0) / recentWeeks.length) * 10
+              (recentPeriods.reduce((sum, p) => sum + p.tasksCompleted, 0) / recentPeriods.length) * 10
             ) / 10
           : 0
 
@@ -276,6 +298,7 @@ export const analyticsRouter = router({
         dataPoints,
         avgVelocity,
         totalCompleted: completedTasks.length,
+        granularity: input.granularity,
       }
     }),
 
