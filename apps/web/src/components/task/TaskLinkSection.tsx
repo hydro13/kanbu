@@ -124,7 +124,7 @@ function LinkItem({
   const icon = LINK_TYPE_ICONS[link.linkType] ?? <Link2 className="h-3 w-3" />
 
   return (
-    <div className="group flex items-center gap-2 py-1.5 px-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800">
+    <div className="group flex items-center gap-2 py-1.5 px-2 rounded hover:bg-accent">
       {icon}
       <span className="text-xs text-gray-500 min-w-[80px]">{label}</span>
       <button
