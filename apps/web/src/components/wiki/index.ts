@@ -1,6 +1,6 @@
 /*
  * Wiki Components
- * Version: 1.5.0
+ * Version: 1.6.0
  *
  * Exports all wiki-related components.
  *
@@ -10,6 +10,8 @@
  * Modified: 2026-01-14
  * Change: Fase 15.3 - Added AskWikiDialog and AskWikiFab components
  * Change: Fase 22 - Added WikiDuplicateBadge and WikiDuplicateManager components
+ * Modified: 2026-01-15
+ * Change: Fase 24.7 - Added ClusterLegend and ClusterDetailPanel components
  * ===================================================================
  */
 
@@ -60,3 +62,10 @@ export type { WikiDuplicateBadgeProps, DuplicateInfo } from './WikiDuplicateBadg
 
 export { WikiDuplicateManager } from './WikiDuplicateManager'
 export type { WikiDuplicateManagerProps } from './WikiDuplicateManager'
+
+// Fase 24.7 - Community Detection UI
+export { ClusterLegend } from './ClusterLegend'
+export type { ClusterLegendProps } from './ClusterLegend'
+
+export { ClusterDetailPanel } from './ClusterDetailPanel'
+export type { ClusterDetailPanelProps } from './ClusterDetailPanel'

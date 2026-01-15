@@ -283,8 +283,10 @@ export class WikiClusterService {
         generateSummaries: true,
       })
 
+      // Always return modified=true when detectCommunities ran
+      // even if no communities were found (graph was analyzed)
       return {
-        modified: result.communities.length > 0,
+        modified: true,
         communitiesAffected: result.communities.length,
         newCommunity: result.communities[0],
       }
@@ -316,10 +318,34 @@ export class WikiClusterService {
           totalCount: cached.communities.length,
         }
       }
+
+      // includeMembers=true: fetch members for cached communities
+      const communitiesWithMembers: CommunityWithMembers[] = []
+      for (const community of filtered) {
+        const members = await this.fetchCommunityMembers(community.uuid)
+        communitiesWithMembers.push({
+          ...community,
+          members,
+        })
+      }
+
+      return {
+        communities: communitiesWithMembers,
+        totalCount: cached.communities.length,
+      }
     }
 
     // Fetch from FalkorDB
     const communities = await this.fetchCommunities(groupId, minMembers, limit)
+
+    // Update cache with fetched communities
+    this.cache.set(groupId, {
+      communities,
+      computedAt: new Date(),
+      groupId,
+      nodeCount: 0, // TODO: track actual node/edge count for invalidation
+      edgeCount: 0,
+    })
 
     if (includeMembers) {
       const communitiesWithMembers: CommunityWithMembers[] = []
@@ -341,6 +367,47 @@ export class WikiClusterService {
     return {
       communities,
       totalCount: communities.length,
+    }
+  }
+
+  /**
+   * Get a single community by UUID with members
+   */
+  async getCommunity(communityUuid: string): Promise<CommunityWithMembers | null> {
+    // Fetch community from FalkorDB
+    const query = `
+      MATCH (c:Community {uuid: '${this.escapeString(communityUuid)}'})
+      RETURN c.uuid, c.name, c.summary, c.groupId, c.memberCount, c.createdAt, c.updatedAt
+      LIMIT 1
+    `
+
+    const result = await this.query(query)
+
+    if (result.length < 2 || !Array.isArray(result[1])) {
+      return null
+    }
+
+    const row = result[1] as unknown[]
+    if (!Array.isArray(row) || row.length < 7) {
+      return null
+    }
+
+    const community: CommunityNode = {
+      uuid: String(row[0]),
+      name: String(row[1]),
+      summary: String(row[2]),
+      groupId: String(row[3]),
+      memberCount: Number(row[4]),
+      createdAt: new Date(String(row[5])),
+      updatedAt: new Date(String(row[6])),
+    }
+
+    // Fetch members
+    const members = await this.fetchCommunityMembers(communityUuid)
+
+    return {
+      ...community,
+      members,
     }
   }
 
