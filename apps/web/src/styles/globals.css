@@ -225,6 +225,78 @@
     --interactive-hover: rgb(0 0 0 / 0.04);
     --interactive-active: rgb(0 0 0 / 0.08);
     --interactive-selected: var(--color-blue-50);
+
+    /* ═══════════════════════════════════════════════════════════════
+       COMPONENT TOKENS
+       ═══════════════════════════════════════════════════════════════ */
+
+    /* Card */
+    --card-background: var(--surface-1);
+    --card-border: var(--border-default);
+    --card-radius: var(--radius-lg);
+    --card-shadow: var(--shadow-sm);
+    --card-padding: var(--space-6);
+    --card-padding-sm: var(--space-4);
+    --card-padding-lg: var(--space-8);
+
+    /* Button */
+    --button-radius: var(--radius-md);
+    --button-padding-x: var(--space-4);
+    --button-padding-y: var(--space-2);
+    --button-padding-x-sm: var(--space-3);
+    --button-padding-y-sm: var(--space-1-5);
+    --button-padding-x-lg: var(--space-6);
+    --button-padding-y-lg: var(--space-3);
+    --button-font-weight: var(--font-weight-medium);
+    --button-font-size: var(--font-size-sm);
+
+    /* Input */
+    --input-radius: var(--radius-md);
+    --input-border: var(--border-default);
+    --input-border-focus: var(--border-focus);
+    --input-padding-x: var(--space-3);
+    --input-padding-y: var(--space-2);
+    --input-font-size: var(--font-size-sm);
+    --input-background: var(--surface-background);
+
+    /* Page */
+    --page-padding-x: var(--space-6);
+    --page-padding-y: var(--space-8);
+    --page-max-width: 80rem;
+    --page-max-width-narrow: 48rem;
+
+    /* Page Title */
+    --page-title-size: var(--font-size-2xl);
+    --page-title-weight: var(--font-weight-semibold);
+    --page-title-size-lg: var(--font-size-3xl);
+    --page-title-weight-lg: var(--font-weight-bold);
+
+    /* Section */
+    --section-title-size: var(--font-size-lg);
+    --section-title-weight: var(--font-weight-semibold);
+    --section-gap: var(--space-8);
+
+    /* Sidebar */
+    --sidebar-width: 14rem;
+    --sidebar-width-collapsed: 3.5rem;
+    --sidebar-background: var(--surface-2);
+    --sidebar-item-radius: var(--radius-md);
+    --sidebar-item-padding-x: var(--space-3);
+    --sidebar-item-padding-y: var(--space-2);
+
+    /* Table */
+    --table-header-background: var(--surface-2);
+    --table-row-hover: var(--interactive-hover);
+    --table-border: var(--border-default);
+    --table-cell-padding-x: var(--space-4);
+    --table-cell-padding-y: var(--space-3);
+
+    /* Modal */
+    --modal-background: var(--surface-1);
+    --modal-overlay: rgb(0 0 0 / 0.5);
+    --modal-radius: var(--radius-lg);
+    --modal-shadow: var(--shadow-xl);
+    --modal-padding: var(--space-6);
   }
 
   .dark {
