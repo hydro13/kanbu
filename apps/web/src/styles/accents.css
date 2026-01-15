@@ -1,0 +1,140 @@
+/*
+ * Theme Accent Variants
+ * Version: 1.0.0
+ *
+ * Professional accent color overrides for the theme system.
+ * These classes override the --primary color based on user preference.
+ *
+ * Usage: Apply data-accent="name" to the <html> element.
+ *
+ * ===================================================================
+ * AI Architect: Robin Waslander <R.Waslander@gmail.com>
+ * Session: MAX-2026-01-15
+ * ===================================================================
+ */
+
+/* =============================================================================
+   Slate - Neutral and professional (default when no accent set)
+   ============================================================================= */
+
+[data-accent="slate"] {
+  --primary: 215 25% 27%;
+  --primary-foreground: 0 0% 100%;
+  --ring: 215 25% 27%;
+}
+
+[data-accent="slate"].dark,
+.dark[data-accent="slate"],
+.dark [data-accent="slate"] {
+  --primary: 215 20% 65%;
+  --primary-foreground: 222 47% 11%;
+  --ring: 215 20% 65%;
+}
+
+/* =============================================================================
+   Blue - Trust and reliability
+   ============================================================================= */
+
+[data-accent="blue"] {
+  --primary: 221 83% 53%;
+  --primary-foreground: 0 0% 100%;
+  --ring: 221 83% 53%;
+}
+
+[data-accent="blue"].dark,
+.dark[data-accent="blue"],
+.dark [data-accent="blue"] {
+  --primary: 217 91% 60%;
+  --primary-foreground: 0 0% 100%;
+  --ring: 217 91% 60%;
+}
+
+/* =============================================================================
+   Teal - Fresh and modern
+   ============================================================================= */
+
+[data-accent="teal"] {
+  --primary: 173 80% 32%;
+  --primary-foreground: 0 0% 100%;
+  --ring: 173 80% 32%;
+}
+
+[data-accent="teal"].dark,
+.dark[data-accent="teal"],
+.dark [data-accent="teal"] {
+  --primary: 172 66% 50%;
+  --primary-foreground: 166 76% 10%;
+  --ring: 172 66% 50%;
+}
+
+/* =============================================================================
+   Violet - Creative and premium
+   ============================================================================= */
+
+[data-accent="violet"] {
+  --primary: 262 83% 58%;
+  --primary-foreground: 0 0% 100%;
+  --ring: 262 83% 58%;
+}
+
+[data-accent="violet"].dark,
+.dark[data-accent="violet"],
+.dark [data-accent="violet"] {
+  --primary: 263 70% 50%;
+  --primary-foreground: 0 0% 100%;
+  --ring: 263 70% 50%;
+}
+
+/* =============================================================================
+   Rose - Bold and energetic
+   ============================================================================= */
+
+[data-accent="rose"] {
+  --primary: 347 77% 50%;
+  --primary-foreground: 0 0% 100%;
+  --ring: 347 77% 50%;
+}
+
+[data-accent="rose"].dark,
+.dark[data-accent="rose"],
+.dark [data-accent="rose"] {
+  --primary: 349 89% 60%;
+  --primary-foreground: 0 0% 100%;
+  --ring: 349 89% 60%;
+}
+
+/* =============================================================================
+   Amber - Warm and friendly
+   ============================================================================= */
+
+[data-accent="amber"] {
+  --primary: 32 95% 44%;
+  --primary-foreground: 0 0% 100%;
+  --ring: 32 95% 44%;
+}
+
+[data-accent="amber"].dark,
+.dark[data-accent="amber"],
+.dark [data-accent="amber"] {
+  --primary: 38 92% 50%;
+  --primary-foreground: 26 83% 14%;
+  --ring: 38 92% 50%;
+}
+
+/* =============================================================================
+   High Contrast Mode (Accessibility)
+   ============================================================================= */
+
+[data-contrast="high"] {
+  /* Increased border visibility */
+  --border: 214 32% 70%;
+
+  /* Stronger text contrast */
+  --muted-foreground: 215 25% 35%;
+}
+
+[data-contrast="high"].dark,
+.dark[data-contrast="high"] {
+  --border: 215 20% 40%;
+  --muted-foreground: 215 20% 75%;
+}

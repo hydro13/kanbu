@@ -1,18 +1,24 @@
 /*
  * EditProfile Page
- * Version: 1.1.0
+ * Version: 1.3.0
  *
  * User profile editing page with form for basic info, theme, and preferences.
  * Compact 2-column layout to fit on 1920x1080 without scrolling.
  *
  * Task: USER-01 (Task 247), Task 264 - UX improvements
+ *
+ * Modified: 2026-01-15
+ * Change: Integrated useTheme hook for theme management (Fase 3.1)
+ * Change: Added accent color picker (Fase 3.2)
  */
 
 import { useState, useEffect } from 'react'
 import { ProfileLayout } from '../../components/profile/ProfileLayout'
 import { Button } from '../../components/ui/button'
 import { SocialLinksEditor } from '../../components/profile/SocialLinksEditor'
+import { AccentPicker } from '../../components/theme'
 import { trpc } from '../../lib/trpc'
+import { useTheme, type ThemeMode } from '@/contexts/ThemeContext'
 
 // =============================================================================
 // Compact Input Components
@@ -39,7 +45,7 @@ function CompactInput({
 }) {
   return (
     <div className="space-y-1">
-      <label htmlFor={id} className="text-sm font-medium text-gray-700 dark:text-gray-300">
+      <label htmlFor={id} className="text-sm font-medium text-muted-foreground">
         {label}
       </label>
       <input
@@ -50,43 +56,10 @@ function CompactInput({
         disabled={disabled}
         placeholder={placeholder}
         className={`w-full h-9 px-3 text-sm rounded-md border border-input
-          ${disabled ? 'bg-gray-50 dark:bg-gray-800 text-gray-500' : 'bg-white dark:bg-gray-900'}
-          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+          ${disabled ? 'bg-muted text-muted-foreground' : 'bg-background'}
+          focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent`}
       />
       {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
-    </div>
-  )
-}
-
-function CompactSelect({
-  id,
-  label,
-  value,
-  onChange,
-  options,
-}: {
-  id: string
-  label: string
-  value: string
-  onChange: (value: string) => void
-  options: { value: string; label: string }[]
-}) {
-  return (
-    <div className="space-y-1">
-      <label htmlFor={id} className="text-sm font-medium text-gray-700 dark:text-gray-300">
-        {label}
-      </label>
-      <select
-        id={id}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full h-9 px-3 text-sm rounded-md border border-input
-          bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-      >
-        {options.map((opt) => (
-          <option key={opt.value} value={opt.value}>{opt.label}</option>
-        ))}
-      </select>
     </div>
   )
 }
@@ -99,8 +72,10 @@ export function EditProfile() {
   const [name, setName] = useState('')
   const [timezone, setTimezone] = useState('')
   const [language, setLanguage] = useState('')
-  const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('system')
   const [hasChanges, setHasChanges] = useState(false)
+
+  // Theme is managed by ThemeContext - changes are applied immediately
+  const { theme, setTheme: setThemeGlobal, isSyncing: isThemeSyncing } = useTheme()
 
   const utils = trpc.useUtils()
   const { data: profile, isLoading } = trpc.user.getProfile.useQuery()
@@ -112,36 +87,39 @@ export function EditProfile() {
     },
   })
 
-  // Initialize form with profile data
+  // Initialize form with profile data (excluding theme - handled by ThemeContext)
   useEffect(() => {
     if (profile) {
       setName(profile.name ?? '')
       setTimezone(profile.timezone ?? '')
       setLanguage(profile.language ?? '')
-      setTheme((profile.theme as 'light' | 'dark' | 'system') ?? 'system')
     }
   }, [profile])
 
-  // Track changes
+  // Track changes (excluding theme - it's saved immediately via ThemeContext)
   useEffect(() => {
     if (profile) {
       const changed =
         name !== (profile.name ?? '') ||
         timezone !== (profile.timezone ?? '') ||
-        language !== (profile.language ?? '') ||
-        theme !== ((profile.theme as 'light' | 'dark' | 'system') ?? 'system')
+        language !== (profile.language ?? '')
       setHasChanges(changed)
     }
-  }, [name, timezone, language, theme, profile])
+  }, [name, timezone, language, profile])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+    // Note: theme is NOT included here - it's saved immediately via ThemeContext
     updateProfile.mutate({
       name: name || undefined,
       timezone: timezone || undefined,
       language: language || undefined,
-      theme,
     })
+  }
+
+  // Handle theme change - this saves immediately to backend via ThemeContext
+  const handleThemeChange = (newTheme: string) => {
+    setThemeGlobal(newTheme as ThemeMode)
   }
 
   if (isLoading) {
@@ -171,7 +149,7 @@ export function EditProfile() {
         <div className="grid grid-cols-2 gap-4 mb-4">
           {/* Left Column: Basic Information */}
           <div className="bg-card rounded-card border border-border">
-            <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+            <div className="px-4 py-3 border-b border-border">
               <h3 className="text-sm font-semibold text-foreground">Basic Information</h3>
             </div>
             <div className="p-4 space-y-3">
@@ -202,21 +180,34 @@ export function EditProfile() {
 
           {/* Right Column: Preferences */}
           <div className="bg-card rounded-card border border-border">
-            <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+            <div className="px-4 py-3 border-b border-border">
               <h3 className="text-sm font-semibold text-foreground">Preferences</h3>
             </div>
             <div className="p-4 space-y-3">
-              <CompactSelect
-                id="theme"
-                label="Theme"
-                value={theme}
-                onChange={(v) => setTheme(v as 'light' | 'dark' | 'system')}
-                options={[
-                  { value: 'system', label: 'System Default' },
-                  { value: 'light', label: 'Light' },
-                  { value: 'dark', label: 'Dark' },
-                ]}
-              />
+              <div className="space-y-1">
+                <label htmlFor="theme" className="text-sm font-medium text-muted-foreground">
+                  Theme {isThemeSyncing && <span className="text-xs">(saving...)</span>}
+                </label>
+                <select
+                  id="theme"
+                  value={theme}
+                  onChange={(e) => handleThemeChange(e.target.value)}
+                  disabled={isThemeSyncing}
+                  className="w-full h-9 px-3 text-sm rounded-md border border-input
+                    bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  <option value="system">System Default</option>
+                  <option value="light">Light</option>
+                  <option value="dark">Dark</option>
+                </select>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-muted-foreground">
+                  Accent Color {isThemeSyncing && <span className="text-xs">(saving...)</span>}
+                </label>
+                <AccentPicker layout="inline" size="sm" showLabels={false} />
+                <p className="text-xs text-muted-foreground">Choose your preferred accent color</p>
+              </div>
               <CompactInput
                 id="timezone"
                 label="Timezone"
@@ -259,7 +250,7 @@ export function EditProfile() {
                   setName(profile.name ?? '')
                   setTimezone(profile.timezone ?? '')
                   setLanguage(profile.language ?? '')
-                  setTheme((profile.theme as 'light' | 'dark' | 'system') ?? 'system')
+                  // Note: theme is not reset here - it's managed separately
                 }
               }}
               disabled={!hasChanges}

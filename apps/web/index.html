@@ -5,6 +5,8 @@
     <link rel="icon" type="image/png" href="/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Kanbu</title>
+    <!-- Theme FOUC Prevention: Apply dark class before CSS loads -->
+    <script>(function(){var t=localStorage.getItem('kanbu-theme-cache');var d=t==='dark'||(t!=='light'&&window.matchMedia('(prefers-color-scheme: dark)').matches);if(d)document.documentElement.classList.add('dark');})();</script>
   </head>
   <body>
     <div id="root"></div>
