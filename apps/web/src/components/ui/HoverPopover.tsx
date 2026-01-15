@@ -239,7 +239,7 @@ export function HoverPopover({
   const popoverContent = isOpen && coords && (
     <div
       ref={popoverRef}
-      className={`fixed z-[9999] bg-card rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden animate-in fade-in-0 zoom-in-95 duration-150 ${popoverClassName}`}
+      className={`fixed z-[9999] bg-card rounded-lg shadow-xl border border-border overflow-hidden animate-in fade-in-0 zoom-in-95 duration-150 ${popoverClassName}`}
       style={{
         top: coords.top,
         left: coords.left,
@@ -281,14 +281,14 @@ interface PopoverHeaderProps {
 
 export function PopoverHeader({ icon, title, subtitle }: PopoverHeaderProps) {
   return (
-    <div className="px-3 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750 rounded-t-lg">
+    <div className="px-3 py-2 border-b border-border bg-muted rounded-t-lg">
       <div className="flex items-center gap-2">
-        {icon && <span className="text-gray-500">{icon}</span>}
-        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+        {icon && <span className="text-muted-foreground">{icon}</span>}
+        <span className="text-sm font-medium text-foreground">
           {title}
         </span>
         {subtitle && (
-          <span className="text-sm text-gray-500 dark:text-gray-400 ml-auto">
+          <span className="text-sm text-muted-foreground ml-auto">
             {subtitle}
           </span>
         )}

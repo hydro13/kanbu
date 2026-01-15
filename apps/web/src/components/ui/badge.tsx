@@ -13,6 +13,16 @@ const badgeVariants = cva(
         destructive:
           'border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80',
         outline: 'text-foreground',
+        // Status variants
+        success: 'border-transparent bg-success/10 text-success',
+        warning: 'border-transparent bg-warning/10 text-warning',
+        error: 'border-transparent bg-error/10 text-error',
+        info: 'border-transparent bg-info/10 text-info',
+        // Priority variants
+        'priority-low': 'border-transparent bg-priority-low/10 text-priority-low',
+        'priority-medium': 'border-transparent bg-priority-medium/10 text-priority-medium',
+        'priority-high': 'border-transparent bg-priority-high/10 text-priority-high',
+        'priority-urgent': 'border-transparent bg-priority-urgent/10 text-priority-urgent',
       },
     },
     defaultVariants: {
