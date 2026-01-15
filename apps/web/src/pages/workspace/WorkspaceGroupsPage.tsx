@@ -182,7 +182,7 @@ export function WorkspaceGroupsPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
+            <h1 className="text-page-title-lg tracking-tight text-foreground flex items-center gap-3">
               <Layers className="h-8 w-8" />
               Groups
             </h1>

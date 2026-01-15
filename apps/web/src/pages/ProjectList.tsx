@@ -125,7 +125,7 @@ export function ProjectListPage() {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">My Workspaces</h1>
+              <h1 className="text-page-title-lg tracking-tight text-foreground">My Workspaces</h1>
               <p className="text-muted-foreground">
                 Select a workspace to view projects
               </p>
@@ -267,7 +267,7 @@ export function ProjectListPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Projects</h1>
+            <h1 className="text-page-title-lg tracking-tight text-foreground">Projects</h1>
             <p className="text-muted-foreground">
               Manage projects in {currentWorkspace.name}
             </p>

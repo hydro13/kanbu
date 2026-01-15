@@ -37,7 +37,7 @@ export function EditorDemoPage() {
       <div className="max-w-4xl mx-auto space-y-8">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Rich Text Editor Demo</h1>
+          <h1 className="text-page-title-lg text-foreground">Rich Text Editor Demo</h1>
           <p className="text-muted-foreground mt-2">
             Test the Lexical-based rich text editor. Try formatting, lists, and markdown shortcuts.
           </p>

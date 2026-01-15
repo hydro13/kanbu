@@ -214,9 +214,9 @@ export function GitHubProjectSettings() {
         <div className="mb-4">
           <div className="flex items-center gap-3 mb-1">
             <GitHubIcon className="h-6 w-6" />
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">GitHub Integration</h1>
+            <h1 className="text-section-title text-foreground">GitHub Integration</h1>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-muted-foreground">
             Link a GitHub repository to sync issues, pull requests, and commits.
           </p>
         </div>

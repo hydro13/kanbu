@@ -298,7 +298,7 @@ export function BoardSettingsPage() {
             {' / '}
             <span>Settings</span>
           </nav>
-          <h1 className="text-2xl font-bold">Board Settings</h1>
+          <h1 className="text-page-title text-foreground">Board Settings</h1>
           <p className="text-muted-foreground mt-1">
             Manage columns, swimlanes, and WIP limits
           </p>

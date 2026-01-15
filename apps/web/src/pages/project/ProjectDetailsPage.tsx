@@ -115,7 +115,7 @@ export function ProjectDetailsPage() {
             {' / '}
             <span>Details</span>
           </nav>
-          <h1 className="text-2xl font-bold">Project Details</h1>
+          <h1 className="text-page-title text-foreground">Project Details</h1>
           <p className="text-muted-foreground mt-1">
             Edit project name and description
           </p>

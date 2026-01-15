@@ -328,10 +328,10 @@ export function ImportExportPage() {
       <div className="max-w-4xl mx-auto py-8 px-4">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-page-title text-foreground">
             Import & Export
           </h1>
-          <p className="mt-1 text-gray-500 dark:text-gray-400">
+          <p className="mt-1 text-muted-foreground">
             Import tasks from other tools or export your project data. No lock-in - your data is always yours.
           </p>
         </div>

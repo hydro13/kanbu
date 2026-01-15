@@ -249,8 +249,8 @@ export function WebhookSettings() {
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <Webhook className="w-6 h-6 text-gray-700 dark:text-gray-300" />
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+            <Webhook className="w-6 h-6 text-muted-foreground" />
+            <h1 className="text-section-title text-foreground">
               Webhooks
             </h1>
           </div>

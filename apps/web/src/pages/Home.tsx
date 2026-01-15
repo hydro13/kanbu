@@ -134,7 +134,7 @@ export function HomePage() {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">
+          <h1 className="text-page-title-lg tracking-tight text-foreground">
             Welcome, {user?.name}!
           </h1>
           <p className="text-muted-foreground">

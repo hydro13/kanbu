@@ -191,8 +191,8 @@ export function ApiSettings() {
                 <ArrowLeft className="w-5 h-5" />
               </button>
               <div className="flex items-center gap-3">
-                <Key className="w-6 h-6 text-gray-700 dark:text-gray-300" />
-                <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
+                <Key className="w-6 h-6 text-muted-foreground" />
+                <h1 className="text-section-title text-foreground">
                   API Keys
                 </h1>
               </div>
