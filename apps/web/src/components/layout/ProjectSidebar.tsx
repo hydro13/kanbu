@@ -261,7 +261,7 @@ export function ProjectSidebar({ projectIdentifier, projectId, workspaceSlug, co
                         'flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors',
                         active
                           ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-medium'
-                          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                          : 'text-gray-700 dark:text-gray-300 hover:bg-accent'
                       )}
                       title={collapsed ? item.label : undefined}
                     >
