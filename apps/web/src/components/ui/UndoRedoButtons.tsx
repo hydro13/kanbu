@@ -91,15 +91,15 @@ function UndoToast({ toast, onDismiss }: UndoToastProps) {
   }, [])
 
   const iconMap = {
-    success: <CheckIcon className="h-5 w-5 text-green-500" />,
-    warning: <WarningIcon className="h-5 w-5 text-amber-500" />,
-    error: <ErrorIcon className="h-5 w-5 text-red-500" />,
+    success: <CheckIcon className="h-5 w-5 text-success" />,
+    warning: <WarningIcon className="h-5 w-5 text-warning" />,
+    error: <ErrorIcon className="h-5 w-5 text-error" />,
   }
 
   const bgMap = {
-    success: 'bg-green-50 dark:bg-green-900/30 border-green-200 dark:border-green-800',
-    warning: 'bg-amber-50 dark:bg-amber-900/30 border-amber-200 dark:border-amber-800',
-    error: 'bg-red-50 dark:bg-red-900/30 border-red-200 dark:border-red-800',
+    success: 'bg-success-muted border-success/20',
+    warning: 'bg-warning-muted border-warning/20',
+    error: 'bg-error-muted border-error/20',
   }
 
   return createPortal(
@@ -114,18 +114,18 @@ function UndoToast({ toast, onDismiss }: UndoToastProps) {
       role="alert"
     >
       {iconMap[toast.type]}
-      <span className="text-sm text-gray-700 dark:text-gray-200">{toast.message}</span>
+      <span className="text-sm text-foreground">{toast.message}</span>
       {toast.action && (
         <button
           onClick={toast.action.onClick}
-          className="ml-2 px-2 py-1 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 rounded"
+          className="ml-2 px-2 py-1 text-xs font-medium text-primary hover:bg-primary/10 rounded"
         >
           {toast.action.label}
         </button>
       )}
       <button
         onClick={onDismiss}
-        className="ml-2 p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded"
+        className="ml-2 p-1 text-muted-foreground hover:text-foreground rounded"
         aria-label="Dismiss"
       >
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -170,8 +170,8 @@ export function UndoRedoButtons({ projectId, className }: UndoRedoButtonsProps) 
           className={cn(
             'p-1.5 rounded transition-colors',
             canUndo && !isProcessing
-              ? 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-accent'
-              : 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
+              ? 'text-muted-foreground hover:text-foreground hover:bg-accent'
+              : 'text-muted-foreground/40 cursor-not-allowed'
           )}
           title="Undo (Ctrl+Z)"
           aria-label="Undo"
@@ -184,8 +184,8 @@ export function UndoRedoButtons({ projectId, className }: UndoRedoButtonsProps) 
           className={cn(
             'p-1.5 rounded transition-colors',
             canRedo && !isProcessing
-              ? 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-accent'
-              : 'text-gray-300 dark:text-gray-600 cursor-not-allowed'
+              ? 'text-muted-foreground hover:text-foreground hover:bg-accent'
+              : 'text-muted-foreground/40 cursor-not-allowed'
           )}
           title="Redo (Ctrl+Shift+Z)"
           aria-label="Redo"
