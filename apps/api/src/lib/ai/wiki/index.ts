@@ -13,6 +13,8 @@
  * Fase 19.2 - Edge Embeddings (WikiEdgeEmbeddingService)
  * Fase 21.3 - Node Embeddings (WikiNodeEmbeddingService)
  * Fase 22 - Entity Deduplication & Graph Cleanup
+ * Fase 23 - Reflexion Extraction (Multi-Pass)
+ * Fase 24 - Community Detection (Label Propagation)
  */
 
 export {
@@ -211,3 +213,66 @@ export {
   getWikiDeduplicationService,
   resetWikiDeduplicationService,
 } from './WikiDeduplicationService'
+
+// Fase 24.2 - Community Detection Types
+export {
+  // Core types
+  type CommunityNode,
+  type CommunityMembership,
+  // Algorithm types
+  type LPNeighbor,
+  type LPProjectionMap,
+  type LPClusterResult,
+  type LPConfig,
+  DEFAULT_LP_CONFIG,
+  // Service I/O types
+  type DetectCommunitiesInput,
+  type DetectCommunitiesOutput,
+  type UpdateCommunitiesInput,
+  type UpdateCommunitiesOutput,
+  type GetCommunitiesInput,
+  type GetCommunitiesOutput,
+  type CommunityWithMembers,
+  // LLM types
+  type SummarizePairInput,
+  type SummarizePairOutput,
+  type GenerateCommunityNameInput,
+  type GenerateCommunityNameOutput,
+  type EntitySummary,
+  // Cache types
+  type CommunityCacheEntry,
+  type CommunityCacheConfig,
+  DEFAULT_CACHE_CONFIG,
+  // FalkorDB types
+  type FalkorCommunityNode,
+  type FalkorHasMemberEdge,
+  // UI types
+  type CommunityDisplayData,
+  type CommunityDetectionStatus,
+  type CommunityDetectionProgress,
+} from './types'
+
+// Fase 24.3 - Label Propagation Algorithm
+export {
+  labelPropagation,
+  buildProjectionFromEdges,
+  getClusterStats,
+  mergeSmallClusters,
+} from './algorithms'
+
+// Fase 24.4 - Community Summarization Prompts
+export {
+  getSummarizePairSystemPrompt,
+  getSummarizePairUserPrompt,
+  parseSummarizePairResponse,
+  getGenerateCommunityNameSystemPrompt,
+  getGenerateCommunityNameUserPrompt,
+  parseGenerateCommunityNameResponse,
+} from './prompts'
+
+// Fase 24.5 - WikiClusterService
+export {
+  WikiClusterService,
+  getWikiClusterService,
+  resetWikiClusterService,
+} from './WikiClusterService'

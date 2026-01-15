@@ -1,7 +1,7 @@
 # Feature Beslissingen - Graphiti vs Kanbu
 
 > **Doel:** Track welke Graphiti features we wel/niet gaan implementeren
-> **Laatst bijgewerkt:** 2026-01-14
+> **Laatst bijgewerkt:** 2026-01-15
 
 ---
 
@@ -157,12 +157,15 @@
 - ⚠️ Geen AI-gener cluster namen/descriptions
 
 **Wat Fase 24 toevoegt:**
-- 🔄 24.1 Validatie & Setup (pre-checks, test data)
-- 🔄 24.2 Clustering Algorithm (Leiden/Louvain, cache)
-- 🔄 24.3 AI Cluster Summaries (LLM prompts, naming, descriptions)
-- 🔄 24.4 tRPC Endpoints (6 endpoints, frontend hooks)
-- 🔄 24.5 UI Components (ClusterLegend, ClusterDetailPanel)
-- 🔄 24.6 Testing & Validation (~88 tests)
+- 🔄 24.1 Pre-Validatie (code checks, conflict detection)
+- 🔄 24.2 FalkorDB Schema + TypeScript Types (CommunityNode, CommunityEdge)
+- 🔄 24.3 Label Propagation Algorithm (port van Python Graphiti)
+- 🔄 24.4 LLM Prompts (summarize_pair, summary_description)
+- 🔄 24.5 WikiClusterService (detectCommunities, updateCommunity)
+- 🔄 24.6 tRPC Endpoints (4 endpoints, frontend hooks)
+- 🔄 24.7 UI Components (ClusterLegend, ClusterDetailPanel)
+- 🔄 24.8 Tests (~88 tests)
+- 🔄 24.9 Migration Script (dry-run support)
 
 **Nieuwe Componenten:**
 - `WikiClusterService.ts` - Clustering algoritme + cache management
@@ -408,6 +411,7 @@
 | 2026-01-14 | Deduplication | ✅ JA | Robin | Gepland voor Fase 22 |
 | 2026-01-14 | Reflexion Extraction | ✅ JA | Robin | Gepland voor Fase 23 |
 | 2026-01-14 | Community Detection | ✅ JA | Robin | Gepland voor Fase 24 |
+| 2026-01-15 | Community Detection | 🔄 FASE 24 | Claude Code | Fase 24 plan uitgewerkt met 9 sub-fases |
 
 ---
 
@@ -423,4 +427,4 @@
 
 ---
 
-*Laatst bijgewerkt door: Claude Code - 2026-01-14*
+*Laatst bijgewerkt door: Claude Code - 2026-01-15*

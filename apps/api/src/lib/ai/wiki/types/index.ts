@@ -6,3 +6,4 @@
 
 export * from './deduplication'
 export * from './reflexion'
+export * from './community'

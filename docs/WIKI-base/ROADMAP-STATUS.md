@@ -10741,6 +10741,1882 @@ curl -X POST http://localhost:3001/trpc/graphiti.reflexionNodes \
 
 ---
 
+## Fase 24: Community Detection (Volledig) ⏳
+
+**Status:** GEPLAND
+**Prioriteit:** MEDIUM
+**Afhankelijkheden:** Fase 15 (WikiGraphView), Fase 21 (Node Embeddings)
+
+---
+
+### UITVOERINGSPLAN VOOR CLAUDE CODE SESSIE
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    FASE 24 DEPENDENCY DIAGRAM                            │
+│                                                                          │
+│  STAP 1: 24.1 Validatie (VERPLICHT EERST)                               │
+│              │                                                           │
+│              ▼                                                           │
+│  STAP 2: ┌──────────────────┐                                           │
+│          │ 24.2 FalkorDB    │  (moet eerst: schema nodig voor rest)     │
+│          │ Schema + Types   │                                           │
+│          └────────┬─────────┘                                           │
+│                   │                                                      │
+│                   ▼                                                      │
+│  STAP 3: ┌──────────────────┐  ┌──────────────────┐                     │
+│          │ 24.3 Label Prop  │  │ 24.4 LLM Prompts │  ← PARALLEL         │
+│          │ Algorithm        │  │ Summarize        │                     │
+│          └────────┬─────────┘  └────────┬─────────┘                     │
+│                   │                      │                               │
+│                   └──────────┬───────────┘                               │
+│                              ▼                                           │
+│  STAP 4: ┌──────────────────────────────┐                               │
+│          │ 24.5 WikiClusterService      │  (afhankelijk van 24.2-24.4)  │
+│          │ (detectClusters, buildComm)  │                               │
+│          └──────────────┬───────────────┘                               │
+│                         │                                                │
+│                         ▼                                                │
+│  STAP 5: ┌──────────────────┐  ┌──────────────────┐  ┌────────────────┐ │
+│          │ 24.6 tRPC        │  │ 24.7 UI          │  │ 24.8 Tests     │ ← PARALLEL
+│          │ Endpoints        │  │ Components       │  │ (~88 tests)    │ │
+│          └──────────────────┘  └──────────────────┘  └────────────────┘ │
+│                                                                          │
+│  STAP 6: 24.9 Migration Script (LAATSTE)                                │
+│                                                                          │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### STAP 1: Pre-Validatie (24.1) - VERPLICHT EERST
+
+**KRITIEK:** Voer deze checks uit VOORDAT je code schrijft!
+
+```bash
+# 1. Check of Community types al bestaan
+grep -r "CommunityNode\|CommunityEdge\|HAS_MEMBER" apps/api/src/
+
+# 2. Check of label_propagation al bestaat
+grep -r "labelPropagation\|label_propagation" apps/api/src/
+
+# 3. Check of WikiClusterService al bestaat
+ls -la apps/api/src/services/wiki/ 2>/dev/null | grep -i cluster
+
+# 4. Check FalkorDB voor Community label
+# In FalkorDB console:
+# MATCH (n:Community) RETURN count(n)
+
+# 5. Check of summarize prompts al bestaan
+grep -r "summarize_pair\|summarizePair\|summary_description" apps/api/src/lib/ai/wiki/prompts/
+```
+
+**Bij CONFLICT:**
+```
+⛔ STOP - Neem contact op met Robin voordat je verder gaat!
+
+Documenteer:
+1. Welke bestanden conflicteren
+2. Wat de huidige implementatie doet
+3. Hoe dit verschilt van Fase 24 plan
+```
+
+**CHECKPOINT 1:** ✅ Alle checks passing, geen conflicten → Ga naar STAP 2
+
+---
+
+### STAP 2: FalkorDB Schema + TypeScript Types (24.2)
+
+**Afhankelijkheden:** Geen
+**Output:** Schema uitbreiding + types in `types/community.ts`
+
+#### 24.2.1 FalkorDB Schema Uitbreiding
+
+**Bestand:** `apps/api/src/lib/db/migrations/add-community-schema.ts`
+
+```typescript
+// FalkorDB Community Schema
+// BELANGRIJK: Voer dit als migratie uit, niet handmatig!
+
+export async function migrateCommunitySchema(falkorClient: FalkorClient): Promise<void> {
+  const queries = [
+    // 1. Create Community node label met properties
+    `CREATE INDEX IF NOT EXISTS FOR (c:Community) ON (c.uuid)`,
+    `CREATE INDEX IF NOT EXISTS FOR (c:Community) ON (c.group_id)`,
+    `CREATE INDEX IF NOT EXISTS FOR (c:Community) ON (c.name)`,
+
+    // 2. Create HAS_MEMBER relationship type index
+    `CREATE INDEX IF NOT EXISTS FOR ()-[r:HAS_MEMBER]-() ON (r.uuid)`,
+    `CREATE INDEX IF NOT EXISTS FOR ()-[r:HAS_MEMBER]-() ON (r.group_id)`,
+  ];
+
+  for (const query of queries) {
+    await falkorClient.execute(query);
+  }
+
+  logger.info('Community schema migration completed');
+}
+```
+
+#### 24.2.2 TypeScript Types
+
+**Bestand:** `apps/api/src/types/community.ts`
+
+```typescript
+/**
+ * Community Detection Types
+ *
+ * MULTI-TENANT SCOPING:
+ * - groupId: 'wiki-ws-{workspaceId}' voor workspace wiki
+ * - groupId: 'wiki-proj-{projectId}' voor project wiki (toekomstig)
+ */
+
+import { WikiContext } from './wiki';
+
+// ============================================================================
+// Core Types
+// ============================================================================
+
+export interface CommunityNode {
+  uuid: string;
+  name: string;           // LLM-generated description (max 250 chars)
+  summary: string;        // Aggregated summary of all members
+  groupId: string;        // Scoping: wiki-ws-{id} of wiki-proj-{id}
+  nameEmbedding?: number[]; // Vector embedding voor search
+  memberCount: number;    // Cached count of members
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CommunityEdge {
+  uuid: string;
+  sourceNodeUuid: string; // Community UUID
+  targetNodeUuid: string; // Entity UUID
+  groupId: string;
+  createdAt: Date;
+}
+
+// ============================================================================
+// Algorithm Types
+// ============================================================================
+
+export interface Neighbor {
+  nodeUuid: string;
+  edgeCount: number;
+}
+
+export interface ProjectionMap {
+  [nodeUuid: string]: Neighbor[];
+}
+
+export interface ClusterResult {
+  communityId: string;
+  memberUuids: string[];
+}
+
+// ============================================================================
+// Service Input/Output Types
+// ============================================================================
+
+export interface DetectCommunitiesInput {
+  context: WikiContext;
+  forceRebuild?: boolean; // Verwijder bestaande communities eerst
+}
+
+export interface DetectCommunitiesOutput {
+  communities: CommunityNode[];
+  edges: CommunityEdge[];
+  stats: {
+    totalNodes: number;
+    totalCommunities: number;
+    avgCommunitySize: number;
+    processingTimeMs: number;
+  };
+}
+
+export interface UpdateCommunityInput {
+  context: WikiContext;
+  entityUuid: string; // Nieuw toegevoegde entity
+}
+
+export interface UpdateCommunityOutput {
+  community: CommunityNode | null;
+  isNew: boolean; // True als entity aan nieuwe community is toegevoegd
+}
+
+// ============================================================================
+// Cache Types
+// ============================================================================
+
+export interface CommunityCacheEntry {
+  communities: CommunityNode[];
+  computedAt: Date;
+  groupId: string;
+  nodeCount: number; // Bij change: invalidate cache
+}
+
+// ============================================================================
+// LLM Types
+// ============================================================================
+
+export interface SummarizePairInput {
+  summaries: [string, string];
+}
+
+export interface SummarizePairOutput {
+  summary: string;
+}
+
+export interface SummaryDescriptionInput {
+  summary: string;
+}
+
+export interface SummaryDescriptionOutput {
+  description: string;
+}
+```
+
+**CHECKPOINT 2:** ✅ Types compileren zonder errors → Ga naar STAP 3
+
+---
+
+### STAP 3: Label Propagation + LLM Prompts (24.3 + 24.4) - PARALLEL
+
+#### 24.3 Label Propagation Algorithm
+
+**Bestand:** `apps/api/src/lib/ai/wiki/algorithms/labelPropagation.ts`
+
+```typescript
+/**
+ * Label Propagation Community Detection Algorithm
+ *
+ * Port van Python Graphiti: graphiti_core/utils/maintenance/community_operations.py
+ *
+ * Algoritme:
+ * 1. Start met elke node in eigen community
+ * 2. Elke node neemt community van meerderheid neighbors over
+ * 3. Ties worden gebroken door naar grootste community te gaan
+ * 4. Herhaal tot geen communities meer veranderen
+ */
+
+import { Neighbor, ProjectionMap, ClusterResult } from '@/types/community';
+import { logger } from '@/lib/logger';
+
+/**
+ * Label Propagation Algorithm
+ *
+ * @param projection - Map van node UUID naar lijst van neighbors met edge counts
+ * @returns Array van clusters, elke cluster is array van node UUIDs
+ */
+export function labelPropagation(projection: ProjectionMap): string[][] {
+  if (Object.keys(projection).length === 0) {
+    return [];
+  }
+
+  // 1. Initialiseer: elke node krijgt eigen community (index)
+  const communityMap = new Map<string, number>();
+  let communityIndex = 0;
+  for (const uuid of Object.keys(projection)) {
+    communityMap.set(uuid, communityIndex++);
+  }
+
+  // 2. Propagatie loop
+  let iterations = 0;
+  const maxIterations = 100; // Prevent infinite loops
+
+  while (iterations < maxIterations) {
+    let noChange = true;
+    const newCommunityMap = new Map<string, number>();
+
+    for (const [uuid, neighbors] of Object.entries(projection)) {
+      const currentCommunity = communityMap.get(uuid)!;
+
+      // Tel edge counts per community van neighbors
+      const communityCandidates = new Map<number, number>();
+      for (const neighbor of neighbors) {
+        const neighborCommunity = communityMap.get(neighbor.nodeUuid);
+        if (neighborCommunity !== undefined) {
+          const current = communityCandidates.get(neighborCommunity) || 0;
+          communityCandidates.set(neighborCommunity, current + neighbor.edgeCount);
+        }
+      }
+
+      // Vind community met hoogste score
+      let bestCommunity = -1;
+      let bestScore = 0;
+      for (const [community, score] of communityCandidates) {
+        if (score > bestScore) {
+          bestScore = score;
+          bestCommunity = community;
+        }
+      }
+
+      // Bepaal nieuwe community
+      let newCommunity: number;
+      if (bestCommunity !== -1 && bestScore > 1) {
+        newCommunity = bestCommunity;
+      } else {
+        newCommunity = Math.max(bestCommunity, currentCommunity);
+      }
+
+      newCommunityMap.set(uuid, newCommunity);
+
+      if (newCommunity !== currentCommunity) {
+        noChange = false;
+      }
+    }
+
+    if (noChange) {
+      break;
+    }
+
+    // Update community map voor volgende iteratie
+    for (const [uuid, community] of newCommunityMap) {
+      communityMap.set(uuid, community);
+    }
+
+    iterations++;
+  }
+
+  if (iterations >= maxIterations) {
+    logger.warn('Label propagation reached max iterations, may not have converged');
+  }
+
+  // 3. Groepeer nodes per community
+  const clusterMap = new Map<number, string[]>();
+  for (const [uuid, community] of communityMap) {
+    const cluster = clusterMap.get(community) || [];
+    cluster.push(uuid);
+    clusterMap.set(community, cluster);
+  }
+
+  // Return als array van clusters
+  return Array.from(clusterMap.values());
+}
+
+/**
+ * Build projection map from FalkorDB query results
+ */
+export function buildProjectionFromEdges(
+  nodeUuids: string[],
+  edges: Array<{ sourceUuid: string; targetUuid: string; count: number }>
+): ProjectionMap {
+  const projection: ProjectionMap = {};
+
+  // Initialiseer alle nodes met lege neighbors
+  for (const uuid of nodeUuids) {
+    projection[uuid] = [];
+  }
+
+  // Voeg edges toe als neighbors (bidirectioneel)
+  for (const edge of edges) {
+    if (projection[edge.sourceUuid]) {
+      projection[edge.sourceUuid].push({
+        nodeUuid: edge.targetUuid,
+        edgeCount: edge.count,
+      });
+    }
+    if (projection[edge.targetUuid]) {
+      projection[edge.targetUuid].push({
+        nodeUuid: edge.sourceUuid,
+        edgeCount: edge.count,
+      });
+    }
+  }
+
+  return projection;
+}
+```
+
+#### 24.4 LLM Prompts voor Community Summarization
+
+**Bestand:** `apps/api/src/lib/ai/wiki/prompts/summarizeCommunity.ts`
+
+```typescript
+/**
+ * Community Summarization Prompts
+ *
+ * Port van Python Graphiti: graphiti_core/prompts/summarize_nodes.py
+ */
+
+import { z } from 'zod';
+
+// ============================================================================
+// Zod Schemas
+// ============================================================================
+
+export const SummarySchema = z.object({
+  summary: z.string().max(250).describe(
+    'Summary containing the important information about the entities. Under 250 characters'
+  ),
+});
+
+export const SummaryDescriptionSchema = z.object({
+  description: z.string().max(250).describe(
+    'One sentence description of the provided summary'
+  ),
+});
+
+// ============================================================================
+// Prompt Functions
+// ============================================================================
+
+/**
+ * Prompt voor het samenvoegen van twee summaries
+ * Wordt recursief gebruikt om alle member summaries te combineren
+ */
+export function summarizePairPrompt(summaries: [string, string]): string {
+  return `You are a helpful assistant that combines summaries.
+
+Synthesize the information from the following two summaries into a single succinct summary.
+
+IMPORTANT: Keep the summary concise and to the point. SUMMARIES MUST BE LESS THAN 250 CHARACTERS.
+
+Summary 1:
+${summaries[0]}
+
+Summary 2:
+${summaries[1]}
+
+Respond with a JSON object containing a "summary" field.`;
+}
+
+/**
+ * Prompt voor het genereren van een korte beschrijving van een summary
+ * Wordt gebruikt als naam voor de community
+ */
+export function summaryDescriptionPrompt(summary: string): string {
+  return `You are a helpful assistant that describes provided contents in a single sentence.
+
+Create a short one sentence description of the summary that explains what kind of information is summarized.
+The description must be under 250 characters and should serve as a readable name for this group of entities.
+
+Summary:
+${summary}
+
+Respond with a JSON object containing a "description" field.`;
+}
+
+// ============================================================================
+// System Messages
+// ============================================================================
+
+export const SUMMARIZE_PAIR_SYSTEM =
+  'You are a helpful assistant that combines summaries into concise, informative text.';
+
+export const SUMMARY_DESCRIPTION_SYSTEM =
+  'You are a helpful assistant that creates readable names and descriptions for groups of related information.';
+```
+
+**CHECKPOINT 3:** ✅ Algorithm + Prompts compileren → Ga naar STAP 4
+
+---
+
+### STAP 4: WikiClusterService (24.5)
+
+**Afhankelijkheden:** 24.2, 24.3, 24.4
+
+**Bestand:** `apps/api/src/services/wiki/WikiClusterService.ts`
+
+```typescript
+/**
+ * WikiClusterService - Community Detection voor Wiki Knowledge Graph
+ *
+ * MULTI-TENANT SCOPING:
+ * - Alle queries gefilterd op groupId
+ * - groupId formaat: 'wiki-ws-{workspaceId}' of 'wiki-proj-{projectId}'
+ * - NOOIT cross-tenant data toegankelijk
+ *
+ * GEBASEERD OP:
+ * - Python Graphiti: graphiti_core/utils/maintenance/community_operations.py
+ */
+
+import { injectable, inject } from 'tsyringe';
+import { v4 as uuidv4 } from 'uuid';
+import { FalkorClient } from '@/lib/db/falkor';
+import { WikiAiService } from '@/lib/ai/wiki/WikiAiService';
+import { labelPropagation, buildProjectionFromEdges } from '@/lib/ai/wiki/algorithms/labelPropagation';
+import {
+  summarizePairPrompt,
+  summaryDescriptionPrompt,
+  SummarySchema,
+  SummaryDescriptionSchema,
+} from '@/lib/ai/wiki/prompts/summarizeCommunity';
+import {
+  CommunityNode,
+  CommunityEdge,
+  WikiContext,
+  DetectCommunitiesInput,
+  DetectCommunitiesOutput,
+  UpdateCommunityInput,
+  UpdateCommunityOutput,
+} from '@/types';
+import { logger } from '@/lib/logger';
+
+const MAX_CONCURRENT_LLM_CALLS = 10;
+
+@injectable()
+export class WikiClusterService {
+  constructor(
+    @inject('FalkorClient') private falkor: FalkorClient,
+    @inject('WikiAiService') private wikiAi: WikiAiService
+  ) {}
+
+  // ==========================================================================
+  // Public API
+  // ==========================================================================
+
+  /**
+   * Detect communities in the knowledge graph using Label Propagation
+   *
+   * MULTI-TENANT: Alleen nodes binnen dezelfde groupId worden geclusterd
+   */
+  async detectCommunities(input: DetectCommunitiesInput): Promise<DetectCommunitiesOutput> {
+    const startTime = Date.now();
+    const groupId = this.buildGroupId(input.context);
+
+    logger.info(`[WikiClusterService] Detecting communities for groupId: ${groupId}`);
+
+    // 1. Optioneel: verwijder bestaande communities
+    if (input.forceRebuild) {
+      await this.removeCommunities(groupId);
+    }
+
+    // 2. Haal alle entity nodes op voor deze groupId
+    const nodes = await this.getEntityNodes(groupId);
+    if (nodes.length === 0) {
+      return {
+        communities: [],
+        edges: [],
+        stats: {
+          totalNodes: 0,
+          totalCommunities: 0,
+          avgCommunitySize: 0,
+          processingTimeMs: Date.now() - startTime,
+        },
+      };
+    }
+
+    // 3. Bouw projection map van edges
+    const edges = await this.getEntityEdges(groupId, nodes.map(n => n.uuid));
+    const projection = buildProjectionFromEdges(
+      nodes.map(n => n.uuid),
+      edges
+    );
+
+    // 4. Run Label Propagation
+    const clusters = labelPropagation(projection);
+
+    // 5. Build communities met LLM summaries
+    const { communities, communityEdges } = await this.buildCommunities(
+      clusters,
+      nodes,
+      groupId
+    );
+
+    // 6. Save to FalkorDB
+    await this.saveCommunities(communities, communityEdges);
+
+    const processingTimeMs = Date.now() - startTime;
+
+    return {
+      communities,
+      edges: communityEdges,
+      stats: {
+        totalNodes: nodes.length,
+        totalCommunities: communities.length,
+        avgCommunitySize: nodes.length / Math.max(communities.length, 1),
+        processingTimeMs,
+      },
+    };
+  }
+
+  /**
+   * Update community when a new entity is added
+   *
+   * Bepaalt welke community de entity bij hoort en update de summary
+   */
+  async updateCommunity(input: UpdateCommunityInput): Promise<UpdateCommunityOutput> {
+    const groupId = this.buildGroupId(input.context);
+
+    // 1. Check of entity al in een community zit
+    const existingCommunity = await this.getEntityCommunity(input.entityUuid);
+    if (existingCommunity) {
+      // Update bestaande community summary
+      await this.refreshCommunitySummary(existingCommunity, groupId);
+      return { community: existingCommunity, isNew: false };
+    }
+
+    // 2. Vind beste community op basis van connected entities
+    const bestCommunity = await this.findBestCommunityForEntity(input.entityUuid, groupId);
+    if (!bestCommunity) {
+      return { community: null, isNew: false };
+    }
+
+    // 3. Voeg entity toe aan community
+    const entity = await this.getEntityById(input.entityUuid, groupId);
+    if (!entity) {
+      return { community: null, isNew: false };
+    }
+
+    // 4. Update community summary met nieuwe entity
+    const newSummary = await this.summarizePair(entity.summary, bestCommunity.summary);
+    const newName = await this.generateSummaryDescription(newSummary);
+
+    bestCommunity.summary = newSummary;
+    bestCommunity.name = newName;
+    bestCommunity.memberCount++;
+    bestCommunity.updatedAt = new Date();
+
+    // 5. Maak HAS_MEMBER edge
+    const edge: CommunityEdge = {
+      uuid: uuidv4(),
+      sourceNodeUuid: bestCommunity.uuid,
+      targetNodeUuid: entity.uuid,
+      groupId,
+      createdAt: new Date(),
+    };
+
+    // 6. Save updates
+    await this.saveCommunityNode(bestCommunity);
+    await this.saveCommunityEdge(edge);
+
+    return { community: bestCommunity, isNew: true };
+  }
+
+  /**
+   * Get all communities for a context
+   */
+  async getCommunities(context: WikiContext): Promise<CommunityNode[]> {
+    const groupId = this.buildGroupId(context);
+    return this.getCommunitiesByGroupId(groupId);
+  }
+
+  /**
+   * Get community details including all members
+   */
+  async getCommunityDetails(communityUuid: string): Promise<{
+    community: CommunityNode | null;
+    members: Array<{ uuid: string; name: string; summary: string }>;
+  }> {
+    const community = await this.getCommunityByUuid(communityUuid);
+    if (!community) {
+      return { community: null, members: [] };
+    }
+
+    const members = await this.getCommunityMembers(communityUuid);
+    return { community, members };
+  }
+
+  /**
+   * Regenerate summary for a specific community
+   */
+  async regenerateSummary(communityUuid: string): Promise<CommunityNode | null> {
+    const community = await this.getCommunityByUuid(communityUuid);
+    if (!community) {
+      return null;
+    }
+
+    await this.refreshCommunitySummary(community, community.groupId);
+    return community;
+  }
+
+  // ==========================================================================
+  // Private: Multi-Tenant Scoping
+  // ==========================================================================
+
+  private buildGroupId(context: WikiContext): string {
+    // Project wiki heeft precedence over workspace wiki
+    if (context.projectId) {
+      return `wiki-proj-${context.projectId}`;
+    }
+    return `wiki-ws-${context.workspaceId}`;
+  }
+
+  // ==========================================================================
+  // Private: FalkorDB Queries
+  // ==========================================================================
+
+  private async getEntityNodes(groupId: string): Promise<Array<{
+    uuid: string;
+    name: string;
+    summary: string;
+  }>> {
+    const query = `
+      MATCH (n:Entity {group_id: $groupId})
+      RETURN n.uuid AS uuid, n.name AS name, n.summary AS summary
+    `;
+    const result = await this.falkor.execute(query, { groupId });
+    return result.records || [];
+  }
+
+  private async getEntityEdges(groupId: string, nodeUuids: string[]): Promise<Array<{
+    sourceUuid: string;
+    targetUuid: string;
+    count: number;
+  }>> {
+    const query = `
+      MATCH (n:Entity {group_id: $groupId})-[e:RELATES_TO]-(m:Entity {group_id: $groupId})
+      WHERE n.uuid IN $nodeUuids AND m.uuid IN $nodeUuids
+      WITH n.uuid AS source, m.uuid AS target, count(e) AS cnt
+      RETURN source AS sourceUuid, target AS targetUuid, cnt AS count
+    `;
+    const result = await this.falkor.execute(query, { groupId, nodeUuids });
+    return result.records || [];
+  }
+
+  private async getEntityCommunity(entityUuid: string): Promise<CommunityNode | null> {
+    const query = `
+      MATCH (c:Community)-[:HAS_MEMBER]->(n:Entity {uuid: $entityUuid})
+      RETURN c.uuid AS uuid, c.name AS name, c.summary AS summary,
+             c.group_id AS groupId, c.member_count AS memberCount,
+             c.created_at AS createdAt, c.updated_at AS updatedAt
+      LIMIT 1
+    `;
+    const result = await this.falkor.execute(query, { entityUuid });
+    return result.records?.[0] || null;
+  }
+
+  private async findBestCommunityForEntity(
+    entityUuid: string,
+    groupId: string
+  ): Promise<CommunityNode | null> {
+    // Vind community met meeste connected entities
+    const query = `
+      MATCH (c:Community {group_id: $groupId})-[:HAS_MEMBER]->(m:Entity)
+            -[:RELATES_TO]-(n:Entity {uuid: $entityUuid})
+      WITH c, count(m) AS connections
+      ORDER BY connections DESC
+      LIMIT 1
+      RETURN c.uuid AS uuid, c.name AS name, c.summary AS summary,
+             c.group_id AS groupId, c.member_count AS memberCount,
+             c.created_at AS createdAt, c.updated_at AS updatedAt
+    `;
+    const result = await this.falkor.execute(query, { entityUuid, groupId });
+    return result.records?.[0] || null;
+  }
+
+  private async getEntityById(uuid: string, groupId: string): Promise<{
+    uuid: string;
+    name: string;
+    summary: string;
+  } | null> {
+    const query = `
+      MATCH (n:Entity {uuid: $uuid, group_id: $groupId})
+      RETURN n.uuid AS uuid, n.name AS name, n.summary AS summary
+    `;
+    const result = await this.falkor.execute(query, { uuid, groupId });
+    return result.records?.[0] || null;
+  }
+
+  private async getCommunitiesByGroupId(groupId: string): Promise<CommunityNode[]> {
+    const query = `
+      MATCH (c:Community {group_id: $groupId})
+      RETURN c.uuid AS uuid, c.name AS name, c.summary AS summary,
+             c.group_id AS groupId, c.member_count AS memberCount,
+             c.created_at AS createdAt, c.updated_at AS updatedAt
+      ORDER BY c.member_count DESC
+    `;
+    const result = await this.falkor.execute(query, { groupId });
+    return result.records || [];
+  }
+
+  private async getCommunityByUuid(uuid: string): Promise<CommunityNode | null> {
+    const query = `
+      MATCH (c:Community {uuid: $uuid})
+      RETURN c.uuid AS uuid, c.name AS name, c.summary AS summary,
+             c.group_id AS groupId, c.member_count AS memberCount,
+             c.created_at AS createdAt, c.updated_at AS updatedAt
+    `;
+    const result = await this.falkor.execute(query, { uuid });
+    return result.records?.[0] || null;
+  }
+
+  private async getCommunityMembers(communityUuid: string): Promise<Array<{
+    uuid: string;
+    name: string;
+    summary: string;
+  }>> {
+    const query = `
+      MATCH (c:Community {uuid: $communityUuid})-[:HAS_MEMBER]->(n:Entity)
+      RETURN n.uuid AS uuid, n.name AS name, n.summary AS summary
+    `;
+    const result = await this.falkor.execute(query, { communityUuid });
+    return result.records || [];
+  }
+
+  private async removeCommunities(groupId: string): Promise<void> {
+    const query = `
+      MATCH (c:Community {group_id: $groupId})
+      DETACH DELETE c
+    `;
+    await this.falkor.execute(query, { groupId });
+  }
+
+  private async saveCommunities(
+    communities: CommunityNode[],
+    edges: CommunityEdge[]
+  ): Promise<void> {
+    // Save nodes
+    for (const community of communities) {
+      await this.saveCommunityNode(community);
+    }
+
+    // Save edges
+    for (const edge of edges) {
+      await this.saveCommunityEdge(edge);
+    }
+  }
+
+  private async saveCommunityNode(community: CommunityNode): Promise<void> {
+    const query = `
+      MERGE (c:Community {uuid: $uuid})
+      SET c.name = $name,
+          c.summary = $summary,
+          c.group_id = $groupId,
+          c.member_count = $memberCount,
+          c.created_at = $createdAt,
+          c.updated_at = $updatedAt
+    `;
+    await this.falkor.execute(query, {
+      uuid: community.uuid,
+      name: community.name,
+      summary: community.summary,
+      groupId: community.groupId,
+      memberCount: community.memberCount,
+      createdAt: community.createdAt.toISOString(),
+      updatedAt: community.updatedAt.toISOString(),
+    });
+  }
+
+  private async saveCommunityEdge(edge: CommunityEdge): Promise<void> {
+    const query = `
+      MATCH (c:Community {uuid: $communityUuid})
+      MATCH (e:Entity {uuid: $entityUuid})
+      MERGE (c)-[r:HAS_MEMBER {uuid: $uuid}]->(e)
+      SET r.group_id = $groupId,
+          r.created_at = $createdAt
+    `;
+    await this.falkor.execute(query, {
+      communityUuid: edge.sourceNodeUuid,
+      entityUuid: edge.targetNodeUuid,
+      uuid: edge.uuid,
+      groupId: edge.groupId,
+      createdAt: edge.createdAt.toISOString(),
+    });
+  }
+
+  // ==========================================================================
+  // Private: Community Building
+  // ==========================================================================
+
+  private async buildCommunities(
+    clusters: string[][],
+    nodes: Array<{ uuid: string; name: string; summary: string }>,
+    groupId: string
+  ): Promise<{
+    communities: CommunityNode[];
+    communityEdges: CommunityEdge[];
+  }> {
+    const nodeMap = new Map(nodes.map(n => [n.uuid, n]));
+    const communities: CommunityNode[] = [];
+    const communityEdges: CommunityEdge[] = [];
+
+    for (const cluster of clusters) {
+      if (cluster.length === 0) continue;
+
+      const clusterNodes = cluster
+        .map(uuid => nodeMap.get(uuid))
+        .filter((n): n is NonNullable<typeof n> => n !== undefined);
+
+      if (clusterNodes.length === 0) continue;
+
+      // Build community met LLM summary
+      const community = await this.buildSingleCommunity(clusterNodes, groupId);
+      communities.push(community);
+
+      // Create HAS_MEMBER edges
+      const now = new Date();
+      for (const node of clusterNodes) {
+        communityEdges.push({
+          uuid: uuidv4(),
+          sourceNodeUuid: community.uuid,
+          targetNodeUuid: node.uuid,
+          groupId,
+          createdAt: now,
+        });
+      }
+    }
+
+    return { communities, communityEdges };
+  }
+
+  private async buildSingleCommunity(
+    nodes: Array<{ uuid: string; name: string; summary: string }>,
+    groupId: string
+  ): Promise<CommunityNode> {
+    // Recursive pairwise summarization
+    let summaries = nodes.map(n => n.summary).filter(s => s && s.length > 0);
+
+    if (summaries.length === 0) {
+      summaries = [nodes.map(n => n.name).join(', ')];
+    }
+
+    while (summaries.length > 1) {
+      const newSummaries: string[] = [];
+
+      // Process pairs
+      for (let i = 0; i < summaries.length; i += 2) {
+        if (i + 1 < summaries.length) {
+          const combined = await this.summarizePair(summaries[i], summaries[i + 1]);
+          newSummaries.push(combined);
+        } else {
+          // Odd one out
+          newSummaries.push(summaries[i]);
+        }
+      }
+
+      summaries = newSummaries;
+    }
+
+    const finalSummary = summaries[0];
+    const name = await this.generateSummaryDescription(finalSummary);
+    const now = new Date();
+
+    return {
+      uuid: uuidv4(),
+      name,
+      summary: finalSummary,
+      groupId,
+      memberCount: nodes.length,
+      createdAt: now,
+      updatedAt: now,
+    };
+  }
+
+  private async refreshCommunitySummary(
+    community: CommunityNode,
+    groupId: string
+  ): Promise<void> {
+    const members = await this.getCommunityMembers(community.uuid);
+    if (members.length === 0) return;
+
+    // Rebuild summary from all members
+    let summaries = members.map(m => m.summary).filter(s => s && s.length > 0);
+
+    if (summaries.length === 0) {
+      summaries = [members.map(m => m.name).join(', ')];
+    }
+
+    while (summaries.length > 1) {
+      const newSummaries: string[] = [];
+      for (let i = 0; i < summaries.length; i += 2) {
+        if (i + 1 < summaries.length) {
+          const combined = await this.summarizePair(summaries[i], summaries[i + 1]);
+          newSummaries.push(combined);
+        } else {
+          newSummaries.push(summaries[i]);
+        }
+      }
+      summaries = newSummaries;
+    }
+
+    community.summary = summaries[0];
+    community.name = await this.generateSummaryDescription(community.summary);
+    community.memberCount = members.length;
+    community.updatedAt = new Date();
+
+    await this.saveCommunityNode(community);
+  }
+
+  // ==========================================================================
+  // Private: LLM Calls
+  // ==========================================================================
+
+  private async summarizePair(summary1: string, summary2: string): Promise<string> {
+    const prompt = summarizePairPrompt([summary1, summary2]);
+    const result = await this.wikiAi.generateStructured(prompt, SummarySchema);
+    return result.summary;
+  }
+
+  private async generateSummaryDescription(summary: string): Promise<string> {
+    const prompt = summaryDescriptionPrompt(summary);
+    const result = await this.wikiAi.generateStructured(prompt, SummaryDescriptionSchema);
+    return result.description;
+  }
+}
+```
+
+**CHECKPOINT 4:** ✅ WikiClusterService compileert → Ga naar STAP 5
+
+---
+
+### STAP 5: tRPC Endpoints + UI Components + Tests (24.6 + 24.7 + 24.8) - PARALLEL
+
+#### 24.6 tRPC Endpoints
+
+**Bestand:** `apps/api/src/routers/graphiti.ts` (extend existing)
+
+```typescript
+// Voeg toe aan bestaande graphiti router
+
+import { WikiClusterService } from '@/services/wiki/WikiClusterService';
+
+// In de router definition:
+
+detectCommunities: protectedProcedure
+  .input(z.object({
+    workspaceId: z.number(),
+    projectId: z.number().optional(),
+    forceRebuild: z.boolean().optional(),
+  }))
+  .mutation(async ({ ctx, input }) => {
+    const service = container.resolve(WikiClusterService);
+    return service.detectCommunities({
+      context: {
+        workspaceId: input.workspaceId,
+        projectId: input.projectId,
+      },
+      forceRebuild: input.forceRebuild,
+    });
+  }),
+
+getCommunities: protectedProcedure
+  .input(z.object({
+    workspaceId: z.number(),
+    projectId: z.number().optional(),
+  }))
+  .query(async ({ ctx, input }) => {
+    const service = container.resolve(WikiClusterService);
+    return service.getCommunities({
+      workspaceId: input.workspaceId,
+      projectId: input.projectId,
+    });
+  }),
+
+getCommunityDetails: protectedProcedure
+  .input(z.object({
+    communityUuid: z.string(),
+  }))
+  .query(async ({ ctx, input }) => {
+    const service = container.resolve(WikiClusterService);
+    return service.getCommunityDetails(input.communityUuid);
+  }),
+
+regenerateCommunity: protectedProcedure
+  .input(z.object({
+    communityUuid: z.string(),
+  }))
+  .mutation(async ({ ctx, input }) => {
+    const service = container.resolve(WikiClusterService);
+    return service.regenerateSummary(input.communityUuid);
+  }),
+```
+
+#### 24.7 UI Components
+
+**Bestand:** `apps/web/src/components/wiki/ClusterLegend.tsx`
+
+```tsx
+/**
+ * ClusterLegend - Shows detected communities with AI-generated names
+ *
+ * Features:
+ * - Color-coded legend matching graph visualization
+ * - Clickable items to highlight community in graph
+ * - Member count per community
+ */
+
+import { useCommunities } from '@/hooks/wiki/useCommunities';
+
+interface ClusterLegendProps {
+  workspaceId: number;
+  projectId?: number;
+  onCommunityClick?: (communityUuid: string) => void;
+  selectedCommunityUuid?: string;
+}
+
+export function ClusterLegend({
+  workspaceId,
+  projectId,
+  onCommunityClick,
+  selectedCommunityUuid,
+}: ClusterLegendProps) {
+  const { data: communities, isLoading } = useCommunities({
+    workspaceId,
+    projectId,
+  });
+
+  if (isLoading) {
+    return <div className="animate-pulse">Loading clusters...</div>;
+  }
+
+  if (!communities || communities.length === 0) {
+    return <div className="text-muted-foreground">No clusters detected</div>;
+  }
+
+  return (
+    <div className="space-y-2">
+      <h4 className="font-medium text-sm">Communities</h4>
+      <ul className="space-y-1">
+        {communities.map((community, index) => (
+          <li
+            key={community.uuid}
+            className={`
+              flex items-center gap-2 p-2 rounded cursor-pointer
+              hover:bg-muted transition-colors
+              ${selectedCommunityUuid === community.uuid ? 'bg-muted' : ''}
+            `}
+            onClick={() => onCommunityClick?.(community.uuid)}
+          >
+            <div
+              className="w-3 h-3 rounded-full"
+              style={{ backgroundColor: getCommunityColor(index) }}
+            />
+            <span className="flex-1 text-sm truncate" title={community.name}>
+              {community.name}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {community.memberCount}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function getCommunityColor(index: number): string {
+  const colors = [
+    '#4f46e5', // indigo
+    '#0891b2', // cyan
+    '#059669', // emerald
+    '#d97706', // amber
+    '#dc2626', // red
+    '#7c3aed', // violet
+    '#db2777', // pink
+    '#2563eb', // blue
+  ];
+  return colors[index % colors.length];
+}
+```
+
+**Bestand:** `apps/web/src/components/wiki/ClusterDetailPanel.tsx`
+
+```tsx
+/**
+ * ClusterDetailPanel - Detail view for a community
+ *
+ * Features:
+ * - Full community summary
+ * - List of member entities
+ * - Regenerate summary button
+ */
+
+import { Button } from '@/components/ui/button';
+import { useCommunityDetails } from '@/hooks/wiki/useCommunityDetails';
+import { useRegenerateCommunity } from '@/hooks/wiki/useRegenerateCommunity';
+
+interface ClusterDetailPanelProps {
+  communityUuid: string;
+  onMemberClick?: (entityUuid: string) => void;
+}
+
+export function ClusterDetailPanel({
+  communityUuid,
+  onMemberClick,
+}: ClusterDetailPanelProps) {
+  const { data, isLoading } = useCommunityDetails(communityUuid);
+  const regenerate = useRegenerateCommunity();
+
+  if (isLoading) {
+    return <div className="animate-pulse">Loading...</div>;
+  }
+
+  if (!data?.community) {
+    return <div className="text-muted-foreground">Community not found</div>;
+  }
+
+  const { community, members } = data;
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <h3 className="font-semibold">{community.name}</h3>
+        <p className="text-sm text-muted-foreground mt-1">
+          {community.summary}
+        </p>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => regenerate.mutate({ communityUuid })}
+          disabled={regenerate.isPending}
+        >
+          {regenerate.isPending ? 'Regenerating...' : 'Regenerate Summary'}
+        </Button>
+      </div>
+
+      <div>
+        <h4 className="font-medium text-sm mb-2">
+          Members ({members.length})
+        </h4>
+        <ul className="space-y-1 max-h-[200px] overflow-y-auto">
+          {members.map((member) => (
+            <li
+              key={member.uuid}
+              className="p-2 rounded hover:bg-muted cursor-pointer text-sm"
+              onClick={() => onMemberClick?.(member.uuid)}
+            >
+              <span className="font-medium">{member.name}</span>
+              {member.summary && (
+                <p className="text-xs text-muted-foreground truncate">
+                  {member.summary}
+                </p>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+```
+
+#### 24.7.3 React Hooks
+
+**Bestand:** `apps/web/src/hooks/wiki/useCommunities.ts`
+
+```typescript
+import { trpc } from '@/lib/trpc';
+
+interface UseCommunitionsOptions {
+  workspaceId: number;
+  projectId?: number;
+}
+
+export function useCommunities(options: UseCommunitionsOptions) {
+  return trpc.graphiti.getCommunities.useQuery({
+    workspaceId: options.workspaceId,
+    projectId: options.projectId,
+  });
+}
+```
+
+**Bestand:** `apps/web/src/hooks/wiki/useCommunityDetails.ts`
+
+```typescript
+import { trpc } from '@/lib/trpc';
+
+export function useCommunityDetails(communityUuid: string) {
+  return trpc.graphiti.getCommunityDetails.useQuery({
+    communityUuid,
+  }, {
+    enabled: !!communityUuid,
+  });
+}
+```
+
+**Bestand:** `apps/web/src/hooks/wiki/useDetectCommunities.ts`
+
+```typescript
+import { trpc } from '@/lib/trpc';
+
+export function useDetectCommunities() {
+  const utils = trpc.useUtils();
+
+  return trpc.graphiti.detectCommunities.useMutation({
+    onSuccess: () => {
+      // Invalidate communities cache
+      utils.graphiti.getCommunities.invalidate();
+    },
+  });
+}
+```
+
+**Bestand:** `apps/web/src/hooks/wiki/useRegenerateCommunity.ts`
+
+```typescript
+import { trpc } from '@/lib/trpc';
+
+export function useRegenerateCommunity() {
+  const utils = trpc.useUtils();
+
+  return trpc.graphiti.regenerateCommunity.useMutation({
+    onSuccess: (data) => {
+      if (data) {
+        // Invalidate specific community details
+        utils.graphiti.getCommunityDetails.invalidate({
+          communityUuid: data.uuid,
+        });
+        // Also refresh the communities list
+        utils.graphiti.getCommunities.invalidate();
+      }
+    },
+  });
+}
+```
+
+#### 24.8 Tests
+
+**Bestand:** `apps/api/src/services/wiki/__tests__/WikiClusterService.test.ts`
+
+```typescript
+/**
+ * WikiClusterService Tests
+ *
+ * Test categories:
+ * 1. Label Propagation Algorithm (unit)
+ * 2. Community Building (integration)
+ * 3. Multi-tenant Isolation (security)
+ * 4. LLM Prompts (mock)
+ */
+
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { labelPropagation, buildProjectionFromEdges } from '../algorithms/labelPropagation';
+import { WikiClusterService } from '../WikiClusterService';
+
+describe('labelPropagation', () => {
+  it('should return empty array for empty projection', () => {
+    const result = labelPropagation({});
+    expect(result).toEqual([]);
+  });
+
+  it('should put disconnected nodes in separate clusters', () => {
+    const projection = {
+      'node-1': [],
+      'node-2': [],
+      'node-3': [],
+    };
+    const result = labelPropagation(projection);
+    expect(result.length).toBe(3);
+  });
+
+  it('should cluster connected nodes together', () => {
+    const projection = {
+      'node-1': [{ nodeUuid: 'node-2', edgeCount: 2 }],
+      'node-2': [{ nodeUuid: 'node-1', edgeCount: 2 }, { nodeUuid: 'node-3', edgeCount: 2 }],
+      'node-3': [{ nodeUuid: 'node-2', edgeCount: 2 }],
+    };
+    const result = labelPropagation(projection);
+    expect(result.length).toBe(1);
+    expect(result[0].sort()).toEqual(['node-1', 'node-2', 'node-3']);
+  });
+
+  it('should separate weakly connected groups', () => {
+    const projection = {
+      'a1': [{ nodeUuid: 'a2', edgeCount: 5 }],
+      'a2': [{ nodeUuid: 'a1', edgeCount: 5 }],
+      'b1': [{ nodeUuid: 'b2', edgeCount: 5 }],
+      'b2': [{ nodeUuid: 'b1', edgeCount: 5 }],
+    };
+    const result = labelPropagation(projection);
+    expect(result.length).toBe(2);
+  });
+
+  it('should handle single node clusters', () => {
+    const projection = {
+      'lonely': [],
+    };
+    const result = labelPropagation(projection);
+    expect(result.length).toBe(1);
+    expect(result[0]).toEqual(['lonely']);
+  });
+
+  it('should respect edge weights when determining community', () => {
+    // node-2 has stronger connection to group A than group B
+    const projection = {
+      'a1': [{ nodeUuid: 'a2', edgeCount: 5 }, { nodeUuid: 'node-2', edgeCount: 10 }],
+      'a2': [{ nodeUuid: 'a1', edgeCount: 5 }, { nodeUuid: 'node-2', edgeCount: 10 }],
+      'b1': [{ nodeUuid: 'b2', edgeCount: 5 }, { nodeUuid: 'node-2', edgeCount: 1 }],
+      'b2': [{ nodeUuid: 'b1', edgeCount: 5 }, { nodeUuid: 'node-2', edgeCount: 1 }],
+      'node-2': [
+        { nodeUuid: 'a1', edgeCount: 10 },
+        { nodeUuid: 'a2', edgeCount: 10 },
+        { nodeUuid: 'b1', edgeCount: 1 },
+        { nodeUuid: 'b2', edgeCount: 1 },
+      ],
+    };
+    const result = labelPropagation(projection);
+    // node-2 should end up with a1, a2 due to higher edge weights
+    const clusterWithNode2 = result.find(c => c.includes('node-2'));
+    expect(clusterWithNode2).toContain('a1');
+    expect(clusterWithNode2).toContain('a2');
+  });
+});
+
+describe('buildProjectionFromEdges', () => {
+  it('should build bidirectional projection', () => {
+    const nodeUuids = ['node-1', 'node-2'];
+    const edges = [{ sourceUuid: 'node-1', targetUuid: 'node-2', count: 3 }];
+
+    const result = buildProjectionFromEdges(nodeUuids, edges);
+
+    expect(result['node-1']).toContainEqual({ nodeUuid: 'node-2', edgeCount: 3 });
+    expect(result['node-2']).toContainEqual({ nodeUuid: 'node-1', edgeCount: 3 });
+  });
+
+  it('should initialize all nodes even without edges', () => {
+    const nodeUuids = ['node-1', 'node-2', 'node-3'];
+    const edges: any[] = [];
+
+    const result = buildProjectionFromEdges(nodeUuids, edges);
+
+    expect(Object.keys(result)).toHaveLength(3);
+    expect(result['node-1']).toEqual([]);
+    expect(result['node-2']).toEqual([]);
+    expect(result['node-3']).toEqual([]);
+  });
+
+  it('should handle multiple edges between same nodes', () => {
+    const nodeUuids = ['node-1', 'node-2'];
+    const edges = [
+      { sourceUuid: 'node-1', targetUuid: 'node-2', count: 2 },
+      { sourceUuid: 'node-2', targetUuid: 'node-1', count: 3 },
+    ];
+
+    const result = buildProjectionFromEdges(nodeUuids, edges);
+
+    // Both edges should be recorded
+    expect(result['node-1'].length).toBe(2);
+  });
+});
+
+describe('WikiClusterService', () => {
+  describe('Multi-tenant isolation', () => {
+    it('should scope queries to workspace groupId', async () => {
+      // Mock FalkorDB to verify groupId is passed
+      const mockFalkor = {
+        execute: vi.fn().mockResolvedValue({ records: [] }),
+      };
+
+      const service = new WikiClusterService(mockFalkor as any, {} as any);
+      await service.getCommunities({ workspaceId: 123 });
+
+      expect(mockFalkor.execute).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ groupId: 'wiki-ws-123' })
+      );
+    });
+
+    it('should prefer project groupId over workspace', async () => {
+      const mockFalkor = {
+        execute: vi.fn().mockResolvedValue({ records: [] }),
+      };
+
+      const service = new WikiClusterService(mockFalkor as any, {} as any);
+      await service.getCommunities({ workspaceId: 123, projectId: 456 });
+
+      expect(mockFalkor.execute).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ groupId: 'wiki-proj-456' })
+      );
+    });
+
+    it('should never leak data across workspaces', async () => {
+      const mockFalkor = {
+        execute: vi.fn().mockResolvedValue({ records: [] }),
+      };
+
+      const service = new WikiClusterService(mockFalkor as any, {} as any);
+
+      // First workspace
+      await service.getCommunities({ workspaceId: 1 });
+      const firstCall = mockFalkor.execute.mock.calls[0];
+
+      // Second workspace
+      await service.getCommunities({ workspaceId: 2 });
+      const secondCall = mockFalkor.execute.mock.calls[1];
+
+      // Verify different groupIds
+      expect(firstCall[1].groupId).toBe('wiki-ws-1');
+      expect(secondCall[1].groupId).toBe('wiki-ws-2');
+    });
+  });
+
+  describe('detectCommunities', () => {
+    it('should return empty result for empty graph', async () => {
+      const mockFalkor = {
+        execute: vi.fn().mockResolvedValue({ records: [] }),
+      };
+
+      const service = new WikiClusterService(mockFalkor as any, {} as any);
+      const result = await service.detectCommunities({
+        context: { workspaceId: 1 },
+      });
+
+      expect(result.communities).toEqual([]);
+      expect(result.stats.totalNodes).toBe(0);
+      expect(result.stats.totalCommunities).toBe(0);
+    });
+
+    it('should remove existing communities when forceRebuild is true', async () => {
+      const mockFalkor = {
+        execute: vi.fn().mockResolvedValue({ records: [] }),
+      };
+
+      const service = new WikiClusterService(mockFalkor as any, {} as any);
+      await service.detectCommunities({
+        context: { workspaceId: 1 },
+        forceRebuild: true,
+      });
+
+      // Should have called DETACH DELETE
+      const deleteCall = mockFalkor.execute.mock.calls.find(
+        call => call[0].includes('DETACH DELETE')
+      );
+      expect(deleteCall).toBeDefined();
+    });
+  });
+});
+
+describe('LLM Prompts', () => {
+  describe('summarizePairPrompt', () => {
+    it('should include both summaries in prompt', () => {
+      const { summarizePairPrompt } = require('../prompts/summarizeCommunity');
+
+      const prompt = summarizePairPrompt(['Summary A', 'Summary B']);
+
+      expect(prompt).toContain('Summary A');
+      expect(prompt).toContain('Summary B');
+      expect(prompt).toContain('250');
+    });
+  });
+
+  describe('summaryDescriptionPrompt', () => {
+    it('should include summary in prompt', () => {
+      const { summaryDescriptionPrompt } = require('../prompts/summarizeCommunity');
+
+      const prompt = summaryDescriptionPrompt('Test summary content');
+
+      expect(prompt).toContain('Test summary content');
+      expect(prompt).toContain('one sentence');
+    });
+  });
+});
+```
+
+**Test Count Estimate:**
+
+| Category | Tests |
+|----------|-------|
+| labelPropagation unit | 12 |
+| buildProjectionFromEdges | 8 |
+| WikiClusterService.detectCommunities | 15 |
+| WikiClusterService.updateCommunity | 10 |
+| WikiClusterService.getCommunities | 5 |
+| Multi-tenant isolation | 8 |
+| LLM prompt generation | 6 |
+| tRPC endpoints (e2e) | 12 |
+| UI components (render) | 12 |
+| **Total** | **~88** |
+
+**CHECKPOINT 5:** ✅ Alle tests passing → Ga naar STAP 6
+
+---
+
+### STAP 6: Migration Script (24.9)
+
+**Bestand:** `apps/api/scripts/migrate-community-detection.ts`
+
+```typescript
+/**
+ * Community Detection Migration Script
+ *
+ * Dit script:
+ * 1. Maakt FalkorDB schema (indexes)
+ * 2. Detecteert communities voor alle bestaande workspaces
+ * 3. Logt statistieken
+ *
+ * GEBRUIK:
+ * pnpm tsx scripts/migrate-community-detection.ts --dry-run
+ * pnpm tsx scripts/migrate-community-detection.ts --workspace=123
+ * pnpm tsx scripts/migrate-community-detection.ts --all
+ */
+
+import { parseArgs } from 'util';
+import { container } from 'tsyringe';
+import { FalkorClient } from '@/lib/db/falkor';
+import { WikiClusterService } from '@/services/wiki/WikiClusterService';
+import { migrateCommunitySchema } from '@/lib/db/migrations/add-community-schema';
+
+const { values: args } = parseArgs({
+  options: {
+    'dry-run': { type: 'boolean', default: false },
+    workspace: { type: 'string' },
+    all: { type: 'boolean', default: false },
+  },
+});
+
+async function main() {
+  const falkor = container.resolve<FalkorClient>('FalkorClient');
+  const clusterService = container.resolve(WikiClusterService);
+
+  console.log('=== Community Detection Migration ===\n');
+
+  // 1. Schema migration
+  if (!args['dry-run']) {
+    console.log('1. Running schema migration...');
+    await migrateCommunitySchema(falkor);
+    console.log('   ✅ Schema migration complete\n');
+  } else {
+    console.log('1. [DRY-RUN] Would run schema migration\n');
+  }
+
+  // 2. Get workspaces to process
+  let workspaceIds: number[] = [];
+
+  if (args.workspace) {
+    workspaceIds = [parseInt(args.workspace, 10)];
+  } else if (args.all) {
+    // Query all workspaces with wiki content
+    const result = await falkor.execute(`
+      MATCH (n:Entity)
+      WHERE n.group_id STARTS WITH 'wiki-ws-'
+      WITH DISTINCT substring(n.group_id, 8) AS wsId
+      RETURN collect(toInteger(wsId)) AS workspaceIds
+    `);
+    workspaceIds = result.records?.[0]?.workspaceIds || [];
+  }
+
+  console.log(`2. Processing ${workspaceIds.length} workspace(s)...\n`);
+
+  // 3. Detect communities per workspace
+  const results: Array<{
+    workspaceId: number;
+    communities: number;
+    nodes: number;
+    timeMs: number;
+  }> = [];
+
+  for (const workspaceId of workspaceIds) {
+    console.log(`   Processing workspace ${workspaceId}...`);
+
+    if (!args['dry-run']) {
+      const result = await clusterService.detectCommunities({
+        context: { workspaceId },
+        forceRebuild: true,
+      });
+
+      results.push({
+        workspaceId,
+        communities: result.stats.totalCommunities,
+        nodes: result.stats.totalNodes,
+        timeMs: result.stats.processingTimeMs,
+      });
+
+      console.log(`   ✅ ${result.stats.totalCommunities} communities, ${result.stats.totalNodes} nodes`);
+    } else {
+      console.log(`   [DRY-RUN] Would detect communities for workspace ${workspaceId}`);
+    }
+  }
+
+  // 4. Summary
+  console.log('\n=== Summary ===');
+  if (!args['dry-run'] && results.length > 0) {
+    console.table(results);
+
+    const totalCommunities = results.reduce((sum, r) => sum + r.communities, 0);
+    const totalNodes = results.reduce((sum, r) => sum + r.nodes, 0);
+    console.log(`\nTotal: ${totalCommunities} communities covering ${totalNodes} nodes`);
+  }
+
+  console.log('\n✅ Migration complete');
+}
+
+main().catch((err) => {
+  console.error('Migration failed:', err);
+  process.exit(1);
+});
+```
+
+**CHECKPOINT 6:** ✅ Migration script werkt met --dry-run → Fase 24 COMPLEET
+
+---
+
+### Gap Analyse
+
+| Component | Python Graphiti | Kanbu Status | Actie |
+|-----------|-----------------|--------------|-------|
+| `CommunityNode` | `nodes.py:591` | ❌ Niet aanwezig | 24.2 - Types + FalkorDB |
+| `CommunityEdge` (HAS_MEMBER) | `edges.py:480` | ❌ Niet aanwezig | 24.2 - Types + FalkorDB |
+| `label_propagation()` | `community_operations.py:86` | ❌ Niet aanwezig | 24.3 - Algorithm |
+| `summarize_pair()` | `community_operations.py:134` | ❌ Niet aanwezig | 24.4 - Prompts |
+| `summary_description()` | `community_operations.py:151` | ❌ Niet aanwezig | 24.4 - Prompts |
+| `build_communities()` | `community_operations.py:209` | ❌ Niet aanwezig | 24.5 - Service |
+| `update_community()` | `community_operations.py:304` | ❌ Niet aanwezig | 24.5 - Service |
+| `remove_communities()` | `community_operations.py:237` | ❌ Niet aanwezig | 24.5 - Service |
+| tRPC endpoints | N/A | ❌ Niet aanwezig | 24.6 - Endpoints |
+| UI components | N/A | ⚠️ Basis graph view | 24.7 - Enhanced |
+
+---
+
+### Multi-Tenant Architectuur
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                        MULTI-TENANT SCOPING                          │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│  Workspace 1                    Workspace 2                          │
+│  ┌────────────────────┐         ┌────────────────────┐              │
+│  │ Wiki (workspace)   │         │ Wiki (workspace)   │              │
+│  │ groupId: wiki-ws-1 │         │ groupId: wiki-ws-2 │              │
+│  │                    │         │                    │              │
+│  │ Community A        │         │ Community X        │              │
+│  │ Community B        │         │ Community Y        │              │
+│  └────────────────────┘         └────────────────────┘              │
+│           │                              │                           │
+│  ┌────────┴────────┐            (geen project wikis)                │
+│  │                 │                                                 │
+│  ▼                 ▼                                                 │
+│  Project 1         Project 2                                         │
+│  ┌──────────────┐  ┌──────────────┐                                 │
+│  │ Wiki         │  │ Wiki         │                                 │
+│  │ wiki-proj-10 │  │ wiki-proj-11 │                                 │
+│  │              │  │              │                                 │
+│  │ Community P  │  │ Community Q  │                                 │
+│  │ Community R  │  │ (eigen)      │                                 │
+│  └──────────────┘  └──────────────┘                                 │
+│                                                                      │
+│  ⛔ NOOIT cross-tenant queries!                                     │
+│  ✅ Alle queries gefilterd op groupId                               │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+**GroupId Formaat:**
+
+```typescript
+// Workspace wiki (huidige implementatie)
+groupId: `wiki-ws-${workspaceId}`
+
+// Project wiki (TOEKOMSTIG - backwards compatible)
+groupId: `wiki-proj-${projectId}`
+```
+
+**WikiContext doorgeven:**
+
+```typescript
+// Altijd volledige context meegeven
+const context: WikiContext = {
+  workspaceId: episode.workspaceId ?? 0,
+  projectId: episode.projectId,  // undefined voor workspace wiki
+};
+
+// Service bepaalt groupId
+const groupId = context.projectId
+  ? `wiki-proj-${context.projectId}`
+  : `wiki-ws-${context.workspaceId}`;
+```
+
+---
+
+### Cost Analysis
+
+**LLM Kosten per Community:**
+
+| Operatie | Tokens (approx) | Kosten (GPT-4o) |
+|----------|-----------------|-----------------|
+| summarize_pair | ~200 input, ~50 output | $0.001 |
+| summary_description | ~100 input, ~50 output | $0.0005 |
+| Per community (10 members) | ~5 pairs + 1 description | ~$0.006 |
+
+**Totale Kosten Schatting:**
+
+| Scenario | Communities | Kosten |
+|----------|-------------|--------|
+| Klein (50 nodes) | ~5-10 | $0.03-0.06 |
+| Medium (200 nodes) | ~20-30 | $0.12-0.18 |
+| Groot (500 nodes) | ~50-80 | $0.30-0.50 |
+
+---
+
+### Rollback Plan
+
+**Bij problemen met Community Detection:**
+
+```bash
+# 1. Verwijder alle community data
+# In FalkorDB console:
+MATCH (c:Community) DETACH DELETE c
+
+# 2. Verwijder indexes (optioneel)
+DROP INDEX community_uuid_index IF EXISTS
+DROP INDEX community_group_id_index IF EXISTS
+
+# 3. Feature flag uit (indien toegevoegd)
+# In .env:
+ENABLE_COMMUNITY_DETECTION=false
+```
+
+**Geen data loss risico:** Community nodes zijn derived data, kunnen altijd opnieuw worden gegenereerd.
+
+---
+
+### Verificatie Checklist
+
+**Fase 24 Compleet wanneer:**
+
+- [ ] **24.1** Pre-checks uitgevoerd, geen conflicten
+- [ ] **24.2** FalkorDB schema + TypeScript types aangemaakt
+- [ ] **24.3** Label Propagation algorithm werkt
+- [ ] **24.4** LLM prompts implementeren (summarize_pair, summary_description)
+- [ ] **24.5** WikiClusterService volledig functioneel
+- [ ] **24.6** tRPC endpoints exposed en testbaar
+- [ ] **24.7** UI components (ClusterLegend, ClusterDetailPanel) + hooks
+- [ ] **24.8** Tests passing (~88 tests)
+- [ ] **24.9** Migration script werkt met dry-run
+
+**Handmatige Test:**
+
+```bash
+# 1. Start API server
+bash scripts/api.sh restart
+
+# 2. Detect communities voor een workspace
+curl -X POST http://localhost:3001/trpc/graphiti.detectCommunities \
+  -H "Content-Type: application/json" \
+  -d '{
+    "workspaceId": 1,
+    "forceRebuild": true
+  }'
+
+# Expected: { "communities": [...], "stats": { "totalCommunities": N, ... } }
+
+# 3. Get communities
+curl http://localhost:3001/trpc/graphiti.getCommunities?input=%7B%22workspaceId%22:1%7D
+
+# 4. Check in UI
+# - Open Wiki Graph View
+# - Verify ClusterLegend shows detected communities
+# - Click on community to see details
+```
+
+---
+
+### Beslispunten voor Robin
+
+| # | Vraag | Opties | Impact |
+|---|-------|--------|--------|
+| 1 | Community detection default enabled? | **On** / Off | UX: automatisch vs handmatig |
+| 2 | Minimum community size? | **2** / 3 / 5 | Kleine clusters tonen of niet |
+| 3 | Auto-update bij nieuwe entity? | **On** / Off | LLM kosten vs freshness |
+| 4 | Community kleuren in graph? | **Ja** / Nee | Visuele feedback |
+| 5 | Max communities per workspace? | **Unlimited** / 50 / 100 | Performance vs volledigheid |
+
+---
+
+### Changelog Fase 24
+
+| Datum | Actie |
+|-------|-------|
+| 2026-01-15 | Fase 24 plan aangemaakt |
+
+---
+
 ## Graphiti Architectuur
 
 ```
