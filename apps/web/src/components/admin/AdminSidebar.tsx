@@ -282,7 +282,7 @@ export function AdminSidebar({ collapsed = false }: AdminSidebarProps) {
     <aside
       className={cn(
         'flex flex-col h-full border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 transition-all',
-        collapsed ? 'w-16' : 'w-56'
+        collapsed ? 'w-sidebar-collapsed' : 'w-sidebar'
       )}
     >
       {/* Header */}
@@ -307,7 +307,7 @@ export function AdminSidebar({ collapsed = false }: AdminSidebarProps) {
           to="/"
           className={cn(
             'flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors',
-            'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+            'text-gray-600 dark:text-gray-400 hover:bg-accent'
           )}
         >
           <HomeIcon className="h-5 w-5 flex-shrink-0" />
@@ -345,7 +345,7 @@ export function AdminSidebar({ collapsed = false }: AdminSidebarProps) {
                           'flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors',
                           active
                             ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 font-medium'
-                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                            : 'text-gray-700 dark:text-gray-300 hover:bg-accent'
                         )}
                         title={collapsed ? item.label : undefined}
                       >
