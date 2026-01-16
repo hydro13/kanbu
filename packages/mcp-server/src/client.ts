@@ -151,28 +151,70 @@ export class KanbuClient {
       body = JSON.stringify(input)
     }
 
-    const response = await fetch(url, {
-      method,
-      headers,
-      body,
+    return this.retry(async () => {
+      const response = await fetch(url, {
+        method,
+        headers,
+        body,
+      })
+
+      if (!response.ok) {
+        const text = await response.text()
+        logger.error({ url, status: response.status, method, error: text }, 'Kanbu API call failed')
+        throw new Error(`API call failed: ${response.status} ${text}`)
+      }
+
+      const data = (await response.json()) as TrpcResponse<T>
+
+      if (data.error) {
+        throw new Error(data.error.message || 'API call failed')
+      }
+
+      if (!data.result?.data) {
+        throw new Error('Invalid response from server')
+      }
+
+      return data.result.data
     })
+  }
 
-    if (!response.ok) {
-      const text = await response.text()
-      logger.error({ url, status: response.status, method, error: text }, 'Kanbu API call failed')
-      throw new Error(`API call failed: ${response.status} ${text}`)
+  /**
+   * Helper to perform retries with exponential backoff
+   */
+  private async retry<T>(
+    operation: () => Promise<T>,
+    maxRetries: number = 3,
+    baseDelay: number = 1000
+  ): Promise<T> {
+    let lastError: unknown
+
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        return await operation()
+      } catch (error) {
+        lastError = error
+        const isRetryable =
+          error instanceof Error &&
+          (error.message.includes('500') ||
+            error.message.includes('502') ||
+            error.message.includes('503') ||
+            error.message.includes('504') ||
+            error.message.includes('fetch failed') ||
+            error.message.includes('ECONNREFUSED'))
+
+        if (!isRetryable || attempt === maxRetries - 1) {
+          throw error
+        }
+
+        const delay = baseDelay * Math.pow(2, attempt)
+        logger.warn(
+          { error: error instanceof Error ? error.message : 'Unknown', attempt: attempt + 1, delay },
+          'Retrying API call'
+        )
+        await new Promise((resolve) => setTimeout(resolve, delay))
+      }
     }
 
-    const data = (await response.json()) as TrpcResponse<T>
-
-    if (data.error) {
-      throw new Error(data.error.message || 'API call failed')
-    }
-
-    if (!data.result?.data) {
-      throw new Error('Invalid response from server')
-    }
-
-    return data.result.data
+    throw lastError
   }
 }

@@ -251,6 +251,7 @@ export const UpdateAclSchema = z.object({
 
 export const DeleteAclSchema = z.object({
   id: z.number().describe('ACL entry ID to delete'),
+  dryRun: z.boolean().optional().describe('Simulate the action without applying changes'),
 })
 
 export const BulkGrantSchema = z.object({
@@ -271,6 +272,7 @@ export const BulkRevokeSchema = z.object({
     type: PrincipalTypeSchema,
     id: z.number(),
   })).min(1).max(100).describe('Principals to revoke permissions from'),
+  dryRun: z.boolean().optional().describe('Simulate the action without applying changes'),
 })
 
 export const CopyPermissionsSchema = z.object({
@@ -1118,6 +1120,11 @@ export async function handleDeleteAcl(args: unknown) {
   const input = DeleteAclSchema.parse(args)
   const config = requireAuth()
 
+  if (input.dryRun) {
+    // Ideally we would fetch the entry to show what would be deleted, but for now a summary is sufficient
+    return success(`[DRY RUN] Would delete ACL entry #${input.id}. No changes made.`)
+  }
+
   try {
     await client.call<SimpleResponse>(
       config.kanbuUrl,
@@ -1165,6 +1172,10 @@ export async function handleBulkGrant(args: unknown) {
 export async function handleBulkRevoke(args: unknown) {
   const input = BulkRevokeSchema.parse(args)
   const config = requireAuth()
+
+  if (input.dryRun) {
+    return success(`[DRY RUN] Would revoke permissions for ${input.principals.length} principals on ${input.resourceType}${input.resourceId ? ` #${input.resourceId}` : ''}. No changes made.`)
+  }
 
   try {
     const result = await client.call<BulkResponse>(

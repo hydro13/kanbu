@@ -109,7 +109,7 @@ export const taskToolDefinitions = [
   {
     name: 'kanbu_list_tasks',
     description:
-      'List tasks in a project. Can filter by status (open/closed) or column.',
+      'List tasks in a project. Best for exploring the current state of a project, finding tasks in a specific column (e.g., "To Do"), or filtering by status. Use this to get an overview before acting.',
     inputSchema: {
       type: 'object',
       properties: {

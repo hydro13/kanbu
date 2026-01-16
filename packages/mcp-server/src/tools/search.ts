@@ -98,7 +98,7 @@ export const searchToolDefinitions = [
   {
     name: 'kanbu_search_global',
     description:
-      'Global search across tasks, comments, and wiki pages in a project.',
+      'Global logical search across the entire project (tasks, comments, wiki). Use this for broad queries like "what happened last week?" or "plan for release". It uses vector search to find conceptually relevant results, not just exact keyword matches.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -108,7 +108,8 @@ export const searchToolDefinitions = [
         },
         query: {
           type: 'string',
-          description: 'Search query',
+          description:
+            'Natural language search query. Examples: "blockers for android", "decisions made about api", "deployment issues"',
         },
         types: {
           type: 'array',
