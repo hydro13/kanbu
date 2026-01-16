@@ -1,12 +1,12 @@
 # Kanbu MCP Server - Claude Code Integration
 
-> **Status: Fase 5 COMPLEET** (2026-01-09)
+> **Status: Phase 5 COMPLETE** (2026-01-09)
 >
-> De MCP server is volledig werkend met 32 tools: pairing (3), core (11), subtasks/comments (9), search/activity (5), en analytics (4).
+> The MCP server is fully functional with 32 tools: pairing (3), core (11), subtasks/comments (9), search/activity (5), and analytics (4).
 
-## Overzicht
+## Overview
 
-De Kanbu MCP Server is specifiek ontworpen voor **Claude Code** integratie. Via een eenvoudige pairing flow koppel je Claude Code aan je Kanbu account. Claude erft automatisch al jouw ACL rechten.
+The Kanbu MCP Server is specifically designed for **Claude Code** integration. Through a simple pairing flow, you connect Claude Code to your Kanbu account. Claude automatically inherits all your ACL permissions.
 
 ## Pairing Flow
 
@@ -15,8 +15,8 @@ De Kanbu MCP Server is specifiek ontworpen voor **Claude Code** integratie. Via 
 │                        PAIRING FLOW                                  │
 ├─────────────────────────────────────────────────────────────────────┤
 │                                                                      │
-│  STAP 1: Genereer Setup Code (Kanbu Profile Page)                   │
-│  ─────────────────────────────────────────────────                  │
+│  STEP 1: Generate Setup Code (Kanbu Profile Page)                   │
+│  ─────────────────────────────────────────────                      │
 │     ┌─────────────────────────────────┐                             │
 │     │ 🔗 Connect Claude Code          │                             │
 │     │                                  │                             │
@@ -31,31 +31,31 @@ De Kanbu MCP Server is specifiek ontworpen voor **Claude Code** integratie. Via 
 │     │  KNB-A3X9-7MK2"                 │                             │
 │     └─────────────────────────────────┘                             │
 │                                                                      │
-│  STAP 2: Vertel Claude de Code                                      │
+│  STEP 2: Tell Claude the Code                                       │
 │  ─────────────────────────────────────                              │
-│     User: "Connect met Kanbu, code KNB-A3X9-7MK2"                   │
+│     User: "Connect to Kanbu, code KNB-A3X9-7MK2"                    │
 │                                                                      │
-│     Claude: Ik verbind met Kanbu...                                 │
+│     Claude: Connecting to Kanbu...                                  │
 │             [exchangeSetupCode] ──────────► Kanbu API               │
 │                                             ├─ Validate code        │
-│             ✓ Verbonden als Robin!          ├─ Mark consumed        │
-│               Je hebt Domain Admin rechten. └─ Return token         │
+│             ✓ Connected as Robin!           ├─ Mark consumed        │
+│               You have Domain Admin rights. └─ Return token         │
 │                                                                      │
-│  STAP 3: Permanent Verbonden                                        │
+│  STEP 3: Permanently Connected                                      │
 │  ─────────────────────────────────────                              │
-│     • Token opgeslagen op deze machine                              │
-│     • Setup code is geconsumeerd (kan niet hergebruikt worden)      │
-│     • Claude kan nu namens jou werken                               │
+│     • Token stored on this machine                                  │
+│     • Setup code is consumed (cannot be reused)                     │
+│     • Claude can now work on your behalf                            │
 │                                                                      │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-## Hoe Het Werkt
+## How It Works
 
-### Architectuur
+### Architecture
 
 ```
-                    Setup Code (eenmalig)
+                    Setup Code (one-time)
                            │
 ┌─────────────────┐        │        ┌─────────────────┐
 │  Kanbu Web UI   │────────┼───────▶│  User tells     │
@@ -94,17 +94,17 @@ De Kanbu MCP Server is specifiek ontworpen voor **Claude Code** integratie. Via 
 
 | Aspect | Setup Code | Permanent Token |
 |--------|------------|-----------------|
-| **Zichtbaar voor user** | Ja (in UI) | Nee (alleen lokaal) |
-| **Levensduur** | 5 minuten | Permanent (tot revoke) |
-| **Gebruik** | Eenmalig | Onbeperkt |
+| **Visible to user** | Yes (in UI) | No (only locally) |
+| **Lifetime** | 5 minutes | Permanent (until revoke) |
+| **Usage** | One-time | Unlimited |
 | **Format** | `KNB-XXXX-XXXX` | `ast_xxxxxx...` (256-bit) |
-| **Opslag** | Database | Lokaal bestand |
+| **Storage** | Database | Local file |
 
 ## User Interface
 
-### Profile Page - AI Assistant Sectie
+### Profile Page - AI Assistant Section
 
-**Niet verbonden:**
+**Not connected:**
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -121,7 +121,7 @@ De Kanbu MCP Server is specifiek ontworpen voor **Claude Code** integratie. Via 
 └─────────────────────────────────────────────────────────────┘
 ```
 
-**Setup code gegenereerd:**
+**Setup code generated:**
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -146,7 +146,7 @@ De Kanbu MCP Server is specifiek ontworpen voor **Claude Code** integratie. Via 
 └─────────────────────────────────────────────────────────────┘
 ```
 
-**Verbonden:**
+**Connected:**
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -156,7 +156,7 @@ De Kanbu MCP Server is specifiek ontworpen voor **Claude Code** integratie. Via 
 │ Status: ● Connected                                          │
 │ Connected since: 2026-01-09 14:32                           │
 │ Last used: 2 minutes ago                                    │
-│ Machine: your-machine (Linux)                                        │
+│ Machine: your-machine (Linux)                                │
 │                                                              │
 │ Your permissions Claude inherits:                            │
 │ • Domain Admin (full access)                                │
@@ -173,124 +173,124 @@ De Kanbu MCP Server is specifiek ontworpen voor **Claude Code** integratie. Via 
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## Claude Code Commando's
+## Claude Code Commands
 
-### Eerste Keer Verbinden
+### First Time Connection
 
 ```
-User: Connect met Kanbu, mijn code is KNB-A3X9-7MK2
+User: Connect to Kanbu, my code is KNB-A3X9-7MK2
 
-Claude: Ik verbind met Kanbu...
+Claude: Connecting to Kanbu...
 
-✓ Verbonden!
+✓ Connected!
   User: Robin Waslander
   Role: Domain Admin
   Workspaces: 3
   Projects: 12
 
-Je kunt nu vragen stellen zoals:
-• "Wat zijn mijn taken?"
-• "Maak een taak aan in project X"
-• "Zet taak KANBU-42 op Done"
+You can now ask questions like:
+• "What are my tasks?"
+• "Create a task in project X"
+• "Move task KANBU-42 to Done"
 ```
 
-### Al Verbonden
+### Already Connected
 
 ```
-User: Wat zijn mijn openstaande taken?
+User: What are my open tasks?
 
 Claude: [kanbu_my_tasks]
 
-Je hebt 4 openstaande taken:
-1. KANBU-142: Implementeer MCP server (IN_PROGRESS)
+You have 4 open tasks:
+1. KANBU-142: Implement MCP server (IN_PROGRESS)
 2. KANBU-138: Fix login redirect bug (TODO)
-3. KANBU-135: Update documentatie (TODO)
+3. KANBU-135: Update documentation (TODO)
 4. KANBU-130: Code review PR #42 (IN_REVIEW)
 ```
 
 ## Permission Inheritance
 
-Claude erft automatisch jouw ACL rechten:
+Claude automatically inherits your ACL permissions:
 
-| Jouw Rol | Claude Kan |
+| Your Role | Claude Can |
 |----------|------------|
-| Domain Admin | Alles: workspaces, projecten, users beheren |
-| Workspace Admin | Projecten in die workspace beheren |
-| Project Manager | Taken in dat project beheren |
-| Project Member | Taken lezen/bewerken waar je toegang tot hebt |
-| Viewer | Alleen lezen |
+| Domain Admin | Everything: manage workspaces, projects, users |
+| Workspace Admin | Manage projects in that workspace |
+| Project Manager | Manage tasks in that project |
+| Project Member | Read/edit tasks you have access to |
+| Viewer | Only read |
 
-Als jouw rechten veranderen, veranderen die van Claude automatisch mee.
+When your permissions change, Claude's automatically change as well.
 
-## Beschikbare Tools
+## Available Tools
 
-### Fase 1 - Pairing Tools (✅ Geïmplementeerd)
+### Phase 1 - Pairing Tools (✅ Implemented)
 
-| Tool | Beschrijving | Status |
+| Tool | Description | Status |
 |------|--------------|--------|
-| `kanbu_connect` | Verbind met setup code | ✅ Werkend |
-| `kanbu_whoami` | Toon verbonden user en rechten | ✅ Werkend |
-| `kanbu_disconnect` | Verbreek verbinding | ✅ Werkend |
+| `kanbu_connect` | Connect with setup code | ✅ Working |
+| `kanbu_whoami` | Show connected user and permissions | ✅ Working |
+| `kanbu_disconnect` | Disconnect | ✅ Working |
 
-### Fase 2 - Core Tools (✅ Geïmplementeerd)
+### Phase 2 - Core Tools (✅ Implemented)
 
-| Tool | Beschrijving | Vereiste Permissie | Status |
+| Tool | Description | Required Permission | Status |
 |------|--------------|-------------------|--------|
-| `kanbu_list_workspaces` | Lijst toegankelijke workspaces | R op workspace | ✅ Werkend |
-| `kanbu_get_workspace` | Workspace details met projecten | R op workspace | ✅ Werkend |
-| `kanbu_list_projects` | Lijst projecten in workspace | R op project | ✅ Werkend |
-| `kanbu_get_project` | Project details met columns | R op project | ✅ Werkend |
-| `kanbu_create_project` | Nieuw project aanmaken | W op workspace | ✅ Werkend |
-| `kanbu_list_tasks` | Taken in project met filters | R op project | ✅ Werkend |
-| `kanbu_get_task` | Taak details met subtasks/comments | R op task | ✅ Werkend |
-| `kanbu_create_task` | Nieuwe taak aanmaken | W op project | ✅ Werkend |
-| `kanbu_update_task` | Taak bewerken | W op task | ✅ Werkend |
-| `kanbu_move_task` | Status/kolom wijzigen | W op task | ✅ Werkend |
-| `kanbu_my_tasks` | Jouw toegewezen taken | - (eigen taken) | ✅ Werkend |
+| `kanbu_list_workspaces` | List accessible workspaces | R on workspace | ✅ Working |
+| `kanbu_get_workspace` | Workspace details with projects | R on workspace | ✅ Working |
+| `kanbu_list_projects` | List projects in workspace | R on project | ✅ Working |
+| `kanbu_get_project` | Project details with columns | R on project | ✅ Working |
+| `kanbu_create_project` | Create new project | W on workspace | ✅ Working |
+| `kanbu_list_tasks` | Tasks in project with filters | R on project | ✅ Working |
+| `kanbu_get_task` | Task details with subtasks/comments | R on task | ✅ Working |
+| `kanbu_create_task` | Create new task | W on project | ✅ Working |
+| `kanbu_update_task` | Edit task | W on task | ✅ Working |
+| `kanbu_move_task` | Change status/column | W on task | ✅ Working |
+| `kanbu_my_tasks` | Your assigned tasks | - (own tasks) | ✅ Working |
 
-### Fase 3 - Subtask & Comment Tools (✅ Geïmplementeerd)
+### Phase 3 - Subtask & Comment Tools (✅ Implemented)
 
-| Tool | Beschrijving | Vereiste Permissie | Status |
+| Tool | Description | Required Permission | Status |
 |------|--------------|-------------------|--------|
-| `kanbu_list_subtasks` | Lijst subtaken voor een taak | R op project | ✅ Werkend |
-| `kanbu_create_subtask` | Nieuwe subtaak aanmaken | W op project | ✅ Werkend |
-| `kanbu_update_subtask` | Subtaak properties bewerken | W op project | ✅ Werkend |
-| `kanbu_toggle_subtask` | Toggle TODO/DONE status | W op project | ✅ Werkend |
-| `kanbu_delete_subtask` | Subtaak verwijderen | W op project | ✅ Werkend |
-| `kanbu_list_comments` | Comments op een taak | R op project | ✅ Werkend |
-| `kanbu_add_comment` | Comment toevoegen | W op project | ✅ Werkend |
-| `kanbu_update_comment` | Eigen comment bewerken | W op project | ✅ Werkend |
-| `kanbu_delete_comment` | Comment verwijderen | W op project | ✅ Werkend |
+| `kanbu_list_subtasks` | List subtasks for a task | R on project | ✅ Working |
+| `kanbu_create_subtask` | Create new subtask | W on project | ✅ Working |
+| `kanbu_update_subtask` | Edit subtask properties | W on project | ✅ Working |
+| `kanbu_toggle_subtask` | Toggle TODO/DONE status | W on project | ✅ Working |
+| `kanbu_delete_subtask` | Delete subtask | W on project | ✅ Working |
+| `kanbu_list_comments` | Comments on a task | R on project | ✅ Working |
+| `kanbu_add_comment` | Add comment | W on project | ✅ Working |
+| `kanbu_update_comment` | Edit own comment | W on project | ✅ Working |
+| `kanbu_delete_comment` | Delete comment | W on project | ✅ Working |
 
-### Fase 4 - Search & Activity Tools (✅ Geïmplementeerd)
+### Phase 4 - Search & Activity Tools (✅ Implemented)
 
-| Tool | Beschrijving | Vereiste Permissie | Status |
+| Tool | Description | Required Permission | Status |
 |------|--------------|-------------------|--------|
-| `kanbu_search_tasks` | Full-text zoeken in taken | R op project | ✅ Werkend |
-| `kanbu_search_global` | Zoeken in taken, comments, wiki | R op project | ✅ Werkend |
-| `kanbu_recent_activity` | Recente project activiteit | R op project | ✅ Werkend |
-| `kanbu_task_activity` | Activiteit historie voor een taak | R op project | ✅ Werkend |
-| `kanbu_activity_stats` | Activiteit statistieken (30 dagen) | R op project | ✅ Werkend |
+| `kanbu_search_tasks` | Full-text search in tasks | R on project | ✅ Working |
+| `kanbu_search_global` | Search in tasks, comments, wiki | R on project | ✅ Working |
+| `kanbu_recent_activity` | Recent project activity | R on project | ✅ Working |
+| `kanbu_task_activity` | Activity history for a task | R on project | ✅ Working |
+| `kanbu_activity_stats` | Activity statistics (30 days) | R on project | ✅ Working |
 
-### Fase 5 - Analytics & Insights Tools (✅ Geïmplementeerd)
+### Phase 5 - Analytics & Insights Tools (✅ Implemented)
 
-| Tool | Beschrijving | Vereiste Permissie | Status |
+| Tool | Description | Required Permission | Status |
 |------|--------------|-------------------|--------|
-| `kanbu_project_stats` | Project statistieken, completion rate, trends | R op project | ✅ Werkend |
-| `kanbu_velocity` | Team velocity per week, rolling average | R op project | ✅ Werkend |
-| `kanbu_cycle_time` | Cycle time per kolom, bottleneck detectie | R op project | ✅ Werkend |
-| `kanbu_team_workload` | Workload per teamlid, overdue counts | R op project | ✅ Werkend |
+| `kanbu_project_stats` | Project statistics, completion rate, trends | R on project | ✅ Working |
+| `kanbu_velocity` | Team velocity per week, rolling average | R on project | ✅ Working |
+| `kanbu_cycle_time` | Cycle time per column, bottleneck detection | R on project | ✅ Working |
+| `kanbu_team_workload` | Workload per team member, overdue counts | R on project | ✅ Working |
 
-### Fase 6+ - Extended Tools (Gepland)
+### Phase 6+ - Extended Tools (Planned)
 
-| Tool | Beschrijving |
+| Tool | Description |
 |------|--------------|
 | `kanbu_burndown_data` | Burndown chart data |
 | `kanbu_forecast` | Sprint/project completion forecast |
 
 ## Audit Logging
 
-Alle acties via Claude Code worden gelogd:
+All actions via Claude Code are logged:
 
 ```
 [2026-01-09 14:45:23] Task #42 updated
@@ -300,40 +300,40 @@ Alle acties via Claude Code worden gelogd:
   Action: status changed TODO → IN_PROGRESS
 ```
 
-In de UI: **Robin (via Claude)** moved task to In Progress
+In the UI: **Robin (via Claude)** moved task to In Progress
 
 ## Security
 
-### Setup Code Beveiliging
+### Setup Code Security
 
-- Format: `KNB-XXXX-XXXX` (12 karakters alfanumeriek)
-- **One-time use**: Na consumptie onbruikbaar
-- **5 minuten TTL**: Verloopt automatisch
-- **Niet gevoelig**: Kan veilig mondeling gedeeld worden
+- Format: `KNB-XXXX-XXXX` (12 alphanumeric characters)
+- **One-time use**: Unusable after consumption
+- **5 minute TTL**: Expires automatically
+- **Not sensitive**: Can be safely shared verbally
 
-### Permanent Token Beveiliging
+### Permanent Token Security
 
-- 256-bit random, cryptografisch veilig
-- Gehashed opgeslagen in database (argon2)
-- Nooit zichtbaar voor gebruiker
-- Alleen opgeslagen op de machine die verbond
-- Machine-specifieke binding
+- 256-bit random, cryptographically secure
+- Hashed storage in database (argon2)
+- Never visible to user
+- Only stored on the machine that connected
+- Machine-specific binding
 
 ### Rate Limiting
 
-- Max 100 requests per minuut per binding
-- Burst: 20 requests per seconde
-- Setup code attempts: max 5 per uur per user
+- Max 100 requests per minute per binding
+- Burst: 20 requests per second
+- Setup code attempts: max 5 per hour per user
 
 ### Token Revocation
 
-- "Disconnect" in profile page verwijdert binding
-- Admin kan bindings van users revoken
-- Bij verdachte activiteit automatische revocatie
+- "Disconnect" in profile page removes binding
+- Admin can revoke user bindings
+- Automatic revocation on suspicious activity
 
 ## Multi-Machine Support
 
-Een user kan Claude Code op meerdere machines verbinden:
+A user can connect Claude Code on multiple machines:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -351,9 +351,9 @@ Een user kan Claude Code op meerdere machines verbinden:
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## Installatie
+## Installation
 
-### Vanuit Source
+### From Source
 
 ```bash
 cd packages/mcp-server
@@ -361,22 +361,22 @@ pnpm install
 pnpm build
 ```
 
-### Toevoegen aan Claude Code
+### Add to Claude Code
 
-**Via Claude CLI (aanbevolen):**
+**Via Claude CLI (recommended):**
 
 ```bash
-# Installeer Claude CLI indien nodig
+# Install Claude CLI if needed
 npm install -g @anthropic-ai/claude-code
 
-# Voeg Kanbu MCP server toe
+# Add Kanbu MCP server
 claude mcp add kanbu -- node /path/to/kanbu/packages/mcp-server/dist/index.js
 
-# Verifieer
+# Verify
 claude mcp list
 ```
 
-**Handmatig (settings.local.json):**
+**Manual (settings.local.json):**
 
 ```json
 {
@@ -389,17 +389,17 @@ claude mcp list
 }
 ```
 
-### NPM Package (toekomstig)
+### NPM Package (future)
 
 ```bash
 npm install -g @kanbu/mcp-server
 ```
 
-## Configuratie
+## Configuration
 
-De MCP server configuratie wordt automatisch gegenereerd bij pairing.
+The MCP server configuration is automatically generated during pairing.
 
-Na succesvolle verbinding staat in `~/.config/kanbu/mcp.json`:
+After successful connection, `~/.config/kanbu/mcp.json` contains:
 
 ```json
 {
@@ -413,61 +413,61 @@ Na succesvolle verbinding staat in `~/.config/kanbu/mcp.json`:
 }
 ```
 
-## Voorbeeld Sessie
+## Example Session
 
 ```
-User: Ik wil Claude Code verbinden met Kanbu
+User: I want to connect Claude Code with Kanbu
 
-Claude: Om te verbinden heb ik een setup code nodig.
-        Ga naar je Kanbu profile page → AI Assistant sectie
-        en klik op "Generate Setup Code".
+Claude: To connect, I need a setup code.
+        Go to your Kanbu profile page → AI Assistant section
+        and click on "Generate Setup Code".
 
-        Geef mij daarna de code (bijv. KNB-XXXX-XXXX).
+        Then give me the code (e.g., KNB-XXXX-XXXX).
 
-User: De code is KNB-A3X9-7MK2
+User: The code is KNB-A3X9-7MK2
 
 Claude: [kanbu_connect code="KNB-A3X9-7MK2"]
 
-✓ Verbonden met Kanbu!
+✓ Connected to Kanbu!
 
   User: Robin Waslander (robin@example.com)
   Role: Domain Admin
 
-  Je kunt nu:
-  • "Wat zijn mijn taken?" - Bekijk je toegewezen taken
-  • "Maak taak X in project Y" - Nieuwe taak aanmaken
-  • "Zet KANBU-42 op Done" - Status wijzigen
+  You can now:
+  • "What are my tasks?" - View your assigned tasks
+  • "Create task X in project Y" - Create new task
+  • "Move KANBU-42 to Done" - Change status
 
-User: Wat zijn mijn taken?
+User: What are my tasks?
 
 Claude: [kanbu_my_tasks]
 
-Je hebt 4 openstaande taken:
+You have 4 open tasks:
 
-| Ref | Titel | Status | Project |
+| Ref | Title | Status | Project |
 |-----|-------|--------|---------|
-| KANBU-142 | Implementeer MCP server | IN_PROGRESS | Kanbu Dev |
+| KANBU-142 | Implement MCP server | IN_PROGRESS | Kanbu Dev |
 | KANBU-138 | Fix login redirect bug | TODO | Kanbu Dev |
-| KANBU-135 | Update documentatie | TODO | Kanbu Dev |
+| KANBU-135 | Update documentation | TODO | Kanbu Dev |
 | KANBU-130 | Code review PR #42 | IN_REVIEW | Kanbu Dev |
 
-User: Zet KANBU-138 op In Progress
+User: Move KANBU-138 to In Progress
 
 Claude: [kanbu_move_task taskId=138 status="IN_PROGRESS"]
 
-✓ KANBU-138 "Fix login redirect bug" is nu In Progress.
+✓ KANBU-138 "Fix login redirect bug" is now In Progress.
 ```
 
 ## Roadmap
 
-Zie [ROADMAP.md](./ROADMAP.md) voor de implementatie planning.
+See [ROADMAP.md](./ROADMAP.md) for implementation planning.
 
-## Technisch Ontwerp
+## Technical Design
 
-Zie [PLAN.md](./PLAN.md) voor de technische architectuur.
+See [PLAN.md](./PLAN.md) for technical architecture.
 
 ## Links
 
 - [MCP Specification](https://spec.modelcontextprotocol.io/)
-- [Kanbu ACL Documentatie](../ACL/README.md)
+- [Kanbu ACL Documentation](../ACL/README.md)
 - [Claude Code Documentation](https://docs.anthropic.com/claude-code)

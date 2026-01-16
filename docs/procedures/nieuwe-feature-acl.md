@@ -1,63 +1,63 @@
-# Procedure: Nieuwe Feature/Menu Item Toevoegen
+# Procedure: Adding New Feature/Menu Item
 
-> **Versie:** 1.0.0
-> **Datum:** 2026-01-08
-> **Fase:** 8C - System-wide Feature ACL
+> **Version:** 1.0.0
+> **Date:** 2026-01-08
+> **Phase:** 8C - System-wide Feature ACL
 
-## Overzicht
+## Overview
 
-Alle menu items en features in Kanbu worden beheerd via het ACL (Access Control List) systeem.
-Dit betekent dat nieuwe features **expliciet** moeten worden toegevoegd aan het systeem om
-zichtbaar te zijn voor gebruikers.
+All menu items and features in Kanbu are managed via the ACL (Access Control List) system.
+This means that new features **must explicitly** be added to the system to be
+visible to users.
 
 ## Checklist
 
-- [ ] Feature toegevoegd aan `seed-features.ts`
-- [ ] Seed script uitgevoerd
-- [ ] Sidebar/layout geupdate met ACL check
-- [ ] TypeScript types bijgewerkt (indien nodig)
-- [ ] Getest in browser
+- [ ] Feature added to `seed-features.ts`
+- [ ] Seed script executed
+- [ ] Sidebar/layout updated with ACL check
+- [ ] TypeScript types updated (if necessary)
+- [ ] Tested in browser
 
-## Stap 1: Bepaal de Scope
+## Step 1: Determine the Scope
 
-Features hebben een van de volgende scopes:
+Features have one of the following scopes:
 
-| Scope | Aantal | Voorbeelden |
+| Scope | Count | Examples |
 |-------|--------|-------------|
 | `dashboard` | 4 | overview, my-tasks, my-subtasks, my-workspaces |
 | `profile` | 16 | summary, time-tracking, last-logins, sessions, edit-profile, notifications, api-tokens, etc. |
 | `admin` | 9 | users, create-user, acl, permission-tree, invites, workspaces, settings-general, etc. |
 | `project` | 11 | board, list, calendar, timeline, sprints, milestones, analytics, members, settings, etc. |
 
-**Totaal: 40 features in het systeem**
+**Total: 40 features in the system**
 
-Zie `packages/shared/prisma/seed-features.ts` voor de complete lijst per scope.
+See `packages/shared/prisma/seed-features.ts` for the complete list per scope.
 
-## Stap 2: Voeg Feature toe aan Seed File
+## Step 2: Add Feature to Seed File
 
-Open `packages/shared/prisma/seed-features.ts` en voeg de feature toe aan de juiste scope array.
+Open `packages/shared/prisma/seed-features.ts` and add the feature to the appropriate scope array.
 
-### Voorbeeld: Admin Feature
+### Example: Admin Feature
 
 ```typescript
 const ADMIN_FEATURES: FeatureDefinition[] = [
-  // ... bestaande features
+  // ... existing features
   {
     scope: 'admin',
-    slug: 'audit-log',           // Unieke identifier
-    name: 'Audit Log',           // Display naam
+    slug: 'audit-log',           // Unique identifier
+    name: 'Audit Log',           // Display name
     description: 'View system audit log',
     icon: 'log',                 // Icon identifier
-    sortOrder: 60,               // Volgorde in menu
+    sortOrder: 60,               // Order in menu
   },
 ]
 ```
 
-### Voorbeeld: Dashboard Feature
+### Example: Dashboard Feature
 
 ```typescript
 const DASHBOARD_FEATURES: FeatureDefinition[] = [
-  // ... bestaande features
+  // ... existing features
   {
     scope: 'dashboard',
     slug: 'calendar-widget',
@@ -69,11 +69,11 @@ const DASHBOARD_FEATURES: FeatureDefinition[] = [
 ]
 ```
 
-### Voorbeeld: Project Feature
+### Example: Project Feature
 
 ```typescript
 const PROJECT_FEATURES: FeatureDefinition[] = [
-  // ... bestaande features
+  // ... existing features
   {
     scope: 'project',
     slug: 'wiki',
@@ -85,14 +85,14 @@ const PROJECT_FEATURES: FeatureDefinition[] = [
 ]
 ```
 
-## Stap 3: Run de Seed
+## Step 3: Run the Seed
 
 ```bash
 cd packages/shared
 pnpm tsx prisma/seed-features.ts
 ```
 
-Je zou output moeten zien zoals:
+You should see output like:
 ```
 Seeding features...
 
@@ -102,11 +102,11 @@ Seeding features...
 Feature seeding completed successfully!
 ```
 
-## Stap 4: Update de Sidebar/Layout
+## Step 4: Update the Sidebar/Layout
 
-### Voor Project Features
+### For Project Features
 
-De `ProjectSidebar` gebruikt al ACL checks. Voeg alleen het menu item toe:
+The `ProjectSidebar` already uses ACL checks. Just add the menu item:
 
 ```typescript
 // In apps/web/src/components/layout/ProjectSidebar.tsx
@@ -117,7 +117,7 @@ function getNavSections(workspaceSlug: string, projectIdentifier: string): NavSe
     {
       title: 'Content',
       items: [
-        // ... bestaande items
+        // ... existing items
         { label: 'Wiki', path: `${basePath}/wiki`, icon: WikiIcon, slug: 'wiki' },
       ],
     },
@@ -125,9 +125,9 @@ function getNavSections(workspaceSlug: string, projectIdentifier: string): NavSe
 }
 ```
 
-### Voor Admin Features
+### For Admin Features
 
-Als je de AdminSidebar wilt updaten met ACL checks:
+To update the AdminSidebar with ACL checks:
 
 ```typescript
 // In apps/web/src/components/admin/AdminSidebar.tsx
@@ -136,7 +136,7 @@ import { useAdminFeatureAccess, type AdminFeatureSlug } from '@/hooks/useFeature
 export function AdminSidebar({ collapsed = false }: AdminSidebarProps) {
   const { canSeeFeature, isLoading } = useAdminFeatureAccess()
 
-  // Voeg slug toe aan nav items
+  // Add slug to nav items
   interface NavItem {
     label: string
     path: string
@@ -148,7 +148,7 @@ export function AdminSidebar({ collapsed = false }: AdminSidebarProps) {
     { label: 'Audit Log', path: '/admin/audit', icon: LogIcon, slug: 'audit-log' },
   ]
 
-  // Filter op ACL
+  // Filter based on ACL
   const filteredItems = navItems.filter(item =>
     isLoading || canSeeFeature(item.slug)
   )
@@ -157,24 +157,24 @@ export function AdminSidebar({ collapsed = false }: AdminSidebarProps) {
 }
 ```
 
-### Voor Dashboard Features
+### For Dashboard Features
 
 ```typescript
 // In apps/web/src/components/dashboard/DashboardSidebar.tsx
 import { useDashboardFeatureAccess, type DashboardFeatureSlug } from '@/hooks/useFeatureAccess'
 
-// Zelfde patroon als AdminSidebar
+// Same pattern as AdminSidebar
 ```
 
-## Stap 5: Update TypeScript Types (indien nodig)
+## Step 5: Update TypeScript Types (if necessary)
 
-Als je een nieuwe feature slug toevoegt, update de types in `useFeatureAccess.ts`:
+If you add a new feature slug, update the types in `useFeatureAccess.ts`:
 
 ```typescript
 // In apps/web/src/hooks/useFeatureAccess.ts
 
-// Voeg nieuwe slug toe aan het juiste type
-// Voorbeeld voor Admin features:
+// Add new slug to the appropriate type
+// Example for Admin features:
 export type AdminFeatureSlug =
   // User Management section
   | 'users'
@@ -188,48 +188,48 @@ export type AdminFeatureSlug =
   | 'settings-general'
   | 'settings-security'
   | 'backup'
-  | 'audit-log'  // Nieuwe feature
+  | 'audit-log'  // New feature
 
-// Update de feature categorieen (bepaalt welke permission nodig is)
+// Update the feature categories (determines which permission is needed)
 const ADMIN_READ_FEATURES: AdminFeatureSlug[] = ['users', 'workspaces', 'audit-log']
 const ADMIN_EXECUTE_FEATURES: AdminFeatureSlug[] = ['create-user', 'invites']
 const ADMIN_PERMISSIONS_FEATURES: AdminFeatureSlug[] = ['acl', 'permission-tree', 'settings-general', 'settings-security', 'backup']
 ```
 
-**Let op:** De feature categorieen bepalen welke ACL permission level nodig is:
-- `READ_FEATURES`: Basis toegang (canRead)
-- `EXECUTE_FEATURES`: Geavanceerde features (canExecute)
-- `PERMISSIONS_FEATURES`: Beheer features (canManagePermissions)
+**Note:** The feature categories determine which ACL permission level is needed:
+- `READ_FEATURES`: Basic access (canRead)
+- `EXECUTE_FEATURES`: Advanced features (canExecute)
+- `PERMISSIONS_FEATURES`: Management features (canManagePermissions)
 
-## Stap 6: Test in Browser
+## Step 6: Test in Browser
 
-1. Start de dev servers
-2. Ga naar de ACL Manager (`/admin/acl`)
-3. Expandeer de juiste sectie (Dashboard/Admin/Profile/Project)
-4. Verify dat je nieuwe feature zichtbaar is onder "Features"
-5. Test dat de feature alleen zichtbaar is voor users met de juiste ACL permissions
+1. Start the dev servers
+2. Go to the ACL Manager (`/admin/acl`)
+3. Expand the appropriate section (Dashboard/Admin/Profile/Project)
+4. Verify that your new feature is visible under "Features"
+5. Test that the feature is only visible to users with the correct ACL permissions
 
-## Belangrijk: Feature Visibility
+## Important: Feature Visibility
 
-**Een nieuwe feature is ONZICHTBAAR totdat ACL permissions worden toegekend!**
+**A new feature is INVISIBLE until ACL permissions are granted!**
 
-Dit is by design: fail-safe security. Om een feature te activeren:
+This is by design: fail-safe security. To activate a feature:
 
-1. Ga naar ACL Manager (`/admin/acl`)
-2. Selecteer de feature in de resource tree
-3. Grant permissions aan de gewenste users/groups
+1. Go to ACL Manager (`/admin/acl`)
+2. Select the feature in the resource tree
+3. Grant permissions to the desired users/groups
 
-## Veelgemaakte Fouten
+## Common Mistakes
 
-| Fout | Gevolg | Oplossing |
+| Mistake | Consequence | Solution |
 |------|--------|-----------|
-| Seed niet uitgevoerd | Feature niet in database | Run `pnpm tsx prisma/seed-features.ts` |
-| Slug mismatch | Feature niet gevonden | Zorg dat slug in seed en sidebar identiek is |
-| Type niet geupdate | TypeScript errors | Update de type definitions |
-| ACL niet toegekend | Feature onzichtbaar | Grant permissions in ACL Manager |
+| Seed not executed | Feature not in database | Run `pnpm tsx prisma/seed-features.ts` |
+| Slug mismatch | Feature not found | Ensure slug in seed and sidebar are identical |
+| Type not updated | TypeScript errors | Update the type definitions |
+| ACL not granted | Feature invisible | Grant permissions in ACL Manager |
 
-## Gerelateerde Documentatie
+## Related Documentation
 
 - [ACL Roadmap](../ACL/ROADMAP.md)
-- [CLAUDE.md](../../CLAUDE.md) - Hoofddocumentatie
-- [seed-features.ts](../../packages/shared/prisma/seed-features.ts) - Feature definities
+- [CLAUDE.md](../../CLAUDE.md) - Main documentation
+- [seed-features.ts](../../packages/shared/prisma/seed-features.ts) - Feature definitions

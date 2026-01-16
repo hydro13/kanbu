@@ -1,42 +1,42 @@
-# AD-Style Permission System voor Kanbu
+# AD-Style Permission System for Kanbu
 
-## Overzicht
+## Overview
 
-Implementeer een Active Directory-achtig permission systeem waarbij Security Groups flexibel rechten kunnen krijgen op meerdere objecten (workspaces, projects) met inheritance.
+Implement an Active Directory-like permission system with Security Groups, LDAP-compatible structure, and granular permissions.
 
-## Huidige Situatie
+## Current Situation
 
-**Wat er al is:**
-- `Group` model met types: SYSTEM, WORKSPACE, WORKSPACE_ADMIN, PROJECT, CUSTOM
-- `GroupMember` voor lidmaatschappen
-- `GroupPermission` voor fine-grained permissions (ALLOW/DENY)
-- `Permission` tabel met 45+ permissions
-- Domain Admins groep die overal toegang heeft
+**What already exists:**
+- `Group` model with types: SYSTEM, WORKSPACE, WORKSPACE_ADMIN, PROJECT, CUSTOM
+- `GroupMember` for memberships
+- `GroupPermission` for fine-grained permissions (ALLOW/DENY)
+- `Permission` table with 45+ permissions
+- Domain Admins group with access to everything
 - Auto-groups per workspace/project
 
-**Het Probleem:**
-Groups hebben `workspaceId`/`projectId` direct op het model → 1:1 binding aan objecten.
-Kan niet:
-- Cross-workspace groepen maken ("Alle Developers")
-- Eén groep aan meerdere workspaces toewijzen
-- Echte Security Groups zoals in AD
+**The Problem:**
+Groups have `workspaceId`/`projectId` directly on the model → 1:1 binding to objects.
+Cannot:
+- Create cross-workspace groups ("All Developers")
+- Assign one group to multiple workspaces
+- True Security Groups like in AD
 
-## Oplossing: Two-Tier Group System
+## Solution: Two-Tier Group System
 
-### Tier 1: Auto-Groups (bestaand, ongewijzigd)
-- WORKSPACE, WORKSPACE_ADMIN, PROJECT types blijven 1:1 gebonden
-- Automatisch aangemaakt bij workspace/project creatie
+### Tier 1: Auto-Groups (existing, unchanged)
+- WORKSPACE, WORKSPACE_ADMIN, PROJECT types remain 1:1 bound
+- Automatically created on workspace/project creation
 
-### Tier 2: Security Groups (nieuw)
-- CUSTOM en SYSTEM types zonder object-binding
-- Krijgen toegang via **Role Assignments**
-- Kunnen op meerdere objecten rechten krijgen
+### Tier 2: Security Groups (new)
+- CUSTOM and SYSTEM types without object-binding
+- Get access via **Role Assignments**
+- Can get permissions on multiple objects
 
 ---
 
-## Database Wijzigingen
+## Database Changes
 
-### Nieuwe Tabel: `role_assignments`
+### New Table: `role_assignments`
 
 ```sql
 CREATE TABLE role_assignments (
@@ -53,7 +53,7 @@ CREATE TABLE role_assignments (
 );
 ```
 
-### Update `groups` Tabel
+### Update `groups` Table
 
 ```sql
 ALTER TABLE groups ADD COLUMN is_security_group BOOLEAN DEFAULT false;
@@ -61,64 +61,64 @@ ALTER TABLE groups ADD COLUMN is_security_group BOOLEAN DEFAULT false;
 
 ---
 
-## Bestanden te Wijzigen
+## Files to Modify
 
 ### 1. Database Schema
 - `packages/shared/prisma/schema.prisma`
-  - Toevoegen: RoleAssignment model
-  - Toevoegen: isSecurityGroup veld aan Group
-  - Toevoegen: AssignmentRole enum
+  - Add: RoleAssignment model
+  - Add: isSecurityGroup field to Group
+  - Add: AssignmentRole enum
 
 ### 2. Services
-- `apps/api/src/services/roleAssignments.ts` (NIEUW)
+- `apps/api/src/services/roleAssignments.ts` (NEW)
   - assignGroupToWorkspace()
   - assignGroupToProject()
   - removeAssignment()
   - getUserWorkspaceRole() - check role assignments
-  - getUserProjectRole() - met inheritance
+  - getUserProjectRole() - with inheritance
 
 - `apps/api/src/services/groupPermissions.ts` (UPDATE)
-  - isWorkspaceAdmin() - ook role assignments checken
-  - canAccessWorkspace() - ook role assignments checken
-  - canAccessProject() - met inheritance van workspace
+  - isWorkspaceAdmin() - also check role assignments
+  - canAccessWorkspace() - also check role assignments
+  - canAccessProject() - with inheritance from workspace
 
 - `apps/api/src/services/permissions.ts` (UPDATE)
-  - getWorkspaceRole() - role assignments meenemen
-  - getProjectRole() - inheritance van workspace
-  - getUserWorkspaces() - workspaces via role assignments includen
+  - getWorkspaceRole() - include role assignments
+  - getProjectRole() - inheritance from workspace
+  - getUserWorkspaces() - include workspaces via role assignments
 
 ### 3. API Procedures
-- `apps/api/src/trpc/procedures/roleAssignment.ts` (NIEUW)
-  - assign: Group toewijzen aan object met role
-  - remove: Assignment verwijderen
-  - listForWorkspace: Assignments voor workspace
-  - listForProject: Assignments voor project
-  - listForGroup: Waar is group toegewezen
-  - getEffectiveAccess: Effectieve rechten voor user
+- `apps/api/src/trpc/procedures/roleAssignment.ts` (NEW)
+  - assign: Assign group to object with role
+  - remove: Remove assignment
+  - listForWorkspace: Assignments for workspace
+  - listForProject: Assignments for project
+  - listForGroup: Where is group assigned
+  - getEffectiveAccess: Effective permissions for user
 
 - `apps/api/src/trpc/procedures/group.ts` (UPDATE)
-  - createSecurityGroup: Security group aanmaken
-  - getDirectoryTree: Boom structuur voor UI
+  - createSecurityGroup: Create security group
+  - getDirectoryTree: Tree structure for UI
 
 ### 4. Frontend
 - `apps/web/src/pages/admin/GroupListPage.tsx` (UPDATE)
   - "Create Security Group" button
   - Security Group badge
-  - Filter voor Security vs Auto groups
+  - Filter for Security vs Auto groups
 
 - `apps/web/src/pages/admin/GroupEditPage.tsx` (UPDATE)
-  - "Assignments" tab voor security groups
-  - Waar is deze groep toegewezen + met welke role
+  - "Assignments" tab for security groups
+  - Where is this group assigned + with which role
 
-- `apps/web/src/components/admin/AssignGroupDialog.tsx` (NIEUW)
+- `apps/web/src/components/admin/AssignGroupDialog.tsx` (NEW)
   - Group selector
   - Object selector (workspace/project)
   - Role selector
   - Inherit checkbox
 
-- `apps/web/src/pages/admin/DirectoryPage.tsx` (NIEUW - optioneel)
-  - Tree view van domain structuur
-  - Visuele weergave van AD
+- `apps/web/src/pages/admin/DirectoryPage.tsx` (NEW - optional)
+  - Tree view of domain structure
+  - Visual representation of AD
 
 ---
 
@@ -129,43 +129,43 @@ Domain (Kanbu root)
   └── Workspace
         └── Project
 
-Regels:
-1. Domain Admin → toegang tot ALLES
-2. Role op Workspace + inherit=true → zelfde role op alle Projects
-3. Role op Project → alleen dat project
-4. Hogere role wint (ADMIN > MEMBER > VIEWER)
+Rules:
+1. Domain Admin → access to EVERYTHING
+2. Role on Workspace + inherit=true → same role on all Projects
+3. Role on Project → only that project
+4. Higher role wins (ADMIN > MEMBER > VIEWER)
 ```
 
 ---
 
-## Implementatie Volgorde
+## Implementation Order
 
 ### Sprint 1: Database + Core Services
-1. Prisma schema updaten met RoleAssignment
-2. Migratie draaien
-3. RoleAssignmentService maken
-4. GroupPermissionService updaten voor role assignments
-5. PermissionService updaten voor inheritance
+1. Update Prisma schema with RoleAssignment
+2. Run migration
+3. Create RoleAssignmentService
+4. Update GroupPermissionService for role assignments
+5. Update PermissionService for inheritance
 
 ### Sprint 2: API
-1. roleAssignment router maken
-2. group router uitbreiden met security group procedures
-3. Testen
+1. Create roleAssignment router
+2. Extend group router with security group procedures
+3. Testing
 
 ### Sprint 3: Frontend
-1. GroupListPage updaten
-2. GroupEditPage Assignments tab toevoegen
-3. AssignGroupDialog maken
-4. (Optioneel) DirectoryPage met tree view
+1. Update GroupListPage
+2. Add GroupEditPage Assignments tab
+3. Create AssignGroupDialog
+4. (Optional) DirectoryPage with tree view
 
 ---
 
 ## Backward Compatibility
 
-- Auto-groups (WORKSPACE, WORKSPACE_ADMIN, PROJECT) blijven exact hetzelfde werken
-- Bestaande code hoeft niet te veranderen
-- Security Groups zijn opt-in functionaliteit
-- Geen breaking changes in API
+- Auto-groups (WORKSPACE, WORKSPACE_ADMIN, PROJECT) continue working exactly the same
+- Existing code doesn't need to change
+- Security Groups are opt-in functionality
+- No breaking changes in API
 
 ---
 
@@ -173,16 +173,16 @@ Regels:
 
 ## Permission Registry Pattern
 
-### Het Kernprincipe
+### The Core Principle
 
-**Elke feature/actie in Kanbu moet zich registreren als permission node.**
+**Every feature/action in Kanbu must register itself as a permission node.**
 
-Dit betekent:
-1. Geen code mag een actie uitvoeren zonder permission check
-2. Nieuwe features worden automatisch zichtbaar in de AD permission tree
-3. Centrale plek voor alle rechten - geen losse checks verspreid door de code
+This means:
+1. No code may perform an action without a permission check
+2. New features automatically become visible in the AD permission tree
+3. Central place for all permissions - no scattered checks throughout the code
 
-### Permission Tree Structuur
+### Permission Tree Structure
 
 ```
 kanbu (root)
@@ -338,7 +338,7 @@ kanbu (root)
 
 ### Permission Definition in Code
 
-Elke module definieert zijn permissions:
+Each module defines its permissions:
 
 ```typescript
 // apps/api/src/permissions/definitions/task.permissions.ts
@@ -387,7 +387,7 @@ export const taskPermissions = definePermissions('task', {
 
 ### Automatic Registration
 
-Bij server startup worden alle permissions geladen en gesynchroniseerd met de database:
+On server startup, all permissions are loaded and synchronized with the database:
 
 ```typescript
 // apps/api/src/permissions/registry.ts
@@ -422,7 +422,7 @@ export const permissionRegistry = new PermissionRegistry()
 
 ### Enforcement Pattern
 
-Elke API procedure gebruikt een guard:
+Each API procedure uses a guard:
 
 ```typescript
 // apps/api/src/trpc/procedures/task.ts
@@ -446,7 +446,7 @@ export const taskRouter = router({
 
 ### Frontend Integration
 
-UI componenten verbergen/tonen op basis van permissions:
+UI components hide/show based on permissions:
 
 ```tsx
 // CanDo component - shows children only if user has permission
@@ -466,7 +466,7 @@ const permissions = usePermissions(['task.create', 'task.edit', 'task.delete'])
 
 ### Development Workflow
 
-Wanneer een developer een nieuwe feature bouwt:
+When a developer builds a new feature:
 
 1. **Define permissions** in `permissions/definitions/{feature}.permissions.ts`
 2. **Register** in `permissions/index.ts`
@@ -513,16 +513,16 @@ model Permission {
 
 ---
 
-## Aangepaste Implementatie Volgorde
+## Adjusted Implementation Order
 
 ### Sprint 1: Permission Registry Foundation
 1. PermissionRegistry class
-2. Permission definitions voor core modules (task, project, workspace)
+2. Permission definitions for core modules (task, project, workspace)
 3. Database sync mechanism
 4. requirePermission middleware
 5. Migrate existing permission checks
 
-### Sprint 2: Role Assignments (oorspronkelijk plan)
+### Sprint 2: Role Assignments (original plan)
 1. RoleAssignment model
 2. Security Groups
 3. Inheritance logic
@@ -531,43 +531,43 @@ model Permission {
 1. CanDo component
 2. useCanDo / usePermissions hooks
 3. Permission tree viewer in admin
-4. Group permission editor met tree
+4. Group permission editor with tree
 
 ### Sprint 4: Remaining Modules
-1. Define permissions voor alle features
+1. Define permissions for all features
 2. Add guards to all procedures
 3. Add UI checks everywhere
 
 ---
 
-## Open Vragen
+## Open Questions
 
-1. **DirectoryPage**: Wil je een tree view UI zoals AD Users & Computers? Of is de Groups lijst voldoende?
+1. **DirectoryPage**: Do you want a tree view UI like AD Users & Computers? Or is the Groups list sufficient?
 
-2. **Inheritance opt-out**: Moet een admin per assignment kunnen kiezen of rechten doorerven naar projecten?
+2. **Inheritance opt-out**: Should an admin be able to choose per assignment whether permissions inherit to projects?
 
-3. **Scope**: Beginnen we met alleen Workspace-level assignments, of direct ook Project-level?
+3. **Scope**: Start with only Workspace-level assignments, or immediately also Project-level?
 
-4. **Granulariteit**: Hoe diep moet de permission tree gaan? Bijvoorbeeld:
-   - `task.edit` = alles aan een task bewerken
-   - OF `task.edit.title`, `task.edit.dueDate`, etc. = per veld
+4. **Granularity**: How deep should the permission tree go? For example:
+   - `task.edit` = edit everything on a task
+   - OR `task.edit.title`, `task.edit.dueDate`, etc. = per field
 
-5. **Default behavior**: Als een permission niet expliciet is toegekend - DENY of ALLOW? (Suggest: DENY by default)
+5. **Default behavior**: If a permission is not explicitly granted - DENY or ALLOW? (Suggest: DENY by default)
 
 ---
 
-## LDAP Compatibiliteit
+## LDAP Compatibility
 
-### Waarom LDAP?
+### Why LDAP?
 
-1. **Enterprise integratie**: Grote organisaties gebruiken Active Directory / LDAP
-2. **Single Sign-On**: Users hoeven niet apart in Kanbu te worden aangemaakt
-3. **Centrale groepsbeheer**: IT-afdeling beheert groepen in AD, Kanbu respecteert die
-4. **Compliance**: Audit trails en toegangsbeheer vanuit één plek
+1. **Enterprise integration**: Large organizations use Active Directory / LDAP
+2. **Single Sign-On**: Users don't need to be created separately in Kanbu
+3. **Central group management**: IT department manages groups in AD, Kanbu respects them
+4. **Compliance**: Audit trails and access control from one place
 
 ### LDAP-Compatible Schema
 
-Onze permission tree volgt LDAP naming conventions:
+Our permission tree follows LDAP naming conventions:
 
 ```
 Distinguished Names (DN):
@@ -582,13 +582,13 @@ Object Classes:
 - kanbuPermission - Custom class for permissions
 ```
 
-### Database Velden voor LDAP
+### Database Fields for LDAP
 
 ```prisma
 model Group {
   // ... existing fields ...
 
-  // LDAP-compatible velden
+  // LDAP-compatible fields
   objectGuid        String    @unique @default(uuid())  // AD Object GUID
   distinguishedName String?   @unique                    // Full DN path
   samAccountName    String?   @unique                    // Short name (max 20 chars)
@@ -604,7 +604,7 @@ model Group {
 model User {
   // ... existing fields ...
 
-  // LDAP-compatible velden
+  // LDAP-compatible fields
   objectGuid           String    @unique @default(uuid())
   distinguishedName    String?   @unique
   samAccountName       String?   @unique
@@ -625,7 +625,7 @@ enum LdapSource {
 }
 ```
 
-### Permission Paths als LDAP Attributes
+### Permission Paths as LDAP Attributes
 
 ```
 LDAP Attribute: kanbuPermission
@@ -640,7 +640,7 @@ Example values on a group:
 - planning.sprints.manage
 ```
 
-### Sync Architectuur
+### Sync Architecture
 
 ```
 ┌─────────────────┐         ┌─────────────────┐
@@ -662,7 +662,7 @@ Sync modes:
 
 ### LDAP Query Examples
 
-Als Kanbu een LDAP server zou exposen:
+If Kanbu would expose an LDAP server:
 
 ```ldap
 # Find all groups a user belongs to
@@ -677,7 +677,7 @@ Als Kanbu een LDAP server zou exposen:
 
 ### Future: LDAP Server Mode
 
-Kanbu kan zelf als LDAP server fungeren voor andere applicaties:
+Kanbu can function as an LDAP server itself for other applications:
 
 ```typescript
 // apps/api/src/ldap/server.ts
@@ -695,7 +695,7 @@ server.search('dc=kanbu,dc=local', async (req, res, next) => {
 })
 ```
 
-### Mapping Tabel
+### Mapping Table
 
 | Kanbu Concept | LDAP Equivalent | AD Equivalent |
 |---------------|-----------------|---------------|

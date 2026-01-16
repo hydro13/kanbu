@@ -1,30 +1,30 @@
 # Kanbu Component Audit
 
-**Datum:** 2026-01-15
+**Date:** 2026-01-15
 **Status:** Complete (Updated)
 
 ---
 
-## Overzicht
+## Overview
 
-| Metric | Waarde |
-|--------|--------|
-| Totaal componenten (regels) | 46,565 |
-| Wiki componenten (regels) | 8,902 |
-| Pages (regels) | 30,887 |
-| **Totaal frontend** | **~85,000 regels** |
+| Metric | Value |
+|--------|-------|
+| Total components (lines) | 46,565 |
+| Wiki components (lines) | 8,902 |
+| Pages (lines) | 30,887 |
+| **Total frontend** | **~85,000 lines** |
 | Component directories | 20 |
-| Grootste component | WikiGraphView.tsx (2,177 regels) |
-| Sidebars | 7 verschillende |
-| Layouts | 5 verschillende |
+| Largest component | WikiGraphView.tsx (2,177 lines) |
+| Sidebars | 7 different |
+| Layouts | 5 different |
 
 ---
 
-## Sidebar Componenten
+## Sidebar Components
 
-### Huidige Sidebars
-| Component | Locatie | Icon Bron |
-|-----------|---------|-----------|
+### Current Sidebars
+| Component | Location | Icon Source |
+|-----------|----------|-------------|
 | DashboardSidebar | components/dashboard/ | lucide-react |
 | ProjectSidebar | components/layout/ | **Custom SVG** |
 | WorkspaceSidebar | components/layout/ | lucide-react |
@@ -33,42 +33,42 @@
 | WikiSidebar | components/wiki/ | lucide-react |
 | TaskSidebar | components/task/ | lucide-react |
 
-### Probleem: Icon Inconsistentie
-**ProjectSidebar** definieert 10+ custom SVG icons in het bestand zelf:
+### Problem: Icon Inconsistency
+**ProjectSidebar** defines 10+ custom SVG icons in the file itself:
 - BoardIcon, ListIcon, CalendarIcon, TimelineIcon, MilestoneIcon, etc.
 
-Alle andere sidebars gebruiken `lucide-react`.
+All other sidebars use `lucide-react`.
 
 ### Impact
-- Visuele inconsistentie (stroke width, sizing kan verschillen)
-- Code duplicatie (~100 regels SVG definities)
-- Onderhoudslast (changes moeten op meerdere plekken)
+- Visual inconsistency (stroke width, sizing can differ)
+- Code duplication (~100 lines of SVG definitions)
+- Maintenance burden (changes needed in multiple places)
 
 ---
 
-## Layout Componenten
+## Layout Components
 
-### Huidige Layouts
-| Component | Gebruik | Sidebar |
-|-----------|---------|---------|
-| BaseLayout | Algemene wrapper | DashboardSidebar |
-| DashboardLayout | Dashboard pagina's | DashboardSidebar |
+### Current Layouts
+| Component | Usage | Sidebar |
+|-----------|-------|---------|
+| BaseLayout | General wrapper | DashboardSidebar |
+| DashboardLayout | Dashboard pages | DashboardSidebar |
 | ProjectLayout | Project views | ProjectSidebar |
-| WorkspaceLayout | Workspace pagina's | WorkspaceSidebar |
-| ProfileLayout | Profiel pagina's | ProfileSidebar |
-| AdminLayout | Admin pagina's | AdminSidebar |
+| WorkspaceLayout | Workspace pages | WorkspaceSidebar |
+| ProfileLayout | Profile pages | ProfileSidebar |
+| AdminLayout | Admin pages | AdminSidebar |
 
-### Observatie
-Er is geen gedeelde basis voor de sidebars. Elk layout type heeft zijn eigen sidebar implementatie.
+### Observation
+There is no shared base for the sidebars. Each layout type has its own sidebar implementation.
 
 ---
 
-## Core Componenten per Directory
+## Core Components per Directory
 
-### `/components/task/` (32 componenten)
-De kern van de applicatie. Belangrijke componenten:
-- TaskDetailModal.tsx - Hoofd task detail view
-- TaskQuickActions.tsx - Inline acties
+### `/components/task/` (32 components)
+The core of the application. Important components:
+- TaskDetailModal.tsx - Main task detail view
+- TaskQuickActions.tsx - Inline actions
 - PriorityBadge.tsx - Priority indicator
 - DueDateBadge.tsx - Due date indicator
 - SubtaskList.tsx - Subtask management
@@ -76,52 +76,52 @@ De kern van de applicatie. Belangrijke componenten:
 - AttachmentSection.tsx - File attachments
 - TimeTracker.tsx - Time tracking
 
-### `/components/board/` (10+ componenten)
-Kanban board functionaliteit:
-- Board.tsx - Hoofd board component
-- Column.tsx - Kolom container
-- DraggableTask.tsx - Sleepbare task card
-- FilterBar.tsx (688 regels) - Filtering UI
+### `/components/board/` (10+ components)
+Kanban board functionality:
+- Board.tsx - Main board component
+- Column.tsx - Column container
+- DraggableTask.tsx - Draggable task card
+- FilterBar.tsx (688 lines) - Filtering UI
 - LiveCursors.tsx - Real-time collaboration
 
-### `/components/editor/` (15+ componenten)
+### `/components/editor/` (15+ components)
 Rich text editor (Lexical-based):
-- RichTextEditor.tsx - Hoofd editor
-- ToolbarPlugin.tsx (681 regels) - Editor toolbar
+- RichTextEditor.tsx - Main editor
+- ToolbarPlugin.tsx (681 lines) - Editor toolbar
 - MentionPlugin.tsx - @mentions
 - TaskRefPlugin.tsx - Task references
 - WikiLinkPlugin.tsx - Wiki links
 - MediaPlugin.tsx - Media embedding
 
-### `/components/wiki/` (17 componenten, 8,902 regels)
-**Het meest uitgebreide subsysteem!**
+### `/components/wiki/` (17 components, 8,902 lines)
+**The most extensive subsystem!**
 
-| Component | Regels | Functie |
-|-----------|--------|---------|
-| WikiGraphView.tsx | 2,177 | D3.js kennisgraaf visualisatie |
+| Component | Lines | Function |
+|-----------|-------|----------|
+| WikiGraphView.tsx | 2,177 | D3.js knowledge graph visualization |
 | AskWikiDialog.tsx | 881 | AI-powered semantic search |
-| WikiSearchDialog.tsx | 865 | Zoekinterface met filters |
-| WikiPageView.tsx | 766 | Pagina weergave met editor |
-| WikiDuplicateManager.tsx | 728 | Duplicaat detectie en merge |
-| ContradictionHistory.tsx | 492 | Contradictie tracking |
-| WikiSidebar.tsx | 458 | Navigatie en paginalijst |
-| ContradictionDialog.tsx | 432 | Contradictie details |
-| WikiTemporalSearch.tsx | 349 | Tijdlijn-gebaseerd zoeken |
-| WikiVersionHistory.tsx | 317 | Versie beheer |
-| ContradictionToast.tsx | 311 | Real-time notificaties |
+| WikiSearchDialog.tsx | 865 | Search interface with filters |
+| WikiPageView.tsx | 766 | Page display with editor |
+| WikiDuplicateManager.tsx | 728 | Duplicate detection and merge |
+| ContradictionHistory.tsx | 492 | Contradiction tracking |
+| WikiSidebar.tsx | 458 | Navigation and page list |
+| ContradictionDialog.tsx | 432 | Contradiction details |
+| WikiTemporalSearch.tsx | 349 | Timeline-based search |
+| WikiVersionHistory.tsx | 317 | Version management |
+| ContradictionToast.tsx | 311 | Real-time notifications |
 | FactCheckDialog.tsx | 288 | Fact checking interface |
-| BacklinksPanel.tsx | 227 | Backlink overzicht |
-| WikiDuplicateBadge.tsx | 177 | Duplicaat indicator |
+| BacklinksPanel.tsx | 227 | Backlink overview |
+| WikiDuplicateBadge.tsx | 177 | Duplicate indicator |
 
 **Features:**
-- AI contradictie detectie
-- Kennisgraaf met D3.js
+- AI contradiction detection
+- Knowledge graph with D3.js
 - Semantic search
-- Versie geschiedenis
+- Version history
 - Backlinks tracking
-- Duplicaat detectie
+- Duplicate detection
 
-### `/components/analytics/` (5 componenten)
+### `/components/analytics/` (5 components)
 Analytics dashboards:
 - TaskCountWidget.tsx
 - VelocityChart.tsx
@@ -132,7 +132,7 @@ Analytics dashboards:
 
 ## UI Base Components (shadcn/ui)
 
-### Aanwezig (20)
+### Present (20)
 ```
 badge, button, card, checkbox, collapsible,
 dialog, dropdown-menu, input, label, progress,
@@ -140,32 +140,32 @@ scroll-area, select, separator, slider, sonner,
 switch, tabs, tooltip, HoverPopover, UndoRedoButtons
 ```
 
-### Ontbrekend (vaak nodig)
-- Avatar (bestaat custom in task/)
+### Missing (often needed)
+- Avatar (exists custom in task/)
 - Alert/AlertDialog
 - Breadcrumb
-- Calendar (bestaat custom in pages/)
-- Command (shadcn versie)
+- Calendar (exists custom in pages/)
+- Command (shadcn version)
 - Form (shadcn form wrapper)
 - Menubar
 - NavigationMenu
 - Pagination
-- Popover (alleen HoverPopover bestaat)
+- Popover (only HoverPopover exists)
 - RadioGroup
 - Sheet (slide-over panel)
 - Skeleton (loading states)
 - Table
 - Textarea
-- Toast (alleen sonner)
+- Toast (only sonner)
 
 ---
 
-## Grote Componenten (>500 regels)
+## Large Components (>500 lines)
 
-| Component | Regels | Notities |
-|-----------|--------|----------|
-| WikiGraphView.tsx | 2,177 | Mogelijk te splitten |
-| AskWikiDialog.tsx | 881 | AI functionaliteit |
+| Component | Lines | Notes |
+|-----------|-------|-------|
+| WikiGraphView.tsx | 2,177 | Could be split |
+| AskWikiDialog.tsx | 881 | AI functionality |
 | WikiSearchDialog.tsx | 865 | Search interface |
 | ResourceTree.tsx | 839 | Admin permissions |
 | CommandPalette.tsx | 812 | ⌘K interface |
@@ -175,23 +175,23 @@ switch, tabs, tooltip, HoverPopover, UndoRedoButtons
 | ToolbarPlugin.tsx | 681 | Editor toolbar |
 | WhatIfSimulator.tsx | 667 | Permission simulator |
 
-### Aanbeveling
-Componenten >500 regels zouden gesplitst moeten worden in:
-- Presentatie componenten
+### Recommendation
+Components >500 lines should be split into:
+- Presentation components
 - Logic hooks
-- Sub-componenten
+- Sub-components
 
 ---
 
-## Aanbevelingen
+## Recommendations
 
-### 1. Standaardiseer Icons
-- Verwijder custom SVG icons uit ProjectSidebar
-- Gebruik consistent lucide-react voor alle icons
-- Creëer een `icons/` directory voor eventuele custom icons
+### 1. Standardize Icons
+- Remove custom SVG icons from ProjectSidebar
+- Use lucide-react consistently for all icons
+- Create an `icons/` directory for any custom icons
 
-### 2. Consolideer Sidebar Logic
-Creëer een gedeelde `SidebarBase` component:
+### 2. Consolidate Sidebar Logic
+Create a shared `SidebarBase` component:
 ```typescript
 interface SidebarItem {
   label: string
@@ -203,15 +203,15 @@ interface SidebarItem {
 function SidebarBase({ items, collapsed }: { items: SidebarItem[], collapsed: boolean })
 ```
 
-### 3. Voeg Ontbrekende UI Components Toe
-Prioriteit:
+### 3. Add Missing UI Components
+Priority:
 1. Skeleton (loading states)
 2. Sheet (mobile-friendly modals)
 3. Table (data display)
 4. Breadcrumb (navigation)
 
-### 4. Refactor Grote Componenten
-Start met WikiGraphView.tsx (2,177 regels):
-- Extract graph logic naar custom hook
-- Split rendering in sub-components
+### 4. Refactor Large Components
+Start with WikiGraphView.tsx (2,177 lines):
+- Extract graph logic to custom hook
+- Split rendering into sub-components
 - Separate data fetching

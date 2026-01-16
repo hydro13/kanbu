@@ -1,73 +1,73 @@
-# GitHub Projects Documentatie
+# GitHub Projects Documentation
 
-Deze map bevat de visie en implementatie documentatie voor de GitHub integratie in Kanbu.
+This directory contains the vision and implementation documentation for GitHub integration in Kanbu.
 
-## Documenten
+## Documents
 
-| Document | Beschrijving |
+| Document | Description |
 |----------|--------------|
-| [VISIE.md](./VISIE.md) | De overkoepelende visie voor GitHub integratie - **LEES DIT EERST** |
-| [ROADMAP.md](./ROADMAP.md) | Fasering en deliverables per fase |
-| [IMPLEMENTATIE-PLAN.md](./IMPLEMENTATIE-PLAN.md) | Technisch implementatie plan met stappen en code voorbeelden |
+| [VISIE.md](./VISIE.md) | The overarching vision for GitHub integration - **READ THIS FIRST** |
+| [ROADMAP.md](./ROADMAP.md) | Phasing and deliverables per phase |
+| [IMPLEMENTATIE-PLAN.md](./IMPLEMENTATIE-PLAN.md) | Technical implementation plan with steps and code examples |
 
-## Kernboodschap
+## Core Message
 
-> **Kanbu is de orchestratielaag bovenop GitHub.**
+> **Kanbu is the orchestration layer on top of GitHub.**
 
-- GitHub blijft de "source of truth" voor code-gerelateerde items
-- Kanbu voegt waarde toe: workspaces, project groepen, cross-project features
-- Bi-directionele sync zorgt dat gebruikers kunnen werken waar ze willen
-- Geen vendor lock-in - data leeft in beide systemen
+- GitHub remains the "source of truth" for code-related items
+- Kanbu adds value: workspaces, project groups, cross-project features
+- Bi-directional sync ensures users can work where they want
+- No vendor lock-in - data lives in both systems
 
 ---
 
-## 🎯 EERSTE GROTE MILESTONE
+## 🎯 FIRST MAJOR MILESTONE
 
-### 100% Feature Parity met GitHub Projects
+### 100% Feature Parity with GitHub Projects
 
-**Doel:** Bouw binnen Kanbu een complete 1-op-1 replica van GitHub Projects.
+**Goal:** Build a complete 1-to-1 replica of GitHub Projects within Kanbu.
 
-Alles wat GitHub Projects kan, moet Kanbu ook kunnen:
+Everything GitHub Projects can do, Kanbu must also be able to do:
 - ✅ Board views (Kanban)
 - ✅ List views
 - ✅ Table views
-- ✅ Issues beheren
-- ✅ Milestones beheren
-- ✅ Labels en filters
+- ✅ Issue management
+- ✅ Milestone management
+- ✅ Labels and filters
 - ✅ Keyboard shortcuts
 - ✅ Drag & drop
-- ✅ Bulk acties
-- ✅ Alle layouts
+- ✅ Bulk actions
+- ✅ All layouts
 
-**Waarom eerst 1-op-1?**
+**Why 1-to-1 first?**
 
-1. **Feature Parity** - Gebruikers stappen naadloos over
-2. **Leren** - GitHub is bewezen door miljoenen gebruikers
-3. **Referentie** - Beste features overnemen naar Kanbu's interne module
+1. **Feature Parity** - Users transition seamlessly
+2. **Learning** - GitHub is proven by millions of users
+3. **Reference** - Adopt best features into Kanbu's internal module
 
 ---
 
-## Architectuur
+## Architecture
 
-### Twee Project Modules in een Workspace
+### Two Project Modules in a Workspace
 
 ```
 Workspace
-├── 📁 Interne Projecten (Kanbu Module)
-│   └── Bestaande Kanbu structuur
+├── 📁 Internal Projects (Kanbu Module)
+│   └── Existing Kanbu structure
 │
-└── 🐙 GitHub Projecten (GitHub Module)
-    └── 1-op-1 met GitHub Projects
+└── 🐙 GitHub Projects (GitHub Module)
+    └── 1-to-1 with GitHub Projects
 ```
 
-### Twee Soorten Projecten
+### Two Types of Projects
 
-1. **Interne Kanbu Projecten** - eigen structuur, geen externe sync
-2. **GitHub Projecten** - volgt GitHub's structuur, bi-directionele sync
+1. **Internal Kanbu Projects** - own structure, no external sync
+2. **GitHub Projects** - follows GitHub's structure, bi-directional sync
 
-### GitHub Module Entiteiten
+### GitHub Module Entities
 
-| GitHub | Kanbu Tabel | Sync |
+| GitHub | Kanbu Table | Sync |
 |--------|-------------|------|
 | Repository | GitHubRepository | ↔️ |
 | Issue | GitHubIssue | ↔️ |
@@ -76,22 +76,22 @@ Workspace
 | Commit | GitHubCommit | ← (read-only) |
 | Comment | GitHubComment | ↔️ |
 
-### Wat NIET Synchroniseert (Kanbu-only)
+### What Does NOT Sync (Kanbu-only)
 
 - Workspaces
-- Project Groepen
-- Interne Kanbu projecten
+- Project Groups
+- Internal Kanbu projects
 - Cross-project dependencies
 
-## Voor Ontwikkelaars
+## For Developers
 
-Als je aan de GitHub integratie werkt:
+If you're working on the GitHub integration:
 
-1. Lees eerst [VISIE.md](./VISIE.md) voor het waarom
-2. Check [IMPLEMENTATIE-PLAN.md](./IMPLEMENTATIE-PLAN.md) voor de huidige status
-3. Volg de sync patronen die al bestaan
-4. Log altijd in `GitHubSyncLog`
+1. Read [VISIE.md](./VISIE.md) first for the why
+2. Check [IMPLEMENTATIE-PLAN.md](./IMPLEMENTATIE-PLAN.md) for current status
+3. Follow existing sync patterns
+4. Always log in `GitHubSyncLog`
 
 ## Contact
 
-Bij vragen over de visie of implementatie, overleg met Robin Waslander.
+For questions about the vision or implementation, consult with Robin Waslander.

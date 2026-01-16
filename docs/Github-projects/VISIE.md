@@ -1,134 +1,134 @@
-# GitHub Integratie Visie
+# GitHub Integration Vision
 
-## Versie: 1.0.0
-## Datum: 2026-01-10
-## Auteur: Robin Waslander
+## Version: 1.0.0
+## Date: 2026-01-10
+## Author: Robin Waslander
 
 ---
 
-## Kernvisie
+## Core Vision
 
 **GitHub + Kanbu = WIN (1+1=3)**
 
-Kanbu is een project management applicatie die volledig zelfstandig kan werken, maar ook gekoppeld kan worden aan GitHub repositories. Deze koppeling is **bi-directioneel** - wijzigingen in Kanbu verschijnen in GitHub en vice versa.
+Kanbu is a project management application that can work completely standalone, but can also be linked to GitHub repositories. This link is **bi-directional** - changes in Kanbu appear in GitHub and vice versa.
 
-### Het Principe
+### The Principle
 
-> "Gebruik GitHub zoals je gewend bent. Kanbu maakt het beter. En je data is altijd van jou."
+> "Use GitHub as you're used to. Kanbu makes it better. And your data is always yours."
 
-- Kanbu "fixt" GitHub niet - GitHub is excellent voor wat het doet
-- Kanbu is de **orchestratielaag** bovenop GitHub
-- Gebruikers werken waar ze willen - het resultaat is hetzelfde
-
----
-
-## Waarom Bi-directionele Sync?
-
-### 1. Geen Vendor Lock-in
-- Alle data staat OOK in GitHub
-- Stop je met Kanbu? Je project leeft door in GitHub
-- Gebruikers durven eerder te starten - geen risico
-
-### 2. Flexibele Toegang
-- **Externe contributor** → alleen GitHub toegang nodig
-- **Freelancer** → werkt via GitHub issues
-- **Core team** → Kanbu voor de rijke ervaring
-- Iedereen ziet dezelfde data
-
-### 3. Open Source Projecten
-- Publieke repo = community contributes via GitHub
-- Maintainers managen via Kanbu (betere tools)
-- Community hoeft Kanbu niet te kennen
-
-### 4. Geloofwaardigheid
-- Developers vertrouwen GitHub
-- "Het synct met GitHub" = instant geloofwaardigheid
-- Kanbu voegt waarde toe, vervangt niet
+- Kanbu doesn't "fix" GitHub - GitHub is excellent at what it does
+- Kanbu is the **orchestration layer** on top of GitHub
+- Users work where they want - the result is the same
 
 ---
 
-## Architectuur
+## Why Bi-directional Sync?
 
-### Eerste Grote Milestone: 100% Feature Parity
+### 1. No Vendor Lock-in
+- All data is ALSO in GitHub
+- Stop using Kanbu? Your project lives on in GitHub
+- Users dare to start more easily - no risk
 
-**Doel:** Bouw een complete 1-op-1 replica van GitHub Projects binnen Kanbu.
+### 2. Flexible Access
+- **External contributor** → only GitHub access needed
+- **Freelancer** → works via GitHub issues
+- **Core team** → Kanbu for the rich experience
+- Everyone sees the same data
 
-Alles wat GitHub Projects kan, moet de Kanbu GitHub Module ook kunnen:
+### 3. Open Source Projects
+- Public repo = community contributes via GitHub
+- Maintainers manage via Kanbu (better tools)
+- Community doesn't need to know Kanbu
+
+### 4. Credibility
+- Developers trust GitHub
+- "It syncs with GitHub" = instant credibility
+- Kanbu adds value, doesn't replace
+
+---
+
+## Architecture
+
+### First Major Milestone: 100% Feature Parity
+
+**Goal:** Build a complete 1-to-1 replica of GitHub Projects within Kanbu.
+
+Everything GitHub Projects can do, the Kanbu GitHub Module must also be able to do:
 
 | Feature | Status |
 |---------|--------|
-| Board view (Kanban) | 🔲 Te bouwen |
-| List view | 🔲 Te bouwen |
-| Table view | 🔲 Te bouwen |
-| Issues CRUD | ✅ Sync werkt |
-| Milestones CRUD | ✅ Sync werkt |
-| Labels & filters | 🔲 Te bouwen |
-| Keyboard shortcuts | 🔲 Te bouwen |
-| Drag & drop | 🔲 Te bouwen |
-| Bulk acties | 🔲 Te bouwen |
-| Search | 🔲 Te bouwen |
+| Board view (Kanban) | 🔲 To build |
+| List view | 🔲 To build |
+| Table view | 🔲 To build |
+| Issues CRUD | ✅ Sync works |
+| Milestones CRUD | ✅ Sync works |
+| Labels & filters | 🔲 To build |
+| Keyboard shortcuts | 🔲 To build |
+| Drag & drop | 🔲 To build |
+| Bulk actions | 🔲 To build |
+| Search | 🔲 To build |
 
-**Waarom eerst 1-op-1? (Drie Voordelen)**
+**Why 1-to-1 first? (Three Benefits)**
 
 1. **Feature Parity**
-   - Gebruikers kunnen naadloos overstappen
-   - Geen leercurve - het werkt zoals ze gewend zijn
+   - Users can switch seamlessly
+   - No learning curve - it works as they're used to
 
-2. **Leren van een Werkende Omgeving**
-   - GitHub Projects is bewezen en getest door miljoenen gebruikers
-   - We leren hun UX patterns, keyboard shortcuts, workflows
-   - Geen trial-and-error nodig - we bouwen wat al werkt
+2. **Learning from a Working Environment**
+   - GitHub Projects is proven and tested by millions of users
+   - We learn their UX patterns, keyboard shortcuts, workflows
+   - No trial-and-error needed - we build what already works
 
-3. **Referentie voor Kanbu's Interne Module**
-   - Na het bouwen hebben we een prachtige structuur
-   - We kunnen de Kanbu project-module vergelijken
-   - De beste features overnemen én verrijken
-   - Beide modules worden beter door deze aanpak
+3. **Reference for Kanbu's Internal Module**
+   - After building, we have a beautiful structure
+   - We can compare the Kanbu project module
+   - Adopt AND enrich the best features
+   - Both modules become better through this approach
 
-### Twee Project Modules
+### Two Project Modules
 
-**Aanpak:** De workspace krijgt twee project modules die naast elkaar bestaan:
+**Approach:** The workspace gets two project modules that exist side by side:
 
-1. **Interne Projecten Module** - bestaande Kanbu projecten
-2. **GitHub Projecten Module** - 1-op-1 met GitHub Projects
+1. **Internal Projects Module** - existing Kanbu projects
+2. **GitHub Projects Module** - 1-to-1 with GitHub Projects
 
-| Aspect | Interne Module | GitHub Module |
+| Aspect | Internal Module | GitHub Module |
 |--------|----------------|---------------|
-| Structuur | Kanbu-eigen ontwerp | 1-op-1 met GitHub |
-| Sync | Geen externe sync | Bi-directioneel |
-| Focus | Kan vrij evolueren | Feature parity eerst |
+| Structure | Kanbu's own design | 1-to-1 with GitHub |
+| Sync | No external sync | Bi-directional |
+| Focus | Can evolve freely | Feature parity first |
 
-### Workspace Structuur
+### Workspace Structure
 
 ```
 ┌─────────────────── KANBU WORKSPACE ─────────────────────┐
-│  Workspace: "Mijn Bedrijf"                              │
+│  Workspace: "My Company"                                │
 │                                                         │
-│  ┌─ 📁 INTERNE PROJECTEN (Kanbu Module) ─────────────┐  │
+│  ┌─ 📁 INTERNAL PROJECTS (Kanbu Module) ─────────────┐  │
 │  │                                                    │  │
 │  │  📋 design-specs                                   │  │
 │  │  📋 internal-docs                                  │  │
 │  │  📋 team-planning                                  │  │
 │  │                                                    │  │
-│  │  → Pure Kanbu structuur                           │  │
-│  │  → Geen externe sync                              │  │
-│  │  → Kan vrij evolueren                             │  │
+│  │  → Pure Kanbu structure                           │  │
+│  │  → No external sync                               │  │
+│  │  → Can evolve freely                              │  │
 │  └────────────────────────────────────────────────────┘  │
 │                                                         │
-│  ┌─ 🐙 GITHUB PROJECTEN (GitHub Module) ─────────────┐  │
+│  ┌─ 🐙 GITHUB PROJECTS (GitHub Module) ─────────────┐  │
 │  │                                                    │  │
 │  │  🔗 webapp-frontend    ↔️ github.com/org/webapp    │  │
 │  │  🔗 api-service        ↔️ github.com/org/api       │  │
 │  │  🔗 component-lib      ↔️ github.com/org/components│  │
 │  │                                                    │  │
-│  │  → Volgt GitHub's structuur                       │  │
-│  │  → Bi-directionele sync                           │  │
+│  │  → Follows GitHub's structure                     │  │
+│  │  → Bi-directional sync                            │  │
 │  │  → Issues, Milestones, PRs, etc.                  │  │
 │  └────────────────────────────────────────────────────┘  │
 │                                                         │
-│  ┌─ Project Groepen (optioneel) ─────────────────────┐  │
-│  │  Groep "Frontend": webapp + component-lib + design │  │
-│  │  → Combineert BEIDE types voor statistieken       │  │
+│  ┌─ Project Groups (optional) ─────────────────────┐  │
+│  │  Group "Frontend": webapp + component-lib + design │  │
+│  │  → Combines BOTH types for statistics            │  │
 │  └────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────┘
          ↕️ sync      ↕️ sync
@@ -138,19 +138,19 @@ Alles wat GitHub Projects kan, moet de Kanbu GitHub Module ook kunnen:
     └─────────┘   └─────────┘
 ```
 
-### Voordelen van deze Aanpak
+### Benefits of this Approach
 
-1. **100% Feature Parity** - GitHub module wordt een exacte replica van GitHub Projects
-2. **Naadloze ervaring** - Gebruikers voelen zich meteen thuis
-3. **Duidelijke code** - Gescheiden services, routes, componenten
-4. **Gefaseerd bouwen** - Eerst 1-op-1, daarna Kanbu-specifieke features
+1. **100% Feature Parity** - GitHub module becomes an exact replica of GitHub Projects
+2. **Seamless experience** - Users feel immediately at home
+3. **Clear code** - Separated services, routes, components
+4. **Phased building** - First 1-to-1, then Kanbu-specific features
 
 ### Database
 
-De GitHub module gebruikt de bestaande `GitHub*` tabellen:
+The GitHub module uses the existing `GitHub*` tables:
 
 ```
-GitHubRepository  → Projecten
+GitHubRepository  → Projects
 GitHubIssue       → Issues/Cards
 GitHubMilestone   → Milestones
 GitHubPullRequest → Pull Requests
@@ -158,152 +158,152 @@ GitHubCommit      → Commits
 GitHubComment     → Comments
 ```
 
-De UI en logica worden volledig gebouwd rondom deze tabellen.
+The UI and logic are completely built around these tables.
 
 ---
 
-## Wat Kanbu Toevoegt (GitHub heeft dit niet)
+## What Kanbu Adds (GitHub doesn't have this)
 
 ### 1. Workspaces
-GitHub kent geen workspaces. Je hebt organizations en repositories, maar geen overkoepelende structuur.
+GitHub doesn't know workspaces. You have organizations and repositories, but no overarching structure.
 
 **Kanbu:**
-- Een workspace kan meerdere projecten bevatten
-- Mix van GitHub én interne projecten
-- Gecentraliseerd gebruikersbeheer
+- A workspace can contain multiple projects
+- Mix of GitHub AND internal projects
+- Centralized user management
 
-### 2. Project Groepen
-Groepeer gerelateerde projecten samen.
+### 2. Project Groups
+Group related projects together.
 
 **Kanbu:**
-- Combineer statistieken over meerdere projecten
-- Zie totale velocity, burndown, etc.
-- Cross-project afhankelijkheden visualiseren
+- Combine statistics across multiple projects
+- See total velocity, burndown, etc.
+- Visualize cross-project dependencies
 
 ### 3. Cross-Project Dependencies
-Een task in GitHub project A kan afhangen van een task in intern project B.
+A task in GitHub project A can depend on a task in internal project B.
 
-**In GitHub:** Je ziet alleen project A en "heeft een dependency"
-**In Kanbu:** Je ziet BEIDE projecten en de volledige dependency chain
+**In GitHub:** You only see project A and "has a dependency"
+**In Kanbu:** You see BOTH projects and the complete dependency chain
 
-### 4. Het Totaalplaatje
-GitHub toont je één repo/project tegelijk. Kanbu toont:
-- Portfolio overzicht
-- Resource allocatie over projecten
-- Gecombineerde rapportages
-- Cross-project zoeken
+### 4. The Big Picture
+GitHub shows you one repo/project at a time. Kanbu shows:
+- Portfolio overview
+- Resource allocation across projects
+- Combined reports
+- Cross-project search
 
 ---
 
-## Sync Strategie
+## Sync Strategy
 
-### Entiteiten die Synchroniseren
+### Entities that Synchronize
 
-| GitHub | Kanbu | Sync Richting |
+| GitHub | Kanbu | Sync Direction |
 |--------|-------|---------------|
-| Repository | Project | GitHub → Kanbu (bij koppelen) |
-| Issue | Task | Bi-directioneel |
-| Milestone | Milestone | Bi-directioneel |
+| Repository | Project | GitHub → Kanbu (when linking) |
+| Issue | Task | Bi-directional |
+| Milestone | Milestone | Bi-directional |
 | Pull Request | PR (read-only in Kanbu) | GitHub → Kanbu |
 | Commit | Commit (read-only in Kanbu) | GitHub → Kanbu |
-| Comment | Comment | Bi-directioneel |
-| Label | Tag | Bi-directioneel |
-| Release | Release | Bi-directioneel |
+| Comment | Comment | Bi-directional |
+| Label | Tag | Bi-directional |
+| Release | Release | Bi-directional |
 
-### Wat NIET synchroniseert (Kanbu-only)
+### What Does NOT Sync (Kanbu-only)
 
 - Workspaces
-- Project Groepen
-- Cross-project dependencies naar interne projecten
-- Kanbu-specifieke velden (time tracking, custom fields, etc.)
+- Project Groups
+- Cross-project dependencies to internal projects
+- Kanbu-specific fields (time tracking, custom fields, etc.)
 - ACL/Permissions
 
-### Conflict Resolutie
+### Conflict Resolution
 
-Bij gelijktijdige wijzigingen:
-1. **Timestamp vergelijking** - meest recente wint
-2. **Optioneel: Merge** - voor tekstvelden (beschrijvingen, comments)
-3. **Audit log** - alle wijzigingen worden gelogd
+In case of simultaneous changes:
+1. **Timestamp comparison** - most recent wins
+2. **Optional: Merge** - for text fields (descriptions, comments)
+3. **Audit log** - all changes are logged
 
 ---
 
-## Implementatie Flow
+## Implementation Flow
 
-### Bij Koppelen van een Repo
+### When Linking a Repo
 
-1. Gebruiker selecteert GitHub repo in Kanbu
-2. Kanbu maakt/update Project met `githubRepositoryId`
+1. User selects GitHub repo in Kanbu
+2. Kanbu creates/updates Project with `githubRepositoryId`
 3. **Initial sync:**
-   - Importeer alle issues → Kanbu tasks
-   - Importeer alle milestones → Kanbu milestones
-   - Importeer alle labels → Kanbu tags
-   - Importeer alle PRs → Kanbu PRs (read-only)
-4. Webhook registratie voor real-time updates
+   - Import all issues → Kanbu tasks
+   - Import all milestones → Kanbu milestones
+   - Import all labels → Kanbu tags
+   - Import all PRs → Kanbu PRs (read-only)
+4. Webhook registration for real-time updates
 
-### Bij Wijziging in GitHub (via Webhook)
+### When Changing in GitHub (via Webhook)
 
-1. GitHub stuurt webhook naar Kanbu
-2. Kanbu ontvangt en valideert
-3. Update corresponderende Kanbu entiteit
+1. GitHub sends webhook to Kanbu
+2. Kanbu receives and validates
+3. Update corresponding Kanbu entity
 4. Log in sync history
 
-### Bij Wijziging in Kanbu
+### When Changing in Kanbu
 
-1. Gebruiker wijzigt task/milestone/etc.
-2. Kanbu detecteert dat project GitHub-gekoppeld is
-3. Push wijziging naar GitHub API
+1. User modifies task/milestone/etc.
+2. Kanbu detects that project is GitHub-linked
+3. Push change to GitHub API
 4. Log in sync history
 
 ---
 
-## UI/UX Overwegingen
+## UI/UX Considerations
 
-### Visuele Indicatoren
+### Visual Indicators
 
-- **GitHub icoon** bij gekoppelde projecten
+- **GitHub icon** for linked projects
 - **Sync status indicator** (synced, pending, error)
-- **"Open in GitHub" link** bij alle gesyncte entiteiten
-- **Verschillende kleur/badge** voor GitHub vs lokale items
+- **"Open in GitHub" link** for all synced entities
+- **Different color/badge** for GitHub vs local items
 
 ### Sync Controls
 
-- **Manual sync knop** - forceer sync nu
-- **Sync history** - bekijk wat er gesynchroniseerd is
-- **Conflict resolution UI** - bij merge conflicts
+- **Manual sync button** - force sync now
+- **Sync history** - view what has been synchronized
+- **Conflict resolution UI** - for merge conflicts
 
 ---
 
-## Toekomstige Uitbreidingen
+## Future Extensions
 
-### Fase 2: GitHub Projects (Boards)
-- Sync met GitHub's eigen Project boards
+### Phase 2: GitHub Projects (Boards)
+- Sync with GitHub's own Project boards
 - Column mapping (To Do → Backlog, etc.)
 
-### Fase 3: GitHub Actions Integration
-- Zie CI/CD status in Kanbu
-- Trigger workflows vanuit Kanbu
+### Phase 3: GitHub Actions Integration
+- See CI/CD status in Kanbu
+- Trigger workflows from Kanbu
 
-### Fase 4: Multi-Provider
+### Phase 4: Multi-Provider
 - GitLab support
 - Bitbucket support
 - Azure DevOps support
 
 ---
 
-## Samenvatting
+## Summary
 
-Kanbu is de **orchestratielaag** bovenop GitHub (en andere providers). Het voegt waarde toe door:
+Kanbu is the **orchestration layer** on top of GitHub (and other providers). It adds value through:
 
-1. **Workspaces** - overkoepelende structuur
-2. **Project Groepen** - gecombineerde inzichten
-3. **Cross-project features** - dependencies, zoeken, rapportages
-4. **Betere UI/UX** - voor project management
+1. **Workspaces** - overarching structure
+2. **Project Groups** - combined insights
+3. **Cross-project features** - dependencies, search, reports
+4. **Better UI/UX** - for project management
 
-De bi-directionele sync zorgt ervoor dat:
-- Data nooit verloren gaat (GitHub backup)
-- Iedereen kan werken waar ze willen
-- Geen vendor lock-in
-- Instant adoptie mogelijk
+The bi-directional sync ensures that:
+- Data is never lost (GitHub backup)
+- Everyone can work where they want
+- No vendor lock-in
+- Instant adoption possible
 
-**De business case:**
-> GitHub + Kanbu = beter dan beide apart. Je data, jouw keuze waar je werkt.
+**The business case:**
+> GitHub + Kanbu = better than both separately. Your data, your choice where you work.

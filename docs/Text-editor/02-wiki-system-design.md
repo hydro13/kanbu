@@ -1,12 +1,12 @@
 # Wiki System Design
 
-## Overzicht
+## Overview
 
-Het Kanbu wiki systeem is een hiërarchisch kennisbeheersysteem dat is geïntegreerd met de workspace en project structuur. In tegenstelling tot traditionele wiki's, is dit systeem ontworpen om context-aware te zijn en verbanden te leggen tussen documenten, taken, en gebruikers.
+The Kanbu wiki system is a hierarchical knowledge management system that is integrated with the workspace and project structure. Unlike traditional wikis, this system is designed to be context-aware and create connections between documents, tasks, and users.
 
-## Architectuur
+## Architecture
 
-### Hiërarchie
+### Hierarchy
 
 ```
 Kanbu Instance
@@ -23,7 +23,7 @@ Kanbu Instance
 │   │   │   ├── API Documentation
 │   │   │   └── Deployment Guide
 │   │   └── Tasks
-│   │       └── Task #123 (context linkt naar [[Project Wiki/API Documentation]])
+│   │       └── Task #123 (context links to [[Project Wiki/API Documentation]])
 │   │
 │   └── Project 2
 │       └── Project Wiki
@@ -35,13 +35,13 @@ Kanbu Instance
 
 ### Link Types
 
-| Type | Syntax | Voorbeeld | Beschrijving |
+| Type | Syntax | Example | Description |
 |------|--------|-----------|--------------|
-| Wiki Link | `[[Page Name]]` | `[[API Documentation]]` | Link naar pagina in dezelfde wiki |
-| Cross-Wiki | `[[Workspace Wiki/Page]]` | `[[Workspace Wiki/Architecture]]` | Link naar parent wiki |
-| Task Link | `#TASK-123` | `#TASK-456` | Link naar een task |
-| User Mention | `@username` | `@robin` | Mention van een gebruiker |
-| Tag | `#tag-name` | `#frontend` | Categorisatie tag |
+| Wiki Link | `[[Page Name]]` | `[[API Documentation]]` | Link to page in same wiki |
+| Cross-Wiki | `[[Workspace Wiki/Page]]` | `[[Workspace Wiki/Architecture]]` | Link to parent wiki |
+| Task Link | `#TASK-123` | `#TASK-456` | Link to a task |
+| User Mention | `@username` | `@robin` | Mention a user |
+| Tag | `#tag-name` | `#frontend` | Categorization tag |
 
 ## Wiki Page Model
 
@@ -56,17 +56,17 @@ interface WikiPage {
 
   // Content
   content: LexicalEditorState;     // Rich text JSON
-  plainText: string;               // Voor full-text search
-  excerpt: string;                 // Eerste 200 chars voor previews
+  plainText: string;               // For full-text search
+  excerpt: string;                 // First 200 chars for previews
 
   // Hierarchy
-  workspaceId?: number;            // Als workspace wiki page
-  projectId?: number;              // Als project wiki page
-  parentPageId?: number;           // Voor nested pages
+  workspaceId?: number;            // If workspace wiki page
+  projectId?: number;              // If project wiki page
+  parentPageId?: number;           // For nested pages
 
   // Metadata
   tags: string[];
-  icon?: string;                   // Emoji of icon
+  icon?: string;                   // Emoji or icon
   coverImage?: string;             // Header image URL
 
   // Timestamps
@@ -107,38 +107,38 @@ interface WikiPageWithRelations extends WikiPage {
 
 ## Link Resolution
 
-### Algoritme
+### Algorithm
 
-Wanneer een `[[Page Name]]` wordt geresolved:
+When a `[[Page Name]]` is resolved:
 
 ```typescript
 function resolveWikiLink(
   linkText: string,
   context: { workspaceId?: number; projectId?: number }
 ): WikiPage | null {
-  // 1. Check voor explicit path
+  // 1. Check for explicit path
   if (linkText.includes('/')) {
     const [wikiType, pageName] = linkText.split('/');
 
     if (wikiType === 'Workspace Wiki' && context.workspaceId) {
       return findPage({ workspaceId: context.workspaceId, slug: toSlug(pageName) });
     }
-    // ... andere wiki types
+    // ... other wiki types
   }
 
-  // 2. Zoek eerst in huidige context (project wiki)
+  // 2. Search in current context first (project wiki)
   if (context.projectId) {
     const projectPage = findPage({ projectId: context.projectId, slug: toSlug(linkText) });
     if (projectPage) return projectPage;
   }
 
-  // 3. Zoek in parent context (workspace wiki)
+  // 3. Search in parent context (workspace wiki)
   if (context.workspaceId) {
     const workspacePage = findPage({ workspaceId: context.workspaceId, slug: toSlug(linkText) });
     if (workspacePage) return workspacePage;
   }
 
-  // 4. Niet gevonden - return null (broken link)
+  // 4. Not found - return null (broken link)
   return null;
 }
 ```
@@ -157,9 +157,9 @@ type LinkStatus =
 
 ## Backlinks
 
-Backlinks worden automatisch getrackt wanneer content wordt opgeslagen.
+Backlinks are automatically tracked when content is saved.
 
-### Extractie
+### Extraction
 
 ```typescript
 function extractLinks(editorState: LexicalEditorState): ExtractedLinks {
@@ -222,7 +222,7 @@ links             links
 
 ### Tag System
 
-Tags zijn first-class citizens in het systeem:
+Tags are first-class citizens in the system:
 
 ```typescript
 interface Tag {
@@ -242,22 +242,22 @@ interface Tag {
 }
 ```
 
-### Automatische Index Pages
+### Automatic Index Pages
 
-Voor elke tag wordt een virtuele index page gegenereerd:
+For each tag, a virtual index page is generated:
 
 ```typescript
 interface TagIndexPage {
   tag: Tag;
-  pages: WikiPage[];               // Pagina's met deze tag
-  tasks: Task[];                   // Tasks met deze tag
-  relatedTags: Tag[];              // Tags die vaak samen voorkomen
+  pages: WikiPage[];               // Pages with this tag
+  tasks: Task[];                   // Tasks with this tag
+  relatedTags: Tag[];              // Tags that often appear together
 }
 ```
 
 ### Tag Hierarchy
 
-Tags kunnen hiërarchisch zijn via `/` separator:
+Tags can be hierarchical via `/` separator:
 
 ```
 #engineering
@@ -267,10 +267,10 @@ Tags kunnen hiërarchisch zijn via `/` separator:
 #engineering/backend/api
 ```
 
-Query mogelijkheden:
-- `#engineering` → Alle items met engineering of sub-tags
-- `#engineering/frontend` → Alleen frontend items
-- `#engineering/*` → Directe children van engineering
+Query capabilities:
+- `#engineering` → All items with engineering or sub-tags
+- `#engineering/frontend` → Only frontend items
+- `#engineering/*` → Direct children of engineering
 
 ## Versioning
 
@@ -319,7 +319,7 @@ interface VersionDiff {
 
 ### Full-Text Search
 
-Elke pagina heeft een `plainText` veld voor search:
+Each page has a `plainText` field for search:
 
 ```sql
 -- PostgreSQL full-text search
@@ -334,14 +334,14 @@ WHERE to_tsvector('dutch', plain_text || ' ' || title)
 
 ### Semantic Search (RAG)
 
-Voor geavanceerde search gebruiken we vector embeddings:
+For advanced search we use vector embeddings:
 
 ```typescript
 interface WikiPageEmbedding {
   pageId: number;
   embedding: number[];             // 1536-dim vector (OpenAI)
-  chunkIndex: number;              // Voor lange pagina's
-  chunkText: string;               // De tekst van dit chunk
+  chunkIndex: number;              // For long pages
+  chunkText: string;               // The text of this chunk
 }
 ```
 
@@ -447,7 +447,7 @@ function getWikiPermission(
 
 ### Link Popup
 
-Wanneer je over een wiki-link hovert:
+When you hover over a wiki-link:
 
 ```
 ┌──────────────────────────────┐

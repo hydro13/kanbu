@@ -2,28 +2,28 @@
 
 ## Vision
 
-Het Kanbu kennissysteem gaat verder dan een traditionele wiki door gebruik te maken van:
+The Kanbu knowledge system goes beyond a traditional wiki by leveraging:
 
-1. **Bi-directional Links** - Foam/Obsidian-achtige [[wiki-links]]
-2. **Knowledge Graph** - Visuele weergave van verbanden
-3. **RAG (Retrieval Augmented Generation)** - AI-powered search en suggesties
-4. **Automatic Linking** - Suggesties voor relevante verbanden
+1. **Bi-directional Links** - Foam/Obsidian-like [[wiki-links]]
+2. **Knowledge Graph** - Visual representation of connections
+3. **RAG (Retrieval Augmented Generation)** - AI-powered search and suggestions
+4. **Automatic Linking** - Suggestions for relevant connections
 
-## Foam-achtige Features
+## Foam-like Features
 
 ### Bi-directional Links
 
-Elke `[[link]]` is automatisch bi-directioneel:
+Every `[[link]]` is automatically bi-directional:
 
 ```
-Page A: "Zie [[Page B]] voor details"
+Page A: "See [[Page B]] for details"
          ↓
-Page B: Backlinks section toont "Page A"
+Page B: Backlinks section shows "Page A"
 ```
 
-### Daily Notes (optioneel)
+### Daily Notes (optional)
 
-Automatische dagelijkse notities voor journals/standups:
+Automatic daily notes for journals/standups:
 
 ```
 /wiki/daily/2026-01-07
@@ -32,7 +32,7 @@ Automatische dagelijkse notities voor journals/standups:
 
 ### Graph View
 
-Interactieve visualisatie van alle pagina's en hun verbanden:
+Interactive visualization of all pages and their connections:
 
 ```
         ┌──────────┐
@@ -251,7 +251,7 @@ function chunkContent(content: string): string[] {
 
 ### 1. Link Suggestions
 
-Wanneer je typt, suggereert het systeem relevante links:
+When you type, the system suggests relevant links:
 
 ```typescript
 interface LinkSuggestion {
@@ -291,7 +291,7 @@ async function suggestLinks(
 
 ### 2. Auto-tagging
 
-AI-powered tag suggesties:
+AI-powered tag suggestions:
 
 ```typescript
 async function suggestTags(content: string): Promise<TagSuggestion[]> {
@@ -312,7 +312,7 @@ async function suggestTags(content: string): Promise<TagSuggestion[]> {
 
 ### 3. Related Content
 
-Toon gerelateerde content onderaan elke pagina:
+Show related content at the bottom of each page:
 
 ```typescript
 interface RelatedContent {
@@ -350,14 +350,14 @@ async function findRelatedContent(pageId: number): Promise<RelatedContent> {
 
 ### 4. Knowledge Gap Detection
 
-Identificeer ontbrekende documentatie:
+Identify missing documentation:
 
 ```typescript
 interface KnowledgeGap {
-  topic: string;                   // Wat ontbreekt
-  evidence: string[];              // Waarom we denken dat het ontbreekt
-  suggestedTitle: string;          // Voorgestelde pagina titel
-  relatedPages: WikiPage[];        // Gerelateerde bestaande pagina's
+  topic: string;                   // What's missing
+  evidence: string[];              // Why we think it's missing
+  suggestedTitle: string;          // Suggested page title
+  relatedPages: WikiPage[];        // Related existing pages
 }
 
 async function detectKnowledgeGaps(

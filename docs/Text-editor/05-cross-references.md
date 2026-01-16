@@ -1,96 +1,96 @@
 # Cross-References & Link System
 
-## Overzicht
+## Overview
 
-Het cross-reference systeem in Kanbu maakt het mogelijk om verbanden te leggen tussen alle entiteiten in het systeem:
+The cross-reference system in Kanbu makes it possible to create connections between all entities in the system:
 
-- Wiki pagina's
+- Wiki pages
 - Tasks
-- Projecten
+- Projects
 - Workspaces
-- Gebruikers
+- Users
 - Media
 
 ## Link Types
 
 ### 1. Wiki Links `[[Page Name]]`
 
-Link naar wiki pagina's binnen de huidige context.
+Link to wiki pages within the current context.
 
 ```
-Zie [[Getting Started]] voor meer informatie.
+See [[Getting Started]] for more information.
 ```
 
-**Resolutie volgorde:**
-1. Project wiki (als in project context)
+**Resolution order:**
+1. Project wiki (if in project context)
 2. Workspace wiki (parent)
-3. Exacte match op titel
-4. Fuzzy match op titel
+3. Exact match on title
+4. Fuzzy match on title
 
 ### 2. Cross-Wiki Links `[[Wiki/Page]]`
 
-Expliciete link naar specifieke wiki:
+Explicit link to specific wiki:
 
 ```
-Zie [[Workspace Wiki/Architecture]] voor het overzicht.
-Zie [[Project Wiki/API Docs]] voor de API.
+See [[Workspace Wiki/Architecture]] for the overview.
+See [[Project Wiki/API Docs]] for the API.
 ```
 
 **Syntax:**
-- `[[Workspace Wiki/Page]]` - Link naar workspace wiki
-- `[[Project Wiki/Page]]` - Link naar project wiki (in project context)
-- `[[/Absolute/Path]]` - Absolute path in wiki hiërarchie
+- `[[Workspace Wiki/Page]]` - Link to workspace wiki
+- `[[Project Wiki/Page]]` - Link to project wiki (in project context)
+- `[[/Absolute/Path]]` - Absolute path in wiki hierarchy
 
-### 3. Task Links `#TASK-123` of `#123`
+### 3. Task Links `#TASK-123` or `#123`
 
-Link naar taken:
+Link to tasks:
 
 ```
-Dit is gerelateerd aan #TASK-456.
-Zie ook #123 voor de backend implementatie.
+This is related to #TASK-456.
+See also #123 for the backend implementation.
 ```
 
 **Features:**
-- Hover preview met task details
+- Hover preview with task details
 - Status indicator (open/closed)
 - Click to open task modal
 
 ### 4. User Mentions `@username`
 
-Mention van gebruikers:
+Mention users:
 
 ```
-@robin kan je hier naar kijken?
+@robin can you look at this?
 CC: @team-frontend
 ```
 
 **Features:**
-- Autocomplete tijdens typen
-- Notificatie naar mentioned user
-- Avatar tonen
+- Autocomplete while typing
+- Notification to mentioned user
+- Show avatar
 
 ### 5. Tags `#tag-name`
 
-Categorisatie tags:
+Categorization tags:
 
 ```
 #frontend #urgent #v2.0
 ```
 
-**Note:** Tags en task links gebruiken beide `#`, maar worden onderscheiden door:
-- `#TASK-123` of `#123` (alleen cijfers) = Task link
-- `#tag-name` (bevat letters) = Tag
+**Note:** Tags and task links both use `#`, but are distinguished by:
+- `#TASK-123` or `#123` (only digits) = Task link
+- `#tag-name` (contains letters) = Tag
 
 ### 6. External Links
 
-Automatische link detectie en preview:
+Automatic link detection and preview:
 
 ```
-Bekijk https://example.com voor meer info.
+Check https://example.com for more info.
 ```
 
 **Features:**
-- Automatische URL detectie
+- Automatic URL detection
 - Link preview card (unfurl)
 - Open in new tab
 

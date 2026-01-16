@@ -1,12 +1,12 @@
 # Kanbu Design Token Reference Guide
 
-**Versie:** 2.0.0
-**Laatst bijgewerkt:** 2026-01-16
-**Status:** Design System v2.0.0 Voltooid
+**Version:** 2.0.0
+**Last updated:** 2026-01-16
+**Status:** Design System v2.0.0 Complete
 
 ---
 
-## Inhoud
+## Contents
 
 1. [Quick Reference](#quick-reference)
 2. [Primitive Tokens](#primitive-tokens)

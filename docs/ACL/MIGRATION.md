@@ -1,12 +1,12 @@
-# ACL Migratie Handleiding
+# ACL Migration Guide
 
-## Overzicht
+## Overview
 
-Dit document beschrijft hoe bestaande permissies worden gemigreerd van het legacy systeem (WorkspaceUser, ProjectMember, GroupPermission) naar het nieuwe ACL systeem.
+This document describes how existing permissions are migrated from the legacy system (WorkspaceUser, ProjectMember, GroupPermission) to the new ACL system.
 
-## Migratie Script
+## Migration Script
 
-Het migratie script bevindt zich in:
+The migration script is located in:
 ```
 packages/shared/prisma/migrations/acl-migration-helper.ts
 ```
@@ -31,42 +31,42 @@ packages/shared/prisma/migrations/acl-migration-helper.ts
 | MANAGER     | RWXD (15)       | Editor        |
 | OWNER       | RWXDP (31)      | Full Control  |
 
-## Pre-Migratie Checklist
+## Pre-Migration Checklist
 
 ### 1. Backup Database
 ```bash
 # Via Docker
 sudo docker exec kanbu-postgres pg_dump -U kanbu kanbu > backup_pre_acl_migration.sql
 
-# Of via psql
+# Or via psql
 PGPASSWORD=kanbu_2025 pg_dump -h localhost -U kanbu kanbu > backup_pre_acl_migration.sql
 ```
 
-### 2. Audit Huidige Data
+### 2. Audit Current Data
 ```sql
--- Tel WorkspaceUser entries
+-- Count WorkspaceUser entries
 SELECT COUNT(*) as workspace_users FROM workspace_users;
 
--- Tel ProjectMember entries
+-- Count ProjectMember entries
 SELECT COUNT(*) as project_members FROM project_members;
 
--- Tel GroupPermission entries
+-- Count GroupPermission entries
 SELECT COUNT(*) as group_permissions FROM group_permissions;
 
--- Tel bestaande ACL entries
+-- Count existing ACL entries
 SELECT COUNT(*) as acl_entries FROM acl_entries;
 ```
 
-### 3. Noteer Huidige Toegang
+### 3. Record Current Access
 ```sql
--- Workspace toegang per user
+-- Workspace access per user
 SELECT u.username, w.name as workspace, wu.role
 FROM workspace_users wu
 JOIN users u ON u.id = wu.user_id
 JOIN workspaces w ON w.id = wu.workspace_id
 ORDER BY u.username, w.name;
 
--- Project toegang per user
+-- Project access per user
 SELECT u.username, p.name as project, pm.role
 FROM project_members pm
 JOIN users u ON u.id = pm.user_id
@@ -74,32 +74,32 @@ JOIN projects p ON p.id = pm.project_id
 ORDER BY u.username, p.name;
 ```
 
-## Migratie Uitvoeren
+## Running Migration
 
-### Stap 1: Dry Run (Aanbevolen)
+### Step 1: Dry Run (Recommended)
 
-Bekijk eerst wat er gemigreerd zou worden zonder daadwerkelijk te schrijven:
+First view what would be migrated without actually writing:
 
 ```bash
 cd /home/robin/genx/v6/dev/kanbu/packages/shared/prisma/migrations
 
-# Bekijk het script
+# View the script
 cat acl-migration-helper.ts
 ```
 
-### Stap 2: Run Migratie
+### Step 2: Run Migration
 
 ```bash
 cd /home/robin/genx/v6/dev/kanbu/packages/shared/prisma/migrations
 
-# Zorg dat je in de juiste Node omgeving zit
+# Ensure you're in the correct Node environment
 export PATH="/home/robin/snap/code/217/.local/share/pnpm/nodejs/22.21.1/bin:$PATH"
 
-# Run het script
+# Run the script
 npx tsx acl-migration-helper.ts
 ```
 
-### Verwachte Output
+### Expected Output
 
 ```
 ============================================================
@@ -133,11 +133,11 @@ NOTE: The old tables (workspace_users, project_members, group_permissions)
 are still intact. You can remove them after verifying the ACL system works.
 ```
 
-## Post-Migratie Verificatie
+## Post-Migration Verification
 
 ### 1. Check ACL Entries
 ```sql
--- Bekijk alle nieuwe ACL entries
+-- View all new ACL entries
 SELECT
   ae.id,
   ae.resource_type,
@@ -156,15 +156,15 @@ LEFT JOIN groups g ON ae.principal_type = 'group' AND ae.principal_id = g.id
 ORDER BY ae.resource_type, ae.resource_id;
 ```
 
-### 2. Vergelijk Toegang
+### 2. Compare Access
 
-Test met elke user:
-1. Log in als user
+Test with each user:
+1. Log in as user
 2. Check workspace listing
-3. Check project toegang
-4. Vergelijk met pre-migratie notities
+3. Check project access
+4. Compare with pre-migration notes
 
-### 3. Functionele Tests
+### 3. Functional Tests
 
 ```bash
 cd /home/robin/genx/v6/dev/kanbu/apps/api
@@ -175,52 +175,52 @@ pnpm vitest run src/services/__tests__/aclService.test.ts
 
 ## Rollback Procedure
 
-Als er iets misgaat:
+If something goes wrong:
 
-### 1. Verwijder ACL Entries
+### 1. Remove ACL Entries
 ```sql
--- Verwijder alle gemigreerde ACL entries (behoud handmatig aangemaakte)
+-- Remove all migrated ACL entries (preserve manually created ones)
 DELETE FROM acl_entries
-WHERE created_at > '2026-01-08 00:00:00'  -- Pas datum aan
-  AND created_by IS NULL;  -- Migratie entries hebben geen creator
+WHERE created_at > '2026-01-08 00:00:00'  -- Adjust date
+  AND created_by IS NULL;  -- Migration entries have no creator
 ```
 
-### 2. Herstel Database (indien nodig)
+### 2. Restore Database (if necessary)
 ```bash
-# Restore volledige backup
+# Restore full backup
 PGPASSWORD=kanbu_2025 psql -h localhost -U kanbu kanbu < backup_pre_acl_migration.sql
 ```
 
 ## Troubleshooting
 
 ### "ACL entry already exists"
-Dit is normaal - het script slaat duplicaten over. Entries die al bestaan worden niet overschreven.
+This is normal - the script skips duplicates. Entries that already exist will not be overwritten.
 
-### User heeft geen toegang meer
-1. Check of ACL entry is aangemaakt:
+### User has no access anymore
+1. Check if ACL entry was created:
    ```sql
    SELECT * FROM acl_entries
    WHERE principal_type = 'user'
      AND principal_id = (SELECT id FROM users WHERE username = 'username');
    ```
-2. Check of er een DENY entry is die access blokkeert
-3. Maak handmatig een ACL entry aan via de ACL Manager UI
+2. Check if there's a DENY entry blocking access
+3. Manually create an ACL entry via the ACL Manager UI
 
 ### Performance issues
-Na grote migraties, run:
+After large migrations, run:
 ```sql
 VACUUM ANALYZE acl_entries;
 ```
 
-## Na Succesvolle Migratie
+## After Successful Migration
 
-Wanneer alles werkt:
+When everything works:
 
-1. **Update ROADMAP.md** - Markeer Fase 2 als voltooid
-2. **Begin met Fase 3** - Legacy code verwijderen
-3. **Monitor** - Houd logs in de gaten voor permission errors
+1. **Update ROADMAP.md** - Mark Phase 2 as complete
+2. **Start Phase 3** - Remove legacy code
+3. **Monitor** - Watch logs for permission errors
 
-## Zie Ook
+## See Also
 
-- [README.md](./README.md) - ACL systeem overzicht
-- [ROADMAP.md](./ROADMAP.md) - Implementatie roadmap
+- [README.md](./README.md) - ACL system overview
+- [ROADMAP.md](./ROADMAP.md) - Implementation roadmap

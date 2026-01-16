@@ -1,77 +1,77 @@
-# ACL Architectuur - Scoped Permission Model
+# ACL Architecture - Scoped Permission Model
 
-## Overzicht
+## Overview
 
-Dit document beschrijft de architectuur voor het **Scoped Permission Model** van Kanbu.
-Het systeem is geïnspireerd op Active Directory en biedt enterprise-grade toegangscontrole
-met workspace-level isolatie en gedelegeerde administratie.
+This document describes the architecture for the **Scoped Permission Model** of Kanbu.
+The system is inspired by Active Directory and provides enterprise-grade access control
+with workspace-level isolation and delegated administration.
 
-**Document versie:** 2.4.0
-**Datum:** 2026-01-09
-**Status:** Goedgekeurd voor implementatie
+**Document version:** 2.4.0
+**Date:** 2026-01-09
+**Status:** Approved for implementation
 
 ---
 
-## 1. Kernconcepten
+## 1. Core Concepts
 
-### 1.1 Scheiding van Concerns
+### 1.1 Separation of Concerns
 
-Het systeem maakt een duidelijke scheiding tussen:
+The system makes a clear distinction between:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                         ACL SYSTEEM                                  │
+│                         ACL SYSTEM                                  │
 ├─────────────────────────────────────────────────────────────────────┤
 │                                                                      │
-│   RESOURCES (WAT)              PRINCIPALS (WIE)                     │
+│   RESOURCES (WHAT)              PRINCIPALS (WHO)                     │
 │   ─────────────────           ──────────────────                    │
-│   De objecten die je          De entiteiten die                     │
-│   wilt beveiligen:            rechten krijgen:                      │
+│   The objects you want        The entities that get                 │
+│   to protect:                 permissions:                          │
 │                                                                      │
-│   • System (admin functies)   • Users (individuele gebruikers)      │
-│   • Workspaces                • Security Groups (groepen users)     │
+│   • System (admin functions)  • Users (individual users)            │
+│   • Workspaces                • Security Groups (groups of users)   │
 │   • Projects                                                         │
 │   • (Future: Tasks, Wiki)                                           │
 │                                                                      │
-│                    ACL ENTRIES (HOE)                                │
+│                    ACL ENTRIES (HOW)                                │
 │                    ─────────────────                                │
-│                    De koppeling tussen                              │
-│                    resources en principals                          │
-│                    met specifieke permissies                        │
+│                    The link between                                 │
+│                    resources and principals                         │
+│                    with specific permissions                        │
 │                    (RWXDP bitmask)                                  │
 │                                                                      │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
-### 1.2 Active Directory Compatibiliteit
+### 1.2 Active Directory Compatibility
 
-Het model volgt AD-concepten voor enterprise compatibility:
+The model follows AD concepts for enterprise compatibility:
 
-| AD Concept | Kanbu Equivalent | Beschrijving |
-|------------|------------------|--------------|
-| Domain | Kanbu Instance | De root van het systeem |
-| Organizational Unit (OU) | Workspace | Container voor projecten en users |
-| Security Group | Group | Groep users die samen rechten krijgen |
-| User Account | User | Individuele gebruiker |
-| ACL | AclEntry | Permissie koppeling |
-| Inheritance | inheritToChildren | Rechten erven naar children |
+| AD Concept | Kanbu Equivalent | Description |
+|------------|------------------|-------------|
+| Domain | Kanbu Instance | The root of the system |
+| Organizational Unit (OU) | Workspace | Container for projects and users |
+| Security Group | Group | Group of users that get permissions together |
+| User Account | User | Individual user |
+| ACL | AclEntry | Permission link |
+| Inheritance | inheritToChildren | Permissions inherit to children |
 
 ---
 
-## 2. Resource Hiërarchie
+## 2. Resource Hierarchy
 
-### 2.1 Volledige Resource Tree (Fase 4C)
+### 2.1 Complete Resource Tree (Phase 4C)
 
 ```
-Kanbu (Root)                    ← resourceType: 'root', ACL hier = alles
+Kanbu (Root)                    ← resourceType: 'root', ACL here = everything
 │
-├── System                      ← resourceType: 'system', systeembeheer
+├── System                      ← resourceType: 'system', system management
 │   ├── User Management         ← system sub-item (future)
 │   ├── Group Management        ← system sub-item (future)
 │   ├── LDAP Integration        ← system sub-item (future)
 │   └── Settings                ← system sub-item (future)
 │
-├── Dashboard                   ← resourceType: 'dashboard' (Fase 4C)
+├── Dashboard                   ← resourceType: 'dashboard' (Phase 4C)
 │   └── (dashboard features)    ← dashboard sub-items (future)
 │
 └── Workspaces                  ← resourceType: 'workspace', resourceId: null
@@ -94,26 +94,26 @@ Kanbu (Root)                    ← resourceType: 'root', ACL hier = alles
 
 | Type | resourceType | resourceId | Scope | Status |
 |------|--------------|------------|-------|--------|
-| **Root (Kanbu)** | `root` | `null` | Alles - top-level container | Fase 4C |
-| **System** | `system` | `null` | Systeembeheer (users, groups, settings) | Bestaand |
-| **Dashboard** | `dashboard` | `null` | Dashboard features | Fase 4C |
-| All Workspaces | `workspace` | `null` | Alle workspaces (container) | Bestaand |
-| Specific Workspace | `workspace` | `{id}` | Eén workspace + children | Bestaand |
-| All Projects | `project` | `null` | Alle projects | Bestaand |
-| Specific Project | `project` | `{id}` | Eén project + children | Bestaand |
+| **Root (Kanbu)** | `root` | `null` | Everything - top-level container | Phase 4C |
+| **System** | `system` | `null` | System management (users, groups, settings) | Existing |
+| **Dashboard** | `dashboard` | `null` | Dashboard features | Phase 4C |
+| All Workspaces | `workspace` | `null` | All workspaces (container) | Existing |
+| Specific Workspace | `workspace` | `{id}` | One workspace + children | Existing |
+| All Projects | `project` | `null` | All projects | Existing |
+| Specific Project | `project` | `{id}` | One project + children | Existing |
 
-### 2.3 Inheritance Hiërarchie
+### 2.3 Inheritance Hierarchy
 
 ```
-root (Kanbu)                    ← ACL hier erft naar ALLES
-├── system                      ← Erft van root, geeft door aan system sub-items
-├── dashboard                   ← Erft van root, geeft door aan dashboard items
-└── workspace (null = all)      ← Erft van root
-    └── workspace:{id}          ← Erft van workspace:null
-        └── project:{id}        ← Erft van workspace:{id}
+root (Kanbu)                    ← ACL here inherits to EVERYTHING
+├── system                      ← Inherits from root, passes to system sub-items
+├── dashboard                   ← Inherits from root, passes to dashboard items
+└── workspace (null = all)      ← Inherits from root
+    └── workspace:{id}          ← Inherits from workspace:null
+        └── project:{id}        ← Inherits from workspace:{id}
 ```
 
-**Voorbeeld:** Domain Admins op `root` met `inheritToChildren=true` → volledige toegang overal.
+**Example:** Domain Admins on `root` with `inheritToChildren=true` → full access everywhere.
 
 ---
 
@@ -121,77 +121,77 @@ root (Kanbu)                    ← ACL hier erft naar ALLES
 
 ### 3.1 Permission Scopes
 
-Het systeem heeft drie primaire scope levels:
+The system has three primary scope levels:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
 │ LEVEL 1: GLOBAL/SYSTEM SCOPE                                        │
 │ ─────────────────────────────                                       │
-│ • Super Admins (AppRole.ADMIN of admin ACL)                        │
-│ • Zien ALLES in het systeem                                        │
-│ • Kunnen ALLES beheren                                             │
-│ • Volledige user/group management                                  │
-│ • System settings toegang                                          │
+│ • Super Admins (AppRole.ADMIN or admin ACL)                        │
+│ • See EVERYTHING in the system                                     │
+│ • Can manage EVERYTHING                                            │
+│ • Full user/group management                                       │
+│ • System settings access                                           │
 ├─────────────────────────────────────────────────────────────────────┤
 │ LEVEL 2: WORKSPACE SCOPE                                            │
 │ ─────────────────────────                                           │
-│ • Workspace Admins (P permission op workspace)                     │
-│ • Zien ALLEEN hun workspace(s)                                     │
-│ • Beheren workspace settings, members, projects                    │
-│ • Contact list gefilterd op workspace members                      │
-│ • Admin panel toont alleen workspace-scoped functies               │
+│ • Workspace Admins (P permission on workspace)                     │
+│ • See ONLY their workspace(s)                                      │
+│ • Manage workspace settings, members, projects                     │
+│ • Contact list filtered to workspace members                       │
+│ • Admin panel shows only workspace-scoped functions                │
 ├─────────────────────────────────────────────────────────────────────┤
 │ LEVEL 3: PROJECT SCOPE                                              │
 │ ─────────────────────────                                           │
 │ • Project Managers/Members                                         │
-│ • Werken binnen één of meer projects                               │
-│ • Rechten bepaald door project ACL of workspace inheritance        │
+│ • Work within one or more projects                                 │
+│ • Permissions determined by project ACL or workspace inheritance   │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
 ### 3.2 Scope Cascading
 
-Rechten werken van boven naar beneden:
+Permissions work from top to bottom:
 
 ```
-System Admin (P op admin)
+System Admin (P on admin)
     │
-    ├── Ziet alle workspaces
-    ├── Ziet alle users
-    ├── Ziet alle groups
-    └── Volledige admin panel
+    ├── Sees all workspaces
+    ├── Sees all users
+    ├── Sees all groups
+    └── Full admin panel
 
-Workspace Admin (P op workspace:1)
+Workspace Admin (P on workspace:1)
     │
-    ├── Ziet ALLEEN workspace:1
-    ├── Ziet ALLEEN users in workspace:1
-    ├── Beheert ALLEEN projects in workspace:1
-    └── Admin panel: alleen workspace:1 functies
+    ├── Sees ONLY workspace:1
+    ├── Sees ONLY users in workspace:1
+    ├── Manages ONLY projects in workspace:1
+    └── Admin panel: only workspace:1 functions
 
-Project Member (RWX op project:5)
+Project Member (RWX on project:5)
     │
-    ├── Werkt in project:5
-    └── Geen admin toegang
+    ├── Works in project:5
+    └── No admin access
 ```
 
 ---
 
 ## 4. Security Groups
 
-### 4.1 Voorgestelde Standaard Groups
+### 4.1 Proposed Standard Groups
 
-| Group Name | Beschrijving | Typische ACL |
-|------------|--------------|--------------|
-| `domain-admins` | Systeem beheerders | P op `admin:null` |
-| `system-admins` | Technisch beheer | RWX op `admin:null` |
-| `workspace-admins` | Workspace beheerders | P op specifieke workspaces |
-| `project-managers` | Project leiders | RWXD op specifieke projects |
-| `users` | Alle gebruikers (automatisch lid) | RWX op hun projects |
-| `viewers` | Alleen-lezen | R op specifieke resources |
-| `external-contractors` | Externe partijen | Beperkte R/RW op specifieke projects |
-| `guests` | Gasten | Minimale R toegang |
+| Group Name | Description | Typical ACL |
+|------------|-------------|-------------|
+| `domain-admins` | System administrators | P on `admin:null` |
+| `system-admins` | Technical management | RWX on `admin:null` |
+| `workspace-admins` | Workspace managers | P on specific workspaces |
+| `project-managers` | Project leaders | RWXD on specific projects |
+| `users` | All users (automatic member) | RWX on their projects |
+| `viewers` | Read-only | R on specific resources |
+| `external-contractors` | External parties | Limited R/RW on specific projects |
+| `guests` | Guests | Minimal R access |
 
-### 4.2 Group Hiërarchie
+### 4.2 Group Hierarchy
 
 ```
 Groups
@@ -213,42 +213,42 @@ Groups
 
 ## 5. Scoped Data Access
 
-### 5.1 Principe: "Zie alleen wat je mag zien"
+### 5.1 Principle: "See only what you're allowed to see"
 
-**KRITISCH:** Alle data queries moeten gefilterd worden op basis van de user's scope.
+**CRITICAL:** All data queries must be filtered based on the user's scope.
 
 ```typescript
-// FOUT - Toont alle users
+// WRONG - Shows all users
 const users = await prisma.user.findMany()
 
-// GOED - Toont alleen users in scope
+// RIGHT - Shows only users in scope
 const users = await getUsersInScope(currentUserId)
 ```
 
-### 5.2 Scope Filter Implementatie
+### 5.2 Scope Filter Implementation
 
-Voor elke data query moet het systeem:
+For each data query, the system must:
 
-1. **Bepaal user's scope** - System, Workspace, of Project level
-2. **Filter resources** - Alleen resources binnen scope
-3. **Filter principals** - Alleen users/groups binnen scope
+1. **Determine user's scope** - System, Workspace, or Project level
+2. **Filter resources** - Only resources within scope
+3. **Filter principals** - Only users/groups within scope
 
 ```typescript
-// Voorbeeld: Contact List
+// Example: Contact List
 async function getContactList(userId: number) {
   const scope = await getUserScope(userId)
 
   if (scope.level === 'system') {
-    // System admin: alle users
+    // System admin: all users
     return prisma.user.findMany()
   }
 
   if (scope.level === 'workspace') {
-    // Workspace admin: alleen workspace members
+    // Workspace admin: only workspace members
     return getUsersInWorkspaces(scope.workspaceIds)
   }
 
-  // Project member: alleen project team members
+  // Project member: only project team members
   return getUsersInProjects(scope.projectIds)
 }
 ```
@@ -257,26 +257,26 @@ async function getContactList(userId: number) {
 
 | Query | System Scope | Workspace Scope | Project Scope |
 |-------|--------------|-----------------|---------------|
-| Users list | Alle users | Workspace members | Project team |
-| Groups list | Alle groups | Workspace groups | Project groups |
-| Workspaces | Alle | Eigen workspace(s) | - |
-| Projects | Alle | Workspace projects | Eigen project(s) |
-| Tasks | Alle | Workspace tasks | Project tasks |
-| Admin panel | Volledig | Workspace admin | - |
-| Menu items | Alle | Gefilterd | Gefilterd |
+| Users list | All users | Workspace members | Project team |
+| Groups list | All groups | Workspace groups | Project groups |
+| Workspaces | All | Own workspace(s) | - |
+| Projects | All | Workspace projects | Own project(s) |
+| Tasks | All | Workspace tasks | Project tasks |
+| Admin panel | Full | Workspace admin | - |
+| Menu items | All | Filtered | Filtered |
 
 ---
 
 ## 6. UI Scoping
 
-### 6.1 Conditionele Menu's
+### 6.1 Conditional Menus
 
-Menu items worden getoond op basis van effectieve permissies:
+Menu items are shown based on effective permissions:
 
 ```typescript
 // Sidebar menu items
 const menuItems = [
-  // Altijd zichtbaar voor ingelogde users
+  // Always visible for logged-in users
   { label: 'Dashboard', visible: true },
   { label: 'My Tasks', visible: true },
 
@@ -293,142 +293,142 @@ const menuItems = [
 
 ### 6.2 Admin Panel Scoping
 
-Het admin panel toont verschillende secties per scope:
+The admin panel shows different sections per scope:
 
-**System Admin ziet:**
+**System Admin sees:**
 - All Workspaces
 - All Users
 - All Groups
 - System Settings
-- ACL Manager (volledig)
-- Audit Logs (alle logs)
+- ACL Manager (full)
+- Audit Logs (all logs)
 
-**Workspace Admin ziet:**
-- Workspace Settings (eigen)
-- Workspace Members (eigen)
-- Workspace Projects (eigen)
+**Workspace Admin sees:**
+- Workspace Settings (own)
+- Workspace Members (own)
+- Workspace Projects (own)
 - ACL Manager (workspace scope)
 - Audit Logs (workspace-scoped)
 
 ---
 
-## 7. Implementatie Fases
+## 7. Implementation Phases
 
-### Fase 1-3B: Foundation & Pure ACL (VOLTOOID)
+### Phase 1-3B: Foundation & Pure ACL (COMPLETED)
 - [x] AclEntry model
-- [x] AclService core functies
+- [x] AclService core functions
 - [x] tRPC procedures
 - [x] Basic UI
-- [x] Legacy fallback verwijderd
+- [x] Legacy fallback removed
 - [x] Workspace/Project access via ACL
 - [x] Members via ACL
 
-### Fase 4: Resource Tree UI (VOLTOOID)
+### Phase 4: Resource Tree UI (COMPLETED)
 - [x] VSCode-style tree component
-- [x] Volledige hiërarchie tonen
-- [x] Security Groups sectie
+- [x] Full hierarchy display
+- [x] Security Groups section
 - [x] Real-time WebSocket updates
 
-### Fase 4B: Radicale Simplificatie (VOLTOOID)
-- [x] [+] knop voor Create Security Group in ResourceTree
-- [x] Create form in right panel (niet popup)
-- [x] Delete knop voor Security Groups
-- [x] GroupListPage en GroupEditPage verwijderd
+### Phase 4B: Radical Simplification (COMPLETED)
+- [x] [+] button for Create Security Group in ResourceTree
+- [x] Create form in right panel (not popup)
+- [x] Delete button for Security Groups
+- [x] GroupListPage and GroupEditPage removed
 - [x] AclPage is single source of truth
 
-### Fase 4C: Extended Resource Hierarchy (VOLTOOID)
+### Phase 4C: Extended Resource Hierarchy (COMPLETED)
 - [x] Resource types: root, system, dashboard
-- [x] ResourceTree met volledige AD-style hiërarchie
-- [x] ACL op Root niveau (Domain Admins met inherit)
-- [x] ACL op System container
-- [x] ACL op Dashboard container
-- [x] Inheritance van root naar alle children
+- [x] ResourceTree with full AD-style hierarchy
+- [x] ACL on Root level (Domain Admins with inherit)
+- [x] ACL on System container
+- [x] ACL on Dashboard container
+- [x] Inheritance from root to all children
 
-### Fase 5: Scoped Data Access (VOLTOOID)
+### Phase 5: Scoped Data Access (COMPLETED)
 - [x] getUserScope() service method
-- [x] Scope-filtered queries voor alle data
+- [x] Scope-filtered queries for all data
 - [x] Contact list scoping
 - [x] User/Group list scoping
 
-### Fase 6: Scoped Admin Panel (VOLTOOID)
+### Phase 6: Scoped Admin Panel (COMPLETED)
 - [x] Workspace Admin view
-- [x] Gefilterde admin functies
+- [x] Filtered admin functions
 - [x] Scoped ACL Manager
 
-### Fase 7: Scoped UI Elements (VOLTOOID)
-- [x] Conditionele menu's
+### Phase 7: Scoped UI Elements (COMPLETED)
+- [x] Conditional menus
 - [x] Scoped breadcrumbs
 - [x] Permission-based component rendering
 
-### Fase 8B: Feature ACL Project (VOLTOOID)
-- [x] Feature tabel + ACL resourceType 'feature'
-- [x] 11 project features geseed
-- [x] ProjectSidebar met ACL per menu item
+### Phase 8B: Feature ACL Project (COMPLETED)
+- [x] Feature table + ACL resourceType 'feature'
+- [x] 11 project features seeded
+- [x] ProjectSidebar with ACL per menu item
 
-### Fase 8C: Feature ACL Systeem-breed (VOLTOOID)
-- [x] 40 features geseed (4 dashboard, 16 profile, 9 admin, 11 project)
-- [x] useFeatureAccess hook met convenience hooks
-- [x] ResourceTree toont features per scope
-- [x] Documentatie bijgewerkt
+### Phase 8C: Feature ACL System-wide (COMPLETED)
+- [x] 40 features seeded (4 dashboard, 16 profile, 9 admin, 11 project)
+- [x] useFeatureAccess hook with convenience hooks
+- [x] ResourceTree shows features per scope
+- [x] Documentation updated
 
-### Fase 9.1: Audit Logging (VOLTOOID)
+### Phase 9.1: Audit Logging (COMPLETED)
 - [x] AuditLog database model
-- [x] AuditService met categorieën (ACL, GROUP, USER, WORKSPACE, SETTINGS)
-- [x] Logging integratie in alle CRUD procedures
-- [x] Query API met scope filtering
-- [x] AuditLogsPage UI met filtering, export (CSV/JSON)
-- [x] Workspace-scoped access (admins zien alleen eigen workspace logs)
+- [x] AuditService with categories (ACL, GROUP, USER, WORKSPACE, SETTINGS)
+- [x] Logging integration in all CRUD procedures
+- [x] Query API with scope filtering
+- [x] AuditLogsPage UI with filtering, export (CSV/JSON)
+- [x] Workspace-scoped access (admins see only own workspace logs)
 
-### Fase 9.6: API Keys & Service Accounts (VOLTOOID)
-- [x] Database schema uitgebreid met ApiKeyScope enum (USER, WORKSPACE, PROJECT)
-- [x] ApiKey model met scope velden en service account support
-- [x] apiKeyService voor authenticatie en scoped permission checks
-- [x] tRPC context met dual auth (JWT + API key)
-- [x] apiKeyProcedure en hybridProcedure in router.ts
-- [x] UI met scope selector, workspace/project dropdowns, service account optie
-- [x] Audit logging voor API key events (created, updated, revoked, used)
+### Phase 9.6: API Keys & Service Accounts (COMPLETED)
+- [x] Database schema extended with ApiKeyScope enum (USER, WORKSPACE, PROJECT)
+- [x] ApiKey model with scope fields and service account support
+- [x] apiKeyService for authentication and scoped permission checks
+- [x] tRPC context with dual auth (JWT + API key)
+- [x] apiKeyProcedure and hybridProcedure in router.ts
+- [x] UI with scope selector, workspace/project dropdowns, service account option
+- [x] Audit logging for API key events (created, updated, revoked, used)
 
-### Fase 9.4: Bulk Operations (VOLTOOID)
-- [x] `bulkGrantPermission()` - Grant aan meerdere users/groups
-- [x] `bulkRevokePermission()` - Revoke van meerdere principals
-- [x] `copyAclEntries()` - Kopieer ACL naar andere resources
-- [x] `applyTemplate()` - Pas permission preset toe
-- [x] MultiPrincipalSelector component voor UI
-- [x] BulkAclDialog met 4 modes (grant, revoke, copy, template)
-- [x] AclPage toolbar integratie
+### Phase 9.4: Bulk Operations (COMPLETED)
+- [x] `bulkGrantPermission()` - Grant to multiple users/groups
+- [x] `bulkRevokePermission()` - Revoke from multiple principals
+- [x] `copyAclEntries()` - Copy ACL to other resources
+- [x] `applyTemplate()` - Apply permission preset
+- [x] MultiPrincipalSelector component for UI
+- [x] BulkAclDialog with 4 modes (grant, revoke, copy, template)
+- [x] AclPage toolbar integration
 
-### Fase 9.5: Advanced ACL UI (VOLTOOID)
-- [x] Permission Matrix View - Grid principals × resources met effectieve permissies
-- [x] Effective Permissions Calculator - Debug tool voor permission breakdown
-- [x] What-If Simulator - Preview ACL wijzigingen voor implementatie
+### Phase 9.5: Advanced ACL UI (COMPLETED)
+- [x] Permission Matrix View - Grid principals × resources with effective permissions
+- [x] Effective Permissions Calculator - Debug tool for permission breakdown
+- [x] What-If Simulator - Preview ACL changes before implementation
 - [x] Import/Export ACL - Backup/restore in JSON/CSV format
-- [x] 6 nieuwe tRPC procedures (getPermissionMatrix, calculateEffective, simulateChange, exportAcl, importPreview, importExecute)
-- [x] 5 nieuwe frontend components (PermissionMatrixPage, EffectivePermissionsPanel, WhatIfSimulator, AclExportDialog, AclImportDialog)
+- [x] 6 new tRPC procedures (getPermissionMatrix, calculateEffective, simulateChange, exportAcl, importPreview, importExecute)
+- [x] 5 new frontend components (PermissionMatrixPage, EffectivePermissionsPanel, WhatIfSimulator, AclExportDialog, AclImportDialog)
 - [x] Tools dropdown in AclPage toolbar
 
-### Fase 9.2+: Advanced Features (PLANNED)
+### Phase 9.2+: Advanced Features (PLANNED)
 - [ ] LDAP/AD Sync
 - [ ] Task-level ACL
 
 ---
 
-## 8. Technische Specificaties
+## 8. Technical Specifications
 
 ### 8.1 Core Services
 
-| Service | Verantwoordelijkheid |
-|---------|---------------------|
+| Service | Responsibility |
+|---------|----------------|
 | `AclService` | ACL CRUD, permission checks |
 | `PermissionService` | High-level access checks, role mapping |
-| `ScopeService` (nieuw) | Bepaal user scope, filter queries |
+| `ScopeService` (new) | Determine user scope, filter queries |
 
-### 8.2 ScopeService API (te implementeren)
+### 8.2 ScopeService API (to be implemented)
 
 ```typescript
 interface UserScope {
   level: 'system' | 'workspace' | 'project'
-  workspaceIds: number[]  // Workspaces waar user toegang heeft
-  projectIds: number[]    // Projects waar user toegang heeft
+  workspaceIds: number[]  // Workspaces where user has access
+  projectIds: number[]    // Projects where user has access
   permissions: {
     canManageUsers: boolean
     canManageGroups: boolean
@@ -438,10 +438,10 @@ interface UserScope {
 }
 
 class ScopeService {
-  // Bepaal user's effectieve scope
+  // Determine user's effective scope
   async getUserScope(userId: number): Promise<UserScope>
 
-  // Gefilterde queries
+  // Filtered queries
   async getUsersInScope(userId: number): Promise<User[]>
   async getGroupsInScope(userId: number): Promise<Group[]>
   async getWorkspacesInScope(userId: number): Promise<Workspace[]>
@@ -455,16 +455,16 @@ class ScopeService {
 
 ### 8.3 Database Queries Pattern
 
-Alle queries die data ophalen moeten dit pattern volgen:
+All queries that fetch data must follow this pattern:
 
 ```typescript
-// 1. Haal user scope op (cached)
+// 1. Get user scope (cached)
 const scope = await scopeService.getUserScope(ctx.user.id)
 
-// 2. Bouw query filter op basis van scope
+// 2. Build query filter based on scope
 const whereClause = buildScopeFilter(scope, 'workspace')
 
-// 3. Execute query met filter
+// 3. Execute query with filter
 const data = await prisma.workspace.findMany({
   where: whereClause,
   ...otherOptions
@@ -473,31 +473,31 @@ const data = await prisma.workspace.findMany({
 
 ---
 
-## 9. Migratie Strategie
+## 9. Migration Strategy
 
 ### 9.1 Backward Compatibility
 
-Tijdens de migratie moet het systeem blijven werken:
+During migration, the system must continue working:
 
-1. **Bestaande users behouden toegang** via huidige ACL entries
-2. **Nieuwe scope checks** worden geleidelijk toegevoegd
-3. **Feature flags** voor nieuwe scoped functies
-4. **Fallback naar onscoped** als scope niet bepaald kan worden
+1. **Existing users retain access** via current ACL entries
+2. **New scope checks** are added gradually
+3. **Feature flags** for new scoped functions
+4. **Fallback to unscoped** if scope cannot be determined
 
-### 9.2 Stapsgewijze Rollout
+### 9.2 Phased Rollout
 
 ```
-Week 1-2: ScopeService implementeren
-    └── Unit tests voor scope determination
+Week 1-2: Implement ScopeService
+    └── Unit tests for scope determination
 
 Week 3-4: Contact list scoping
-    └── Eerste zichtbare scoped feature
+    └── First visible scoped feature
 
 Week 5-6: Admin panel scoping
     └── Workspace admin view
 
 Week 7-8: Menu scoping
-    └── Conditionele UI elements
+    └── Conditional UI elements
 
 Week 9+: Advanced features
     └── Audit, LDAP sync, etc.
@@ -507,42 +507,42 @@ Week 9+: Advanced features
 
 ## 10. Success Criteria
 
-### 10.1 Functionele Eisen
+### 10.1 Functional Requirements
 
-- [ ] Workspace Admin kan ALLEEN eigen workspace beheren
-- [ ] Contact list toont ALLEEN users in scope
-- [ ] Admin panel gefilterd per scope
-- [ ] Menu items verborgen als geen toegang
-- [ ] Geen data leakage tussen workspaces
+- [ ] Workspace Admin can ONLY manage own workspace
+- [ ] Contact list shows ONLY users in scope
+- [ ] Admin panel filtered per scope
+- [ ] Menu items hidden if no access
+- [ ] No data leakage between workspaces
 
-### 10.2 Niet-Functionele Eisen
+### 10.2 Non-Functional Requirements
 
 - [ ] Scope check < 50ms per request
-- [ ] Geen breaking changes voor bestaande users
-- [x] Audit trail voor alle scope-gerelateerde acties (Fase 9.1)
-- [ ] AD-compatible group structuur
+- [ ] No breaking changes for existing users
+- [x] Audit trail for all scope-related actions (Phase 9.1)
+- [ ] AD-compatible group structure
 
 ---
 
-## 11. Referenties
+## 11. References
 
-- [README.md](./README.md) - ACL systeem basis documentatie
-- [ROADMAP.md](./ROADMAP.md) - Implementatie roadmap
-- [MIGRATION.md](./MIGRATION.md) - Migratie handleiding
+- [README.md](./README.md) - ACL system basic documentation
+- [ROADMAP.md](./ROADMAP.md) - Implementation roadmap
+- [MIGRATION.md](./MIGRATION.md) - Migration guide
 - Active Directory Security Model: https://docs.microsoft.com/en-us/windows-server/identity/ad-ds/
 
 ---
 
 ## Changelog
 
-| Versie | Datum | Wijziging |
-|--------|-------|-----------|
-| 2.4.0 | 2026-01-09 | Fase 9.5 VOLTOOID: Advanced ACL UI (Permission Matrix, Effective Permissions Calculator, What-If Simulator, Import/Export) |
-| 2.3.0 | 2026-01-09 | Fase 9.4 VOLTOOID: Bulk Operations (bulkGrant, bulkRevoke, copy, template) |
-| 2.2.0 | 2026-01-09 | Fase 9.6 VOLTOOID: API Keys & Service Accounts met scoped access |
-| 2.1.0 | 2026-01-09 | Fase 9.1 VOLTOOID: Security Audit Logging met scope-based access |
-| 2.0.0 | 2026-01-08 | Fase 4B-8C VOLTOOID: Systeem-breed Feature ACL (40 features) |
-| 1.2.0 | 2026-01-08 | Fase 4C: Extended Resource Hierarchy (Root, System, Dashboard) |
-| 1.1.1 | 2026-01-08 | Fase 4B.1 voltooid: Security Groups CRUD in AclPage |
-| 1.1.0 | 2026-01-08 | Fase 4B: Radicale Simplificatie (AclPage single source of truth) |
-| 1.0.0 | 2026-01-08 | Initiële architectuur document |
+| Version | Date | Change |
+|---------|------|--------|
+| 2.4.0 | 2026-01-09 | Phase 9.5 COMPLETED: Advanced ACL UI (Permission Matrix, Effective Permissions Calculator, What-If Simulator, Import/Export) |
+| 2.3.0 | 2026-01-09 | Phase 9.4 COMPLETED: Bulk Operations (bulkGrant, bulkRevoke, copy, template) |
+| 2.2.0 | 2026-01-09 | Phase 9.6 COMPLETED: API Keys & Service Accounts with scoped access |
+| 2.1.0 | 2026-01-09 | Phase 9.1 COMPLETED: Security Audit Logging with scope-based access |
+| 2.0.0 | 2026-01-08 | Phase 4B-8C COMPLETED: System-wide Feature ACL (40 features) |
+| 1.2.0 | 2026-01-08 | Phase 4C: Extended Resource Hierarchy (Root, System, Dashboard) |
+| 1.1.1 | 2026-01-08 | Phase 4B.1 completed: Security Groups CRUD in AclPage |
+| 1.1.0 | 2026-01-08 | Phase 4B: Radical Simplification (AclPage single source of truth) |
+| 1.0.0 | 2026-01-08 | Initial architecture document |

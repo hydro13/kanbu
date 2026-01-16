@@ -1,51 +1,51 @@
-# GitHub Integratie - Implementatie Plan
+# GitHub Integration - Implementation Plan
 
-## Versie: 1.1.0
-## Datum: 2026-01-10
+## Version: 1.1.0
+## Date: 2026-01-10
 ## Status: In Progress
 
 ---
 
-## 🎯 Eerste Grote Milestone: 100% Feature Parity
+## 🎯 First Major Milestone: 100% Feature Parity
 
-### Doel
+### Goal
 
-Bouw een **complete 1-op-1 replica** van GitHub Projects binnen Kanbu.
+Build a **complete 1-to-1 replica** of GitHub Projects within Kanbu.
 
-Alles wat je op GitHub kunt doen, moet je ook in Kanbu kunnen doen:
-- Dezelfde layouts (Board, List, Table)
-- Dezelfde keyboard shortcuts
-- Dezelfde drag & drop
-- Dezelfde filters en zoekfunctie
-- Dezelfde bulk acties
-- **Exact dezelfde ervaring**
+Everything you can do on GitHub must also be possible in Kanbu:
+- Same layouts (Board, List, Table)
+- Same keyboard shortcuts
+- Same drag & drop
+- Same filters and search
+- Same bulk actions
+- **Exact same experience**
 
-### Waarom Feature Parity Eerst? (Drie Voordelen)
+### Why Feature Parity First? (Three Benefits)
 
 1. **Feature Parity**
-   - Gebruikers kunnen naadloos overstappen
-   - Het werkt precies zoals ze gewend zijn
+   - Users can switch seamlessly
+   - It works exactly as they're used to
 
-2. **Leren van een Werkende Omgeving**
-   - GitHub Projects is bewezen door miljoenen gebruikers
-   - We leren hun UX patterns, shortcuts, workflows
-   - Geen trial-and-error - we bouwen wat al werkt
+2. **Learning from a Working Environment**
+   - GitHub Projects is proven by millions of users
+   - We learn their UX patterns, shortcuts, workflows
+   - No trial-and-error - we build what already works
 
-3. **Referentie voor Kanbu's Interne Module**
-   - Na het bouwen hebben we een prachtige structuur
-   - We kunnen de Kanbu project-module ermee vergelijken
-   - De beste features overnemen én verrijken
-   - Beide modules worden beter door deze aanpak
+3. **Reference for Kanbu's Internal Module**
+   - After building, we have a beautiful structure
+   - We can compare the Kanbu project module with it
+   - Adopt AND enrich the best features
+   - Both modules become better through this approach
 
-### Architectuur
+### Architecture
 
-Twee project modules naast elkaar in een workspace:
+Two project modules side by side in a workspace:
 
 ```
 Workspace
-├── 📁 Interne Projecten (bestaande Kanbu module)
+├── 📁 Internal Projects (existing Kanbu module)
 │
-└── 🐙 GitHub Projecten (GitHub module - 1-op-1 met GitHub)
+└── 🐙 GitHub Projects (GitHub module - 1-to-1 with GitHub)
     └── Board, List, Table views
     └── Issues, Milestones, PRs
     └── Labels, Filters, Search
@@ -55,136 +55,136 @@ Workspace
 
 ---
 
-## Huidige Status
+## Current Status
 
-### Wat Werkt (GitHub Module)
+### What Works (GitHub Module)
 
-| Feature | Status | Notities |
+| Feature | Status | Notes |
 |---------|--------|----------|
-| Repo koppelen | ✅ Werkt | Via GitHub App installatie |
-| Issues sync (import) | ✅ Werkt | Bulk import + webhooks |
-| Issue comments sync | ✅ Werkt | Inclusief afbeeldingen |
-| Milestones sync (import) | ✅ Werkt | Bulk import + webhooks |
-| PRs sync | ✅ Werkt | Read-only in Kanbu |
-| Commits sync | ✅ Werkt | Read-only in Kanbu |
-| Webhooks ontvangen | ✅ Werkt | Real-time updates |
-| GitHub Integration pagina | ✅ Werkt | Toont alle data |
+| Repo linking | ✅ Works | Via GitHub App installation |
+| Issues sync (import) | ✅ Works | Bulk import + webhooks |
+| Issue comments sync | ✅ Works | Including images |
+| Milestones sync (import) | ✅ Works | Bulk import + webhooks |
+| PRs sync | ✅ Works | Read-only in Kanbu |
+| Commits sync | ✅ Works | Read-only in Kanbu |
+| Webhooks receive | ✅ Works | Real-time updates |
+| GitHub Integration page | ✅ Works | Shows all data |
 
-### Wat Ontbreekt (GitHub Module)
+### What's Missing (GitHub Module)
 
-| Feature | Status | Prioriteit |
-|---------|--------|------------|
-| GitHub projecten in workspace lijst | ❌ Ontbreekt | HOOG |
-| Volledige GitHub project UI (board view) | ❌ Ontbreekt | HOOG |
-| Kanbu → GitHub sync (bi-directioneel) | ❌ Ontbreekt | HOOG |
-| Visuele scheiding (iconen, kleuren) | ❌ Ontbreekt | MEDIUM |
-| Project Groepen (combineren beide types) | ❌ Ontbreekt | MEDIUM |
+| Feature | Status | Priority |
+|---------|--------|----------|
+| GitHub projects in workspace list | ❌ Missing | HIGH |
+| Full GitHub project UI (board view) | ❌ Missing | HIGH |
+| Kanbu → GitHub sync (bi-directional) | ❌ Missing | HIGH |
+| Visual separation (icons, colors) | ❌ Missing | MEDIUM |
+| Project Groups (combine both types) | ❌ Missing | MEDIUM |
 
 ---
 
-## Implementatie Stappen
+## Implementation Steps
 
-### Stap 1: GitHub Projecten in Workspace (HUIDIGE FOCUS)
+### Step 1: GitHub Projects in Workspace (CURRENT FOCUS)
 
-**Doel:** GitHub repositories verschijnen als projecten in de workspace lijst.
+**Goal:** GitHub repositories appear as projects in the workspace list.
 
-#### Huidige Situatie
+#### Current Situation
 
-- Workspace toont alleen interne Kanbu projecten
-- GitHub repos zijn gekoppeld aan Kanbu projecten via `Project.githubRepositoryId`
-- Dit is de OUDE aanpak die we NIET meer volgen
+- Workspace shows only internal Kanbu projects
+- GitHub repos are linked to Kanbu projects via `Project.githubRepositoryId`
+- This is the OLD approach that we NO LONGER follow
 
-#### Nieuwe Aanpak
+#### New Approach
 
-GitHub projecten worden APART getoond in de workspace:
+GitHub projects are shown SEPARATELY in the workspace:
 
 ```
-Workspace "Mijn Bedrijf"
-├── 📁 Interne Projecten
-│   └── (bestaande project lijst)
+Workspace "My Company"
+├── 📁 Internal Projects
+│   └── (existing project list)
 │
-└── 🐙 GitHub Projecten
-    └── (repositories gekoppeld aan deze workspace)
+└── 🐙 GitHub Projects
+    └── (repositories linked to this workspace)
 ```
 
-#### Database Overwegingen
+#### Database Considerations
 
-Optie A: `GitHubRepository` krijgt directe `workspaceId`:
+Option A: `GitHubRepository` gets direct `workspaceId`:
 ```prisma
 model GitHubRepository {
-  // Bestaande velden...
+  // Existing fields...
   workspaceId  Int?
   workspace    Workspace? @relation(fields: [workspaceId], references: [id])
 }
 ```
 
-Optie B: Via bestaande Project koppeling (huidige situatie):
+Option B: Via existing Project link (current situation):
 - `GitHubRepository` → `Project` → `Workspace`
-- Nadeel: afhankelijk van intern project
+- Disadvantage: dependent on internal project
 
-**Aanbeveling:** Optie A - directe koppeling voor onafhankelijkheid.
+**Recommendation:** Option A - direct link for independence.
 
-#### Te Doen
+#### To Do
 
-- [ ] Beslissing maken: directe workspaceId of via Project
-- [ ] Database schema aanpassen indien nodig
-- [ ] Workspace API uitbreiden met GitHub projecten
-- [ ] Workspace UI splitsen in twee secties
-- [ ] GitHub project cards ontwerpen
+- [ ] Make decision: direct workspaceId or via Project
+- [ ] Adjust database schema if needed
+- [ ] Extend Workspace API with GitHub projects
+- [ ] Split Workspace UI into two sections
+- [ ] Design GitHub project cards
 
 ---
 
-### Stap 2: GitHub Project Board View
+### Step 2: GitHub Project Board View
 
-**Doel:** Een volledige board view voor GitHub projecten (zoals Kanban).
+**Goal:** A complete board view for GitHub projects (like Kanban).
 
-#### Componenten
+#### Components
 
 ```
 /workspace/:slug/github/:repoId
-├── Board View (issues als kaarten)
-├── List View (issues als lijst)
+├── Board View (issues as cards)
+├── List View (issues as list)
 ├── Milestones Tab
 ├── Pull Requests Tab
 └── Settings Tab
 ```
 
-#### Issues als Kaarten
+#### Issues as Cards
 
-GitHub issues worden getoond in kolommen:
-- Kolom bepaling via **labels** (bv. `status:todo`, `status:in-progress`)
-- Of via **milestone** groepering
-- Of via **assignee** groepering
+GitHub issues are shown in columns:
+- Column determination via **labels** (e.g. `status:todo`, `status:in-progress`)
+- Or via **milestone** grouping
+- Or via **assignee** grouping
 
-#### Te Doen
+#### To Do
 
-- [ ] Route structuur opzetten
-- [ ] GitHubProjectPage component maken
-- [ ] Board view component maken
-- [ ] Issue card component maken
-- [ ] Kolom configuratie (labels/milestones/assignees)
+- [ ] Set up route structure
+- [ ] Create GitHubProjectPage component
+- [ ] Create board view component
+- [ ] Create issue card component
+- [ ] Column configuration (labels/milestones/assignees)
 
 ---
 
-### Stap 3: Bi-directionele Sync (Kanbu → GitHub)
+### Step 3: Bi-directional Sync (Kanbu → GitHub)
 
-**Doel:** Wijzigingen in Kanbu's GitHub module worden gepusht naar GitHub.
+**Goal:** Changes in Kanbu's GitHub module are pushed to GitHub.
 
-#### Wat Synchroniseert
+#### What Synchronizes
 
-| Actie in Kanbu | Actie naar GitHub |
-|----------------|-------------------|
-| Issue title wijzigen | `PATCH /issues/:number` |
-| Issue body wijzigen | `PATCH /issues/:number` |
-| Issue sluiten | `PATCH /issues/:number {state: 'closed'}` |
-| Issue verplaatsen (label) | `PUT /issues/:number/labels` |
-| Comment toevoegen | `POST /issues/:number/comments` |
-| Milestone wijzigen | `PATCH /milestones/:number` |
+| Action in Kanbu | Action to GitHub |
+|-----------------|------------------|
+| Change issue title | `PATCH /issues/:number` |
+| Change issue body | `PATCH /issues/:number` |
+| Close issue | `PATCH /issues/:number {state: 'closed'}` |
+| Move issue (label) | `PUT /issues/:number/labels` |
+| Add comment | `POST /issues/:number/comments` |
+| Change milestone | `PATCH /milestones/:number` |
 
 #### Sync Logic
 
 ```typescript
-// Bij wijziging in GitHubIssue
+// On change in GitHubIssue
 async function syncIssueToGitHub(issueId: number, changes: Partial<GitHubIssue>) {
   const issue = await prisma.gitHubIssue.findUnique({
     where: { id: issueId },
@@ -214,18 +214,18 @@ async function syncIssueToGitHub(issueId: number, changes: Partial<GitHubIssue>)
 }
 ```
 
-#### Te Doen
+#### To Do
 
-- [ ] Sync service voor Kanbu → GitHub
-- [ ] Trigger bij wijzigingen in GitHub* tabellen
-- [ ] Conflict detectie (timestamp check)
-- [ ] Retry mechanisme bij failures
+- [ ] Sync service for Kanbu → GitHub
+- [ ] Trigger on changes in GitHub* tables
+- [ ] Conflict detection (timestamp check)
+- [ ] Retry mechanism on failures
 
 ---
 
-### Stap 4: UI Updates
+### Step 4: UI Updates
 
-#### Visuele Indicators
+#### Visual Indicators
 
 ```tsx
 // ProjectCard.tsx
@@ -263,11 +263,11 @@ function SyncStatus({ entityType, entityId }) {
 
 ---
 
-## Database Migraties
+## Database Migrations
 
-### Migratie 1: GitHubRepository directe workspace koppeling (optioneel)
+### Migration 1: GitHubRepository direct workspace link (optional)
 
-Als we besluiten voor Optie A (directe workspaceId):
+If we decide on Option A (direct workspaceId):
 
 ```sql
 -- AddWorkspaceIdToGitHubRepository
@@ -276,13 +276,13 @@ ALTER TABLE "GitHubRepository" ADD CONSTRAINT "GitHubRepository_workspaceId_fkey
   FOREIGN KEY ("workspaceId") REFERENCES "Workspace"("id")
   ON DELETE SET NULL;
 
--- Index voor snelle queries
+-- Index for fast queries
 CREATE INDEX "GitHubRepository_workspaceId_idx" ON "GitHubRepository"("workspaceId");
 ```
 
-### Database Aanpak
+### Database Approach
 
-De GitHub module gebruikt de bestaande `GitHub*` tabellen:
+The GitHub module uses the existing `GitHub*` tables:
 - `GitHubRepository`
 - `GitHubIssue`
 - `GitHubMilestone`
@@ -290,17 +290,17 @@ De GitHub module gebruikt de bestaande `GitHub*` tabellen:
 - `GitHubCommit`
 - `GitHubComment`
 
-De UI wordt volledig gebouwd rondom deze tabellen voor 1-op-1 feature parity met GitHub.
+The UI is completely built around these tables for 1-to-1 feature parity with GitHub.
 
 ---
 
-## Testing Strategie
+## Testing Strategy
 
 ### Unit Tests
 
 - [ ] `syncGitHubMilestoneToKanbu` - correct mapping
 - [ ] `syncKanbuMilestoneToGitHub` - correct API calls
-- [ ] Conflict detection werkt
+- [ ] Conflict detection works
 
 ### Integration Tests
 
@@ -311,23 +311,23 @@ De UI wordt volledig gebouwd rondom deze tabellen voor 1-op-1 feature parity met
 
 ### E2E Tests
 
-- [ ] Milestone aanmaken in GitHub → verschijnt in Kanbu
-- [ ] Milestone wijzigen in Kanbu → wijzigt in GitHub
-- [ ] Cross-project dependency met GitHub milestone
+- [ ] Milestone create in GitHub → appears in Kanbu
+- [ ] Milestone change in Kanbu → changes in GitHub
+- [ ] Cross-project dependency with GitHub milestone
 
 ---
 
 ## Rollback Plan
 
-Bij problemen:
+In case of problems:
 1. Disable bi-directional sync (feature flag)
-2. Fallback naar read-only mode (GitHub → Kanbu only)
-3. Data is veilig in beide systemen
+2. Fallback to read-only mode (GitHub → Kanbu only)
+3. Data is safe in both systems
 
 ---
 
-## Referenties
+## References
 
-- [VISIE.md](./VISIE.md) - De overkoepelende visie
+- [VISIE.md](./VISIE.md) - The overarching vision
 - [GitHub API Docs](https://docs.github.com/en/rest)
 - [Prisma Docs](https://www.prisma.io/docs)

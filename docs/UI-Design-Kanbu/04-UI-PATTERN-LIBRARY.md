@@ -1,91 +1,91 @@
-# Kanbu UI Pattern Library - Inventarisatie
+# Kanbu UI Pattern Library - Inventory
 
-Dit document bevat een complete inventarisatie van alle UI patronen die momenteel in de Kanbu codebase bestaan. Dit is een **feitelijke inventarisatie** - geen oordeel of aanbevelingen.
+This document contains a complete inventory of all UI patterns currently existing in the Kanbu codebase. This is a **factual inventory** - no judgments or recommendations.
 
 ---
 
-## 1. Layout Patronen
+## 1. Layout Patterns
 
-### 1.1 Layout Hiërarchie
+### 1.1 Layout Hierarchy
 
 ```
-BaseLayout (508 regels)
-├── DashboardLayout (gebruikt BaseLayout + DashboardSidebar)
-│   ├── AdminLayout (gebruikt DashboardLayout + AdminSidebar + page header)
-│   └── ProfileLayout (gebruikt DashboardLayout + ProfileSidebar + page header)
-└── ProjectLayout (gebruikt BaseLayout + ProjectSidebar)
+BaseLayout (508 lines)
+├── DashboardLayout (uses BaseLayout + DashboardSidebar)
+│   ├── AdminLayout (uses DashboardLayout + AdminSidebar + page header)
+│   └── ProfileLayout (uses DashboardLayout + ProfileSidebar + page header)
+└── ProjectLayout (uses BaseLayout + ProjectSidebar)
 ```
 
-### 1.2 BaseLayout Kenmerken
+### 1.2 BaseLayout Characteristics
 
-**Locatie:** `src/components/layout/BaseLayout.tsx`
+**Location:** `src/components/layout/BaseLayout.tsx`
 
-| Eigenschap | Waarde |
-|------------|--------|
-| Header hoogte | `h-10` (40px) |
-| Sidebar default breedte | 224px (w-56) |
-| Sidebar collapsed breedte | 56px (w-14) |
-| Sidebar min breedte | 160px |
-| Sidebar max breedte | 400px |
-| Content max breedte | 1600px (wanneer niet full-width) |
+| Property | Value |
+|----------|-------|
+| Header height | `h-10` (40px) |
+| Sidebar default width | 224px (w-56) |
+| Sidebar collapsed width | 56px (w-14) |
+| Sidebar min width | 160px |
+| Sidebar max width | 400px |
+| Content max width | 1600px (when not full-width) |
 | Content padding | `p-6` (24px) |
 
 **Features:**
-- Resizable sidebar met drag handle
+- Resizable sidebar with drag handle
 - Collapsible sidebar (icons-only mode)
-- Mobile responsive met overlay menu
-- Breadcrumb navigatie in header
-- User menu dropdown rechts
+- Mobile responsive with overlay menu
+- Breadcrumb navigation in header
+- User menu dropdown on right
 
-### 1.3 Specifieke Layouts
+### 1.3 Specific Layouts
 
 | Layout | Sidebar | Extra Header |
 |--------|---------|--------------|
 | DashboardLayout | DashboardSidebar | - |
 | ProjectLayout | ProjectSidebar | Presence indicator |
-| AdminLayout | AdminSidebar | Page header met titel |
-| ProfileLayout | ProfileSidebar | Page header met titel |
+| AdminLayout | AdminSidebar | Page header with title |
+| ProfileLayout | ProfileSidebar | Page header with title |
 
-### 1.4 Sidebar Varianten (7 gevonden)
+### 1.4 Sidebar Variants (7 found)
 
-| Sidebar | Locatie | Regels |
-|---------|---------|--------|
+| Sidebar | Location | Lines |
+|---------|----------|-------|
 | DashboardSidebar | `src/components/layout/DashboardSidebar.tsx` | ~200 |
 | ProjectSidebar | `src/components/layout/ProjectSidebar.tsx` | ~250 |
 | AdminSidebar | `src/components/layout/AdminSidebar.tsx` | ~150 |
 | ProfileSidebar | `src/components/layout/ProfileSidebar.tsx` | ~100 |
 | WikiSidebar | `src/components/wiki/WikiSidebar.tsx` | ~300 |
 | TaskDetailSidebar | `src/components/task/TaskDetailSidebar.tsx` | ~150 |
-| FilterSidebar | Diverse locaties | Varies |
+| FilterSidebar | Various locations | Varies |
 
 ---
 
-## 2. Page Header Patronen
+## 2. Page Header Patterns
 
-### 2.1 Gevonden Title Stijlen
+### 2.1 Found Title Styles
 
-Er zijn **7 verschillende title stijlen** gevonden in de codebase:
+There are **7 different title styles** found in the codebase:
 
-| Stijl | Voorbeelden |
-|-------|-------------|
+| Style | Examples |
+|-------|----------|
 | `text-3xl font-bold tracking-tight` | WorkspaceSettings, WikiPage, TagManagement, WorkspaceGroups, UserProfile |
 | `text-2xl font-bold` | ImportExport, AcceptInvite, BoardSettings |
 | `text-2xl font-semibold` | AnalyticsDashboard |
 | `text-xl font-bold` | WebhookSettings |
 | `text-xl font-semibold` | ApiSettings, AclPage |
-| `text-lg font-semibold` | Dialog titles, kleinere secties |
-| `text-lg font-medium` | Subsecties |
+| `text-lg font-semibold` | Dialog titles, smaller sections |
+| `text-lg font-medium` | Subsections |
 
-### 2.2 Header Layout Patronen
+### 2.2 Header Layout Patterns
 
-**Patroon A - Simple Header:**
+**Pattern A - Simple Header:**
 ```tsx
 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
   Page Title
 </h1>
 ```
 
-**Patroon B - Header met Icon:**
+**Pattern B - Header with Icon:**
 ```tsx
 <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
   <Icon className="w-8 h-8 text-blue-600" />
@@ -93,7 +93,7 @@ Er zijn **7 verschillende title stijlen** gevonden in de codebase:
 </h1>
 ```
 
-**Patroon C - Header met Stats:**
+**Pattern C - Header with Stats:**
 ```tsx
 <div className="flex items-center justify-between mb-4">
   <h1>...</h1>
@@ -106,7 +106,7 @@ Er zijn **7 verschillende title stijlen** gevonden in de codebase:
 </div>
 ```
 
-**Patroon D - Header met Back Button:**
+**Pattern D - Header with Back Button:**
 ```tsx
 <div className="flex items-center gap-4">
   <Link to="..." className="p-2 hover:bg-gray-100 rounded-lg">
@@ -116,10 +116,10 @@ Er zijn **7 verschillende title stijlen** gevonden in de codebase:
 </div>
 ```
 
-### 2.3 Page Container Patronen
+### 2.3 Page Container Patterns
 
-| Patroon | Classes | Gebruikt in |
-|---------|---------|-------------|
+| Pattern | Classes | Used in |
+|---------|---------|---------|
 | Max width container | `max-w-7xl mx-auto px-6 py-8` | AnalyticsDashboard |
 | Max width smaller | `max-w-4xl mx-auto` | Profile pages |
 | Full width | `px-6 py-8` | Board views |
@@ -127,14 +127,14 @@ Er zijn **7 verschillende title stijlen** gevonden in de codebase:
 
 ---
 
-## 3. Card/Panel Patronen
+## 3. Card/Panel Patterns
 
 ### 3.1 shadcn/ui Card Component
 
-**Locatie:** `src/components/ui/card.tsx`
+**Location:** `src/components/ui/card.tsx`
 
 ```tsx
-// Basis Card styling
+// Basic Card styling
 className="rounded-lg border bg-card text-card-foreground shadow-sm"
 
 // CardHeader
@@ -147,34 +147,34 @@ className="text-2xl font-semibold leading-none tracking-tight"
 className="p-6 pt-0"
 ```
 
-### 3.2 Handmatige Card Stijlen (veel voorkomend)
+### 3.2 Manual Card Styles (common)
 
-| Stijl | Aantal | Voorbeeld |
-|-------|--------|-----------|
-| `bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700` | 50+ | Meeste pages |
+| Style | Count | Example |
+|-------|-------|---------|
+| `bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700` | 50+ | Most pages |
 | `bg-white dark:bg-gray-700 rounded-lg p-3 shadow-sm` | 20+ | TaskCard, inline cards |
 | `bg-gray-50 dark:bg-gray-900 rounded-lg` | 15+ | Nested cards, sidebars |
-| `bg-white rounded-lg border shadow-sm` | 10+ | Simpele cards |
+| `bg-white rounded-lg border shadow-sm` | 10+ | Simple cards |
 
-### 3.3 Card Padding Varianten
+### 3.3 Card Padding Variants
 
-| Padding | Gebruikt voor |
-|---------|---------------|
-| `p-3` | Kleine cards, list items |
+| Padding | Used for |
+|---------|----------|
+| `p-3` | Small cards, list items |
 | `p-4` | Medium cards |
-| `p-6` | Grote cards, settings sections |
+| `p-6` | Large cards, settings sections |
 | `p-8` | Hero sections, empty states |
 
-### 3.4 Card Header Binnen Cards
+### 3.4 Card Headers Within Cards
 
 ```tsx
-// Patroon 1: Icon + Title
+// Pattern 1: Icon + Title
 <div className="flex items-center gap-2 mb-4">
   <Icon className="w-5 h-5 text-blue-500" />
   <h3 className="text-lg font-semibold">Title</h3>
 </div>
 
-// Patroon 2: Title + Action
+// Pattern 2: Title + Action
 <div className="flex items-center justify-between mb-4">
   <h3 className="text-lg font-semibold">Title</h3>
   <Button size="sm">Action</Button>
@@ -183,11 +183,11 @@ className="p-6 pt-0"
 
 ---
 
-## 4. Form Element Patronen
+## 4. Form Element Patterns
 
 ### 4.1 shadcn/ui Input Component
 
-**Locatie:** `src/components/ui/input.tsx`
+**Location:** `src/components/ui/input.tsx`
 
 ```tsx
 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2
@@ -196,20 +196,20 @@ className="flex h-10 w-full rounded-md border border-input bg-background px-3 py
            focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
 ```
 
-### 4.2 Handmatige Input Stijlen
+### 4.2 Manual Input Styles
 
-Er worden **108 handmatige `<input>` of `<Input>` componenten** gebruikt.
+There are **108 manual `<input>` or `<Input>` components** used.
 
-**Meest voorkomende handmatige stijl:**
+**Most common manual style:**
 ```tsx
 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
            bg-white dark:bg-gray-700 text-gray-900 dark:text-white
            focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 ```
 
-### 4.3 Form Layout Patronen
+### 4.3 Form Layout Patterns
 
-**Patroon A - Vertical Stack:**
+**Pattern A - Vertical Stack:**
 ```tsx
 <div className="space-y-4">
   <div>
@@ -219,7 +219,7 @@ className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-
 </div>
 ```
 
-**Patroon B - Grid Layout:**
+**Pattern B - Grid Layout:**
 ```tsx
 <div className="grid grid-cols-2 gap-4">
   <div>
@@ -229,68 +229,68 @@ className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-
 </div>
 ```
 
-### 4.4 Label Stijlen
+### 4.4 Label Styles
 
-| Stijl | Voorbeelden |
-|-------|-------------|
-| `text-sm font-medium text-gray-700 dark:text-gray-300` | Meest voorkomend |
+| Style | Examples |
+|-------|----------|
+| `text-sm font-medium text-gray-700 dark:text-gray-300` | Most common |
 | `text-sm font-medium mb-1` | Compact |
-| `block text-sm font-medium mb-2` | Met spacing |
+| `block text-sm font-medium mb-2` | With spacing |
 
-### 4.5 Select/Dropdown Componenten
+### 4.5 Select/Dropdown Components
 
 - **shadcn/ui Select:** `src/components/ui/select.tsx` (Radix-based)
-- **Native selects:** ~50 instances met handmatige styling
+- **Native selects:** ~50 instances with manual styling
 
 ---
 
-## 5. Modal/Dialog Patronen
+## 5. Modal/Dialog Patterns
 
 ### 5.1 shadcn/ui Dialog Component
 
-**Locatie:** `src/components/ui/dialog.tsx`
+**Location:** `src/components/ui/dialog.tsx`
 
-| Onderdeel | Styling |
+| Component | Styling |
 |-----------|---------|
 | Overlay | `bg-black/50 backdrop-blur-sm` |
 | Content | `max-w-4xl p-6 rounded-lg shadow-lg` |
 | Title | `text-lg font-semibold leading-none tracking-tight` |
 | Description | `text-sm text-muted-foreground` |
 
-### 5.2 Dialog Gebruikslocaties (16 bestanden)
+### 5.2 Dialog Usage Locations (16 files)
 
 | Component | Type |
 |-----------|------|
-| TaskDetailModal | Groot, complex |
+| TaskDetailModal | Large, complex |
 | SubtaskEditModal | Medium |
 | WikiSearchDialog | Medium |
 | FactCheckDialog | Medium |
 | ContradictionDialog | Medium |
 | AddMembersModal | Medium |
-| ConflictWarningModal | Klein |
+| ConflictWarningModal | Small |
 | WikiDuplicateManager | Medium |
-| WikiVersionHistory | Groot |
+| WikiVersionHistory | Large |
 | WikiTemporalSearch | Medium |
 
-### 5.3 Modal Breedtes
+### 5.3 Modal Widths
 
-| Breedte | Gebruik |
-|---------|---------|
-| `max-w-sm` | Confirmatie dialogs |
-| `max-w-md` | Kleine forms |
+| Width | Usage |
+|-------|-------|
+| `max-w-sm` | Confirmation dialogs |
+| `max-w-md` | Small forms |
 | `max-w-lg` | Medium forms |
-| `max-w-xl` | Grote forms |
+| `max-w-xl` | Large forms |
 | `max-w-2xl` | Detail views |
-| `max-w-4xl` | Complexe modals (default) |
+| `max-w-4xl` | Complex modals (default) |
 | `max-w-6xl` | Full feature modals |
 
 ---
 
-## 6. Button Patronen
+## 6. Button Patterns
 
 ### 6.1 shadcn/ui Button Variants
 
-**Locatie:** `src/components/ui/button.tsx`
+**Location:** `src/components/ui/button.tsx`
 
 | Variant | Styling |
 |---------|---------|
@@ -310,97 +310,97 @@ className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-
 | `lg` | `h-11 rounded-md px-8` |
 | `icon` | `h-10 w-10` |
 
-### 6.3 Button Gebruik Statistieken
+### 6.3 Button Usage Statistics
 
-- **Totaal `<Button>` componenten:** 217 instances in 50 bestanden
-- **Meest voorkomende variant:** `default` en `outline`
-- **Meest voorkomende size:** `default` en `sm`
+- **Total `<Button>` components:** 217 instances in 50 files
+- **Most common variant:** `default` and `outline`
+- **Most common size:** `default` and `sm`
 
-### 6.4 Handmatige Button Stijlen
+### 6.4 Manual Button Styles
 
-Naast de shadcn Button worden er ook handmatige buttons gebruikt:
+Besides the shadcn Button, manual buttons are also used:
 
 ```tsx
-// Primary handmatig
+// Primary manual
 className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg"
 
-// Secondary handmatig
+// Secondary manual
 className="px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200
            dark:hover:bg-gray-600 rounded-lg"
 
-// Icon button handmatig
+// Icon button manual
 className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg"
 ```
 
 ---
 
-## 7. UI Component Bibliotheek
+## 7. UI Component Library
 
-### 7.1 shadcn/ui Componenten (20 bestanden)
+### 7.1 shadcn/ui Components (20 files)
 
-| Component | Bestand | Radix-based |
-|-----------|---------|-------------|
-| Button | button.tsx | Nee (Slot) |
-| Card | card.tsx | Nee |
-| Input | input.tsx | Nee |
-| Label | label.tsx | Ja |
-| Dialog | dialog.tsx | Ja |
-| Dropdown Menu | dropdown-menu.tsx | Ja |
-| Select | select.tsx | Ja |
-| Tabs | tabs.tsx | Ja |
-| Tooltip | tooltip.tsx | Ja |
-| Badge | badge.tsx | Nee |
-| Checkbox | checkbox.tsx | Ja |
-| Switch | switch.tsx | Ja |
-| Slider | slider.tsx | Ja |
-| Progress | progress.tsx | Ja |
-| Scroll Area | scroll-area.tsx | Ja |
-| Separator | separator.tsx | Ja |
-| Collapsible | collapsible.tsx | Ja |
-| Sonner (Toast) | sonner.tsx | Nee |
+| Component | File | Radix-based |
+|-----------|------|-------------|
+| Button | button.tsx | No (Slot) |
+| Card | card.tsx | No |
+| Input | input.tsx | No |
+| Label | label.tsx | Yes |
+| Dialog | dialog.tsx | Yes |
+| Dropdown Menu | dropdown-menu.tsx | Yes |
+| Select | select.tsx | Yes |
+| Tabs | tabs.tsx | Yes |
+| Tooltip | tooltip.tsx | Yes |
+| Badge | badge.tsx | No |
+| Checkbox | checkbox.tsx | Yes |
+| Switch | switch.tsx | Yes |
+| Slider | slider.tsx | Yes |
+| Progress | progress.tsx | Yes |
+| Scroll Area | scroll-area.tsx | Yes |
+| Separator | separator.tsx | Yes |
+| Collapsible | collapsible.tsx | Yes |
+| Sonner (Toast) | sonner.tsx | No |
 | HoverPopover | HoverPopover.tsx | Custom |
 | UndoRedoButtons | UndoRedoButtons.tsx | Custom |
 
 ---
 
-## 8. Spacing & Sizing Patronen
+## 8. Spacing & Sizing Patterns
 
-### 8.1 Spacing Schaal (Tailwind)
+### 8.1 Spacing Scale (Tailwind)
 
-| Token | Pixels | Gebruik |
-|-------|--------|---------|
+| Token | Pixels | Usage |
+|-------|--------|-------|
 | `1` | 4px | Micro spacing |
-| `2` | 8px | Kleine gaps |
+| `2` | 8px | Small gaps |
 | `3` | 12px | List item padding |
 | `4` | 16px | Card padding, gaps |
 | `6` | 24px | Section padding |
 | `8` | 32px | Large spacing |
 
-### 8.2 Gap Patronen
+### 8.2 Gap Patterns
 
-| Pattern | Gebruik |
-|---------|---------|
-| `gap-2` | Icons naast text |
+| Pattern | Usage |
+|---------|-------|
+| `gap-2` | Icons next to text |
 | `gap-3` | List items |
 | `gap-4` | Card grids |
 | `gap-6` | Section spacing |
 
-### 8.3 Margin Patronen
+### 8.3 Margin Patterns
 
-| Pattern | Gebruik |
-|---------|---------|
-| `mb-2` | Label naar input |
-| `mb-4` | Sectie headers |
+| Pattern | Usage |
+|---------|-------|
+| `mb-2` | Label to input |
+| `mb-4` | Section headers |
 | `mb-6` | Page sections |
 | `mb-8` | Major sections |
 
 ---
 
-## 9. Color Patronen (Samenvatting)
+## 9. Color Patterns (Summary)
 
 ### 9.1 Design System Colors (CSS Variables)
 
-De design tokens zijn gedefinieerd in `globals.css`:
+Design tokens are defined in `globals.css`:
 
 | Token | Light | Dark |
 |-------|-------|------|
@@ -412,16 +412,16 @@ De design tokens zijn gedefinieerd in `globals.css`:
 | `--accent` | `240 4.8% 95.9%` | `240 3.7% 15.9%` |
 | `--destructive` | `0 84.2% 60.2%` | `0 62.8% 30.6%` |
 
-### 9.2 Hardcoded Colors (Probleem)
+### 9.2 Hardcoded Colors (Problem)
 
-| Type | Aantal |
-|------|--------|
+| Type | Count |
+|------|-------|
 | Hardcoded `bg-*` classes | 1,443 |
 | Hardcoded `text-*` classes | 2,405 |
 | Design system usage | 804 |
 | **Ratio hardcoded vs design system** | **~5:1** |
 
-### 9.3 Priority Color Inconsistentie
+### 9.3 Priority Color Inconsistency
 
 | View | LOW | MEDIUM | HIGH | URGENT |
 |------|-----|--------|------|--------|
@@ -430,7 +430,7 @@ De design tokens zijn gedefinieerd in `globals.css`:
 
 ---
 
-## 10. Responsive Patronen
+## 10. Responsive Patterns
 
 ### 10.1 Breakpoints (Tailwind defaults)
 
@@ -442,7 +442,7 @@ De design tokens zijn gedefinieerd in `globals.css`:
 | `xl` | 1280px |
 | `2xl` | 1536px |
 
-### 10.2 Responsive Patronen
+### 10.2 Responsive Patterns
 
 **Grid Responsive:**
 ```tsx
@@ -451,8 +451,8 @@ className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
 
 **Hide/Show:**
 ```tsx
-className="hidden md:block"  // Verberg op mobile
-className="md:hidden"        // Alleen mobile
+className="hidden md:block"  // Hide on mobile
+className="md:hidden"        // Mobile only
 ```
 
 **Text Size:**
@@ -462,7 +462,7 @@ className="text-sm md:text-base"
 
 ---
 
-## 11. State Patronen
+## 11. State Patterns
 
 ### 11.1 Loading States
 
@@ -501,28 +501,28 @@ className="text-sm md:text-base"
 
 ---
 
-## 12. Statistieken Samenvatting
+## 12. Statistics Summary
 
-| Metric | Waarde |
-|--------|--------|
-| **Totaal frontend bestanden** | 180+ |
-| **Totaal regels code** | 85,000+ |
-| **shadcn/ui componenten** | 20 |
-| **Layout componenten** | 5 |
-| **Sidebar varianten** | 7 |
-| **Dialog/Modal bestanden** | 16 |
+| Metric | Value |
+|--------|-------|
+| **Total frontend files** | 180+ |
+| **Total lines of code** | 85,000+ |
+| **shadcn/ui components** | 20 |
+| **Layout components** | 5 |
+| **Sidebar variants** | 7 |
+| **Dialog/Modal files** | 16 |
 | **Button instances** | 217 |
 | **Input instances** | 108 |
-| **Hardcoded kleuren** | 3,848 |
-| **Design system kleuren** | 804 |
-| **Title stijl varianten** | 7 |
-| **Card stijl varianten** | 4+ |
+| **Hardcoded colors** | 3,848 |
+| **Design system colors** | 804 |
+| **Title style variants** | 7 |
+| **Card style variants** | 4+ |
 
 ---
 
-## 13. Bestanden per Categorie
+## 13. Files by Category
 
-### 13.1 Layout Bestanden
+### 13.1 Layout Files
 
 ```
 src/components/layout/
@@ -538,7 +538,7 @@ src/components/layout/
 └── WidthToggle.tsx
 ```
 
-### 13.2 UI Component Bestanden
+### 13.2 UI Component Files
 
 ```
 src/components/ui/
@@ -566,5 +566,5 @@ src/components/ui/
 
 ---
 
-*Document gegenereerd: 2026-01-15*
-*Versie: 1.0.0*
+*Document generated: 2026-01-15*
+*Version: 1.0.0*

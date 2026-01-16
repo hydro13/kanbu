@@ -1,8 +1,8 @@
 # Kanbu Permission System - AD-Style Design
 
-## Overzicht
+## Overview
 
-Een Active Directory-achtig permission systeem met Security Groups, LDAP-compatibele structuur, en granulaire rechten.
+An Active Directory-like permission system with Security Groups, LDAP-compatible structure, and granular permissions.
 
 ---
 
@@ -11,22 +11,22 @@ Een Active Directory-achtig permission systeem met Security Groups, LDAP-compati
 ### 1.1 Security Groups
 
 ```prisma
-// Security Group - de kern van het systeem
+// Security Group - the core of the system
 model SecurityGroup {
   id              Int       @id @default(autoincrement())
 
-  // LDAP-compatible velden
-  objectGuid      String    @unique @default(uuid())  // Unieke identifier
+  // LDAP-compatible fields
+  objectGuid      String    @unique @default(uuid())  // Unique identifier
   name            String    @unique                    // sAMAccountName: "project-kanbu-editors"
   displayName     String                               // "Project Kanbu Editors"
   description     String?
   distinguishedName String  @unique                    // "CN=Editors,OU=Kanbu,OU=Projects,DC=kanbu,DC=local"
 
-  // Type en scope
+  // Type and scope
   type            SecurityGroupType                    // SYSTEM, WORKSPACE, PROJECT, CUSTOM
   scope           SecurityGroupScope   @default(DOMAIN_LOCAL)  // DOMAIN_LOCAL, GLOBAL, UNIVERSAL
 
-  // Hiërarchie koppeling (optioneel)
+  // Hierarchy linking (optional)
   workspaceId     Int?
   workspace       Workspace?  @relation(fields: [workspaceId], references: [id])
   projectId       Int?
@@ -39,7 +39,7 @@ model SecurityGroup {
 
   // Source tracking
   source          GroupSource      @default(LOCAL)     // LOCAL, LDAP, AZURE_AD
-  externalId      String?                              // ID in externe directory
+  externalId      String?                              // ID in external directory
 
   // Timestamps
   createdAt       DateTime  @default(now())
@@ -64,15 +64,15 @@ enum SecurityGroupType {
 }
 
 enum SecurityGroupScope {
-  DOMAIN_LOCAL      // Alleen binnen dit domein
-  GLOBAL            // Kan members hebben uit andere domeinen
-  UNIVERSAL         // Kan overal gebruikt worden
+  DOMAIN_LOCAL      // Only within this domain
+  GLOBAL            // Can have members from other domains
+  UNIVERSAL         // Can be used anywhere
 }
 
 enum GroupSource {
-  LOCAL             // Aangemaakt in Kanbu
-  LDAP              // Gesynchroniseerd van LDAP
-  AZURE_AD          // Gesynchroniseerd van Azure AD
+  LOCAL             // Created in Kanbu
+  LDAP              // Synchronized from LDAP
+  AZURE_AD          // Synchronized from Azure AD
   SCIM              // Via SCIM provisioning
 }
 ```
@@ -80,7 +80,7 @@ enum GroupSource {
 ### 1.2 Group Membership
 
 ```prisma
-// Koppeling tussen users en groups
+// Link between users and groups
 model SecurityGroupMember {
   id              Int       @id @default(autoincrement())
 
@@ -91,12 +91,12 @@ model SecurityGroupMember {
   user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Membership type
-  memberType      MemberType @default(DIRECT)  // DIRECT of via nested group
+  memberType      MemberType @default(DIRECT)  // DIRECT or via nested group
 
   // Audit
   addedBy         Int?
   addedAt         DateTime  @default(now())
-  expiresAt       DateTime?                    // Tijdelijk lidmaatschap
+  expiresAt       DateTime?                    // Temporary membership
 
   @@unique([groupId, userId])
   @@index([userId])
@@ -104,16 +104,16 @@ model SecurityGroupMember {
 }
 
 enum MemberType {
-  DIRECT            // Direct lid van de groep
-  NESTED            // Lid via een nested group
-  DYNAMIC           // Dynamisch op basis van rules
+  DIRECT            // Direct member of the group
+  NESTED            // Member via a nested group
+  DYNAMIC           // Dynamic based on rules
 }
 ```
 
 ### 1.3 Permissions
 
 ```prisma
-// Permission definitie
+// Permission definition
 model Permission {
   id              Int       @id @default(autoincrement())
 
@@ -122,15 +122,15 @@ model Permission {
   displayName     String              // "Create Tasks"
   description     String?
 
-  // Categorisatie
+  // Categorization
   category        String              // "tasks", "sprints", "milestones", etc.
 
-  // Hiërarchie (voor inheritance)
+  // Hierarchy (for inheritance)
   parentId        Int?
   parent          Permission?   @relation("PermissionHierarchy", fields: [parentId], references: [id])
   children        Permission[]  @relation("PermissionHierarchy")
 
-  // Volgorde voor UI
+  // Sort order for UI
   sortOrder       Int       @default(0)
 
   // Relations
@@ -139,7 +139,7 @@ model Permission {
   @@index([category])
 }
 
-// Koppeling tussen groups en permissions
+// Link between groups and permissions
 model SecurityGroupPermission {
   id              Int       @id @default(autoincrement())
 
@@ -149,18 +149,18 @@ model SecurityGroupPermission {
   permissionId    Int
   permission      Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
-  // Allow/Deny zoals Windows
+  // Allow/Deny like Windows
   accessType      AccessType    @default(ALLOW)
 
-  // Scope - waar geldt deze permission?
-  // NULL = overal waar de groep scope heeft
+  // Scope - where does this permission apply?
+  // NULL = everywhere the group has scope
   workspaceId     Int?
   workspace       Workspace?  @relation(fields: [workspaceId], references: [id])
   projectId       Int?
   project         Project?    @relation(fields: [projectId], references: [id])
 
   // Inheritance
-  inherited       Boolean   @default(false)   // Van parent group?
+  inherited       Boolean   @default(false)   // From parent group?
 
   @@unique([groupId, permissionId, workspaceId, projectId])
   @@index([groupId])
@@ -169,122 +169,122 @@ model SecurityGroupPermission {
 
 enum AccessType {
   ALLOW
-  DENY              // Deny overruled ALTIJD allow (zoals Windows)
+  DENY              // Deny ALWAYS overrides allow (like Windows)
 }
 ```
 
 ---
 
-## 2. Permission Categorieën
+## 2. Permission Categories
 
-### 2.1 Systeem Permissions
+### 2.1 System Permissions
 
-| Permission | Beschrijving |
-|------------|--------------|
-| `system.admin` | Volledige systeemtoegang |
-| `system.users.view` | Gebruikers bekijken |
-| `system.users.manage` | Gebruikers aanmaken/wijzigen |
-| `system.groups.view` | Security groups bekijken |
-| `system.groups.manage` | Security groups beheren |
-| `system.settings.view` | Systeeminstellingen bekijken |
-| `system.settings.manage` | Systeeminstellingen wijzigen |
+| Permission | Description |
+|------------|-------------|
+| `system.admin` | Full system access |
+| `system.users.view` | View users |
+| `system.users.manage` | Create/modify users |
+| `system.groups.view` | View security groups |
+| `system.groups.manage` | Manage security groups |
+| `system.settings.view` | View system settings |
+| `system.settings.manage` | Modify system settings |
 
 ### 2.2 Workspace Permissions
 
-| Permission | Beschrijving |
-|------------|--------------|
-| `workspace.view` | Workspace bekijken |
-| `workspace.settings.manage` | Workspace instellingen wijzigen |
-| `workspace.members.view` | Members bekijken |
-| `workspace.members.manage` | Members toevoegen/verwijderen |
-| `workspace.projects.create` | Nieuwe projecten aanmaken |
-| `workspace.projects.delete` | Projecten verwijderen |
+| Permission | Description |
+|------------|-------------|
+| `workspace.view` | View workspace |
+| `workspace.settings.manage` | Modify workspace settings |
+| `workspace.members.view` | View members |
+| `workspace.members.manage` | Add/remove members |
+| `workspace.projects.create` | Create new projects |
+| `workspace.projects.delete` | Delete projects |
 
 ### 2.3 Project Permissions
 
-| Permission | Beschrijving |
-|------------|--------------|
-| `project.view` | Project bekijken |
-| `project.settings.manage` | Project instellingen wijzigen |
-| `project.members.view` | Project members bekijken |
-| `project.members.manage` | Project members beheren |
-| `project.delete` | Project verwijderen |
+| Permission | Description |
+|------------|-------------|
+| `project.view` | View project |
+| `project.settings.manage` | Modify project settings |
+| `project.members.view` | View project members |
+| `project.members.manage` | Manage project members |
+| `project.delete` | Delete project |
 
 ### 2.4 Board/Tasks Permissions
 
-| Permission | Beschrijving |
-|------------|--------------|
-| `tasks.view` | Tasks bekijken |
-| `tasks.create` | Tasks aanmaken |
-| `tasks.edit` | Tasks bewerken |
-| `tasks.delete` | Tasks verwijderen |
-| `tasks.move` | Tasks verplaatsen (drag & drop) |
-| `tasks.assign` | Tasks toewijzen aan users |
-| `tasks.comment` | Comments plaatsen |
-| `board.columns.manage` | Kolommen beheren |
-| `board.swimlanes.manage` | Swimlanes beheren |
+| Permission | Description |
+|------------|-------------|
+| `tasks.view` | View tasks |
+| `tasks.create` | Create tasks |
+| `tasks.edit` | Edit tasks |
+| `tasks.delete` | Delete tasks |
+| `tasks.move` | Move tasks (drag & drop) |
+| `tasks.assign` | Assign tasks to users |
+| `tasks.comment` | Post comments |
+| `board.columns.manage` | Manage columns |
+| `board.swimlanes.manage` | Manage swimlanes |
 
 ### 2.5 Planning Permissions
 
-| Permission | Beschrijving |
-|------------|--------------|
-| `sprints.view` | Sprints bekijken |
-| `sprints.manage` | Sprints aanmaken/wijzigen/verwijderen |
-| `milestones.view` | Milestones bekijken |
-| `milestones.manage` | Milestones aanmaken/wijzigen/verwijderen |
-| `analytics.view` | Analytics dashboard bekijken |
+| Permission | Description |
+|------------|-------------|
+| `sprints.view` | View sprints |
+| `sprints.manage` | Create/modify/delete sprints |
+| `milestones.view` | View milestones |
+| `milestones.manage` | Create/modify/delete milestones |
+| `analytics.view` | View analytics dashboard |
 
 ### 2.6 Integration Permissions
 
-| Permission | Beschrijving |
-|------------|--------------|
-| `webhooks.view` | Webhooks bekijken |
-| `webhooks.manage` | Webhooks aanmaken/wijzigen/verwijderen |
-| `import.execute` | Data importeren |
-| `export.execute` | Data exporteren |
-| `api.access` | API toegang |
+| Permission | Description |
+|------------|-------------|
+| `webhooks.view` | View webhooks |
+| `webhooks.manage` | Create/modify/delete webhooks |
+| `import.execute` | Import data |
+| `export.execute` | Export data |
+| `api.access` | API access |
 
 ---
 
-## 3. Standaard Security Groups
+## 3. Standard Security Groups
 
-### 3.1 System-level Groups (automatisch)
+### 3.1 System-level Groups (automatic)
 
 | Group | Permissions |
 |-------|-------------|
 | **Domain Admins** | `system.admin` (full control) |
-| **Domain Users** | Basis authenticatie |
+| **Domain Users** | Basic authentication |
 
 ### 3.2 Workspace-level Groups (per workspace)
 
 | Group Template | Permissions |
 |----------------|-------------|
-| **{Workspace} Admins** | Alles binnen workspace |
+| **{Workspace} Admins** | Everything within workspace |
 | **{Workspace} Members** | `workspace.view`, `workspace.members.view` |
 
 ### 3.3 Project-level Groups (per project)
 
 | Group Template | Permissions |
 |----------------|-------------|
-| **{Project} Admins** | Full control op project |
-| **{Project} Managers** | Alles behalve delete project, members manage |
+| **{Project} Admins** | Full control on project |
+| **{Project} Managers** | Everything except delete project, members manage |
 | **{Project} Editors** | Tasks CRUD, sprints/milestones view |
-| **{Project} Viewers** | Alleen lezen |
+| **{Project} Viewers** | Read-only |
 
 ---
 
 ## 4. Permission Inheritance & Resolution
 
-### 4.1 Inheritance Regels
+### 4.1 Inheritance Rules
 
 ```
-1. DENY overruled ALTIJD ALLOW (net als Windows)
-2. Expliciete permission > inherited permission
-3. Specifieke scope > algemene scope
-4. Nested group permissions worden ge-merged
+1. DENY ALWAYS overrides ALLOW (just like Windows)
+2. Explicit permission > inherited permission
+3. Specific scope > general scope
+4. Nested group permissions are merged
 ```
 
-### 4.2 Resolution Algoritme
+### 4.2 Resolution Algorithm
 
 ```typescript
 function resolvePermission(
@@ -292,23 +292,23 @@ function resolvePermission(
   permission: string,
   scope: { workspaceId?: number, projectId?: number }
 ): boolean {
-  // 1. Haal alle groepen op waar user (direct of nested) lid van is
+  // 1. Get all groups where user is a member (direct or nested)
   const groups = getUserGroups(userId, { includeNested: true });
 
-  // 2. Haal alle permission entries op voor deze permission + scope
+  // 2. Get all permission entries for this permission + scope
   const entries = getPermissionEntries(groups, permission, scope);
 
-  // 3. Check voor DENY (hoogste prioriteit)
+  // 3. Check for DENY (highest priority)
   if (entries.some(e => e.accessType === 'DENY')) {
     return false;
   }
 
-  // 4. Check voor ALLOW
+  // 4. Check for ALLOW
   if (entries.some(e => e.accessType === 'ALLOW')) {
     return true;
   }
 
-  // 5. Geen expliciete permission = geen toegang
+  // 5. No explicit permission = no access
   return false;
 }
 ```
@@ -365,7 +365,7 @@ function resolvePermission(
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 5.2 Object Tree (linkerkolom)
+### 5.2 Object Tree (left column)
 
 ```
 ┌──────────────────────────────────┐
@@ -445,31 +445,31 @@ permission.check({ userId, permission, workspaceId?, projectId? })
 
 ---
 
-## 7. Implementatie Volgorde
+## 7. Implementation Order
 
-### Fase 1: Database & Core (Week 1)
-1. ✅ Database schema migreren
+### Phase 1: Database & Core (Week 1)
+1. ✅ Migrate database schema
 2. Permission seed data
 3. PermissionService core logic
-4. Migratie bestaande roles naar groups
+4. Migrate existing roles to groups
 
-### Fase 2: API Layer (Week 1-2)
-1. tRPC procedures voor groups
-2. tRPC procedures voor permissions
+### Phase 2: API Layer (Week 1-2)
+1. tRPC procedures for groups
+2. tRPC procedures for permissions
 3. Permission middleware/guards
 
-### Fase 3: UI Components (Week 2)
+### Phase 3: UI Components (Week 2)
 1. Object tree component
 2. Permission grid component
 3. Group selector/picker
 4. User group membership editor
 
-### Fase 4: Integration (Week 2-3)
-1. Bestaande code refactoren naar nieuwe permission checks
-2. UI elements tonen/verbergen op basis van permissions
+### Phase 4: Integration (Week 2-3)
+1. Refactor existing code to new permission checks
+2. Show/hide UI elements based on permissions
 3. Testing & debugging
 
-### Fase 5: Advanced Features (Later)
+### Phase 5: Advanced Features (Later)
 1. LDAP sync
 2. Audit logging
 3. Permission templates
@@ -477,25 +477,25 @@ permission.check({ userId, permission, workspaceId?, projectId? })
 
 ---
 
-## 8. Migratie van Bestaand Systeem
+## 8. Migration from Existing System
 
-### Huidige structuur:
-- `WorkspaceUser` met `role`: OWNER, ADMIN, MEMBER, VIEWER
-- `ProjectMember` met `role`: OWNER, MANAGER, MEMBER, VIEWER
+### Current structure:
+- `WorkspaceUser` with `role`: OWNER, ADMIN, MEMBER, VIEWER
+- `ProjectMember` with `role`: OWNER, MANAGER, MEMBER, VIEWER
 
-### Migratie:
-1. Creëer security groups per workspace/project
-2. Map oude roles naar nieuwe groups
-3. Kopieer memberships
+### Migration:
+1. Create security groups per workspace/project
+2. Map old roles to new groups
+3. Copy memberships
 4. Update permission checks in code
-5. Verwijder oude role velden (later, na validatie)
+5. Remove old role fields (later, after validation)
 
 ---
 
-## Vragen ter Verduidelijking
+## Questions for Clarification
 
-1. **Nested groups**: Wil je volledige nested group support (group in group)?
-2. **Permission inheritance**: Moet een Project group automatisch workspace permissions erven?
-3. **Tijdelijke toegang**: Wil je dat memberships kunnen verlopen?
-4. **Audit trail**: Hoe uitgebreid moet de logging zijn?
-5. **Custom groups**: Mogen users zelf groups aanmaken of alleen admins?
+1. **Nested groups**: Do you want full nested group support (group in group)?
+2. **Permission inheritance**: Should a Project group automatically inherit workspace permissions?
+3. **Temporary access**: Do you want memberships to be able to expire?
+4. **Audit trail**: How extensive should the logging be?
+5. **Custom groups**: Can users create groups themselves or only admins?

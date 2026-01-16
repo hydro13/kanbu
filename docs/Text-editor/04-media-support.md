@@ -1,18 +1,18 @@
 # Media Support in Rich Text Editor
 
-## Overzicht
+## Overview
 
-Alle rich text velden in Kanbu (workspace descriptions, project descriptions, task context, sticky notes, wiki pages) ondersteunen embedded media inclusief:
+All rich text fields in Kanbu (workspace descriptions, project descriptions, task context, sticky notes, wiki pages) support embedded media including:
 
-- Afbeeldingen (upload, URL, paste)
-- Video's (upload, YouTube, Vimeo embeds)
-- Bestanden (documenten, PDF's)
-- Code blocks met syntax highlighting
-- Embeds (externe content)
+- Images (upload, URL, paste)
+- Videos (upload, YouTube, Vimeo embeds)
+- Files (documents, PDFs)
+- Code blocks with syntax highlighting
+- Embeds (external content)
 
 ## Media Types
 
-### 1. Afbeeldingen
+### 1. Images
 
 #### Upload Flow
 
@@ -95,7 +95,7 @@ interface ImageProcessingConfig {
 }
 ```
 
-### 2. Video's
+### 2. Videos
 
 #### Video Sources
 
@@ -167,7 +167,7 @@ function parseVideoUrl(url: string): VideoInfo | null {
 }
 ```
 
-### 3. Bestanden
+### 3. Files
 
 #### File Attachments
 
@@ -385,7 +385,7 @@ interface UploadResponse {
 
 ### Direct Upload (Presigned URLs)
 
-Voor grote bestanden, direct naar S3:
+For large files, upload directly to S3:
 
 ```typescript
 // GET /api/media/upload-url

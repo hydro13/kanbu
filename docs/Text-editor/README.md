@@ -1,161 +1,161 @@
 # Kanbu Rich Text Editor
 
-## Overzicht
+## Overview
 
-Dit document beschrijft de architectuur en strategie voor de rich text editor in Kanbu, gebaseerd op **Lexical** (Meta's editor framework). De editor wordt gebruikt voor alle tekstvelden die rijke content ondersteunen, inclusief media, links, en cross-referenties naar wiki pagina's.
+This document describes the architecture and strategy for the rich text editor in Kanbu, based on **Lexical** (Meta's editor framework). The editor is used for all text fields that support rich content, including media, links, and cross-references to wiki pages.
 
-> **Implementatie Tracking:** Zie [TODO.md](./TODO.md) voor de huidige status en voortgang.
+> **Implementation Tracking:** See [TODO.md](./TODO.md) for current status and progress.
 
-## Gekozen Editor: Lexical
+## Chosen Editor: Lexical
 
-### Waarom Lexical?
+### Why Lexical?
 
-Na evaluatie van meerdere editor frameworks is gekozen voor [Lexical](https://lexical.dev/):
+After evaluating multiple editor frameworks, [Lexical](https://lexical.dev/) was chosen:
 
-| Framework | Overwogen | Reden voor/tegen |
+| Framework | Considered | Reason for/against |
 |-----------|-----------|------------------|
-| **Lexical** | Gekozen | Extensible, performant, React-first, TypeScript, actief onderhouden door Meta |
-| Monaco Editor | Afgewezen | Te zwaar, primair voor code editing, niet voor rich text |
-| TipTap | Overwogen | Goede optie, maar Lexical is nieuwer en performanter |
-| Slate | Overwogen | Complexere API, minder actieve ontwikkeling |
-| Quill | Afgewezen | Verouderd, minder flexibel |
-| Plate | Overwogen | Gebaseerd op Slate, extra abstractielaag |
-| Editor.js | Afgewezen | Block-based, minder geschikt voor inline editing |
+| **Lexical** | Chosen | Extensible, performant, React-first, TypeScript, actively maintained by Meta |
+| Monaco Editor | Rejected | Too heavy, primarily for code editing, not for rich text |
+| TipTap | Considered | Good option, but Lexical is newer and more performant |
+| Slate | Considered | More complex API, less active development |
+| Quill | Rejected | Outdated, less flexible |
+| Plate | Considered | Based on Slate, extra abstraction layer |
+| Editor.js | Rejected | Block-based, less suitable for inline editing |
 
-### Lexical Voordelen
+### Lexical Advantages
 
 1. **Extensible Architecture**
-   - Plugin-based systeem
-   - Custom nodes voor wiki-links, mentions, embeds
-   - Modulair: alleen laden wat nodig is
+   - Plugin-based system
+   - Custom nodes for wiki-links, mentions, embeds
+   - Modular: only load what's needed
 
 2. **Performance**
-   - Gebouwd voor snelheid
-   - Efficiënt met grote documenten
+   - Built for speed
+   - Efficient with large documents
    - Minimal re-renders
 
 3. **React Integration**
    - Native React hooks
    - Context-based state management
-   - Declaratieve API
+   - Declarative API
 
 4. **TypeScript Support**
-   - Volledig getypeerd
-   - Goede IDE ondersteuning
+   - Fully typed
+   - Good IDE support
    - Type-safe custom nodes
 
 5. **Collaboration Ready**
-   - Yjs integratie mogelijk
-   - Real-time samenwerking (toekomst)
+   - Yjs integration possible
+   - Real-time collaboration (future)
 
 6. **Speech-to-Text**
-   - Ingebouwde SpeechToTextPlugin
-   - Gebruikt Web Speech API
+   - Built-in SpeechToTextPlugin
+   - Uses Web Speech API
    - Voice commands (undo, redo, etc.)
 
 ## Use Cases in Kanbu
 
-### Fase 1: Core Editor Component
+### Phase 1: Core Editor Component
 
-Eerst bouwen we een herbruikbare `RichTextEditor` component die overal kan worden ingezet.
+First, we build a reusable `RichTextEditor` component that can be deployed everywhere.
 
 #### 1.1 Workspace Descriptions
-- **Locatie**: Workspace settings, workspace overview
+- **Location**: Workspace settings, workspace overview
 - **Features**:
   - Rich text formatting
   - Media embeds (images, videos)
-  - Links naar projecten binnen workspace
-  - Links naar workspace wiki pagina's
+  - Links to projects within workspace
+  - Links to workspace wiki pages
 
 #### 1.2 Project Descriptions
-- **Locatie**: Project settings, project overview
+- **Location**: Project settings, project overview
 - **Features**:
   - Rich text formatting
   - Media embeds
-  - Links naar tasks
-  - Links naar project wiki pagina's
-  - Links naar parent workspace wiki
+  - Links to tasks
+  - Links to project wiki pages
+  - Links to parent workspace wiki
 
 #### 1.3 Task Context/Descriptions
-- **Locatie**: Task detail modal/page
+- **Location**: Task detail modal/page
 - **Features**:
   - Rich text formatting
   - Media embeds (screenshots, diagrams)
-  - @mentions naar team members
-  - Links naar andere tasks
-  - Links naar wiki pagina's
-  - Checklists (subtasks inline)
+  - @mentions to team members
+  - Links to other tasks
+  - Links to wiki pages
+  - Checklists (inline subtasks)
 
 #### 1.4 Sticky Notes
-- **Locatie**: Board view, dashboard
+- **Location**: Board view, dashboard
 - **Features**:
   - Compact rich text
   - Quick formatting
   - Links
-  - Color coding (bestaand)
+  - Color coding (existing)
 
-### Fase 2: Wiki System
+### Phase 2: Wiki System
 
-Hiërarchisch wiki systeem geïntegreerd in de module structuur.
+Hierarchical wiki system integrated into the module structure.
 
-#### 2.1 Architectuur
+#### 2.1 Architecture
 ```
 Workspace
 ├── Workspace Wiki
 │   ├── Page 1
-│   ├── Page 2 [[links naar Page 3]]
+│   ├── Page 2 [[links to Page 3]]
 │   └── Page 3
 │
 └── Project A
     ├── Project Wiki
-    │   ├── Page A1 [[link naar Workspace Wiki/Page 1]]
+    │   ├── Page A1 [[link to Workspace Wiki/Page 1]]
     │   └── Page A2
     └── Tasks
-        └── Task 1 (context kan linken naar wiki)
+        └── Task 1 (context can link to wiki)
 ```
 
 #### 2.2 Wiki Features
-- **WYSIWYG editing** met Lexical
+- **WYSIWYG editing** with Lexical
 - **Wiki-links**: `[[Page Name]]` syntax
-- **Backlinks**: Automatisch tonen welke pagina's linken naar huidige pagina
-- **Tags**: `#tag` systeem voor categorisatie
-- **Hiërarchie**: Project wikis kunnen linken naar workspace wikis
-- **Versioning**: Geschiedenis van wijzigingen
-- **Media library**: Gedeelde media per workspace/project
+- **Backlinks**: Automatically show which pages link to current page
+- **Tags**: `#tag` system for categorization
+- **Hierarchy**: Project wikis can link to workspace wikis
+- **Versioning**: History of changes
+- **Media library**: Shared media per workspace/project
 
-### Fase 3: Knowledge Graph (Foam-achtig)
+### Phase 3: Knowledge Graph (Foam-like)
 
-Geavanceerde knowledge management features.
+Advanced knowledge management features.
 
 #### 3.1 Link Intelligence
-- **Bi-directional links**: Automatische backlink tracking
-- **Link suggestions**: AI-powered suggesties voor relevante links
-- **Orphan detection**: Pagina's zonder links identificeren
-- **Broken link detection**: Verwijderde pagina's detecteren
+- **Bi-directional links**: Automatic backlink tracking
+- **Link suggestions**: AI-powered suggestions for relevant links
+- **Orphan detection**: Identify pages without links
+- **Broken link detection**: Detect deleted pages
 
 #### 3.2 Tags & Indexes
-- **Tag pages**: Automatisch gegenereerde pagina's per tag
+- **Tag pages**: Automatically generated pages per tag
 - **Tag hierarchy**: Nested tags (`#project/frontend/components`)
-- **Index pages**: Overzichtspagina's per categorie
+- **Index pages**: Overview pages per category
 
 #### 3.3 RAG Integration
-- **Semantic search**: Zoeken op betekenis, niet alleen keywords
-- **Related content**: Automatisch gerelateerde pagina's tonen
-- **Knowledge graph visualization**: Visuele weergave van verbanden
-- **AI summaries**: Automatische samenvattingen van pagina's
+- **Semantic search**: Search by meaning, not just keywords
+- **Related content**: Automatically show related pages
+- **Knowledge graph visualization**: Visual representation of connections
+- **AI summaries**: Automatic summaries of pages
 
-## Technische Specificaties
+## Technical Specifications
 
 ### Data Model
 
 ```typescript
-// Lexical slaat content op als JSON
+// Lexical stores content as JSON
 interface RichTextContent {
   // Lexical editor state (JSON)
   editorState: string;
-  // Plain text versie voor search indexing
+  // Plain text version for search indexing
   plainText: string;
-  // Extracted links voor graph building
+  // Extracted links for graph building
   links: {
     wikiLinks: string[];      // [[Page Name]]
     taskLinks: string[];      // #TASK-123
@@ -269,9 +269,9 @@ interface RichTextEditorProps {
 ## Implementation Roadmap
 
 ### Sprint 1: Foundation
-- [x] Lexical package installatie
-- [x] Basis `RichTextEditor` component
-- [x] Toolbar met formatting opties
+- [x] Lexical package installation
+- [x] Basic `RichTextEditor` component
+- [x] Toolbar with formatting options
 - [x] Markdown shortcuts
 - [x] JSON serialization/deserialization
 
@@ -286,7 +286,7 @@ interface RichTextEditorProps {
 - [ ] Project description editor
 - [ ] Task context editor
 - [x] Sticky notes editor
-- [ ] Database migration voor rich text velden
+- [ ] Database migration for rich text fields
 
 ### Sprint 4: Wiki Foundation
 - [ ] WikiPage model & API
@@ -348,6 +348,6 @@ interface RichTextEditorProps {
 
 ## Revision History
 
-| Datum | Versie | Wijziging |
+| Date | Version | Change |
 |-------|--------|-----------|
 | 2026-01-07 | 1.0 | Initial roadmap created |

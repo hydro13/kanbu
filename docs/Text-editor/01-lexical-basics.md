@@ -1,32 +1,32 @@
-# Lexical Basics - Technische Deep Dive
+# Lexical Basics - Technical Deep Dive
 
-## Wat is Lexical?
+## What is Lexical?
 
-Lexical is een extensible text editor framework gebouwd door Meta (Facebook). Het is ontworpen als opvolger van Draft.js met focus op:
+Lexical is an extensible text editor framework built by Meta (Facebook). It is designed as a successor to Draft.js with focus on:
 
-- **Performance**: Minimale overhead, efficiënte updates
-- **Accessibility**: WCAG compliant uit de box
-- **Extensibility**: Alles is een plugin
-- **Reliability**: Uitgebreid getest in productie bij Meta
+- **Performance**: Minimal overhead, efficient updates
+- **Accessibility**: WCAG compliant out of the box
+- **Extensibility**: Everything is a plugin
+- **Reliability**: Extensively tested in production at Meta
 
 ## Core Concepts
 
 ### 1. Editor State
 
-Lexical werkt met een immutable state model. Elke wijziging creëert een nieuwe state.
+Lexical works with an immutable state model. Each change creates a new state.
 
 ```typescript
 import { createEditor, EditorState } from 'lexical';
 
 const editor = createEditor();
 
-// Lezen van state
+// Reading state
 editor.getEditorState().read(() => {
   const root = $getRoot();
   const text = root.getTextContent();
 });
 
-// Schrijven naar state
+// Writing to state
 editor.update(() => {
   const root = $getRoot();
   const paragraph = $createParagraphNode();
@@ -37,14 +37,14 @@ editor.update(() => {
 
 ### 2. Nodes
 
-Alles in Lexical is een Node. Er zijn verschillende basis node types:
+Everything in Lexical is a Node. There are different base node types:
 
 ```typescript
-// Basis nodes
+// Base nodes
 import {
-  RootNode,           // Container voor alles
+  RootNode,           // Container for everything
   ParagraphNode,      // <p> element
-  TextNode,           // Tekst content
+  TextNode,           // Text content
   LineBreakNode,      // <br> element
 } from 'lexical';
 
@@ -58,7 +58,7 @@ import { TableNode, TableRowNode, TableCellNode } from '@lexical/table';
 
 ### 3. Custom Nodes
 
-Voor wiki-links maken we een custom node:
+For wiki-links we create a custom node:
 
 ```typescript
 import { TextNode, SerializedTextNode, NodeKey } from 'lexical';
@@ -110,7 +110,7 @@ export class WikiLinkNode extends TextNode {
 
 ### 4. Commands
 
-Lexical gebruikt een command pattern voor acties:
+Lexical uses a command pattern for actions:
 
 ```typescript
 import {
@@ -145,7 +145,7 @@ editor.registerCommand(
 
 ### 5. Plugins
 
-Plugins zijn React components die functionaliteit toevoegen:
+Plugins are React components that add functionality:
 
 ```typescript
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
@@ -175,7 +175,7 @@ function WikiLinkPlugin() {
 
 ### LexicalComposer
 
-De root component die de editor context voorziet:
+The root component that provides the editor context:
 
 ```tsx
 import { LexicalComposer } from '@lexical/react/LexicalComposer';
@@ -265,7 +265,7 @@ const editorTheme = {
 
 ### JSON Format
 
-Lexical slaat state op als JSON:
+Lexical stores state as JSON:
 
 ```json
 {
@@ -334,21 +334,21 @@ const markdown = editor.getEditorState().read(() => {
 
 ## Markdown Shortcuts
 
-Lexical ondersteunt real-time markdown conversie:
+Lexical supports real-time markdown conversion:
 
 ```typescript
 import { MarkdownShortcutPlugin } from '@lexical/react/LexicalMarkdownShortcutPlugin';
 import { TRANSFORMERS } from '@lexical/markdown';
 
-// In je editor:
+// In your editor:
 <MarkdownShortcutPlugin transformers={TRANSFORMERS} />
 ```
 
-Ondersteunde shortcuts:
+Supported shortcuts:
 - `# ` → H1
 - `## ` → H2
 - `### ` → H3
-- `* ` of `- ` → Bullet list
+- `* ` or `- ` → Bullet list
 - `1. ` → Numbered list
 - `> ` → Quote
 - ``` ` ``` → Inline code
@@ -359,10 +359,10 @@ Ondersteunde shortcuts:
 
 ## Performance Tips
 
-1. **Debounce onChange**: Niet elke keystroke naar server sturen
-2. **Lazy load plugins**: Alleen laden wat nodig is
-3. **Virtualization**: Voor lange documenten
-4. **Web Workers**: Zware operaties off-main-thread
+1. **Debounce onChange**: Don't send every keystroke to server
+2. **Lazy load plugins**: Only load what's needed
+3. **Virtualization**: For long documents
+4. **Web Workers**: Heavy operations off-main-thread
 
 ```typescript
 // Debounced save
@@ -381,7 +381,7 @@ function handleChange(editorState: EditorState) {
 
 ## Accessibility
 
-Lexical heeft ingebouwde accessibility:
+Lexical has built-in accessibility:
 
 - ARIA labels
 - Keyboard navigation
@@ -404,7 +404,7 @@ Lexical heeft ingebouwde accessibility:
 - Safari 14+
 - Edge 90+
 
-Speech-to-text vereist:
-- Chrome/Edge: Volledig
+Speech-to-text requires:
+- Chrome/Edge: Full support
 - Safari: webkit prefix
-- Firefox: Beperkt (behind flag)
+- Firefox: Limited (behind flag)

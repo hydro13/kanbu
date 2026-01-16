@@ -1,188 +1,188 @@
-# Kanbu Container Structuur
+# Kanbu Container Structure
 
-## Versie: 1.1.0
-## Datum: 2026-01-10
+## Version: 1.1.0
+## Date: 2026-01-10
 
 ---
 
 ## ACL Model (Security Groups)
 
-### Kernprincipe: Alles is een Object
+### Core Principle: Everything is an Object
 
-In Kanbu is **letterlijk alles** een object waar ACL rechten op kunnen staan:
+In Kanbu, **literally everything** is an object that can have ACL permissions:
 
 ```
 Kanbu (root)
 ├── System
-│   └── Administration         ← Object met ACL
+│   └── Administration         ← Object with ACL
 ├── Dashboard
 │   └── Features
-│       ├── Overview           ← Object met ACL
-│       ├── My Tasks           ← Object met ACL
-│       ├── My Subtasks        ← Object met ACL
-│       └── My Workspaces      ← Object met ACL
-├── Profile                    ← Object met ACL
+│       ├── Overview           ← Object with ACL
+│       ├── My Tasks           ← Object with ACL
+│       ├── My Subtasks        ← Object with ACL
+│       └── My Workspaces      ← Object with ACL
+├── Profile                    ← Object with ACL
 └── Workspaces
-    ├── GenX                   ← Object met ACL
+    ├── GenX                   ← Object with ACL
     │   └── Projects
-    │       └── Website        ← Object met ACL
-    ├── Mblock BV              ← Object met ACL
-    └── Privé                  ← Object met ACL
+    │       └── Website        ← Object with ACL
+    ├── Mblock BV              ← Object with ACL
+    └── Private                ← Object with ACL
 ```
 
-**Objecten zijn:** Workspaces, Projects, Menus, Menu items, Functies, Pagina's, Acties, Features, etc.
+**Objects are:** Workspaces, Projects, Menus, Menu items, Functions, Pages, Actions, Features, etc.
 
 ### RWXDP Permissions (Filesystem-style)
 
-| Permission | Betekenis |
-|------------|-----------|
-| **R** | Read - Lezen/bekijken |
-| **W** | Write - Aanpassen/bewerken |
-| **X** | Execute - Uitvoeren/gebruiken |
-| **D** | Delete - Verwijderen |
-| **P** | Permissions - ACL beheren |
+| Permission | Meaning |
+|------------|---------|
+| **R** | Read - View/access |
+| **W** | Write - Modify/edit |
+| **X** | Execute - Run/use |
+| **D** | Delete - Remove |
+| **P** | Permissions - Manage ACL |
 
 ### Security Groups
 
-Alle rollen zijn **security groups**. Users krijgen rechten door:
+All roles are **security groups**. Users get permissions through:
 
-1. **Direct op object** - User krijgt rechtstreeks rechten op een object
-2. **Via Security Group** - User is lid van een groep die rechten heeft
+1. **Direct on object** - User gets permissions directly on an object
+2. **Via Security Group** - User is member of a group that has permissions
 
 ```
 Security Groups:
-├── Domain Admins              → Rechten op ALLES
-├── Workspace-GenX-Admin       → Admin rechten op GenX
-├── Workspace-GenX             → Member rechten op GenX
-├── Workspace-Mblock-Admin     → Admin rechten op Mblock
-├── Workspace-Mblock           → Member rechten op Mblock
-├── Project-Website-Admin      → Admin rechten op Website project
-├── Project-Website            → Member rechten op Website project
+├── Domain Admins              → Permissions on EVERYTHING
+├── Workspace-GenX-Admin       → Admin permissions on GenX
+├── Workspace-GenX             → Member permissions on GenX
+├── Workspace-Mblock-Admin     → Admin permissions on Mblock
+├── Workspace-Mblock           → Member permissions on Mblock
+├── Project-Website-Admin      → Admin permissions on Website project
+├── Project-Website            → Member permissions on Website project
 └── ... etc
 ```
 
-### Rechten Inheritance (Naar Beneden)
+### Permission Inheritance (Downward)
 
-Rechten werken **naar beneden** in de hiërarchie:
+Permissions work **downward** in the hierarchy:
 
 ```
 Domain Admin
-└── Alles naar beneden ─────────────────► Hele systeem
+└── Everything downward ─────────────────► Entire system
 
 Workspace-GenX-Admin
-└── Alles naar beneden binnen GenX ─────► GenX + alle projecten erin
+└── Everything downward within GenX ─────► GenX + all projects in it
 
 Project-Website-Admin
-└── Alles naar beneden binnen Website ──► Website project alleen
+└── Everything downward within Website ──► Website project only
 ```
 
 ### User Management per Level
 
-| Admin Level | Kan users aanmaken? | Kan invites versturen? | Scope |
-|-------------|---------------------|------------------------|-------|
-| **Domain Admin** | ✅ Ja | ✅ Ja | Hele systeem |
-| **Workspace-X-Admin** | ✅ Ja | ✅ Ja | Workspace X |
-| **Project-Y-Admin** | ✅ Ja | ✅ Ja | Project Y |
+| Admin Level | Can create users? | Can send invites? | Scope |
+|-------------|-------------------|-------------------|-------|
+| **Domain Admin** | ✅ Yes | ✅ Yes | Entire system |
+| **Workspace-X-Admin** | ✅ Yes | ✅ Yes | Workspace X |
+| **Project-Y-Admin** | ✅ Yes | ✅ Yes | Project Y |
 
-**Alle users leven in één global user pool (Kanbu/Domain level).**
+**All users live in one global user pool (Kanbu/Domain level).**
 
 ### Invite Flow
 
-De invite **bron** bepaalt de automatische security group membership:
+The invite **source** determines automatic security group membership:
 
 ```
-Project-Website-Admin stuurt invite naar jan@email.com
+Project-Website-Admin sends invite to jan@email.com
                 ↓
-Jan accepteert invite en maakt account aan
+Jan accepts invite and creates account
                 ↓
-Jan wordt automatisch lid van "Project-Website" security group
+Jan automatically becomes member of "Project-Website" security group
                 ↓
-Jan heeft nu rechten op Project Website (via die groep)
+Jan now has permissions on Project Website (via that group)
 ```
 
-| Invite van | Nieuwe user wordt lid van |
-|------------|---------------------------|
-| Domain Admin | (admin kiest groep) |
+| Invite from | New user becomes member of |
+|-------------|----------------------------|
+| Domain Admin | (admin chooses group) |
 | Workspace-X-Admin | Workspace-X |
 | Project-Y-Admin | Project-Y |
 
-### Voorbeeld: User met Meerdere Rollen
+### Example: User with Multiple Roles
 
 ```
-Robin is lid van:
-├── Domain Admins              → Admin overal
-└── (automatisch alles)
+Robin is member of:
+├── Domain Admins              → Admin everywhere
+└── (automatically everything)
 
-Jan is lid van:
-├── Workspace-GenX-Admin       → Admin in GenX (kan users inviten)
-├── Workspace-Mblock           → Member in Mblock (geen admin!)
+Jan is member of:
+├── Workspace-GenX-Admin       → Admin in GenX (can invite users)
+├── Workspace-Mblock           → Member in Mblock (not admin!)
 └── Project-Analytics-Admin    → Admin in Analytics project
 
-Dus Jan:
-├── Kan users aanmaken/inviten voor GenX     ✅
-├── Kan GEEN users aanmaken voor Mblock      ❌ (alleen member)
-├── Kan users toevoegen aan Analytics        ✅
-└── Ziet admin features in GenX, niet in Mblock
+So Jan:
+├── Can create/invite users for GenX     ✅
+├── CANNOT create users for Mblock       ❌ (only member)
+├── Can add users to Analytics           ✅
+└── Sees admin features in GenX, not in Mblock
 ```
 
 ---
 
-## Container Hiërarchie
+## Container Hierarchy
 
-Kanbu volgt een **geneste container structuur** (vergelijkbaar met AD Forest → Domain → OU):
+Kanbu follows a **nested container structure** (similar to AD Forest → Domain → OU):
 
 ```
 Kanbu (Root)
-├── Global user pool (alle users)
+├── Global user pool (all users)
 │
 └── Workspaces (containers)
-    ├── Members (users lid van deze workspace)
+    ├── Members (users member of this workspace)
     ├── Modules (Wiki, Statistics, Settings, etc.)
     │
     └── Projects (sub-containers)
-        ├── Members (users lid van dit project)
+        ├── Members (users member of this project)
         └── Modules (Board, List, Calendar, Settings, etc.)
 ```
 
 ---
 
-## Rol-gebaseerde Zichtbaarheid
+## Role-based Visibility
 
-### Wie ziet wat? (Via Security Groups)
+### Who sees what? (Via Security Groups)
 
-| Security Group | Ziet | Kan beheren |
-|----------------|------|-------------|
-| **Domain Admins** | ALLES | Users, Workspaces, Projects, ACL |
-| **Workspace-X-Admin** | Workspace X + projecten | Users voor X, Projects in X |
-| **Workspace-X** | Workspace X + projecten | Taken in projecten |
-| **Project-Y-Admin** | Project Y | Users voor Y, Project settings |
-| **Project-Y** | Project Y | Eigen taken |
+| Security Group | Sees | Can manage |
+|----------------|------|------------|
+| **Domain Admins** | EVERYTHING | Users, Workspaces, Projects, ACL |
+| **Workspace-X-Admin** | Workspace X + projects | Users for X, Projects in X |
+| **Workspace-X** | Workspace X + projects | Tasks in projects |
+| **Project-Y-Admin** | Project Y | Users for Y, Project settings |
+| **Project-Y** | Project Y | Own tasks |
 
-### Voorbeeld: GenX Organisatie
+### Example: GenX Organization
 
 ```
 Kanbu (Domain)
 │
 ├── Robin
-│   └── Lid van: Domain Admins ──────────────── Ziet ALLES, beheert ALLES
+│   └── Member of: Domain Admins ──────────────── Sees EVERYTHING, manages EVERYTHING
 │
 ├── Workspace: "TechCorp BV"
 │   ├── Jan
-│   │   └── Lid van: Workspace-TechCorp-Admin ─ Ziet TechCorp, kan users inviten
+│   │   └── Member of: Workspace-TechCorp-Admin ─ Sees TechCorp, can invite users
 │   ├── Piet
-│   │   └── Lid van: Project-Website-Admin ──── Ziet Website project, is admin
+│   │   └── Member of: Project-Website-Admin ──── Sees Website project, is admin
 │   └── Project: "Website Redesign"
 │       └── Klaas
-│           └── Lid van: Project-Website ────── Ziet alleen dit project
+│           └── Member of: Project-Website ────── Sees only this project
 │
 └── Workspace: "DataFlow BV"
     ├── Marie
-    │   └── Lid van: Workspace-DataFlow-Admin ─ Ziet DataFlow, kan users inviten
+    │   └── Member of: Workspace-DataFlow-Admin ─ Sees DataFlow, can invite users
     ├── Piet
-    │   └── Lid van: Project-Analytics ──────── Ziet ook dit project!
+    │   └── Member of: Project-Analytics ──────── Sees this project too!
     └── Project: "Analytics Dashboard"
 
-Piet is lid van 2 security groups in 2 verschillende workspaces:
+Piet is member of 2 security groups in 2 different workspaces:
 - Project-Website-Admin (TechCorp) → Admin
 - Project-Analytics (DataFlow) → Member
 ```
@@ -191,101 +191,101 @@ Piet is lid van 2 security groups in 2 verschillende workspaces:
 
 ## Feature Levels
 
-Elke feature hoort bij een specifiek container level:
+Each feature belongs to a specific container level:
 
 ### Personal Level (Dashboard)
 
-Features die **cross-container** zijn - aggregatie van alles waar je toegang hebt.
+Features that are **cross-container** - aggregation of everything you have access to.
 
-| Feature | Beschrijving |
-|---------|--------------|
-| **Favorites** | Jouw shortcuts naar projecten uit ALLE workspaces |
-| **My Tasks** | Taken uit ALLE projecten waar je lid van bent |
-| **My Subtasks** | Subtaken uit ALLE projecten |
-| **Overview/Widgets** | Persoonlijke stats en dashboards |
-| **Notes** | Persoonlijke notities |
-| **Inbox** | Notificaties van ALLE containers |
+| Feature | Description |
+|---------|-------------|
+| **Favorites** | Your shortcuts to projects from ALL workspaces |
+| **My Tasks** | Tasks from ALL projects you're member of |
+| **My Subtasks** | Subtasks from ALL projects |
+| **Overview/Widgets** | Personal stats and dashboards |
+| **Notes** | Personal notes |
+| **Inbox** | Notifications from ALL containers |
 
-**URL Patroon:** `/dashboard/*`
+**URL Pattern:** `/dashboard/*`
 
 **Sidebar:** `DashboardSidebar`
 
 ### Workspace Level
 
-Features die bij **één workspace** horen.
+Features that belong to **one workspace**.
 
-| Feature | Beschrijving |
-|---------|--------------|
-| **Projects** | Lijst van projecten in deze workspace |
-| **Groups** | Organisatie/categorisatie van projecten |
-| **Wiki** | Kennisbank van de workspace |
-| **Members** | Gebruikers lid van deze workspace |
-| **Statistics** | Stats over deze workspace |
-| **Settings** | Workspace configuratie |
+| Feature | Description |
+|---------|-------------|
+| **Projects** | List of projects in this workspace |
+| **Groups** | Organization/categorization of projects |
+| **Wiki** | Knowledge base of the workspace |
+| **Members** | Users member of this workspace |
+| **Statistics** | Stats about this workspace |
+| **Settings** | Workspace configuration |
 
-**URL Patroon:** `/workspace/:slug/*`
+**URL Pattern:** `/workspace/:slug/*`
 
 **Sidebar:** `WorkspaceSidebar`
 
 ### Project Level
 
-Features die bij **één project** horen.
+Features that belong to **one project**.
 
-| Feature | Beschrijving |
-|---------|--------------|
-| **Board** | Kanban bord |
-| **List** | Takenlijst |
-| **Calendar** | Kalenderweergave |
+| Feature | Description |
+|---------|-------------|
+| **Board** | Kanban board |
+| **List** | Task list |
+| **Calendar** | Calendar view |
 | **Timeline** | Gantt/timeline view |
 | **Sprints** | Sprint planning |
-| **Milestones** | Milestones beheer |
-| **Analytics** | Project statistieken |
-| **GitHub** | Gekoppelde repository |
-| **Members** | Gebruikers lid van dit project |
-| **Settings** | Project configuratie |
+| **Milestones** | Milestones management |
+| **Analytics** | Project statistics |
+| **GitHub** | Linked repository |
+| **Members** | Users member of this project |
+| **Settings** | Project configuration |
 
-**URL Patroon:** `/workspace/:slug/project/:id/*`
+**URL Pattern:** `/workspace/:slug/project/:id/*`
 
 **Sidebar:** `ProjectSidebar`
 
 ---
 
-## Navigatie Principes
+## Navigation Principles
 
 ### 1. Context-aware Sidebars
 
-Elke container level heeft zijn eigen sidebar:
+Each container level has its own sidebar:
 
 ```
 /dashboard              → DashboardSidebar (Personal items)
-/workspaces             → Geen sidebar of minimaal
+/workspaces             → No sidebar or minimal
 /workspace/:slug        → WorkspaceSidebar (Workspace modules)
 /workspace/:slug/project/:id → ProjectSidebar (Project features)
 ```
 
-### 2. Geen Tree in Sidebar
+### 2. No Tree in Sidebar
 
-- Workspaces worden getoond op `/workspaces` pagina
-- Projects worden getoond op `/workspace/:slug` pagina
-- Sidebar toont alleen **modules van huidige container**
+- Workspaces are shown on `/workspaces` page
+- Projects are shown on `/workspace/:slug` page
+- Sidebar shows only **modules of current container**
 
-### 3. Favorites zijn Personal
+### 3. Favorites are Personal
 
-Favorites verschijnen alleen in `DashboardSidebar` omdat:
-- Ze cross-container zijn (projecten uit verschillende workspaces)
-- Ze persoonlijk zijn (jouw shortcuts)
-- Ze niet bij één workspace horen
+Favorites only appear in `DashboardSidebar` because:
+- They are cross-container (projects from different workspaces)
+- They are personal (your shortcuts)
+- They don't belong to one workspace
 
-### 4. ACL bepaalt zichtbaarheid
+### 4. ACL determines visibility
 
-- User ziet alleen objecten waar hij (via security group) rechten op heeft
-- Modules/menu items zijn objecten - alleen zichtbaar met juiste permissions
-- Sidebar items worden gefilterd op ACL (RWXDP)
-- Admin features alleen zichtbaar voor users in Admin security groups
+- User only sees objects they have permissions on (via security group)
+- Modules/menu items are objects - only visible with correct permissions
+- Sidebar items are filtered on ACL (RWXDP)
+- Admin features only visible for users in Admin security groups
 
 ---
 
-## URL Structuur
+## URL Structure
 
 ```
 /dashboard                              → Personal overview
@@ -293,7 +293,7 @@ Favorites verschijnen alleen in `DashboardSidebar` omdat:
 /dashboard/subtasks                     → My Subtasks
 /dashboard/notes                        → Personal notes
 
-/workspaces                             → Lijst van workspaces
+/workspaces                             → List of workspaces
 
 /workspace/:slug                        → Workspace homepage (projects)
 /workspace/:slug/wiki                   → Workspace wiki
@@ -313,7 +313,7 @@ Favorites verschijnen alleen in `DashboardSidebar` omdat:
 
 ---
 
-## Sidebar Componenten
+## Sidebar Components
 
 ### DashboardSidebar
 
@@ -378,26 +378,26 @@ Favorites verschijnen alleen in `DashboardSidebar` omdat:
 
 ---
 
-## Belangrijke Regels
+## Important Rules
 
 ### DO's
 
-- ✅ Elke container heeft eigen members
-- ✅ Elke container heeft eigen modules
-- ✅ Sidebar past zich aan op container level
-- ✅ ACL bepaalt wat zichtbaar is
-- ✅ Favorites zijn altijd personal level
+- ✅ Each container has own members
+- ✅ Each container has own modules
+- ✅ Sidebar adapts to container level
+- ✅ ACL determines what is visible
+- ✅ Favorites are always personal level
 
 ### DON'Ts
 
-- ❌ Geen tree structuur in sidebar
-- ❌ Geen workspace modules in ProjectSidebar
-- ❌ Geen project-specifieke items in DashboardSidebar
-- ❌ Geen cross-container features op workspace/project level
+- ❌ No tree structure in sidebar
+- ❌ No workspace modules in ProjectSidebar
+- ❌ No project-specific items in DashboardSidebar
+- ❌ No cross-container features on workspace/project level
 
 ---
 
-## Referenties
+## References
 
-- [ROADMAP.md](./ROADMAP.md) - Implementatie roadmap
-- [VISIE.md](./VISIE.md) - Design principes
+- [ROADMAP.md](./ROADMAP.md) - Implementation roadmap
+- [VISIE.md](./VISIE.md) - Design principles

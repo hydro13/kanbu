@@ -1,37 +1,37 @@
-# Kanbu GitHub Connector - Architectuur
+# Kanbu GitHub Connector - Architecture
 
-## Overzicht
+## Overview
 
-Dit document beschrijft de technische architectuur van de Kanbu GitHub Connector.
+This document describes the technical architecture of the Kanbu GitHub Connector.
 
-### Twee-Tier Architectuur
+### Two-Tier Architecture
 
-De connector is opgebouwd met een **twee-tier structuur**: Admin (Workspace) niveau en Project niveau.
+The connector is built with a **two-tier structure**: Admin (Workspace) level and Project level.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                              KANBU                                       │
 │                                                                          │
 │  ┌─────────────────────────────────────────────────────────────────┐    │
-│  │                 ADMIN NIVEAU (Workspace)                         │    │
+│  │                 ADMIN LEVEL (Workspace)                          │    │
 │  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐           │    │
 │  │  │ Installations│  │ User Mapping │  │ Repos        │           │    │
 │  │  │ Management   │  │ GitHub↔Kanbu │  │ Overview     │           │    │
 │  │  └──────────────┘  └──────────────┘  └──────────────┘           │    │
 │  │                                                                  │    │
-│  │  Beheerd door: Workspace Admins                                  │    │
+│  │  Managed by: Workspace Admins                                    │    │
 │  │  UI: Admin → GitHub Settings                                     │    │
 │  └──────────────────────────────────────┬──────────────────────────┘    │
 │                                         │                                │
 │                                         ▼                                │
 │  ┌──────────────────────────────────────────────────────────────────┐   │
-│  │                 PROJECT NIVEAU                                    │   │
+│  │                 PROJECT LEVEL                                     │   │
 │  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐            │   │
 │  │  │ Repo Linking │  │ Sync Settings│  │ Sync Status  │            │   │
 │  │  │ (1 per proj) │  │ & Mapping    │  │ & Logs       │            │   │
 │  │  └──────────────┘  └──────────────┘  └──────────────┘            │   │
 │  │                                                                   │   │
-│  │  Beheerd door: Project Managers                                   │   │
+│  │  Managed by: Project Managers                                     │   │
 │  │  UI: Project Settings → GitHub                                    │   │
 │  └───────────────────────────────────────────────────────────────────┘   │
 │                                                                          │
@@ -70,21 +70,21 @@ De connector is opgebouwd met een **twee-tier structuur**: Admin (Workspace) niv
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Waarom Twee Niveaus?
+### Why Two Levels?
 
-| Aspect | Admin Niveau | Project Niveau |
-|--------|--------------|----------------|
-| **Scope** | Hele workspace | Enkel project |
-| **GitHub App Install** | Eenmalig per org/user | Selecteer repo uit installatie |
-| **User Mapping** | Centraal beheren | Automatisch gebruiken bij sync |
-| **Rechten** | Workspace P | Project P |
-| **Wie** | Workspace Admins | Project Managers |
+| Aspect | Admin Level | Project Level |
+|--------|-------------|----------------|
+| **Scope** | Entire workspace | Single project only |
+| **GitHub App Install** | Once per org/user | Select repo from installation |
+| **User Mapping** | Centrally managed | Automatically used during sync |
+| **Permissions** | Workspace P | Project P |
+| **Who** | Workspace Admins | Project Managers |
 
 ---
 
 ## 1. GitHub App vs OAuth App
 
-We gebruiken een **GitHub App** (niet een OAuth App) om de volgende redenen:
+We use a **GitHub App** (not an OAuth App) for the following reasons:
 
 | Aspect | GitHub App | OAuth App |
 |--------|------------|-----------|
@@ -94,7 +94,7 @@ We gebruiken een **GitHub App** (niet een OAuth App) om de volgende redenen:
 | Webhooks | App-level, automatic | Manual per-repo |
 | Token lifetime | 1 hour (renewable) | Long-lived |
 
-### GitHub App Configuratie
+### GitHub App Configuration
 
 ```yaml
 name: Kanbu
@@ -122,7 +122,7 @@ setup_url: https://kanbu.example.com/api/github/setup
 
 ---
 
-## 2. Authenticatie Flow
+## 2. Authentication Flow
 
 ### 2.1 Installation Flow
 
@@ -161,7 +161,7 @@ setup_url: https://kanbu.example.com/api/github/setup
 
 ### 2.2 Token Refresh
 
-Installation access tokens verlopen na 1 uur. Refresh flow:
+Installation access tokens expire after 1 hour. Refresh flow:
 
 ```typescript
 async function getInstallationToken(installationId: number): Promise<string> {
@@ -309,11 +309,11 @@ async function routeWebhookEvent(
 
 ---
 
-## 4. Issue Synchronisatie
+## 4. Issue Synchronization
 
 ### 4.1 Sync Hash
 
-Om te bepalen of een update nodig is, gebruiken we een hash van de relevante velden:
+To determine if an update is needed, we use a hash of relevant fields:
 
 ```typescript
 function computeIssueHash(issue: GitHubIssuePayload): string {
@@ -343,7 +343,7 @@ function computeTaskHash(task: Task): string {
 
 ### 4.2 Conflict Resolution
 
-Bij bidirectionele sync kunnen conflicts ontstaan:
+With bidirectional sync, conflicts can occur:
 
 ```typescript
 type SyncDirection = 'github_to_kanbu' | 'kanbu_to_github' | 'skip'
@@ -417,13 +417,13 @@ const issueToTask: FieldMapping = {
 
 ---
 
-## 5. ACL Integratie
+## 5. ACL Integration
 
-### 5.1 Twee-Niveau Permission Checks
+### 5.1 Two-Level Permission Checks
 
-De GitHub connector vereist permission checks op **twee niveaus**:
+The GitHub connector requires permission checks at **two levels**:
 
-#### Admin-Niveau Procedures (Workspace)
+#### Admin-Level Procedures (Workspace)
 
 ```typescript
 // apps/api/src/trpc/procedures/githubAdmin.ts
@@ -455,7 +455,7 @@ export const githubAdminRouter = router({
 })
 ```
 
-#### Project-Niveau Procedures
+#### Project-Level Procedures
 
 ```typescript
 // apps/api/src/trpc/procedures/github.ts
@@ -474,7 +474,7 @@ export const githubRouter = router({
     }),
 
   // Link repository (requires Project P)
-  // Note: repository moet uit een workspace installation komen
+  // Note: repository must come from a workspace installation
   linkRepository: protectedProcedure
     .input(z.object({
       projectId: z.number(),
@@ -893,10 +893,10 @@ logger.info('GitHub sync completed', {
 
 ## Changelog
 
-| Datum | Wijziging |
-|-------|-----------|
-| 2026-01-09 | Twee-tier architectuur toegevoegd (Admin + Project niveau) |
-| 2026-01-09 | GitHubUserMapping model toegevoegd aan ERD |
-| 2026-01-09 | Permission checks gesplitst in Admin en Project niveau |
-| 2026-01-09 | Scope per Model tabel toegevoegd |
-| 2026-01-09 | Initiële architectuur document |
+| Date | Change |
+|------|--------|
+| 2026-01-09 | Added two-tier architecture (Admin + Project level) |
+| 2026-01-09 | Added GitHubUserMapping model to ERD |
+| 2026-01-09 | Split permission checks into Admin and Project level |
+| 2026-01-09 | Added Scope per Model table |
+| 2026-01-09 | Initial architecture document |

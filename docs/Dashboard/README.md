@@ -1,38 +1,38 @@
-# Dashboard Documentatie
+# Dashboard Documentation
 
-Deze map bevat de complete visie, architectuur en implementatie roadmap voor het Kanbu Dashboard.
+This directory contains the complete vision, architecture and implementation roadmap for the Kanbu Dashboard.
 
-**Doelstelling:** Implementatie van "Claude's Planner" - een ideaal dashboard ontwerp gebaseerd op best practices van 9 PM tools, aangepast aan Kanbu's real-time multi-user architectuur.
+**Objective:** Implementation of "Claude's Planner" - an ideal dashboard design based on best practices from 9 PM tools, adapted to Kanbu's real-time multi-user architecture.
 
 ---
 
-## Documenten
+## Documents
 
-| Document | Beschrijving | Leesvolgorde |
+| Document | Description | Reading Order |
 |----------|--------------|--------------|
-| [VISIE.md](./VISIE.md) | Overkoepelende visie en design principes | 1. Eerst lezen |
-| [IDEAAL-DASHBOARD-ONTWERP.md](./IDEAAL-DASHBOARD-ONTWERP.md) | Claude's Planner - het volledige ideale ontwerp | 2. Referentie |
-| [HUIDIGE-STAAT.md](./HUIDIGE-STAAT.md) | Analyse van bestaande implementatie | 3. Begrip huidige staat |
-| [CONCURRENTIE-ANALYSE.md](./CONCURRENTIE-ANALYSE.md) | Analyse van 10 PM tools (incl. Claude's Planner) | 4. Achtergrond |
-| [ROADMAP.md](./ROADMAP.md) | **IMPLEMENTATIE GIDS** - Gedetailleerde fases | 5. **Werk hiermee** |
+| [VISIE.md](./VISIE.md) | Overarching vision and design principles | 1. Read first |
+| [IDEAAL-DASHBOARD-ONTWERP.md](./IDEAAL-DASHBOARD-ONTWERP.md) | Claude's Planner - the complete ideal design | 2. Reference |
+| [HUIDIGE-STAAT.md](./HUIDIGE-STAAT.md) | Analysis of existing implementation | 3. Understand current state |
+| [CONCURRENTIE-ANALYSE.md](./CONCURRENTIE-ANALYSE.md) | Analysis of 10 PM tools (incl. Claude's Planner) | 4. Background |
+| [ROADMAP.md](./ROADMAP.md) | **IMPLEMENTATION GUIDE** - Detailed phases | 5. **Work with this** |
 
 ---
 
-## Kernboodschap
+## Core Message
 
-> **Het Dashboard is de cockpit van de gebruiker - gebouwd voor real-time multi-user samenwerking.**
+> **The Dashboard is the user's cockpit - built for real-time multi-user collaboration.**
 
-### Wat We Bouwen
+### What We're Building
 
 ```
 Dashboard Sidebar (Claude's Planner model)
-├── 🏠 Home (widget-based, personaliseerbaar)
-├── 📥 Inbox (notificaties + mentions)
+├── 🏠 Home (widget-based, personalizable)
+├── 📥 Inbox (notifications + mentions)
 ├── ✅ My Tasks (smart grouping: Today/Upcoming/Overdue)
 ├── 📅 Today (focus view)
 │
 ├── ⭐ FAVORITES
-│   └── Gepinde projecten (cross-workspace)
+│   └── Pinned projects (cross-workspace)
 │
 ├── 📁 WORKSPACES (collapsible tree)
 │   ├── 🏢 Workspace A ▼
@@ -51,63 +51,63 @@ Dashboard Sidebar (Claude's Planner model)
 
 ---
 
-## Architectuur Constraints
+## Architecture Constraints
 
-### MOET Respecteren
+### MUST Respect
 
-| Constraint | Reden |
+| Constraint | Reason |
 |------------|-------|
-| **Real-time multi-user** | Socket.io + Redis adapter, GEEN offline-first |
-| **ACL overal** | Elk menu item, elke actie via RWXDP permissions |
-| **BaseLayout pattern** | Bestaande collapsible/resizable sidebar |
-| **tRPC procedures** | Consistente API patterns |
-| **Docker + SaaS** | Multi-server deployment met Redis |
-| **LDAP sync (gepland)** | ACL is voorbereid op externe identity providers |
+| **Real-time multi-user** | Socket.io + Redis adapter, NO offline-first |
+| **ACL everywhere** | Every menu item, every action via RWXDP permissions |
+| **BaseLayout pattern** | Existing collapsible/resizable sidebar |
+| **tRPC procedures** | Consistent API patterns |
+| **Docker + SaaS** | Multi-server deployment with Redis |
+| **LDAP sync (planned)** | ACL is prepared for external identity providers |
 
-### MAG NIET Doen
+### MUST NOT Do
 
-| Verboden | Waarom |
+| Forbidden | Why |
 |----------|--------|
-| Offline-first implementeren | Conflicteert met real-time multi-user |
-| ACL bypassen | Security en audit trail |
-| Nieuwe state management library | Redux + Zustand al in gebruik |
-| Hardcoded permissions | Alles via ACL service |
+| Implement offline-first | Conflicts with real-time multi-user |
+| Bypass ACL | Security and audit trail |
+| New state management library | Redux + Zustand already in use |
+| Hardcoded permissions | Everything via ACL service |
 
 ---
 
-## Voor Claude Code Sessies
+## For Claude Code Sessions
 
-### Voor Je Begint
+### Before You Start
 
-1. **Lees [ROADMAP.md](./ROADMAP.md)** - Vind je specifieke fase/taak
-2. **Check dependencies** - Zijn vorige fases compleet?
-3. **Begrijp de ACL** - Gebruik `useAclPermission`, `useFeatureAccess` hooks
-4. **Ken de real-time patterns** - `useSocket` hook voor live updates
+1. **Read [ROADMAP.md](./ROADMAP.md)** - Find your specific phase/task
+2. **Check dependencies** - Are previous phases complete?
+3. **Understand ACL** - Use `useAclPermission`, `useFeatureAccess` hooks
+4. **Know real-time patterns** - `useSocket` hook for live updates
 
-### Tijdens Ontwikkeling
+### During Development
 
-1. **Volg bestaande patterns** - Kijk naar `ProjectSidebar.tsx`, `AdminSidebar.tsx`
-2. **Test met Robin** - Visuele + functionele validatie
-3. **ACL integratie** - Menu items MOETEN permissions respecteren
-4. **Geen over-engineering** - Focus op de specifieke taak
+1. **Follow existing patterns** - Look at `ProjectSidebar.tsx`, `AdminSidebar.tsx`
+2. **Test with Robin** - Visual + functional validation
+3. **ACL integration** - Menu items MUST respect permissions
+4. **No over-engineering** - Focus on the specific task
 
-### Na Afronding
+### After Completion
 
-1. **Mark fase als ✅ Done** in ROADMAP.md
-2. **Document eventuele afwijkingen**
-3. **Update dependencies** voor volgende fase
+1. **Mark phase as ✅ Done** in ROADMAP.md
+2. **Document any deviations**
+3. **Update dependencies** for next phase
 
 ---
 
-## Status Legenda
+## Status Legend
 
-| Status | Betekenis |
+| Status | Meaning |
 |--------|-----------|
-| 📋 Planned | Nog niet gestart |
-| 🔶 In Progress | Actief in ontwikkeling |
-| ✅ Done | Compleet en getest |
-| 🔲 Todo | Specifiek item nog te doen |
-| ⚠️ Blocked | Wacht op dependency |
+| 📋 Planned | Not yet started |
+| 🔶 In Progress | Active development |
+| ✅ Done | Complete and tested |
+| 🔲 Todo | Specific item to do |
+| ⚠️ Blocked | Waiting for dependency |
 
 ---
 
@@ -123,6 +123,6 @@ Dashboard Sidebar (Claude's Planner model)
 
 ## Contact
 
-Bij vragen over de visie of implementatie, overleg met Robin Waslander.
+For questions about vision or implementation, consult with Robin Waslander.
 
-**Let op:** Dit is een iteratief project. Documentatie wordt bijgewerkt naarmate fases vorderen.
+**Note:** This is an iterative project. Documentation is updated as phases progress.

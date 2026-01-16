@@ -1,111 +1,111 @@
 # Kanbu GitHub Connector Documentation
 
-## Documenten
+## Documents
 
-| Document | Beschrijving |
-|----------|--------------|
-| [ROADMAP.md](ROADMAP.md) | Implementatie roadmap met 16 fases |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | Technische architectuur en design |
+| Document | Description |
+|----------|-------------|
+| [ROADMAP.md](ROADMAP.md) | Implementation roadmap with 16 phases |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | Technical architecture and design |
 
-## Fase Completion Protocol
+## Phase Completion Protocol
 
-> **BELANGRIJK:** Bij elke voltooide fase MOET het [Fase Completion Protocol](ROADMAP.md#fase-completion-protocol) worden doorlopen.
+> **IMPORTANT:** For each completed phase, the [Phase Completion Protocol](ROADMAP.md#phase-completion-protocol) MUST be followed.
 
-Dit protocol zorgt ervoor dat:
-- Alle documentatie up-to-date blijft (ROADMAP, ARCHITECTURE, README)
-- ACL features correct worden geregistreerd
-- MCP tools worden toegevoegd en gedocumenteerd
-- CLAUDE.md bijgewerkt wordt voor cold-start sessies
-- Een git commit wordt gemaakt met consistente format
+This protocol ensures that:
+- All documentation stays up-to-date (ROADMAP, ARCHITECTURE, README)
+- ACL features are properly registered
+- MCP tools are added and documented
+- CLAUDE.md is updated for cold-start sessions
+- A git commit is made with consistent format
 
-Elke fase in de ROADMAP heeft een eigen **Completion Checklist** die alle stappen bevat.
+Each phase in the ROADMAP has its own **Completion Checklist** containing all steps.
 
-## Twee-Tier Architectuur
+## Two-Tier Architecture
 
-De GitHub connector gebruikt een **twee-tier structuur**:
+The GitHub connector uses a **two-tier structure**:
 
-| Niveau | Waar | Wie | Functies |
-|--------|------|-----|----------|
+| Level | Where | Who | Functions |
+|-------|-------|-----|-----------|
 | **Admin (Workspace)** | Admin → GitHub | Workspace Admins | Installations, User Mapping, Repos Overview |
 | **Project** | Project Settings → GitHub | Project Managers | Repo Linking, Sync Settings, Sync Status |
 
-Dit zorgt voor:
-- Eenmalige GitHub App installatie per org/user (hergebruik over projecten)
-- Centrale user mapping (GitHub login ↔ Kanbu user)
-- Project-specifieke sync instellingen
+This ensures:
+- One-time GitHub App installation per org/user (reused across projects)
+- Centralized user mapping (GitHub login ↔ Kanbu user)
+- Project-specific sync settings
 
 ## Quick Links
 
-### Roadmap Fases
+### Roadmap Phases
 
-**Core (Fase 1-9):**
-1. **Fase 1: Database & Infrastructure** - Prisma models (7 models incl. UserMapping)
-2. **Fase 2: GitHub App & OAuth** - App installatie en user mapping (Admin niveau)
-3. **Fase 3: Repository Linking** - Projects koppelen aan repos (Project niveau)
-4. **Fase 4: Webhook Handler** - GitHub events verwerken
-5. **Fase 5: Issue Sync (Inbound)** - GitHub issues → Kanbu tasks
-6. **Fase 6: Issue Sync (Outbound)** - Kanbu tasks → GitHub issues
-7. **Fase 7: PR & Commit Tracking** - Pull requests en commits linken
-8. **Fase 8: Automation** - Automatische acties op GitHub events
-9. **Fase 9: MCP Tools** - Claude Code integratie
+**Core (Phase 1-9):**
+1. **Phase 1: Database & Infrastructure** - Prisma models (7 models incl. UserMapping)
+2. **Phase 2: GitHub App & OAuth** - App installation and user mapping (Admin level)
+3. **Phase 3: Repository Linking** - Link projects to repos (Project level)
+4. **Phase 4: Webhook Handler** - Process GitHub events
+5. **Phase 5: Issue Sync (Inbound)** - GitHub issues → Kanbu tasks
+6. **Phase 6: Issue Sync (Outbound)** - Kanbu tasks → GitHub issues
+7. **Phase 7: PR & Commit Tracking** - Link pull requests and commits
+8. **Phase 8: Automation** - Automatic actions on GitHub events
+9. **Phase 9: MCP Tools** - Claude Code integration
 
-**Extended (Fase 10-16):**
-10. **Fase 10: CI/CD Integratie** - GitHub Actions, Build Status, Deploy Tracking
-11. **Fase 11: Geavanceerde Sync** - Milestones, Releases, Wiki, GitHub Projects
-12. **Fase 12: Code Review Integratie** - Reviews, Comments, Approvals, CODEOWNERS
-13. **Fase 13: Analytics & Insights** - Cycle Time, Contributor Stats, Burndown
-14. **Fase 14: Developer Experience** - VS Code Extension, CLI Tool, Git Hooks, GitHub Bot
-15. **Fase 15: Multi-Repo Support** - Monorepo, Multi-Repo Projects, Cross-Repo PRs
-16. **Fase 16: AI/Claude Integratie** - PR Summary, Code Review AI, Release Notes, Bug Triage
+**Extended (Phase 10-16):**
+10. **Phase 10: CI/CD Integration** - GitHub Actions, Build Status, Deploy Tracking
+11. **Phase 11: Advanced Sync** - Milestones, Releases, Wiki, GitHub Projects
+12. **Phase 12: Code Review Integration** - Reviews, Comments, Approvals, CODEOWNERS
+13. **Phase 13: Analytics & Insights** - Cycle Time, Contributor Stats, Burndown
+14. **Phase 14: Developer Experience** - VS Code Extension, CLI Tool, Git Hooks, GitHub Bot
+15. **Phase 15: Multi-Repo Support** - Monorepo, Multi-Repo Projects, Cross-Repo PRs
+16. **Phase 16: AI/Claude Integration** - PR Summary, Code Review AI, Release Notes, Bug Triage
 
 ### Key Features
 
 **Core:**
-- Bidirectionele issue synchronisatie
-- Pull request tracking met task linking
+- Bidirectional issue synchronization
+- Pull request tracking with task linking
 - Commit tracking via task references
-- Feature branch creation vanuit tasks
-- Automatische task status updates
-- ACL-gebaseerde toegangscontrole
-- Volledig audit logging
+- Feature branch creation from tasks
+- Automatic task status updates
+- ACL-based access control
+- Full audit logging
 
 **Extended:**
-- CI/CD pipeline integratie (GitHub Actions)
+- CI/CD pipeline integration (GitHub Actions)
 - Code review workflow (reviews, approvals)
 - Analytics dashboard (cycle time, velocity)
 - Developer tools (VS Code, CLI, Git hooks)
 - AI-powered features (PR summaries, code review)
-- Multi-repo en monorepo ondersteuning
+- Multi-repo and monorepo support
 
 ### ACL Permissions
 
-**Admin Niveau (Workspace):**
+**Admin Level (Workspace):**
 
-| Actie | Vereiste Permission |
-|-------|---------------------|
-| Installations bekijken | Workspace R |
-| Installations beheren | Workspace P |
-| User mappings bekijken | Workspace R |
-| User mappings beheren | Workspace P |
+| Action | Required Permission |
+|--------|---------------------|
+| View installations | Workspace R |
+| Manage installations | Workspace P |
+| View user mappings | Workspace R |
+| Manage user mappings | Workspace P |
 
-**Project Niveau:**
+**Project Level:**
 
-| Actie | Vereiste Permission |
-|-------|---------------------|
-| GitHub panel bekijken | Project R |
-| Issues/PRs bekijken | Project R |
-| Manual sync triggeren | Project W |
-| Repository koppelen | Project P |
-| Settings configureren | Project P |
+| Action | Required Permission |
+|--------|---------------------|
+| View GitHub panel | Project R |
+| View issues/PRs | Project R |
+| Trigger manual sync | Project W |
+| Link repository | Project P |
+| Configure settings | Project P |
 
 ### Sidebar Menu
 
-Na implementatie verschijnt "GitHub" op twee locaties:
+After implementation, "GitHub" appears in two locations:
 
 **Admin Sidebar** (Workspace Admins):
 ```
 INTEGRATIONS
-└── GitHub        ← NIEUW (installations, user mapping, overview)
+└── GitHub        ← NEW (installations, user mapping, overview)
 ```
 
 **Project Sidebar** (Project Settings):
@@ -115,5 +115,5 @@ MANAGE
 ├── Board Settings
 ├── Import/Export
 ├── Webhooks
-└── GitHub        ← NIEUW (repo linking, sync settings)
+└── GitHub        ← NEW (repo linking, sync settings)
 ```

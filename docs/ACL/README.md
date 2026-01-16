@@ -1,67 +1,67 @@
-# Access Control Lists (ACL) Systeem
+# Access Control Lists (ACL) System
 
-> **Visie & Architectuur:** Zie [ARCHITECTURE.md](./ARCHITECTURE.md) voor de volledige visie van het scoped permission model.
-> **Implementatie Status:** Zie [ROADMAP.md](./ROADMAP.md) voor de huidige status en planning.
+> **Vision & Architecture:** See [ARCHITECTURE.md](./ARCHITECTURE.md) for the complete vision of the scoped permission model.
+> **Implementation Status:** See [ROADMAP.md](./ROADMAP.md) for current status and planning.
 
-## Overzicht
+## Overview
 
-Kanbu gebruikt een **filesystem-style ACL systeem** geïnspireerd op NTFS/Active Directory permissies. Dit biedt een flexibel en krachtig autorisatiemodel dat zowel eenvoudige als complexe toegangsscenario's ondersteunt.
+Kanbu uses a **filesystem-style ACL system** inspired by NTFS/Active Directory permissions. This provides a flexible and powerful authorization model that supports both simple and complex access scenarios.
 
-Het systeem evolueert naar een **Scoped Permission Model** met:
-- **Resource hiërarchie**: System > Workspaces > Projects
-- **Security Groups**: AD-compatible groepen voor role-based access
-- **Workspace isolation**: Gedelegeerde administratie per workspace
-- **Scoped data access**: Users zien alleen data binnen hun scope
+The system evolves towards a **Scoped Permission Model** with:
+- **Resource hierarchy**: System > Workspaces > Projects
+- **Security Groups**: AD-compatible groups for role-based access
+- **Workspace isolation**: Delegated administration per workspace
+- **Scoped data access**: Users only see data within their scope
 
-## Waarom ACL?
+## Why ACL?
 
-Het vorige role-based systeem (WorkspaceUser, ProjectMember) had beperkingen:
-- Geen ondersteuning voor expliciete deny
-- Geen inheritance tussen resources
-- Beperkte granulariteit (alleen voorgedefinieerde roles)
-- Geen groepsgebaseerde permissies op resource niveau
+The previous role-based system (WorkspaceUser, ProjectMember) had limitations:
+- No support for explicit deny
+- No inheritance between resources
+- Limited granularity (only predefined roles)
+- No group-based permissions at resource level
 
-Het nieuwe ACL systeem lost dit op met:
-- **Bitmask permissies** - Flexibele combinatie van rechten
-- **Deny-first logic** - Expliciete weigering overschrijft altijd toestemming
-- **Inheritance** - Workspace permissies erven door naar projects
-- **Principal types** - Zowel users als groups kunnen rechten krijgen
+The new ACL system solves this with:
+- **Bitmask permissions** - Flexible combination of rights
+- **Deny-first logic** - Explicit denial always overrides permission
+- **Inheritance** - Workspace permissions inherit to projects
+- **Principal types** - Both users and groups can receive rights
 
-## Permissie Model (RWXDP)
+## Permission Model (RWXDP)
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    PERMISSION BITS                          │
 ├─────────┬───────┬─────────────────────────────────────────┤
-│ Letter  │ Value │ Betekenis                                │
+│ Letter  │ Value │ Meaning                                  │
 ├─────────┼───────┼─────────────────────────────────────────┤
-│ R       │ 1     │ Read - Content bekijken                  │
-│ W       │ 2     │ Write - Content wijzigen                 │
-│ X       │ 4     │ Execute - Nieuwe items aanmaken          │
-│ D       │ 8     │ Delete - Items verwijderen               │
-│ P       │ 16    │ Permissions - ACLs beheren               │
+│ R       │ 1     │ Read - View content                      │
+│ W       │ 2     │ Write - Modify content                   │
+│ X       │ 4     │ Execute - Create new items               │
+│ D       │ 8     │ Delete - Remove items                    │
+│ P       │ 16    │ Permissions - Manage ACLs                │
 └─────────┴───────┴─────────────────────────────────────────┘
 ```
 
 ### Presets
 
-| Preset       | Value | Bits  | Beschrijving                    |
+| Preset       | Value | Bits  | Description                     |
 |--------------|-------|-------|---------------------------------|
-| None         | 0     | -----  | Geen rechten                    |
-| Read Only    | 1     | R----  | Alleen lezen                    |
-| Contributor  | 7     | RWX--  | Lezen, schrijven, aanmaken      |
-| Editor       | 15    | RWXD-  | Alles behalve ACL beheer        |
-| Full Control | 31    | RWXDP  | Volledige controle              |
+| None         | 0     | -----  | No rights                       |
+| Read Only    | 1     | R----  | Read only                       |
+| Contributor  | 7     | RWX--  | Read, write, create             |
+| Editor       | 15    | RWXD-  | Everything except ACL management|
+| Full Control | 31    | RWXDP  | Full control                    |
 
-### Bitmask Berekening
+### Bitmask Calculation
 
-Permissies worden opgeslagen als een integer bitmask:
+Permissions are stored as an integer bitmask:
 
 ```typescript
-// Voorbeeld: Read + Write = 1 + 2 = 3
+// Example: Read + Write = 1 + 2 = 3
 const permissions = ACL_PERMISSIONS.READ | ACL_PERMISSIONS.WRITE // 3
 
-// Check of een permissie aanwezig is
+// Check if a permission is present
 const hasRead = (permissions & ACL_PERMISSIONS.READ) !== 0 // true
 const hasDelete = (permissions & ACL_PERMISSIONS.DELETE) !== 0 // false
 ```
@@ -73,12 +73,12 @@ model AclEntry {
   id              Int      @id @default(autoincrement())
   resourceType    String   // 'workspace', 'project', 'admin', 'profile'
   resourceId      Int?     // null = root/all resources of type
-  principalType   String   // 'user' of 'group'
-  principalId     Int      // user.id of group.id
+  principalType   String   // 'user' or 'group'
+  principalId     Int      // user.id or group.id
   permissions     Int      // bitmask (0-31)
   deny            Boolean  // true = deny entry, false = allow entry
-  inherited       Boolean  // true = geërfd van parent
-  inheritToChildren Boolean // true = erft door naar children
+  inherited       Boolean  // true = inherited from parent
+  inheritToChildren Boolean // true = inherits to children
   createdAt       DateTime
   createdById     Int?
   updatedAt       DateTime
@@ -87,11 +87,11 @@ model AclEntry {
 
 ## Deny-First Logic
 
-Net als NTFS werkt het ACL systeem met **deny-first**:
+Like NTFS, the ACL system works with **deny-first**:
 
-1. Verzamel alle DENY entries voor de user (direct + via groups)
-2. Verzamel alle ALLOW entries voor de user (direct + via groups)
-3. Bereken: `effectivePermissions = allowedPermissions & ~deniedPermissions`
+1. Collect all DENY entries for the user (direct + via groups)
+2. Collect all ALLOW entries for the user (direct + via groups)
+3. Calculate: `effectivePermissions = allowedPermissions & ~deniedPermissions`
 
 ```
 ┌────────────────────────────────────────────────────────────┐
@@ -120,34 +120,34 @@ Net als NTFS werkt het ACL systeem met **deny-first**:
 
 ## Inheritance
 
-Permissies kunnen overerven van parent naar child resources:
+Permissions can inherit from parent to child resources:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    RESOURCE HIERARCHY                        │
 ├─────────────────────────────────────────────────────────────┤
 │                                                              │
-│   workspace (null)     ← Root: alle workspaces              │
+│   workspace (null)     ← Root: all workspaces               │
 │        │                                                     │
 │        ▼                                                     │
-│   workspace (id: 1)    ← Specifieke workspace               │
+│   workspace (id: 1)    ← Specific workspace                 │
 │        │                                                     │
 │        ▼ inheritToChildren=true                              │
-│   project (id: 5)      ← Project erft workspace permissies  │
+│   project (id: 5)      ← Project inherits workspace perms   │
 │                                                              │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-Als een user READ heeft op `workspace:1` met `inheritToChildren=true`, dan heeft die user automatisch ook READ op alle projects binnen die workspace.
+If a user has READ on `workspace:1` with `inheritToChildren=true`, that user automatically also has READ on all projects within that workspace.
 
 ## Role Mapping
 
-ACL permissies worden vertaald naar workspace/project roles voor compatibiliteit:
+ACL permissions are translated to workspace/project roles for compatibility:
 
-| ACL Permissies | Workspace Role | Project Role |
+| ACL Permissions | Workspace Role | Project Role |
 |----------------|----------------|--------------|
 | R              | VIEWER         | VIEWER       |
-| RW of RWX      | MEMBER         | MEMBER       |
+| RW or RWX      | MEMBER         | MEMBER       |
 | RWXD           | MEMBER         | MANAGER      |
 | RWXDP          | ADMIN          | OWNER        |
 
@@ -155,35 +155,35 @@ ACL permissies worden vertaald naar workspace/project roles voor compatibiliteit
 
 ### tRPC Procedures (`trpc.acl.*`)
 
-| Procedure       | Beschrijving                              |
+| Procedure       | Description                              |
 |-----------------|-------------------------------------------|
-| `list`          | ACL entries voor een resource ophalen     |
-| `grant`         | Permissies verlenen aan user/group        |
-| `deny`          | Permissies expliciet weigeren             |
-| `revoke`        | Alle permissies intrekken                 |
-| `update`        | Bestaande ACL entry aanpassen             |
-| `delete`        | ACL entry verwijderen                     |
-| `checkPermission` | Effectieve permissies controleren       |
-| `getPresets`    | Beschikbare presets ophalen               |
-| `getPrincipals` | Users en groups ophalen voor toewijzing   |
-| `getResources`  | Resources ophalen die ACLs kunnen hebben  |
-| `getStats`      | ACL statistieken (admin only)             |
+| `list`          | Retrieve ACL entries for a resource      |
+| `grant`         | Grant permissions to user/group          |
+| `deny`          | Explicitly deny permissions              |
+| `revoke`        | Revoke all permissions                   |
+| `update`        | Modify existing ACL entry                |
+| `delete`        | Delete ACL entry                         |
+| `checkPermission` | Check effective permissions            |
+| `getPresets`    | Retrieve available presets               |
+| `getPrincipals` | Retrieve users and groups for assignment |
+| `getResources`  | Retrieve resources that can have ACLs    |
+| `getStats`      | ACL statistics (admin only)              |
 
 ## Service Layer
 
 ### AclService (`services/aclService.ts`)
 
 ```typescript
-// Check enkele permissie
+// Check single permission
 await aclService.hasPermission(userId, 'workspace', workspaceId, ACL_PERMISSIONS.READ)
 
-// Check alle permissies
+// Check all permissions
 const result = await aclService.checkPermission(userId, 'project', projectId)
 // result.effectivePermissions = 7 (RWX)
 // result.deniedPermissions = 0
 // result.sources = [{ type: 'user', ... }, { type: 'group', ... }]
 
-// Permissie verlenen
+// Grant permission
 await aclService.grantPermission({
   resourceType: 'workspace',
   resourceId: 1,
@@ -193,7 +193,7 @@ await aclService.grantPermission({
   inheritToChildren: true,
 })
 
-// Permissie weigeren
+// Deny permission
 await aclService.denyPermission({
   resourceType: 'project',
   resourceId: 10,
@@ -205,121 +205,121 @@ await aclService.denyPermission({
 
 ## UI
 
-De ACL Manager is beschikbaar via **Administration > ACL Manager** (`/admin/acl`).
+The ACL Manager is available via **Administration > ACL Manager** (`/admin/acl`).
 
 Features:
 - Resource selector (workspaces, projects, admin)
-- Overzicht van alle ACL entries met ALLOW/DENY badges
-- Grant/Deny dialogs met preset selectie
+- Overview of all ACL entries with ALLOW/DENY badges
+- Grant/Deny dialogs with preset selection
 - Custom permission toggles
-- Inheritance opties
-- Statistics overzicht
+- Inheritance options
+- Statistics overview
 
-## Huidige Status
+## Current Status
 
-### Pure ACL Modus ✓
+### Pure ACL Mode ✓
 
-Het systeem draait nu in **pure ACL modus** (Fase 3B voltooid):
-- [x] Alle workspace/project access via ACL
-- [x] Legacy fallback verwijderd
-- [x] Members worden uit ACL gelezen
-- [x] Procedures schrijven alleen naar ACL
+The system now runs in **pure ACL mode** (Phase 3B completed):
+- [x] All workspace/project access via ACL
+- [x] Legacy fallback removed
+- [x] Members read from ACL
+- [x] Procedures write only to ACL
 
-### Geïmplementeerd ✓
+### Implemented ✓
 
 - [x] Database model (AclEntry)
-- [x] AclService met alle core functies
-- [x] tRPC procedures voor CRUD
-- [x] ACL Manager UI met VSCode-style tree (Fase 4)
-- [x] Security Groups sectie in tree
+- [x] AclService with all core functions
+- [x] tRPC procedures for CRUD
+- [x] ACL Manager UI with VSCode-style tree (Phase 4)
+- [x] Security Groups section in tree
 - [x] Real-time WebSocket updates
 - [x] Integration in PermissionService
 - [x] Workspace listing/access via ACL
 - [x] Project listing/access via ACL
 - [x] 15 unit tests
 
-### Voltooid (Fase 4B-8C)
+### Completed (Phase 4B-8C)
 
-- [x] **Fase 4B**: [+] knop voor Security Groups, GroupListPage verwijderd
-- [x] **Fase 4C**: Extended Resource Hierarchy (root, system, dashboard)
-- [x] **Fase 5**: ScopeService voor data filtering
-- [x] **Fase 6**: Workspace-scoped admin panel
-- [x] **Fase 7**: Conditionele menu's en AclGate component
-- [x] **Fase 8B**: Feature ACL voor Projects (11 features)
-- [x] **Fase 8C**: Systeem-breed Feature ACL (40 features totaal)
+- [x] **Phase 4B**: [+] button for Security Groups, GroupListPage removed
+- [x] **Phase 4C**: Extended Resource Hierarchy (root, system, dashboard)
+- [x] **Phase 5**: ScopeService for data filtering
+- [x] **Phase 6**: Workspace-scoped admin panel
+- [x] **Phase 7**: Conditional menus and AclGate component
+- [x] **Phase 8B**: Feature ACL for Projects (11 features)
+- [x] **Phase 8C**: System-wide Feature ACL (40 features total)
 
-### Feature ACL Overzicht
+### Feature ACL Overview
 
-**40 features over 4 scopes:**
+**40 features across 4 scopes:**
 - `dashboard` (4): overview, my-tasks, my-subtasks, my-workspaces
 - `profile` (16): summary, time-tracking, last-logins, sessions, password-history, metadata, edit-profile, avatar, change-password, two-factor-auth, public-access, notifications, external-accounts, integrations, api-tokens, hourly-rate
 - `admin` (9): users, create-user, acl, permission-tree, invites, workspaces, settings-general, settings-security, backup
 - `project` (11): board, list, calendar, timeline, sprints, milestones, analytics, members, settings, import-export, webhooks
 
-### Voltooid (Fase 9.1, 9.4, 9.5, 9.6)
+### Completed (Phase 9.1, 9.4, 9.5, 9.6)
 
-- [x] **Fase 9.1**: Audit Logging - Security audit trail voor alle kritieke events
-- [x] **Fase 9.4**: Bulk Operations - bulkGrant, bulkRevoke, copyPermissions, applyTemplate
-- [x] **Fase 9.5**: Advanced ACL UI - Permission Matrix view, Effective Permissions Calculator, What-If Simulator, Import/Export ACL
-- [x] **Fase 9.6**: API Keys & Service Accounts - Scoped API keys (USER/WORKSPACE/PROJECT), service accounts, dual auth (JWT + API key)
+- [x] **Phase 9.1**: Audit Logging - Security audit trail for all critical events
+- [x] **Phase 9.4**: Bulk Operations - bulkGrant, bulkRevoke, copyPermissions, applyTemplate
+- [x] **Phase 9.5**: Advanced ACL UI - Permission Matrix view, Effective Permissions Calculator, What-If Simulator, Import/Export ACL
+- [x] **Phase 9.6**: API Keys & Service Accounts - Scoped API keys (USER/WORKSPACE/PROJECT), service accounts, dual auth (JWT + API key)
 
-### Gepland (Fase 9.2, 9.3)
+### Planned (Phase 9.2, 9.3)
 
-- [ ] **Fase 9.2**: LDAP/AD Sync
-- [ ] **Fase 9.3**: Task-level ACL
+- [ ] **Phase 9.2**: LDAP/AD Sync
+- [ ] **Phase 9.3**: Task-level ACL
 
-Zie [ROADMAP.md](./ROADMAP.md) voor de volledige planning.
+See [ROADMAP.md](./ROADMAP.md) for the complete planning.
 
-## Te Verwijderen in Fase 4B
+## To Be Removed in Phase 4B
 
-> ⚠️ **Radicale Simplificatie:** De volgende systemen worden VOLLEDIG verwijderd.
+> ⚠️ **Radical Simplification:** The following systems will be COMPLETELY removed.
 
-### Tabellen (Database)
+### Tables (Database)
 
-| Tabel | Reden voor verwijdering |
+| Table | Reason for removal |
 |-------|------------------------|
-| `GroupPermission` | Named permissions niet nodig, ACL bitmask is beter |
-| `Permission` | Alleen gebruikt door GroupPermission |
-| `RoleAssignment` | Niet nodig, ACL presets zijn genoeg |
-| `WorkspaceUser` | ❌ AL VERWIJDERD - vervangen door AclEntry |
-| `ProjectMember` | ❌ AL VERWIJDERD - vervangen door AclEntry |
+| `GroupPermission` | Named permissions not needed, ACL bitmask is better |
+| `Permission` | Only used by GroupPermission |
+| `RoleAssignment` | Not needed, ACL presets are sufficient |
+| `WorkspaceUser` | ❌ ALREADY REMOVED - replaced by AclEntry |
+| `ProjectMember` | ❌ ALREADY REMOVED - replaced by AclEntry |
 
 ### Frontend Pages
 
-| Page | Reden voor verwijdering |
+| Page | Reason for removal |
 |------|------------------------|
-| `GroupListPage.tsx` | Niet nodig, groups zichtbaar in AclPage ResourceTree |
-| `GroupEditPage.tsx` | Niet nodig, members via GroupMembersPanel in AclPage |
+| `GroupListPage.tsx` | Not needed, groups visible in AclPage ResourceTree |
+| `GroupEditPage.tsx` | Not needed, members via GroupMembersPanel in AclPage |
 
 ### Backend Services
 
-| Service | Reden voor verwijdering |
+| Service | Reason for removal |
 |---------|------------------------|
-| `groupPermissions.ts` | Named permissions niet meer nodig |
-| `roleAssignmentService.ts` | RoleAssignment niet meer nodig |
-| `roleAssignment.ts` (procedures) | RoleAssignment niet meer nodig |
+| `groupPermissions.ts` | Named permissions no longer needed |
+| `roleAssignmentService.ts` | RoleAssignment no longer needed |
+| `roleAssignment.ts` (procedures) | RoleAssignment no longer needed |
 
-### Wat Blijft
+### What Remains
 
-**AclPage is de single source of truth voor:**
-- Security Groups aanmaken ([+] knop)
-- Group members beheren (GroupMembersPanel)
-- ACL permissions toekennen (Grant/Deny dialogs)
-- Resources beheren (ResourceTree)
+**AclPage is the single source of truth for:**
+- Creating Security Groups ([+] button)
+- Managing group members (GroupMembersPanel)
+- Assigning ACL permissions (Grant/Deny dialogs)
+- Managing resources (ResourceTree)
 
-## Bestanden
+## Files
 
-| Bestand | Beschrijving |
+| File | Description |
 |---------|--------------|
 | `apps/api/src/services/aclService.ts` | Core ACL service |
-| `apps/api/src/services/permissions.ts` | PermissionService met ACL integratie |
+| `apps/api/src/services/permissions.ts` | PermissionService with ACL integration |
 | `apps/api/src/trpc/procedures/acl.ts` | tRPC endpoints |
 | `apps/web/src/pages/admin/AclPage.tsx` | ACL Manager UI |
 | `apps/web/src/components/admin/ResourceTree.tsx` | VSCode-style resource tree component |
 | `packages/shared/prisma/schema.prisma` | AclEntry model |
 
-## Zie Ook
+## See Also
 
-- [ARCHITECTURE.md](./ARCHITECTURE.md) - Volledige visie en technische specificaties
-- [ROADMAP.md](./ROADMAP.md) - Implementatie roadmap met status
-- [MIGRATION.md](./MIGRATION.md) - Migratie handleiding
+- [ARCHITECTURE.md](./ARCHITECTURE.md) - Complete vision and technical specifications
+- [ROADMAP.md](./ROADMAP.md) - Implementation roadmap with status
+- [MIGRATION.md](./MIGRATION.md) - Migration guide
