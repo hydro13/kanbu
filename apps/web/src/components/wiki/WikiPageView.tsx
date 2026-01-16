@@ -642,7 +642,17 @@ export function WikiPageView({
         {/* Key excludes updatedAt to prevent editor remount on auto-save refetch */}
         <RichTextEditor
           key={`${page.id}-${isEditing}`}
-          initialContent={isEditing ? editedContentJson || undefined : page.contentJson || undefined}
+          initialContent={isEditing
+            ? editedContentJson || undefined
+            : page.contentJson || undefined}
+          initialMarkdown={
+            // Use markdown conversion when no Lexical JSON exists but plain text content does
+            (isEditing && !editedContentJson && page.content)
+              ? page.content
+              : (!isEditing && !page.contentJson && page.content)
+                ? page.content
+                : undefined
+          }
           onChange={handleEditorChange}
           readOnly={!isEditing}
           showToolbar={isEditing}

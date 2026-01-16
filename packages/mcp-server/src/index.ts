@@ -220,6 +220,27 @@ import {
   handleCreateGitHubBranch,
   handleLinkPRToTask,
 } from './tools/github.js'
+import {
+  wikiToolDefinitions,
+  handleListProjectWikiPages,
+  handleGetProjectWikiPage,
+  handleGetProjectWikiPageBySlug,
+  handleCreateProjectWikiPage,
+  handleUpdateProjectWikiPage,
+  handleDeleteProjectWikiPage,
+  handleGetProjectWikiVersions,
+  handleGetProjectWikiVersion,
+  handleRestoreProjectWikiVersion,
+  handleListWorkspaceWikiPages,
+  handleGetWorkspaceWikiPage,
+  handleGetWorkspaceWikiPageBySlug,
+  handleCreateWorkspaceWikiPage,
+  handleUpdateWorkspaceWikiPage,
+  handleDeleteWorkspaceWikiPage,
+  handleGetWorkspaceWikiVersions,
+  handleGetWorkspaceWikiVersion,
+  handleRestoreWorkspaceWikiVersion,
+} from './tools/wiki.js'
 
 // =============================================================================
 // Tool Schemas
@@ -326,6 +347,8 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       ...profileToolDefinitions,
       // GitHub tools (GitHub Connector Fase 9)
       ...githubToolDefinitions,
+      // Wiki tools (Phase 17)
+      ...wikiToolDefinitions,
     ],
   }
 })
@@ -650,6 +673,46 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         return await handleCreateGitHubBranch(args)
       case 'kanbu_link_pr_to_task':
         return await handleLinkPRToTask(args)
+
+      // Wiki tools - Project Wiki (Phase 17)
+      case 'kanbu_list_project_wiki_pages':
+        return await handleListProjectWikiPages(args)
+      case 'kanbu_get_project_wiki_page':
+        return await handleGetProjectWikiPage(args)
+      case 'kanbu_get_project_wiki_page_by_slug':
+        return await handleGetProjectWikiPageBySlug(args)
+      case 'kanbu_create_project_wiki_page':
+        return await handleCreateProjectWikiPage(args)
+      case 'kanbu_update_project_wiki_page':
+        return await handleUpdateProjectWikiPage(args)
+      case 'kanbu_delete_project_wiki_page':
+        return await handleDeleteProjectWikiPage(args)
+      case 'kanbu_get_project_wiki_versions':
+        return await handleGetProjectWikiVersions(args)
+      case 'kanbu_get_project_wiki_version':
+        return await handleGetProjectWikiVersion(args)
+      case 'kanbu_restore_project_wiki_version':
+        return await handleRestoreProjectWikiVersion(args)
+
+      // Wiki tools - Workspace Wiki (Phase 17)
+      case 'kanbu_list_workspace_wiki_pages':
+        return await handleListWorkspaceWikiPages(args)
+      case 'kanbu_get_workspace_wiki_page':
+        return await handleGetWorkspaceWikiPage(args)
+      case 'kanbu_get_workspace_wiki_page_by_slug':
+        return await handleGetWorkspaceWikiPageBySlug(args)
+      case 'kanbu_create_workspace_wiki_page':
+        return await handleCreateWorkspaceWikiPage(args)
+      case 'kanbu_update_workspace_wiki_page':
+        return await handleUpdateWorkspaceWikiPage(args)
+      case 'kanbu_delete_workspace_wiki_page':
+        return await handleDeleteWorkspaceWikiPage(args)
+      case 'kanbu_get_workspace_wiki_versions':
+        return await handleGetWorkspaceWikiVersions(args)
+      case 'kanbu_get_workspace_wiki_version':
+        return await handleGetWorkspaceWikiVersion(args)
+      case 'kanbu_restore_workspace_wiki_version':
+        return await handleRestoreWorkspaceWikiVersion(args)
 
       default:
         throw new McpError(ErrorCode.MethodNotFound, `Unknown tool: ${name}`)

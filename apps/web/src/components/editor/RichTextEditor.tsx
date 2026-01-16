@@ -25,7 +25,9 @@ import { TabIndentationPlugin } from '@lexical/react/LexicalTabIndentationPlugin
 import { LexicalErrorBoundary } from '@lexical/react/LexicalErrorBoundary'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { TRANSFORMERS } from '@lexical/markdown'
-import type { EditorState, LexicalEditor } from 'lexical'
+import { $getRoot, $insertNodes, type EditorState, type LexicalEditor } from 'lexical'
+import { $generateNodesFromDOM } from '@lexical/html'
+import Showdown from 'showdown'
 
 // Nodes
 import { HeadingNode, QuoteNode } from '@lexical/rich-text'
@@ -59,6 +61,8 @@ import './editor.css'
 export interface RichTextEditorProps {
   /** Initial content as Lexical JSON state */
   initialContent?: string
+  /** Initial content as markdown (will be converted to Lexical nodes) */
+  initialMarkdown?: string
   /** Callback when content changes */
   onChange?: (editorState: EditorState, editor: LexicalEditor, jsonString: string) => void
   /** Placeholder text */
@@ -147,11 +151,94 @@ function InitialStatePlugin({ initialContent }: InitialStatePluginProps) {
 }
 
 // =============================================================================
+// Markdown Init Plugin
+// =============================================================================
+
+/**
+ * Create a Showdown converter with optimal settings for wiki/documentation
+ */
+function createMarkdownConverter(): Showdown.Converter {
+  return new Showdown.Converter({
+    tables: true,
+    strikethrough: true,
+    tasklists: true,
+    ghCodeBlocks: true,
+    simpleLineBreaks: false,
+    openLinksInNewWindow: false,
+    backslashEscapesHTMLTags: true,
+    emoji: false,
+    underline: true,
+    ghMentions: false,
+    encodeEmails: false,
+    headerLevelStart: 1,
+    parseImgDimensions: true,
+    splitAdjacentBlockquotes: true,
+  })
+}
+
+let markdownConverter: Showdown.Converter | null = null
+
+function getMarkdownConverter(): Showdown.Converter {
+  if (!markdownConverter) {
+    markdownConverter = createMarkdownConverter()
+  }
+  return markdownConverter
+}
+
+interface MarkdownInitPluginProps {
+  markdown: string
+}
+
+/**
+ * Plugin that converts markdown content to Lexical nodes on mount.
+ * Uses Showdown for markdown-to-HTML conversion, then Lexical's $generateNodesFromDOM.
+ */
+function MarkdownInitPlugin({ markdown }: MarkdownInitPluginProps) {
+  const [editor] = useLexicalComposerContext()
+
+  useEffect(() => {
+    if (!markdown) return
+
+    // Convert markdown to HTML using Showdown
+    const converter = getMarkdownConverter()
+    const html = converter.makeHtml(markdown)
+
+    // Parse HTML to DOM
+    const parser = new DOMParser()
+    const dom = parser.parseFromString(html, 'text/html')
+
+    // Convert DOM to Lexical nodes and insert
+    editor.update(
+      () => {
+        const nodes = $generateNodesFromDOM(editor, dom)
+        const root = $getRoot()
+        root.clear()
+
+        // Filter out empty/whitespace-only nodes
+        const filteredNodes = nodes.filter(node => {
+          if (node.getType() !== 'text') return true
+          const textContent = node.getTextContent()
+          return textContent.trim().length > 0
+        })
+
+        if (filteredNodes.length > 0) {
+          $insertNodes(filteredNodes)
+        }
+      },
+      { discrete: true }
+    )
+  }, []) // Only run once on mount
+
+  return null
+}
+
+// =============================================================================
 // Main Component
 // =============================================================================
 
 export function RichTextEditor({
   initialContent,
+  initialMarkdown,
   onChange,
   placeholder = 'Start typing...',
   readOnly = false,
@@ -296,8 +383,9 @@ export function RichTextEditor({
             {/* Auto focus */}
             {autoFocus && <AutoFocusPlugin />}
 
-            {/* Initial content */}
+            {/* Initial content - Lexical JSON takes priority, fallback to markdown */}
             {initialContent && <InitialStatePlugin initialContent={initialContent} />}
+            {!initialContent && initialMarkdown && <MarkdownInitPlugin markdown={initialMarkdown} />}
           </div>
 
           {/* Minimap */}

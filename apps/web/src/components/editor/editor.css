@@ -570,12 +570,12 @@
   display: block;
   margin: 0;
   margin-bottom: 0.5rem;
-  padding: 1rem;
+  padding: 0.5rem 0.75rem;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 0.875rem;
-  line-height: 1.6;
+  line-height: 1.5;
   background: hsl(var(--muted));
-  border-radius: 0.5rem;
+  border-radius: 0.375rem;
   overflow-x: auto;
   tab-size: 2;
   white-space: pre;
@@ -663,12 +663,12 @@
   display: block;
   margin: 0;
   margin-bottom: 0.5rem;
-  padding: 1rem;
+  padding: 0.5rem 0.75rem;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 0.875rem;
-  line-height: 1.6;
+  line-height: 1.5;
   background: hsl(var(--muted));
-  border-radius: 0.5rem;
+  border-radius: 0.375rem;
   overflow-x: auto;
   tab-size: 2;
   white-space: pre;
@@ -713,17 +713,18 @@
 
 .lexical-table-cell,
 .lexical-table-cell-header {
-  padding: 0.75rem 1rem;
+  padding: 0.25rem 0.5rem;
   text-align: left;
   vertical-align: top;
-  border: 1px solid hsl(var(--border));
-  min-width: 120px;
+  border: 1px solid hsl(var(--foreground) / 0.2);
+  min-width: 60px;
   word-wrap: break-word;
 }
 
 .lexical-table-cell-header {
   font-weight: 600;
   background: hsl(var(--muted) / 0.5);
+  border-bottom: 2px solid hsl(var(--foreground) / 0.3);
 }
 
 /* HTML table elements (from pasted content) */
@@ -738,17 +739,18 @@
 
 .lexical-content-editable th,
 .lexical-content-editable td {
-  padding: 0.75rem 1rem;
+  padding: 0.25rem 0.5rem;
   text-align: left;
   vertical-align: top;
-  border: 1px solid hsl(var(--border));
-  min-width: 100px;
+  border: 1px solid hsl(var(--foreground) / 0.2);
+  min-width: 60px;
   word-wrap: break-word;
 }
 
 .lexical-content-editable th {
   font-weight: 600;
   background: hsl(var(--muted) / 0.5);
+  border-bottom: 2px solid hsl(var(--foreground) / 0.3);
 }
 
 .lexical-content-editable tr {

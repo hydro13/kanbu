@@ -173,9 +173,9 @@ function RelatedSection({ pageId, basePath }: RelatedSectionProps) {
               <span>Could not load related pages</span>
             </div>
           ) : hasRelated ? (
-            related.map((page) => (
+            related.map((page, index) => (
               <Link
-                key={`related-${page.pageId}`}
+                key={`related-${page.pageId}-${index}`}
                 to={`${basePath}/${page.slug || page.pageId}`}
                 className="flex items-center gap-2 px-2 py-1.5 text-sm rounded-md hover:bg-accent transition-colors group"
               >

@@ -43,3 +43,6 @@ export * from './profile.js'
 
 // GitHub Connector - Fase 9
 export * from './github.js'
+
+// Phase 17 - Wiki Pages Management
+export * from './wiki.js'
