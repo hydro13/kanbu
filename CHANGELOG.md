@@ -29,57 +29,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 #### Wiki MCP Tools (Phase 17)
-Volledige wiki beheer via Claude Code MCP integratie - 18 nieuwe tools.
+Complete wiki management via Claude Code MCP integration - 18 new tools.
 
 **Project Wiki Tools (9):**
-- `kanbu_list_project_wiki_pages` - Lijst wiki pagina's in project
-- `kanbu_get_project_wiki_page` - Pagina details ophalen
-- `kanbu_get_project_wiki_page_by_slug` - Pagina via slug/permalink
-- `kanbu_create_project_wiki_page` - Nieuwe pagina aanmaken
-- `kanbu_update_project_wiki_page` - Pagina bewerken
-- `kanbu_delete_project_wiki_page` - Pagina verwijderen
-- `kanbu_get_project_wiki_versions` - Versie geschiedenis
-- `kanbu_get_project_wiki_version` - Specifieke versie ophalen
-- `kanbu_restore_project_wiki_version` - Oude versie herstellen
+- `kanbu_list_project_wiki_pages` - List wiki pages in project
+- `kanbu_get_project_wiki_page` - Get page details
+- `kanbu_get_project_wiki_page_by_slug` - Get page by slug/permalink
+- `kanbu_create_project_wiki_page` - Create new page
+- `kanbu_update_project_wiki_page` - Update existing page
+- `kanbu_delete_project_wiki_page` - Delete page
+- `kanbu_get_project_wiki_versions` - Get version history
+- `kanbu_get_project_wiki_version` - Get specific version
+- `kanbu_restore_project_wiki_version` - Restore old version
 
 **Workspace Wiki Tools (9):**
-- Dezelfde 9 tools voor workspace-level wiki's
+- Same 9 tools for workspace-level wikis
 
 **Wiki Features:**
-- Versie beheer: Tot 20 versies per pagina
-- Hiërarchische structuur: Parent/child pagina relaties
+- Version control: Up to 20 versions per page
+- Hierarchical structure: Parent/child page relationships
 - Status management: Draft, Published, Archived
-- Slug permalinks: Leesbare URLs
-- Graphiti integratie: AI entity extractie voor knowledge graph
+- Slug permalinks: Human-readable URLs
+- Graphiti integration: AI entity extraction for knowledge graph
 - Cross-references: `[[wiki links]]`, `@mentions`, `#task-refs`, `#tags`
 
 #### RichTextEditor Improvements
-- `initialMarkdown` prop voor wiki page markdown support
+- `initialMarkdown` prop for wiki page markdown support
 
 ### Changed
 
-#### Editor CSS Verbeteringen
+#### Editor CSS Improvements
 
-**Tabellen:**
-- Padding: 12px/16px → 4px/8px (compacter)
-- Borders: Betere zichtbaarheid met `foreground/0.2`
-- Headers: Dikkere onderrand (2px) voor visuele scheiding
+**Tables:**
+- Padding: 12px/16px → 4px/8px (more compact)
+- Borders: Better visibility with `foreground/0.2`
+- Headers: Thicker bottom border (2px) for visual separation
 - Min-width: 100-120px → 60px
 
-**Code Blokken:**
-- Padding: 16px → 8px/12px (50% reductie)
+**Code Blocks:**
+- Padding: 16px → 8px/12px (50% reduction)
 - Line-height: 1.6 → 1.5
 - Border-radius: 0.5rem → 0.375rem
 
 ### Fixed
-- **BacklinksPanel.tsx**: Duplicate React key warning in related pages list
-- **WikiPageView.tsx**: Markdown initialisatie geïntegreerd
+- **BacklinksPanel.tsx**: Fixed duplicate React key warning in related pages list
+- **WikiPageView.tsx**: Integrated markdown initialization
 
 ### Technical
-- Nieuwe bestanden: `wiki.ts`, `wiki.test.ts`
-- Regels toegevoegd: ~2000
-- Unit tests: 71 nieuwe tests voor wiki tools
-- Totaal MCP tools: 93+
+- New files: `wiki.ts`, `wiki.test.ts`
+- Lines added: ~2000
+- Unit tests: 71 new tests for wiki tools
+- Total MCP tools: 93+
 
 ---
 
