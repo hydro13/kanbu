@@ -1,0 +1,63 @@
+name: CI/CD
+
+on:
+  push:
+      branches: [main, develop]
+        pull_request:
+            branches: [main, develop]
+
+            jobs:
+              lint:
+                  name: Lint & Format Check
+                      runs-on: ubuntu-latest
+                          strategy:
+                                matrix:
+                                        node-version: ['22']
+                                            steps:
+                                                  - uses: actions/checkout@v4
+                                                        - uses: pnpm/action-setup@v2
+                                                                with:
+                                                                          version: 9
+                                                                                - uses: actions/setup-node@v4
+                                                                                        with:
+                                                                                                  node-version: ${{ matrix.node-version }}
+                                                                                                            cache: 'pnpm'
+                                                                                                                  - run: pnpm install
+                                                                                                                        - run: pnpm lint
+                                                                                                                              - run: pnpm format:check
+                                                                                                                              
+                                                                                                                                typecheck:
+                                                                                                                                    name: TypeScript Typecheck
+                                                                                                                                        runs-on: ubuntu-latest
+                                                                                                                                            strategy:
+                                                                                                                                                  matrix:
+                                                                                                                                                          node-version: ['22']
+                                                                                                                                                              steps:
+                                                                                                                                                                    - uses: actions/checkout@v4
+                                                                                                                                                                          - uses: pnpm/action-setup@v2
+                                                                                                                                                                                  with:
+                                                                                                                                                                                            version: 9
+                                                                                                                                                                                                  - uses: actions/setup-node@v4
+                                                                                                                                                                                                          with:
+                                                                                                                                                                                                                    node-version: ${{ matrix.node-version }}
+                                                                                                                                                                                                                              cache: 'pnpm'
+                                                                                                                                                                                                                                    - run: pnpm install
+                                                                                                                                                                                                                                          - run: pnpm typecheck
+                                                                                                                                                                                                                                          
+                                                                                                                                                                                                                                            build:
+                                                                                                                                                                                                                                                name: Build
+                                                                                                                                                                                                                                                    runs-on: ubuntu-latest
+                                                                                                                                                                                                                                                        strategy:
+                                                                                                                                                                                                                                                              matrix:
+                                                                                                                                                                                                                                                                      node-version: ['22']
+                                                                                                                                                                                                                                                                          steps:
+                                                                                                                                                                                                                                                                                - uses: actions/checkout@v4
+                                                                                                                                                                                                                                                                                      - uses: pnpm/action-setup@v2
+                                                                                                                                                                                                                                                                                              with:
+                                                                                                                                                                                                                                                                                                        version: 9
+                                                                                                                                                                                                                                                                                                              - uses: actions/setup-node@v4
+                                                                                                                                                                                                                                                                                                                      with:
+                                                                                                                                                                                                                                                                                                                                node-version: ${{ matrix.node-version }}
+                                                                                                                                                                                                                                                                                                                                          cache: 'pnpm'
+                                                                                                                                                                                                                                                                                                                                                - run: pnpm install
+                                                                                                                                                                                                                                                                                                                                                      - run: pnpm build
