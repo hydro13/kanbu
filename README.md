@@ -241,7 +241,7 @@ See [LICENSE](LICENSE) for details.
 ## Support
 
 
-- 💬 Discord Community - Soon
+- 💬 💬 [Discord Community](https://discord.com/channels/1461655382492446927/1461655383708799153)
 - 🐛 [Issue Tracker](https://github.com/hydro13/kanbu/issues)
 - 📧 [Email](mailto:r.waslander@gmail.com)
 
@@ -721,6 +721,7 @@ Email: R.Waslander@gmail.com
 ---
 
 *Kanbu - Modern Project Management*
+
 
 
 
