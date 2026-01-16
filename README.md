@@ -227,8 +227,8 @@ See [LICENSE](LICENSE) for details.
 
 ## Support
 
-- 📖 [Documentation](https://docs.kanbu.dev)
-- 💬 [Discord Community](https://discord.gg/kanbu)
+
+- 💬 Discord Community - Soon
 - 🐛 [Issue Tracker](https://github.com/hydro13/kanbu/issues)
 - 📧 [Email](mailto:r.waslander@gmail.com)
 
@@ -708,4 +708,5 @@ Email: R.Waslander@gmail.com
 ---
 
 *Kanbu - Modern Project Management*
+
 
