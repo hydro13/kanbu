@@ -79,8 +79,8 @@ certs/
 
 Deze certificaten zijn geldig voor:
 - localhost
-- max
-- max.tail1b9995.ts.net
+- your-hostname
+- your-hostname.tailscale-domain.ts.net (optional)
 - 127.0.0.1
 - ::1
 
@@ -95,7 +95,7 @@ mkcert -install
 
 # Genereer nieuwe certificaten
 cd certs/
-mkcert localhost max max.tail1b9995.ts.net 127.0.0.1 ::1
+mkcert localhost your-hostname 127.0.0.1 ::1
 ```
 
 ## API Server
@@ -160,7 +160,7 @@ Als browser klaagt over mixed content:
 ## GitHub App Integratie
 
 De GitHub App vereist HTTPS voor:
-- OAuth callback: `https://max.tail1b9995.ts.net/api/github/callback`
-- Webhooks: `https://max.tail1b9995.ts.net/api/webhooks/github`
+- OAuth callback: `https://your-domain.com/api/github/callback`
+- Webhooks: `https://your-domain.com/api/webhooks/github`
 
 Als HTTPS niet werkt, werkt de hele GitHub integratie niet!

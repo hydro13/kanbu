@@ -1,12 +1,21 @@
 {
   "name": "@kanbu/mcp-server",
-  "version": "0.1.0",
+  "version": "0.1.0-beta.1",
   "description": "Kanbu MCP Server for Claude Code integration",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
     "kanbu-mcp": "dist/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hydro13/kanbu.git",
+    "directory": "packages/mcp-server"
+  },
+  "homepage": "https://hydro13.github.io/kanbu/",
+  "bugs": {
+    "url": "https://github.com/hydro13/kanbu/issues"
   },
   "scripts": {
     "build": "tsc",

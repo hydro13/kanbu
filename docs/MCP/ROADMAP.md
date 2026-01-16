@@ -723,7 +723,7 @@ Bij klikken op audit entry:
 Action: task:created
 User: Robin Waslander
 Via: Claude Code
-  Machine: MAX (Linux)
+  Machine: your-machine (Linux)
   Binding ID: 42
   Connected since: 2026-01-09
 ```

@@ -156,7 +156,7 @@ De Kanbu MCP Server is specifiek ontworpen voor **Claude Code** integratie. Via 
 │ Status: ● Connected                                          │
 │ Connected since: 2026-01-09 14:32                           │
 │ Last used: 2 minutes ago                                    │
-│ Machine: MAX (Linux)                                        │
+│ Machine: your-machine (Linux)                                        │
 │                                                              │
 │ Your permissions Claude inherits:                            │
 │ • Domain Admin (full access)                                │
@@ -296,7 +296,7 @@ Alle acties via Claude Code worden gelogd:
 [2026-01-09 14:45:23] Task #42 updated
   User: Robin Waslander
   Via: Claude Code (MCP)
-  Machine: MAX
+  Machine: your-machine
   Action: status changed TODO → IN_PROGRESS
 ```
 
