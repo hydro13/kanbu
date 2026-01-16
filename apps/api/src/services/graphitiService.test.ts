@@ -8,7 +8,7 @@
  * @date 2026-01-13
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import type { TemporalFact, SearchResult } from './graphitiService'
 
 // Note: Full integration tests require running FalkorDB

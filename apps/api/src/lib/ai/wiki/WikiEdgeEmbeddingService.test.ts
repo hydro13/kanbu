@@ -12,15 +12,13 @@
  * @date 2026-01-13
  */
 
-import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import {
   WikiEdgeEmbeddingService,
   resetWikiEdgeEmbeddingService,
   type EdgeForEmbedding,
-  type WikiContext,
-  type EdgeSearchResult,
-  type HybridSearchResult,
 } from './WikiEdgeEmbeddingService'
+import type { WikiContext } from './WikiAiService'
 
 // =============================================================================
 // Mock Types
@@ -303,7 +301,7 @@ describe('WikiEdgeEmbeddingService', () => {
 
   describe('storeEdgeEmbedding', () => {
     it('should generate and store embedding', async () => {
-      const edge = testEdges[0]
+      const edge = testEdges[0]!
 
       const result = await service.storeEdgeEmbedding(testContext, edge, 100)
 
@@ -330,12 +328,12 @@ describe('WikiEdgeEmbeddingService', () => {
     })
 
     it('should include temporal fields in payload', async () => {
-      const edge = testEdges[0]
+      const edge = testEdges[0]!
 
       await service.storeEdgeEmbedding(testContext, edge, 100)
 
-      const upsertCall = mockQdrant.upsert.mock.calls[0]
-      const payload = upsertCall[1].points[0].payload
+      const upsertCall = mockQdrant.upsert.mock.calls[0]!
+      const payload = upsertCall[1].points[0]!.payload
 
       expect(payload.validAt).toBe(edge.validAt)
       expect(payload.factHash).toBeDefined()
@@ -352,7 +350,7 @@ describe('WikiEdgeEmbeddingService', () => {
         model: null,
       })
 
-      const result = await service.storeEdgeEmbedding(testContext, testEdges[0], 100)
+      const result = await service.storeEdgeEmbedding(testContext, testEdges[0]!, 100)
 
       expect(result).toBe(false)
     })
@@ -501,7 +499,7 @@ describe('WikiEdgeEmbeddingService', () => {
       )
 
       expect(results.length).toBeGreaterThan(0)
-      expect(results[0]).toMatchObject({
+      expect(results[0]!).toMatchObject({
         edgeId: expect.any(String),
         score: expect.any(Number),
         fact: expect.any(String),
@@ -515,7 +513,7 @@ describe('WikiEdgeEmbeddingService', () => {
         { id: 'edge-2', score: 0.3, payload: { fact: 'Low score' } },
       ])
 
-      const results = await service.edgeSemanticSearch(
+      await service.edgeSemanticSearch(
         testContext,
         'test query',
         { scoreThreshold: 0.5 }
@@ -623,8 +621,8 @@ describe('WikiEdgeEmbeddingService', () => {
       const results = await service.hybridSemanticSearch(testContext, 'test')
 
       // Results should be sorted: edge 0.9, page 0.7, edge 0.5
-      expect(results[0].score).toBeGreaterThanOrEqual(results[1].score)
-      expect(results[1].score).toBeGreaterThanOrEqual(results[2].score)
+      expect(results[0]!.score).toBeGreaterThanOrEqual(results[1]!.score)
+      expect(results[1]!.score).toBeGreaterThanOrEqual(results[2]!.score)
     })
 
     it('should respect limit', async () => {

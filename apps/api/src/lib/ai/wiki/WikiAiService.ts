@@ -29,7 +29,6 @@ import {
   getEnhancedDetectContradictionsSystemPrompt,
   getEnhancedDetectContradictionsUserPrompt,
   parseEnhancedDetectContradictionsResponse,
-  toBasicContradictionResult,
   // Fase 17.2 - Batch Detection
   MAX_BATCH_SIZE,
   getBatchDetectContradictionsSystemPrompt,
@@ -57,7 +56,6 @@ import {
   type ContradictionDetail,
   type EnhancedContradictionResult,
   type BatchNewFact,
-  type BatchContradictionResult,
   type CategoryHandlingConfig,
   type ExtractedFact,
 } from './prompts'

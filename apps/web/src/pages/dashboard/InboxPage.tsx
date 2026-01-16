@@ -118,11 +118,11 @@ function groupNotificationsByDate(notifications: NotificationItem[]) {
     date.setHours(0, 0, 0, 0)
 
     if (date.getTime() === today.getTime()) {
-      groups[0].items.push(notification)
+      groups[0]!.items.push(notification)
     } else if (date.getTime() === yesterday.getTime()) {
-      groups[1].items.push(notification)
+      groups[1]!.items.push(notification)
     } else {
-      groups[2].items.push(notification)
+      groups[2]!.items.push(notification)
     }
   }
 
@@ -264,10 +264,29 @@ export function InboxPage() {
                   <CardContent className="p-0 divide-y">
                     {group.items.map((notification) => {
                       const projectInfo = getProjectInfo(notification.data)
-                      const NotificationWrapper = notification.link ? Link : 'div'
-                      const wrapperProps = notification.link
-                        ? { to: notification.link }
-                        : {}
+
+                      const contentElement = (
+                        <>
+                          <p
+                            className={cn(
+                              'text-sm',
+                              !notification.isRead && 'font-medium'
+                            )}
+                          >
+                            {notification.title}
+                          </p>
+                          {notification.content && (
+                            <p className="text-sm text-muted-foreground mt-0.5">
+                              {notification.content}
+                            </p>
+                          )}
+                          {projectInfo && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {projectInfo}
+                            </p>
+                          )}
+                        </>
+                      )
 
                       return (
                         <div
@@ -290,30 +309,22 @@ export function InboxPage() {
                           </div>
 
                           {/* Content */}
-                          <NotificationWrapper
-                            {...wrapperProps}
-                            className="flex-1 min-w-0 cursor-pointer"
-                            onClick={() => handleNotificationClick(notification)}
-                          >
-                            <p
-                              className={cn(
-                                'text-sm',
-                                !notification.isRead && 'font-medium'
-                              )}
+                          {notification.link ? (
+                            <Link
+                              to={notification.link}
+                              className="flex-1 min-w-0 cursor-pointer"
+                              onClick={() => handleNotificationClick(notification)}
                             >
-                              {notification.title}
-                            </p>
-                            {notification.content && (
-                              <p className="text-sm text-muted-foreground mt-0.5">
-                                {notification.content}
-                              </p>
-                            )}
-                            {projectInfo && (
-                              <p className="text-xs text-muted-foreground mt-1">
-                                {projectInfo}
-                              </p>
-                            )}
-                          </NotificationWrapper>
+                              {contentElement}
+                            </Link>
+                          ) : (
+                            <div
+                              className="flex-1 min-w-0 cursor-pointer"
+                              onClick={() => handleNotificationClick(notification)}
+                            >
+                              {contentElement}
+                            </div>
+                          )}
 
                           {/* Time and actions */}
                           <div className="flex-shrink-0 flex items-center gap-2">

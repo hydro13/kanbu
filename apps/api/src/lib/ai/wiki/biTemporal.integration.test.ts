@@ -93,8 +93,7 @@ describe('bi-temporal integration', () => {
         },
       ]
 
-      // Step 2: New fact that contradicts edge-1
-      const newFact = 'Jan works at Beta Inc'
+      // Step 2: New fact that contradicts edge-1: "Jan works at Beta Inc"
 
       // Step 3: Simulated LLM response
       const llmResponse = `{
@@ -118,12 +117,10 @@ describe('bi-temporal integration', () => {
     })
 
     it('should handle multiple contradictions', () => {
-      // Multiple facts about exclusive properties
-      const existingEdges: ExistingFact[] = [
-        { id: 'edge-1', fact: 'Project uses PostgreSQL', validAt: null, invalidAt: null },
-        { id: 'edge-2', fact: 'Project primary database is PostgreSQL', validAt: null, invalidAt: null },
-        { id: 'edge-3', fact: 'Project supports caching', validAt: null, invalidAt: null },
-      ]
+      // Multiple facts about exclusive properties:
+      // - edge-1: 'Project uses PostgreSQL'
+      // - edge-2: 'Project primary database is PostgreSQL'
+      // - edge-3: 'Project supports caching'
 
       // New fact changes primary database
       const llmResponse = `{
@@ -140,10 +137,9 @@ describe('bi-temporal integration', () => {
     })
 
     it('should preserve non-contradicting facts', () => {
-      const existingEdges: ExistingFact[] = [
-        { id: 'edge-1', fact: 'Jan likes pizza', validAt: null, invalidAt: null },
-        { id: 'edge-2', fact: 'Jan likes coffee', validAt: null, invalidAt: null },
-      ]
+      // Existing facts:
+      // - edge-1: 'Jan likes pizza'
+      // - edge-2: 'Jan likes coffee'
 
       // Adding another preference doesn't contradict
       const llmResponse = `{
@@ -209,22 +205,22 @@ describe('bi-temporal integration', () => {
       }
 
       // Verify temporal queries at each point in time
-      const finalState = timeline[2].edges
+      const finalState = timeline[2]!.edges
 
       // Query at start of 2024: Jan is junior
       const at2024 = getValidFactsAt(finalState, '2024-06-01T00:00:00.000Z')
       expect(at2024).toHaveLength(1)
-      expect(at2024[0].fact).toContain('junior')
+      expect(at2024[0]!.fact).toContain('junior')
 
       // Query at start of 2025: Jan is senior
       const at2025 = getValidFactsAt(finalState, '2025-06-01T00:00:00.000Z')
       expect(at2025).toHaveLength(1)
-      expect(at2025[0].fact).toContain('senior')
+      expect(at2025[0]!.fact).toContain('senior')
 
       // Query at start of 2026: Jan is tech lead
       const at2026 = getValidFactsAt(finalState, '2026-06-01T00:00:00.000Z')
       expect(at2026).toHaveLength(1)
-      expect(at2026[0].fact).toContain('tech lead')
+      expect(at2026[0]!.fact).toContain('tech lead')
     })
 
     it('should support "as of" queries at any point in time', () => {
@@ -244,13 +240,13 @@ describe('bi-temporal integration', () => {
       }
 
       // In 2021, project used MySQL
-      expect(getValidFactsAt('2021-06-01T00:00:00.000Z')[0].fact).toContain('MySQL')
+      expect(getValidFactsAt('2021-06-01T00:00:00.000Z')[0]!.fact).toContain('MySQL')
 
       // In 2023, project used PostgreSQL
-      expect(getValidFactsAt('2023-06-01T00:00:00.000Z')[0].fact).toContain('PostgreSQL')
+      expect(getValidFactsAt('2023-06-01T00:00:00.000Z')[0]!.fact).toContain('PostgreSQL')
 
       // In 2026, project uses MongoDB
-      expect(getValidFactsAt('2026-06-01T00:00:00.000Z')[0].fact).toContain('MongoDB')
+      expect(getValidFactsAt('2026-06-01T00:00:00.000Z')[0]!.fact).toContain('MongoDB')
 
       // Before project started, no database
       expect(getValidFactsAt('2019-01-01T00:00:00.000Z')).toHaveLength(0)
@@ -263,7 +259,7 @@ describe('bi-temporal integration', () => {
 
   describe('edge cases', () => {
     it('should handle facts with null valid_at (timeless facts)', () => {
-      const edges = [
+      const edges: { id: string; fact: string; validAt: string | null; invalidAt: string | null }[] = [
         { id: 'e1', fact: 'Company name is Acme', validAt: null, invalidAt: null },
       ]
 
@@ -295,10 +291,10 @@ describe('bi-temporal integration', () => {
       }
 
       // In the morning: Draft
-      expect(getValidFactsAt('2026-01-13T10:00:00.000Z')[0].fact).toContain('Draft')
+      expect(getValidFactsAt('2026-01-13T10:00:00.000Z')[0]!.fact).toContain('Draft')
 
       // In the afternoon: Published
-      expect(getValidFactsAt('2026-01-13T15:00:00.000Z')[0].fact).toContain('Published')
+      expect(getValidFactsAt('2026-01-13T15:00:00.000Z')[0]!.fact).toContain('Published')
     })
 
     it('should handle overlapping temporal boundaries', () => {
@@ -319,7 +315,7 @@ describe('bi-temporal integration', () => {
       // At exact boundary, only new version should be valid (invalidAt <= asOf excludes old)
       const atBoundary = getValidFactsAt('2026-01-15T00:00:00.000Z')
       expect(atBoundary).toHaveLength(1)
-      expect(atBoundary[0].fact).toContain('Version 2.0')
+      expect(atBoundary[0]!.fact).toContain('Version 2.0')
     })
   })
 })

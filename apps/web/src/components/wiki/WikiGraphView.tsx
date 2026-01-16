@@ -105,7 +105,7 @@ import {
   RefreshCw,
 } from 'lucide-react'
 import { ClusterLegend, ClusterDetailPanel } from '@/components/wiki'
-import { useCommunities, useDetectCommunities } from '@/hooks/wiki'
+import { useDetectCommunities } from '@/hooks/wiki'
 
 // =============================================================================
 // Types
@@ -943,9 +943,10 @@ export function WikiGraphView({
   )
 
   // Community Detection hooks (Fase 24.10)
-  const { data: communitiesData } = useCommunities(
+  // Note: useCommunities hook doesn't support enabled option, so we use trpc directly
+  const { data: communitiesData } = trpc.wikiCommunity.list.useQuery(
     {
-      context: { workspaceId },
+      workspaceId,
       includeMembers: false,
     },
     {
@@ -957,7 +958,7 @@ export function WikiGraphView({
 
   const handleDetectCommunities = useCallback(() => {
     detectMutation.mutate({
-      context: { workspaceId },
+      workspaceId,
       forceRebuild: true,
       generateSummaries: true,
     })
@@ -2076,9 +2077,9 @@ export function WikiGraphView({
         {/* Legend (Fase 24.10: ClusterLegend for advanced mode) */}
         {filters.showClusters && filters.communityMode === 'advanced' && communitiesData ? (
           <ClusterLegend
-            communities={communitiesData.communities}
-            selectedCommunityUuid={selectedCommunityUuid}
-            onSelectCommunity={setSelectedCommunityUuid}
+            workspaceId={workspaceId}
+            selectedCommunityUuid={selectedCommunityUuid ?? undefined}
+            onCommunityClick={setSelectedCommunityUuid}
           />
         ) : (
           <div className="absolute bottom-2 left-2 flex items-center gap-4 text-xs bg-white/80 dark:bg-slate-800/80 px-2 py-1 rounded">
@@ -2165,9 +2166,12 @@ export function WikiGraphView({
       {selectedCommunityUuid && (
         <ClusterDetailPanel
           communityUuid={selectedCommunityUuid}
-          context={{ workspaceId }}
-          onClose={() => setSelectedCommunityUuid(null)}
-          onNavigate={handleNavigate}
+          workspaceId={workspaceId}
+          onMemberClick={(entityUuid) => {
+            // Navigate to entity in graph
+            const node = graphData?.nodes.find(n => n.uuid === entityUuid)
+            if (node?.slug) handleNavigate(node.slug)
+          }}
         />
       )}
     </div>

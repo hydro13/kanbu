@@ -17,7 +17,6 @@ import {
   WikiNodeEmbeddingService,
   resetWikiNodeEmbeddingService,
   type NodeForEmbedding,
-  type EmbeddableNodeType,
 } from './WikiNodeEmbeddingService'
 import type { WikiContext } from './WikiAiService'
 
@@ -397,7 +396,7 @@ describe('WikiNodeEmbeddingService', () => {
 
   describe('storeNodeEmbedding', () => {
     it('should store embedding with correct payload', async () => {
-      const node = testNodes[0]
+      const node = testNodes[0]!
       const embedding = generateMockEmbedding('[Person] Robin Waslander')
 
       const result = await service.storeNodeEmbedding(testContext, node, embedding)
@@ -425,13 +424,13 @@ describe('WikiNodeEmbeddingService', () => {
     })
 
     it('should include nameHash for change detection', async () => {
-      const node = testNodes[0]
+      const node = testNodes[0]!
       const embedding = generateMockEmbedding('[Person] Robin Waslander')
 
       await service.storeNodeEmbedding(testContext, node, embedding)
 
-      const upsertCall = mockQdrant.upsert.mock.calls[0]
-      const payload = upsertCall[1].points[0].payload
+      const upsertCall = mockQdrant.upsert.mock.calls[0]!
+      const payload = upsertCall[1].points[0]!.payload
 
       expect(payload.nameHash).toBeDefined()
       expect(typeof payload.nameHash).toBe('string')
@@ -448,7 +447,7 @@ describe('WikiNodeEmbeddingService', () => {
 
       const result = await service.storeNodeEmbedding(
         testContext,
-        testNodes[0],
+        testNodes[0]!,
         generateMockEmbedding('test')
       )
 
@@ -458,7 +457,7 @@ describe('WikiNodeEmbeddingService', () => {
 
   describe('generateAndStoreNodeEmbedding', () => {
     it('should generate and store embedding', async () => {
-      const node = testNodes[0]
+      const node = testNodes[0]!
 
       const result = await service.generateAndStoreNodeEmbedding(testContext, node)
 
@@ -471,7 +470,7 @@ describe('WikiNodeEmbeddingService', () => {
     })
 
     it('should skip unchanged node', async () => {
-      const node = testNodes[0]
+      const node = testNodes[0]!
 
       // First store
       await service.generateAndStoreNodeEmbedding(testContext, node)
@@ -773,7 +772,7 @@ describe('WikiNodeEmbeddingService', () => {
   describe('findByNormalizedName', () => {
     it('should find exact matches', async () => {
       // Store a node
-      const node = testNodes[0]
+      const node = testNodes[0]!
       const embedding = generateMockEmbedding(`[${node.type}] ${node.name}`)
       await service.storeNodeEmbedding(testContext, node, embedding)
 
@@ -796,7 +795,7 @@ describe('WikiNodeEmbeddingService', () => {
       )
 
       expect(results.length).toBeGreaterThan(0)
-      expect(results[0].score).toBe(1.0) // Exact match has score 1.0
+      expect(results[0]!.score).toBe(1.0) // Exact match has score 1.0
     })
 
     it('should normalize name before searching', async () => {
@@ -966,7 +965,7 @@ describe('WikiNodeEmbeddingService', () => {
       )
 
       expect(results.length).toBeGreaterThan(0)
-      expect(results[0].name).toBe('Jan Janssen')
+      expect(results[0]!.name).toBe('Jan Janssen')
     })
 
     it('should find "Robin Waslander" with partial name', async () => {
@@ -990,7 +989,7 @@ describe('WikiNodeEmbeddingService', () => {
       )
 
       expect(results.length).toBeGreaterThan(0)
-      expect(results[0].name).toBe('Robin Waslander')
+      expect(results[0]!.name).toBe('Robin Waslander')
     })
 
     it('should find similar concepts', async () => {
@@ -1014,7 +1013,7 @@ describe('WikiNodeEmbeddingService', () => {
       )
 
       expect(results.length).toBeGreaterThan(0)
-      expect(results[0].nodeType).toBe('Concept')
+      expect(results[0]!.nodeType).toBe('Concept')
     })
   })
 })

@@ -37,6 +37,7 @@ export function WorkspaceSettingsWrapper() {
   const workspace = workspaceQuery.data
 
   // Set current workspace in Redux when loaded
+  // Using workspace?.id as dependency to avoid deep type instantiation
   useEffect(() => {
     if (workspace) {
       dispatch(setCurrentWorkspace({
@@ -48,9 +49,12 @@ export function WorkspaceSettingsWrapper() {
         role: workspace.role,
         projectCount: workspace.projectCount,
         memberCount: workspace.memberCount,
+        createdAt: workspace.createdAt,
+        updatedAt: workspace.updatedAt,
       }))
     }
-  }, [workspace, dispatch])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [workspace?.id, dispatch])
 
   // Loading state
   if (workspaceQuery.isLoading) {

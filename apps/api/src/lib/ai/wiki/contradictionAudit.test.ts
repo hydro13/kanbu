@@ -149,7 +149,7 @@ describe('ContradictionAuditService', () => {
       expect(result.newFactId).toBe('edge-new-123')
       expect(result.newFact).toBe('Jan works at TechStart')
       expect(result.invalidatedFacts).toHaveLength(1)
-      expect(result.invalidatedFacts[0].id).toBe('edge-old-456')
+      expect(result.invalidatedFacts[0]!.id).toBe('edge-old-456')
       expect(result.strategy).toBe(ResolutionStrategy.INVALIDATE_OLD)
       expect(result.confidence).toBe(0.95)
       expect(result.category).toBe(ContradictionCategory.FACTUAL)

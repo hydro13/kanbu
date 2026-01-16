@@ -124,10 +124,10 @@ describe('reflexionNodes', () => {
       const result = parseReflexionNodesResponse(response)
 
       expect(result.missedEntities).toHaveLength(2)
-      expect(result.missedEntities[0].name).toBe('Maria')
-      expect(result.missedEntities[0].reason).toBe('Mentioned as colleague but not extracted')
-      expect(result.missedEntities[0].suggestedType).toBe('Person')
-      expect(result.missedEntities[1].name).toBe('Alpha project')
+      expect(result.missedEntities[0]!.name).toBe('Maria')
+      expect(result.missedEntities[0]!.reason).toBe('Mentioned as colleague but not extracted')
+      expect(result.missedEntities[0]!.suggestedType).toBe('Person')
+      expect(result.missedEntities[1]!.name).toBe('Alpha project')
       expect(result.reasoning).toBe('Found two entities that were not in the extracted list')
     })
 
@@ -158,7 +158,7 @@ That's the result.`
       const result = parseReflexionNodesResponse(response)
 
       expect(result.missedEntities).toHaveLength(1)
-      expect(result.missedEntities[0].name).toBe('TestEntity')
+      expect(result.missedEntities[0]!.name).toBe('TestEntity')
     })
 
     it('should handle string-only entity names', () => {
@@ -170,8 +170,8 @@ That's the result.`
       const result = parseReflexionNodesResponse(response)
 
       expect(result.missedEntities).toHaveLength(2)
-      expect(result.missedEntities[0].name).toBe('Entity1')
-      expect(result.missedEntities[1].name).toBe('Entity2')
+      expect(result.missedEntities[0]!.name).toBe('Entity1')
+      expect(result.missedEntities[1]!.name).toBe('Entity2')
     })
 
     it('should filter out empty entity names', () => {
@@ -187,7 +187,7 @@ That's the result.`
       const result = parseReflexionNodesResponse(response)
 
       expect(result.missedEntities).toHaveLength(1)
-      expect(result.missedEntities[0].name).toBe('ValidEntity')
+      expect(result.missedEntities[0]!.name).toBe('ValidEntity')
     })
 
     it('should handle missing optional fields', () => {
@@ -200,9 +200,9 @@ That's the result.`
 
       const result = parseReflexionNodesResponse(response)
 
-      expect(result.missedEntities[0].name).toBe('SimpleEntity')
-      expect(result.missedEntities[0].reason).toBeUndefined()
-      expect(result.missedEntities[0].suggestedType).toBeUndefined()
+      expect(result.missedEntities[0]!.name).toBe('SimpleEntity')
+      expect(result.missedEntities[0]!.reason).toBeUndefined()
+      expect(result.missedEntities[0]!.suggestedType).toBeUndefined()
     })
 
     it('should handle malformed JSON gracefully with bullet list fallback', () => {
@@ -226,8 +226,8 @@ That's the result.`
       const result = parseReflexionNodesResponse(response)
 
       expect(result.missedEntities.length).toBe(2)
-      expect(result.missedEntities[0].name).toBe('First Entity')
-      expect(result.missedEntities[1].name).toBe('Second Entity')
+      expect(result.missedEntities[0]!.name).toBe('First Entity')
+      expect(result.missedEntities[1]!.name).toBe('Second Entity')
     })
 
     it('should handle missing reasoning field', () => {

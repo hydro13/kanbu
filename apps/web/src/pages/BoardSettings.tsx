@@ -324,7 +324,8 @@ export function BoardSettingsPage() {
                 </div>
                 <ArchiveToggle
                   projectId={projectId}
-                  initialValue={Boolean((projectQuery.data?.settings as { showArchiveColumn?: boolean } | null)?.showArchiveColumn)}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  initialValue={Boolean((projectQuery.data as any)?.settings?.showArchiveColumn)}
                 />
               </div>
             </CardContent>

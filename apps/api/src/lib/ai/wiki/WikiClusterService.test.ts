@@ -297,7 +297,7 @@ describe('WikiClusterService', () => {
       expect(result).not.toBeNull()
       expect(result?.name).toBe('Engineering Team')
       expect(result?.members).toHaveLength(3)
-      expect(result?.members[0]?.name).toBe('Alice')
+      expect(result?.members?.[0]?.name).toBe('Alice')
     })
 
     it('should return null for non-existent community', async () => {
