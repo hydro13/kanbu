@@ -4,6 +4,13 @@
 **Self-hosted project management with enterprise permissions and AI superpowers.**
 
 > Tell Claude what you want. It plans the work, estimates hours, creates subtasks, builds the features, and tracks its own progress. You review.
+>
+> [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+> [![GitHub release (latest by date)](https://img.shields.io/github/v/release/hydro13/kanbu?label=version&color=brightgreen)](https://github.com/hydro13/kanbu/releases)
+> [![GitHub last commit](https://img.shields.io/github/last-commit/hydro13/kanbu)](https://github.com/hydro13/kanbu/commits)
+> [![GitHub issues](https://img.shields.io/github/issues/hydro13/kanbu)](https://github.com/hydro13/kanbu/issues)
+> [![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+> [![Status: Beta](https://img.shields.io/badge/Status-Beta-yellow)](https://github.com/hydro13/kanbu/releases)
 
 <img width="2428" height="1846" alt="image" src="https://github.com/user-attachments/assets/6cd89fcd-2afa-44c1-a200-8cef163e8c31" />
 
@@ -714,6 +721,7 @@ Email: R.Waslander@gmail.com
 ---
 
 *Kanbu - Modern Project Management*
+
 
 
 
