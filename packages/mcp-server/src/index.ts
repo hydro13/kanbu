@@ -33,6 +33,7 @@ import { z } from 'zod'
 import { TokenStorage } from './storage.js'
 import { KanbuClient } from './client.js'
 import { getMachineId, getMachineName } from './machine.js'
+import { logger } from './logger.js'
 
 // Tool imports
 import {
@@ -334,6 +335,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
  */
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params
+  logger.debug({ tool: name }, 'Tool called')
 
   try {
     switch (name) {
@@ -654,9 +656,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     }
   } catch (error) {
     if (error instanceof McpError) {
+      logger.warn({ tool: name, error: error.message, code: error.code }, 'MCP Error')
       throw error
     }
     const message = error instanceof Error ? error.message : 'Unknown error'
+    logger.error({ tool: name, error: error instanceof Error ? error.stack : message }, 'Tool execution failed')
     return {
       content: [
         {

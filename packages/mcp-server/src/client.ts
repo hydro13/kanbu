@@ -13,6 +13,8 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
+import { logger } from './logger.js'
+
 // =============================================================================
 // Types
 // =============================================================================
@@ -157,6 +159,7 @@ export class KanbuClient {
 
     if (!response.ok) {
       const text = await response.text()
+      logger.error({ url, status: response.status, method, error: text }, 'Kanbu API call failed')
       throw new Error(`API call failed: ${response.status} ${text}`)
     }
 
