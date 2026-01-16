@@ -43,7 +43,23 @@ export const router = t.router;
 export const publicProcedure = t.procedure;
 export const middleware = t.middleware;
 
-import { rateLimitMiddleware } from './middleware/rateLimit';
+import { rateLimitService } from '../services/rateLimitService';
+
+// Rate limit for Assistant requests: 100 req/min
+const ASSISTANT_RATE_LIMIT = 100;
+
+const rateLimitMiddleware = middleware(async ({ ctx, next }) => {
+    if (ctx.assistantContext) {
+        const key = `binding:${ctx.assistantContext.bindingId}`;
+        if (!rateLimitService.check(key, ASSISTANT_RATE_LIMIT)) {
+            throw new TRPCError({
+                code: 'TOO_MANY_REQUESTS',
+                message: 'Rate limit exceeded for Assistant binding',
+            });
+        }
+    }
+    return next();
+});
 
 /**
  * Protected procedure - requires authentication
