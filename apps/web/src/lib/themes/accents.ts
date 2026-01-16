@@ -20,7 +20,7 @@
 // Types
 // =============================================================================
 
-export type AccentName = 'slate' | 'blue' | 'teal' | 'violet' | 'rose' | 'amber'
+export type AccentName = 'slate' | 'blue' | 'teal' | 'violet' | 'rose' | 'amber' | 'custom'
 
 export interface AccentColors {
   /** Primary color for light mode (HSL values without hsl()) */
@@ -188,6 +188,28 @@ export const accents: Record<AccentName, AccentDefinition> = {
       },
     },
   },
+
+  // ---------------------------------------------------------------------------
+  // Custom - User-defined color (placeholder, values set dynamically)
+  // ---------------------------------------------------------------------------
+  custom: {
+    name: 'custom',
+    label: 'Custom',
+    description: 'Your own color',
+    preview: '#6366f1', // Default preview, will be overridden
+    colors: {
+      light: {
+        primary: '239 84% 67%',        // Default indigo-like
+        primaryForeground: '0 0% 100%',
+        ring: '239 84% 67%',
+      },
+      dark: {
+        primary: '239 84% 67%',
+        primaryForeground: '0 0% 100%',
+        ring: '239 84% 67%',
+      },
+    },
+  },
 }
 
 // =============================================================================
@@ -221,6 +243,164 @@ export function getAccent(name: AccentName): AccentDefinition {
 /** Check if a string is a valid accent name */
 export function isValidAccent(name: string): name is AccentName {
   return name in accents
+}
+
+/** Preset accents (excludes 'custom') */
+export const presetAccents = accentOrder
+
+// =============================================================================
+// Custom Color Helpers
+// =============================================================================
+
+export interface CustomAccentHSL {
+  h: number  // 0-360
+  s: number  // 0-100
+  l: number  // 0-100
+}
+
+/**
+ * Convert HSL to hex color string
+ */
+export function hslToHex(h: number, s: number, l: number): string {
+  s /= 100
+  l /= 100
+
+  const c = (1 - Math.abs(2 * l - 1)) * s
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1))
+  const m = l - c / 2
+
+  let r = 0, g = 0, b = 0
+
+  if (h < 60) { r = c; g = x; b = 0 }
+  else if (h < 120) { r = x; g = c; b = 0 }
+  else if (h < 180) { r = 0; g = c; b = x }
+  else if (h < 240) { r = 0; g = x; b = c }
+  else if (h < 300) { r = x; g = 0; b = c }
+  else { r = c; g = 0; b = x }
+
+  const toHex = (n: number) => Math.round((n + m) * 255).toString(16).padStart(2, '0')
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`
+}
+
+/**
+ * Calculate relative luminance of a color
+ * Used for WCAG contrast calculations
+ */
+function relativeLuminance(r: number, g: number, b: number): number {
+  const sRGB = [r, g, b].map(c => {
+    c /= 255
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)
+  })
+  return 0.2126 * sRGB[0]! + 0.7152 * sRGB[1]! + 0.0722 * sRGB[2]!
+}
+
+/**
+ * Calculate contrast ratio between two HSL colors
+ * Returns a value between 1 and 21
+ * WCAG AA requires 4.5:1 for normal text, 3:1 for large text
+ */
+export function calculateContrastRatio(
+  h1: number, s1: number, l1: number,
+  h2: number, s2: number, l2: number
+): number {
+  // Convert HSL to RGB
+  const hslToRgb = (h: number, s: number, l: number): [number, number, number] => {
+    s /= 100
+    l /= 100
+    const c = (1 - Math.abs(2 * l - 1)) * s
+    const x = c * (1 - Math.abs(((h / 60) % 2) - 1))
+    const m = l - c / 2
+
+    let r = 0, g = 0, b = 0
+    if (h < 60) { r = c; g = x }
+    else if (h < 120) { r = x; g = c }
+    else if (h < 180) { g = c; b = x }
+    else if (h < 240) { g = x; b = c }
+    else if (h < 300) { r = x; b = c }
+    else { r = c; b = x }
+
+    return [
+      Math.round((r + m) * 255),
+      Math.round((g + m) * 255),
+      Math.round((b + m) * 255)
+    ]
+  }
+
+  const rgb1 = hslToRgb(h1, s1, l1)
+  const rgb2 = hslToRgb(h2, s2, l2)
+
+  const l1Lum = relativeLuminance(...rgb1)
+  const l2Lum = relativeLuminance(...rgb2)
+
+  const lighter = Math.max(l1Lum, l2Lum)
+  const darker = Math.min(l1Lum, l2Lum)
+
+  return (lighter + 0.05) / (darker + 0.05)
+}
+
+/**
+ * Check if a custom color meets WCAG AA contrast requirements against white text
+ */
+export function meetsWCAGContrast(h: number, s: number, l: number): boolean {
+  // Check against white (0, 0, 100)
+  const contrastWhite = calculateContrastRatio(h, s, l, 0, 0, 100)
+  // Also check against near-black for dark mode (0, 0, 10)
+  const contrastBlack = calculateContrastRatio(h, s, l, 0, 0, 10)
+
+  // For buttons, we want good contrast with the foreground text
+  // Lightness below 50% should use white text, above should use dark text
+  if (l <= 50) {
+    return contrastWhite >= 4.5
+  } else {
+    return contrastBlack >= 4.5
+  }
+}
+
+/**
+ * Determine the appropriate foreground color for a given background HSL
+ * Returns HSL string for either white or dark text
+ */
+export function getForegroundForBackground(h: number, s: number, l: number): string {
+  // Calculate contrast with white and dark
+  const contrastWhite = calculateContrastRatio(h, s, l, 0, 0, 100)
+  const contrastDark = calculateContrastRatio(h, s, l, 222, 47, 11) // slate-900
+
+  // Use white if it has better contrast, otherwise use dark
+  return contrastWhite > contrastDark ? '0 0% 100%' : '222 47% 11%'
+}
+
+/**
+ * Generate CSS variables for a custom accent color
+ * Applies via style attribute on document root
+ */
+export function applyCustomAccent(hsl: CustomAccentHSL): void {
+  if (typeof document === 'undefined') return
+
+  const { h, s, l } = hsl
+  const hslString = `${h} ${s}% ${l}%`
+  const foreground = getForegroundForBackground(h, s, l)
+
+  const root = document.documentElement
+  root.style.setProperty('--custom-accent', hslString)
+  root.style.setProperty('--custom-accent-foreground', foreground)
+
+  // When accent is 'custom', also update --primary
+  if (root.getAttribute('data-accent') === 'custom') {
+    root.style.setProperty('--primary', hslString)
+    root.style.setProperty('--primary-foreground', foreground)
+    root.style.setProperty('--ring', hslString)
+  }
+}
+
+/**
+ * Clear custom accent CSS variables
+ */
+export function clearCustomAccent(): void {
+  if (typeof document === 'undefined') return
+
+  const root = document.documentElement
+  root.style.removeProperty('--custom-accent')
+  root.style.removeProperty('--custom-accent-foreground')
 }
 
 // =============================================================================

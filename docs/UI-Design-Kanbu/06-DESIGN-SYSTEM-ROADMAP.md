@@ -1,8 +1,8 @@
 # Kanbu Design System - Implementatie Roadmap
 
-**Versie:** 2.2.0
+**Versie:** 2.3.0
 **Laatst bijgewerkt:** 2026-01-16
-**Status:** ✅ Design System v2.0.0 Voltooid | Fase 7 Voltooid | Fase 8-9 Gedocumenteerd
+**Status:** ✅ Design System v2.0.0 Voltooid | Fase 8 Voltooid | Fase 9 Gedocumenteerd
 
 ---
 
@@ -17,6 +17,7 @@
 | Fase 4 | ✅ Voltooid | 2026-01-15 | Backend Persistence (database sync) |
 | Fase 6 | ✅ Voltooid | 2026-01-15 | Design Tokens v2.0.0 (complete system) |
 | Fase 7 | ✅ Voltooid | 2026-01-16 | Component Library Audit (alle UI componenten op tokens) |
+| Fase 8 | ✅ Voltooid | 2026-01-16 | Advanced Theming (custom colors, density, sidebar, export) |
 
 ---
 
@@ -661,11 +662,11 @@ Signed-off-by: Robin Waslander <R.Waslander@gmail.com>
 
 ---
 
-## FASE 8: Advanced Theming (Niet Gestart)
+## FASE 8: Advanced Theming ✅ VOLTOOID
 
 **Doel:** Uitgebreide themecustomization opties voor eindgebruikers.
 
-**Geschatte complexiteit:** Hoog | **Geschatte duur:** 3-5 dagen
+**Datum:** 2026-01-16 | **Status:** ✅ Voltooid
 
 ### Pre-flight Checks
 

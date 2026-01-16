@@ -700,6 +700,146 @@
 }
 
 /* =================================================================
+   DENSITY SETTINGS (Fase 8)
+   Adjusts spacing throughout the UI
+   ================================================================= */
+/* Density CSS Variables */
+[data-density="compact"] {
+  --density-multiplier: 0.75;
+  --page-padding: 1rem;
+  --card-padding: 0.75rem;
+  --section-gap: 1rem;
+  --element-gap: 0.25rem;
+}
+
+[data-density="normal"] {
+  --density-multiplier: 1;
+  --page-padding: 1.5rem;
+  --card-padding: 1rem;
+  --section-gap: 1.5rem;
+  --element-gap: 0.5rem;
+}
+
+[data-density="spacious"] {
+  --density-multiplier: 1.5;
+  --page-padding: 2rem;
+  --card-padding: 1.5rem;
+  --section-gap: 2rem;
+  --element-gap: 0.75rem;
+}
+
+/* Apply density to main content areas */
+[data-density="compact"] main.p-6 {
+  padding: var(--page-padding) !important;
+}
+
+[data-density="spacious"] main.p-6 {
+  padding: var(--page-padding) !important;
+}
+
+/* Apply density to card-like elements */
+[data-density="compact"] .bg-card {
+  --tw-space-y-reverse: 0;
+}
+
+[data-density="compact"] .bg-card .p-4 {
+  padding: var(--card-padding) !important;
+}
+
+[data-density="spacious"] .bg-card .p-4 {
+  padding: var(--card-padding) !important;
+}
+
+/* Apply density to space-y utilities */
+[data-density="compact"] .space-y-6 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(var(--section-gap) * (1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(var(--section-gap) * var(--tw-space-y-reverse));
+}
+
+[data-density="spacious"] .space-y-6 > :not([hidden]) ~ :not([hidden]) {
+  --tw-space-y-reverse: 0;
+  margin-top: calc(var(--section-gap) * (1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(var(--section-gap) * var(--tw-space-y-reverse));
+}
+
+/* Apply density to gap utilities */
+[data-density="compact"] .gap-2 {
+  gap: var(--element-gap) !important;
+}
+
+[data-density="spacious"] .gap-2 {
+  gap: var(--element-gap) !important;
+}
+
+[data-density="compact"] .gap-4 {
+  gap: calc(var(--element-gap) * 2) !important;
+}
+
+[data-density="spacious"] .gap-4 {
+  gap: calc(var(--element-gap) * 2) !important;
+}
+
+/* Typography scaling for compact mode */
+[data-density="compact"] {
+  font-size: 0.9375rem; /* 15px base instead of 16px */
+}
+
+[data-density="compact"] .text-sm {
+  font-size: 0.8125rem !important; /* 13px instead of 14px */
+}
+
+[data-density="compact"] .text-xs {
+  font-size: 0.6875rem !important; /* 11px instead of 12px */
+}
+
+/* Typography scaling for spacious mode */
+[data-density="spacious"] {
+  font-size: 1.0625rem; /* 17px base */
+}
+
+[data-density="spacious"] .text-sm {
+  font-size: 0.9375rem !important; /* 15px instead of 14px */
+}
+
+/* Button padding adjustment */
+[data-density="compact"] .btn,
+[data-density="compact"] button[type="button"],
+[data-density="compact"] button[type="submit"] {
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+}
+
+[data-density="spacious"] .btn,
+[data-density="spacious"] button[type="button"],
+[data-density="spacious"] button[type="submit"] {
+  padding-top: 0.625rem;
+  padding-bottom: 0.625rem;
+}
+
+/* =================================================================
+   SIDEBAR POSITION (Fase 8)
+   Order values: sidebar 0 or 2, resize-handle 1 (middle), main 2 or 0
+   ================================================================= */
+[data-sidebar="left"] {
+  --sidebar-order: 0;
+  --resize-order: 1;
+  --main-order: 2;
+}
+
+[data-sidebar="right"] {
+  --sidebar-order: 2;
+  --resize-order: 1;
+  --main-order: 0;
+}
+
+/* When sidebar is on the right, swap border sides */
+[data-sidebar="right"] .sidebar-container {
+  border-right: none;
+  border-left: 1px solid hsl(var(--border));
+}
+
+/* =================================================================
    UTILITY CLASSES
    Custom utilities built on design tokens
    ================================================================= */
