@@ -43,6 +43,11 @@ coverage/
 packages/shared/prisma/*.db
 packages/shared/prisma/*.db-journal
 
+# SQL backups (except migrations and scripts)
+*.sql
+!packages/shared/prisma/migrations/**/*.sql
+!scripts/*.sql
+
 # Turbo
 .turbo/
 
