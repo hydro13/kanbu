@@ -25,7 +25,7 @@ Kanbu is different:
 | Problem | Kanbu Solution |
 |---------|----------------|
 | "I need enterprise permissions but Trello doesn't have them" | **NTFS-style ACL** with inheritance, deny rules, and security groups |
-| "I want AI to help but it can't access my tasks" | **131 MCP tools** - Claude Code works directly in your board |
+| "I want AI to help but it can't access my tasks" | **136 MCP tools** - Claude Code works directly in your board |
 | "GitHub issues and my PM tool are never in sync" | **Bi-directional GitHub sync** with webhook integration |
 | "I want to self-host but lose features" | Community edition has MORE features than most paid tools |
 | "My team speaks different languages" | Each user talks to their own AI assistant in their own language |
@@ -80,7 +80,7 @@ Kanbu includes **Kanbu Graphiti**, a self-hosted knowledge graph engine (Python/
 - **Contradiction Detection**: Flags conflicting information across your documentation.
 
 ### 🔌 AI Integration (Claude Code)
-Connect Claude Code to manage your Kanbu projects with **131 available tools**.
+Connect Claude Code to manage your Kanbu projects with **136 available tools**.
 
 **Tool Categories:**
 | Phase | Category | Tools | Examples |
