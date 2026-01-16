@@ -1,86 +1,86 @@
 # UI Development Guide - Kanbu Design System
 
-**Versie:** 2.0.0
-**Status:** VERPLICHT voor alle UI werk
-**Laatste update:** 2026-01-16
+**Version:** 2.0.0
+**Status:** MANDATORY for all UI work
+**Last update:** 2026-01-16
 
 ---
 
-## Quick Start (5 minuten)
+## Quick Start (5 minutes)
 
-### De Gouden Regel
+### The Golden Rule
 
 ```
-NOOIT hardcoded kleuren gebruiken!
+NEVER use hardcoded colors!
 ```
 
-**FOUT:**
+**WRONG:**
 ```tsx
 <div className="bg-gray-100 text-gray-900 border-gray-200">
 <span className="text-blue-500">
 <button className="bg-slate-800 hover:bg-slate-700">
 ```
 
-**GOED:**
+**RIGHT:**
 ```tsx
 <div className="bg-surface-1 text-foreground border-border">
 <span className="text-primary">
 <button className="bg-primary text-primary-foreground hover:bg-primary/90">
 ```
 
-### Waarom?
+### Why?
 
-- **Dark mode** werkt automatisch met tokens
-- **Accent colors** (6 keuzes) werken automatisch
-- **Consistentie** door heel de applicatie
-- **Toegankelijkheid** is ingebouwd
+- **Dark mode** works automatically with tokens
+- **Accent colors** (6 choices) work automatically
+- **Consistency** throughout the application
+- **Accessibility** is built-in
 
 ---
 
 ## Token Cheat Sheet
 
-### Achtergrond Kleuren
+### Background Colors
 
-| Token | Gebruik | Light Mode | Dark Mode |
-|-------|---------|------------|-----------|
-| `bg-background` | Pagina achtergrond | wit | donkergrijs |
-| `bg-surface-1` | Cards, eerste laag | lichtgrijs | donkergrijs |
-| `bg-surface-2` | Nested elementen | iets donkerder | iets lichter |
-| `bg-surface-3` | Diepste nesting | nog donkerder | nog lichter |
-| `bg-muted` | Subtiele achtergrond | grijs | donkergrijs |
-| `bg-primary` | Primaire actie buttons | accent kleur | accent kleur |
-| `bg-secondary` | Secundaire elementen | lichtgrijs | donkergrijs |
-| `bg-destructive` | Danger/delete acties | rood | rood |
+| Token | Usage | Light Mode | Dark Mode |
+|-------|-------|------------|-----------|
+| `bg-background` | Page background | white | dark gray |
+| `bg-surface-1` | Cards, first layer | light gray | dark gray |
+| `bg-surface-2` | Nested elements | slightly darker | slightly lighter |
+| `bg-surface-3` | Deepest nesting | even darker | even lighter |
+| `bg-muted` | Subtle background | gray | dark gray |
+| `bg-primary` | Primary action buttons | accent color | accent color |
+| `bg-secondary` | Secondary elements | light gray | dark gray |
+| `bg-destructive` | Danger/delete actions | red | red |
 
-### Tekst Kleuren
+### Text Colors
 
-| Token | Gebruik |
-|-------|---------|
-| `text-foreground` | Primaire tekst |
-| `text-muted-foreground` | Secundaire/subtiele tekst |
-| `text-primary` | Accent gekleurde tekst |
-| `text-primary-foreground` | Tekst op primary achtergrond |
-| `text-destructive` | Error/danger tekst |
+| Token | Usage |
+|-------|-------|
+| `text-foreground` | Primary text |
+| `text-muted-foreground` | Secondary/subtle text |
+| `text-primary` | Accent colored text |
+| `text-primary-foreground` | Text on primary background |
+| `text-destructive` | Error/danger text |
 
-### Border Kleuren
+### Border Colors
 
-| Token | Gebruik |
-|-------|---------|
-| `border-border` | Standaard borders |
+| Token | Usage |
+|-------|-------|
+| `border-border` | Standard borders |
 | `border-input` | Form input borders |
 | `border-primary` | Accent borders |
 | `border-destructive` | Error borders |
 
-### State Kleuren
+### State Colors
 
-| Token | Gebruik |
-|-------|---------|
-| `bg-success`, `text-success` | Geslaagd, voltooid |
-| `bg-warning`, `text-warning` | Waarschuwing |
-| `bg-error`, `text-error` | Fouten |
-| `bg-info`, `text-info` | Informatie |
+| Token | Usage |
+|-------|-------|
+| `bg-success`, `text-success` | Success, completed |
+| `bg-warning`, `text-warning` | Warning |
+| `bg-error`, `text-error` | Errors |
+| `bg-info`, `text-info` | Information |
 
-### Priority Kleuren (Tasks)
+### Priority Colors (Tasks)
 
 | Token | Priority |
 |-------|----------|
@@ -91,38 +91,38 @@ NOOIT hardcoded kleuren gebruiken!
 
 ---
 
-## Component Patronen
+## Component Patterns
 
 ### Card Component
 
 ```tsx
 <div className="bg-surface-1 border border-border rounded-lg p-4 shadow-sm">
-  <h3 className="text-foreground font-medium">Titel</h3>
-  <p className="text-muted-foreground text-sm">Beschrijving</p>
+  <h3 className="text-foreground font-medium">Title</h3>
+  <p className="text-muted-foreground text-sm">Description</p>
 </div>
 ```
 
-### Button Varianten
+### Button Variants
 
 ```tsx
-// Primary (hoofdactie)
+// Primary (main action)
 <Button className="bg-primary text-primary-foreground hover:bg-primary/90">
-  Opslaan
+  Save
 </Button>
 
 // Secondary
 <Button variant="secondary" className="bg-secondary text-secondary-foreground">
-  Annuleren
+  Cancel
 </Button>
 
 // Destructive
 <Button variant="destructive" className="bg-destructive text-destructive-foreground">
-  Verwijderen
+  Delete
 </Button>
 
-// Ghost (subtiel)
+// Ghost (subtle)
 <Button variant="ghost" className="hover:bg-accent hover:text-accent-foreground">
-  Meer opties
+  More options
 </Button>
 ```
 
@@ -136,7 +136,7 @@ NOOIT hardcoded kleuren gebruiken!
                placeholder:text-muted-foreground
                focus:border-primary focus:ring-primary"
   />
-  <p className="text-muted-foreground text-sm">Hulptekst</p>
+  <p className="text-muted-foreground text-sm">Helper text</p>
 </div>
 ```
 
@@ -163,8 +163,8 @@ NOOIT hardcoded kleuren gebruiken!
 
 ```tsx
 <tr className="border-b border-border hover:bg-muted/50 transition-colors">
-  <td className="text-foreground py-3 px-4">Primaire data</td>
-  <td className="text-muted-foreground py-3 px-4">Secundaire data</td>
+  <td className="text-foreground py-3 px-4">Primary data</td>
+  <td className="text-muted-foreground py-3 px-4">Secondary data</td>
 </tr>
 ```
 
@@ -174,15 +174,15 @@ NOOIT hardcoded kleuren gebruiken!
 <Dialog>
   <DialogContent className="bg-surface-1 border-border">
     <DialogHeader>
-      <DialogTitle className="text-foreground">Titel</DialogTitle>
+      <DialogTitle className="text-foreground">Title</DialogTitle>
       <DialogDescription className="text-muted-foreground">
-        Beschrijving
+        Description
       </DialogDescription>
     </DialogHeader>
     {/* content */}
     <DialogFooter>
-      <Button variant="secondary">Annuleren</Button>
-      <Button>Bevestigen</Button>
+      <Button variant="secondary">Cancel</Button>
+      <Button>Confirm</Button>
     </DialogFooter>
   </DialogContent>
 </Dialog>
@@ -206,37 +206,37 @@ NOOIT hardcoded kleuren gebruiken!
 
 ## Do's and Don'ts
 
-### DO: Gebruik Semantic Tokens
+### DO: Use Semantic Tokens
 
 ```tsx
-// GOED - semantic meaning
+// GOOD - semantic meaning
 className="bg-surface-1 text-foreground border-border"
 className="bg-destructive text-destructive-foreground"
 className="text-muted-foreground"
 ```
 
-### DON'T: Hardcoded Kleuren
+### DON'T: Hardcoded Colors
 
 ```tsx
-// FOUT - hardcoded kleuren
+// WRONG - hardcoded colors
 className="bg-gray-100 text-gray-900 border-gray-200"
 className="bg-red-500 text-white"
 className="text-gray-500"
 ```
 
-### DO: Gebruik State Tokens
+### DO: Use State Tokens
 
 ```tsx
-// GOED - state tokens
+// GOOD - state tokens
 className="bg-success text-success-foreground"  // completed
 className="bg-warning text-warning-foreground"  // pending
 className="bg-error text-error-foreground"      // failed
 ```
 
-### DON'T: Hardcoded State Kleuren
+### DON'T: Hardcoded State Colors
 
 ```tsx
-// FOUT - hardcoded state kleuren
+// WRONG - hardcoded state colors
 className="bg-green-500"   // completed
 className="bg-yellow-500"  // pending
 className="bg-red-500"     // failed
@@ -245,7 +245,7 @@ className="bg-red-500"     // failed
 ### DO: Hover/Focus States
 
 ```tsx
-// GOED - consistente interactie states
+// GOOD - consistent interaction states
 className="hover:bg-accent focus:ring-2 focus:ring-ring"
 className="hover:bg-primary/90 active:bg-primary/80"
 ```
@@ -253,24 +253,24 @@ className="hover:bg-primary/90 active:bg-primary/80"
 ### DON'T: Hardcoded Hover States
 
 ```tsx
-// FOUT - hardcoded hover
+// WRONG - hardcoded hover
 className="hover:bg-gray-200"
 className="hover:bg-blue-600"
 ```
 
-### DO: Opacity voor Variaties
+### DO: Opacity for Variations
 
 ```tsx
-// GOED - gebruik opacity voor lichtere varianten
-className="bg-primary/10 text-primary"      // lichte achtergrond
+// GOOD - use opacity for lighter variants
+className="bg-primary/10 text-primary"      // light background
 className="bg-destructive/10 text-destructive"
-className="border-primary/50"               // subtiele border
+className="border-primary/50"               // subtle border
 ```
 
-### DON'T: Aparte Kleur Shades
+### DON'T: Separate Color Shades
 
 ```tsx
-// FOUT - hardcoded shades
+// WRONG - hardcoded shades
 className="bg-blue-100 text-blue-700"
 className="bg-red-50 text-red-600"
 ```
@@ -279,53 +279,53 @@ className="bg-red-50 text-red-600"
 
 ## Pre-Commit Checklist
 
-Voer deze commando's uit VOORDAT je commit om hardcoded kleuren te vinden:
+Run these commands BEFORE you commit to find hardcoded colors:
 
-### Check voor Hardcoded Background Colors
+### Check for Hardcoded Background Colors
 
 ```bash
 cd apps/web/src
 grep -rn "bg-\(gray\|slate\|zinc\|neutral\|stone\|red\|orange\|amber\|yellow\|lime\|green\|emerald\|teal\|cyan\|sky\|blue\|indigo\|violet\|purple\|fuchsia\|pink\|rose\)-[0-9]" --include="*.tsx" --include="*.ts"
 ```
 
-### Check voor Hardcoded Text Colors
+### Check for Hardcoded Text Colors
 
 ```bash
 grep -rn "text-\(gray\|slate\|zinc\|neutral\|stone\|red\|orange\|amber\|yellow\|lime\|green\|emerald\|teal\|cyan\|sky\|blue\|indigo\|violet\|purple\|fuchsia\|pink\|rose\)-[0-9]" --include="*.tsx" --include="*.ts"
 ```
 
-### Check voor Hardcoded Border Colors
+### Check for Hardcoded Border Colors
 
 ```bash
 grep -rn "border-\(gray\|slate\|zinc\|neutral\|stone\|red\|orange\|amber\|yellow\|lime\|green\|emerald\|teal\|cyan\|sky\|blue\|indigo\|violet\|purple\|fuchsia\|pink\|rose\)-[0-9]" --include="*.tsx" --include="*.ts"
 ```
 
-### Verwachte Output
+### Expected Output
 
-De output moet **LEEG** zijn, of alleen false positives bevatten (bijv. in comments of disabled code).
+The output should be **EMPTY**, or only contain false positives (e.g., in comments or disabled code).
 
-Als er matches zijn: **VERVANG** ze met de juiste tokens uit de cheat sheet hierboven.
+If there are matches: **REPLACE** them with the correct tokens from the cheat sheet above.
 
 ---
 
-## Design Token Locaties
+## Design Token Locations
 
-| Bestand | Inhoud |
-|---------|--------|
-| `styles/globals.css` | Alle CSS custom properties (design tokens) |
+| File | Contents |
+|------|----------|
+| `styles/globals.css` | All CSS custom properties (design tokens) |
 | `styles/accents.css` | Accent color overrides |
-| `lib/design-tokens.ts` | TypeScript token definities |
-| `tailwind.config.js` | Tailwind integratie met tokens |
+| `lib/design-tokens.ts` | TypeScript token definitions |
+| `tailwind.config.js` | Tailwind integration with tokens |
 
-### Token Structuur (globals.css)
+### Token Structure (globals.css)
 
 ```css
 :root {
-  /* Primitive Colors - NIET direct gebruiken */
+  /* Primitive Colors - DO NOT use directly */
   --gray-50: ...;
   --gray-100: ...;
 
-  /* Semantic Colors - GEBRUIK DEZE */
+  /* Semantic Colors - USE THESE */
   --background: ...;
   --foreground: ...;
   --surface-1: ...;
@@ -345,37 +345,37 @@ Als er matches zijn: **VERVANG** ze met de juiste tokens uit de cheat sheet hier
 
 ---
 
-## Nieuwe Componenten Maken
+## Creating New Components
 
-### Stap 1: Check bestaande componenten
+### Step 1: Check existing components
 
-Voordat je een nieuw component maakt, check of er al iets vergelijkbaars bestaat:
+Before creating a new component, check if something similar already exists:
 
 ```bash
-# Zoek in ui/ directory
+# Search in ui/ directory
 ls apps/web/src/components/ui/
 
-# Zoek specifiek component
-grep -rn "ComponentNaam" apps/web/src/components/
+# Search for specific component
+grep -rn "ComponentName" apps/web/src/components/
 ```
 
-### Stap 2: Gebruik shadcn/ui als basis
+### Step 2: Use shadcn/ui as base
 
-Kanbu gebruikt shadcn/ui. Check eerst of het component daar beschikbaar is:
+Kanbu uses shadcn/ui. Check if the component is available there first:
 - https://ui.shadcn.com/docs/components
 
-### Stap 3: Token-first approach
+### Step 3: Token-first approach
 
-Begin ALTIJD met tokens:
+ALWAYS start with tokens:
 
 ```tsx
-// Stap 1: Definieer de basis met tokens
+// Step 1: Define the base with tokens
 const baseStyles = "bg-surface-1 text-foreground border-border rounded-lg";
 
-// Stap 2: Voeg interactie states toe
+// Step 2: Add interaction states
 const interactiveStyles = "hover:bg-accent focus:ring-2 focus:ring-ring";
 
-// Stap 3: Combineer met variants
+// Step 3: Combine with variants
 const variants = {
   default: "bg-surface-1",
   primary: "bg-primary text-primary-foreground",
@@ -383,59 +383,59 @@ const variants = {
 };
 ```
 
-### Stap 4: Test beide themes
+### Step 4: Test both themes
 
-**ALTIJD** testen in:
+**ALWAYS** test in:
 1. Light mode
 2. Dark mode
-3. Alle 6 accent colors (indien relevant)
+3. All 6 accent colors (if relevant)
 
 ---
 
-## Veelgemaakte Fouten
+## Common Mistakes
 
-### Fout 1: "Het werkt in light mode"
+### Mistake 1: "It works in light mode"
 
 ```tsx
-// FOUT - ziet er goed uit in light, onleesbaar in dark
+// WRONG - looks good in light, unreadable in dark
 <div className="bg-white text-black">
 
-// GOED - werkt in beide modes
+// RIGHT - works in both modes
 <div className="bg-background text-foreground">
 ```
 
-### Fout 2: Inline hex/rgb kleuren
+### Mistake 2: Inline hex/rgb colors
 
 ```tsx
-// FOUT - inline kleuren
+// WRONG - inline colors
 <div style={{ backgroundColor: '#f3f4f6', color: '#111827' }}>
 
-// GOED - CSS variables als nodig
+// GOOD - CSS variables if needed
 <div style={{ backgroundColor: 'var(--surface-1)', color: 'var(--foreground)' }}>
 
 // BEST - Tailwind classes
 <div className="bg-surface-1 text-foreground">
 ```
 
-### Fout 3: Kleur in component props
+### Mistake 3: Color in component props
 
 ```tsx
-// FOUT - hardcoded kleur als prop
+// WRONG - hardcoded color as prop
 <Icon color="#3b82f6" />
 <Badge color="blue" />
 
-// GOED - semantic meaning
+// RIGHT - semantic meaning
 <Icon className="text-primary" />
 <Badge variant="primary" />
 ```
 
-### Fout 4: Vergeten van hover states
+### Mistake 4: Forgetting hover states
 
 ```tsx
-// FOUT - geen hover feedback
+// WRONG - no hover feedback
 <button className="bg-primary text-white">Click</button>
 
-// GOED - duidelijke hover feedback
+// RIGHT - clear hover feedback
 <button className="bg-primary text-primary-foreground hover:bg-primary/90 transition-colors">
   Click
 </button>
@@ -445,7 +445,7 @@ const variants = {
 
 ## Quick Reference Card
 
-Print deze uit of houd open tijdens development:
+Print this out or keep open during development:
 
 ```
 BACKGROUNDS          TEXT                 BORDERS
@@ -466,7 +466,7 @@ bg-warning           bg-priority-medium
 bg-error             bg-priority-high
 bg-info              bg-priority-urgent
 
-INTERACTIE
+INTERACTION
 ─────────────────────────────────────────────────────
 hover:bg-accent      focus:ring-ring
 hover:bg-primary/90  active:bg-primary/80
@@ -475,22 +475,22 @@ hover:text-foreground transition-colors
 
 ---
 
-## Hulp Nodig?
+## Need Help?
 
-### Documentatie
+### Documentation
 
-- Design System Architectuur: `docs/UI-Design-Kanbu/05-DESIGN-SYSTEM-ARCHITECTURE.md`
-- Token Definities: `apps/web/src/styles/globals.css`
+- Design System Architecture: `docs/UI-Design-Kanbu/05-DESIGN-SYSTEM-ARCHITECTURE.md`
+- Token Definitions: `apps/web/src/styles/globals.css`
 - Component Audit: `docs/UI-Design-Kanbu/03-COMPONENT-AUDIT.md`
 
-### Bij Twijfel
+### When in Doubt
 
-1. Check globals.css voor beschikbare tokens
-2. Kijk naar bestaande componenten voor patronen
-3. Test in dark mode VOORDAT je commit
-4. Vraag de gebruiker bij onduidelijkheid
+1. Check globals.css for available tokens
+2. Look at existing components for patterns
+3. Test in dark mode BEFORE you commit
+4. Ask the user if unclear
 
 ---
 
-*Document versie: 2.0.0*
-*Laatst bijgewerkt: 2026-01-16*
+*Document version: 2.0.0*
+*Last updated: 2026-01-16*

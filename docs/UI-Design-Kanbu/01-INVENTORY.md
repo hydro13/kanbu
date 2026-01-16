@@ -1,80 +1,80 @@
-# Kanbu UI Inventarisatie
+# Kanbu UI Inventory
 
-**Datum:** 2026-01-15
+**Date:** 2026-01-15
 **Status:** Complete (Updated)
 
-## Overzicht
+## Overview
 
-Kanbu is een uitgebreide project management applicatie met **60+ routes**, **20+ component directories**, en **77,000+ regels** frontend code.
+Kanbu is a comprehensive project management application with **60+ routes**, **20+ component directories**, and **77,000+ lines** of frontend code.
 
-### Totalen
+### Totals
 
-| Categorie | Aantal |
-|-----------|--------|
-| Pages (regels code) | 30,887 |
-| Components (regels code) | 46,565 |
-| Wiki componenten alleen | 8,902 |
-| **Totaal frontend** | **~85,000 regels** |
+| Category | Count |
+|----------|-------|
+| Pages (lines of code) | 30,887 |
+| Components (lines of code) | 46,565 |
+| Wiki components only | 8,902 |
+| **Total frontend** | **~85,000 lines** |
 
 ---
 
 ## Tech Stack
 
-| Technologie | Details |
-|-------------|---------|
+| Technology | Details |
+|------------|---------|
 | Framework | React + TypeScript |
 | Build | Vite 6.x |
 | Styling | TailwindCSS + CSS Variables |
-| UI Components | shadcn/ui basis |
+| UI Components | shadcn/ui base |
 | State | Redux (store/) |
 | Routing | React Router v6 |
 
 ---
 
-## Design System Basis
+## Design System Base
 
 ### Tailwind Config
 - Dark mode via `class`
-- CSS variabelen voor kleuren (HSL formaat)
+- CSS variables for colors (HSL format)
 - shadcn/ui compatible setup
 
-### Kleuren Tokens (globals.css)
+### Color Tokens (globals.css)
 
 **Light Mode:**
 ```css
---background: 0 0% 100%          /* wit */
---foreground: 222.2 84% 4.9%     /* bijna zwart */
---primary: 222.2 47.4% 11.2%     /* donkerblauw */
---secondary: 210 40% 96.1%       /* lichtgrijs */
---destructive: 0 84.2% 60.2%     /* rood */
---muted: 210 40% 96.1%           /* lichtgrijs */
---accent: 210 40% 96.1%          /* lichtgrijs */
+--background: 0 0% 100%          /* white */
+--foreground: 222.2 84% 4.9%     /* almost black */
+--primary: 222.2 47.4% 11.2%     /* dark blue */
+--secondary: 210 40% 96.1%       /* light gray */
+--destructive: 0 84.2% 60.2%     /* red */
+--muted: 210 40% 96.1%           /* light gray */
+--accent: 210 40% 96.1%          /* light gray */
 ```
 
 **Dark Mode:**
 ```css
---background: 222.2 84% 4.9%     /* donkerblauw/zwart */
---foreground: 210 40% 98%        /* bijna wit */
---primary: 210 40% 98%           /* bijna wit */
---secondary: 217.2 32.6% 17.5%   /* donkergrijs */
---destructive: 0 62.8% 30.6%     /* donkerrood */
+--background: 222.2 84% 4.9%     /* dark blue/black */
+--foreground: 210 40% 98%        /* almost white */
+--primary: 210 40% 98%           /* almost white */
+--secondary: 217.2 32.6% 17.5%   /* dark gray */
+--destructive: 0 62.8% 30.6%     /* dark red */
 ```
 
-### Observatie
-- Secondary, muted, en accent hebben **dezelfde waarde** in beide modes
-- Dit suggereert dat het kleurenpalet niet volledig is uitgewerkt
-- Geen aparte tokens voor: success, warning, info
+### Observation
+- Secondary, muted, and accent have **the same value** in both modes
+- This suggests that the color palette is not fully developed
+- No separate tokens for: success, warning, info
 
 ---
 
-## Routes Inventarisatie
+## Routes Inventory
 
 ### Public Routes (3)
-| Route | Component | Beschrijving |
-|-------|-----------|--------------|
-| `/login` | LoginPage | Inlogpagina |
-| `/register` | RegisterPage | Registratiepagina |
-| `/invite/:token` | AcceptInvitePage | Uitnodiging accepteren |
+| Route | Component | Description |
+|-------|-----------|-------------|
+| `/login` | LoginPage | Login page |
+| `/register` | RegisterPage | Registration page |
+| `/invite/:token` | AcceptInvitePage | Accept invitation |
 
 ### Dashboard Routes (5)
 | Route | Component |
@@ -161,63 +161,63 @@ Kanbu is een uitgebreide project management applicatie met **60+ routes**, **20+
 
 ---
 
-## Wiki Systeem (Belangrijk!)
+## Wiki System (Important!)
 
-De Wiki is een **compleet kennisbeheersysteem** met:
-- Pagina's met rich text editor
-- Kennisgraaf visualisatie
-- AI-powered zoeken
-- Contradictie detectie
-- Versie geschiedenis
+The Wiki is a **complete knowledge management system** with:
+- Pages with rich text editor
+- Knowledge graph visualization
+- AI-powered search
+- Contradiction detection
+- Version history
 - Backlinks tracking
-- Duplicaat detectie
+- Duplicate detection
 
 ### Wiki Route
-| Route | Component | Regels |
-|-------|-----------|--------|
+| Route | Component | Lines |
+|-------|-----------|-------|
 | `/workspace/:slug/wiki` | WorkspaceWikiPage | 1,088 |
-| `/workspace/:slug/wiki/:pageSlug` | WorkspaceWikiPage | (zelfde) |
+| `/workspace/:slug/wiki/:pageSlug` | WorkspaceWikiPage | (same) |
 
-### Wiki Componenten (8,902 regels totaal)
-| Component | Regels | Functie |
-|-----------|--------|---------|
-| WikiGraphView.tsx | 2,177 | Kennisgraaf D3.js visualisatie |
+### Wiki Components (8,902 total lines)
+| Component | Lines | Function |
+|-----------|-------|----------|
+| WikiGraphView.tsx | 2,177 | Knowledge graph D3.js visualization |
 | AskWikiDialog.tsx | 881 | AI-powered wiki search |
-| WikiSearchDialog.tsx | 865 | Zoekinterface |
-| WikiPageView.tsx | 766 | Wiki pagina weergave |
-| WikiDuplicateManager.tsx | 728 | Duplicaat pagina beheer |
-| ContradictionHistory.tsx | 492 | Contradictie geschiedenis |
-| WikiSidebar.tsx | 458 | Wiki navigatie sidebar |
-| ContradictionDialog.tsx | 432 | Contradictie details |
-| WikiTemporalSearch.tsx | 349 | Tijdlijn zoeken |
-| WikiVersionHistory.tsx | 317 | Versie beheer |
-| ContradictionToast.tsx | 311 | Contradictie notificaties |
+| WikiSearchDialog.tsx | 865 | Search interface |
+| WikiPageView.tsx | 766 | Wiki page display |
+| WikiDuplicateManager.tsx | 728 | Duplicate page management |
+| ContradictionHistory.tsx | 492 | Contradiction history |
+| WikiSidebar.tsx | 458 | Wiki navigation sidebar |
+| ContradictionDialog.tsx | 432 | Contradiction details |
+| WikiTemporalSearch.tsx | 349 | Timeline search |
+| WikiVersionHistory.tsx | 317 | Version management |
+| ContradictionToast.tsx | 311 | Contradiction notifications |
 | FactCheckDialog.tsx | 288 | Fact checking UI |
-| BacklinksPanel.tsx | 227 | Backlink overzicht |
-| WikiDuplicateBadge.tsx | 177 | Duplicaat indicator |
+| BacklinksPanel.tsx | 227 | Backlink overview |
+| WikiDuplicateBadge.tsx | 177 | Duplicate indicator |
 | ClusterDetailPanel.tsx | ~100 | Cluster details |
-| ClusterLegend.tsx | ~100 | Graaf legenda |
-| EdgeSearchResult.tsx | ~150 | Zoekresultaat item |
+| ClusterLegend.tsx | ~100 | Graph legend |
+| EdgeSearchResult.tsx | ~150 | Search result item |
 
-### Observatie
-Het Wiki systeem is **zeer uitgebreid** met AI-integratie (contradictie detectie, fact checking, semantic search). Dit is een differentiërende feature die speciale aandacht verdient bij UI updates.
+### Observation
+The Wiki system is **very extensive** with AI integration (contradiction detection, fact checking, semantic search). This is a differentiating feature that deserves special attention during UI updates.
 
 ---
 
-## Grootste Pagina's (per regels code)
+## Largest Pages (by lines of code)
 
-| Pagina | Regels | Notities |
-|--------|--------|----------|
-| PermissionTreePage.tsx | 1,231 | Admin permissions boom |
-| AclPage.tsx | 1,113 | Access Control List beheer |
-| AiSystemsPage.tsx | 1,096 | AI systeem configuratie |
-| WorkspaceWikiPage.tsx | 1,088 | Wiki hoofdpagina |
-| CalendarView.tsx | 1,076 | Kalender view |
-| TimelineView.tsx | 960 | Gantt-achtige timeline |
-| GitHubProjectSettings.tsx | 871 | GitHub integratie |
-| WorkspaceSettings.tsx | 790 | Workspace instellingen |
+| Page | Lines | Notes |
+|------|-------|-------|
+| PermissionTreePage.tsx | 1,231 | Admin permissions tree |
+| AclPage.tsx | 1,113 | Access Control List management |
+| AiSystemsPage.tsx | 1,096 | AI system configuration |
+| WorkspaceWikiPage.tsx | 1,088 | Wiki main page |
+| CalendarView.tsx | 1,076 | Calendar view |
+| TimelineView.tsx | 960 | Gantt-like timeline |
+| GitHubProjectSettings.tsx | 871 | GitHub integration |
+| WorkspaceSettings.tsx | 790 | Workspace settings |
 | GitHubAdminPage.tsx | 763 | GitHub admin |
-| UserEditPage.tsx | 755 | Gebruiker bewerken |
+| UserEditPage.tsx | 755 | Edit user |
 
 ---
 
@@ -225,47 +225,47 @@ Het Wiki systeem is **zeer uitgebreid** met AI-integratie (contradictie detectie
 
 ```
 components/
-├── admin/          # Admin specifieke componenten
-├── analytics/      # Grafieken, charts, stats
+├── admin/          # Admin-specific components
+├── analytics/      # Charts, stats
 ├── auth/           # Login, register, protected routes
-├── board/          # Kanban board componenten
+├── board/          # Kanban board components
 ├── command/        # Command palette (⌘K)
-├── common/         # Gedeelde utilities
+├── common/         # Shared utilities
 ├── dashboard/      # Dashboard widgets
 ├── editor/         # Rich text editor
-├── github/         # GitHub integratie
-├── import/         # Import/export functionaliteit
+├── github/         # GitHub integration
+├── import/         # Import/export functionality
 ├── layout/         # Page layouts, sidebars
-├── milestone/      # Milestone componenten
-├── profile/        # Profiel pagina componenten
-├── project/        # Project specifieke componenten
-├── sprint/         # Sprint/scrum componenten
+├── milestone/      # Milestone components
+├── profile/        # Profile page components
+├── project/        # Project-specific components
+├── sprint/         # Sprint/scrum components
 ├── sticky/         # Sticky notes
 ├── task/           # Task cards, modals
-├── ui/             # shadcn/ui basis componenten
+├── ui/             # shadcn/ui base components
 ├── wiki/           # Wiki editor/viewer
-└── workspace/      # Workspace componenten
+└── workspace/      # Workspace components
 ```
 
 ---
 
 ## UI Base Components (shadcn/ui)
 
-Aanwezige componenten:
+Available components:
 - badge, button, card, checkbox, collapsible
 - dialog, dropdown-menu, input, label
 - progress, scroll-area, select, separator
 - slider, sonner (toast), switch, tabs, tooltip
 
-Custom toevoegingen:
+Custom additions:
 - HoverPopover
 - UndoRedoButtons
 
 ---
 
-## Volgende Stappen
+## Next Steps
 
-1. [ ] Analyseer component structuur per directory
-2. [ ] Identificeer hergebruikte vs. duplicate componenten
-3. [ ] Documenteer kleur/typography inconsistenties
-4. [ ] Maak design token aanbevelingen
+1. [ ] Analyze component structure per directory
+2. [ ] Identify reused vs. duplicate components
+3. [ ] Document color/typography inconsistencies
+4. [ ] Make design token recommendations

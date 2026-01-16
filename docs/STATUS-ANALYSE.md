@@ -1,20 +1,20 @@
-# Kanbu Status Analyse
+# Kanbu Status Analysis
 
-**Datum:** 2026-01-03
-**Laatst bijgewerkt:** 2026-01-04 - Live editing presence & auto-save toegevoegd
+**Date:** 2026-01-03
+**Last updated:** 2026-01-04 - Live editing presence & auto-save added
 
 ---
 
-## 1. Kanbu Architectuur
+## 1. Kanbu Architecture
 
 ### Tech Stack
 - **Frontend:** React + TypeScript + Vite
 - **Backend:** Node.js + Fastify + tRPC
 - **Real-time:** Socket.io + Redis adapter (optional)
-- **Database:** PostgreSQL + Prisma (eigen database, niet genxv5)
+- **Database:** PostgreSQL + Prisma (own database, not genxv5)
 - **Monorepo:** pnpm workspaces
 
-### Structuur
+### Structure
 ```
 kanbu/
 ├── apps/
@@ -26,7 +26,7 @@ kanbu/
 │   │       └── lib/
 │   └── web/          # React frontend
 │       └── src/
-│           ├── pages/            # 25 pagina's
+│           ├── pages/            # 25 pages
 │           ├── components/
 │           │   ├── board/        # Board, Column, Swimlane, DnD
 │           │   ├── layout/
@@ -37,173 +37,173 @@ kanbu/
 
 ---
 
-## 2. Wat is AF in Kanbu
+## 2. What is DONE in Kanbu
 
 ### Backend (API) - 27 Procedures
-| Module | Status | Beschrijving |
-|--------|--------|--------------|
+| Module | Status | Description |
+|--------|--------|-------------|
 | activity.ts | ✅ | Activity logging |
-| admin.ts | ✅ | Admin functies |
-| analytics.ts | ✅ | Analytics/rapportage |
+| admin.ts | ✅ | Admin functions |
+| analytics.ts | ✅ | Analytics/reporting |
 | apiKey.ts | ✅ | API key management |
-| attachment.ts | ✅ | Bestand uploads |
-| auth.ts | ✅ | Authenticatie |
-| category.ts | ✅ | Categorieën |
-| column.ts | ✅ | Kolommen CRUD |
+| attachment.ts | ✅ | File uploads |
+| auth.ts | ✅ | Authentication |
+| category.ts | ✅ | Categories |
+| column.ts | ✅ | Columns CRUD |
 | comment.ts | ✅ | Comments |
 | export.ts | ✅ | Data export |
 | import.ts | ✅ | Data import |
 | milestone.ts | ✅ | Milestones |
-| notification.ts | ✅ | Notificaties |
+| notification.ts | ✅ | Notifications |
 | project.ts | ✅ | Project CRUD |
-| search.ts | ✅ | Zoeken |
+| search.ts | ✅ | Search |
 | sprint.ts | ✅ | Sprints |
 | stickyNote.ts | ✅ | Sticky notes |
-| subtask.ts | ✅ | Subtaken |
+| subtask.ts | ✅ | Subtasks |
 | swimlane.ts | ✅ | Swimlanes CRUD |
-| system.ts | ✅ | Systeem info |
+| system.ts | ✅ | System info |
 | tag.ts | ✅ | Tags |
 | taskLink.ts | ✅ | Task links |
-| task.ts | ✅ | Taken CRUD |
+| task.ts | ✅ | Tasks CRUD |
 | user.ts | ✅ | User management |
 | webhook.ts | ✅ | Webhooks |
 | workspace.ts | ✅ | Workspaces |
 
-### Frontend (Web) - 25 Pagina's
-| Pagina | Status | Beschrijving |
-|--------|--------|--------------|
+### Frontend (Web) - 25 Pages
+| Page | Status | Description |
+|------|--------|-------------|
 | Home.tsx | ✅ | Dashboard home |
-| Login.tsx | ✅ | Login pagina |
-| Register.tsx | ✅ | Registratie |
-| ProjectList.tsx | ✅ | Project overzicht |
+| Login.tsx | ✅ | Login page |
+| Register.tsx | ✅ | Registration |
+| ProjectList.tsx | ✅ | Project overview |
 | BoardView.tsx | ✅ | Kanban board |
-| ListView.tsx | ✅ | Lijst weergave |
-| CalendarView.tsx | ✅ | Kalender weergave |
+| ListView.tsx | ✅ | List view |
+| CalendarView.tsx | ✅ | Calendar view |
 | TimelineView.tsx | ✅ | Gantt/timeline |
-| MilestoneView.tsx | ✅ | Milestone overzicht |
+| MilestoneView.tsx | ✅ | Milestone overview |
 | SprintBoard.tsx | ✅ | Sprint board |
 | SprintPlanning.tsx | ✅ | Sprint planning |
 | SprintBurndown.tsx | ✅ | Burndown chart |
 | AnalyticsDashboard.tsx | ✅ | Analytics |
-| ProjectSettings.tsx | ✅ | Project instellingen |
-| BoardSettings.tsx | ✅ | Board instellingen |
-| TagManagement.tsx | ✅ | Tag beheer |
+| ProjectSettings.tsx | ✅ | Project settings |
+| BoardSettings.tsx | ✅ | Board settings |
+| TagManagement.tsx | ✅ | Tag management |
 | ImportExport.tsx | ✅ | Import/export |
-| UserProfile.tsx | ✅ | Profiel pagina |
-| AcceptInvite.tsx | ✅ | Uitnodiging accepteren |
-| NotificationSettings.tsx | ✅ | Notificatie settings |
+| UserProfile.tsx | ✅ | Profile page |
+| AcceptInvite.tsx | ✅ | Accept invitation |
+| NotificationSettings.tsx | ✅ | Notification settings |
 | WorkspaceSettings.tsx | ✅ | Workspace settings |
 | ApiSettings.tsx | ✅ | API settings |
 | WebhookSettings.tsx | ✅ | Webhook settings |
-| admin/* | ✅ | Admin pagina's |
-| dashboard/* | ✅ | Dashboard subpagina's |
-| profile/* | ✅ | Profiel subpagina's |
+| admin/* | ✅ | Admin pages |
+| dashboard/* | ✅ | Dashboard subpages |
+| profile/* | ✅ | Profile subpages |
 
-### Core Board Componenten
-| Component | Status | Beschrijving |
-|-----------|--------|--------------|
-| Board.tsx | ✅ | Hoofdboard component |
-| Column.tsx | ✅ | Kolom component |
-| SwimlaneRow.tsx | ✅ | Swimlane rijen |
+### Core Board Components
+| Component | Status | Description |
+|-----------|--------|-------------|
+| Board.tsx | ✅ | Main board component |
+| Column.tsx | ✅ | Column component |
+| SwimlaneRow.tsx | ✅ | Swimlane rows |
 | DndContext.tsx | ✅ | Drag & drop |
 | DroppableColumn.tsx | ✅ | Drop zones |
 | useBoard.ts | ✅ | Board hook |
 
 ### Real-Time Collaboration (Socket.io)
-| Feature | Status | Beschrijving |
-|---------|--------|--------------|
-| Live Task Sync | ✅ | Wijzigingen direct zichtbaar bij alle users |
-| Presence Indicators | ✅ | Zie wie online is op het board |
-| Live Cursors | ✅ | Zie waar anderen hun muis bewegen |
+| Feature | Status | Description |
+|---------|--------|-------------|
+| Live Task Sync | ✅ | Changes instantly visible to all users |
+| Presence Indicators | ✅ | See who is online on the board |
+| Live Cursors | ✅ | See where others are moving their mouse |
 | Typing Indicators | ✅ | "X is typing..." in comments |
-| Conflict Resolution | ✅ | Alert bij gelijktijdige wijzigingen |
-| Live Editing Presence | ✅ | Rood kader + disabled Edit knop wanneer iemand anders bezig is |
-| Tag Sync | ✅ | Tags worden live gesynchroniseerd |
-| Subtask Sync | ✅ | Subtaak wijzigingen worden live gesynchroniseerd |
+| Conflict Resolution | ✅ | Alert on simultaneous changes |
+| Live Editing Presence | ✅ | Red border + disabled Edit button when someone else is editing |
+| Tag Sync | ✅ | Tags are synchronized live |
+| Subtask Sync | ✅ | Subtask changes are synchronized live |
 
 ### Editing Safety Features
-| Feature | Status | Beschrijving |
-|---------|--------|--------------|
-| Heartbeat System | ✅ | Editors sturen elke 30s heartbeat om lock actief te houden |
-| Stale Lock Cleanup | ✅ | Locks worden na 2 minuten zonder heartbeat automatisch vrijgegeven |
-| Auto-Save | ✅ | Wijzigingen worden elke 30s automatisch opgeslagen |
-| Optimistic Locking | ✅ | Conflict detectie via expectedUpdatedAt timestamp |
+| Feature | Status | Description |
+|---------|--------|-------------|
+| Heartbeat System | ✅ | Editors send heartbeat every 30s to keep lock active |
+| Stale Lock Cleanup | ✅ | Locks are automatically released after 2 minutes without heartbeat |
+| Auto-Save | ✅ | Changes are automatically saved every 30s |
+| Optimistic Locking | ✅ | Conflict detection via expectedUpdatedAt timestamp |
 
 **Scaling:**
-- Single instance: ~15 concurrent users (geen Redis nodig)
-- Multi-instance: Honderden users (met Redis adapter)
+- Single instance: ~15 concurrent users (no Redis needed)
+- Multi-instance: Hundreds of users (with Redis adapter)
 
 ---
 
-## 3. Vergelijking met GENX-Planner
+## 3. Comparison with GENX-Planner
 
 ### GENX-Planner Features (45 MCP Tools)
 
-| Feature Groep | Tools | Kanbu Status |
+| Feature Group | Tools | Kanbu Status |
 |---------------|-------|--------------|
-| **Core (17)** | projects, tasks, columns, swimlanes, comments, subtasks, board | ✅ Aanwezig |
-| **Relationgraph (4)** | task links, link types | ✅ Aanwezig (taskLink.ts) |
-| **Gantt (2)** | timeline, task dates | ✅ Aanwezig (TimelineView) |
-| **Milestone (4)** | milestones, task-milestone koppeling | ✅ Aanwezig |
-| **Wiki (5)** | wiki pages CRUD | ❌ **ONTBREEKT** |
-| **Global Search (3)** | cross-project search | ⚠️ Deels (alleen binnen project) |
-| **metaMagik (5)** | custom fields | ❌ **ONTBREEKT** |
-| **Budget (5)** | budget tracking | ❌ **ONTBREEKT** |
+| **Core (17)** | projects, tasks, columns, swimlanes, comments, subtasks, board | ✅ Present |
+| **Relationgraph (4)** | task links, link types | ✅ Present (taskLink.ts) |
+| **Gantt (2)** | timeline, task dates | ✅ Present (TimelineView) |
+| **Milestone (4)** | milestones, task-milestone linking | ✅ Present |
+| **Wiki (5)** | wiki pages CRUD | ❌ **MISSING** |
+| **Global Search (3)** | cross-project search | ⚠️ Partial (only within project) |
+| **metaMagik (5)** | custom fields | ❌ **MISSING** |
+| **Budget (5)** | budget tracking | ❌ **MISSING** |
 
 ---
 
-## 4. Wat ONTBREEKT in Kanbu
+## 4. What is MISSING in Kanbu
 
-### Kritieke Gaps
+### Critical Gaps
 
-| Feature | Prioriteit | Beschrijving |
-|---------|------------|--------------|
-| **Wiki systeem** | HOOG | GENX-Planner heeft volledige wiki met pagina's per project |
-| **Custom Fields** | HOOG | metaMagik plugin: custom velden (text, number, date, dropdown) |
-| **Budget Tracking** | MEDIUM | Budget module met expenses/income tracking |
-| **Cross-project Search** | MEDIUM | Zoeken over alle projecten heen |
+| Feature | Priority | Description |
+|---------|----------|-------------|
+| **Wiki system** | HIGH | GENX-Planner has full wiki with pages per project |
+| **Custom Fields** | HIGH | metaMagik plugin: custom fields (text, number, date, dropdown) |
+| **Budget Tracking** | MEDIUM | Budget module with expenses/income tracking |
+| **Cross-project Search** | MEDIUM | Search across all projects |
 
-### Mogelijke Gaps (verder onderzoek nodig)
+### Possible Gaps (needs further investigation)
 
-| Feature | Status | Notitie |
-|---------|--------|---------|
-| Project Groups | ❓ | Workspace lijkt equivalent |
-| Automatic Actions | ❓ | Trigger-based automatisering |
-| Time Tracking | ❓ | Op subtask niveau |
-| File Attachments | ✅ | attachment.ts aanwezig |
-| User Permissions | ❓ | Hoe granulair? |
-| Themes | ❓ | GENX heeft gruvbox/dark themes |
+| Feature | Status | Note |
+|---------|--------|------|
+| Project Groups | ❓ | Workspace seems equivalent |
+| Automatic Actions | ❓ | Trigger-based automation |
+| Time Tracking | ❓ | On subtask level |
+| File Attachments | ✅ | attachment.ts present |
+| User Permissions | ❓ | How granular? |
+| Themes | ❓ | GENX has gruvbox/dark themes |
 
 ---
 
-## 5. Samenvatting
+## 5. Summary
 
 ### Kanbu Status: ~80% Feature Parity
 
-**Wat werkt goed:**
+**What works well:**
 - Complete board/task/project management
 - Drag & drop
-- Sprints en milestones
+- Sprints and milestones
 - Gantt/timeline view
 - Analytics
 - Multi-user/workspace
 - **Real-time collaboration** (live sync, presence, cursors)
 
-**Wat moet gebouwd worden:**
-1. **Wiki systeem** - Documentatie per project
-2. **Custom Fields** - Flexibele metadata op taken
-3. **Budget Module** - Financiële tracking
-4. **Cross-project Search** - Globale zoekfunctie
+**What needs to be built:**
+1. **Wiki system** - Documentation per project
+2. **Custom Fields** - Flexible metadata on tasks
+3. **Budget Module** - Financial tracking
+4. **Cross-project Search** - Global search function
 
 ---
 
-## 6. Aanbevolen Volgende Stappen
+## 6. Recommended Next Steps
 
-1. **Wiki systeem implementeren** - Hoogste prioriteit voor documentatie
-2. **Custom Fields toevoegen** - Flexibiliteit voor verschillende projecttypes
-3. **Global Search uitbreiden** - Cross-project zoeken
-4. **Budget module** - Als financiële tracking nodig is
+1. **Implement Wiki system** - Highest priority for documentation
+2. **Add Custom Fields** - Flexibility for different project types
+3. **Extend Global Search** - Cross-project search
+4. **Budget module** - If financial tracking is needed
 
 ---
 
-*Rapport gegenereerd met behulp van genx-vector-source MCP tools*
+*Report generated using genx-vector-source MCP tools*

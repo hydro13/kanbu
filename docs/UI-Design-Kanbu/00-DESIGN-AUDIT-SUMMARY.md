@@ -1,79 +1,79 @@
-# Kanbu Design Audit - Samenvatting
+# Kanbu Design Audit - Summary
 
-**Datum:** 2026-01-15
+**Date:** 2026-01-15
 **Auditor:** Claude Code (Opus 4.5)
-**Versie:** 2.0.0 (Design System Implemented)
-**Status:** Design System v2.0.0 Voltooid
+**Version:** 2.0.0 (Design System Implemented)
+**Status:** Design System v2.0.0 Completed
 
 ---
 
 ## Executive Summary
 
-Kanbu is een **functioneel sterke** applicatie met:
+Kanbu is a **functionally strong** application with:
 - **60+ routes**
-- **85,000+ regels** frontend code (30,887 pages + 46,565 components + 8,902 wiki)
+- **85,000+ lines** of frontend code (30,887 pages + 46,565 components + 8,902 wiki)
 - **20+ component directories**
-- **Uitgebreid Wiki systeem** met AI-integratie
+- **Extensive Wiki system** with AI integration
 
-### Huidige Status: Design System v2.0.0 Geimplementeerd
+### Current Status: Design System v2.0.0 Implemented
 
-| Fase | Status | Beschrijving |
-|------|--------|--------------|
-| Fase 1: Foundation | ✅ Voltooid | Primitive tokens, typography, spacing |
-| Fase 2: Hardcoded Migratie | ✅ Voltooid | 100% hardcoded kleuren verwijderd |
-| Fase 3: Theme Infrastructure | ✅ Voltooid | ThemeContext, accent colors |
-| Fase 4: Backend Persistence | ✅ Voltooid | Theme/accent opgeslagen in database |
-| Fase 6: Design Tokens v2.0.0 | ✅ Voltooid | Compleet token systeem |
-
----
-
-## Gedetailleerde Rapporten
-
-| Document | Inhoud |
-|----------|--------|
-| [01-INVENTORY.md](./01-INVENTORY.md) | Routes, pagina's, tech stack |
-| [02-COLOR-AUDIT.md](./02-COLOR-AUDIT.md) | Kleur audit (historisch) |
-| [03-COMPONENT-AUDIT.md](./03-COMPONENT-AUDIT.md) | Component analyse, sidebars, layouts |
-| [04-UI-PATTERN-LIBRARY.md](./04-UI-PATTERN-LIBRARY.md) | **Volledige inventarisatie** van alle UI patronen |
-| [05-DESIGN-SYSTEM-ARCHITECTURE.md](./05-DESIGN-SYSTEM-ARCHITECTURE.md) | **Geimplementeerde architectuur** |
-| [06-DESIGN-SYSTEM-ROADMAP.md](./06-DESIGN-SYSTEM-ROADMAP.md) | **Implementatie roadmap** met progress tracking |
+| Phase | Status | Description |
+|-------|--------|-------------|
+| Phase 1: Foundation | ✅ Completed | Primitive tokens, typography, spacing |
+| Phase 2: Hardcoded Migration | ✅ Completed | 100% hardcoded colors removed |
+| Phase 3: Theme Infrastructure | ✅ Completed | ThemeContext, accent colors |
+| Phase 4: Backend Persistence | ✅ Completed | Theme/accent saved in database |
+| Phase 6: Design Tokens v2.0.0 | ✅ Completed | Complete token system |
 
 ---
 
-## Opgeloste Problemen
+## Detailed Reports
 
-### ~~1. Priority Kleuren Inconsistentie~~ ✅ OPGELOST
+| Document | Content |
+|----------|---------|
+| [01-INVENTORY.md](./01-INVENTORY.md) | Routes, pages, tech stack |
+| [02-COLOR-AUDIT.md](./02-COLOR-AUDIT.md) | Color audit (historical) |
+| [03-COMPONENT-AUDIT.md](./03-COMPONENT-AUDIT.md) | Component analysis, sidebars, layouts |
+| [04-UI-PATTERN-LIBRARY.md](./04-UI-PATTERN-LIBRARY.md) | **Complete inventory** of all UI patterns |
+| [05-DESIGN-SYSTEM-ARCHITECTURE.md](./05-DESIGN-SYSTEM-ARCHITECTURE.md) | **Implemented architecture** |
+| [06-DESIGN-SYSTEM-ROADMAP.md](./06-DESIGN-SYSTEM-ROADMAP.md) | **Implementation roadmap** with progress tracking |
 
-**Was:** "High" priority was ORANJE in sommige views, GEEL in andere.
+---
 
-**Oplossing:** Gecentraliseerd in `lib/design-tokens.ts` en `globals.css`:
-- Priority colors als semantic tokens
+## Resolved Issues
+
+### ~~1. Priority Colors Inconsistency~~ ✅ RESOLVED
+
+**Was:** "High" priority was ORANGE in some views, YELLOW in others.
+
+**Solution:** Centralized in `lib/design-tokens.ts` and `globals.css`:
+- Priority colors as semantic tokens
 - `--priority-low`, `--priority-medium`, `--priority-high`, `--priority-urgent`
 
 ---
 
-### ~~2. Hardcoded Kleuren (75%)~~ ✅ OPGELOST
+### ~~2. Hardcoded Colors (75%)~~ ✅ RESOLVED
 
 **Was:**
-- 1,443 `bg-[kleur]-[nummer]` classes
-- 2,405 `text-[kleur]-[nummer]` classes
-- Slechts 804 design system classes
+- 1,443 `bg-[color]-[number]` classes
+- 2,405 `text-[color]-[number]` classes
+- Only 804 design system classes
 
-**Nu:**
-- 100% gemigreerd naar design tokens
-- Alle kleuren via CSS custom properties
-- Volledige dark mode ondersteuning
+**Now:**
+- 100% migrated to design tokens
+- All colors via CSS custom properties
+- Full dark mode support
 
 ---
 
-### ~~3. Ontbrekende Design Tokens~~ ✅ OPGELOST
+### ~~3. Missing Design Tokens~~ ✅ RESOLVED
 
-**Was ontbrekend:**
-- success (groen voor completed)
-- warning (oranje voor deadlines)
-- info (blauw voor notificaties)
+**Was missing:**
+- success (green for completed)
+- warning (orange for deadlines)
+- info (blue for notifications)
 
-**Nu aanwezig (globals.css v2.0.0):**
+**Now present (globals.css v2.0.0):**
 - Complete color scales (Gray, Blue, Orange, Red, Green, Amber, Teal, Violet, Rose, Cyan)
 - State colors (success, warning, error, info)
 - Component tokens (Card, Button, Input, Badge, Avatar, Tooltip, Toast, Tabs, etc.)
@@ -83,14 +83,14 @@ Kanbu is een **functioneel sterke** applicatie met:
 
 ---
 
-## Geimplementeerde Features
+## Implemented Features
 
-### Design Token Systeem v2.0.0
+### Design Token System v2.0.0
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                        USER PREFERENCES                          │
-│            (opgeslagen in database + localStorage)               │
+│            (saved in database + localStorage)                    │
 └─────────────────────────────────────────────────────────────────┘
                                 ↓
 ┌─────────────────────────────────────────────────────────────────┐
@@ -114,13 +114,13 @@ Kanbu is een **functioneel sterke** applicatie met:
                                 ↓
 ┌─────────────────────────────────────────────────────────────────┐
 │                    TAILWIND UTILITIES                            │
-│           Volledig geintegreerd met CSS variables                │
+│           Fully integrated with CSS variables                    │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 ### Accent Color System
 
-6 beschikbare accent kleuren:
+6 available accent colors:
 - **Slate** - Neutral and professional
 - **Blue** - Trust and reliability (default)
 - **Teal** - Fresh and modern
@@ -132,21 +132,21 @@ Kanbu is een **functioneel sterke** applicatie met:
 
 ```typescript
 // Frontend: ThemeContext.tsx
-// - localStorage voor snelle hydration
-// - Sync met backend bij login
+// - localStorage for fast hydration
+// - Sync with backend on login
 
-// Backend: user.theme, user.accent velden
+// Backend: user.theme, user.accent fields
 // - tRPC: user.updateProfile({ theme, accent })
-// - Database: User model met theme/accent kolommen
+// - Database: User model with theme/accent columns
 ```
 
 ---
 
-## Resterende Verbetermogelijkheden
+## Remaining Improvement Opportunities
 
-### 1. Sidebar Consolidatie (Medium Priority)
+### 1. Sidebar Consolidation (Medium Priority)
 
-**Huidige staat:** 7 verschillende sidebar implementaties.
+**Current state:** 7 different sidebar implementations.
 
 | Sidebar | Icons | Drag & Drop | Collapse |
 |---------|-------|-------------|----------|
@@ -156,32 +156,32 @@ Kanbu is een **functioneel sterke** applicatie met:
 | AdminSidebar | lucide | ❌ | ❌ |
 | ProfileSidebar | lucide | ❌ | ❌ |
 
-**Aanbeveling:** Creëer `SidebarBase` component voor consistente UX.
+**Recommendation:** Create `SidebarBase` component for consistent UX.
 
 ---
 
-### 2. Icon Inconsistentie (Low Priority)
+### 2. Icon Inconsistency (Low Priority)
 
-**Probleem:** ProjectSidebar definieert 10+ custom SVG icons terwijl alle andere componenten lucide-react gebruiken.
+**Problem:** ProjectSidebar defines 10+ custom SVG icons while all other components use lucide-react.
 
-**Aanbeveling:** Vervang custom icons door lucide equivalenten.
+**Recommendation:** Replace custom icons with lucide equivalents.
 
 ---
 
 ### 3. Component Refactoring (Ongoing)
 
-**Grote componenten:**
-- WikiGraphView.tsx (2,177 regels)
-- FilterBar.tsx (688 regels)
-- ToolbarPlugin.tsx (681 regels)
+**Large components:**
+- WikiGraphView.tsx (2,177 lines)
+- FilterBar.tsx (688 lines)
+- ToolbarPlugin.tsx (681 lines)
 
-**Aanbeveling:** Extract state naar custom hooks, split in sub-components.
+**Recommendation:** Extract state to custom hooks, split into sub-components.
 
 ---
 
-## Technische Details
+## Technical Details
 
-### Bestanden Structuur
+### File Structure
 
 ```
 apps/web/src/
@@ -203,26 +203,26 @@ apps/web/src/
 
 ### Key Commits
 
-| Commit | Beschrijving |
-|--------|--------------|
-| `ce26b0c0` | feat(design-system): Complete design token system (Fase 6) |
-| `2d801549` | feat(design-system): Add backend persistence (Fase 4) |
-| `be525603` | feat(design-system): Theme infrastructure + accents (Fase 3) |
-| `c3e7a709` | refactor(design-system): Remove ALL hardcoded colors (Fase 2) |
+| Commit | Description |
+|--------|-------------|
+| `ce26b0c0` | feat(design-system): Complete design token system (Phase 6) |
+| `2d801549` | feat(design-system): Add backend persistence (Phase 4) |
+| `be525603` | feat(design-system): Theme infrastructure + accents (Phase 3) |
+| `c3e7a709` | refactor(design-system): Remove ALL hardcoded colors (Phase 2) |
 
 ---
 
-## Conclusie
+## Conclusion
 
-Het Kanbu design system is nu **productie-ready** met:
+The Kanbu design system is now **production-ready** with:
 
-1. **Volledig themeable** - Light/dark/system mode
-2. **6 accent kleuren** - Persoonlijke customization
-3. **Backend persistence** - Settings volgen de gebruiker
-4. **100% design tokens** - Geen hardcoded kleuren meer
-5. **Toegankelijkheid** - High contrast mode, focus indicators, reduced motion
+1. **Fully themeable** - Light/dark/system mode
+2. **6 accent colors** - Personal customization
+3. **Backend persistence** - Settings follow the user
+4. **100% design tokens** - No more hardcoded colors
+5. **Accessibility** - High contrast mode, focus indicators, reduced motion
 
-De foundation is gelegd voor toekomstige uitbreidingen zoals:
+The foundation is laid for future extensions such as:
 - Custom color picker
 - Layout preferences
 - Component density settings
@@ -230,5 +230,5 @@ De foundation is gelegd voor toekomstige uitbreidingen zoals:
 
 ---
 
-*Document versie: 2.0.0*
-*Laatst bijgewerkt: 2026-01-15*
+*Document version: 2.0.0*
+*Last updated: 2026-01-15*

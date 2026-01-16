@@ -2,23 +2,23 @@
 
 ## Overview
 
-Kanbu draait op HTTPS in development voor:
-- GitHub App webhooks en OAuth callbacks
-- Veilige API communicatie
-- Tailscale netwerk toegang
+Kanbu runs on HTTPS in development for:
+- GitHub App webhooks and OAuth callbacks
+- Secure API communication
+- Tailscale network access
 
 ## Services
 
-| Service | Poort | Protocol | Beschrijving |
-|---------|-------|----------|--------------|
+| Service | Port | Protocol | Description |
+|---------|------|----------|-------------|
 | PostgreSQL | 5432 | TCP | Database (Docker) |
 | API Server | 3001 | **HTTPS** | Fastify + tRPC |
 | Web Server | 5173 | **HTTPS** | Vite dev server |
 
-## Starten
+## Starting
 
 ```bash
-# 1. Database (als niet draait)
+# 1. Database (if not running)
 sudo docker compose up -d postgres
 
 # 2. API Server
@@ -28,79 +28,79 @@ bash scripts/api.sh start
 cd apps/web && pnpm dev
 ```
 
-## ⚠️ KRITIEKE CONFIGURATIE - NIET AANRAKEN!
+## ⚠️ CRITICAL CONFIGURATION - DO NOT TOUCH!
 
 ### Web Server (Vite)
 
-**Bestand:** `apps/web/vite.config.ts`
+**File:** `apps/web/vite.config.ts`
 
-**WAARSCHUWING:** Wijzig dit bestand NIET zonder overleg!
+**WARNING:** Do NOT modify this file without consultation!
 
-De configuratie bevat:
-- HTTPS met zelf-gesigneerde certificaten (mkcert)
-- Proxy configuratie naar HTTPS API
-- Host configuratie voor netwerk toegang
+The configuration contains:
+- HTTPS with self-signed certificates (mkcert)
+- Proxy configuration to HTTPS API
+- Host configuration for network access
 
-### Bekende Issues
+### Known Issues
 
 #### Vite .js vs .ts Config Conflict
 
-**KRITIEK:** Vite prefereert `.js` boven `.ts` config bestanden!
+**CRITICAL:** Vite prefers `.js` over `.ts` config files!
 
-Als er zowel `vite.config.js` als `vite.config.ts` bestaat, laadt Vite de `.js` versie.
+If both `vite.config.js` and `vite.config.ts` exist, Vite loads the `.js` version.
 
-**Oplossing:** Zorg dat er ALLEEN `vite.config.ts` bestaat:
+**Solution:** Ensure ONLY `vite.config.ts` exists:
 ```bash
 ls apps/web/vite.config.*
-# Moet alleen vite.config.ts tonen!
+# Should only show vite.config.ts!
 
-# Als .js bestaat, verwijder het:
+# If .js exists, remove it:
 rm apps/web/vite.config.js
 ```
 
 #### Vite 7.x HTTPS Bug
 
-Vite 7.x heeft problemen met HTTPS configuratie. Gebruik Vite 6.x:
+Vite 7.x has issues with HTTPS configuration. Use Vite 6.x:
 ```json
 "vite": "^6.4.1"
 ```
 
-**NIET upgraden naar Vite 7!**
+**DO NOT upgrade to Vite 7!**
 
-## SSL Certificaten
+## SSL Certificates
 
-Certificaten zijn gemaakt met `mkcert` en staan in `certs/`:
+Certificates are created with `mkcert` and stored in `certs/`:
 
 ```
 certs/
-├── localhost+4.pem      # Certificaat
+├── localhost+4.pem      # Certificate
 └── localhost+4-key.pem  # Private key
 ```
 
-Deze certificaten zijn geldig voor:
+These certificates are valid for:
 - localhost
 - your-hostname
 - your-hostname.tailscale-domain.ts.net (optional)
 - 127.0.0.1
 - ::1
 
-### Certificaten Vernieuwen
+### Renewing Certificates
 
-Als certificaten verlopen of je nieuwe hosts nodig hebt:
+If certificates expire or you need new hosts:
 
 ```bash
-# Installeer mkcert (eenmalig)
+# Install mkcert (one-time)
 sudo apt install mkcert
 mkcert -install
 
-# Genereer nieuwe certificaten
+# Generate new certificates
 cd certs/
 mkcert localhost your-hostname 127.0.0.1 ::1
 ```
 
 ## API Server
 
-De API server draait ook op HTTPS. Beheer via script:
+The API server also runs on HTTPS. Manage via script:
 
 ```bash
 # Start
@@ -112,35 +112,35 @@ bash scripts/api.sh stop
 # Status
 bash scripts/api.sh status
 
-# Logs bekijken
+# View logs
 tail -f /tmp/kanbu-api.log
 ```
 
 ## Troubleshooting
 
-### Web server start op HTTP ipv HTTPS
+### Web server starts on HTTP instead of HTTPS
 
-1. Check of `vite.config.js` NIET bestaat:
+1. Check that `vite.config.js` does NOT exist:
    ```bash
    ls apps/web/vite.config.js
-   # Moet "No such file" geven
+   # Should return "No such file"
    ```
 
-2. Check certificaten:
+2. Check certificates:
    ```bash
    ls -la certs/
-   # Moet localhost+4.pem en localhost+4-key.pem tonen
+   # Should show localhost+4.pem and localhost+4-key.pem
    ```
 
-3. Check Vite versie:
+3. Check Vite version:
    ```bash
    cat apps/web/package.json | grep '"vite"'
-   # Moet 6.x zijn, NIET 7.x
+   # Should be 6.x, NOT 7.x
    ```
 
-### API onbereikbaar
+### API unreachable
 
-1. Check of API draait:
+1. Check if API is running:
    ```bash
    bash scripts/api.sh status
    ```
@@ -152,15 +152,15 @@ tail -f /tmp/kanbu-api.log
 
 ### Mixed Content Errors
 
-Als browser klaagt over mixed content:
-- Web MOET op HTTPS draaien
-- API MOET op HTTPS draaien
-- Beide gebruiken zelf-gesigneerde certificaten
+If browser complains about mixed content:
+- Web MUST run on HTTPS
+- API MUST run on HTTPS
+- Both use self-signed certificates
 
-## GitHub App Integratie
+## GitHub App Integration
 
-De GitHub App vereist HTTPS voor:
+The GitHub App requires HTTPS for:
 - OAuth callback: `https://your-domain.com/api/github/callback`
 - Webhooks: `https://your-domain.com/api/webhooks/github`
 
-Als HTTPS niet werkt, werkt de hele GitHub integratie niet!
+If HTTPS doesn't work, the entire GitHub integration won't work!

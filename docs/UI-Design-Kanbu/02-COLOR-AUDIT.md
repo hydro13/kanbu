@@ -1,54 +1,54 @@
-# Kanbu Kleur Audit
+# Kanbu Color Audit
 
-**Datum:** 2026-01-15
-**Versie:** 2.0.0
-**Status:** ✅ Alle Problemen Opgelost
-
----
-
-## Samenvatting: Alle Issues Opgelost
-
-Dit document beschrijft de **historische** kleurproblemen die zijn geïdentificeerd tijdens de design audit. **Alle genoemde problemen zijn opgelost** in het Design System v2.0.0 implementatie.
-
-| Probleem | Status | Oplossing |
-|----------|--------|-----------|
-| Hardcoded kleuren (75%) | ✅ Opgelost | 100% gemigreerd naar design tokens |
-| Priority kleuren inconsistent | ✅ Opgelost | Semantic tokens: `--priority-*` |
-| Ontbrekende tokens | ✅ Opgelost | success, warning, error, info toegevoegd |
+**Date:** 2026-01-15
+**Version:** 2.0.0
+**Status:** ✅ All Issues Resolved
 
 ---
 
-## Historisch: Originele Bevindingen
+## Summary: All Issues Resolved
 
-### Statistieken (VOOR migratie)
+This document describes the **historical** color issues identified during the design audit. **All mentioned issues have been resolved** in Design System v2.0.0 implementation.
 
-| Type | Aantal | Percentage |
-|------|--------|------------|
-| Hardcoded Tailwind bg-kleuren | 1,443 | ~64% |
-| Hardcoded Tailwind text-kleuren | 2,405 | ~75% |
-| Design system kleuren | 804 | ~25% |
-
-### Statistieken (NA migratie - Fase 2)
-
-| Type | Aantal | Percentage |
-|------|--------|------------|
-| Hardcoded Tailwind kleuren | 0 | 0% |
-| Design system kleuren | 100% | 100% |
+| Issue | Status | Solution |
+|-------|--------|----------|
+| Hardcoded colors (75%) | ✅ Resolved | 100% migrated to design tokens |
+| Inconsistent priority colors | ✅ Resolved | Semantic tokens: `--priority-*` |
+| Missing tokens | ✅ Resolved | success, warning, error, info added |
 
 ---
 
-## ~~Priority Kleuren Inconsistentie~~ ✅ OPGELOST
+## Historical: Original Findings
 
-### Was Het Probleem
+### Statistics (BEFORE migration)
 
-Priority kleuren waren op **4+ verschillende plekken** gedefinieerd met **verschillende waarden**:
-- FilterBar.tsx → `bg-orange-500` voor HIGH
-- CalendarView.tsx → `bg-yellow-500` voor HIGH
-- TimelineView.tsx → `bg-yellow-500` voor HIGH
+| Type | Count | Percentage |
+|------|-------|------------|
+| Hardcoded Tailwind bg-colors | 1,443 | ~64% |
+| Hardcoded Tailwind text-colors | 2,405 | ~75% |
+| Design system colors | 804 | ~25% |
 
-### Huidige Oplossing
+### Statistics (AFTER migration - Phase 2)
 
-Alle priority kleuren zijn nu gecentraliseerd als semantic tokens in `globals.css`:
+| Type | Count | Percentage |
+|------|-------|------------|
+| Hardcoded Tailwind colors | 0 | 0% |
+| Design system colors | 100% | 100% |
+
+---
+
+## ~~Priority Color Inconsistency~~ ✅ RESOLVED
+
+### Was The Problem
+
+Priority colors were defined in **4+ different locations** with **different values**:
+- FilterBar.tsx → `bg-orange-500` for HIGH
+- CalendarView.tsx → `bg-yellow-500` for HIGH
+- TimelineView.tsx → `bg-yellow-500` for HIGH
+
+### Current Solution
+
+All priority colors are now centralized as semantic tokens in `globals.css`:
 
 ```css
 /* Priority Colors (globals.css v2.0.0) */
@@ -64,24 +64,24 @@ Alle priority kleuren zijn nu gecentraliseerd als semantic tokens in `globals.cs
 --priority-urgent-light: var(--color-red-100);
 ```
 
-Alle componenten gebruiken nu dezelfde bron:
-- `lib/design-tokens.ts` voor TypeScript constants
-- `globals.css` voor CSS custom properties
+All components now use the same source:
+- `lib/design-tokens.ts` for TypeScript constants
+- `globals.css` for CSS custom properties
 
 ---
 
-## ~~Ontbrekende Design Tokens~~ ✅ OPGELOST
+## ~~Missing Design Tokens~~ ✅ RESOLVED
 
-### Was Het Probleem
+### Was The Problem
 
-Het oorspronkelijke design system miste:
-- `--success` (voor positieve acties, completed states)
-- `--warning` (voor high priority, deadlines)
-- `--info` (voor informatieve berichten)
+The original design system was missing:
+- `--success` (for positive actions, completed states)
+- `--warning` (for high priority, deadlines)
+- `--info` (for informational messages)
 
-### Huidige Oplossing
+### Current Solution
 
-Volledige state color set in `globals.css`:
+Complete state color set in `globals.css`:
 
 ```css
 /* State Colors - Light Mode */
@@ -113,17 +113,17 @@ Volledige state color set in `globals.css`:
 
 ---
 
-## Huidige Token Architectuur
+## Current Token Architecture
 
 ### 1. Primitive Color Tokens
 
-10 complete kleurschalen (50-950):
+10 complete color scales (50-950):
 - Gray, Blue, Orange, Red, Green, Amber
-- **Nieuw:** Teal, Violet, Rose, Cyan
+- **New:** Teal, Violet, Rose, Cyan
 
 ### 2. Semantic Tokens
 
-Betekenisvolle kleurnamen die naar primitives verwijzen:
+Meaningful color names that reference primitives:
 
 | Token | Light Mode | Dark Mode |
 |-------|------------|-----------|
@@ -137,7 +137,7 @@ Betekenisvolle kleurnamen die naar primitives verwijzen:
 
 ### 3. Component Tokens
 
-Specifieke tokens per component:
+Specific tokens per component:
 
 ```css
 /* Badge tokens */
@@ -156,9 +156,9 @@ Specifieke tokens per component:
 
 ---
 
-## Tailwind Integratie
+## Tailwind Integration
 
-Alle kleuren zijn beschikbaar via Tailwind classes:
+All colors are available via Tailwind classes:
 
 ```tsx
 // Semantic colors
@@ -177,27 +177,27 @@ Alle kleuren zijn beschikbaar via Tailwind classes:
 
 ---
 
-## Voltooide Stappen
+## Completed Steps
 
-- [x] Creëer gecentraliseerde kleur definities (`lib/design-tokens.ts`)
-- [x] Update alle priority kleur referenties
-- [x] Voeg success/warning/error/info tokens toe aan `globals.css`
-- [x] Migreer 100% hardcoded kleuren
+- [x] Create centralized color definitions (`lib/design-tokens.ts`)
+- [x] Update all priority color references
+- [x] Add success/warning/error/info tokens to `globals.css`
+- [x] Migrate 100% hardcoded colors
 - [x] Test light/dark mode consistency
-- [x] Update Tailwind config voor semantic colors
+- [x] Update Tailwind config for semantic colors
 
 ---
 
-## Referentie: Key Files
+## Reference: Key Files
 
-| Bestand | Functie |
-|---------|---------|
+| File | Function |
+|------|----------|
 | `apps/web/src/styles/globals.css` | CSS custom properties (v2.0.0) |
 | `apps/web/src/lib/design-tokens.ts` | TypeScript token constants |
-| `apps/web/tailwind.config.js` | Tailwind integratie |
+| `apps/web/tailwind.config.js` | Tailwind integration |
 | `apps/web/src/styles/accents.css` | Accent color overrides |
 
 ---
 
-*Document versie: 2.0.0*
-*Laatst bijgewerkt: 2026-01-15*
+*Document version: 2.0.0*
+*Last updated: 2026-01-15*

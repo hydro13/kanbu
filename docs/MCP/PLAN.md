@@ -1,84 +1,84 @@
-# Kanbu MCP Server - Technisch Ontwerp
+# Kanbu MCP Server - Technical Design
 
-> **Status: Fase 1 Geïmplementeerd** (2026-01-09)
+> **Status: Phase 1 Implemented** (2026-01-09)
 >
-> Dit document beschrijft zowel het oorspronkelijke ontwerp als de daadwerkelijke implementatie.
+> This document describes both the original design and the actual implementation.
 
-## Overzicht
+## Overview
 
-Dit document beschrijft de technische architectuur van de Kanbu MCP Server met one-time setup code pairing en ACL permission inheritance.
+This document describes the technical architecture of the Kanbu MCP Server with one-time setup code pairing and ACL permission inheritance.
 
-## Architectuur
+## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                            PAIRING FLOW                                  │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                          │
-│   Kanbu Profile Page                    Claude Code                      │
-│   ┌──────────────────┐                  ┌──────────────────┐            │
-│   │ Generate Setup   │                  │ User: "Connect   │            │
-│   │ Code             │──────────────────│ met code X"      │            │
-│   │                  │   User speaks    │                  │            │
-│   │ KNB-A3X9-7MK2   │   the code       │ kanbu_connect()  │            │
-│   └──────────────────┘                  └────────┬─────────┘            │
-│                                                  │                       │
-│                                                  ▼                       │
-│                                         ┌──────────────────┐            │
-│                                         │ MCP Server       │            │
-│                                         │ exchangeSetupCode│            │
-│                                         └────────┬─────────┘            │
-│                                                  │                       │
-│                                                  ▼                       │
-│   ┌─────────────────────────────────────────────────────────────────┐  │
-│   │                        Kanbu API                                 │  │
-│   ├─────────────────────────────────────────────────────────────────┤  │
-│   │  1. Validate setup code (exists, not expired, not consumed)     │  │
-│   │  2. Mark setup code as consumed                                  │  │
-│   │  3. Generate permanent token (256-bit)                          │  │
-│   │  4. Create AssistantBinding (userId + machineId + tokenHash)    │  │
-│   │  5. Return: permanent token + user info                         │  │
-│   └─────────────────────────────────────────────────────────────────┘  │
-│                                                  │                       │
-│                                                  ▼                       │
-│                                         ┌──────────────────┐            │
-│                                         │ Store token      │            │
-│                                         │ locally          │            │
-│                                         │ ~/.config/kanbu/ │            │
-│                                         │   mcp.json       │            │
-│                                         └──────────────────┘            │
-│                                                                          │
-└─────────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│                            PAIRING FLOW                              │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│   Kanbu Profile Page                    Claude Code                 │
+│   ┌──────────────────┐                  ┌──────────────────┐       │
+│   │ Generate Setup   │                  │ User: "Connect   │       │
+│   │ Code             │──────────────────│ with code X"     │       │
+│   │                  │   User speaks    │                  │       │
+│   │ KNB-A3X9-7MK2   │   the code       │ kanbu_connect()  │       │
+│   └──────────────────┘                  └────────┬─────────┘       │
+│                                                  │                  │
+│                                                  ▼                  │
+│                                         ┌──────────────────┐       │
+│                                         │ MCP Server       │       │
+│                                         │ exchangeSetupCode│       │
+│                                         └────────┬─────────┘       │
+│                                                  │                  │
+│                                                  ▼                  │
+│   ┌─────────────────────────────────────────────────────────────┐ │
+│   │                        Kanbu API                             │ │
+│   ├─────────────────────────────────────────────────────────────┤ │
+│   │  1. Validate setup code (exists, not expired, not consumed) │ │
+│   │  2. Mark setup code as consumed                             │ │
+│   │  3. Generate permanent token (256-bit)                      │ │
+│   │  4. Create AssistantBinding (userId + machineId + tokenHash)│ │
+│   │  5. Return: permanent token + user info                     │ │
+│   └─────────────────────────────────────────────────────────────┘ │
+│                                                  │                  │
+│                                                  ▼                  │
+│                                         ┌──────────────────┐       │
+│                                         │ Store token      │       │
+│                                         │ locally          │       │
+│                                         │ ~/.config/kanbu/ │       │
+│                                         │   mcp.json       │       │
+│                                         └──────────────────┘       │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
 
-┌─────────────────────────────────────────────────────────────────────────┐
-│                          NORMAL OPERATION                                │
-├─────────────────────────────────────────────────────────────────────────┤
-│                                                                          │
-│   Claude Code                                                            │
-│   ┌──────────────────┐                                                  │
-│   │ kanbu_my_tasks() │                                                  │
-│   └────────┬─────────┘                                                  │
-│            │                                                             │
-│            ▼                                                             │
-│   ┌──────────────────┐        ┌──────────────────┐                     │
-│   │ MCP Server       │        │ Local Token      │                     │
-│   │                  │◄───────│ ~/.config/kanbu/ │                     │
-│   │ Read token       │        │   mcp.json       │                     │
-│   └────────┬─────────┘        └──────────────────┘                     │
-│            │                                                             │
-│            │ x-assistant-token: ast_xxx                                 │
-│            │ x-machine-id: hash                                         │
-│            ▼                                                             │
-│   ┌─────────────────────────────────────────────────────────────────┐  │
-│   │                        Kanbu API                                 │  │
-│   ├─────────────────────────────────────────────────────────────────┤  │
-│   │  1. Validate token → get userId                                  │  │
-│   │  2. ACL check: checkPermission(userId, resource, action)        │  │
-│   │  3. Execute business logic                                       │  │
-│   │  4. Audit log with viaAssistant=true, machineId                 │  │
-│   └─────────────────────────────────────────────────────────────────┘  │
-│                                                                          │
-└─────────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│                          NORMAL OPERATION                            │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│   Claude Code                                                        │
+│   ┌──────────────────┐                                              │
+│   │ kanbu_my_tasks() │                                              │
+│   └────────┬─────────┘                                              │
+│            │                                                         │
+│            ▼                                                         │
+│   ┌──────────────────┐        ┌──────────────────┐                 │
+│   │ MCP Server       │        │ Local Token      │                 │
+│   │                  │◄───────│ ~/.config/kanbu/ │                 │
+│   │ Read token       │        │   mcp.json       │                 │
+│   └────────┬─────────┘        └──────────────────┘                 │
+│            │                                                         │
+│            │ x-assistant-token: ast_xxx                             │
+│            │ x-machine-id: hash                                     │
+│            ▼                                                         │
+│   ┌─────────────────────────────────────────────────────────────┐  │
+│   │                        Kanbu API                             │  │
+│   ├─────────────────────────────────────────────────────────────┤  │
+│   │  1. Validate token → get userId                             │  │
+│   │  2. ACL check: checkPermission(userId, resource, action)    │  │
+│   │  3. Execute business logic                                  │  │
+│   │  4. Audit log with viaAssistant=true, machineId             │  │
+│   └─────────────────────────────────────────────────────────────┘  │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
 ## Database Schema
@@ -88,7 +88,7 @@ Dit document beschrijft de technische architectuur van de Kanbu MCP Server met o
 ```prisma
 // prisma/schema.prisma
 
-/// Tijdelijke setup code voor pairing (5 min TTL, one-time use)
+/// Temporary setup code for pairing (5 min TTL, one-time use)
 model AssistantSetupCode {
   id          Int       @id @default(autoincrement())
   userId      Int
@@ -105,13 +105,13 @@ model AssistantSetupCode {
   @@index([expiresAt])
 }
 
-/// Permanente binding tussen user en machine
+/// Permanent binding between user and machine
 model AssistantBinding {
   id            Int       @id @default(autoincrement())
   userId        Int
   user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  machineId     String    // Hash van machine identifier
+  machineId     String    // Hash of machine identifier
   machineName   String?   // Human readable: "MAX (Linux)"
   tokenHash     String    @db.VarChar(255)  // argon2 hash
   tokenPrefix   String    @db.VarChar(12)   // ast_xxxx for logs
@@ -134,9 +134,9 @@ model AuditLog {
 }
 ```
 
-## Package Structuur
+## Package Structure
 
-### Actuele Implementatie (Fase 1)
+### Actual Implementation (Phase 1)
 
 ```
 packages/mcp-server/
@@ -150,7 +150,7 @@ packages/mcp-server/
 └── dist/                     # Compiled output
 ```
 
-### Geplande Structuur (Fase 2+)
+### Planned Structure (Phase 2+)
 
 ```
 packages/mcp-server/
@@ -471,10 +471,10 @@ export const assistantRouter = router({
 ### Crypto Utilities
 
 ```typescript
-// apps/api/src/utils/crypto.ts (actuele implementatie)
+// apps/api/src/utils/crypto.ts (actual implementation)
 
 import { randomBytes, createHash } from 'crypto';
-import argon2 from 'argon2';  // Project gebruikt argon2, niet bcrypt
+import argon2 from 'argon2';  // Project uses argon2, not bcrypt
 
 const SETUP_CODE_PREFIX = 'KNB';
 const TOKEN_PREFIX = 'ast_';
@@ -518,7 +518,7 @@ export async function verifyToken(token: string, hash: string): Promise<boolean>
 ### Token Storage
 
 ```typescript
-// packages/mcp-server/src/storage.ts (actuele implementatie)
+// packages/mcp-server/src/storage.ts (actual implementation)
 
 import { existsSync, readFileSync, writeFileSync, unlinkSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
@@ -947,10 +947,10 @@ export function AssistantSection() {
 
 ## Changelog
 
-| Datum | Wijziging |
-|-------|-----------|
-| 2026-01-09 | **Fase 1 Geïmplementeerd** - Updated met actuele implementatie details |
-| 2026-01-09 | Token storage gewijzigd naar `~/.config/kanbu/mcp.json` |
-| 2026-01-09 | bcrypt vervangen door argon2 (consistent met project) |
-| 2026-01-09 | Plan herschreven voor one-time setup code pairing |
-| 2026-01-09 | Initieel technisch ontwerp |
+| Date | Change |
+|------|--------|
+| 2026-01-09 | **Phase 1 Implemented** - Updated with actual implementation details |
+| 2026-01-09 | Token storage changed to `~/.config/kanbu/mcp.json` |
+| 2026-01-09 | bcrypt replaced with argon2 (consistent with project) |
+| 2026-01-09 | Plan rewritten for one-time setup code pairing |
+| 2026-01-09 | Initial technical design |

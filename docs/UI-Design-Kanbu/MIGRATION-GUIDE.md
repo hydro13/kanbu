@@ -1,14 +1,14 @@
 # Kanbu Design Token Migration Guide
 
-**Versie:** 2.0.0
-**Laatst bijgewerkt:** 2026-01-16
-**Status:** Design System v2.0.0 Voltooid
+**Version:** 2.0.0
+**Last updated:** 2026-01-16
+**Status:** Design System v2.0.0 Complete
 
 ---
 
-## Inhoud
+## Contents
 
-1. [Overzicht](#overzicht)
+1. [Overview](#overview)
 2. [Quick Migration Table](#quick-migration-table)
 3. [Regex Search Patterns](#regex-search-patterns)
 4. [Common Migrations](#common-migrations)
@@ -18,23 +18,23 @@
 
 ---
 
-## Overzicht
+## Overview
 
-Dit document beschrijft hoe je hardcoded Tailwind kleuren migreert naar het Kanbu design token systeem. Het design token systeem biedt:
+This document describes how to migrate hardcoded Tailwind colors to the Kanbu design token system. The design token system provides:
 
-- **Automatische dark mode** - Geen `dark:` prefixes nodig
-- **Consistente kleuren** - Alle UI elementen delen dezelfde kleurenschema
-- **Themeability** - Gebruikers kunnen accent kleuren kiezen
-- **Onderhoudbaar** - Wijzigingen op één plek, overal toegepast
+- **Automatic dark mode** - No `dark:` prefixes needed
+- **Consistent colors** - All UI elements share the same color scheme
+- **Themeability** - Users can choose accent colors
+- **Maintainability** - Changes in one place, applied everywhere
 
-### Principe
+### Principle
 
-**Vermijden:**
+**Avoid:**
 ```tsx
 <div className="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
 ```
 
-**Gebruiken:**
+**Use:**
 ```tsx
 <div className="bg-background text-foreground">
 ```
@@ -219,7 +219,7 @@ divide-(gray)-\d{2,3}
 <Badge variant="success">Active</Badge>
 ```
 
-Of handmatig:
+Or manually:
 ```tsx
 <span className="bg-success/10 text-success px-2 py-1 rounded-full text-xs">
   Active
@@ -240,7 +240,7 @@ Of handmatig:
 <Input />
 ```
 
-Of handmatig:
+Or manually:
 ```tsx
 <input
   className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:ring-ring focus:border-ring"
@@ -261,7 +261,7 @@ Of handmatig:
 <Button>Save</Button>
 ```
 
-Of handmatig:
+Or manually:
 ```tsx
 <button className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-md">
   Save
@@ -355,14 +355,14 @@ Of handmatig:
 
 ### Pre-Commit Check
 
-- [ ] Geen hardcoded kleuren (`bg-gray-*`, `text-blue-*`, etc.)
-- [ ] Geen `dark:` prefixes voor kleuren
-- [ ] Semantic tokens gebruikt waar mogelijk
-- [ ] Priority kleuren via `--priority-*` tokens
-- [ ] State kleuren via `--success/warning/error/info`
-- [ ] Buttons gebruiken `<Button>` component
-- [ ] Badges gebruiken `<Badge>` component
-- [ ] Inputs gebruiken `<Input>` component
+- [ ] No hardcoded colors (`bg-gray-*`, `text-blue-*`, etc.)
+- [ ] No `dark:` prefixes for colors
+- [ ] Semantic tokens used where possible
+- [ ] Priority colors via `--priority-*` tokens
+- [ ] State colors via `--success/warning/error/info`
+- [ ] Buttons use `<Button>` component
+- [ ] Badges use `<Badge>` component
+- [ ] Inputs use `<Input>` component
 
 ### Quick Grep Commands
 
@@ -382,15 +382,15 @@ grep -rE "dark:(bg|text|border)" src/ --include="*.tsx"
 
 ### Acceptable Exceptions
 
-Sommige hardcoded kleuren zijn acceptabel:
+Some hardcoded colors are acceptable:
 
-1. **Gradients** - Gradients gebruiken vaak specifieke kleuren
-2. **Syntax highlighting** - Code blocks met specifieke kleuren
-3. **Charts/graphs** - Data visualisaties met vaste kleuren
-4. **Brand assets** - Logo's of externe brand kleuren
-5. **Third-party libraries** - Waar tokens niet toegepast kunnen worden
+1. **Gradients** - Gradients often use specific colors
+2. **Syntax highlighting** - Code blocks with specific colors
+3. **Charts/graphs** - Data visualizations with fixed colors
+4. **Brand assets** - Logos or external brand colors
+5. **Third-party libraries** - Where tokens cannot be applied
 
-Documenteer deze uitzonderingen met een comment:
+Document these exceptions with a comment:
 
 ```tsx
 {/* Exception: External brand color, cannot use token */}
@@ -401,25 +401,25 @@ Documenteer deze uitzonderingen met een comment:
 
 ## Troubleshooting
 
-### Problem: Kleur verandert niet in dark mode
+### Problem: Color doesn't change in dark mode
 
-**Oorzaak:** Hardcoded kleur zonder `dark:` variant.
+**Cause:** Hardcoded color without `dark:` variant.
 
-**Oplossing:** Vervang door semantic token.
+**Solution:** Replace with semantic token.
 
 ```tsx
 // Problem
-<div className="bg-white">...</div>  // Blijft wit in dark mode
+<div className="bg-white">...</div>  // Stays white in dark mode
 
 // Solution
-<div className="bg-background">...</div>  // Automatisch donker in dark mode
+<div className="bg-background">...</div>  // Automatically dark in dark mode
 ```
 
-### Problem: Focus ring heeft verkeerde kleur
+### Problem: Focus ring has wrong color
 
-**Oorzaak:** Hardcoded `focus:ring-blue-500`.
+**Cause:** Hardcoded `focus:ring-blue-500`.
 
-**Oplossing:**
+**Solution:**
 ```tsx
 // Problem
 <input className="focus:ring-blue-500" />
@@ -428,11 +428,11 @@ Documenteer deze uitzonderingen met een comment:
 <input className="focus:ring-ring" />
 ```
 
-### Problem: Hover state is te licht/donker
+### Problem: Hover state is too light/dark
 
-**Oorzaak:** Hardcoded hover kleur.
+**Cause:** Hardcoded hover color.
 
-**Oplossing:**
+**Solution:**
 ```tsx
 // Problem
 <button className="hover:bg-gray-100 dark:hover:bg-gray-700">
@@ -443,11 +443,11 @@ Documenteer deze uitzonderingen met een comment:
 <button className="hover:bg-muted/50">
 ```
 
-### Problem: Badge kleur klopt niet met status
+### Problem: Badge color doesn't match status
 
-**Oorzaak:** Verkeerde variant of hardcoded kleur.
+**Cause:** Wrong variant or hardcoded color.
 
-**Oplossing:**
+**Solution:**
 ```tsx
 // Problem
 <span className="bg-green-100 text-green-800">Success</span>
@@ -456,28 +456,28 @@ Documenteer deze uitzonderingen met een comment:
 <Badge variant="success">Success</Badge>
 ```
 
-### Problem: Border is onzichtbaar in dark mode
+### Problem: Border is invisible in dark mode
 
-**Oorzaak:** Hardcoded lichte border kleur.
+**Cause:** Hardcoded light border color.
 
-**Oplossing:**
+**Solution:**
 ```tsx
 // Problem
-<div className="border border-gray-200">  // Onzichtbaar op donkere achtergrond
+<div className="border border-gray-200">  // Invisible on dark background
 
 // Solution
-<div className="border border-border">  // Automatisch aangepast
+<div className="border border-border">  // Automatically adjusted
 ```
 
 ---
 
-## Gerelateerde Documentatie
+## Related Documentation
 
-- [Token Reference Guide](./TOKEN-REFERENCE.md) - Alle beschikbare design tokens
-- [Component Usage Guide](./COMPONENT-USAGE.md) - Component voorbeelden
-- [Design System Roadmap](./06-DESIGN-SYSTEM-ROADMAP.md) - Implementatie historie
+- [Token Reference Guide](./TOKEN-REFERENCE.md) - All available design tokens
+- [Component Usage Guide](./COMPONENT-USAGE.md) - Component examples
+- [Design System Roadmap](./06-DESIGN-SYSTEM-ROADMAP.md) - Implementation history
 
 ---
 
-*Document Versie: 2.0.0*
-*Laatst Bijgewerkt: 2026-01-16*
+*Document Version: 2.0.0*
+*Last Updated: 2026-01-16*

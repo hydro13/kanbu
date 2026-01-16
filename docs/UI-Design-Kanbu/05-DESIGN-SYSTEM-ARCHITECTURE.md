@@ -1,19 +1,19 @@
 # Kanbu Design System Architecture
 
-**Versie:** 2.0.0
-**Datum:** 2026-01-15
-**Status:** ✅ Geimplementeerd
+**Version:** 2.0.0
+**Date:** 2026-01-15
+**Status:** ✅ Implemented
 
 ---
 
-## 1. Overzicht
+## 1. Overview
 
-Het Kanbu Design System v2.0.0 is een **volledig themeable design system** met:
+Kanbu Design System v2.0.0 is a **fully themeable design system** with:
 
-1. **Theme Mode** - Light/dark/system met automatische detectie
-2. **Accent Colors** - 6 professionele kleurschema's
-3. **Backend Persistence** - Settings worden opgeslagen per gebruiker
-4. **100% Design Tokens** - Geen hardcoded kleuren
+1. **Theme Mode** - Light/dark/system with automatic detection
+2. **Accent Colors** - 6 professional color schemes
+3. **Backend Persistence** - Settings stored per user
+4. **100% Design Tokens** - No hardcoded colors
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -43,23 +43,23 @@ Het Kanbu Design System v2.0.0 is een **volledig themeable design system** met:
                                 ↓
 ┌─────────────────────────────────────────────────────────────────┐
 │                   TAILWIND CONFIG v2.0.0                         │
-│           Volledig geintegreerd met CSS variables                │
+│           Fully integrated with CSS variables                    │
 └─────────────────────────────────────────────────────────────────┘
                                 ↓
 ┌─────────────────────────────────────────────────────────────────┐
 │                    REACT COMPONENTS                              │
-│         shadcn/ui + custom components met tokens                 │
+│         shadcn/ui + custom components with tokens                │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 2. Bestandsstructuur (Geimplementeerd)
+## 2. File Structure (Implemented)
 
 ```
 apps/web/src/
 ├── styles/
-│   ├── globals.css              # Design tokens v2.0.0 (HOOFDBESTAND)
+│   ├── globals.css              # Design tokens v2.0.0 (MAIN FILE)
 │   └── accents.css              # Accent color overrides
 ├── contexts/
 │   └── ThemeContext.tsx         # Theme state management + hook
@@ -78,9 +78,9 @@ apps/web/src/
 
 ---
 
-## 3. Design Token Hiërarchie
+## 3. Design Token Hierarchy
 
-### 3.1 Token Lagen
+### 3.1 Token Layers
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -102,10 +102,10 @@ apps/web/src/
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-### 3.2 Geimplementeerde Token Categorieën
+### 3.2 Implemented Token Categories
 
-| Categorie | Tokens | Beschrijving |
-|-----------|--------|--------------|
+| Category | Tokens | Description |
+|----------|--------|-------------|
 | **Color Scales** | 10 × 19 = 190 | Gray, Blue, Orange, Red, Green, Amber, Teal, Violet, Rose, Cyan (50-950) |
 | **Typography** | 20+ | Font sizes, weights, line heights, letter spacing |
 | **Spacing** | 20+ | Space scale (0-20), component padding |
@@ -174,10 +174,10 @@ export const themeInitScript = `(function(){
 
 ## 5. Accent Color System
 
-### 5.1 Beschikbare Accenten
+### 5.1 Available Accents
 
-| Accent | Beschrijving | Light Primary | Dark Primary |
-|--------|--------------|---------------|--------------|
+| Accent | Description | Light Primary | Dark Primary |
+|--------|-------------|---------------|--------------|
 | **Slate** | Neutral and professional | 215 25% 27% | 215 20% 65% |
 | **Blue** | Trust and reliability (default) | 221 83% 53% | 217 91% 60% |
 | **Teal** | Fresh and modern | 173 80% 32% | 172 66% 50% |
@@ -505,5 +505,5 @@ export function ThemeProviderWithAuth({ children }) {
 
 ---
 
-*Document versie: 2.0.0*
-*Laatst bijgewerkt: 2026-01-15*
+*Document version: 2.0.0*
+*Last updated: 2026-01-15*

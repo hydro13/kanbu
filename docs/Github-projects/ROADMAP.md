@@ -1,23 +1,23 @@
 # GitHub Module Roadmap
 
-## Versie: 1.0.0
-## Datum: 2026-01-10
+## Version: 1.0.0
+## Date: 2026-01-10
 ## Status: Active
 
 ---
 
-## Overzicht
+## Overview
 
-Deze roadmap beschrijft de fases om 100% Feature Parity met GitHub Projects te bereiken.
+This roadmap describes the phases to achieve 100% Feature Parity with GitHub Projects.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
 │                                                                     │
-│  FASE 1        FASE 2        FASE 3        FASE 4        FASE 5    │
+│  PHASE 1       PHASE 2       PHASE 3       PHASE 4       PHASE 5   │
 │  ──────        ──────        ──────        ──────        ──────    │
 │                                                                     │
 │  Workspace     Board         Complete      Bi-direc-     Advanced  │
-│  Integratie    View          UI            tioneel       Features  │
+│  Integration   View          UI            tional        Features  │
 │                                                                     │
 │  ▓▓▓▓▓▓▓▓▓▓    ░░░░░░░░░░    ░░░░░░░░░░    ░░░░░░░░░░    ░░░░░░░░░░│
 │  IN PROGRESS   PLANNED       PLANNED       PLANNED       PLANNED   │
@@ -27,124 +27,124 @@ Deze roadmap beschrijft de fases om 100% Feature Parity met GitHub Projects te b
 
 ---
 
-## Fase 1: Workspace Integratie
+## Phase 1: Workspace Integration
 
 **Status:** 🔄 In Progress
 
-**Doel:** GitHub repositories zichtbaar maken als aparte projecten in de workspace.
+**Goal:** Make GitHub repositories visible as separate projects in the workspace.
 
 ### Deliverables
 
-| Item | Status | Beschrijving |
-|------|--------|--------------|
-| GitHubRepository.workspaceId | 🔲 Todo | Directe koppeling aan workspace |
-| Database migratie | 🔲 Todo | Schema aanpassen voor workspaceId |
-| Workspace API uitbreiden | 🔲 Todo | Endpoint voor GitHub projecten |
-| Workspace UI splitsen | 🔲 Todo | Twee secties: Intern + GitHub |
-| GitHub project cards | 🔲 Todo | Card design voor repo's |
-| Navigatie naar GitHub project | 🔲 Todo | Routes opzetten |
+| Item | Status | Description |
+|------|--------|-------------|
+| GitHubRepository.workspaceId | 🔲 Todo | Direct link to workspace |
+| Database migration | 🔲 Todo | Adjust schema for workspaceId |
+| Extend Workspace API | 🔲 Todo | Endpoint for GitHub projects |
+| Split Workspace UI | 🔲 Todo | Two sections: Internal + GitHub |
+| GitHub project cards | 🔲 Todo | Card design for repos |
+| Navigate to GitHub project | 🔲 Todo | Set up routes |
 
-### Technische Details
+### Technical Details
 
 ```
-Workspace "Mijn Bedrijf"
-├── 📁 Interne Projecten
-│   └── (bestaande project lijst)
+Workspace "My Company"
+├── 📁 Internal Projects
+│   └── (existing project list)
 │
-└── 🐙 GitHub Projecten
-    └── (repositories in deze workspace)
+└── 🐙 GitHub Projects
+    └── (repositories in this workspace)
 ```
 
-**Database wijziging:**
+**Database change:**
 ```prisma
 model GitHubRepository {
-  // Bestaande velden...
+  // Existing fields...
   workspaceId  Int?
   workspace    Workspace? @relation(fields: [workspaceId], references: [id])
 }
 ```
 
-### Acceptatiecriteria
+### Acceptance Criteria
 
-- [ ] GitHub repos verschijnen in workspace sidebar
-- [ ] Duidelijk visueel onderscheid (GitHub icoon)
-- [ ] Klikken opent GitHub project pagina
-- [ ] Sync status zichtbaar per repo
+- [ ] GitHub repos appear in workspace sidebar
+- [ ] Clear visual distinction (GitHub icon)
+- [ ] Clicking opens GitHub project page
+- [ ] Sync status visible per repo
 
 ---
 
-## Fase 2: Board View
+## Phase 2: Board View
 
 **Status:** 📋 Planned
 
-**Doel:** Een werkende Kanban board voor GitHub issues.
+**Goal:** A working Kanban board for GitHub issues.
 
 ### Deliverables
 
-| Item | Status | Beschrijving |
-|------|--------|--------------|
-| Route structuur | 🔲 Todo | `/workspace/:slug/github/:repoId` |
+| Item | Status | Description |
+|------|--------|-------------|
+| Route structure | 🔲 Todo | `/workspace/:slug/github/:repoId` |
 | GitHubProjectPage | 🔲 Todo | Container component |
-| Board layout | 🔲 Todo | Kolommen met issues |
-| Issue cards | 🔲 Todo | Compacte issue weergave |
-| Kolom configuratie | 🔲 Todo | Via labels/status |
-| Basis drag & drop | 🔲 Todo | Issues verplaatsen |
+| Board layout | 🔲 Todo | Columns with issues |
+| Issue cards | 🔲 Todo | Compact issue display |
+| Column configuration | 🔲 Todo | Via labels/status |
+| Basic drag & drop | 🔲 Todo | Move issues |
 
-### Kolom Strategieën
+### Column Strategies
 
-**Optie A: Label-based (aanbevolen)**
+**Option A: Label-based (recommended)**
 ```
 [Backlog]     [Todo]        [In Progress]  [Done]
 status:       status:       status:        status:
 backlog       todo          in-progress    done
 ```
 
-**Optie B: Milestone-based**
+**Option B: Milestone-based**
 ```
 [No Milestone]  [v1.0]       [v1.1]        [v2.0]
 ```
 
-**Optie C: Assignee-based**
+**Option C: Assignee-based**
 ```
 [Unassigned]   [Robin]      [Jan]         [Piet]
 ```
 
-### Acceptatiecriteria
+### Acceptance Criteria
 
-- [ ] Board toont alle open issues
-- [ ] Issues gegroepeerd in kolommen
-- [ ] Issue card toont: title, labels, assignee, comments count
-- [ ] Drag & drop verplaatst issue (label update)
-- [ ] Real-time sync met GitHub
+- [ ] Board shows all open issues
+- [ ] Issues grouped in columns
+- [ ] Issue card shows: title, labels, assignee, comments count
+- [ ] Drag & drop moves issue (label update)
+- [ ] Real-time sync with GitHub
 
 ---
 
-## Fase 3: Complete UI
+## Phase 3: Complete UI
 
 **Status:** 📋 Planned
 
-**Doel:** Alle views en interacties die GitHub Projects heeft.
+**Goal:** All views and interactions that GitHub Projects has.
 
 ### Deliverables
 
-| Item | Status | Beschrijving |
-|------|--------|--------------|
-| List View | 🔲 Todo | Issues als lijst |
-| Table View | 🔲 Todo | Spreadsheet-achtige weergave |
+| Item | Status | Description |
+|------|--------|-------------|
+| List View | 🔲 Todo | Issues as list |
+| Table View | 🔲 Todo | Spreadsheet-like display |
 | Filters | 🔲 Todo | Label, assignee, milestone filters |
-| Search | 🔲 Todo | Zoeken in issues |
-| Keyboard shortcuts | 🔲 Todo | `j/k` navigatie, `c` create, etc. |
-| Bulk acties | 🔲 Todo | Meerdere issues selecteren/wijzigen |
-| Issue detail panel | 🔲 Todo | Side panel met volledige issue |
-| Comment thread | 🔲 Todo | Comments lezen/schrijven |
-| Milestones view | 🔲 Todo | Milestone overzicht |
-| PR tab | 🔲 Todo | Pull requests overzicht |
+| Search | 🔲 Todo | Search in issues |
+| Keyboard shortcuts | 🔲 Todo | `j/k` navigation, `c` create, etc. |
+| Bulk actions | 🔲 Todo | Select/modify multiple issues |
+| Issue detail panel | 🔲 Todo | Side panel with full issue |
+| Comment thread | 🔲 Todo | Read/write comments |
+| Milestones view | 🔲 Todo | Milestone overview |
+| PR tab | 🔲 Todo | Pull requests overview |
 
 ### Keyboard Shortcuts (GitHub Parity)
 
-| Shortcut | Actie |
-|----------|-------|
-| `j` / `k` | Volgende / vorige issue |
+| Shortcut | Action |
+|----------|--------|
+| `j` / `k` | Next / previous issue |
 | `o` / `Enter` | Open issue detail |
 | `c` | Create new issue |
 | `x` | Select issue |
@@ -152,42 +152,42 @@ backlog       todo          in-progress    done
 | `/` | Focus search |
 | `?` | Show shortcuts |
 
-### Views Vergelijking
+### Views Comparison
 
 | Feature | GitHub | Kanbu Status |
 |---------|--------|--------------|
-| Board view | ✅ | 🔲 Fase 2 |
-| List view | ✅ | 🔲 Fase 3 |
-| Table view | ✅ | 🔲 Fase 3 |
+| Board view | ✅ | 🔲 Phase 2 |
+| List view | ✅ | 🔲 Phase 3 |
+| Table view | ✅ | 🔲 Phase 3 |
 | Roadmap view | ✅ | 🔲 Future |
 
-### Acceptatiecriteria
+### Acceptance Criteria
 
-- [ ] Alle drie views werken (Board, List, Table)
-- [ ] Filters persisteren in URL
-- [ ] Keyboard navigatie volledig
-- [ ] Bulk acties werken
-- [ ] Comments kunnen worden gelezen en geschreven
+- [ ] All three views work (Board, List, Table)
+- [ ] Filters persist in URL
+- [ ] Keyboard navigation complete
+- [ ] Bulk actions work
+- [ ] Comments can be read and written
 
 ---
 
-## Fase 4: Bi-directionele Sync
+## Phase 4: Bi-directional Sync
 
 **Status:** 📋 Planned
 
-**Doel:** Wijzigingen in Kanbu worden gepusht naar GitHub.
+**Goal:** Changes in Kanbu are pushed to GitHub.
 
 ### Deliverables
 
-| Item | Status | Beschrijving |
-|------|--------|--------------|
-| Issue create → GitHub | 🔲 Todo | Nieuwe issues aanmaken |
-| Issue update → GitHub | 🔲 Todo | Title, body, state wijzigen |
-| Issue move → GitHub | 🔲 Todo | Labels updaten bij drag |
-| Comment create → GitHub | 🔲 Todo | Comments posten |
-| Milestone update → GitHub | 🔲 Todo | Milestone wijzigingen |
-| Conflict detection | 🔲 Todo | Timestamp vergelijking |
-| Retry mechanisme | 🔲 Todo | Bij tijdelijke failures |
+| Item | Status | Description |
+|------|--------|-------------|
+| Issue create → GitHub | 🔲 Todo | Create new issues |
+| Issue update → GitHub | 🔲 Todo | Change title, body, state |
+| Issue move → GitHub | 🔲 Todo | Update labels on drag |
+| Comment create → GitHub | 🔲 Todo | Post comments |
+| Milestone update → GitHub | 🔲 Todo | Milestone changes |
+| Conflict detection | 🔲 Todo | Timestamp comparison |
+| Retry mechanism | 🔲 Todo | On temporary failures |
 | Sync status UI | 🔲 Todo | Pending/synced/error indicators |
 
 ### Sync Flow
@@ -197,76 +197,76 @@ backlog       todo          in-progress    done
 │   KANBU     │          │   GITHUB    │
 │             │          │             │
 │  Issue      │─────────▶│  Issue      │
-│  wijzigen   │   API    │  updated    │
+│  change     │   API    │  updated    │
 │             │          │             │
 │  Webhook    │◀─────────│  Confirm    │
-│  ontvangen  │          │             │
+│  receive    │          │             │
 └─────────────┘          └─────────────┘
 ```
 
-### Acceptatiecriteria
+### Acceptance Criteria
 
-- [ ] Issue aanmaken in Kanbu → verschijnt in GitHub
-- [ ] Issue wijzigen in Kanbu → wijzigt in GitHub
-- [ ] Issue sluiten in Kanbu → sluit in GitHub
-- [ ] Comment schrijven in Kanbu → verschijnt in GitHub
-- [ ] Conflict warning bij gelijktijdige edits
+- [ ] Issue create in Kanbu → appears in GitHub
+- [ ] Issue change in Kanbu → changes in GitHub
+- [ ] Issue close in Kanbu → closes in GitHub
+- [ ] Comment write in Kanbu → appears in GitHub
+- [ ] Conflict warning on simultaneous edits
 
 ---
 
-## Fase 5: Advanced Features
+## Phase 5: Advanced Features
 
 **Status:** 📋 Planned
 
-**Doel:** Kanbu-specifieke features die GitHub niet heeft.
+**Goal:** Kanbu-specific features that GitHub doesn't have.
 
 ### Deliverables
 
-| Item | Status | Beschrijving |
-|------|--------|--------------|
-| Project Groepen | 🔲 Todo | Combineer intern + GitHub projecten |
-| Cross-project dependencies | 🔲 Todo | Link issues tussen projecten |
-| Gecombineerde statistieken | 🔲 Todo | Velocity over meerdere repos |
-| Custom fields | 🔲 Todo | Extra velden (Kanbu-only) |
-| Time tracking | 🔲 Todo | Uren registreren (Kanbu-only) |
-| Portfolio view | 🔲 Todo | Overzicht alle projecten |
+| Item | Status | Description |
+|------|--------|-------------|
+| Project Groups | 🔲 Todo | Combine internal + GitHub projects |
+| Cross-project dependencies | 🔲 Todo | Link issues between projects |
+| Combined statistics | 🔲 Todo | Velocity across multiple repos |
+| Custom fields | 🔲 Todo | Extra fields (Kanbu-only) |
+| Time tracking | 🔲 Todo | Register hours (Kanbu-only) |
+| Portfolio view | 🔲 Todo | Overview all projects |
 
-### Project Groepen
+### Project Groups
 
 ```
-Groep "Frontend Team"
+Group "Frontend Team"
 ├── 🐙 webapp-frontend (GitHub)
 ├── 🐙 component-lib (GitHub)
-└── 📁 design-specs (Kanbu intern)
+└── 📁 design-specs (Kanbu internal)
 
-→ Gecombineerde velocity
-→ Gecombineerde burndown
-→ Cross-project dependencies zichtbaar
+→ Combined velocity
+→ Combined burndown
+→ Cross-project dependencies visible
 ```
 
-### Acceptatiecriteria
+### Acceptance Criteria
 
-- [ ] Project groepen aanmaken met beide types
-- [ ] Gecombineerde statistieken per groep
-- [ ] Dependencies tussen projecten visualiseren
-- [ ] Custom fields toevoegen aan GitHub issues (Kanbu-only)
+- [ ] Create project groups with both types
+- [ ] Combined statistics per group
+- [ ] Visualize dependencies between projects
+- [ ] Add custom fields to GitHub issues (Kanbu-only)
 
 ---
 
-## Prioriteiten
+## Priorities
 
-### Must Have (Fase 1-2)
+### Must Have (Phase 1-2)
 - GitHub repos in workspace
-- Basis board view
-- Issue cards met drag & drop
+- Basic board view
+- Issue cards with drag & drop
 
-### Should Have (Fase 3)
-- Alle views (Board, List, Table)
-- Filters en search
+### Should Have (Phase 3)
+- All views (Board, List, Table)
+- Filters and search
 - Keyboard shortcuts
 
-### Could Have (Fase 4)
-- Bi-directionele sync
+### Could Have (Phase 4)
+- Bi-directional sync
 - Conflict detection
 
 ### Won't Have (Now)
@@ -275,28 +275,28 @@ Groep "Frontend Team"
 
 ---
 
-## Risico's en Mitigaties
+## Risks and Mitigations
 
-| Risico | Impact | Mitigatie |
-|--------|--------|-----------|
+| Risk | Impact | Mitigation |
+|------|--------|------------|
 | GitHub API rate limits | Medium | Caching, batch requests |
 | Sync conflicts | High | Timestamp-based resolution, UI warnings |
-| Webhook reliability | Medium | Periodic full sync als fallback |
-| Performance bij veel issues | Medium | Pagination, virtual scrolling |
+| Webhook reliability | Medium | Periodic full sync as fallback |
+| Performance with many issues | Medium | Pagination, virtual scrolling |
 
 ---
 
-## Definities
+## Definitions
 
-- **GitHub Module:** De aparte sectie in Kanbu voor GitHub projecten
-- **Feature Parity:** Exact dezelfde functionaliteit als GitHub Projects
-- **Bi-directioneel:** Wijzigingen gaan beide kanten op
-- **Project Groep:** Verzameling van zowel interne als GitHub projecten
+- **GitHub Module:** The separate section in Kanbu for GitHub projects
+- **Feature Parity:** Exact same functionality as GitHub Projects
+- **Bi-directional:** Changes go both ways
+- **Project Group:** Collection of both internal and GitHub projects
 
 ---
 
-## Referenties
+## References
 
-- [VISIE.md](./VISIE.md) - De overkoepelende visie
-- [IMPLEMENTATIE-PLAN.md](./IMPLEMENTATIE-PLAN.md) - Technische details
+- [VISIE.md](./VISIE.md) - The overarching vision
+- [IMPLEMENTATIE-PLAN.md](./IMPLEMENTATIE-PLAN.md) - Technical details
 - [GitHub Projects Docs](https://docs.github.com/en/issues/planning-and-tracking-with-projects)
