@@ -1542,9 +1542,39 @@ export const AllVariants: Story = {
 }
 ```
 
+**Component Index (20 totaal):**
+
+| Component | Stories | Prioriteit | Status |
+|-----------|---------|------------|--------|
+| badge | ✅ | Hoog | Voltooid |
+| button | ✅ | Hoog | Voltooid |
+| card | ✅ | Hoog | Voltooid |
+| checkbox | ✅ | Hoog | Voltooid |
+| collapsible | ✅ | Laag | Voltooid |
+| dialog | ✅ | Hoog | Voltooid |
+| dropdown-menu | ✅ | Hoog | Voltooid |
+| HoverPopover | ✅ | Medium | Voltooid |
+| input | ✅ | Hoog | Voltooid |
+| label | ✅ | Medium | Voltooid |
+| progress | ✅ | Medium | Voltooid |
+| scroll-area | ✅ | Laag | Voltooid |
+| select | ✅ | Hoog | Voltooid |
+| separator | ✅ | Laag | Voltooid |
+| slider | ✅ | Medium | Voltooid |
+| sonner | ✅ | Medium | Voltooid |
+| switch | ✅ | Hoog | Voltooid |
+| tabs | ✅ | Hoog | Voltooid |
+| tooltip | ✅ | Hoog | Voltooid |
+| UndoRedoButtons | ✅ | Laag | Voltooid |
+
+**Prioriteit voor stories:**
+1. **Hoog (9):** checkbox, dialog, dropdown-menu, select, switch, tabs, tooltip (+ badge, button, card, input ✅)
+2. **Medium (4):** HoverPopover, label, progress, slider, sonner
+3. **Laag (3):** collapsible, scroll-area, separator, UndoRedoButtons
+
 **Acceptatiecriteria:**
 - [x] Storybook draait lokaal
-- [x] Stories voor alle ui/ componenten
+- [x] Stories voor alle ui/ componenten (20/20 voltooid)
 - [x] Theme switching werkt
 - [x] A11y tests beschikbaar
 - [x] Autodocs generatie werkt
