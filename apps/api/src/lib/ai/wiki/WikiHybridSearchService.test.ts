@@ -13,11 +13,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import {
-  WikiHybridSearchService,
-  type HybridSearchOptions,
-  type HybridSearchResult,
-} from './WikiHybridSearchService'
+import { WikiHybridSearchService } from './WikiHybridSearchService'
 import type { Bm25SearchResult } from './WikiBm25Service'
 import type { SemanticSearchResult } from './WikiEmbeddingService'
 import type { EdgeSearchResult } from './WikiEdgeEmbeddingService'
@@ -100,9 +96,9 @@ describe('WikiHybridSearchService', () => {
 
       expect(results).toHaveLength(3)
       // First result: rank 1 → score = 1/(60+1) ≈ 0.0164
-      expect(results[0].pageId).toBe(1)
-      expect(results[0].score).toBeCloseTo(1 / 61, 4)
-      expect(results[0].sources).toEqual(['bm25'])
+      expect(results[0]!.pageId).toBe(1)
+      expect(results[0]!.score).toBeCloseTo(1 / 61, 4)
+      expect(results[0]!.sources).toEqual(['bm25'])
     })
 
     it('should boost documents appearing in multiple sources', () => {
@@ -149,8 +145,8 @@ describe('WikiHybridSearchService', () => {
       )
 
       // BM25 rank 1 = page 1, Vector rank 1 = page 2
-      expect(highBm25[0].pageId).toBe(1) // Page 1 wins with high BM25 weight
-      expect(highVector[0].pageId).toBe(2) // Page 2 wins with high vector weight
+      expect(highBm25[0]!.pageId).toBe(1) // Page 1 wins with high BM25 weight
+      expect(highVector[0]!.pageId).toBe(2) // Page 2 wins with high vector weight
     })
 
     it('should handle edge results correctly', () => {
@@ -162,8 +158,8 @@ describe('WikiHybridSearchService', () => {
       )
 
       expect(results).toHaveLength(2)
-      expect(results[0].sources).toEqual(['edge'])
-      expect(results[0].edgeFacts).toContain('Kanban is a visual method')
+      expect(results[0]!.sources).toEqual(['edge'])
+      expect(results[0]!.edgeFacts).toContain('Kanban is a visual method')
     })
 
     it('should preserve headline from BM25 results', () => {
@@ -281,7 +277,7 @@ describe('WikiHybridSearchService', () => {
 
       // Should still return vector results
       expect(results.length).toBeGreaterThan(0)
-      expect(results[0].sources).toContain('vector')
+      expect(results[0]!.sources).toContain('vector')
     })
 
     it('should handle vector failure gracefully', async () => {
@@ -293,7 +289,7 @@ describe('WikiHybridSearchService', () => {
 
       // Should still return BM25 results
       expect(results.length).toBeGreaterThan(0)
-      expect(results[0].sources).toContain('bm25')
+      expect(results[0]!.sources).toContain('bm25')
     })
 
     it('should pass correct options to BM25 service', async () => {
@@ -374,9 +370,9 @@ describe('WikiHybridSearchService', () => {
 
       // Should merge into single result with both sources
       expect(results).toHaveLength(1)
-      expect(results[0].pageId).toBe(1)
-      expect(results[0].sources).toContain('bm25')
-      expect(results[0].sources).toContain('vector')
+      expect(results[0]!.pageId).toBe(1)
+      expect(results[0]!.sources).toContain('bm25')
+      expect(results[0]!.sources).toContain('vector')
     })
 
     it('should use slug from BM25 when vector has none', async () => {
@@ -389,7 +385,7 @@ describe('WikiHybridSearchService', () => {
 
       const results = await service.search('test', { workspaceId: 1, useEdge: false })
 
-      expect(results[0].slug).toBe('my-slug')
+      expect(results[0]!.slug).toBe('my-slug')
     })
 
     it('should handle very large result sets', async () => {

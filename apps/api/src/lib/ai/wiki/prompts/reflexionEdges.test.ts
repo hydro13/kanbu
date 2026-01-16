@@ -154,11 +154,11 @@ describe('reflexionEdges', () => {
       const result = parseReflexionEdgesResponse(response)
 
       expect(result.missedFacts).toHaveLength(1)
-      expect(result.missedFacts[0].sourceName).toBe('Jan')
-      expect(result.missedFacts[0].targetName).toBe('Alpha project')
-      expect(result.missedFacts[0].relationType).toBe('WORKS_ON')
-      expect(result.missedFacts[0].fact).toBe('Jan works on the Alpha project')
-      expect(result.missedFacts[0].reason).toBe('Project relationship not captured')
+      expect(result.missedFacts[0]!.sourceName).toBe('Jan')
+      expect(result.missedFacts[0]!.targetName).toBe('Alpha project')
+      expect(result.missedFacts[0]!.relationType).toBe('WORKS_ON')
+      expect(result.missedFacts[0]!.fact).toBe('Jan works on the Alpha project')
+      expect(result.missedFacts[0]!.reason).toBe('Project relationship not captured')
       expect(result.reasoning).toBe('Found one missed relationship')
     })
 
@@ -194,7 +194,7 @@ That's the result.`
       const result = parseReflexionEdgesResponse(response)
 
       expect(result.missedFacts).toHaveLength(1)
-      expect(result.missedFacts[0].sourceName).toBe('Entity1')
+      expect(result.missedFacts[0]!.sourceName).toBe('Entity1')
     })
 
     it('should default relation_type to RELATES_TO when missing', () => {
@@ -211,7 +211,7 @@ That's the result.`
 
       const result = parseReflexionEdgesResponse(response)
 
-      expect(result.missedFacts[0].relationType).toBe('RELATES_TO')
+      expect(result.missedFacts[0]!.relationType).toBe('RELATES_TO')
     })
 
     it('should filter out facts with empty source or target', () => {
@@ -228,7 +228,7 @@ That's the result.`
       const result = parseReflexionEdgesResponse(response)
 
       expect(result.missedFacts).toHaveLength(1)
-      expect(result.missedFacts[0].sourceName).toBe('Valid')
+      expect(result.missedFacts[0]!.sourceName).toBe('Valid')
     })
 
     it('should handle missing optional reason field', () => {
@@ -246,7 +246,7 @@ That's the result.`
 
       const result = parseReflexionEdgesResponse(response)
 
-      expect(result.missedFacts[0].reason).toBeUndefined()
+      expect(result.missedFacts[0]!.reason).toBeUndefined()
     })
 
     it('should handle malformed JSON gracefully', () => {
@@ -270,7 +270,7 @@ That's the result.`
       const result = parseReflexionEdgesResponse(response)
 
       expect(result.missedFacts).toHaveLength(1)
-      expect(result.missedFacts[0].sourceName).toBe('Valid')
+      expect(result.missedFacts[0]!.sourceName).toBe('Valid')
     })
 
     it('should handle missing reasoning field', () => {
@@ -299,9 +299,9 @@ That's the result.`
       const result = parseReflexionEdgesResponse(response)
 
       expect(result.missedFacts).toHaveLength(3)
-      expect(result.missedFacts[0].relationType).toBe('WORKS_ON')
-      expect(result.missedFacts[1].relationType).toBe('BELONGS_TO')
-      expect(result.missedFacts[2].relationType).toBe('MANAGES')
+      expect(result.missedFacts[0]!.relationType).toBe('WORKS_ON')
+      expect(result.missedFacts[1]!.relationType).toBe('BELONGS_TO')
+      expect(result.missedFacts[2]!.relationType).toBe('MANAGES')
     })
   })
 })

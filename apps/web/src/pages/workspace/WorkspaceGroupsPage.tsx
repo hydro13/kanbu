@@ -76,8 +76,8 @@ interface ProjectGroup {
   description: string | null
   color: string
   status: string
-  createdAt: Date
-  updatedAt: Date
+  createdAt: string
+  updatedAt: string
   projectCount: number
   projects: ProjectInfo[]
 }

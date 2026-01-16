@@ -262,13 +262,12 @@ export function WikiVersionHistory({
                 </div>
                 <div className="flex-1 border rounded-lg overflow-hidden">
                   <RichTextEditor
-                    initialContent={
-                      typeof versionDetailQuery.data.contentJson === 'string'
-                        ? versionDetailQuery.data.contentJson
-                        : versionDetailQuery.data.contentJson
-                        ? JSON.stringify(versionDetailQuery.data.contentJson)
-                        : undefined
-                    }
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    initialContent={(() => {
+                      const contentJson = (versionDetailQuery.data as any).contentJson
+                      if (typeof contentJson === 'string') return contentJson
+                      return contentJson ? JSON.stringify(contentJson) : undefined
+                    })()}
                     readOnly
                     showToolbar={false}
                     minHeight="200px"

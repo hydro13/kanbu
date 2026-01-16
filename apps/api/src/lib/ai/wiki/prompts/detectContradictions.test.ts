@@ -13,6 +13,7 @@ import {
   getDetectContradictionsUserPrompt,
   parseDetectContradictionsResponse,
   type ExistingFact,
+  type ContradictionDetail,
 } from './detectContradictions'
 
 describe('detectContradictions', () => {

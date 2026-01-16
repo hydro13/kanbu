@@ -49,6 +49,24 @@ import { WikiHybridSearchService } from '../../lib/ai/wiki/WikiHybridSearchServi
 import { getGraphitiService } from '../../services/graphitiService'
 
 // =============================================================================
+// Types
+// =============================================================================
+
+/**
+ * Related fact found for an entity during context analysis
+ */
+export interface RelatedFact {
+  entityName: string
+  entityType: string
+  fact: string
+  pageId: number
+  pageTitle: string
+  pageSlug?: string
+  validAt: string | null
+  invalidAt: string | null
+}
+
+// =============================================================================
 // Input Schemas
 // =============================================================================
 
@@ -1007,17 +1025,6 @@ export const wikiAiRouter = router({
         }
 
         // Step 2: For each entity, search for existing facts from other pages
-        interface RelatedFact {
-          entityName: string
-          entityType: string
-          fact: string
-          pageId: number
-          pageTitle: string
-          pageSlug?: string
-          validAt: string | null
-          invalidAt: string | null
-        }
-
         const relatedFacts: RelatedFact[] = []
         const processedEntities = new Set<string>()
 

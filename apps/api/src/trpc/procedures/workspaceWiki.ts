@@ -26,6 +26,7 @@ import { TRPCError } from '@trpc/server'
 import { router, protectedProcedure } from '../router'
 import type { WikiPageStatus } from '@prisma/client'
 import { getGraphitiService } from '../../services/graphitiService'
+import type { ContradictionAuditEntry } from '../../lib/ai/wiki'
 
 // Max versions to keep per page
 const MAX_VERSIONS = 20
@@ -416,7 +417,7 @@ export const workspaceWikiRouter = router({
       // Return page immediately (contradictions are logged and can be fetched via contradictionAudit.getForPage)
       return {
         page,
-        contradictions: [],
+        contradictions: [] as ContradictionAuditEntry[],
         contradictionsResolved: 0,
       }
     }),
@@ -524,7 +525,7 @@ export const workspaceWikiRouter = router({
       // Return page immediately (contradictions are logged and can be fetched via contradictionAudit.getForPage)
       return {
         page,
-        contradictions: [],
+        contradictions: [] as ContradictionAuditEntry[],
         contradictionsResolved: 0,
       }
     }),

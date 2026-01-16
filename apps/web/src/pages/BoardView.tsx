@@ -479,10 +479,13 @@ export function BoardViewPage() {
   }, [tasksQuery.data, archivedTasksQuery.data, selectedTagIds])
 
   // Get showArchiveColumn setting from project settings (default: false)
-  // Cast to unknown first to avoid deep type instantiation with Prisma JsonValue
+  // Use useMemo with any cast to break type chain and avoid deep type instantiation with Prisma JsonValue
   // NOTE: Must be computed before early returns to maintain hook order
-  const projectSettings = (projectQuery.data?.settings ?? {}) as unknown as Record<string, unknown>
-  const showArchiveColumn = Boolean(projectSettings?.showArchiveColumn)
+  const showArchiveColumn = useMemo(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data = projectQuery.data as any
+    return Boolean(data?.settings?.showArchiveColumn)
+  }, [projectQuery.data])
 
   // Filter columns - hide Archive column unless showArchiveColumn is enabled
   // NOTE: This useMemo MUST be before early returns to maintain consistent hook order

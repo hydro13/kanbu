@@ -13,12 +13,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import {
-  WikiBm25Service,
-  resetWikiBm25Service,
-  type Bm25SearchOptions,
-  type Bm25SearchResult,
-} from './WikiBm25Service'
+import { WikiBm25Service, resetWikiBm25Service } from './WikiBm25Service'
 
 // =============================================================================
 // Mock Prisma Client
@@ -133,10 +128,10 @@ describe('WikiBm25Service', () => {
       const results = await service.search('kanban', { workspaceId: 1 })
 
       expect(results).toHaveLength(2)
-      expect(results[0].pageId).toBe(1)
-      expect(results[0].title).toBe('Kanban Guide')
-      expect(results[0].source).toBe('workspace')
-      expect(results[0].headline).toContain('<mark>')
+      expect(results[0]!.pageId).toBe(1)
+      expect(results[0]!.title).toBe('Kanban Guide')
+      expect(results[0]!.source).toBe('workspace')
+      expect(results[0]!.headline).toContain('<mark>')
       expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledTimes(1)
     })
 
@@ -148,8 +143,8 @@ describe('WikiBm25Service', () => {
       const results = await service.search('docs', { projectId: 5 })
 
       expect(results).toHaveLength(1)
-      expect(results[0].pageId).toBe(10)
-      expect(results[0].source).toBe('project')
+      expect(results[0]!.pageId).toBe(10)
+      expect(results[0]!.source).toBe('project')
     })
 
     it('should search both workspace and project when both provided', async () => {
@@ -166,8 +161,8 @@ describe('WikiBm25Service', () => {
       expect(results).toHaveLength(2)
       expect(mockPrisma.$queryRawUnsafe).toHaveBeenCalledTimes(2)
       // Should be sorted by rank (project result first with 0.6)
-      expect(results[0].source).toBe('project')
-      expect(results[1].source).toBe('workspace')
+      expect(results[0]!.source).toBe('project')
+      expect(results[1]!.source).toBe('workspace')
     })
 
     it('should respect limit parameter', async () => {
@@ -191,7 +186,7 @@ describe('WikiBm25Service', () => {
       const results = await service.search('test', { workspaceId: 1, minRank: 0.01 })
 
       expect(results).toHaveLength(1)
-      expect(results[0].title).toBe('High')
+      expect(results[0]!.title).toBe('High')
     })
 
     it('should handle database errors gracefully', async () => {

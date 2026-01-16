@@ -14,14 +14,12 @@
  * =============================================================================
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { OpenAiProvider } from '../OpenAiProvider'
 import { OllamaProvider } from '../OllamaProvider'
 import { LmStudioProvider } from '../LmStudioProvider'
 import {
   createProvider,
-  createEmbeddingProvider,
-  createReasoningProvider,
   createSimpleOpenAiProvider,
   createSimpleOllamaProvider,
   createSimpleLmStudioProvider,
@@ -169,7 +167,7 @@ describe('OpenAiProvider', () => {
       const models = await provider.listModels()
 
       expect(models.length).toBe(3)
-      expect(models[0].id).toBe('gpt-4o-mini')
+      expect(models[0]!.id).toBe('gpt-4o-mini')
     })
 
     it('should filter models by capability', async () => {
@@ -245,8 +243,8 @@ describe('OpenAiProvider', () => {
       const embeddings = await provider.embedBatch(['Text 1', 'Text 2'])
 
       expect(embeddings).toHaveLength(2)
-      expect(embeddings[0][0]).toBe(0.1)
-      expect(embeddings[1][0]).toBe(0.2)
+      expect(embeddings[0]![0]).toBe(0.1)
+      expect(embeddings[1]![0]).toBe(0.2)
     })
 
     it('should sort embeddings by index', async () => {
@@ -262,8 +260,8 @@ describe('OpenAiProvider', () => {
 
       const embeddings = await provider.embedBatch(['Text 1', 'Text 2'])
 
-      expect(embeddings[0][0]).toBe(0.1)
-      expect(embeddings[1][0]).toBe(0.2)
+      expect(embeddings[0]![0]).toBe(0.1)
+      expect(embeddings[1]![0]).toBe(0.2)
     })
   })
 
@@ -365,8 +363,8 @@ describe('OpenAiProvider', () => {
       )
 
       expect(entities).toHaveLength(1)
-      expect(entities[0].name).toBe('John')
-      expect(entities[0].type).toBe('person')
+      expect(entities[0]!.name).toBe('John')
+      expect(entities[0]!.type).toBe('person')
     })
 
     it('should return empty array on invalid JSON response', async () => {
@@ -798,6 +796,6 @@ describe('Model Categorization', () => {
     )
 
     const models = await provider.listModels()
-    expect(models[0].type).toBe('unknown')
+    expect(models[0]!.type).toBe('unknown')
   })
 })

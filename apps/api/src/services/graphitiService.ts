@@ -50,7 +50,6 @@ import {
   type NodeForEmbedding,
   type EmbeddableNodeType,
   type EntityNodeInfo,
-  type DuplicateCandidate,
 } from '../lib/ai/wiki'
 
 // =============================================================================

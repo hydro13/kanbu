@@ -200,8 +200,9 @@ export function WorkspaceWikiPage() {
   const currentPage = currentPageQuery.data as FullPageFromApi | undefined
 
   // Update mutation - Fase 17.4: Now handles contradiction data
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updateMutation = trpc.workspaceWiki.update.useMutation({
-    onSuccess: (result) => {
+    onSuccess: (result: any) => {
       utils.workspaceWiki.list.invalidate()
       utils.workspaceWiki.getBySlug.invalidate()
 
@@ -915,8 +916,9 @@ function CreateWikiPageModal({
   const [selectedParentId, setSelectedParentId] = useState<number | null>(parentId ?? null)
   const [contentJson, setContentJson] = useState('')
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const createMutation = trpc.workspaceWiki.create.useMutation({
-    onSuccess: (result) => {
+    onSuccess: (result: any) => {
       // Fase 17.4: API now returns { page, contradictions }
       onCreated(result.page.slug)
 
