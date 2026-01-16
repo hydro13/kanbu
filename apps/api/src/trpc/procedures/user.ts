@@ -39,7 +39,15 @@ const updateProfileSchema = z.object({
   timezone: z.string().max(50).optional(),
   language: z.string().max(10).optional(),
   theme: z.enum(['light', 'dark', 'system']).optional(),
-  accent: z.enum(['slate', 'blue', 'teal', 'violet', 'rose', 'amber']).optional(),
+  accent: z.enum(['slate', 'blue', 'teal', 'violet', 'rose', 'amber', 'custom']).optional(),
+  // Custom accent color (HSL values)
+  customAccentHue: z.number().int().min(0).max(360).nullable().optional(),
+  customAccentSat: z.number().int().min(0).max(100).nullable().optional(),
+  customAccentLight: z.number().int().min(0).max(100).nullable().optional(),
+  // UI density
+  density: z.enum(['compact', 'normal', 'spacious']).optional(),
+  // Sidebar position
+  sidebarPosition: z.enum(['left', 'right']).optional(),
   defaultFilter: z.string().optional(),
 })
 
@@ -136,6 +144,11 @@ export const userRouter = router({
         // Preferences
         theme: true,
         accent: true,
+        customAccentHue: true,
+        customAccentSat: true,
+        customAccentLight: true,
+        density: true,
+        sidebarPosition: true,
         defaultFilter: true,
         // Public access
         publicToken: true,
@@ -225,6 +238,11 @@ export const userRouter = router({
           language: true,
           theme: true,
           accent: true,
+          customAccentHue: true,
+          customAccentSat: true,
+          customAccentLight: true,
+          density: true,
+          sidebarPosition: true,
           defaultFilter: true,
           updatedAt: true,
         },

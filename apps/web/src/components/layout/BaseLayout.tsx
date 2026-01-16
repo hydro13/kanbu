@@ -438,8 +438,8 @@ export function BaseLayout({
           {/* Sidebar - hidden on mobile */}
           {sidebar && (
             <div
-              className="hidden md:flex flex-col flex-shrink-0 border-r border-gray-200 dark:border-gray-700 bg-muted transition-all duration-200"
-              style={{ width: sidebarWidth }}
+              className="sidebar-container hidden md:flex flex-col flex-shrink-0 border-r border-gray-200 dark:border-gray-700 bg-muted transition-all duration-200"
+              style={{ width: sidebarWidth, order: 'var(--sidebar-order)' }}
             >
               {/* Sidebar header with collapse toggle */}
               <div className="flex items-center justify-between px-3 py-2 border-b border-gray-200 dark:border-gray-700">
@@ -482,6 +482,7 @@ export function BaseLayout({
                 ${isDragging ? 'bg-primary' : 'hover:bg-primary/50'}
                 transition-colors
               `}
+              style={{ order: 'var(--resize-order)' }}
               title="Drag to resize, double-click to reset"
             >
               {/* Visual indicator on hover/drag */}
@@ -510,7 +511,10 @@ export function BaseLayout({
           )}
 
           {/* Page Content */}
-          <main className={`flex-1 overflow-auto ${contentPadding ? 'p-6' : ''}`}>
+          <main
+            className={`flex-1 overflow-auto ${contentPadding ? 'p-6' : ''}`}
+            style={{ order: 'var(--main-order)' }}
+          >
             {children}
           </main>
         </div>

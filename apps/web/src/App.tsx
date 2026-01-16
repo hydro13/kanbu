@@ -111,6 +111,7 @@ import { ApiTokens } from './pages/profile/ApiTokens'
 import { AiAssistant } from './pages/profile/AiAssistant'
 import { HourlyRate } from './pages/profile/HourlyRate'
 import { ChangePassword } from './pages/profile/ChangePassword'
+import { AppearanceSettings } from './pages/profile/AppearanceSettings'
 // Admin pages
 import { UserListPage, UserCreatePage, UserEditPage, InvitesPage, SystemSettingsPage, WorkspaceListPage, WorkspaceCreatePage, WorkspaceEditPage, BackupPage, PermissionTreePage, AclPage, AuditLogsPage, PermissionMatrixPage, GitHubAdminPage, AiSystemsPage } from './pages/admin'
 // Dashboard pages
@@ -429,6 +430,14 @@ function App() {
           element={
             <ProtectedRoute>
               <ChangePassword />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile/appearance"
+          element={
+            <ProtectedRoute>
+              <AppearanceSettings />
             </ProtectedRoute>
           }
         />
