@@ -1,3 +1,250 @@
+
+# Kanbu
+
+**Self-hosted project management with enterprise permissions and AI superpowers.**
+
+> Tell Claude what you want. It plans the work, estimates hours, creates subtasks, builds the features, and tracks its own progress. You review.
+
+<img width="2428" height="1846" alt="image" src="https://github.com/user-attachments/assets/6cd89fcd-2afa-44c1-a200-8cef163e8c31" />
+
+
+---
+
+## Why Kanbu?
+
+Most project management tools are either **too simple** (Trello) or **too complex** (Jira). And none of them understand AI-native workflows.
+
+Kanbu is different:
+
+| Problem | Kanbu Solution |
+|---------|----------------|
+| "I need enterprise permissions but Trello doesn't have them" | NTFS-style ACL with inheritance, deny rules, and security groups |
+| "I want AI to help but it can't access my tasks" | 131 MCP tools - Claude Code works directly in your board |
+| "GitHub issues and my PM tool are never in sync" | Bi-directional GitHub sync with webhook integration |
+| "I want to self-host but lose features" | Community edition has MORE features than most paid tools |
+| "My team speaks different languages" | Each user talks to their own AI assistant in their own language |
+
+---
+
+## Features
+
+### 🎯 Project Management
+- **Kanban boards** with drag-and-drop, swimlanes, and WIP limits
+- **Multiple views**: Board, List, Calendar, Timeline
+- **Sprints & Milestones** with burndown charts
+- **Time tracking** with estimates vs. actuals
+- **Real-time collaboration** - see cursors, typing indicators, live sync
+
+### 🔐 Enterprise Security (NTFS-Style ACL)
+- **Granular permissions**: Read, Write, Execute, Delete, Permissions (RWXDP)
+- **Inheritance**: Workspace → Project → Task permissions flow down
+- **Deny-first logic**: Explicit deny overrides any grant (like NTFS)
+- **Security groups**: Domain Admins, Workspace Admins, custom groups
+- **Permission Matrix**: Visual grid of who can access what
+- **Audit logs**: Complete trail with export to CSV/JSON
+
+### 🤖 AI Integration (Bring Your Own AI)
+- **131 MCP tools** for Claude Code integration
+- **One-time pairing**: Generate code, tell Claude, done
+- **Permission inheritance**: Claude gets YOUR permissions, nothing more
+- **Natural language**: "Create a task for the login bug" → It happens
+- **Multi-language**: Each user talks to Claude in their own language
+- **Full audit trail**: Every AI action logged as "via Claude Code"
+
+### 🐙 GitHub Integration
+- **Bi-directional sync**: Issues, PRs, commits, milestones
+- **GitHub App**: Full webhook support for real-time updates
+- **User mapping**: Link GitHub users to Kanbu users
+- **Auto-link commits**: Reference tasks in commit messages
+- **Sync logs**: Complete visibility into what synced and when
+
+### 📚 Knowledge Wiki
+- **Workspace & Project wikis** with rich editor
+- **Knowledge Graph**: Entities, relationships, auto-linking
+- **Temporal queries**: "What did we know about X in January?"
+- **Hybrid search**: Keyword + semantic + graph traversal
+- **Ask the Wiki**: Natural language Q&A over your documentation
+- **Contradiction detection**: Flags conflicting information
+
+### 🔌 AI Provider Flexibility
+- **Multiple providers**: OpenAI, Ollama, LM Studio
+- **Capability routing**: Different models for embedding/reasoning/vision
+- **Priority fallback**: If one fails, next one takes over
+- **Local-first option**: Run everything on Ollama, no cloud required
+
+---
+
+## Quick Start
+
+```bash
+# Prerequisites: Node.js 22+, PostgreSQL 15+, pnpm 9+
+
+# Clone and install
+git clone https://github.com/hydro13/kanbu.git
+cd kanbu
+pnpm install
+
+# Setup database
+cd packages/shared
+cp ../../apps/api/.env.example ../../apps/api/.env
+# Edit .env with your DATABASE_URL and JWT_SECRET
+pnpm db:generate
+pnpm db:push
+
+# Start development
+cd ../..
+pnpm dev
+
+# Open http://localhost:5173
+```
+
+### Docker (Self-Hosted)
+
+```bash
+cd docker
+cp .env.example .env
+# Edit .env - CHANGE THE PASSWORDS AND JWT_SECRET!
+docker compose -f docker-compose.selfhosted.yml up -d
+```
+
+---
+
+## Claude Code Setup
+
+Connect your Claude Code to manage projects with natural language:
+
+### 1. Build the MCP Server
+
+```bash
+cd packages/mcp-server
+pnpm install && pnpm build
+```
+
+### 2. Add to Claude Code
+
+```bash
+claude mcp add kanbu -- node /path/to/kanbu/packages/mcp-server/dist/index.js
+```
+
+### 3. Connect
+
+1. Go to Profile → AI Assistant
+2. Click "Generate Setup Code"
+3. Tell Claude: *"Connect to Kanbu with code KNB-XXXX-XXXX"*
+
+### 4. Start Working
+
+```
+You: "Create a project for the new website redesign"
+Claude: [creates project, sets up columns, adds milestones]
+
+You: "Add tasks for responsive design, about 8 hours total"
+Claude: [creates tasks with estimates, breaks into subtasks]
+
+You: "What's blocking the homepage task?"
+Claude: [queries dependencies, shows blockers]
+```
+
+**131 tools available** - workspaces, projects, tasks, subtasks, comments, search, analytics, user management, groups, ACL, invites, audit logs, and more.
+
+---
+<img width="2526" height="1409" alt="image" src="https://github.com/user-attachments/assets/bd4dda90-b975-42e0-90fd-d5c18e8d609c" />
+
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Frontend | React 18, TypeScript, Vite, Tailwind CSS, Shadcn/ui |
+| State | Redux Toolkit, TanStack Query |
+| Backend | Node.js 22, Fastify, tRPC v10, Socket.io |
+| Database | PostgreSQL 15, Prisma ORM |
+| AI | MCP Protocol, OpenAI/Ollama/LM Studio |
+| Monorepo | pnpm workspaces, Turborepo |
+
+---
+
+## Project Structure
+
+```
+kanbu/
+├── apps/
+│   ├── api/              # Backend (Fastify + tRPC + Socket.io)
+│   └── web/              # Frontend (React + Vite)
+├── packages/
+│   ├── shared/           # Database schema, shared types
+│   └── mcp-server/       # Claude Code integration (131 tools)
+├── docker/               # Self-hosted deployment
+└── docs/                 # Documentation
+```
+
+---
+
+## Roadmap
+
+- [x] Kanban boards with real-time sync
+- [x] NTFS-style permission system
+- [x] Claude Code MCP integration (131 tools)
+- [x] GitHub bi-directional sync
+- [x] Knowledge graph wiki
+- [x] Multi-AI provider support
+- [ ] Slack/Discord integration
+- [ ] Email notifications
+- [ ] Custom fields
+- [ ] Advanced reporting
+- [ ] API v2 with GraphQL
+
+---
+
+## Contributing
+
+Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) before submitting a PR.
+
+```bash
+# Development
+pnpm dev          # Start all apps
+pnpm lint         # Run ESLint
+pnpm typecheck    # TypeScript checks
+pnpm test         # Run tests
+```
+
+---
+
+## License
+
+**GNU Affero General Public License v3.0 (AGPL-3.0)**
+
+- ✅ Use, modify, and distribute freely
+- ✅ Commercial use allowed
+- ⚠️ Modified versions must be open-sourced
+- ⚠️ Network use = distribution (must share source)
+
+See [LICENSE](LICENSE) for details.
+
+---
+
+## Support
+
+- 📖 [Documentation](https://docs.kanbu.dev)
+- 💬 [Discord Community](https://discord.gg/kanbu)
+- 🐛 [Issue Tracker](https://github.com/hydro13/kanbu/issues)
+- 📧 [Email](mailto:r.waslander@gmail.com)
+
+---
+
+<p align="center">
+  <b>Kanbu</b> - Project management for the AI era<br>
+  Built with ❤️ by <a href="https://github.com/hydro13">Robin Waslander</a>
+</p>
+
+
+
+
+
+
+
 # Kanbu
 
 **Open-source Project Management Platform**
@@ -461,3 +708,4 @@ Email: R.Waslander@gmail.com
 ---
 
 *Kanbu - Modern Project Management*
+
