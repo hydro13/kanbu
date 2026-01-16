@@ -1,12 +1,19 @@
 # Kanbu MCP Server - Claude Code Integration
 
-> **Status: Phase 5 COMPLETE** (2026-01-09)
+> **Status: PRODUCTION READY (Hardened)** (2026-01-16)
 >
-> The MCP server is fully functional with 32 tools: pairing (3), core (11), subtasks/comments (9), search/activity (5), and analytics (4).
+> The MCP server is fully functional, tested, and hardened for production use.
+> **[📘 Read the User Guide](./USER_GUIDE.md)** for usage instructions.
 
 ## Overview
 
-The Kanbu MCP Server is specifically designed for **Claude Code** integration. Through a simple pairing flow, you connect Claude Code to your Kanbu account. Claude automatically inherits all your ACL permissions.
+The Kanbu MCP Server is specifically designed for **Claude Code** integration. It provides a secure, resilient bridge between your AI agent and the Kanbu project management system.
+
+**Recent Hardening Updates:**
+*   **Resilience**: Automatic retry for transient network failures.
+*   **Safety**: `dryRun` simulation for destructive ACL actions.
+*   **Semantics**: Enhanced tool descriptions for better AI context.
+*   **Reliability**: Comprehensive test suite ensuring stability.
 
 ## Pairing Flow
 
@@ -281,12 +288,81 @@ When your permissions change, Claude's automatically change as well.
 | `kanbu_cycle_time` | Cycle time per column, bottleneck detection | R on project | ✅ Working |
 | `kanbu_team_workload` | Workload per team member, overdue counts | R on project | ✅ Working |
 
-### Phase 6+ - Extended Tools (Planned)
+### Phase 6 - User Management (✅ Implemented)
 
-| Tool | Description |
-|------|--------------|
-| `kanbu_burndown_data` | Burndown chart data |
-| `kanbu_forecast` | Sprint/project completion forecast |
+| Tool | Description | Status |
+|------|--------------|--------|
+| `kanbu_list_users` | List all users | ✅ Working |
+| `kanbu_get_user` | Get user details | ✅ Working |
+| `kanbu_create_user` | Create new user | ✅ Working |
+| `kanbu_update_user` | Update user data | ✅ Working |
+| `kanbu_delete_user` | Deactivate user | ✅ Working |
+| `kanbu_reactivate_user` | Reactivate user | ✅ Working |
+| `kanbu_reset_password` | Reset password | ✅ Working |
+| `kanbu_unlock_user` | Unlock blocked user | ✅ Working |
+| `kanbu_disable_2fa` | Disable 2FA for user | ✅ Working |
+| `kanbu_revoke_sessions` | Kill user sessions | ✅ Working |
+
+### Phase 7 - Groups (✅ Implemented)
+
+| Tool | Description | Status |
+|------|--------------|--------|
+| `kanbu_list_groups` | List groups | ✅ Working |
+| `kanbu_get_group` | Group details | ✅ Working |
+| `kanbu_create_group` | Create group | ✅ Working |
+| `kanbu_update_group` | Update group | ✅ Working |
+| `kanbu_delete_group` | Delete group | ✅ Working |
+| `kanbu_add_group_member` | Add member | ✅ Working |
+| `kanbu_remove_group_member` | Remove member | ✅ Working |
+
+### Phase 8 - ACL Management (✅ Implemented)
+
+| Tool | Description | Status |
+|------|--------------|--------|
+| `kanbu_list_acl` | List permissions | ✅ Working |
+| `kanbu_check_permission` | Check access | ✅ Working |
+| `kanbu_grant_permission` | Grant access | ✅ Working |
+| `kanbu_revoke_permission` | Revoke access | ✅ Working |
+| `kanbu_delete_acl` | Delete entry | ✅ Working |
+| `kanbu_bulk_grant` | Bulk grant | ✅ Working |
+| `kanbu_bulk_revoke` | Bulk revoke | ✅ Working |
+| `kanbu_copy_permissions` | Copy ACLs | ✅ Working |
+| `kanbu_simulate_change` | Dry run check | ✅ Working |
+
+### Phase 9 - Invites (✅ Implemented)
+
+| Tool | Description | Status |
+|------|--------------|--------|
+| `kanbu_list_invites` | List invites | ✅ Working |
+| `kanbu_send_invite` | Send invite | ✅ Working |
+| `kanbu_cancel_invite` | Cancel invite | ✅ Working |
+
+### Phase 10 - Audit Logs (✅ Implemented)
+
+| Tool | Description | Status |
+|------|--------------|--------|
+| `kanbu_list_audit_logs` | Query logs | ✅ Working |
+| `kanbu_get_audit_log` | Log details | ✅ Working |
+| `kanbu_audit_stats` | Statistics | ✅ Working |
+
+### Phase 11 - System & Backup (✅ Implemented)
+
+| Tool | Description | Status |
+|------|--------------|--------|
+| `kanbu_get_settings` | System settings | ✅ Working |
+| `kanbu_set_setting` | Update setting | ✅ Working |
+| `kanbu_create_db_backup` | Backup DB | ✅ Working |
+| `kanbu_create_source_backup` | Backup Code | ✅ Working |
+
+### Phase 12 - Profile (✅ Implemented)
+
+| Tool | Description | Status |
+|------|--------------|--------|
+| `kanbu_get_profile` | My profile | ✅ Working |
+| `kanbu_update_profile` | Update profile | ✅ Working |
+| `kanbu_get_time_tracking` | My time logs | ✅ Working |
+| `kanbu_change_password` | Change password | ✅ Working |
+
 
 ## Audit Logging
 

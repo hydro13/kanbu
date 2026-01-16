@@ -247,7 +247,28 @@ model AssistantBinding {
 
 ---
 
-### Phase 6: User Management ✅ COMPLETE
+### Phase 5: Analytics & Insights ✅ COMPLETE (2026-01-09)
+### Phase 5+ (Hardening): Dry Run & Safety ✅ COMPLETE (2026-01-16)
+
+**Goal:** Add safety mechanisms for destructive actions.
+
+**Status:** Fully implemented.
+
+- [x] `dryRun` parameter added to `kanbu_delete_acl`
+- [x] `dryRun` parameter added to `kanbu_bulk_revoke`
+- [x] Simulation logic in handlers
+
+### Phase 6: Testing Infrastructure ✅ COMPLETE (2026-01-16)
+
+**Goal:** Unit and integration testing framework.
+
+**Status:** Fully implemented.
+
+- [x] `vitest` configuration
+- [x] Unit tests for `tools.ts` helpers
+- [x] Integration tests for `client.ts` (with retry logic)
+
+### Phase 6+ (Previous Phase 6): User Management ✅ COMPLETE
 
 **Goal:** User management via MCP.
 
