@@ -778,6 +778,7 @@ Via: Claude Code
 | Phase 15 | - (subtask/comment logging) | 131 | ✅ Complete |
 | Phase 16 | - (audit UI updates) | 131 | ✅ Complete |
 | GitHub Phase 9 | 10 (github) | 141 | ✅ Complete |
+| Phase 17 | 18 (wiki pages) | 159 | 🚧 Planned |
 
 ---
 
@@ -813,6 +814,109 @@ Via: Claude Code
 - [x] 10 GitHub MCP tools
 - [x] TypeScript compiles without errors
 - [x] Tools registered in index.ts
+
+---
+
+### Phase 17: Wiki Pages Management 🚧 PLANNED
+
+**Goal:** Wiki pages CRUD operations for both project and workspace wikis via MCP.
+
+**Status:** Planned for implementation.
+
+**Background:** Wiki functionality is fully implemented in the backend (Prisma models, tRPC procedures), including:
+- Version control (20 versions per page)
+- Lexical JSON content support
+- Hierarchical page structure (parent/child)
+- Draft/Published/Archived status
+- Graphiti knowledge graph sync
+- Slug-based permalinks
+
+However, no MCP tools exist yet for creating, updating, or managing wiki pages from Claude Code.
+
+#### 17.1 Project Wiki Tools (9)
+
+| Tool | Description |
+|------|--------------|
+| `kanbu_list_project_wiki_pages` | List wiki pages in a project (with parent filter) |
+| `kanbu_get_project_wiki_page` | Get wiki page by ID |
+| `kanbu_get_project_wiki_page_by_slug` | Get wiki page by slug (permalink) |
+| `kanbu_create_project_wiki_page` | Create new wiki page in project |
+| `kanbu_update_project_wiki_page` | Update wiki page (creates new version) |
+| `kanbu_delete_project_wiki_page` | Delete wiki page |
+| `kanbu_get_project_wiki_versions` | Get version history for a page |
+| `kanbu_get_project_wiki_version` | Get specific version of a page |
+| `kanbu_restore_project_wiki_version` | Restore old version (creates new version) |
+
+#### 17.2 Workspace Wiki Tools (9)
+
+| Tool | Description |
+|------|--------------|
+| `kanbu_list_workspace_wiki_pages` | List wiki pages in workspace (with parent filter) |
+| `kanbu_get_workspace_wiki_page` | Get wiki page by ID |
+| `kanbu_get_workspace_wiki_page_by_slug` | Get wiki page by slug (permalink) |
+| `kanbu_create_workspace_wiki_page` | Create new wiki page in workspace |
+| `kanbu_update_workspace_wiki_page` | Update wiki page (creates new version) |
+| `kanbu_delete_workspace_wiki_page` | Delete wiki page |
+| `kanbu_get_workspace_wiki_versions` | Get version history for a page |
+| `kanbu_get_workspace_wiki_version` | Get specific version of a page |
+| `kanbu_restore_workspace_wiki_version` | Restore old version (creates new version) |
+
+#### 17.3 Implementation Notes
+
+**Content Format:**
+- Wiki pages support both plain text (`content`) and Lexical JSON (`contentJson`)
+- For MCP, plain text is primary interface, Lexical JSON optional
+- Auto-generate slug from title on create
+
+**Cross-Reference Support:**
+Wiki pages support rich cross-references that are automatically extracted and tracked:
+- `[[Wiki Page]]` - Links to other wiki pages (with link resolution and backlinks)
+- `#TASK-123` or `#123` - Links to tasks (with status indicators)
+- `@username` - User mentions (triggers notifications)
+- `#tag-name` - Tags for categorization (distinguishable from task links)
+- External URLs - Automatic link detection
+
+**Link Extraction:**
+- On save: extract all cross-references from content
+- Resolve `[[wiki links]]` to page IDs
+- Store link relationships for backlinks
+- Send notifications for `@mentions`
+- Track broken links (when target doesn't exist)
+
+**Version Control:**
+- Each update creates new version (max 20 versions)
+- Include `changeNote` parameter for version history
+- Restore creates new version (doesn't rewrite history)
+
+**Hierarchy:**
+- Pages can have parent pages (`parentId`)
+- Support for nested wiki structures
+- List pages with optional parent filter
+
+**Status:**
+- DRAFT: Work in progress, not visible to non-authors
+- PUBLISHED: Visible to all with read access
+- ARCHIVED: Hidden but preserved
+
+**ACL Integration:**
+- Project wiki: requires READ on project for list/get, WRITE for create/update/delete
+- Workspace wiki: requires READ on workspace for list/get, WRITE for create/update/delete
+- Audit logging for all wiki operations (category: WIKI)
+
+**Graphiti Sync:**
+- Wiki pages are synced to knowledge graph
+- Entities and facts are extracted
+- Cross-references become graph edges
+- Enables semantic search and RAG chat
+
+**Deliverables Phase 17:**
+- [ ] 18 wiki management tools (9 project + 9 workspace)
+- [ ] Full CRUD operations for wiki pages
+- [ ] Version control support (list, get, restore)
+- [ ] Hierarchical page structure
+- [ ] Status management (draft/published/archived)
+- [ ] Slug-based permalinks
+- [ ] Audit logging for wiki operations
 
 ---
 
@@ -897,6 +1001,7 @@ Via: Claude Code
 
 | Date | Change |
 |-------|-----------|
+| 2026-01-16 | **Phase 17 ADDED** - Wiki Pages Management: 18 new tools planned (9 project wiki + 9 workspace wiki) for full CRUD, version control, hierarchical structure |
 | 2026-01-09 | **Phase 16 COMPLETE** - Audit UI Updates: new category filters (PROJECT, TASK, SUBTASK, COMMENT), "Via Claude Code" badge in audit logs table, machine details in detail view, MCP-only filter |
 | 2026-01-09 | **Phase 13-15 COMPLETE** - MCP Audit Logging: infrastructure, task logging, subtask/comment logging - all MCP actions are now logged with `via: assistant` metadata |
 | 2026-01-09 | **Phase 13-16 ADDED** - MCP Audit Logging roadmap: infrastructure, task/project/subtask/comment logging, UI updates |
