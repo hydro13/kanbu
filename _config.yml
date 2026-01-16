@@ -3,23 +3,24 @@ description: Project Management System
 theme: jekyll-theme-primer
 markdown: kramdown
 
-# GitHub Pages Configuration
+# Plugins
 plugins:
   - jekyll-seo-tag
     - jekyll-github-metadata
 
-    # Repository settings
+    # Repository
     repository: hydro13/kanbu
 
-    # Build settings
+    # Exclude files from Jekyll processing
     exclude:
       - node_modules
         - .git
-          - package.json
-            - tsconfig.json
-              - webpack.config.js
+          - "*.json"
+            - "*.js"
+              - "*.yml"
                 - docker-compose.yml
                   - Dockerfile
-                    - apps/
-                      - packages/
-                        - scripts/
+                    - apps
+                      - packages
+                        - scripts
+                          - docs
