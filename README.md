@@ -35,6 +35,9 @@ Kanbu is different:
 - **Time tracking** with estimates vs. actuals
 - **Real-time collaboration** - see cursors, typing indicators, live sync
 
+  <img width="2300" height="1407" alt="image" src="https://github.com/user-attachments/assets/c301f168-2e77-4b44-9c3a-45c4a38f2167" />
+
+
 ### 🔐 Enterprise Security (NTFS-Style ACL)
 - **Granular permissions**: Read, Write, Execute, Delete, Permissions (RWXDP)
 - **Inheritance**: Workspace → Project → Task permissions flow down
@@ -57,6 +60,9 @@ Kanbu is different:
 - **User mapping**: Link GitHub users to Kanbu users
 - **Auto-link commits**: Reference tasks in commit messages
 - **Sync logs**: Complete visibility into what synced and when
+
+<img width="2300" height="1407" alt="image" src="https://github.com/user-attachments/assets/154b6f4f-d23f-4dcf-88db-6b374b168b4c" />
+
 
 ### 📚 Knowledge Wiki
 - **Workspace & Project wikis** with rich editor
@@ -708,5 +714,6 @@ Email: R.Waslander@gmail.com
 ---
 
 *Kanbu - Modern Project Management*
+
 
 
