@@ -43,26 +43,30 @@ export const router = t.router;
 export const publicProcedure = t.procedure;
 export const middleware = t.middleware;
 
+import { rateLimitMiddleware } from './middleware/rateLimit';
+
 /**
  * Protected procedure - requires authentication
  * Adds user to context with non-null type
  */
-export const protectedProcedure = publicProcedure.use(
-  middleware(async ({ ctx, next }) => {
-    if (!ctx.user) {
-      throw new TRPCError({
-        code: 'UNAUTHORIZED',
-        message: 'You must be logged in to access this resource',
+export const protectedProcedure = publicProcedure
+  .use(rateLimitMiddleware)
+  .use(
+    middleware(async ({ ctx, next }) => {
+      if (!ctx.user) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'You must be logged in to access this resource',
+        });
+      }
+      return next({
+        ctx: {
+          ...ctx,
+          user: ctx.user as AuthUser, // Assert non-null
+        },
       });
-    }
-    return next({
-      ctx: {
-        ...ctx,
-        user: ctx.user as AuthUser, // Assert non-null
-      },
-    });
-  })
-);
+    })
+  );
 
 /**
  * Admin procedure - requires admin access via ACL or Domain Admins group

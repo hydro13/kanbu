@@ -84,7 +84,7 @@ model AssistantBinding {
   - Updates: lastUsedAt
   - Return: user context
 
-- [ ] Rate limiting middleware (planned for future phase)
+- [x] Rate limiting middleware (Implemented in Phase 5+)
   - 100 req/min per binding
   - 5 setup code attempts per hour
 
@@ -164,7 +164,7 @@ model AssistantBinding {
 
 - [x] Permission check via Bearer token authentication
 - [x] Clear error messages on no access
-- [ ] Audit logging with "via Claude Code" marker (planned)
+- [x] Audit logging with "via Claude Code" marker (Implemented in Phase 13)
 
 **Deliverables Phase 2:** ✅ ALL DELIVERED
 - ✅ 11 core tools (workspace, project, task management)
@@ -674,7 +674,7 @@ await auditService.logTaskEvent({
 
 **Deliverables Phase 14:**
 - [x] Audit logging in all task procedures (create, update, move, delete, assign)
-- [ ] Audit logging in all project procedures (not needed for MCP - no project mutations)
+- [x] Audit logging in all project procedures (Implemented in Phase 14)
 - [x] Before/after change tracking for updates
 - [x] AssistantContext metadata in all logs
 

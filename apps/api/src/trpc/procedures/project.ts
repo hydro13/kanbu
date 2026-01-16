@@ -29,6 +29,7 @@ import {
 } from '../../lib/project'
 import { permissionService } from '../../services'
 import { aclService, ACL_PERMISSIONS, ACL_PRESETS } from '../../services/aclService'
+import { auditService, AUDIT_ACTIONS } from '../../services/auditService'
 
 // =============================================================================
 // Input Schemas
@@ -585,6 +586,27 @@ export const projectRouter = router({
         },
       })
 
+      // Audit Log
+      await auditService.logProjectEvent({
+        action: AUDIT_ACTIONS.PROJECT_UPDATED,
+        resourceType: 'project',
+        resourceId: updated.id,
+        /**
+         * @todo Retrieve name if essential, skipping for perf optimization
+         */
+        resourceName: 'Project Settings',
+        userId: ctx.user.id,
+        changes: { settings: input.settings },
+        metadata: {
+          via: ctx.assistantContext ? 'assistant' : 'web',
+          ...(ctx.assistantContext && {
+            machineId: ctx.assistantContext.machineId,
+            machineName: ctx.assistantContext.machineName,
+            bindingId: ctx.assistantContext.bindingId,
+          }),
+        },
+      })
+
       return updated
     }),
 
@@ -609,6 +631,23 @@ export const projectRouter = router({
         data: { isActive: false },
       })
 
+      // Audit Log
+      await auditService.logProjectEvent({
+        action: AUDIT_ACTIONS.PROJECT_ARCHIVED,
+        resourceType: 'project',
+        resourceId: input.projectId,
+        resourceName: `Project ${input.projectId}`,
+        userId: ctx.user.id,
+        metadata: {
+          via: ctx.assistantContext ? 'assistant' : 'web',
+          ...(ctx.assistantContext && {
+            machineId: ctx.assistantContext.machineId,
+            machineName: ctx.assistantContext.machineName,
+            bindingId: ctx.assistantContext.bindingId,
+          }),
+        },
+      })
+
       return { success: true }
     }),
 
@@ -624,6 +663,23 @@ export const projectRouter = router({
       await ctx.prisma.project.update({
         where: { id: input.projectId },
         data: { isActive: false },
+      })
+
+      // Audit Log
+      await auditService.logProjectEvent({
+        action: AUDIT_ACTIONS.PROJECT_ARCHIVED,
+        resourceType: 'project',
+        resourceId: input.projectId,
+        resourceName: `Project ${input.projectId}`,
+        userId: ctx.user.id,
+        metadata: {
+          via: ctx.assistantContext ? 'assistant' : 'web',
+          ...(ctx.assistantContext && {
+            machineId: ctx.assistantContext.machineId,
+            machineName: ctx.assistantContext.machineName,
+            bindingId: ctx.assistantContext.bindingId,
+          }),
+        },
       })
 
       return { success: true }
@@ -655,6 +711,24 @@ export const projectRouter = router({
       await ctx.prisma.project.update({
         where: { id: input.projectId },
         data: { isActive: true },
+      })
+
+      // Audit Log
+      await auditService.logProjectEvent({
+        action: AUDIT_ACTIONS.PROJECT_RESTORED,
+        resourceType: 'project',
+        resourceId: input.projectId,
+        resourceName: `Project ${input.projectId}`,
+        userId: ctx.user.id,
+        workspaceId: project.workspaceId,
+        metadata: {
+          via: ctx.assistantContext ? 'assistant' : 'web',
+          ...(ctx.assistantContext && {
+            machineId: ctx.assistantContext.machineId,
+            machineName: ctx.assistantContext.machineName,
+            bindingId: ctx.assistantContext.bindingId,
+          }),
+        },
       })
 
       return { success: true }
@@ -810,8 +884,8 @@ export const projectRouter = router({
       // Create ACL entry for the user (ACL-only, no legacy ProjectMember)
       const aclPermissions =
         input.role === 'MANAGER' ? ACL_PRESETS.EDITOR :
-        input.role === 'MEMBER' ? ACL_PRESETS.CONTRIBUTOR :
-        ACL_PRESETS.READ_ONLY // VIEWER
+          input.role === 'MEMBER' ? ACL_PRESETS.CONTRIBUTOR :
+            ACL_PRESETS.READ_ONLY // VIEWER
 
       await aclService.grantPermission({
         resourceType: 'project',
@@ -939,8 +1013,8 @@ export const projectRouter = router({
       // Update ACL permissions based on new role (ACL-only, no legacy)
       const aclPermissions =
         input.role === 'MANAGER' ? ACL_PRESETS.EDITOR :
-        input.role === 'MEMBER' ? ACL_PRESETS.CONTRIBUTOR :
-        ACL_PRESETS.READ_ONLY // VIEWER
+          input.role === 'MEMBER' ? ACL_PRESETS.CONTRIBUTOR :
+            ACL_PRESETS.READ_ONLY // VIEWER
 
       await aclService.revokePermission({
         resourceType: 'project',

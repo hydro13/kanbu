@@ -31,51 +31,17 @@ interface ApiKeyContext {
   rateLimit: number
 }
 
-interface RateLimitEntry {
-  count: number
-  resetAt: number
-}
 
 // =============================================================================
-// Rate Limiting (In-Memory)
+// Rate Limiting
 // =============================================================================
 
-const rateLimitStore = new Map<number, RateLimitEntry>()
+import { rateLimitService } from '../services/rateLimitService'
 
-function checkRateLimit(keyId: number, limit: number): boolean {
-  const now = Date.now()
-  const windowMs = 60000 // 1 minute window
+// Helper wrappers to match existing internal API signature if needed, 
+// or we can replace calls directly. 
+// Replacing direct implementation with service calls.
 
-  const entry = rateLimitStore.get(keyId)
-
-  if (!entry || entry.resetAt < now) {
-    // New window
-    rateLimitStore.set(keyId, { count: 1, resetAt: now + windowMs })
-    return true
-  }
-
-  if (entry.count >= limit) {
-    return false
-  }
-
-  entry.count++
-  return true
-}
-
-function getRateLimitHeaders(
-  keyId: number,
-  limit: number
-): Record<string, string> {
-  const entry = rateLimitStore.get(keyId)
-  const remaining = entry ? Math.max(0, limit - entry.count) : limit
-  const reset = entry ? Math.ceil((entry.resetAt - Date.now()) / 1000) : 60
-
-  return {
-    'X-RateLimit-Limit': limit.toString(),
-    'X-RateLimit-Remaining': remaining.toString(),
-    'X-RateLimit-Reset': reset.toString(),
-  }
-}
 
 // =============================================================================
 // API Key Authentication
@@ -169,8 +135,11 @@ export async function registerPublicApiRoutes(
       }
 
       // Check rate limit
-      if (!checkRateLimit(context.keyId, context.rateLimit)) {
-        const headers = getRateLimitHeaders(context.keyId, context.rateLimit)
+      // Key format: "apikey:123" to distinguish from other types
+      const rateLimitKey = `apikey:${context.keyId}`
+
+      if (!rateLimitService.check(rateLimitKey, context.rateLimit)) {
+        const headers = rateLimitService.getHeaders(rateLimitKey, context.rateLimit)
         reply
           .status(429)
           .headers(headers)
@@ -182,12 +151,12 @@ export async function registerPublicApiRoutes(
       }
 
       // Add rate limit headers to response
-      const headers = getRateLimitHeaders(context.keyId, context.rateLimit)
+      const headers = rateLimitService.getHeaders(rateLimitKey, context.rateLimit)
       reply.headers(headers)
 
-      // Store context for route handlers
-      ;(request as unknown as { apiContext: ApiKeyContext }).apiContext =
-        context
+        // Store context for route handlers
+        ; (request as unknown as { apiContext: ApiKeyContext }).apiContext =
+          context
     }
   )
 

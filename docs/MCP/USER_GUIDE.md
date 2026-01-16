@@ -76,5 +76,8 @@ The connection is built to be robust. If the AI encounters a temporary network g
 **"It's slow"**
 *   Large searches might take a moment. The AI is scanning your entire workspace.
 
+**"I keep getting 'Too many requests'"**
+*   To prevent abuse, the AI is limited to 100 requests per minute. Please wait a moment before trying again.
+
 ---
 *Powered by Kanbu Native MCP Implementation*

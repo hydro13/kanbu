@@ -25,7 +25,7 @@ Kanbu is different:
 | Problem | Kanbu Solution |
 |---------|----------------|
 | "I need enterprise permissions but Trello doesn't have them" | **NTFS-style ACL** with inheritance, deny rules, and security groups |
-| "I want AI to help but it can't access my tasks" | **136 MCP tools** - Claude Code works directly in your board |
+| "I want AI to help but it can't access my tasks" | **141 MCP tools** - Claude Code works directly in your board |
 | "GitHub issues and my PM tool are never in sync" | **Bi-directional GitHub sync** with webhook integration |
 | "I want to self-host but lose features" | Community edition has MORE features than most paid tools |
 | "My team speaks different languages" | Each user talks to their own AI assistant in their own language |
@@ -80,7 +80,8 @@ Kanbu includes **Kanbu Graphiti**, a self-hosted knowledge graph engine (Python/
 - **Contradiction Detection**: Flags conflicting information across your documentation.
 
 ### 🔌 AI Integration (Claude Code)
-Connect Claude Code to manage your Kanbu projects with **136 available tools**.
+Connect Claude Code to manage your Kanbu projects with **141 available tools**.
+**Status: Production Ready (Hardened)**
 
 **Tool Categories:**
 | Phase | Category | Tools | Examples |
@@ -90,7 +91,9 @@ Connect Claude Code to manage your Kanbu projects with **136 available tools**.
 | **3** | Subtasks & Comments | 9 | `kanbu_create_subtask`, `kanbu_add_comment` |
 | **4** | Search & Activity | 5 | `kanbu_search_tasks`, `kanbu_recent_activity` |
 | **5** | Analytics | 4 | `kanbu_project_stats`, `kanbu_velocity` |
-| **6-11** | Admin & System | 80+ | User management, ACL, Audit logs, Backups |
+| **6-12** | Admin & Settings | 85 | User management, ACL, Audit logs, Backups, Profile |
+| **9+** | GitHub Connector | 10 | `kanbu_list_github_prs`, `kanbu_get_github_repo` |
+| **13-16** | Hardening & Audit | 14 | Rate limiting, Audit logging (via metadata) |
 
 ### 🐙 GitHub Integration
 - **Bi-directional sync**: Issues, PRs, commits, milestones
