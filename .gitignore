@@ -63,3 +63,6 @@ certs/
 
 # Upload directories
 **/uploads
+
+*storybook.log
+storybook-static
