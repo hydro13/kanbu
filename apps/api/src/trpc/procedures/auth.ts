@@ -102,17 +102,23 @@ export const authRouter = router({
     .mutation(async ({ ctx, input }): Promise<AuthResponse> => {
       const { email, username, name, password } = input;
 
-      // Check if self-registration is enabled
-      const registrationSetting = await ctx.prisma.systemSetting.findUnique({
-        where: { key: 'security.registration_enabled' },
-      });
-      const registrationEnabled = registrationSetting?.value === 'true';
+      // Check if this is the first user (bootstrap admin)
+      const userCount = await ctx.prisma.user.count();
+      const isFirstUser = userCount === 0;
 
-      if (!registrationEnabled) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'Self-registration is disabled. Please contact an administrator for an invite.',
+      // Only check registration setting if not first user
+      if (!isFirstUser) {
+        const registrationSetting = await ctx.prisma.systemSetting.findUnique({
+          where: { key: 'security.registration_enabled' },
         });
+        const registrationEnabled = registrationSetting?.value === 'true';
+
+        if (!registrationEnabled) {
+          throw new TRPCError({
+            code: 'FORBIDDEN',
+            message: 'Self-registration is disabled. Please contact an administrator for an invite.',
+          });
+        }
       }
 
       // Check if email already exists
@@ -140,15 +146,60 @@ export const authRouter = router({
       // Hash password
       const passwordHash = await hashPassword(password);
 
-      // Create user
+      // Create user (first user gets ADMIN role)
       const user = await ctx.prisma.user.create({
         data: {
           email,
           username,
           name,
           passwordHash,
+          role: isFirstUser ? 'ADMIN' : 'USER',
         },
       });
+
+      // If first user, set up domain-admins group and add user to it
+      if (isFirstUser) {
+        // Create or get domain-admins group
+        let domainAdminsGroup = await ctx.prisma.group.findUnique({
+          where: { name: 'domain-admins' },
+        });
+
+        if (!domainAdminsGroup) {
+          domainAdminsGroup = await ctx.prisma.group.create({
+            data: {
+              name: 'domain-admins',
+              displayName: 'Domain Admins',
+              description: 'Full system access - Domain Administrators',
+              type: 'SYSTEM',
+              isSystem: true,
+              isSecurityGroup: true,
+              scope: 'GLOBAL',
+            },
+          });
+
+          // Grant full control (31 = R+W+X+D+P) on root resource
+          await ctx.prisma.aclEntry.create({
+            data: {
+              resourceType: 'root',
+              resourceId: null,
+              principalType: 'group',
+              principalId: domainAdminsGroup.id,
+              permissions: 31, // Full control
+              deny: false,
+              inheritToChildren: true,
+            },
+          });
+        }
+
+        // Add first user to domain-admins group
+        await ctx.prisma.groupMember.create({
+          data: {
+            groupId: domainAdminsGroup.id,
+            userId: user.id,
+            memberType: 'DIRECT',
+          },
+        });
+      }
 
       // Generate token
       const tokenPair = await generateToken(user.id, user.email, user.username);
