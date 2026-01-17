@@ -119,7 +119,7 @@ import { DashboardOverview, MyTasks, MySubtasks, NotesPage, InboxPage } from './
 // Workspace pages
 import { WorkspaceMembersPage, WorkspaceStatisticsPage, WorkspaceSettingsWrapper, WorkspaceWikiPage, WorkspaceGroupsPage } from './pages/workspace'
 // Project pages
-import { GitHubProjectSettings, ProjectDetailsPage } from './pages/project'
+import { GitHubProjectSettings, ProjectDetailsPage, ProjectWikiPage } from './pages/project'
 import { AcceptInvitePage } from './pages/AcceptInvite'
 // Demo pages
 import { EditorDemoPage } from './pages/EditorDemo'
@@ -512,6 +512,23 @@ function App() {
           element={
             <ProtectedRoute>
               <GitHubProjectSettings />
+            </ProtectedRoute>
+          }
+        />
+        {/* Project Wiki routes */}
+        <Route
+          path="/workspace/:workspaceSlug/project/:projectIdentifier/wiki"
+          element={
+            <ProtectedRoute>
+              <ProjectWikiPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/workspace/:workspaceSlug/project/:projectIdentifier/wiki/:pageSlug"
+          element={
+            <ProtectedRoute>
+              <ProjectWikiPage />
             </ProtectedRoute>
           }
         />
