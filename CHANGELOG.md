@@ -24,6 +24,68 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.1.0-beta.3] - 2026-01-17
+
+### Highlights
+- 🚀 **Production-Ready Docker Deployment** - Fully working self-hosted deployment
+- 🔐 **Bootstrap Admin** - First user automatically becomes Domain Admin
+- 🛡️ **Registration Control** - Disable self-registration via system settings
+
+### Added
+
+#### Bootstrap Admin Setup
+First-time installation now works out of the box:
+- First registered user automatically gets `ADMIN` role
+- `domain-admins` group created with full system access (ACL 31)
+- First user added to `domain-admins` group
+- No manual database setup required
+
+#### Registration Control
+- `security.registration_enabled` setting now enforced by API
+- When disabled: "Self-registration is disabled. Please contact an administrator for an invite."
+- First user registration always allowed (bootstrap)
+
+#### Project Wiki Pages UI
+- New UI for project-level wiki pages
+
+### Changed
+
+#### Docker Deployment (Complete Overhaul)
+Production deployment now fully functional:
+
+**API Container:**
+- esbuild for optimized production builds
+- Automatic database migrations on startup (`api-entrypoint.sh`)
+- Proper pnpm workspace structure preservation
+- Correct Prisma client version (6.x)
+
+**Web Container:**
+- nginx reverse proxy for `/trpc`, `/socket.io`, `/health`
+- SPA routing with fallback to `index.html`
+- Gzip compression and security headers
+
+**Coolify PaaS Support:**
+- Internal networking (expose vs ports)
+- Named volumes for data persistence
+- Health checks for all services
+
+### Fixed
+- TypeScript build errors resolved
+- Removed non-existent dependencies from lockfile
+- Unix line endings for shell scripts (Alpine compatibility)
+- Prisma version mismatch in production containers
+
+### Technical
+- 20 commits since beta.2
+- Docker deployment tested and verified working
+- Self-hosted deployment: ~1GB RAM, supports ~15 concurrent users
+
+### Upgrade Notes
+No breaking changes. Existing databases will continue to work.
+New installations will automatically set up the admin user on first registration.
+
+---
+
 ## [0.1.0-beta.2] - 2026-01-16
 
 ### Added
