@@ -28,7 +28,7 @@ COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
 COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
 COPY . .
-RUN pnpm --filter @kanbu/shared db:generate && pnpm --filter @kanbu/api build
+RUN pnpm --filter @kanbu/shared db:generate && pnpm --filter @kanbu/shared build && pnpm --filter @kanbu/api build
 
 # Production stage
 FROM base AS runner
