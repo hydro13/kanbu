@@ -44,9 +44,10 @@ COPY --from=builder /app/apps/api/node_modules ./apps/api/node_modules
 COPY --from=builder /app/apps/api/dist ./apps/api/dist
 COPY --from=builder /app/apps/api/package.json ./apps/api/
 
-# Copy Prisma schema for migrations at runtime
+# Copy Prisma schema and node_modules for migrations at runtime
 COPY --from=builder /app/packages/shared/prisma ./packages/shared/prisma
 COPY --from=builder /app/packages/shared/package.json ./packages/shared/
+COPY --from=builder /app/packages/shared/node_modules ./packages/shared/node_modules
 
 # Startup script that runs migrations before starting the server
 COPY docker/api-entrypoint.sh /app/api-entrypoint.sh
