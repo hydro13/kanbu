@@ -102,6 +102,19 @@ export const authRouter = router({
     .mutation(async ({ ctx, input }): Promise<AuthResponse> => {
       const { email, username, name, password } = input;
 
+      // Check if self-registration is enabled
+      const registrationSetting = await ctx.prisma.systemSetting.findUnique({
+        where: { key: 'security.registration_enabled' },
+      });
+      const registrationEnabled = registrationSetting?.value === 'true';
+
+      if (!registrationEnabled) {
+        throw new TRPCError({
+          code: 'FORBIDDEN',
+          message: 'Self-registration is disabled. Please contact an administrator for an invite.',
+        });
+      }
+
       // Check if email already exists
       const existingEmail = await ctx.prisma.user.findUnique({
         where: { email },
