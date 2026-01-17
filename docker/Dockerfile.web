@@ -28,8 +28,9 @@ COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
 COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
 COPY . .
 
-# Build arguments for API URL (set at build time)
-ARG VITE_API_URL=http://localhost:3001
+# Build arguments for API URL (empty = use nginx proxy with relative paths)
+# Only set this for local dev containers pointing to external API
+ARG VITE_API_URL=
 
 ENV VITE_API_URL=$VITE_API_URL
 

@@ -70,12 +70,12 @@ services:
       - kanbu-network
 
   # Web Frontend (Nginx serving React SPA)
+  # API calls go through nginx proxy (/trpc, /socket.io)
   web:
     build:
       context: ..
       dockerfile: docker/Dockerfile.web
-      args:
-        VITE_API_URL: ${VITE_API_URL:-http://localhost:3001}
+      # VITE_API_URL empty = use nginx proxy with relative paths
     container_name: kanbu-web
     restart: unless-stopped
     depends_on:
