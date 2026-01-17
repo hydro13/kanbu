@@ -11,8 +11,13 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 FROM base AS deps
 WORKDIR /app
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+# Copy ALL workspace package.json files (pnpm needs them to resolve workspace)
 COPY apps/api/package.json ./apps/api/
+COPY apps/web/package.json ./apps/web/
 COPY packages/shared/package.json ./packages/shared/
+COPY packages/cli/package.json ./packages/cli/
+COPY packages/git-hooks/package.json ./packages/git-hooks/
+COPY packages/mcp-server/package.json ./packages/mcp-server/
 RUN pnpm install --frozen-lockfile --prod=false
 
 # Build stage
@@ -20,6 +25,7 @@ FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
+COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
 COPY . .
 RUN pnpm --filter @kanbu/shared db:generate
