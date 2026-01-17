@@ -33,7 +33,7 @@ ARG VITE_API_URL=http://localhost:3001
 
 ENV VITE_API_URL=$VITE_API_URL
 
-RUN pnpm --filter @kanbu/web build
+RUN pnpm --filter @kanbu/shared db:generate && pnpm --filter @kanbu/shared build && pnpm --filter @kanbu/web build
 
 # Production stage - Nginx for static hosting
 FROM nginx:alpine AS runner
