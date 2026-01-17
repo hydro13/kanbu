@@ -22,7 +22,7 @@ const meta: Meta<typeof Slider> = {
   tags: ['autodocs'],
   argTypes: {
     defaultValue: {
-      control: { type: 'array' },
+      control: { type: 'object' },
       description: 'Default value(s) for the slider',
     },
     min: {
@@ -316,7 +316,7 @@ export const MultipleSliders: Story = {
           <div className="flex justify-between">
             <Label>Balance</Label>
             <span className="text-sm text-muted-foreground">
-              {balance[0] > 0 ? `R ${balance[0]}` : balance[0] < 0 ? `L ${Math.abs(balance[0])}` : 'Center'}
+              {(balance[0] ?? 0) > 0 ? `R ${balance[0]}` : (balance[0] ?? 0) < 0 ? `L ${Math.abs(balance[0] ?? 0)}` : 'Center'}
             </span>
           </div>
           <Slider value={balance} onValueChange={setBalance} min={-50} max={50} />
@@ -410,7 +410,7 @@ export const WithUnits: Story = {
           <div className="flex justify-between">
             <Label>Line Height</Label>
             <span className="text-sm text-muted-foreground">
-              {lineHeight[0].toFixed(1)}
+              {(lineHeight[0] ?? 1.5).toFixed(1)}
             </span>
           </div>
           <Slider
@@ -426,7 +426,7 @@ export const WithUnits: Story = {
           <div className="flex justify-between">
             <Label>Letter Spacing</Label>
             <span className="text-sm text-muted-foreground">
-              {spacing[0] > 0 ? `+${spacing[0]}px` : `${spacing[0]}px`}
+              {(spacing[0] ?? 0) > 0 ? `+${spacing[0]}px` : `${spacing[0]}px`}
             </span>
           </div>
           <Slider

@@ -279,7 +279,7 @@ export function ProjectWikiPage() {
         return results.map((task) => ({
           id: task.id,
           title: task.title,
-          reference: task.reference,
+          reference: task.reference ?? `#${task.id}`,
           priority: priorityToString(task.priority),
           isActive: task.isActive,
           column: task.column ? { title: task.column.title } : undefined,
@@ -555,7 +555,7 @@ export function ProjectWikiPage() {
           ) : (
             /* Wiki Home */
             <ProjectWikiHome
-              project={project}
+              project={{ id: project.id, name: project.name, identifier: project.identifier ?? '' }}
               pages={pages}
               basePath={basePath}
               onCreatePage={() => handleCreatePage()}
@@ -683,7 +683,7 @@ export function ProjectWikiPage() {
 // =============================================================================
 
 interface ProjectWikiHomeProps {
-  project: { id: number; name: string; prefix: string }
+  project: { id: number; name: string; identifier: string }
   pages: PageFromApi[]
   basePath: string
   onCreatePage: () => void

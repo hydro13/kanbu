@@ -16,7 +16,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './car
 import { Button } from './button'
 import { Input } from './input'
 import { Label } from './label'
-import { User, Settings, Bell, Lock, CreditCard, FileText } from 'lucide-react'
+import { User, Settings, Bell, CreditCard, FileText } from 'lucide-react'
 
 const meta: Meta<typeof Tabs> = {
   title: 'UI/Tabs',

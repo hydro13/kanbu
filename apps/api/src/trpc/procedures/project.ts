@@ -596,7 +596,7 @@ export const projectRouter = router({
          */
         resourceName: 'Project Settings',
         userId: ctx.user.id,
-        changes: { settings: input.settings },
+        changes: { settings: input.settings } as Prisma.InputJsonValue,
         metadata: {
           via: ctx.assistantContext ? 'assistant' : 'web',
           ...(ctx.assistantContext && {
