@@ -125,15 +125,16 @@ beforeAll(async () => {
   })
   testInstallationId = testInstallation.id
 
-  // Create test repository
+  // Create test repository with unique owner/name
+  const uniqueSuffix = Date.now()
   const testRepository = await prisma.gitHubRepository.create({
     data: {
       projectId: testProjectId,
       installationId: testInstallationId,
-      repoId: BigInt(Date.now()),
-      owner: 'test-org',
-      name: 'test-repo',
-      fullName: 'test-org/test-repo',
+      repoId: BigInt(uniqueSuffix),
+      owner: `test-org-${uniqueSuffix}`,
+      name: `test-repo-${uniqueSuffix}`,
+      fullName: `test-org-${uniqueSuffix}/test-repo-${uniqueSuffix}`,
       defaultBranch: 'main',
       isPrivate: false,
       syncEnabled: true,

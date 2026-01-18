@@ -39,6 +39,7 @@ vi.mock('../../../lib/prisma', () => ({
     },
     gitHubRepository: {
       findUnique: vi.fn(),
+      findFirst: vi.fn(),
     },
     gitHubPullRequest: {
       findMany: vi.fn(),
@@ -232,7 +233,7 @@ describe('releaseService', () => {
 
   describe('getProjectReleases', () => {
     it('should return empty array when no repository linked', async () => {
-      vi.mocked(prisma.gitHubRepository.findUnique).mockResolvedValue(null)
+      vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue(null)
 
       const result = await getProjectReleases(1)
 
@@ -240,7 +241,7 @@ describe('releaseService', () => {
     })
 
     it('should return releases for linked repository', async () => {
-      vi.mocked(prisma.gitHubRepository.findUnique).mockResolvedValue({ id: 1 } as any)
+      vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue({ id: 1 } as any)
       vi.mocked(prisma.gitHubRelease.findMany).mockResolvedValue([
         {
           id: 1,
@@ -273,7 +274,7 @@ describe('releaseService', () => {
 
   describe('getReleaseStats', () => {
     it('should return zero stats when no repository linked', async () => {
-      vi.mocked(prisma.gitHubRepository.findUnique).mockResolvedValue(null)
+      vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue(null)
 
       const result = await getReleaseStats(1)
 
@@ -287,7 +288,7 @@ describe('releaseService', () => {
     })
 
     it('should return aggregated stats', async () => {
-      vi.mocked(prisma.gitHubRepository.findUnique).mockResolvedValue({ id: 1 } as any)
+      vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue({ id: 1 } as any)
       vi.mocked(prisma.gitHubRelease.count)
         .mockResolvedValueOnce(10) // total
         .mockResolvedValueOnce(2) // drafts
@@ -353,7 +354,7 @@ describe('releaseService', () => {
 
   describe('generateReleaseNotes', () => {
     it('should return empty notes when no repository linked', async () => {
-      vi.mocked(prisma.gitHubRepository.findUnique).mockResolvedValue(null)
+      vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue(null)
 
       const result = await generateReleaseNotes(1)
 
@@ -361,7 +362,7 @@ describe('releaseService', () => {
     })
 
     it('should generate notes from merged PRs', async () => {
-      vi.mocked(prisma.gitHubRepository.findUnique).mockResolvedValue({
+      vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue({
         id: 1,
         fullName: 'owner/repo',
       } as any)
@@ -392,7 +393,7 @@ describe('releaseService', () => {
     })
 
     it('should show no changes message when no PRs found', async () => {
-      vi.mocked(prisma.gitHubRepository.findUnique).mockResolvedValue({
+      vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue({
         id: 1,
         fullName: 'owner/repo',
       } as any)

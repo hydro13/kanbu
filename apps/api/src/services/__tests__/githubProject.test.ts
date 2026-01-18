@@ -109,14 +109,15 @@ describe('GitHub Project Procedures', () => {
 
   describe('Repository Linking', () => {
     it('should link a repository to a project', async () => {
+      const uniqueSuffix = Date.now()
       const repository = await prisma.gitHubRepository.create({
         data: {
           projectId: testProjectId,
           installationId: testInstallationId,
-          repoId: BigInt(98765432),
-          owner: 'test-org',
-          name: 'test-repo',
-          fullName: 'test-org/test-repo',
+          repoId: BigInt(98765432 + uniqueSuffix),
+          owner: `test-org-${uniqueSuffix}`,
+          name: `test-repo-${uniqueSuffix}`,
+          fullName: `test-org-${uniqueSuffix}/test-repo-${uniqueSuffix}`,
           defaultBranch: 'main',
           isPrivate: false,
           syncEnabled: true,
@@ -126,20 +127,21 @@ describe('GitHub Project Procedures', () => {
 
       expect(repository).toBeDefined()
       expect(repository.projectId).toBe(testProjectId)
-      expect(repository.fullName).toBe('test-org/test-repo')
+      expect(repository.fullName).toBe(`test-org-${uniqueSuffix}/test-repo-${uniqueSuffix}`)
       expect(repository.syncEnabled).toBe(true)
     })
 
-    it('should enforce unique projectId constraint (1:1)', async () => {
+    it('should allow multiple repositories per project (multi-repo support)', async () => {
+      const uniqueSuffix = Date.now()
       // Link first repository
       await prisma.gitHubRepository.create({
         data: {
           projectId: testProjectId,
           installationId: testInstallationId,
-          repoId: BigInt(11111111),
-          owner: 'test-org',
+          repoId: BigInt(11111111 + uniqueSuffix),
+          owner: `multi-org-${uniqueSuffix}`,
           name: 'repo-1',
-          fullName: 'test-org/repo-1',
+          fullName: `multi-org-${uniqueSuffix}/repo-1`,
           defaultBranch: 'main',
           isPrivate: false,
           syncEnabled: true,
@@ -147,23 +149,24 @@ describe('GitHub Project Procedures', () => {
         },
       })
 
-      // Try to link second repository to same project - should fail
-      await expect(
-        prisma.gitHubRepository.create({
-          data: {
-            projectId: testProjectId,
-            installationId: testInstallationId,
-            repoId: BigInt(22222222),
-            owner: 'test-org',
-            name: 'repo-2',
-            fullName: 'test-org/repo-2',
-            defaultBranch: 'main',
-            isPrivate: false,
-            syncEnabled: true,
-            syncSettings: {},
-          },
-        })
-      ).rejects.toThrow()
+      // Link second repository to same project - should succeed (multi-repo support)
+      const secondRepo = await prisma.gitHubRepository.create({
+        data: {
+          projectId: testProjectId,
+          installationId: testInstallationId,
+          repoId: BigInt(22222222 + uniqueSuffix),
+          owner: `multi-org-${uniqueSuffix}`,
+          name: 'repo-2',
+          fullName: `multi-org-${uniqueSuffix}/repo-2`,
+          defaultBranch: 'main',
+          isPrivate: false,
+          syncEnabled: true,
+          syncSettings: {},
+        },
+      })
+
+      expect(secondRepo).toBeDefined()
+      expect(secondRepo.projectId).toBe(testProjectId)
     })
 
     it('should enforce unique owner/name constraint', async () => {
@@ -469,6 +472,9 @@ describe('GitHub Project Procedures', () => {
     })
 
     it('should list sync logs ordered by createdAt desc', async () => {
+      const now = new Date()
+      const earlierTime = new Date(now.getTime() - 1000) // 1 second earlier
+
       await prisma.gitHubSyncLog.createMany({
         data: [
           {
@@ -478,6 +484,7 @@ describe('GitHub Project Procedures', () => {
             entityType: 'task',
             status: 'success',
             details: {},
+            createdAt: earlierTime,
           },
           {
             repositoryId: testRepositoryId,
@@ -486,6 +493,7 @@ describe('GitHub Project Procedures', () => {
             entityType: 'task',
             status: 'success',
             details: {},
+            createdAt: now,
           },
         ],
       })

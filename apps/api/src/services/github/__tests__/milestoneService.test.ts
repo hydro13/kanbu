@@ -37,6 +37,7 @@ vi.mock('../../../lib/prisma', () => ({
     },
     gitHubRepository: {
       findUnique: vi.fn(),
+      findFirst: vi.fn(),
     },
   },
 }))
@@ -204,7 +205,7 @@ describe('milestoneService', () => {
 
   describe('getProjectMilestones', () => {
     it('should return empty array when no repository linked', async () => {
-      vi.mocked(prisma.gitHubRepository.findUnique).mockResolvedValue(null)
+      vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue(null)
 
       const result = await getProjectMilestones(1)
 
@@ -212,7 +213,7 @@ describe('milestoneService', () => {
     })
 
     it('should return milestones for linked repository', async () => {
-      vi.mocked(prisma.gitHubRepository.findUnique).mockResolvedValue({ id: 1 } as any)
+      vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue({ id: 1 } as any)
       vi.mocked(prisma.gitHubMilestone.findMany).mockResolvedValue([
         {
           id: 1,
@@ -245,7 +246,7 @@ describe('milestoneService', () => {
 
   describe('getMilestoneStats', () => {
     it('should return zero stats when no repository linked', async () => {
-      vi.mocked(prisma.gitHubRepository.findUnique).mockResolvedValue(null)
+      vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue(null)
 
       const result = await getMilestoneStats(1)
 
@@ -259,7 +260,7 @@ describe('milestoneService', () => {
     })
 
     it('should return aggregated stats', async () => {
-      vi.mocked(prisma.gitHubRepository.findUnique).mockResolvedValue({ id: 1 } as any)
+      vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue({ id: 1 } as any)
       vi.mocked(prisma.gitHubMilestone.count)
         .mockResolvedValueOnce(10) // total
         .mockResolvedValueOnce(6) // open

@@ -301,13 +301,7 @@ export class WikiDeduplicationService {
       const normalizedExact = this.normalizeStringExact(node.name)
       const normalizedFuzzy = this.normalizeNameForFuzzy(node.name)
 
-      // Skip low-entropy names - defer to LLM or embedding
-      if (!this.hasHighEntropy(normalizedFuzzy)) {
-        state.unresolvedIndices.push(idx)
-        continue
-      }
-
-      // Try exact match first
+      // Try exact match first (works for all unicode characters)
       const exactMatches = indexes.normalizedExisting.get(normalizedExact) || []
       if (exactMatches.length === 1) {
         const match = exactMatches[0]
@@ -339,6 +333,13 @@ export class WikiDeduplicationService {
 
       // Multiple exact matches - defer to embedding/LLM
       if (exactMatches.length > 1) {
+        state.unresolvedIndices.push(idx)
+        continue
+      }
+
+      // No exact match - check entropy for fuzzy matching
+      // Skip low-entropy names - defer to LLM or embedding
+      if (!this.hasHighEntropy(normalizedFuzzy)) {
         state.unresolvedIndices.push(idx)
         continue
       }
@@ -803,10 +804,36 @@ export class WikiDeduplicationService {
       const shingles = this.createShingles(normalizedFuzzy)
 
       // Check against all subsequent nodes to avoid duplicates
+      const normalizedExact = this.normalizeStringExact(node.name)
+
       for (let j = i + 1; j < nodes.length && duplicates.length < limit; j++) {
         const other = nodes[j]
         if (!other) continue
 
+        // First check for exact match (case-insensitive, whitespace normalized)
+        const otherNormalizedExact = this.normalizeStringExact(other.name)
+        if (normalizedExact === otherNormalizedExact) {
+          duplicates.push({
+            sourceNode: {
+              uuid: node.uuid,
+              name: node.name,
+              type: node.type,
+              groupId: node.groupId,
+            },
+            targetNode: {
+              uuid: other.uuid,
+              name: other.name,
+              type: other.type,
+              groupId: other.groupId,
+            },
+            matchType: 'exact' as DuplicateMatchType,
+            confidence: 1.0,
+            metrics: {},
+          })
+          continue
+        }
+
+        // Fall back to fuzzy matching
         const otherShingles = indexes.shinglesByNode.get(other.uuid)
         if (!otherShingles) continue
 

@@ -21,7 +21,23 @@ import { TRPCError } from '@trpc/server'
 import { randomBytes } from 'crypto'
 import { router, adminProcedure } from '../router'
 import { hashPassword } from '../../lib/auth'
-import { groupPermissionService, scopeService, auditService, AUDIT_ACTIONS, backupService } from '../../services'
+import {
+  groupPermissionService,
+  scopeService,
+  auditService,
+  AUDIT_ACTIONS,
+  backupService,
+  scheduleService,
+  internalScheduler,
+  retentionService,
+  backupNotificationService,
+  restoreService,
+  verificationService,
+  isValidCronExpression,
+  describeCronExpression,
+  getSchedulerMode,
+  isInternalSchedulerEnabled,
+} from '../../services'
 
 // =============================================================================
 // Input Schemas
@@ -1607,5 +1623,474 @@ export const adminRouter = router({
           message: `Failed to download backup: ${message}`,
         })
       }
+    }),
+
+  // ===========================================================================
+  // Backup Scheduling (Phase 3)
+  // ===========================================================================
+
+  /**
+   * Get scheduler status
+   */
+  getSchedulerStatus: adminProcedure
+    .query(async () => {
+      return {
+        ...internalScheduler.getStatus(),
+        mode: getSchedulerMode(),
+        isEnabled: isInternalSchedulerEnabled(),
+      }
+    }),
+
+  /**
+   * List all backup schedules
+   */
+  listBackupSchedules: adminProcedure
+    .query(async () => {
+      const schedules = await scheduleService.listSchedules()
+      return schedules.map(schedule => ({
+        ...schedule,
+        cronDescription: describeCronExpression(schedule.cronExpression),
+      }))
+    }),
+
+  /**
+   * Get a single backup schedule
+   */
+  getBackupSchedule: adminProcedure
+    .input(z.object({ id: z.number() }))
+    .query(async ({ input }) => {
+      const schedule = await scheduleService.getSchedule(input.id)
+      if (!schedule) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Schedule not found',
+        })
+      }
+      return {
+        ...schedule,
+        cronDescription: describeCronExpression(schedule.cronExpression),
+      }
+    }),
+
+  /**
+   * Create a new backup schedule
+   */
+  createBackupSchedule: adminProcedure
+    .input(z.object({
+      name: z.string().min(1).max(255),
+      type: z.enum(['DATABASE', 'SOURCE']),
+      cronExpression: z.string().min(9).max(100),
+      enabled: z.boolean().default(true),
+      retentionDays: z.number().min(1).max(365).default(30),
+      keepDaily: z.number().min(1).max(30).default(7),
+      keepWeekly: z.number().min(1).max(12).default(4),
+      keepMonthly: z.number().min(1).max(12).default(3),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      // Validate cron expression
+      if (!isValidCronExpression(input.cronExpression)) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: `Invalid cron expression: ${input.cronExpression}`,
+        })
+      }
+
+      const schedule = await scheduleService.createSchedule({
+        ...input,
+        createdById: ctx.user!.id,
+      })
+
+      // Reload scheduler to pick up new schedule
+      if (isInternalSchedulerEnabled()) {
+        await internalScheduler.reload()
+      }
+
+      // Audit logging
+      await auditService.logSettingsEvent({
+        action: AUDIT_ACTIONS.SETTING_CHANGED,
+        resourceType: 'backup_schedule',
+        resourceName: schedule.name,
+        changes: { after: input },
+        userId: ctx.user!.id,
+        ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
+      })
+
+      return {
+        ...schedule,
+        cronDescription: describeCronExpression(schedule.cronExpression),
+      }
+    }),
+
+  /**
+   * Update a backup schedule
+   */
+  updateBackupSchedule: adminProcedure
+    .input(z.object({
+      id: z.number(),
+      name: z.string().min(1).max(255).optional(),
+      cronExpression: z.string().min(9).max(100).optional(),
+      enabled: z.boolean().optional(),
+      retentionDays: z.number().min(1).max(365).optional(),
+      keepDaily: z.number().min(1).max(30).optional(),
+      keepWeekly: z.number().min(1).max(12).optional(),
+      keepMonthly: z.number().min(1).max(12).optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { id, ...data } = input
+
+      // Validate cron expression if provided
+      if (data.cronExpression && !isValidCronExpression(data.cronExpression)) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: `Invalid cron expression: ${data.cronExpression}`,
+        })
+      }
+
+      const schedule = await scheduleService.updateSchedule(id, data)
+
+      // Reload scheduler to pick up changes
+      if (isInternalSchedulerEnabled()) {
+        await internalScheduler.reload()
+      }
+
+      // Audit logging
+      await auditService.logSettingsEvent({
+        action: AUDIT_ACTIONS.SETTING_CHANGED,
+        resourceType: 'backup_schedule',
+        resourceName: schedule.name,
+        changes: { after: data },
+        userId: ctx.user!.id,
+        ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
+      })
+
+      return {
+        ...schedule,
+        cronDescription: describeCronExpression(schedule.cronExpression),
+      }
+    }),
+
+  /**
+   * Delete a backup schedule
+   */
+  deleteBackupSchedule: adminProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const schedule = await scheduleService.getSchedule(input.id)
+      if (!schedule) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Schedule not found',
+        })
+      }
+
+      await scheduleService.deleteSchedule(input.id)
+
+      // Reload scheduler to remove the schedule
+      if (isInternalSchedulerEnabled()) {
+        await internalScheduler.reload()
+      }
+
+      // Audit logging
+      await auditService.logSettingsEvent({
+        action: AUDIT_ACTIONS.SETTING_CHANGED,
+        resourceType: 'backup_schedule',
+        resourceName: schedule.name,
+        changes: { before: { id: input.id, name: schedule.name }, after: null },
+        userId: ctx.user!.id,
+        ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
+      })
+
+      return { success: true, message: 'Schedule deleted' }
+    }),
+
+  /**
+   * Run a schedule now (manual trigger)
+   */
+  runScheduleNow: adminProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const result = await scheduleService.executeSchedule(input.id, 'MANUAL')
+
+      // Audit logging
+      await auditService.logSettingsEvent({
+        action: AUDIT_ACTIONS.BACKUP_CREATED,
+        resourceType: 'backup',
+        resourceName: result.execution.filename ?? 'manual-backup',
+        metadata: {
+          scheduleId: input.id,
+          trigger: 'manual',
+          success: result.success,
+        },
+        userId: ctx.user!.id,
+        ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
+      })
+
+      return result
+    }),
+
+  /**
+   * Preview retention policy effect
+   */
+  previewRetention: adminProcedure
+    .input(z.object({ scheduleId: z.number() }))
+    .query(async ({ input }) => {
+      const schedule = await scheduleService.getSchedule(input.scheduleId)
+      if (!schedule) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: 'Schedule not found',
+        })
+      }
+
+      return retentionService.previewRetention(schedule)
+    }),
+
+  // ===========================================================================
+  // Backup Execution History (Phase 3)
+  // ===========================================================================
+
+  /**
+   * Get execution history
+   */
+  getExecutionHistory: adminProcedure
+    .input(z.object({
+      scheduleId: z.number().optional(),
+      type: z.enum(['DATABASE', 'SOURCE']).optional(),
+      limit: z.number().min(1).max(100).default(50),
+    }))
+    .query(async ({ input }) => {
+      return scheduleService.getExecutionHistory({
+        scheduleId: input.scheduleId,
+        type: input.type,
+        limit: input.limit,
+      })
+    }),
+
+  /**
+   * Get recent executions for dashboard
+   */
+  getRecentExecutions: adminProcedure
+    .input(z.object({
+      limit: z.number().min(1).max(50).default(10),
+    }))
+    .query(async ({ input }) => {
+      return scheduleService.getRecentExecutions(input.limit)
+    }),
+
+  /**
+   * Get execution statistics
+   */
+  getExecutionStats: adminProcedure
+    .query(async () => {
+      return scheduleService.getExecutionStats()
+    }),
+
+  // ===========================================================================
+  // Backup Restore (Phase 3)
+  // ===========================================================================
+
+  /**
+   * Validate a backup for restore
+   */
+  validateRestore: adminProcedure
+    .input(z.object({ filename: z.string() }))
+    .mutation(async ({ input }) => {
+      return restoreService.validateBackup(input.filename)
+    }),
+
+  /**
+   * Get list of restorable backups
+   */
+  getRestorableBackups: adminProcedure
+    .query(async () => {
+      return restoreService.getRestorableBackups()
+    }),
+
+  /**
+   * Restore a database backup
+   * WARNING: This will overwrite the current database!
+   */
+  restoreDatabase: adminProcedure
+    .input(z.object({
+      filename: z.string(),
+      createPreRestoreBackup: z.boolean().default(true),
+      skipVerification: z.boolean().default(false),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      // Audit logging before restore
+      await auditService.logSettingsEvent({
+        action: AUDIT_ACTIONS.SETTING_CHANGED,
+        resourceType: 'backup',
+        resourceName: input.filename,
+        metadata: {
+          action: 'restore_started',
+          createPreRestoreBackup: input.createPreRestoreBackup,
+        },
+        userId: ctx.user!.id,
+        ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
+      })
+
+      const result = await restoreService.restoreDatabase(input.filename, {
+        createPreRestoreBackup: input.createPreRestoreBackup,
+        skipVerification: input.skipVerification,
+        performedById: ctx.user!.id,
+      })
+
+      // Audit logging after restore
+      await auditService.logSettingsEvent({
+        action: AUDIT_ACTIONS.SETTING_CHANGED,
+        resourceType: 'backup',
+        resourceName: input.filename,
+        metadata: {
+          action: result.success ? 'restore_completed' : 'restore_failed',
+          preRestoreBackup: result.preRestoreBackup,
+          durationMs: result.durationMs,
+          tablesRestored: result.tablesRestored,
+        },
+        userId: ctx.user!.id,
+        ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
+      })
+
+      if (!result.success) {
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: result.message,
+        })
+      }
+
+      return result
+    }),
+
+  // ===========================================================================
+  // Backup Notifications (Phase 3)
+  // ===========================================================================
+
+  /**
+   * Get notification configuration
+   */
+  getNotificationConfig: adminProcedure
+    .query(async () => {
+      const config = await backupNotificationService.getConfig()
+      // Don't expose the full webhook secret
+      return {
+        ...config,
+        webhookSecret: config?.webhookSecret ? '********' : null,
+        hasWebhookSecret: !!config?.webhookSecret,
+      }
+    }),
+
+  /**
+   * Update notification configuration
+   */
+  updateNotificationConfig: adminProcedure
+    .input(z.object({
+      notifyOnSuccess: z.boolean().optional(),
+      notifyOnFailure: z.boolean().optional(),
+      webhookUrl: z.string().url().nullable().optional(),
+      webhookSecret: z.string().max(255).nullable().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const config = await backupNotificationService.updateConfig(input)
+
+      // Audit logging
+      await auditService.logSettingsEvent({
+        action: AUDIT_ACTIONS.SETTING_CHANGED,
+        resourceType: 'backup_notification',
+        resourceName: 'notification_config',
+        changes: {
+          after: {
+            notifyOnSuccess: config.notifyOnSuccess,
+            notifyOnFailure: config.notifyOnFailure,
+            hasWebhook: !!config.webhookUrl,
+          },
+        },
+        userId: ctx.user!.id,
+        ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
+      })
+
+      return {
+        ...config,
+        webhookSecret: config.webhookSecret ? '********' : null,
+        hasWebhookSecret: !!config.webhookSecret,
+      }
+    }),
+
+  /**
+   * Test webhook configuration
+   */
+  testWebhook: adminProcedure
+    .mutation(async () => {
+      return backupNotificationService.testWebhook()
+    }),
+
+  // ===========================================================================
+  // Backup Verification (Phase 4.4)
+  // ===========================================================================
+
+  /**
+   * Verify a single backup file integrity
+   */
+  verifyBackup: adminProcedure
+    .input(z.object({ filename: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const result = await verificationService.verifyBackup(input.filename)
+
+      // Audit logging
+      await auditService.logSettingsEvent({
+        action: AUDIT_ACTIONS.SETTING_CHANGED,
+        resourceType: 'backup',
+        resourceName: input.filename,
+        metadata: {
+          action: 'verification',
+          success: result.success,
+          message: result.message,
+        },
+        userId: ctx.user!.id,
+        ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
+      })
+
+      return result
+    }),
+
+  /**
+   * Verify all pending backups (batch verification)
+   */
+  verifyAllBackups: adminProcedure
+    .mutation(async ({ ctx }) => {
+      const result = await verificationService.verifyAllPending()
+
+      // Audit logging
+      await auditService.logSettingsEvent({
+        action: AUDIT_ACTIONS.SETTING_CHANGED,
+        resourceType: 'backup',
+        resourceName: 'batch_verification',
+        metadata: {
+          action: 'batch_verification',
+          total: result.stats.total,
+          success: result.stats.success,
+          failed: result.stats.failed,
+        },
+        userId: ctx.user!.id,
+        ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
+      })
+
+      return result
+    }),
+
+  /**
+   * Get verification statistics
+   */
+  getVerificationStats: adminProcedure
+    .query(async () => {
+      return verificationService.getVerificationStats()
+    }),
+
+  /**
+   * Quick integrity check (existence and size only)
+   */
+  quickCheckBackup: adminProcedure
+    .input(z.object({ filename: z.string() }))
+    .query(async ({ input }) => {
+      return verificationService.quickCheck(input.filename)
     }),
 })

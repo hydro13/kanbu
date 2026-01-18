@@ -39,6 +39,11 @@ export type NotificationType =
   | 'deployment_pending'
   | 'check_run_failed'
   | 'check_run_succeeded'
+  // Backup notification types
+  | 'backup_completed'
+  | 'backup_failed'
+  | 'restore_completed'
+  | 'restore_failed'
 
 export interface NotificationData {
   taskId?: number
@@ -52,6 +57,12 @@ export interface NotificationData {
   actorId?: number
   actorName?: string
   link?: string
+  // Backup data
+  backupType?: 'database' | 'source'
+  backupFilename?: string
+  backupSize?: number
+  backupDuration?: number
+  backupError?: string
   [key: string]: unknown
 }
 
@@ -149,6 +160,28 @@ const NOTIFICATION_TEMPLATES: Record<NotificationType, { title: (data: Notificat
   check_run_succeeded: {
     title: (d) => `Check run succeeded: ${(d as Record<string, unknown>).checkName || 'unknown'}`,
     content: (d) => `Repository: ${(d as Record<string, unknown>).repository || 'unknown'}`,
+  },
+  // Backup notifications
+  backup_completed: {
+    title: (d) => `${d.backupType === 'database' ? 'Database' : 'Source'} backup completed`,
+    content: (d) => {
+      const parts = [`File: ${d.backupFilename || 'unknown'}`]
+      if (d.backupSize) parts.push(`Size: ${Math.round(d.backupSize / 1024)} KB`)
+      if (d.backupDuration) parts.push(`Duration: ${Math.round(d.backupDuration / 1000)}s`)
+      return parts.join(' | ')
+    },
+  },
+  backup_failed: {
+    title: (d) => `${d.backupType === 'database' ? 'Database' : 'Source'} backup failed`,
+    content: (d) => d.backupError || 'An error occurred during backup',
+  },
+  restore_completed: {
+    title: (d) => `${d.backupType === 'database' ? 'Database' : 'Source'} restore completed`,
+    content: (d) => `Restored from: ${d.backupFilename || 'unknown'}`,
+  },
+  restore_failed: {
+    title: (d) => `${d.backupType === 'database' ? 'Database' : 'Source'} restore failed`,
+    content: (d) => d.backupError || 'An error occurred during restore',
   },
 }
 

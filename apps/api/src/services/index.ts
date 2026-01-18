@@ -83,3 +83,44 @@ export {
   type GitHubConfig,
   type InstallationInfo,
 } from './github'
+
+// Backup Service - Database and source code backups (Phase 1-4)
+export {
+  BackupService,
+  backupService,
+  getBackupStorage,
+  getBackupStorageType,
+  isBackupStorageConfigured,
+  type BackupStorage,
+  type BackupFile,
+  type BackupResult,
+  type BackupConfig,
+  // Phase 3: Scheduler
+  scheduleService,
+  internalScheduler,
+  retentionService,
+  isValidCronExpression,
+  calculateNextRun,
+  describeCronExpression,
+  getSchedulerMode,
+  isInternalSchedulerEnabled,
+  type CreateScheduleInput,
+  type UpdateScheduleInput,
+  type ExecutionResult,
+  type SchedulerMode,
+  type RetentionPolicy,
+  type RetentionResult,
+  // Phase 3: Notifications
+  backupNotificationService,
+  type WebhookPayload,
+  // Phase 3: Restore
+  restoreService,
+  type RestoreOptions,
+  type RestoreResult,
+  type RestoreValidation,
+  // Phase 4.4: Verification
+  verificationService,
+  type VerificationResult,
+  type VerificationStats,
+  type BatchVerificationResult,
+} from './backup'

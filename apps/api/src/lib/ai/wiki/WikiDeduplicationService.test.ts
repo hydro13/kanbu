@@ -383,7 +383,29 @@ describe('WikiDeduplicationService', () => {
         expect(state.duplicatePairs[0]?.matchType).toBe('exact')
       })
 
-      it('defers low-entropy names to unresolved', () => {
+      it('defers low-entropy names without exact match to unresolved', () => {
+        const existing: EntityNodeInfo[] = [
+          { uuid: 'existing-1', name: 'bb', type: 'Concept', groupId: 'ws_1' },
+        ]
+        const extracted: EntityNodeInfo[] = [
+          { uuid: 'new-1', name: 'aa', type: 'Concept', groupId: 'ws_1' },
+        ]
+
+        const indexes = service.buildCandidateIndexes(existing)
+        const state: DedupResolutionState = {
+          resolvedNodes: [null],
+          uuidMap: new Map(),
+          unresolvedIndices: [],
+          duplicatePairs: [],
+        }
+
+        service.resolveWithSimilarity(extracted, indexes, state)
+
+        // Low entropy name without exact match should be deferred
+        expect(state.unresolvedIndices).toContain(0)
+      })
+
+      it('resolves exact matches even for low-entropy names', () => {
         const existing: EntityNodeInfo[] = [
           { uuid: 'existing-1', name: 'aa', type: 'Concept', groupId: 'ws_1' },
         ]
@@ -401,8 +423,9 @@ describe('WikiDeduplicationService', () => {
 
         service.resolveWithSimilarity(extracted, indexes, state)
 
-        // Low entropy name should be deferred
-        expect(state.unresolvedIndices).toContain(0)
+        // Exact match should be resolved even with low entropy
+        expect(state.resolvedNodes[0]?.uuid).toBe('existing-1')
+        expect(state.uuidMap.get('new-1')).toBe('existing-1')
       })
 
       it('defers multiple exact matches to unresolved', () => {

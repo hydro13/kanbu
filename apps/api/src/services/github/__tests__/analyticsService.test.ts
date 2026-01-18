@@ -28,6 +28,7 @@ vi.mock('../../../lib/prisma', () => ({
   prisma: {
     gitHubRepository: {
       findUnique: vi.fn(),
+      findFirst: vi.fn(),
     },
     gitHubPullRequest: {
       findMany: vi.fn(),
@@ -59,7 +60,7 @@ describe('analyticsService', () => {
 
   describe('getCycleTimeStats', () => {
     it('should return empty stats when no repository linked', async () => {
-      vi.mocked(prisma.gitHubRepository.findUnique).mockResolvedValue(null)
+      vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue(null)
 
       const result = await getCycleTimeStats(1)
 
@@ -74,7 +75,7 @@ describe('analyticsService', () => {
     })
 
     it('should return empty stats when no merged PRs', async () => {
-      vi.mocked(prisma.gitHubRepository.findUnique).mockResolvedValue({
+      vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue({
         id: 1,
         projectId: 1,
       } as any)
@@ -86,7 +87,7 @@ describe('analyticsService', () => {
     })
 
     it('should calculate correct cycle time statistics', async () => {
-      vi.mocked(prisma.gitHubRepository.findUnique).mockResolvedValue({
+      vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue({
         id: 1,
         projectId: 1,
       } as any)
@@ -133,7 +134,7 @@ describe('analyticsService', () => {
 
   describe('getReviewTimeStats', () => {
     it('should return empty stats when no repository linked', async () => {
-      vi.mocked(prisma.gitHubRepository.findUnique).mockResolvedValue(null)
+      vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue(null)
 
       const result = await getReviewTimeStats(1)
 
@@ -147,7 +148,7 @@ describe('analyticsService', () => {
     })
 
     it('should calculate review time statistics', async () => {
-      vi.mocked(prisma.gitHubRepository.findUnique).mockResolvedValue({
+      vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue({
         id: 1,
         projectId: 1,
       } as any)
@@ -194,7 +195,7 @@ describe('analyticsService', () => {
 
   describe('getContributorStats', () => {
     it('should return empty array when no repository linked', async () => {
-      vi.mocked(prisma.gitHubRepository.findUnique).mockResolvedValue(null)
+      vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue(null)
 
       const result = await getContributorStats(1)
 
@@ -202,7 +203,7 @@ describe('analyticsService', () => {
     })
 
     it('should aggregate contributor statistics', async () => {
-      vi.mocked(prisma.gitHubRepository.findUnique).mockResolvedValue({
+      vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue({
         id: 1,
         projectId: 1,
       } as any)
@@ -249,7 +250,7 @@ describe('analyticsService', () => {
     })
 
     it('should sort contributors by total activity', async () => {
-      vi.mocked(prisma.gitHubRepository.findUnique).mockResolvedValue({
+      vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue({
         id: 1,
         projectId: 1,
       } as any)
@@ -276,7 +277,7 @@ describe('analyticsService', () => {
 
   describe('getThroughputStats', () => {
     it('should return empty array when no repository linked', async () => {
-      vi.mocked(prisma.gitHubRepository.findUnique).mockResolvedValue(null)
+      vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue(null)
 
       const result = await getThroughputStats(1)
 
@@ -284,7 +285,7 @@ describe('analyticsService', () => {
     })
 
     it('should calculate weekly throughput', async () => {
-      vi.mocked(prisma.gitHubRepository.findUnique).mockResolvedValue({
+      vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue({
         id: 1,
         projectId: 1,
       } as any)
@@ -317,7 +318,7 @@ describe('analyticsService', () => {
 
   describe('getProjectAnalytics', () => {
     it('should return combined analytics', async () => {
-      vi.mocked(prisma.gitHubRepository.findUnique).mockResolvedValue({
+      vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue({
         id: 1,
         projectId: 1,
       } as any)

@@ -128,6 +128,7 @@ model User {
   invitationsCreated       WorkspaceInvitation[]
   workspacesCreated        Workspace[]               @relation("WorkspaceCreator")
   aiProviderConfigsCreated AiProviderConfig[]        @relation("AiProviderCreator")
+  backupSchedules          BackupSchedule[]          @relation("BackupScheduleCreator")
 
   @@map("users")
 }
@@ -1492,6 +1493,98 @@ model GitHubCheckRun {
   @@index([headSha])
   @@index([status])
   @@map("github_check_runs")
+}
+
+// ============================================
+// BACKUP AUTOMATION MODELS (Phase 3)
+// ============================================
+
+/// Backup Schedule - defines when and how backups are created
+model BackupSchedule {
+  id              Int                @id @default(autoincrement())
+  name            String             @db.VarChar(255)
+  type            BackupType
+  cronExpression  String             @map("cron_expression") @db.VarChar(100)
+  enabled         Boolean            @default(true)
+  retentionDays   Int                @default(30) @map("retention_days")
+  keepDaily       Int                @default(7) @map("keep_daily")
+  keepWeekly      Int                @default(4) @map("keep_weekly")
+  keepMonthly     Int                @default(3) @map("keep_monthly")
+  lastRunAt       DateTime?          @map("last_run_at")
+  nextRunAt       DateTime?          @map("next_run_at")
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
+  createdById     Int                @map("created_by")
+  createdBy       User               @relation("BackupScheduleCreator", fields: [createdById], references: [id])
+  executions      BackupExecution[]
+
+  @@map("backup_schedules")
+}
+
+/// Backup Execution - tracks each backup run (scheduled, manual, or external)
+model BackupExecution {
+  id            Int             @id @default(autoincrement())
+  scheduleId    Int?            @map("schedule_id")
+  schedule      BackupSchedule? @relation(fields: [scheduleId], references: [id], onDelete: SetNull)
+  type          BackupType
+  trigger       BackupTrigger
+  status        BackupStatus
+  filename      String?         @db.VarChar(500)
+  fileSize      Int?            @map("file_size")
+  errorMessage  String?         @map("error_message")
+  startedAt     DateTime        @default(now()) @map("started_at")
+  completedAt   DateTime?       @map("completed_at")
+  durationMs    Int?            @map("duration_ms")
+
+  // Phase 4.1: Encryption at Rest
+  isEncrypted   Boolean         @default(false) @map("is_encrypted")
+  encryptionAlg String?         @map("encryption_alg") @db.VarChar(50)
+
+  // Phase 4.4: Backup Verification
+  checksum      String?         @map("checksum") @db.VarChar(64)
+  checksumAlg   String?         @map("checksum_alg") @db.VarChar(20)
+  verified      Boolean?        @map("verified")
+  verifiedAt    DateTime?       @map("verified_at")
+
+  @@index([scheduleId])
+  @@index([type, startedAt])
+  @@index([status])
+  @@index([filename])
+  @@map("backup_executions")
+}
+
+/// Backup Notification Configuration - singleton for backup notifications
+model BackupNotificationConfig {
+  id              Int       @id @default(autoincrement())
+  notifyOnSuccess Boolean   @default(false) @map("notify_on_success")
+  notifyOnFailure Boolean   @default(true) @map("notify_on_failure")
+  webhookUrl      String?   @map("webhook_url") @db.VarChar(500)
+  webhookSecret   String?   @map("webhook_secret") @db.VarChar(255)
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@map("backup_notification_config")
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum BackupType {
+  DATABASE
+  SOURCE
+}
+
+enum BackupTrigger {
+  SCHEDULED
+  MANUAL
+  EXTERNAL
+}
+
+enum BackupStatus {
+  RUNNING
+  COMPLETED
+  FAILED
 }
 
 enum WorkspaceRole {

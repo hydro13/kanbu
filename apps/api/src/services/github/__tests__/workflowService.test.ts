@@ -23,6 +23,7 @@ vi.mock('../../../lib/prisma', () => ({
     },
     gitHubRepository: {
       findUnique: vi.fn(),
+      findFirst: vi.fn(),
     },
     gitHubPullRequest: {
       findFirst: vi.fn(),
@@ -123,7 +124,7 @@ describe('upsertWorkflowRun', () => {
 
   it('should create a new workflow run', async () => {
     vi.mocked(prisma.task.findFirst).mockResolvedValue(null)
-    vi.mocked(prisma.gitHubRepository.findUnique).mockResolvedValue(null)
+    vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue(null)
     vi.mocked(prisma.gitHubWorkflowRun.upsert).mockResolvedValue({ id: 1 } as any)
 
     const result = await upsertWorkflowRun(mockWorkflowRunData)
@@ -143,7 +144,7 @@ describe('upsertWorkflowRun', () => {
 
   it('should link to task when branch matches', async () => {
     vi.mocked(prisma.task.findFirst).mockResolvedValue({ id: 42 } as any)
-    vi.mocked(prisma.gitHubRepository.findUnique).mockResolvedValue(null)
+    vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue(null)
     vi.mocked(prisma.gitHubWorkflowRun.upsert).mockResolvedValue({ id: 1 } as any)
 
     await upsertWorkflowRun(mockWorkflowRunData)
@@ -159,7 +160,7 @@ describe('upsertWorkflowRun', () => {
 
   it('should link to PR when branch matches', async () => {
     vi.mocked(prisma.task.findFirst).mockResolvedValue(null)
-    vi.mocked(prisma.gitHubRepository.findUnique).mockResolvedValue({ id: 1 } as any)
+    vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue({ id: 1 } as any)
     vi.mocked(prisma.gitHubPullRequest.findFirst).mockResolvedValue({ id: 99 } as any)
     vi.mocked(prisma.gitHubWorkflowRun.upsert).mockResolvedValue({ id: 1 } as any)
 
@@ -561,7 +562,7 @@ describe('processWorkflowRunEvent', () => {
 
   it('should process workflow_run webhook event', async () => {
     vi.mocked(prisma.task.findFirst).mockResolvedValue(null)
-    vi.mocked(prisma.gitHubRepository.findUnique).mockResolvedValue(null)
+    vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue(null)
     vi.mocked(prisma.gitHubWorkflowRun.upsert).mockResolvedValue({ id: 1 } as any)
 
     const webhookPayload = {
@@ -588,7 +589,7 @@ describe('processWorkflowRunEvent', () => {
 
   it('should handle completed event with completedAt', async () => {
     vi.mocked(prisma.task.findFirst).mockResolvedValue(null)
-    vi.mocked(prisma.gitHubRepository.findUnique).mockResolvedValue(null)
+    vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue(null)
     vi.mocked(prisma.gitHubWorkflowRun.upsert).mockResolvedValue({ id: 1 } as any)
 
     const webhookPayload = {

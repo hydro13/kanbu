@@ -33,6 +33,8 @@ import { registerAvatarRoutes } from './routes/avatar';
 import { registerWorkspaceLogoRoutes } from './routes/workspaceLogo';
 import { registerGitHubWebhookRoutes } from './routes/webhooks/github';
 import { registerGitHubImageProxyRoutes } from './routes/githubImageProxy';
+import { registerBackupTriggerRoutes } from './routes/backupTrigger';
+import { internalScheduler, isInternalSchedulerEnabled } from './services/backup';
 import { initializeSocketServer } from './socket';
 import { isRedisHealthy } from './lib/redis';
 
@@ -187,6 +189,16 @@ export async function createServer() {
 
   // Register GitHub image proxy routes (for private repo images)
   await registerGitHubImageProxyRoutes(server);
+
+  // Register backup trigger routes (for external cron jobs)
+  await registerBackupTriggerRoutes(server);
+
+  // Start internal backup scheduler if enabled
+  if (isInternalSchedulerEnabled()) {
+    internalScheduler.start().catch((err) => {
+      console.error('[Server] Failed to start backup scheduler:', err);
+    });
+  }
 
   return server;
 }

@@ -104,15 +104,16 @@ describe('GitHub Webhook Handler', () => {
     })
     testInstallationId = testInstallation.id
 
-    // Create test repository link
+    // Create test repository link with unique owner/name
+    const repoSuffix = Date.now()
     const testRepository = await prisma.gitHubRepository.create({
       data: {
         projectId: testProjectId,
         installationId: testInstallationId,
-        repoId: BigInt(98765),
-        owner: 'test-org',
-        name: 'test-repo',
-        fullName: 'test-org/test-repo',
+        repoId: BigInt(repoSuffix),
+        owner: `webhook-test-org-${repoSuffix}`,
+        name: `webhook-test-repo-${repoSuffix}`,
+        fullName: `webhook-test-org-${repoSuffix}/webhook-test-repo-${repoSuffix}`,
         defaultBranch: 'main',
         isPrivate: false,
         syncEnabled: true,

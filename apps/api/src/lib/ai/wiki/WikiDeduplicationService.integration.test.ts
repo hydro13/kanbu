@@ -188,14 +188,17 @@ describe('WikiDeduplicationService Integration', () => {
     it('should resolve semantic duplicates via embeddings', async () => {
       // Create mock that returns high similarity for specific pairs
       const mockEmbeddingService = {
-        findSimilarNodes: vi.fn().mockImplementation(
-          async (node: EntityNodeInfo, nodes: EntityNodeInfo[]) => {
+        findSimilarEntities: vi.fn().mockImplementation(
+          async (_context: unknown, name: string) => {
             // Return semantic match for "Artificial Intelligence" -> "AI Systems"
-            if (node.name === 'Artificial Intelligence') {
-              const match = nodes.find(n => n.name === 'AI Systems')
-              if (match) {
-                return [{ node: match, similarity: 0.92 }]
-              }
+            if (name === 'Artificial Intelligence') {
+              return [{
+                nodeId: 'existing-1',
+                name: 'AI Systems',
+                nodeType: 'Concept',
+                score: 0.92,
+                groupId: 'wiki-ws-1',
+              }]
             }
             return []
           }
@@ -241,14 +244,17 @@ describe('WikiDeduplicationService Integration', () => {
 
     it('should skip nodes below embedding threshold', async () => {
       const mockEmbeddingService = {
-        findSimilarNodes: vi.fn().mockImplementation(
-          async (node: EntityNodeInfo, nodes: EntityNodeInfo[]) => {
+        findSimilarEntities: vi.fn().mockImplementation(
+          async (_context: unknown, name: string) => {
             // Return low similarity
-            if (node.name === 'Frontend Framework') {
-              const match = nodes.find(n => n.name === 'Backend System')
-              if (match) {
-                return [{ node: match, similarity: 0.5 }] // Below threshold
-              }
+            if (name === 'Frontend Framework') {
+              return [{
+                nodeId: 'existing-1',
+                name: 'Backend System',
+                nodeType: 'Concept',
+                score: 0.5, // Below threshold
+                groupId: 'wiki-ws-1',
+              }]
             }
             return []
           }
@@ -295,7 +301,9 @@ describe('WikiDeduplicationService Integration', () => {
       // Mock LLM service that recognizes abbreviations
       const mockAiService = {
         detectNodeDuplicates: vi.fn().mockResolvedValue({
-          duplicateUuids: ['existing-1'], // LLM identifies match
+          entityResolutions: [
+            { id: 0, duplicateIdx: 0 }, // First unresolved node matches first existing node (NLP)
+          ],
         }),
       }
 
@@ -429,7 +437,7 @@ describe('WikiDeduplicationService Integration', () => {
 
     it('should not re-process already resolved nodes', async () => {
       const mockEmbeddingService = {
-        findSimilarNodes: vi.fn().mockResolvedValue([]),
+        findSimilarEntities: vi.fn().mockResolvedValue([]),
       }
 
       const serviceWithEmbedding = new WikiDeduplicationService(
@@ -459,12 +467,11 @@ describe('WikiDeduplicationService Integration', () => {
       )
 
       // Embedding should only be called for unresolved node (new-2)
-      expect(mockEmbeddingService.findSimilarNodes).toHaveBeenCalledTimes(1)
-      expect(mockEmbeddingService.findSimilarNodes).toHaveBeenCalledWith(
-        expect.objectContaining({ uuid: 'new-2' }),
-        expect.any(Array),
-        expect.any(Object),
-        expect.any(Number)
+      expect(mockEmbeddingService.findSimilarEntities).toHaveBeenCalledTimes(1)
+      expect(mockEmbeddingService.findSimilarEntities).toHaveBeenCalledWith(
+        expect.any(Object), // context
+        'Deep Learning',    // name
+        expect.any(Object)  // options
       )
     })
   })
