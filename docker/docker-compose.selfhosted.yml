@@ -32,7 +32,7 @@ services:
     volumes:
       - kanbu-db-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-kanbu} -d ${POSTGRES_DB:-kanbu}"]
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-kanbu} -d ${POSTGRES_DB:-kanbu}']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -56,13 +56,20 @@ services:
       JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-me}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost}
       # No REDIS_URL for single-instance deployment
+      # Backup storage configuration
+      BACKUP_STORAGE: ${BACKUP_STORAGE:-local}
+      BACKUP_LOCAL_PATH: /data/backups
+    volumes:
+      # Shared backup storage - same path for dev and prod
+      # Host path configurable via BACKUP_HOST_PATH env var
+      - ${BACKUP_HOST_PATH:-/opt/kanbu-backups}:/data/backups
     # ports:
     #   - "${API_PORT:-3001}:3001"  # Commented out for Coolify - uses internal networking
     expose:
-      - "3001"
+      - '3001'
     healthcheck:
       # Use 127.0.0.1 instead of localhost (Alpine resolves localhost to IPv6 ::1)
-      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3001/health"]
+      test: ['CMD', 'wget', '-q', '--spider', 'http://127.0.0.1:3001/health']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -84,7 +91,7 @@ services:
     # ports:
     #   - "${WEB_PORT:-80}:80"  # Commented out for Coolify - uses internal networking
     expose:
-      - "80"
+      - '80'
     networks:
       - kanbu-network
 
