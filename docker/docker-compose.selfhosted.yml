@@ -59,6 +59,9 @@ services:
       # Backup storage configuration
       BACKUP_STORAGE: ${BACKUP_STORAGE:-local}
       BACKUP_LOCAL_PATH: /data/backups
+      # Environment name for backup subdirectory (e.g., 'dev', 'prod')
+      # Keeps backups separate when multiple instances share storage
+      KANBU_ENVIRONMENT: ${KANBU_ENVIRONMENT:-default}
     volumes:
       # Shared backup storage - same path for dev and prod
       # Host path configurable via BACKUP_HOST_PATH env var

@@ -89,18 +89,27 @@ export interface BackupConfig {
   postgresContainer: string | null;
   postgresContainerPattern: string;
   sourcePath: string;
+  /** Environment name for subdirectory separation (e.g., 'dev', 'prod') */
+  environment: string;
 }
 
 /**
  * Get backup configuration from environment variables
  */
 export function getBackupConfig(): BackupConfig {
+  // KANBU_ENVIRONMENT determines subdirectory for backups (e.g., 'dev', 'prod')
+  // This keeps backups from different environments separate on shared storage
+  const environment = process.env.KANBU_ENVIRONMENT || 'default';
+  const basePath = process.env.BACKUP_LOCAL_PATH || '/data/backups';
+
   return {
     storage: (process.env.BACKUP_STORAGE as 'local' | 'gdrive') || 'local',
-    localPath: process.env.BACKUP_LOCAL_PATH || '/data/backups',
+    // Append environment subdirectory to path
+    localPath: `${basePath}/${environment}`,
     gdrivePath: process.env.BACKUP_GDRIVE_PATH || '/home/robin/GoogleDrive/max-backups',
     postgresContainer: process.env.POSTGRES_CONTAINER || null,
     postgresContainerPattern: process.env.POSTGRES_CONTAINER_PATTERN || 'postgres-',
     sourcePath: process.env.KANBU_SOURCE_PATH || '/app',
+    environment,
   };
 }
