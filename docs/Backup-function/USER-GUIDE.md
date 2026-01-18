@@ -92,8 +92,9 @@ BACKUP_ENCRYPTION_KEY=your-secret-key-here
 | `BACKUP_STORAGE` | Yes | `local` | Storage backend: `local` or `gdrive` |
 | `BACKUP_LOCAL_PATH` | If local | `/data/backups` | Path for local storage |
 | `BACKUP_GDRIVE_PATH` | If gdrive | - | Path to mounted Google Drive |
-| `POSTGRES_CONTAINER` | No | `kanbu-postgres` | Explicit PostgreSQL container name |
-| `POSTGRES_CONTAINER_PATTERN` | No | `postgres-` | Pattern for dynamic container discovery |
+| `BACKUP_PG_MODE` | No | `auto` | Backup mode: `auto`, `direct`, or `docker` |
+| `POSTGRES_CONTAINER` | No | `kanbu-postgres` | PostgreSQL container name (docker mode) |
+| `POSTGRES_CONTAINER_PATTERN` | No | `postgres-` | Pattern for container discovery (docker mode) |
 | `KANBU_SOURCE_PATH` | No | `/app` | Path to Kanbu source code |
 | `BACKUP_ENCRYPTION_KEY` | No | - | Enables AES-256-GCM encryption |
 | `BACKUP_SCHEDULER_MODE` | No | `internal` | Scheduler mode: `internal`, `external`, or `both` |
@@ -137,8 +138,22 @@ BACKUP_TRIGGER_API_KEY=your-secret-api-key
 
 Creates a complete PostgreSQL dump of the Kanbu database.
 
+**Backup Modes:**
+
+The system supports two modes for database backups:
+
+| Mode | How it works | Best for |
+|------|--------------|----------|
+| **Direct** | `pg_dump` via network using `DATABASE_URL` | Containerized deployments (Coolify, Kubernetes) |
+| **Docker** | `docker exec pg_dump` in postgres container | Development, Docker socket access |
+
+Set `BACKUP_PG_MODE` to control the mode:
+- `auto` (default): Tries direct first, falls back to docker
+- `direct`: Force direct mode (requires `DATABASE_URL`)
+- `docker`: Force docker mode (requires Docker socket access)
+
 **Process:**
-1. `pg_dump` exports all tables and data
+1. `pg_dump` exports all tables and data (direct or docker mode)
 2. gzip compresses the output (~90% reduction)
 3. SHA-256 checksum is generated
 4. Optional AES-256-GCM encryption
@@ -615,17 +630,28 @@ mkdir -p /data/backups
 chown -R 1000:1000 /data/backups
 ```
 
-#### "PostgreSQL container not found"
+#### "PostgreSQL container not found" or "No backup method available"
 
-**Cause:** Container name doesn't match configuration.
+**Cause:** Neither direct nor docker mode is available.
 
-**Solution:**
+**Solution for containerized deployments (Coolify):**
+```bash
+# Use direct mode (recommended) - requires DATABASE_URL
+# The API container includes postgresql-client automatically
+BACKUP_PG_MODE=direct
+
+# Verify DATABASE_URL is set
+echo $DATABASE_URL
+```
+
+**Solution for development (Docker mode):**
 ```bash
 # Find the actual container name
 docker ps | grep postgres
 
 # Set explicit name in .env
 POSTGRES_CONTAINER=your-postgres-container-name
+BACKUP_PG_MODE=docker
 
 # Or use pattern matching
 POSTGRES_CONTAINER_PATTERN=postgres-

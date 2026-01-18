@@ -4,10 +4,7 @@
  * Tests for encryption and checksum functionality.
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import * as fs from 'fs/promises'
-import * as path from 'path'
-import * as os from 'os'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 
 // Mock the crypto module
 vi.mock('../crypto', () => ({

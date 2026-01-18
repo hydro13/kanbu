@@ -385,8 +385,10 @@ export function BackupPage() {
                 <div>
                   <div className="text-xs text-muted-foreground uppercase tracking-wider">PostgreSQL</div>
                   <div className="text-sm font-medium mt-1 flex items-center gap-2">
-                    <span className={`w-2 h-2 rounded-full ${backupStatus.data.postgresContainer.found ? 'bg-success' : 'bg-error'}`} />
-                    {backupStatus.data.postgresContainer.name || 'Not found'}
+                    <span className={`w-2 h-2 rounded-full ${backupStatus.data.postgres?.available ? 'bg-success' : 'bg-error'}`} />
+                    {backupStatus.data.postgres?.available
+                      ? `${backupStatus.data.postgres.mode} mode`
+                      : 'Not available'}
                   </div>
                 </div>
                 <div>

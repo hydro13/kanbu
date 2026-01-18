@@ -2,10 +2,10 @@
 
 ## Overview
 
-The backup function in Kanbu is an "emergency solution" that was quickly built during the development phase. It provides basic backup capabilities for both the database and source code, with storage to Google Drive.
+The Kanbu backup system provides enterprise-grade data protection for both database and source code, with support for multiple storage backends, scheduling, encryption, and verification.
 
-**Status:** MVP / Emergency Solution
-**Version:** 1.2.0
+**Status:** Production Ready
+**Version:** 2.0.0
 **Last Updated:** 2026-01-18
 
 ## Current Architecture
@@ -14,81 +14,134 @@ The backup function in Kanbu is an "emergency solution" that was quickly built d
 
 | Component | Location | Description |
 |-----------|----------|-------------|
+| BackupService | `apps/api/src/services/backup/backupService.ts` | Main orchestration service |
 | BackupPage | `apps/web/src/pages/admin/BackupPage.tsx` | Admin UI for backups |
-| admin.ts | `apps/api/src/trpc/procedures/admin.ts` | Backend procedures |
-| system.ts | `packages/mcp-server/src/tools/system.ts` | MCP tools for Claude Code |
+| dockerDiscovery.ts | `apps/api/src/services/backup/container/` | Dual-mode PostgreSQL backup |
+| Storage Backends | `apps/api/src/services/backup/storage/` | Local and Google Drive storage |
+| Scheduler | `apps/api/src/services/backup/scheduler/` | Cron-style scheduling |
+| Crypto | `apps/api/src/services/backup/crypto/` | AES-256-GCM encryption |
+| Verification | `apps/api/src/services/backup/verification/` | SHA-256 checksums |
+
+### Backup Modes
+
+The system supports two modes for database backups:
+
+| Mode | Description | Use Case |
+|------|-------------|----------|
+| **Direct** | `pg_dump` via network connection using `DATABASE_URL` | Containerized deployments (Coolify, Docker) |
+| **Docker** | `docker exec pg_dump` in the postgres container | Development, Docker socket access |
+
+**Auto-detection:** By default (`BACKUP_PG_MODE=auto`), the system tries direct mode first, then falls back to Docker mode.
 
 ### Backup Types
 
 #### 1. Database Backup
-- **Method:** `pg_dump` via Docker exec
-- **Command:** `sudo docker exec kanbu-postgres pg_dump -U kanbu -d kanbu`
-- **Output:** SQL dump file
-- **Location:** `/home/robin/GoogleDrive/max-backups/kanbu_backup_*.sql`
-- **Retention:** Unlimited (no automatic cleanup)
+- **Direct Mode:** `PGPASSWORD=xxx pg_dump -h host -U user -d database`
+- **Docker Mode:** `docker exec container pg_dump -U kanbu -d kanbu`
+- **Output:** Compressed SQL dump (`.sql.gz`) with optional encryption (`.sql.gz.enc`)
+- **Features:** Checksum verification, optional AES-256-GCM encryption
 
 #### 2. Source Code Backup
 - **Method:** `tar -czf` of Kanbu directory
 - **Exclusions:** node_modules, .git, .turbo, dist, .next, *.log, .env.local, coverage
-- **Output:** .tar.gz archive (~30-50 MB)
-- **Location:** `/home/robin/GoogleDrive/max-backups/kanbu_source_*.tar.gz`
-- **Retention:** Unlimited
+- **Output:** `.tar.gz` archive with optional encryption (`.tar.gz.enc`)
 
 ### Data Flow
 
 ```
-┌─────────────────┐      ┌─────────────────┐      ┌─────────────────┐
-│   BackupPage    │─────>│   tRPC API      │─────>│  Shell Commands │
-│   (React)       │      │   (admin.ts)    │      │  (pg_dump/tar)  │
-└─────────────────┘      └─────────────────┘      └────────┬────────┘
-                                                           │
-                                                           ▼
-                                                  ┌─────────────────┐
-                                                  │  /tmp (temp)    │
-                                                  └────────┬────────┘
-                                                           │
-                                                           ▼
-                                                  ┌─────────────────┐
-                                                  │  Google Drive   │
-                                                  │  (rclone mount) │
-                                                  └─────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                        Backup Pipeline                          │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  pg_dump/tar → gzip → SHA-256 checksum → AES-256-GCM → Storage │
+│                                                                 │
+│  CREATE: source → compress → hash → encrypt → save              │
+│  RESTORE: download → decrypt → verify hash → decompress → apply │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-## Limitations
+## Features
 
-### Critical Issues
+### Completed Features
 
-| Issue | Impact | Urgency |
-|-------|--------|---------|
-| **Hardcoded paths** | Only works on MAX machine | High |
-| **Docker container name** | `kanbu-postgres` doesn't work on Coolify | High |
-| **No restore UI** | Manual restore required | High |
-| **No scheduling** | Only manual backups | Medium |
+| Feature | Phase | Status |
+|---------|-------|--------|
+| Dual-mode backup (direct/docker) | 1 | ✅ |
+| Local storage backend | 1 | ✅ |
+| Google Drive storage backend | 1 | ✅ |
+| Environment-based configuration | 1 | ✅ |
+| Backup list & history | 2 | ✅ |
+| Download functionality | 2 | ✅ |
+| Delete with confirmation | 2 | ✅ |
+| Hybrid scheduler (internal/external) | 3 | ✅ |
+| Retention policies | 3 | ✅ |
+| Database restore with safety checks | 3 | ✅ |
+| Webhook notifications | 3 | ✅ |
+| AES-256-GCM encryption | 4 | ✅ |
+| SHA-256 verification | 4 | ✅ |
 
-### Functional Limitations
+### Planned Features
 
-1. **No backup history** - UI doesn't show list of existing backups
-2. **No download button** - User must go to Google Drive
-3. **No selective restore** - All or nothing
-4. **No backup verification** - No integrity checks
-5. **No encryption** - Data stored unencrypted on Google Drive
-6. **No notifications** - No email/webhook after backup
+- Multi-storage replication
+- Point-in-Time Recovery (PITR)
+- Key rotation
 
-### Platform Limitations
+## Configuration
 
-- **MAX Machine Only** - Hardcoded paths to `/home/robin/...`
-- **rclone required** - Google Drive mount must be active
-- **sudo required** - Docker exec requires sudo privileges
-- **Container name hardcoded** - Doesn't work with Coolify's dynamic names
+### Environment Variables
 
-## Current Usage
+```env
+# Storage
+BACKUP_STORAGE=local                  # local | gdrive
+BACKUP_LOCAL_PATH=/data/backups       # For local storage
+BACKUP_GDRIVE_PATH=/path/to/gdrive    # For Google Drive
+
+# PostgreSQL Backup Mode
+BACKUP_PG_MODE=auto                   # auto | direct | docker
+POSTGRES_CONTAINER=kanbu-postgres     # For docker mode
+POSTGRES_CONTAINER_PATTERN=postgres-  # For docker mode pattern matching
+
+# Encryption (optional)
+BACKUP_ENCRYPTION_KEY=your-secret     # Enables AES-256-GCM
+
+# Scheduler
+BACKUP_SCHEDULER_MODE=internal        # internal | external | both
+BACKUP_TRIGGER_API_KEY=secret         # For external triggers
+BACKUP_CRON_TIMEZONE=UTC              # Timezone for cron
+```
+
+### Coolify/Docker Deployment
+
+For containerized deployments, use **direct mode** (default with `BACKUP_PG_MODE=auto`):
+
+```env
+BACKUP_STORAGE=local
+BACKUP_LOCAL_PATH=/data/backups
+BACKUP_PG_MODE=auto                   # Will use direct mode via DATABASE_URL
+```
+
+The API container includes `postgresql-client` and will use the existing `DATABASE_URL` for direct pg_dump.
+
+### Development Machine
+
+For development with Docker access:
+
+```env
+BACKUP_STORAGE=gdrive
+BACKUP_GDRIVE_PATH=/home/user/GoogleDrive/backups
+BACKUP_PG_MODE=docker                 # Use docker exec
+POSTGRES_CONTAINER=kanbu-postgres
+```
+
+## Usage
 
 ### Via Web UI
 
-1. Go to Admin > Backup
-2. Click "Create Database Backup" or "Create Source Backup"
-3. Wait for backup to complete
-4. View result (filename, size, total count)
+1. Go to **Admin → Backup**
+2. Click **Create Database Backup** or **Create Source Backup**
+3. View status, download, verify, or restore backups
+4. Configure schedules and retention policies
 
 ### Via MCP (Claude Code)
 
@@ -97,82 +150,52 @@ kanbu_create_db_backup
 kanbu_create_source_backup
 ```
 
-### Manual Restore
+### Via External Trigger
 
 ```bash
-# Database restore
-cat /path/to/backup.sql | docker exec -i kanbu-postgres psql -U kanbu -d kanbu
-
-# Source restore
-tar -xzf kanbu_source_*.tar.gz
-cd kanbu && pnpm install && pnpm build
+curl -X POST https://kanbu.example.com/api/backup/trigger \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"type": "database"}'
 ```
 
 ## Technical Details
 
-### Database Backup Flow
+### Direct Mode (Containerized)
+
+Uses `DATABASE_URL` to connect directly to PostgreSQL:
 
 ```typescript
-// 1. Generate unique filename
-const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
-const backupFileName = `kanbu_backup_${timestamp}.sql`
-
-// 2. Check Google Drive mount
-await fs.access(GDRIVE_BACKUP_DIR)
-
-// 3. Create pg_dump via Docker
-await execAsync(`sudo docker exec kanbu-postgres pg_dump -U kanbu -d kanbu > "${tempFile}"`)
-
-// 4. Copy to Google Drive
-await fs.copyFile(tempFile, gdrivePath)
-
-// 5. Cleanup temp file
-await fs.unlink(tempFile)
+const command = `PGPASSWORD='${password}' pg_dump -h ${host} -p ${port} -U ${user} -d ${database}`
 ```
 
-### Source Backup Flow
+**Requirements:**
+- `postgresql-client` installed in API container (included in Dockerfile)
+- `DATABASE_URL` environment variable set
+
+### Docker Mode (Development)
+
+Uses Docker exec to run pg_dump in the postgres container:
 
 ```typescript
-// 1. Generate unique filename
-const archiveName = `kanbu_source_${timestamp}.tar.gz`
-
-// 2. Create tar.gz with exclusions
-const excludePatterns = ['node_modules', '.git', '.turbo', 'dist', ...]
-await execAsync(`tar ${excludePatterns} -czf "${tempArchive}" kanbu`)
-
-// 3. Copy to Google Drive
-await fs.copyFile(tempArchive, gdrivePath)
+const command = `docker exec ${container} pg_dump -U kanbu -d kanbu`
 ```
+
+**Requirements:**
+- Docker socket access (`/var/run/docker.sock`)
+- Running PostgreSQL container
 
 ## Dependencies
 
 | Dependency | Version | Usage |
 |------------|---------|-------|
-| rclone | - | Google Drive mount |
-| Docker | 20+ | Database access |
-| PostgreSQL | 15 | pg_dump |
-| tar | GNU | Source archiving |
+| postgresql-client | 16 | Direct pg_dump (in Docker image) |
+| Docker | 20+ | Docker mode backups |
+| gzip | - | Compression |
+| Node.js crypto | - | AES-256-GCM encryption |
 
-## Audit Logging
+## Related Documentation
 
-Both backup types are logged in the audit trail:
-
-```typescript
-await auditService.logSettingsEvent({
-  action: AUDIT_ACTIONS.BACKUP_CREATED,
-  resourceType: 'backup',
-  resourceName: fileName,
-  metadata: { type: 'database|source', fileSize, totalBackups },
-  userId: ctx.user!.id,
-})
-```
-
-## Related Files
-
-- [admin.ts:1461-1640](../../apps/api/src/trpc/procedures/admin.ts#L1461-L1640) - Backend procedures
-- [BackupPage.tsx](../../apps/web/src/pages/admin/BackupPage.tsx) - Frontend component
-- [system.ts:424-494](../../packages/mcp-server/src/tools/system.ts#L424-L494) - MCP handlers
-
-## See Also
-
-- [ROADMAP.md](./ROADMAP.md) - Future plans for the backup function
+- [USER-GUIDE.md](./USER-GUIDE.md) - Complete user guide
+- [ROADMAP.md](./ROADMAP.md) - Development roadmap
+- [DEV-ENVIRONMENT.md](../DEV-ENVIRONMENT.md) - Development setup

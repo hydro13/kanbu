@@ -37,6 +37,9 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3001
 
+# Install PostgreSQL client for direct database backups (no Docker required)
+RUN apk add --no-cache postgresql16-client gzip
+
 # Copy workspace structure to preserve pnpm symlinks
 # Use builder's node_modules (includes generated Prisma client from db:generate)
 COPY --from=builder /app/node_modules ./node_modules

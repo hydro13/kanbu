@@ -19,7 +19,7 @@ import {
   type BackupFile,
   getBackupConfig,
 } from './storage'
-import { execPgDump, getPostgresContainerInfo } from './container/dockerDiscovery'
+import { execPgDump, getPostgresBackupInfo } from './container/dockerDiscovery'
 import {
   isEncryptionEnabled,
   encryptFile,
@@ -320,10 +320,16 @@ export class BackupService {
     storageType: string
     storagePath: string
     storageAccessible: boolean
-    postgresContainer: {
-      found: boolean
-      name: string | null
-      method: string
+    postgres: {
+      available: boolean
+      mode: 'direct' | 'docker' | 'none'
+      details: {
+        pgDumpAvailable: boolean
+        databaseUrlSet: boolean
+        dockerAvailable: boolean
+        containerFound: boolean
+        containerName: string | null
+      }
     }
     backupCounts: {
       database: number
@@ -337,9 +343,9 @@ export class BackupService {
       algorithm: string
     }
   }> {
-    const [storageAccessible, containerInfo, backups] = await Promise.all([
+    const [storageAccessible, backupInfo, backups] = await Promise.all([
       this.storage.isAccessible(),
-      getPostgresContainerInfo(),
+      getPostgresBackupInfo(),
       this.listBackups(),
     ])
 
@@ -347,10 +353,10 @@ export class BackupService {
       storageType: getBackupStorageType(),
       storagePath: this.storage.getPath(),
       storageAccessible,
-      postgresContainer: {
-        found: containerInfo.found,
-        name: containerInfo.containerName,
-        method: containerInfo.method,
+      postgres: {
+        available: backupInfo.available,
+        mode: backupInfo.mode,
+        details: backupInfo.details,
       },
       backupCounts: {
         database: backups.database.length,

@@ -20,22 +20,33 @@ This document describes the planned improvements for the Kanbu backup function, 
 
 **Status:** Complete (2026-01-18)
 
-### 1.1 Dynamic Container Discovery
+### 1.1 Dual-Mode PostgreSQL Backup
 
 **Implementation:** `apps/api/src/services/backup/container/dockerDiscovery.ts`
 
+The system supports two backup modes:
+
 ```typescript
-// Discovery order:
-// 1. POSTGRES_CONTAINER env var (explicit)
-// 2. Pattern matching via POSTGRES_CONTAINER_PATTERN
-// 3. Default fallback: 'kanbu-postgres'
-const container = await findPostgresContainer()
+// Mode selection via BACKUP_PG_MODE:
+// - 'auto' (default): Try direct first, fall back to docker
+// - 'direct': Use pg_dump via network (DATABASE_URL)
+// - 'docker': Use docker exec pg_dump
+
+// Direct mode (for containers without Docker socket)
+PGPASSWORD='xxx' pg_dump -h host -p 5432 -U kanbu -d kanbu
+
+// Docker mode (for development with Docker access)
+docker exec container pg_dump -U kanbu -d kanbu
 ```
 
 **Tasks:**
-- [x] Container discovery via environment variable
-- [x] Fallback to container name pattern matching
-- [x] Error handling when container not found
+- [x] Direct mode via `DATABASE_URL` (network pg_dump)
+- [x] Docker mode via `docker exec` (container pg_dump)
+- [x] Auto-detection with fallback
+- [x] Container discovery via environment variable (docker mode)
+- [x] Fallback to container name pattern matching (docker mode)
+- [x] Error handling when no backup method available
+- [x] `postgresql-client` added to API Dockerfile
 
 ### 1.2 Flexible Storage Backend
 
@@ -66,8 +77,9 @@ interface BackupStorage {
 BACKUP_STORAGE=local|gdrive           # Storage backend
 BACKUP_LOCAL_PATH=/data/backups       # For Coolify/Docker
 BACKUP_GDRIVE_PATH=/path/to/gdrive    # For dev machines with rclone
-POSTGRES_CONTAINER=kanbu-postgres     # Explicit container (optional)
-POSTGRES_CONTAINER_PATTERN=postgres-  # Pattern matching (fallback)
+BACKUP_PG_MODE=auto|direct|docker     # Backup mode (auto-detect by default)
+POSTGRES_CONTAINER=kanbu-postgres     # For docker mode (optional)
+POSTGRES_CONTAINER_PATTERN=postgres-  # For docker mode pattern matching
 KANBU_SOURCE_PATH=/app                # Source backup location
 ```
 
@@ -75,13 +87,17 @@ KANBU_SOURCE_PATH=/app                # Source backup location
 - [x] Environment variables for all backup settings
 - [x] Configuration via `getBackupConfig()` function
 - [x] Documentation in `.env.example` files
+- [x] `BACKUP_PG_MODE` for backup mode selection
 
 ### 1.4 Phase 1 Deliverables
 
-- [x] Backup works on MAX (development) - tested with Google Drive
-- [x] Backup works on Coolify (production) - uses local storage
+- [x] Backup works on MAX (development) - Docker mode with Google Drive
+- [x] Backup works on Coolify (production) - Direct mode with local storage
+- [x] Dual-mode backup: direct (network) and docker (container exec)
+- [x] Auto-detection with fallback between modes
 - [x] Configurable storage backend via `BACKUP_STORAGE`
 - [x] No more hardcoded paths - all configurable via env vars
+- [x] `postgresql-client` included in API Docker image
 
 ---
 

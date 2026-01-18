@@ -26,11 +26,12 @@ export {
   GDriveStorageBackend,
 } from './storage'
 
-// Container discovery
+// Container discovery / PostgreSQL backup
 export {
   findPostgresContainer,
   execPgDump,
-  getPostgresContainerInfo,
+  getPostgresBackupInfo,
+  getPostgresContainerInfo, // Deprecated: use getPostgresBackupInfo
 } from './container/dockerDiscovery'
 
 // Scheduler (Phase 3)
