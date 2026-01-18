@@ -26,6 +26,130 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.1.0-beta.4] - 2026-01-18
+
+### Highlights
+
+- 🔐 **Backup Encryption (Phase 4.1)** - AES-256-GCM encryption at rest
+- ✅ **Backup Verification (Phase 4.4)** - SHA-256 checksum integrity verification
+- 🗄️ **Shared Backup Storage** - Multiple Kanbu instances can share backup storage with environment separation
+- 🛠️ **Pre-commit Hooks** - Automatic linting and formatting with Husky + lint-staged
+
+### Added
+
+#### Backup Encryption & Verification (Phase 4.1 + 4.4)
+
+Enterprise-grade security for backups:
+
+**Encryption:**
+
+- AES-256-GCM encryption at rest
+- Optional: enable by setting `BACKUP_ENCRYPTION_KEY` environment variable
+- PBKDF2 key derivation from passphrase
+- Random IV per file, stored in file header
+- File format: `[16-byte IV][encrypted data][16-byte auth tag]`
+
+**Verification:**
+
+- SHA-256 checksum generated before encryption
+- Checksum stored in `BackupExecution` database record
+- Verify integrity before restore
+- Detects tampering or corruption
+
+**New Database Fields:**
+
+- `is_encrypted` - Whether backup is encrypted
+- `encryption_alg` - Encryption algorithm used
+- `checksum` - SHA-256 hash of original file
+- `checksum_alg` - Checksum algorithm used
+- `verified` - Whether backup has been verified
+- `verified_at` - When verification was performed
+
+#### Dual-Mode PostgreSQL Backup
+
+Smart detection for different deployment environments:
+
+- **Direct mode**: Uses `pg_dump` when PostgreSQL is locally accessible
+- **Docker mode**: Executes via `docker exec` when running in containers
+- Auto-detects Coolify environment (container pattern matching)
+- Consistent backup format across both modes
+
+#### Shared Backup Storage
+
+Multiple Kanbu instances can share storage:
+
+- Configurable host path via `BACKUP_HOST_PATH` environment variable
+- Environment-based subdirectories via `KANBU_ENVIRONMENT` (e.g., `dev`, `prod`)
+- Backups stored in `/data/backups/{environment}/`
+- Prevents backup mixing on shared storage
+
+#### Pre-commit Hooks
+
+Automatic code quality enforcement:
+
+- **Husky** for git hook management
+- **lint-staged** for staged file processing
+- TypeScript/TSX: ESLint + Prettier
+- JavaScript/JSX: Prettier
+- JSON/YAML/Markdown: Prettier
+
+### Fixed
+
+#### tRPC Batch Requests
+
+- Increased Fastify `maxParamLength` from 100 to 5000 characters
+- Fixes 404 errors on batch requests with 5+ procedures
+- Root cause: URL path exceeded 100 character limit
+
+#### Alpine Linux Compatibility
+
+- Use `127.0.0.1` instead of `localhost` in health checks (IPv6 resolution issue)
+- Use `/bin/sh` instead of `/bin/bash` (bash not available in Alpine)
+- Removed `/etc/hosts` modification attempt (Docker mounts it read-only)
+
+#### Other Fixes
+
+- Avatar URL double `/api` prefix issue
+- Missing `BACKUP_DELETED` audit action
+- Checksum and encryption fields not saving to BackupExecution
+- Broken markdown/yaml formatting in community files
+
+### Changed
+
+#### CI/CD Pipeline
+
+- Added Prisma generate step before typecheck and build
+- Build `@kanbu/shared` package before other steps
+- ESLint v9 migration with flat config
+- Prettier formatting for all source files
+
+### Technical
+
+- 20 commits since beta.3
+- New crypto module: `apps/api/src/services/backup/crypto/`
+- New verification service: `apps/api/src/services/backup/verification/`
+- Pre-commit hooks: ~50ms overhead per commit
+
+### Upgrade Notes
+
+**For existing installations:**
+
+No breaking changes. Existing backups remain readable.
+
+**To enable encryption:**
+
+1. Set `BACKUP_ENCRYPTION_KEY` in environment variables
+2. New backups will be encrypted automatically
+3. Old backups can still be restored (backward compatible)
+
+**For shared storage (multiple instances):**
+
+1. Set `BACKUP_HOST_PATH` to shared directory (e.g., `/opt/kanbu-backups`)
+2. Set `KANBU_ENVIRONMENT` per instance (e.g., `dev`, `prod`)
+3. Each instance stores backups in its own subdirectory
+
+---
+
 ## [0.1.0-beta.3] - 2026-01-17
 
 ### Highlights
