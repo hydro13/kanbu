@@ -278,6 +278,11 @@ export class BackupScheduleService {
           fileSize: result.fileSizeKB ? result.fileSizeKB * 1024 : (result.fileSizeMB ? result.fileSizeMB * 1024 * 1024 : null),
           completedAt,
           durationMs,
+          // Phase 4.1 + 4.4: Encryption and checksum fields
+          isEncrypted: result.isEncrypted ?? false,
+          encryptionAlg: result.encryptionAlg,
+          checksum: result.checksum,
+          checksumAlg: result.checksumAlg,
         },
       })
 
@@ -311,6 +316,8 @@ export class BackupScheduleService {
             where: { id: scheduleId },
             select: { name: true },
           }))?.name : undefined,
+          isEncrypted: result.isEncrypted,
+          checksum: result.checksum,
         })
       } catch (notifyError) {
         console.error('[Backup] Failed to send notification:', notifyError)

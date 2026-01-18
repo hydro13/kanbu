@@ -26,6 +26,9 @@ export interface WebhookPayload {
     fileSize: number | null
     durationMs: number | null
     errorMessage: string | null
+    // Phase 4.1 + 4.4: Encryption and verification
+    isEncrypted?: boolean
+    checksum?: string | null
   }
   schedule?: {
     id: number
@@ -43,6 +46,9 @@ export interface BackupResultNotification {
   error?: string
   trigger?: 'scheduled' | 'manual' | 'external'
   scheduleName?: string
+  // Phase 4.1 + 4.4: Encryption and verification
+  isEncrypted?: boolean
+  checksum?: string
 }
 
 /** Input for notifyRestoreResult */
@@ -241,6 +247,8 @@ export class BackupNotificationService {
         fileSize: data.fileSize ?? null,
         durationMs: data.durationMs ?? null,
         errorMessage: data.error ?? null,
+        isEncrypted: data.isEncrypted,
+        checksum: data.checksum ?? null,
       },
       schedule: data.scheduleName ? { id: 0, name: data.scheduleName } : null,
     }
