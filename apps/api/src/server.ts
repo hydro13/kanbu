@@ -73,6 +73,9 @@ export async function createServer() {
     },
     // Increase body limit to 10MB for avatar uploads (base64 encoded images)
     bodyLimit: 10 * 1024 * 1024,
+    // Increase maxParamLength for tRPC batch requests (default 100 is too low)
+    // Batch requests like /trpc/proc1,proc2,proc3,... can exceed 100 chars
+    maxParamLength: 5000,
     // Enable HTTPS if certificates are available
     ...(httpsOptions ? { https: httpsOptions } : {}),
   });
