@@ -21,7 +21,7 @@ import { TRPCError } from '@trpc/server'
 import { randomBytes } from 'crypto'
 import { router, adminProcedure } from '../router'
 import { hashPassword } from '../../lib/auth'
-import { groupPermissionService, scopeService, auditService, AUDIT_ACTIONS } from '../../services'
+import { groupPermissionService, scopeService, auditService, AUDIT_ACTIONS, backupService } from '../../services'
 
 // =============================================================================
 // Input Schemas
@@ -1455,78 +1455,30 @@ export const adminRouter = router({
   // ===========================================================================
 
   /**
-   * Create a database backup and save to Google Drive
-   * Updated: 2026-01-06 - Changed from git to Google Drive storage
+   * Create a database backup
+   * Updated: 2026-01-18 - Refactored to use BackupService with flexible storage
    */
   createBackup: adminProcedure
     .mutation(async ({ ctx }) => {
-      const { exec } = await import('child_process')
-      const { promisify } = await import('util')
-      const execAsync = promisify(exec)
-      const path = await import('path')
-      const fs = await import('fs/promises')
-
-      // Google Drive backup directory (mounted via rclone)
-      const GDRIVE_BACKUP_DIR = '/home/robin/GoogleDrive/max-backups'
-      // Temporary local directory for creating the dump
-      const TEMP_DIR = '/tmp'
-
       try {
-        // Generate timestamp for unique filename
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
-        const backupFileName = `kanbu_backup_${timestamp}.sql`
-        const tempFile = path.join(TEMP_DIR, backupFileName)
-        const gdrivePath = path.join(GDRIVE_BACKUP_DIR, backupFileName)
-
-        // Check if Google Drive is mounted
-        try {
-          await fs.access(GDRIVE_BACKUP_DIR)
-        } catch {
-          throw new Error('Google Drive is not mounted. Please check rclone-gdrive service.')
-        }
-
-        // Create database dump using docker exec
-        const { stderr: dumpErr } = await execAsync(
-          `sudo docker exec kanbu-postgres pg_dump -U kanbu -d kanbu > "${tempFile}"`,
-          { shell: '/bin/bash' }
-        )
-        if (dumpErr && !dumpErr.includes('WARNING')) {
-          throw new Error(`pg_dump error: ${dumpErr}`)
-        }
-
-        // Get file size for confirmation
-        const stats = await fs.stat(tempFile)
-        const fileSizeKB = Math.round(stats.size / 1024)
-
-        // Copy to Google Drive
-        await fs.copyFile(tempFile, gdrivePath)
-
-        // Clean up temp file
-        await fs.unlink(tempFile)
-
-        // Count existing backups (no cleanup - unlimited retention)
-        const files = await fs.readdir(GDRIVE_BACKUP_DIR)
-        const backupFiles = files
-          .filter(f => f.startsWith('kanbu_backup_') && f.endsWith('.sql'))
+        const result = await backupService.createDatabaseBackup()
 
         // Audit logging
         await auditService.logSettingsEvent({
           action: AUDIT_ACTIONS.BACKUP_CREATED,
           resourceType: 'backup',
-          resourceName: backupFileName,
-          metadata: { type: 'database', fileSizeKB, totalBackups: backupFiles.length + 1 },
+          resourceName: result.fileName,
+          metadata: {
+            type: 'database',
+            fileSizeKB: result.fileSizeKB,
+            totalBackups: result.totalBackups,
+            storagePath: result.storagePath,
+          },
           userId: ctx.user!.id,
           ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
         })
 
-        return {
-          success: true,
-          fileName: backupFileName,
-          timestamp,
-          fileSizeKB,
-          totalBackups: backupFiles.length + 1,
-          message: `Backup saved to Google Drive: ${backupFileName}`,
-        }
+        return result
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown error'
         throw new TRPCError({
@@ -1537,104 +1489,122 @@ export const adminRouter = router({
     }),
 
   /**
-   * Create a full source code backup to Google Drive
-   * Includes everything needed to deploy Kanbu on another machine
-   * Added: 2026-01-06
+   * Create a full source code backup
+   * Updated: 2026-01-18 - Refactored to use BackupService with flexible storage
    */
   createSourceBackup: adminProcedure
     .mutation(async ({ ctx }) => {
-      const { exec } = await import('child_process')
-      const { promisify } = await import('util')
-      const execAsync = promisify(exec)
-      const path = await import('path')
-      const fs = await import('fs/promises')
-
-      const KANBU_ROOT = '/home/robin/genx/v6/dev/kanbu'
-      const GDRIVE_BACKUP_DIR = '/home/robin/GoogleDrive/max-backups'
-      const TEMP_DIR = '/tmp'
-
       try {
-        // Check if Google Drive is mounted
-        try {
-          await fs.access(GDRIVE_BACKUP_DIR)
-        } catch {
-          throw new Error('Google Drive is not mounted. Please check rclone-gdrive service.')
-        }
-
-        // Generate timestamp for unique filename
-        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
-        const archiveName = `kanbu_source_${timestamp}.tar.gz`
-        const tempArchive = path.join(TEMP_DIR, archiveName)
-        const gdrivePath = path.join(GDRIVE_BACKUP_DIR, archiveName)
-
-        // Create tar.gz archive excluding node_modules, .git, and other unnecessary files
-        // Using tar with exclude patterns for a clean, deployable backup
-        const excludePatterns = [
-          'node_modules',
-          '.git',
-          '.turbo',
-          'dist',
-          '.next',
-          '*.log',
-          '.env.local',
-          '.DS_Store',
-          'coverage',
-          '.nyc_output',
-        ].map(p => `--exclude='${p}'`).join(' ')
-
-        const { stderr: tarErr } = await execAsync(
-          `cd "${path.dirname(KANBU_ROOT)}" && tar ${excludePatterns} -czf "${tempArchive}" "${path.basename(KANBU_ROOT)}"`,
-          { shell: '/bin/bash', maxBuffer: 50 * 1024 * 1024 }
-        )
-        if (tarErr && !tarErr.includes('Removing leading')) {
-          console.warn('tar warning:', tarErr)
-        }
-
-        // Get archive size
-        const stats = await fs.stat(tempArchive)
-        const fileSizeMB = Math.round(stats.size / (1024 * 1024) * 10) / 10
-
-        // Copy to Google Drive
-        await fs.copyFile(tempArchive, gdrivePath)
-
-        // Clean up temp file
-        await fs.unlink(tempArchive)
-
-        // Count existing backups (no cleanup - unlimited retention)
-        const files = await fs.readdir(GDRIVE_BACKUP_DIR)
-        const sourceBackups = files
-          .filter(f => f.startsWith('kanbu_source_') && f.endsWith('.tar.gz'))
+        const result = await backupService.createSourceBackup()
 
         // Audit logging
         await auditService.logSettingsEvent({
           action: AUDIT_ACTIONS.BACKUP_CREATED,
           resourceType: 'backup',
-          resourceName: archiveName,
-          metadata: { type: 'source', fileSizeMB, totalBackups: sourceBackups.length + 1 },
+          resourceName: result.fileName,
+          metadata: {
+            type: 'source',
+            fileSizeMB: result.fileSizeMB,
+            totalBackups: result.totalBackups,
+            storagePath: result.storagePath,
+          },
           userId: ctx.user!.id,
           ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
         })
 
-        return {
-          success: true,
-          fileName: archiveName,
-          timestamp,
-          fileSizeMB,
-          totalBackups: sourceBackups.length + 1,
-          message: `Source backup saved to Google Drive: ${archiveName}`,
-          instructions: [
-            '1. Download the archive from Google Drive',
-            '2. Extract: tar -xzf ' + archiveName,
-            '3. cd kanbu && pnpm install',
-            '4. Copy .env files and configure for your environment',
-            '5. pnpm db:push && pnpm build && pnpm start',
-          ],
-        }
+        return result
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Unknown error'
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: `Source backup failed: ${message}`,
+        })
+      }
+    }),
+
+  /**
+   * Get backup system status
+   * Added: 2026-01-18 - Phase 2 Self-Service
+   */
+  getBackupStatus: adminProcedure
+    .query(async () => {
+      try {
+        return await backupService.getStatus()
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error'
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: `Failed to get backup status: ${message}`,
+        })
+      }
+    }),
+
+  /**
+   * List all backups
+   * Added: 2026-01-18 - Phase 2 Self-Service
+   */
+  listBackups: adminProcedure
+    .query(async () => {
+      try {
+        return await backupService.listBackups()
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error'
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: `Failed to list backups: ${message}`,
+        })
+      }
+    }),
+
+  /**
+   * Delete a backup file
+   * Added: 2026-01-18 - Phase 2 Self-Service
+   */
+  deleteBackup: adminProcedure
+    .input(z.object({ filename: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        await backupService.deleteBackup(input.filename)
+
+        // Audit logging
+        await auditService.logSettingsEvent({
+          action: AUDIT_ACTIONS.BACKUP_DELETED,
+          resourceType: 'backup',
+          resourceName: input.filename,
+          metadata: {},
+          userId: ctx.user!.id,
+          ipAddress: ctx.req?.headers?.['x-forwarded-for']?.toString() || ctx.req?.socket?.remoteAddress,
+        })
+
+        return { success: true, message: `Backup ${input.filename} deleted` }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error'
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: `Failed to delete backup: ${message}`,
+        })
+      }
+    }),
+
+  /**
+   * Download a backup file
+   * Returns base64 encoded file data for browser download
+   */
+  downloadBackup: adminProcedure
+    .input(z.object({ filename: z.string() }))
+    .mutation(async ({ input }) => {
+      try {
+        const buffer = await backupService.downloadBackup(input.filename)
+        return {
+          filename: input.filename,
+          data: buffer.toString('base64'),
+          size: buffer.length,
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Unknown error'
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: `Failed to download backup: ${message}`,
         })
       }
     }),

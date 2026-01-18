@@ -86,6 +86,7 @@ export const AUDIT_ACTIONS = {
   // SETTINGS
   SETTING_CHANGED: 'setting:changed',
   BACKUP_CREATED: 'backup:created',
+  BACKUP_DELETED: 'backup:deleted',
 
   // API (Fase 9.6)
   API_KEY_CREATED: 'api:key:created',
