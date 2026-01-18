@@ -16,8 +16,14 @@ export function getMediaUrl(path: string | null | undefined): string | undefined
   if (path.startsWith('http://') || path.startsWith('https://')) {
     return path;
   }
+  const apiHost = getApiHost();
+  // Avoid double-prefixing /api when VITE_API_URL is set to /api
+  // and the path already starts with /api (e.g., /api/avatar/2)
+  if (apiHost === '/api' && path.startsWith('/api')) {
+    return path; // Path already has the /api prefix
+  }
   // Prefix relative paths with API host
-  return `${getApiHost()}${path}`;
+  return `${apiHost}${path}`;
 }
 
 /**
