@@ -25,9 +25,10 @@ Kanbu is different:
 | Problem                                                      | Kanbu Solution                                                       |
 | ------------------------------------------------------------ | -------------------------------------------------------------------- |
 | "I need enterprise permissions but Trello doesn't have them" | **NTFS-style ACL** with inheritance, deny rules, and security groups |
-| "I want AI to help but it can't access my tasks"             | **141 MCP tools** - Claude Code works directly in your board         |
+| "I want AI to help but it can't access my tasks"             | **154 MCP tools** - Claude Code works directly in your board         |
 | "GitHub issues and my PM tool are never in sync"             | **Bi-directional GitHub sync** with webhook integration              |
 | "I want to self-host but lose features"                      | Community edition has MORE features than most paid tools             |
+| "My backups are not secure or automated"                     | **Enterprise backup system** with AES-256 encryption & scheduling    |
 | "My team speaks different languages"                         | Each user talks to their own AI assistant in their own language      |
 
 ---
@@ -84,20 +85,22 @@ Kanbu includes **Kanbu Graphiti**, a self-hosted knowledge graph engine (Python/
 
 ### 🔌 AI Integration (Claude Code)
 
-Connect Claude Code to manage your Kanbu projects with **141 available tools**.
+Connect Claude Code to manage your Kanbu projects with **154 available tools**.
 **Status: Production Ready (Hardened)**
 
 **Tool Categories:**
-| Phase | Category | Tools | Examples |
-|-------|----------|-------|----------|
-| **1** | Pairing | 3 | `kanbu_connect`, `kanbu_whoami`, `kanbu_disconnect` |
-| **2** | Core | 11 | `kanbu_list_workspaces`, `kanbu_create_task`, `kanbu_my_tasks` |
-| **3** | Subtasks & Comments | 9 | `kanbu_create_subtask`, `kanbu_add_comment` |
-| **4** | Search & Activity | 5 | `kanbu_search_tasks`, `kanbu_recent_activity` |
-| **5** | Analytics | 4 | `kanbu_project_stats`, `kanbu_velocity` |
-| **6-12** | Admin & Settings | 85 | User management, ACL, Audit logs, Backups, Profile |
-| **9+** | GitHub Connector | 10 | `kanbu_list_github_prs`, `kanbu_get_github_repo` |
-| **13-16** | Hardening & Audit | 14 | Rate limiting, Audit logging (via metadata) |
+
+| Phase     | Category            | Tools | Examples                                                            |
+| --------- | ------------------- | ----- | ------------------------------------------------------------------- |
+| **1**     | Pairing             | 3     | `kanbu_connect`, `kanbu_whoami`, `kanbu_disconnect`                 |
+| **2**     | Core                | 11    | `kanbu_list_workspaces`, `kanbu_create_task`                        |
+| **3**     | Subtasks & Comments | 9     | `kanbu_create_subtask`, `kanbu_add_comment`                         |
+| **4**     | Search & Activity   | 5     | `kanbu_search_tasks`, `kanbu_recent_activity`                       |
+| **5**     | Analytics           | 4     | `kanbu_project_stats`, `kanbu_velocity`                             |
+| **6-12**  | Admin & Settings    | 90    | User management, ACL, Audit logs, Backups, Profile                  |
+| **9+**    | GitHub Connector    | 10    | `kanbu_list_github_prs`, `kanbu_create_github_branch`               |
+| **17**    | Wiki Management     | 18    | `kanbu_list_project_wiki_pages`, `kanbu_create_workspace_wiki_page` |
+| **13-16** | Hardening & Audit   | 4     | Rate limiting, Security hardening                                   |
 
 ### 🐙 GitHub Integration
 
@@ -106,6 +109,19 @@ Connect Claude Code to manage your Kanbu projects with **141 available tools**.
 - **Sync logs**: Complete visibility into what synced and when
 
 <img width="2300" height="1407" alt="GitHub Integration" src="https://github.com/user-attachments/assets/154b6f4f-d23f-4dcf-88db-6b374b168b4c" />
+
+### 💾 Enterprise Backup System
+
+Complete backup solution with enterprise-grade security:
+
+- **AES-256-GCM encryption** at rest (optional, via `BACKUP_ENCRYPTION_KEY`)
+- **SHA-256 checksum verification** to detect tampering or corruption
+- **Dual-mode PostgreSQL backup**: Direct mode (network) or Docker mode (container exec)
+- **Scheduled backups** with cron-style scheduling (internal or external triggers)
+- **Smart retention policies**: Keep last N daily/weekly/monthly backups
+- **Database restore wizard** with pre-restore backup and verification
+- **Webhook notifications** with HMAC-SHA256 signed payloads
+- **Multi-instance support**: Environment-based subdirectories for shared storage
 
 ---
 
