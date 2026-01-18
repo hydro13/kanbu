@@ -32,6 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - 🔐 **Backup Encryption (Phase 4.1)** - AES-256-GCM encryption at rest
 - ✅ **Backup Verification (Phase 4.4)** - SHA-256 checksum integrity verification
+- 📋 **Backup Self-Service (Phase 2)** - List, download, and delete backups via UI
+- ⏰ **Backup Automation (Phase 3)** - Scheduling, retention policies, restore wizard
 - 🗄️ **Shared Backup Storage** - Multiple Kanbu instances can share backup storage with environment separation
 - 🛠️ **Pre-commit Hooks** - Automatic linting and formatting with Husky + lint-staged
 
@@ -73,6 +75,55 @@ Smart detection for different deployment environments:
 - **Docker mode**: Executes via `docker exec` when running in containers
 - Auto-detects Coolify environment (container pattern matching)
 - Consistent backup format across both modes
+
+#### Backup Self-Service (Phase 2)
+
+Complete backup management via admin UI:
+
+- **Backup List**: View all database and source backups with size, date, type
+- **Download**: Download any backup directly from browser
+- **Delete**: Remove old backups with confirmation (double-click safety)
+- **Status Card**: Overview of storage usage and backup counts
+
+#### Backup Automation (Phase 3)
+
+Scheduled backups with smart retention:
+
+**Hybrid Scheduler:**
+
+- `internal` mode: node-cron in API process (default for self-hosted)
+- `external` mode: HTTP trigger endpoints for external cron services
+- `both` mode: Maximum flexibility
+- "Run Now" button for manual execution
+
+**Retention Policies:**
+
+- Configurable per schedule
+- Daily/weekly/monthly bucketing (keep last N of each)
+- Maximum age in days
+- Always keeps at least one backup (safety)
+
+**Database Restore:**
+
+- Restore wizard with safety warnings
+- Auto pre-restore backup (safety net)
+- Multi-step confirmation (2 clicks required)
+- Post-restore verification (table counts)
+- Connection termination before restore
+
+**Notifications:**
+
+- In-app notifications for admins
+- Webhook support with HMAC-SHA256 signatures (`X-Kanbu-Signature`)
+- Configurable: notify on success/failure
+- Test webhook button
+
+**Execution History:**
+
+- Log all backup executions (scheduled, manual, external)
+- Status tracking (running, completed, failed)
+- Duration and file size metrics
+- Success rate statistics
 
 #### Shared Backup Storage
 
