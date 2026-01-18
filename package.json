@@ -1,6 +1,6 @@
 {
     "name": "kanbu",
-    "version": "0.1.0-beta.2",
+    "version": "0.1.0-beta.3",
     "private": true,
     "description": "Kanbu - Project Management System with enterprise-grade ACL and real-time collaboration",
     "author": "Robin Waslander",
