@@ -4,12 +4,6 @@
 
 set -e
 
-# Fix Alpine IPv6 localhost issue: health checks need IPv4
-# Docker regenerates /etc/hosts at startup, so we fix it here
-if grep -q "^::1.*localhost" /etc/hosts 2>/dev/null; then
-    sed -i 's/^::1.*localhost.*$/# ::1 localhost (disabled for health checks)/' /etc/hosts
-fi
-
 echo "========================================"
 echo "  Kanbu API Starting..."
 echo "========================================"
