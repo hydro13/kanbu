@@ -42,6 +42,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'pnpm'
       - run: pnpm install
+      - run: pnpm --filter @kanbu/shared prisma generate
       - run: pnpm typecheck
 
   build:
@@ -60,4 +61,5 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'pnpm'
       - run: pnpm install
+      - run: pnpm --filter @kanbu/shared prisma generate
       - run: pnpm build
