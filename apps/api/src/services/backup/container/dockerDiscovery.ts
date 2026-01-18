@@ -67,7 +67,7 @@ function getBackupMode(): BackupMode {
  */
 async function isPgDumpAvailable(): Promise<boolean> {
   try {
-    await execAsync('which pg_dump', { shell: '/bin/bash' })
+    await execAsync('which pg_dump', { shell: '/bin/sh' })
     return true
   } catch {
     return false
@@ -79,7 +79,7 @@ async function isPgDumpAvailable(): Promise<boolean> {
  */
 async function isDockerAvailable(): Promise<boolean> {
   try {
-    await execAsync('docker --version', { shell: '/bin/bash' })
+    await execAsync('docker --version', { shell: '/bin/sh' })
     return true
   } catch {
     return false
@@ -135,7 +135,7 @@ export async function findPostgresContainer(): Promise<string> {
 async function containerExists(name: string): Promise<boolean> {
   try {
     const { stdout } = await execAsync(`docker ps --filter "name=^${name}$" --format "{{.Names}}"`, {
-      shell: '/bin/bash',
+      shell: '/bin/sh',
     })
     return stdout.trim() === name
   } catch {
@@ -149,7 +149,7 @@ async function containerExists(name: string): Promise<boolean> {
 async function findContainerByPattern(pattern: string): Promise<string | null> {
   try {
     const { stdout } = await execAsync(`docker ps --format "{{.Names}}" | grep "${pattern}" | head -1`, {
-      shell: '/bin/bash',
+      shell: '/bin/sh',
     })
     const containerName = stdout.trim()
     return containerName || null
@@ -177,7 +177,7 @@ async function execPgDumpDirect(outputPath: string): Promise<{ success: boolean;
     const command = `PGPASSWORD='${config.password}' pg_dump -h ${config.host} -p ${config.port} -U ${config.user} -d ${config.database} > "${outputPath}"`
 
     const { stderr } = await execAsync(command, {
-      shell: '/bin/bash',
+      shell: '/bin/sh',
       maxBuffer: 50 * 1024 * 1024, // 50MB buffer for large dumps
     })
 
@@ -211,7 +211,7 @@ async function execPgDumpDocker(outputPath: string): Promise<{ success: boolean;
         : `sudo docker exec ${container} pg_dump -U kanbu -d kanbu > "${outputPath}"`
 
     const { stderr } = await execAsync(command, {
-      shell: '/bin/bash',
+      shell: '/bin/sh',
       maxBuffer: 50 * 1024 * 1024, // 50MB buffer for large dumps
     })
 
