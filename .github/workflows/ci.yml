@@ -43,6 +43,7 @@ jobs:
           cache: 'pnpm'
       - run: pnpm install
       - run: pnpm --filter @kanbu/shared prisma generate
+      - run: pnpm --filter @kanbu/shared build
       - run: pnpm typecheck
 
   build:
@@ -62,4 +63,5 @@ jobs:
           cache: 'pnpm'
       - run: pnpm install
       - run: pnpm --filter @kanbu/shared prisma generate
+      - run: pnpm --filter @kanbu/shared build
       - run: pnpm build
