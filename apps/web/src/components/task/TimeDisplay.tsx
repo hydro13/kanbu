@@ -13,7 +13,7 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { Clock, AlertTriangle, CheckCircle } from 'lucide-react'
+import { Clock, AlertTriangle, CheckCircle } from 'lucide-react';
 
 // =============================================================================
 // Types
@@ -21,15 +21,15 @@ import { Clock, AlertTriangle, CheckCircle } from 'lucide-react'
 
 export interface TimeDisplayProps {
   /** Time spent in hours */
-  timeSpent: number
+  timeSpent: number;
   /** Estimated time in hours */
-  timeEstimated?: number
+  timeEstimated?: number;
   /** Show icon */
-  showIcon?: boolean
+  showIcon?: boolean;
   /** Size variant */
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'sm' | 'md' | 'lg';
   /** Show comparison bar */
-  showBar?: boolean
+  showBar?: boolean;
 }
 
 // =============================================================================
@@ -40,46 +40,43 @@ export interface TimeDisplayProps {
  * Format hours as human-readable string
  */
 export function formatTime(hours: number): string {
-  if (hours <= 0) return '0m'
+  if (hours <= 0) return '0m';
 
-  const totalMinutes = Math.round(hours * 60)
-  const h = Math.floor(totalMinutes / 60)
-  const m = totalMinutes % 60
+  const totalMinutes = Math.round(hours * 60);
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
 
-  if (h === 0) return `${m}m`
-  if (m === 0) return `${h}h`
-  return `${h}h ${m}m`
+  if (h === 0) return `${m}m`;
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}m`;
 }
 
 /**
  * Format hours as short string for compact display
  */
 export function formatTimeShort(hours: number): string {
-  if (hours <= 0) return '0m'
-  if (hours < 1) return `${Math.round(hours * 60)}m`
-  return `${hours.toFixed(1)}h`
+  if (hours <= 0) return '0m';
+  if (hours < 1) return `${Math.round(hours * 60)}m`;
+  return `${hours.toFixed(1)}h`;
 }
 
 /**
  * Calculate percentage of time used
  */
 function getTimePercentage(spent: number, estimated: number): number {
-  if (estimated <= 0) return 0
-  return Math.min(200, Math.round((spent / estimated) * 100))
+  if (estimated <= 0) return 0;
+  return Math.min(200, Math.round((spent / estimated) * 100));
 }
 
 /**
  * Get status based on time comparison
  */
-function getTimeStatus(
-  spent: number,
-  estimated: number
-): 'under' | 'on-track' | 'over' {
-  if (estimated <= 0) return 'on-track'
-  const percentage = (spent / estimated) * 100
-  if (percentage < 90) return 'under'
-  if (percentage <= 110) return 'on-track'
-  return 'over'
+function getTimeStatus(spent: number, estimated: number): 'under' | 'on-track' | 'over' {
+  if (estimated <= 0) return 'on-track';
+  const percentage = (spent / estimated) * 100;
+  if (percentage < 90) return 'under';
+  if (percentage <= 110) return 'on-track';
+  return 'over';
 }
 
 // =============================================================================
@@ -102,7 +99,7 @@ const sizeClasses = {
     icon: 'w-5 h-5',
     gap: 'gap-2',
   },
-}
+};
 
 // =============================================================================
 // TimeDisplay Component
@@ -115,32 +112,30 @@ export function TimeDisplay({
   size = 'md',
   showBar = false,
 }: TimeDisplayProps) {
-  const hasEstimate = timeEstimated !== undefined && timeEstimated > 0
-  const percentage = hasEstimate ? getTimePercentage(timeSpent, timeEstimated) : 0
-  const status = hasEstimate ? getTimeStatus(timeSpent, timeEstimated) : 'on-track'
+  const hasEstimate = timeEstimated !== undefined && timeEstimated > 0;
+  const percentage = hasEstimate ? getTimePercentage(timeSpent, timeEstimated) : 0;
+  const status = hasEstimate ? getTimeStatus(timeSpent, timeEstimated) : 'on-track';
 
-  const classes = sizeClasses[size]
+  const classes = sizeClasses[size];
 
   const statusColors = {
     under: 'text-green-600 dark:text-green-400',
     'on-track': 'text-blue-600 dark:text-blue-400',
     over: 'text-red-600 dark:text-red-400',
-  }
+  };
 
   const barColors = {
     under: 'bg-green-500',
     'on-track': 'bg-blue-500',
     over: 'bg-red-500',
-  }
+  };
 
   return (
     <div className="space-y-1">
       <div className={`flex items-center ${classes.gap}`}>
         {showIcon && <Clock className={`${classes.icon} text-gray-400`} />}
 
-        <span className={`${classes.text} font-medium`}>
-          {formatTime(timeSpent)}
-        </span>
+        <span className={`${classes.text} font-medium`}>{formatTime(timeSpent)}</span>
 
         {hasEstimate && (
           <>
@@ -150,9 +145,7 @@ export function TimeDisplay({
             </span>
 
             {/* Status indicator */}
-            {status === 'over' && (
-              <AlertTriangle className={`${classes.icon} text-red-500`} />
-            )}
+            {status === 'over' && <AlertTriangle className={`${classes.icon} text-red-500`} />}
             {status === 'under' && percentage > 0 && (
               <CheckCircle className={`${classes.icon} text-green-500`} />
             )}
@@ -172,12 +165,10 @@ export function TimeDisplay({
 
       {/* Percentage text */}
       {showBar && hasEstimate && (
-        <span className={`${classes.text} ${statusColors[status]}`}>
-          {percentage}% of estimate
-        </span>
+        <span className={`${classes.text} ${statusColors[status]}`}>{percentage}% of estimate</span>
       )}
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -185,24 +176,20 @@ export function TimeDisplay({
 // =============================================================================
 
 export interface TimeCompactProps {
-  timeSpent: number
-  timeEstimated?: number
-  showEstimate?: boolean
+  timeSpent: number;
+  timeEstimated?: number;
+  showEstimate?: boolean;
 }
 
-export function TimeCompact({
-  timeSpent,
-  timeEstimated,
-  showEstimate = true,
-}: TimeCompactProps) {
-  const hasEstimate = timeEstimated !== undefined && timeEstimated > 0
-  const status = hasEstimate ? getTimeStatus(timeSpent, timeEstimated) : 'on-track'
+export function TimeCompact({ timeSpent, timeEstimated, showEstimate = true }: TimeCompactProps) {
+  const hasEstimate = timeEstimated !== undefined && timeEstimated > 0;
+  const status = hasEstimate ? getTimeStatus(timeSpent, timeEstimated) : 'on-track';
 
   const statusColors = {
     under: '',
     'on-track': '',
     over: 'text-red-500',
-  }
+  };
 
   return (
     <span className={`text-xs text-gray-500 dark:text-gray-400 ${statusColors[status]}`}>
@@ -211,7 +198,7 @@ export function TimeCompact({
         <span className="text-gray-400">/{formatTimeShort(timeEstimated)}</span>
       )}
     </span>
-  )
+  );
 }
 
-export default TimeDisplay
+export default TimeDisplay;

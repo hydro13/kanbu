@@ -18,87 +18,87 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
+import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
 // =============================================================================
 // Types
 // =============================================================================
 
-export type ProjectRole = 'OWNER' | 'MANAGER' | 'MEMBER' | 'VIEWER'
+export type ProjectRole = 'OWNER' | 'MANAGER' | 'MEMBER' | 'VIEWER';
 
 export interface ProjectGitHubInfo {
-  repoCount: number
+  repoCount: number;
   primaryRepo: {
-    fullName: string
-    syncEnabled: boolean
-    lastSyncAt: string | null
-  } | null
+    fullName: string;
+    syncEnabled: boolean;
+    lastSyncAt: string | null;
+  } | null;
 }
 
 export interface Project {
-  id: number
-  name: string
-  identifier: string | null
-  description: string | null
-  isPublic: boolean
-  isActive: boolean
-  startDate: string | null
-  endDate: string | null
-  lastActivityAt: string | null
-  createdAt: string
-  taskCount: number
-  memberCount: number
-  userRole: ProjectRole | null
+  id: number;
+  name: string;
+  identifier: string | null;
+  description: string | null;
+  isPublic: boolean;
+  isActive: boolean;
+  startDate: string | null;
+  endDate: string | null;
+  lastActivityAt: string | null;
+  createdAt: string;
+  taskCount: number;
+  memberCount: number;
+  userRole: ProjectRole | null;
   // GitHub integration info
-  hasGitHub?: boolean
-  github?: ProjectGitHubInfo | null
+  hasGitHub?: boolean;
+  github?: ProjectGitHubInfo | null;
 }
 
 export interface ProjectDetail extends Project {
-  workspaceId: number
-  settings: unknown
-  updatedAt: string
+  workspaceId: number;
+  settings: unknown;
+  updatedAt: string;
   columns: Array<{
-    id: number
-    title: string
-    description: string | null
-    position: number
-    taskLimit: number
-    isCollapsed: boolean
-    showClosed: boolean
-  }>
+    id: number;
+    title: string;
+    description: string | null;
+    position: number;
+    taskLimit: number;
+    isCollapsed: boolean;
+    showClosed: boolean;
+  }>;
   swimlanes: Array<{
-    id: number
-    name: string
-    description: string | null
-    position: number
-  }>
+    id: number;
+    name: string;
+    description: string | null;
+    position: number;
+  }>;
 }
 
 export interface ProjectState {
-  currentProject: ProjectDetail | null
-  projects: Project[]
-  isLoading: boolean
-  error: string | null
+  currentProject: ProjectDetail | null;
+  projects: Project[];
+  isLoading: boolean;
+  error: string | null;
 }
 
 // =============================================================================
 // Local Storage
 // =============================================================================
 
-const PROJECT_KEY = 'kanbu_current_project'
+const PROJECT_KEY = 'kanbu_current_project';
 
 function loadCurrentProjectId(): number | null {
   if (typeof window === 'undefined') {
-    return null
+    return null;
   }
 
-  const stored = localStorage.getItem(PROJECT_KEY)
+  const stored = localStorage.getItem(PROJECT_KEY);
   if (stored) {
-    const id = parseInt(stored, 10)
-    return isNaN(id) ? null : id
+    const id = parseInt(stored, 10);
+    return isNaN(id) ? null : id;
   }
-  return null
+  return null;
 }
 
 // =============================================================================
@@ -110,7 +110,7 @@ const initialState: ProjectState = {
   projects: [],
   isLoading: false,
   error: null,
-}
+};
 
 // =============================================================================
 // Slice
@@ -124,9 +124,9 @@ export const projectSlice = createSlice({
      * Set loading state
      */
     setLoading: (state, action: PayloadAction<boolean>) => {
-      state.isLoading = action.payload
+      state.isLoading = action.payload;
       if (action.payload) {
-        state.error = null
+        state.error = null;
       }
     },
 
@@ -134,29 +134,29 @@ export const projectSlice = createSlice({
      * Set error state
      */
     setError: (state, action: PayloadAction<string | null>) => {
-      state.error = action.payload
-      state.isLoading = false
+      state.error = action.payload;
+      state.isLoading = false;
     },
 
     /**
      * Set projects list
      */
     setProjects: (state, action: PayloadAction<Project[]>) => {
-      state.projects = action.payload
-      state.isLoading = false
-      state.error = null
+      state.projects = action.payload;
+      state.isLoading = false;
+      state.error = null;
     },
 
     /**
      * Set current project (with full details)
      */
     setCurrentProject: (state, action: PayloadAction<ProjectDetail | null>) => {
-      state.currentProject = action.payload
+      state.currentProject = action.payload;
 
       if (action.payload) {
-        localStorage.setItem(PROJECT_KEY, action.payload.id.toString())
+        localStorage.setItem(PROJECT_KEY, action.payload.id.toString());
       } else {
-        localStorage.removeItem(PROJECT_KEY)
+        localStorage.removeItem(PROJECT_KEY);
       }
     },
 
@@ -164,7 +164,7 @@ export const projectSlice = createSlice({
      * Select project by ID (sets current project from list, but needs detail fetch)
      */
     selectProject: (_state, action: PayloadAction<number>) => {
-      localStorage.setItem(PROJECT_KEY, action.payload.toString())
+      localStorage.setItem(PROJECT_KEY, action.payload.toString());
       // Note: The actual project detail should be fetched via tRPC
       // This just saves the selection for next load
     },
@@ -173,26 +173,26 @@ export const projectSlice = createSlice({
      * Add a new project to the list
      */
     addProject: (state, action: PayloadAction<Project>) => {
-      state.projects.unshift(action.payload)
+      state.projects.unshift(action.payload);
     },
 
     /**
      * Update a project in the list
      */
     updateProject: (state, action: PayloadAction<Partial<Project> & { id: number }>) => {
-      const index = state.projects.findIndex((p) => p.id === action.payload.id)
+      const index = state.projects.findIndex((p) => p.id === action.payload.id);
       if (index !== -1) {
         state.projects[index] = {
           ...state.projects[index]!,
           ...action.payload,
-        }
+        };
       }
       // Update current project if it's the same
       if (state.currentProject?.id === action.payload.id) {
         state.currentProject = {
           ...state.currentProject,
           ...action.payload,
-        }
+        };
       }
     },
 
@@ -200,11 +200,11 @@ export const projectSlice = createSlice({
      * Remove a project from the list
      */
     removeProject: (state, action: PayloadAction<number>) => {
-      state.projects = state.projects.filter((p) => p.id !== action.payload)
+      state.projects = state.projects.filter((p) => p.id !== action.payload);
       // Clear current if it was removed
       if (state.currentProject?.id === action.payload) {
-        state.currentProject = null
-        localStorage.removeItem(PROJECT_KEY)
+        state.currentProject = null;
+        localStorage.removeItem(PROJECT_KEY);
       }
     },
 
@@ -212,11 +212,11 @@ export const projectSlice = createSlice({
      * Clear all project state (when switching workspace or logout)
      */
     clearProjects: (state) => {
-      state.currentProject = null
-      state.projects = []
-      state.isLoading = false
-      state.error = null
-      localStorage.removeItem(PROJECT_KEY)
+      state.currentProject = null;
+      state.projects = [];
+      state.isLoading = false;
+      state.error = null;
+      localStorage.removeItem(PROJECT_KEY);
     },
 
     /**
@@ -229,17 +229,17 @@ export const projectSlice = createSlice({
       if (state.currentProject) {
         const index = state.currentProject.columns.findIndex(
           (c) => c.id === action.payload.columnId
-        )
+        );
         if (index !== -1) {
           state.currentProject.columns[index] = {
             ...state.currentProject.columns[index]!,
             ...action.payload.updates,
-          }
+          };
         }
       }
     },
   },
-})
+});
 
 // =============================================================================
 // Actions & Selectors
@@ -256,17 +256,17 @@ export const {
   removeProject,
   clearProjects,
   updateColumn,
-} = projectSlice.actions
+} = projectSlice.actions;
 
 // Selectors
-export const selectProjectState = (state: { project: ProjectState }) => state.project
+export const selectProjectState = (state: { project: ProjectState }) => state.project;
 export const selectCurrentProject = (state: { project: ProjectState }) =>
-  state.project.currentProject
-export const selectProjects = (state: { project: ProjectState }) => state.project.projects
-export const selectProjectLoading = (state: { project: ProjectState }) => state.project.isLoading
-export const selectProjectError = (state: { project: ProjectState }) => state.project.error
+  state.project.currentProject;
+export const selectProjects = (state: { project: ProjectState }) => state.project.projects;
+export const selectProjectLoading = (state: { project: ProjectState }) => state.project.isLoading;
+export const selectProjectError = (state: { project: ProjectState }) => state.project.error;
 
 // Helper to get last selected project ID (for initial load)
-export const getLastProjectId = loadCurrentProjectId
+export const getLastProjectId = loadCurrentProjectId;
 
-export default projectSlice.reducer
+export default projectSlice.reducer;

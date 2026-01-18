@@ -19,17 +19,17 @@
 // =============================================================================
 
 export interface ProgressBarProps {
-  progress: number // 0-100
-  showPercentage?: boolean
-  size?: 'sm' | 'md' | 'lg'
-  animated?: boolean
+  progress: number; // 0-100
+  showPercentage?: boolean;
+  size?: 'sm' | 'md' | 'lg';
+  animated?: boolean;
 }
 
 export interface SubtaskProgressProps {
-  completed: number
-  total: number
-  showCount?: boolean
-  size?: 'sm' | 'md' | 'lg'
+  completed: number;
+  total: number;
+  showCount?: boolean;
+  size?: 'sm' | 'md' | 'lg';
 }
 
 // =============================================================================
@@ -40,7 +40,7 @@ const SIZE_CLASSES: Record<string, { bar: string; text: string }> = {
   sm: { bar: 'h-1', text: 'text-xs' },
   md: { bar: 'h-1.5', text: 'text-xs' },
   lg: { bar: 'h-2', text: 'text-sm' },
-}
+};
 
 // =============================================================================
 // Helper Functions
@@ -48,11 +48,11 @@ const SIZE_CLASSES: Record<string, { bar: string; text: string }> = {
 
 function getProgressColor(progress: number): string {
   if (progress === 100) {
-    return 'bg-green-500 dark:bg-green-400'
+    return 'bg-green-500 dark:bg-green-400';
   } else if (progress > 0) {
-    return 'bg-blue-500 dark:bg-blue-400'
+    return 'bg-blue-500 dark:bg-blue-400';
   }
-  return 'bg-gray-300 dark:bg-gray-500'
+  return 'bg-gray-300 dark:bg-gray-500';
 }
 
 // =============================================================================
@@ -65,9 +65,9 @@ export function ProgressBar({
   size = 'md',
   animated = true,
 }: ProgressBarProps) {
-  const clampedProgress = Math.max(0, Math.min(100, progress))
-  const sizeConfig = SIZE_CLASSES[size] ?? SIZE_CLASSES.md!
-  const progressColor = getProgressColor(clampedProgress)
+  const clampedProgress = Math.max(0, Math.min(100, progress));
+  const sizeConfig = SIZE_CLASSES[size] ?? SIZE_CLASSES.md!;
+  const progressColor = getProgressColor(clampedProgress);
 
   return (
     <div className="w-full">
@@ -89,7 +89,7 @@ export function ProgressBar({
         </span>
       )}
     </div>
-  )
+  );
 }
 
 export function SubtaskProgress({
@@ -98,14 +98,16 @@ export function SubtaskProgress({
   showCount = true,
   size = 'md',
 }: SubtaskProgressProps) {
-  const progress = total > 0 ? (completed / total) * 100 : 0
-  const sizeConfig = SIZE_CLASSES[size] ?? SIZE_CLASSES.md!
+  const progress = total > 0 ? (completed / total) * 100 : 0;
+  const sizeConfig = SIZE_CLASSES[size] ?? SIZE_CLASSES.md!;
 
   return (
     <div className="w-full">
       <ProgressBar progress={progress} size={size} />
       {showCount && (
-        <div className={`flex items-center justify-between ${sizeConfig.text} text-gray-500 dark:text-gray-400 mt-0.5`}>
+        <div
+          className={`flex items-center justify-between ${sizeConfig.text} text-gray-500 dark:text-gray-400 mt-0.5`}
+        >
           <span>
             {completed}/{total} subtasks
           </span>
@@ -113,7 +115,7 @@ export function SubtaskProgress({
         </div>
       )}
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -121,8 +123,8 @@ export function SubtaskProgress({
 // =============================================================================
 
 export function ProgressIndicator({ progress }: { progress: number }) {
-  const clampedProgress = Math.max(0, Math.min(100, progress))
-  const progressColor = getProgressColor(clampedProgress)
+  const clampedProgress = Math.max(0, Math.min(100, progress));
+  const progressColor = getProgressColor(clampedProgress);
 
   return (
     <div className="flex items-center gap-1.5">
@@ -136,7 +138,7 @@ export function ProgressIndicator({ progress }: { progress: number }) {
         {Math.round(clampedProgress)}%
       </span>
     </div>
-  )
+  );
 }
 
-export default ProgressBar
+export default ProgressBar;

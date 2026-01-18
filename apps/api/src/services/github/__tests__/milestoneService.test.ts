@@ -13,8 +13,8 @@
  * =============================================================================
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { prisma } from '../../../lib/prisma'
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { prisma } from '../../../lib/prisma';
 import {
   upsertMilestone,
   getMilestones,
@@ -23,7 +23,7 @@ import {
   getMilestoneStats,
   deleteMilestone,
   syncMilestoneFromWebhook,
-} from '../milestoneService'
+} from '../milestoneService';
 
 // Mock Prisma
 vi.mock('../../../lib/prisma', () => ({
@@ -40,12 +40,12 @@ vi.mock('../../../lib/prisma', () => ({
       findFirst: vi.fn(),
     },
   },
-}))
+}));
 
 describe('milestoneService', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-  })
+    vi.clearAllMocks();
+  });
 
   // ===========================================================================
   // upsertMilestone
@@ -53,7 +53,7 @@ describe('milestoneService', () => {
 
   describe('upsertMilestone', () => {
     it('should create or update a milestone', async () => {
-      vi.mocked(prisma.gitHubMilestone.upsert).mockResolvedValue({ id: 1 } as any)
+      vi.mocked(prisma.gitHubMilestone.upsert).mockResolvedValue({ id: 1 } as any);
 
       const result = await upsertMilestone({
         repositoryId: 1,
@@ -66,9 +66,9 @@ describe('milestoneService', () => {
         openIssues: 5,
         closedIssues: 10,
         htmlUrl: 'https://github.com/owner/repo/milestone/1',
-      })
+      });
 
-      expect(result).toEqual({ id: 1 })
+      expect(result).toEqual({ id: 1 });
       expect(prisma.gitHubMilestone.upsert).toHaveBeenCalledWith({
         where: {
           repositoryId_milestoneNumber: {
@@ -87,9 +87,9 @@ describe('milestoneService', () => {
           state: 'open',
         }),
         select: { id: true },
-      })
-    })
-  })
+      });
+    });
+  });
 
   // ===========================================================================
   // getMilestones
@@ -114,25 +114,25 @@ describe('milestoneService', () => {
           createdAt: new Date(),
           updatedAt: new Date(),
         },
-      ] as any)
+      ] as any);
 
-      const result = await getMilestones(1)
+      const result = await getMilestones(1);
 
-      expect(result).toHaveLength(1)
-      expect(result[0]!.progress).toBe(70) // 7/(3+7) * 100 = 70%
-    })
+      expect(result).toHaveLength(1);
+      expect(result[0]!.progress).toBe(70); // 7/(3+7) * 100 = 70%
+    });
 
     it('should filter by state', async () => {
-      vi.mocked(prisma.gitHubMilestone.findMany).mockResolvedValue([])
+      vi.mocked(prisma.gitHubMilestone.findMany).mockResolvedValue([]);
 
-      await getMilestones(1, { state: 'open' })
+      await getMilestones(1, { state: 'open' });
 
       expect(prisma.gitHubMilestone.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           where: { repositoryId: 1, state: 'open' },
         })
-      )
-    })
+      );
+    });
 
     it('should handle zero issues without division by zero', async () => {
       vi.mocked(prisma.gitHubMilestone.findMany).mockResolvedValue([
@@ -152,13 +152,13 @@ describe('milestoneService', () => {
           createdAt: new Date(),
           updatedAt: new Date(),
         },
-      ] as any)
+      ] as any);
 
-      const result = await getMilestones(1)
+      const result = await getMilestones(1);
 
-      expect(result[0]!.progress).toBe(0)
-    })
-  })
+      expect(result[0]!.progress).toBe(0);
+    });
+  });
 
   // ===========================================================================
   // getMilestoneByNumber
@@ -181,23 +181,23 @@ describe('milestoneService', () => {
         htmlUrl: 'https://github.com/owner/repo/milestone/1',
         createdAt: new Date(),
         updatedAt: new Date(),
-      } as any)
+      } as any);
 
-      const result = await getMilestoneByNumber(1, 1)
+      const result = await getMilestoneByNumber(1, 1);
 
-      expect(result).not.toBeNull()
-      expect(result!.title).toBe('v1.0.0')
-      expect(result!.progress).toBe(100)
-    })
+      expect(result).not.toBeNull();
+      expect(result!.title).toBe('v1.0.0');
+      expect(result!.progress).toBe(100);
+    });
 
     it('should return null when milestone not found', async () => {
-      vi.mocked(prisma.gitHubMilestone.findUnique).mockResolvedValue(null)
+      vi.mocked(prisma.gitHubMilestone.findUnique).mockResolvedValue(null);
 
-      const result = await getMilestoneByNumber(1, 999)
+      const result = await getMilestoneByNumber(1, 999);
 
-      expect(result).toBeNull()
-    })
-  })
+      expect(result).toBeNull();
+    });
+  });
 
   // ===========================================================================
   // getProjectMilestones
@@ -205,15 +205,15 @@ describe('milestoneService', () => {
 
   describe('getProjectMilestones', () => {
     it('should return empty array when no repository linked', async () => {
-      vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue(null)
+      vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue(null);
 
-      const result = await getProjectMilestones(1)
+      const result = await getProjectMilestones(1);
 
-      expect(result).toEqual([])
-    })
+      expect(result).toEqual([]);
+    });
 
     it('should return milestones for linked repository', async () => {
-      vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue({ id: 1 } as any)
+      vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue({ id: 1 } as any);
       vi.mocked(prisma.gitHubMilestone.findMany).mockResolvedValue([
         {
           id: 1,
@@ -231,14 +231,14 @@ describe('milestoneService', () => {
           createdAt: new Date(),
           updatedAt: new Date(),
         },
-      ] as any)
+      ] as any);
 
-      const result = await getProjectMilestones(1)
+      const result = await getProjectMilestones(1);
 
-      expect(result).toHaveLength(1)
-      expect(result[0]!.progress).toBe(50)
-    })
-  })
+      expect(result).toHaveLength(1);
+      expect(result[0]!.progress).toBe(50);
+    });
+  });
 
   // ===========================================================================
   // getMilestoneStats
@@ -246,9 +246,9 @@ describe('milestoneService', () => {
 
   describe('getMilestoneStats', () => {
     it('should return zero stats when no repository linked', async () => {
-      vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue(null)
+      vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue(null);
 
-      const result = await getMilestoneStats(1)
+      const result = await getMilestoneStats(1);
 
       expect(result).toEqual({
         total: 0,
@@ -256,19 +256,19 @@ describe('milestoneService', () => {
         closed: 0,
         overdue: 0,
         upcomingDue: 0,
-      })
-    })
+      });
+    });
 
     it('should return aggregated stats', async () => {
-      vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue({ id: 1 } as any)
+      vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue({ id: 1 } as any);
       vi.mocked(prisma.gitHubMilestone.count)
         .mockResolvedValueOnce(10) // total
         .mockResolvedValueOnce(6) // open
         .mockResolvedValueOnce(4) // closed
         .mockResolvedValueOnce(2) // overdue
-        .mockResolvedValueOnce(1) // upcomingDue
+        .mockResolvedValueOnce(1); // upcomingDue
 
-      const result = await getMilestoneStats(1)
+      const result = await getMilestoneStats(1);
 
       expect(result).toEqual({
         total: 10,
@@ -276,9 +276,9 @@ describe('milestoneService', () => {
         closed: 4,
         overdue: 2,
         upcomingDue: 1,
-      })
-    })
-  })
+      });
+    });
+  });
 
   // ===========================================================================
   // syncMilestoneFromWebhook
@@ -286,7 +286,7 @@ describe('milestoneService', () => {
 
   describe('syncMilestoneFromWebhook', () => {
     it('should upsert milestone on create/edit action', async () => {
-      vi.mocked(prisma.gitHubMilestone.upsert).mockResolvedValue({ id: 1 } as any)
+      vi.mocked(prisma.gitHubMilestone.upsert).mockResolvedValue({ id: 1 } as any);
 
       const result = await syncMilestoneFromWebhook(1, 'created', {
         number: 1,
@@ -299,14 +299,14 @@ describe('milestoneService', () => {
         open_issues: 5,
         closed_issues: 10,
         html_url: 'https://github.com/owner/repo/milestone/1',
-      })
+      });
 
-      expect(result).toEqual({ id: 1 })
-      expect(prisma.gitHubMilestone.upsert).toHaveBeenCalled()
-    })
+      expect(result).toEqual({ id: 1 });
+      expect(prisma.gitHubMilestone.upsert).toHaveBeenCalled();
+    });
 
     it('should delete milestone on delete action', async () => {
-      vi.mocked(prisma.gitHubMilestone.delete).mockResolvedValue({ id: 1 } as any)
+      vi.mocked(prisma.gitHubMilestone.delete).mockResolvedValue({ id: 1 } as any);
 
       const result = await syncMilestoneFromWebhook(1, 'deleted', {
         number: 1,
@@ -316,12 +316,12 @@ describe('milestoneService', () => {
         open_issues: 0,
         closed_issues: 0,
         html_url: 'https://github.com/owner/repo/milestone/1',
-      })
+      });
 
-      expect(result).toBeNull()
-      expect(prisma.gitHubMilestone.delete).toHaveBeenCalled()
-    })
-  })
+      expect(result).toBeNull();
+      expect(prisma.gitHubMilestone.delete).toHaveBeenCalled();
+    });
+  });
 
   // ===========================================================================
   // deleteMilestone
@@ -329,9 +329,9 @@ describe('milestoneService', () => {
 
   describe('deleteMilestone', () => {
     it('should delete a milestone', async () => {
-      vi.mocked(prisma.gitHubMilestone.delete).mockResolvedValue({ id: 1 } as any)
+      vi.mocked(prisma.gitHubMilestone.delete).mockResolvedValue({ id: 1 } as any);
 
-      await deleteMilestone(1, 1)
+      await deleteMilestone(1, 1);
 
       expect(prisma.gitHubMilestone.delete).toHaveBeenCalledWith({
         where: {
@@ -340,7 +340,7 @@ describe('milestoneService', () => {
             milestoneNumber: 1,
           },
         },
-      })
-    })
-  })
-})
+      });
+    });
+  });
+});

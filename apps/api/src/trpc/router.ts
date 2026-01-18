@@ -49,40 +49,38 @@ import { rateLimitService } from '../services/rateLimitService';
 const ASSISTANT_RATE_LIMIT = 100;
 
 const rateLimitMiddleware = middleware(async ({ ctx, next }) => {
-    if (ctx.assistantContext) {
-        const key = `binding:${ctx.assistantContext.bindingId}`;
-        if (!rateLimitService.check(key, ASSISTANT_RATE_LIMIT)) {
-            throw new TRPCError({
-                code: 'TOO_MANY_REQUESTS',
-                message: 'Rate limit exceeded for Assistant binding',
-            });
-        }
+  if (ctx.assistantContext) {
+    const key = `binding:${ctx.assistantContext.bindingId}`;
+    if (!rateLimitService.check(key, ASSISTANT_RATE_LIMIT)) {
+      throw new TRPCError({
+        code: 'TOO_MANY_REQUESTS',
+        message: 'Rate limit exceeded for Assistant binding',
+      });
     }
-    return next();
+  }
+  return next();
 });
 
 /**
  * Protected procedure - requires authentication
  * Adds user to context with non-null type
  */
-export const protectedProcedure = publicProcedure
-  .use(rateLimitMiddleware)
-  .use(
-    middleware(async ({ ctx, next }) => {
-      if (!ctx.user) {
-        throw new TRPCError({
-          code: 'UNAUTHORIZED',
-          message: 'You must be logged in to access this resource',
-        });
-      }
-      return next({
-        ctx: {
-          ...ctx,
-          user: ctx.user as AuthUser, // Assert non-null
-        },
+export const protectedProcedure = publicProcedure.use(rateLimitMiddleware).use(
+  middleware(async ({ ctx, next }) => {
+    if (!ctx.user) {
+      throw new TRPCError({
+        code: 'UNAUTHORIZED',
+        message: 'You must be logged in to access this resource',
       });
-    })
-  );
+    }
+    return next({
+      ctx: {
+        ...ctx,
+        user: ctx.user as AuthUser, // Assert non-null
+      },
+    });
+  })
+);
 
 /**
  * Admin procedure - requires admin access via ACL or Domain Admins group
@@ -146,7 +144,7 @@ export const adminProcedure = protectedProcedure.use(
       where: { userId: user.id },
       select: { groupId: true },
     });
-    const groupIds = userGroupIds.map(g => g.groupId);
+    const groupIds = userGroupIds.map((g) => g.groupId);
 
     if (groupIds.length > 0) {
       const groupAclEntries = await ctx.prisma.aclEntry.findMany({
@@ -165,7 +163,7 @@ export const adminProcedure = protectedProcedure.use(
 
     // Check if any entry has PERMISSIONS bit (workspace admin)
     const isWorkspaceAdmin = workspaceAclEntries.some(
-      entry => (entry.permissions & ACL_PERMISSIONS.PERMISSIONS) !== 0
+      (entry) => (entry.permissions & ACL_PERMISSIONS.PERMISSIONS) !== 0
     );
 
     if (isWorkspaceAdmin) {

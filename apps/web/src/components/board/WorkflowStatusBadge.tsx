@@ -14,17 +14,17 @@
  * =============================================================================
  */
 
-import { trpc } from '@/lib/trpc'
-import { CheckCircle2, XCircle, Loader2, GitBranch, AlertCircle } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { trpc } from '@/lib/trpc';
+import { CheckCircle2, XCircle, Loader2, GitBranch, AlertCircle } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface WorkflowStatusBadgeProps {
-  taskId: number
-  className?: string
+  taskId: number;
+  className?: string;
 }
 
 // =============================================================================
@@ -32,30 +32,30 @@ interface WorkflowStatusBadgeProps {
 // =============================================================================
 
 function StatusIcon({ status, conclusion }: { status: string; conclusion: string | null }) {
-  const iconClass = 'w-3.5 h-3.5'
+  const iconClass = 'w-3.5 h-3.5';
 
   if (status === 'completed') {
     switch (conclusion) {
       case 'success':
-        return <CheckCircle2 className={cn(iconClass, 'text-green-500')} />
+        return <CheckCircle2 className={cn(iconClass, 'text-green-500')} />;
       case 'failure':
-        return <XCircle className={cn(iconClass, 'text-red-500')} />
+        return <XCircle className={cn(iconClass, 'text-red-500')} />;
       case 'cancelled':
-        return <AlertCircle className={cn(iconClass, 'text-gray-400')} />
+        return <AlertCircle className={cn(iconClass, 'text-gray-400')} />;
       default:
-        return <AlertCircle className={cn(iconClass, 'text-gray-400')} />
+        return <AlertCircle className={cn(iconClass, 'text-gray-400')} />;
     }
   }
 
   if (status === 'in_progress') {
-    return <Loader2 className={cn(iconClass, 'text-yellow-500 animate-spin')} />
+    return <Loader2 className={cn(iconClass, 'text-yellow-500 animate-spin')} />;
   }
 
   if (status === 'queued' || status === 'waiting') {
-    return <Loader2 className={cn(iconClass, 'text-blue-400')} />
+    return <Loader2 className={cn(iconClass, 'text-blue-400')} />;
   }
 
-  return null
+  return null;
 }
 
 // =============================================================================
@@ -69,22 +69,22 @@ export function WorkflowStatusBadge({ taskId, className }: WorkflowStatusBadgePr
       staleTime: 60000, // Cache for 1 minute
       refetchInterval: false, // Don't auto-refresh on cards
     }
-  )
+  );
 
   // No workflow runs
   if (!isLoading && (!data?.runs || data.runs.length === 0)) {
-    return null
+    return null;
   }
 
   // Loading state - show nothing to avoid layout shift
   if (isLoading) {
-    return null
+    return null;
   }
 
-  const latestRun = data?.runs[0]
+  const latestRun = data?.runs[0];
 
   if (!latestRun) {
-    return null
+    return null;
   }
 
   return (
@@ -98,7 +98,7 @@ export function WorkflowStatusBadge({ taskId, className }: WorkflowStatusBadgePr
       <GitBranch className="w-3 h-3" />
       <StatusIcon status={latestRun.status} conclusion={latestRun.conclusion} />
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -106,12 +106,12 @@ export function WorkflowStatusBadge({ taskId, className }: WorkflowStatusBadgePr
 // =============================================================================
 
 interface GitBranchIndicatorProps {
-  branchName: string | null
-  className?: string
+  branchName: string | null;
+  className?: string;
 }
 
 export function GitBranchIndicator({ branchName, className }: GitBranchIndicatorProps) {
-  if (!branchName) return null
+  if (!branchName) return null;
 
   return (
     <div
@@ -123,7 +123,7 @@ export function GitBranchIndicator({ branchName, className }: GitBranchIndicator
     >
       <GitBranch className="w-3 h-3" />
     </div>
-  )
+  );
 }
 
-export default WorkflowStatusBadge
+export default WorkflowStatusBadge;

@@ -12,15 +12,15 @@ This document describes the architecture and strategy for the rich text editor i
 
 After evaluating multiple editor frameworks, [Lexical](https://lexical.dev/) was chosen:
 
-| Framework | Considered | Reason for/against |
-|-----------|-----------|------------------|
-| **Lexical** | Chosen | Extensible, performant, React-first, TypeScript, actively maintained by Meta |
-| Monaco Editor | Rejected | Too heavy, primarily for code editing, not for rich text |
-| TipTap | Considered | Good option, but Lexical is newer and more performant |
-| Slate | Considered | More complex API, less active development |
-| Quill | Rejected | Outdated, less flexible |
-| Plate | Considered | Based on Slate, extra abstraction layer |
-| Editor.js | Rejected | Block-based, less suitable for inline editing |
+| Framework     | Considered | Reason for/against                                                           |
+| ------------- | ---------- | ---------------------------------------------------------------------------- |
+| **Lexical**   | Chosen     | Extensible, performant, React-first, TypeScript, actively maintained by Meta |
+| Monaco Editor | Rejected   | Too heavy, primarily for code editing, not for rich text                     |
+| TipTap        | Considered | Good option, but Lexical is newer and more performant                        |
+| Slate         | Considered | More complex API, less active development                                    |
+| Quill         | Rejected   | Outdated, less flexible                                                      |
+| Plate         | Considered | Based on Slate, extra abstraction layer                                      |
+| Editor.js     | Rejected   | Block-based, less suitable for inline editing                                |
 
 ### Lexical Advantages
 
@@ -60,6 +60,7 @@ After evaluating multiple editor frameworks, [Lexical](https://lexical.dev/) was
 First, we build a reusable `RichTextEditor` component that can be deployed everywhere.
 
 #### 1.1 Workspace Descriptions
+
 - **Location**: Workspace settings, workspace overview
 - **Features**:
   - Rich text formatting
@@ -68,6 +69,7 @@ First, we build a reusable `RichTextEditor` component that can be deployed every
   - Links to workspace wiki pages
 
 #### 1.2 Project Descriptions
+
 - **Location**: Project settings, project overview
 - **Features**:
   - Rich text formatting
@@ -77,6 +79,7 @@ First, we build a reusable `RichTextEditor` component that can be deployed every
   - Links to parent workspace wiki
 
 #### 1.3 Task Context/Descriptions
+
 - **Location**: Task detail modal/page
 - **Features**:
   - Rich text formatting
@@ -87,6 +90,7 @@ First, we build a reusable `RichTextEditor` component that can be deployed every
   - Checklists (inline subtasks)
 
 #### 1.4 Sticky Notes
+
 - **Location**: Board view, dashboard
 - **Features**:
   - Compact rich text
@@ -99,6 +103,7 @@ First, we build a reusable `RichTextEditor` component that can be deployed every
 Hierarchical wiki system integrated into the module structure.
 
 #### 2.1 Architecture
+
 ```
 Workspace
 ├── Workspace Wiki
@@ -115,6 +120,7 @@ Workspace
 ```
 
 #### 2.2 Wiki Features
+
 - **WYSIWYG editing** with Lexical
 - **Wiki-links**: `[[Page Name]]` syntax
 - **Backlinks**: Automatically show which pages link to current page
@@ -128,17 +134,20 @@ Workspace
 Advanced knowledge management features.
 
 #### 3.1 Link Intelligence
+
 - **Bi-directional links**: Automatic backlink tracking
 - **Link suggestions**: AI-powered suggestions for relevant links
 - **Orphan detection**: Identify pages without links
 - **Broken link detection**: Detect deleted pages
 
 #### 3.2 Tags & Indexes
+
 - **Tag pages**: Automatically generated pages per tag
 - **Tag hierarchy**: Nested tags (`#project/frontend/components`)
 - **Index pages**: Overview pages per category
 
 #### 3.3 RAG Integration
+
 - **Semantic search**: Search by meaning, not just keywords
 - **Related content**: Automatically show related pages
 - **Knowledge graph visualization**: Visual representation of connections
@@ -157,10 +166,10 @@ interface RichTextContent {
   plainText: string;
   // Extracted links for graph building
   links: {
-    wikiLinks: string[];      // [[Page Name]]
-    taskLinks: string[];      // #TASK-123
-    userMentions: string[];   // @username
-    externalUrls: string[];   // https://...
+    wikiLinks: string[]; // [[Page Name]]
+    taskLinks: string[]; // #TASK-123
+    userMentions: string[]; // @username
+    externalUrls: string[]; // https://...
   };
   // Media references
   media: {
@@ -231,21 +240,21 @@ model WikiPageVersion {
 ```typescript
 interface RichTextEditorProps {
   // Content
-  initialContent?: string;          // Lexical JSON state
+  initialContent?: string; // Lexical JSON state
   onChange?: (content: RichTextContent) => void;
 
   // Features toggles
   features?: {
-    formatting?: boolean;           // Bold, italic, etc.
-    headings?: boolean;             // H1, H2, H3
-    lists?: boolean;                // Bullet, numbered, checklist
-    codeBlocks?: boolean;           // Code with syntax highlighting
-    media?: boolean;                // Image/video embeds
-    links?: boolean;                // External links
-    wikiLinks?: boolean;            // [[wiki links]]
-    mentions?: boolean;             // @mentions
-    tables?: boolean;               // Table support
-    speechToText?: boolean;         // Voice input
+    formatting?: boolean; // Bold, italic, etc.
+    headings?: boolean; // H1, H2, H3
+    lists?: boolean; // Bullet, numbered, checklist
+    codeBlocks?: boolean; // Code with syntax highlighting
+    media?: boolean; // Image/video embeds
+    links?: boolean; // External links
+    wikiLinks?: boolean; // [[wiki links]]
+    mentions?: boolean; // @mentions
+    tables?: boolean; // Table support
+    speechToText?: boolean; // Voice input
   };
 
   // Context for link resolution
@@ -262,13 +271,14 @@ interface RichTextEditorProps {
 
   // Mode
   readOnly?: boolean;
-  compact?: boolean;               // For sticky notes
+  compact?: boolean; // For sticky notes
 }
 ```
 
 ## Implementation Roadmap
 
 ### Sprint 1: Foundation
+
 - [x] Lexical package installation
 - [x] Basic `RichTextEditor` component
 - [x] Toolbar with formatting options
@@ -276,12 +286,14 @@ interface RichTextEditorProps {
 - [x] JSON serialization/deserialization
 
 ### Sprint 2: Media & Links
+
 - [x] Image upload & embed
 - [x] Video embed (YouTube, Vimeo)
 - [x] External link support
 - [x] Link preview cards
 
 ### Sprint 3: Integration
+
 - [ ] Workspace description editor
 - [ ] Project description editor
 - [ ] Task context editor
@@ -289,24 +301,28 @@ interface RichTextEditorProps {
 - [ ] Database migration for rich text fields
 
 ### Sprint 4: Wiki Foundation
+
 - [ ] WikiPage model & API
 - [ ] Wiki page CRUD
 - [ ] `[[wiki-link]]` node
 - [ ] Basic wiki navigation
 
 ### Sprint 5: Wiki Advanced
+
 - [ ] Backlinks tracking & display
 - [ ] Tag system
 - [ ] Version history
 - [ ] Wiki search
 
 ### Sprint 6: Knowledge Graph
+
 - [ ] Link graph data model
 - [ ] Graph visualization component
 - [ ] RAG integration planning
 - [ ] Related content suggestions
 
 ### Sprint 7: Speech & AI
+
 - [ ] Speech-to-text integration
 - [ ] AI-powered link suggestions
 - [ ] Auto-tagging
@@ -315,6 +331,7 @@ interface RichTextEditorProps {
 ## Dependencies
 
 ### NPM Packages
+
 ```json
 {
   "lexical": "^0.17.0",
@@ -331,6 +348,7 @@ interface RichTextEditorProps {
 ```
 
 ### Optional (Future)
+
 ```json
 {
   "yjs": "^13.6.0",
@@ -348,6 +366,6 @@ interface RichTextEditorProps {
 
 ## Revision History
 
-| Date | Version | Change |
-|-------|--------|-----------|
-| 2026-01-07 | 1.0 | Initial roadmap created |
+| Date       | Version | Change                  |
+| ---------- | ------- | ----------------------- |
+| 2026-01-07 | 1.0     | Initial roadmap created |

@@ -19,9 +19,9 @@
 // =============================================================================
 
 export interface TaskCardSkeletonProps {
-  showTags?: boolean
-  showProgress?: boolean
-  showAssignees?: boolean
+  showTags?: boolean;
+  showProgress?: boolean;
+  showAssignees?: boolean;
 }
 
 // =============================================================================
@@ -29,19 +29,11 @@ export interface TaskCardSkeletonProps {
 // =============================================================================
 
 function SkeletonBox({ className }: { className: string }) {
-  return (
-    <div
-      className={`animate-pulse bg-gray-200 dark:bg-gray-600 rounded ${className}`}
-    />
-  )
+  return <div className={`animate-pulse bg-gray-200 dark:bg-gray-600 rounded ${className}`} />;
 }
 
 function SkeletonCircle({ className }: { className: string }) {
-  return (
-    <div
-      className={`animate-pulse bg-gray-200 dark:bg-gray-600 rounded-full ${className}`}
-    />
-  )
+  return <div className={`animate-pulse bg-gray-200 dark:bg-gray-600 rounded-full ${className}`} />;
 }
 
 // =============================================================================
@@ -101,7 +93,7 @@ export function TaskCardSkeleton({
         )}
       </div>
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -112,14 +104,10 @@ export function TaskCardSkeletonList({ count = 3 }: { count?: number }) {
   return (
     <div className="space-y-2">
       {Array.from({ length: count }).map((_, i) => (
-        <TaskCardSkeleton
-          key={i}
-          showTags={i === 0}
-          showProgress={i === 1}
-        />
+        <TaskCardSkeleton key={i} showTags={i === 0} showProgress={i === 1} />
       ))}
     </div>
-  )
+  );
 }
 
-export default TaskCardSkeleton
+export default TaskCardSkeleton;

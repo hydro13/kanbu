@@ -16,10 +16,10 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { ProjectLayout } from '@/components/layout/ProjectLayout'
-import { Button } from '@/components/ui/button'
+import { useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { ProjectLayout } from '@/components/layout/ProjectLayout';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardHeader,
@@ -27,16 +27,16 @@ import {
   CardDescription,
   CardContent,
   CardFooter,
-} from '@/components/ui/card'
-import { useAppSelector } from '@/store'
-import { selectCurrentWorkspace } from '@/store/workspaceSlice'
-import { trpc, getMediaUrl } from '@/lib/trpc'
+} from '@/components/ui/card';
+import { useAppSelector } from '@/store';
+import { selectCurrentWorkspace } from '@/store/workspaceSlice';
+import { trpc, getMediaUrl } from '@/lib/trpc';
 
 // =============================================================================
 // Types
 // =============================================================================
 
-type ProjectMemberRole = 'MANAGER' | 'MEMBER' | 'VIEWER'
+type ProjectMemberRole = 'MANAGER' | 'MEMBER' | 'VIEWER';
 
 // =============================================================================
 // Helpers
@@ -46,15 +46,18 @@ type ProjectMemberRole = 'MANAGER' | 'MEMBER' | 'VIEWER'
  * Get initials from a name (first letter of first and last word)
  */
 function getInitials(name: string | null | undefined): string {
-  if (!name) return '?'
-  const parts = name.trim().split(/\s+/).filter(p => p.length > 0)
-  if (parts.length === 0) return '?'
-  const first = parts[0]
+  if (!name) return '?';
+  const parts = name
+    .trim()
+    .split(/\s+/)
+    .filter((p) => p.length > 0);
+  if (parts.length === 0) return '?';
+  const first = parts[0];
   if (parts.length === 1 || !first) {
-    return first ? first.charAt(0).toUpperCase() : '?'
+    return first ? first.charAt(0).toUpperCase() : '?';
   }
-  const last = parts[parts.length - 1]
-  return (first.charAt(0) + (last ? last.charAt(0) : '')).toUpperCase()
+  const last = parts[parts.length - 1];
+  return (first.charAt(0) + (last ? last.charAt(0) : '')).toUpperCase();
 }
 
 // =============================================================================
@@ -62,80 +65,77 @@ function getInitials(name: string | null | undefined): string {
 // =============================================================================
 
 export function ProjectMembersPage() {
-  const { projectIdentifier } = useParams<{ projectIdentifier: string }>()
-  const navigate = useNavigate()
-  const currentWorkspace = useAppSelector(selectCurrentWorkspace)
-  const utils = trpc.useUtils()
+  const { projectIdentifier } = useParams<{ projectIdentifier: string }>();
+  const navigate = useNavigate();
+  const currentWorkspace = useAppSelector(selectCurrentWorkspace);
+  const utils = trpc.useUtils();
 
   // Form states
-  const [addMemberId, setAddMemberId] = useState('')
-  const [addMemberRole, setAddMemberRole] = useState<ProjectMemberRole>('MEMBER')
+  const [addMemberId, setAddMemberId] = useState('');
+  const [addMemberRole, setAddMemberRole] = useState<ProjectMemberRole>('MEMBER');
 
   // Fetch project by identifier (SEO-friendly URL)
   const projectQuery = trpc.project.getByIdentifier.useQuery(
     { identifier: projectIdentifier! },
     { enabled: !!projectIdentifier }
-  )
+  );
 
   // Get project ID from fetched data
-  const projectId = projectQuery.data?.id ?? 0
+  const projectId = projectQuery.data?.id ?? 0;
 
-  const membersQuery = trpc.project.getMembers.useQuery(
-    { projectId },
-    { enabled: projectId > 0 }
-  )
+  const membersQuery = trpc.project.getMembers.useQuery({ projectId }, { enabled: projectId > 0 });
 
   const workspaceMembersQuery = trpc.workspace.getMembers.useQuery(
     { workspaceId: currentWorkspace?.id ?? 0 },
     { enabled: !!currentWorkspace }
-  )
+  );
 
   // Mutations
   const addMemberMutation = trpc.project.addMember.useMutation({
     onSuccess: () => {
-      setAddMemberId('')
-      utils.project.getMembers.invalidate({ projectId })
+      setAddMemberId('');
+      utils.project.getMembers.invalidate({ projectId });
     },
-  })
+  });
 
   const removeMemberMutation = trpc.project.removeMember.useMutation({
     onSuccess: () => {
-      utils.project.getMembers.invalidate({ projectId })
+      utils.project.getMembers.invalidate({ projectId });
     },
-  })
+  });
 
   const updateRoleMutation = trpc.project.updateMemberRole.useMutation({
     onSuccess: () => {
-      utils.project.getMembers.invalidate({ projectId })
+      utils.project.getMembers.invalidate({ projectId });
     },
-  })
+  });
 
   // Handlers
   const handleAddMember = () => {
-    const userId = parseInt(addMemberId, 10)
-    if (isNaN(userId)) return
+    const userId = parseInt(addMemberId, 10);
+    if (isNaN(userId)) return;
     addMemberMutation.mutate({
       projectId,
       userId,
       role: addMemberRole,
-    })
-  }
+    });
+  };
 
   const handleRemoveMember = (memberId: number) => {
-    if (!confirm('Are you sure you want to remove this member?')) return
+    if (!confirm('Are you sure you want to remove this member?')) return;
     removeMemberMutation.mutate({
       projectId,
       userId: memberId,
-    })
-  }
+    });
+  };
 
   const handleUpdateRole = (memberId: number, newRole: ProjectMemberRole) => {
     updateRoleMutation.mutate({
       projectId,
       userId: memberId,
       role: newRole,
-    })
-  }
+    });
+  };
 
   // Loading/error states
   if (projectQuery.isLoading) {
@@ -145,7 +145,7 @@ export function ProjectMembersPage() {
           <p className="text-muted-foreground">Loading project...</p>
         </div>
       </ProjectLayout>
-    )
+    );
   }
 
   if (!projectQuery.data) {
@@ -155,17 +155,17 @@ export function ProjectMembersPage() {
           <p className="text-muted-foreground">Project not found</p>
         </div>
       </ProjectLayout>
-    )
+    );
   }
 
-  const project = projectQuery.data
-  const userRole = project.userRole
-  const isManager = userRole === 'OWNER' || userRole === 'MANAGER'
+  const project = projectQuery.data;
+  const userRole = project.userRole;
+  const isManager = userRole === 'OWNER' || userRole === 'MANAGER';
 
   // Get workspace members not already in project
-  const availableMembers = workspaceMembersQuery.data?.filter(
-    (wm) => !membersQuery.data?.some((pm) => pm.id === wm.id)
-  ) ?? []
+  const availableMembers =
+    workspaceMembersQuery.data?.filter((wm) => !membersQuery.data?.some((pm) => pm.id === wm.id)) ??
+    [];
 
   return (
     <ProjectLayout>
@@ -173,9 +173,7 @@ export function ProjectMembersPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-page-title-lg tracking-tight text-foreground">Project Members</h1>
-            <p className="text-muted-foreground">
-              Manage members of {project.name}
-            </p>
+            <p className="text-muted-foreground">Manage members of {project.name}</p>
           </div>
           <Button variant="outline" onClick={() => navigate(`/project/${projectId}/board`)}>
             Back to Board
@@ -222,7 +220,9 @@ export function ProjectMembersPage() {
                       {isManager && member.role !== 'OWNER' ? (
                         <select
                           value={member.role}
-                          onChange={(e) => handleUpdateRole(member.id, e.target.value as ProjectMemberRole)}
+                          onChange={(e) =>
+                            handleUpdateRole(member.id, e.target.value as ProjectMemberRole)
+                          }
                           className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm"
                         >
                           <option value="VIEWER">Viewer</option>
@@ -248,9 +248,7 @@ export function ProjectMembersPage() {
                   </div>
                 ))}
                 {membersQuery.data?.length === 0 && (
-                  <p className="text-muted-foreground text-sm text-center py-4">
-                    No members yet
-                  </p>
+                  <p className="text-muted-foreground text-sm text-center py-4">No members yet</p>
                 )}
               </div>
             )}
@@ -332,11 +330,11 @@ export function ProjectMembersPage() {
         )}
       </div>
     </ProjectLayout>
-  )
+  );
 }
 
 // =============================================================================
 // Exports
 // =============================================================================
 
-export default ProjectMembersPage
+export default ProjectMembersPage;

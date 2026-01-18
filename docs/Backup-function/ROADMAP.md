@@ -4,13 +4,13 @@ This document describes the planned improvements for the Kanbu backup function, 
 
 ## Phase Overview
 
-| Phase | Name | Focus | Status |
-|-------|------|-------|--------|
-| 0 | Current State | Emergency solution | Complete |
-| 1 | Production Ready | Coolify compatibility | **Complete** |
-| 2 | Self-Service | List, Download, Delete | **Complete** |
-| 3 | Automation | Scheduling, Restore & monitoring | **Complete** |
-| 4 | Enterprise | Encryption & multi-storage | **Partial** (4.1 ✅, 4.4 ✅) |
+| Phase | Name             | Focus                            | Status                       |
+| ----- | ---------------- | -------------------------------- | ---------------------------- |
+| 0     | Current State    | Emergency solution               | Complete                     |
+| 1     | Production Ready | Coolify compatibility            | **Complete**                 |
+| 2     | Self-Service     | List, Download, Delete           | **Complete**                 |
+| 3     | Automation       | Scheduling, Restore & monitoring | **Complete**                 |
+| 4     | Enterprise       | Encryption & multi-storage       | **Partial** (4.1 ✅, 4.4 ✅) |
 
 ---
 
@@ -40,6 +40,7 @@ docker exec container pg_dump -U kanbu -d kanbu
 ```
 
 **Tasks:**
+
 - [x] Direct mode via `DATABASE_URL` (network pg_dump)
 - [x] Docker mode via `docker exec` (container pg_dump)
 - [x] Auto-detection with fallback
@@ -54,17 +55,18 @@ docker exec container pg_dump -U kanbu -d kanbu
 
 ```typescript
 interface BackupStorage {
-  save(data: Buffer, filename: string): Promise<string>
-  saveFromFile(sourcePath: string, filename: string): Promise<string>
-  list(type: BackupType): Promise<BackupFile[]>
-  delete(filename: string): Promise<void>
-  download(filename: string): Promise<Buffer>
-  getPath(): string
-  isAccessible(): Promise<boolean>
+  save(data: Buffer, filename: string): Promise<string>;
+  saveFromFile(sourcePath: string, filename: string): Promise<string>;
+  list(type: BackupType): Promise<BackupFile[]>;
+  delete(filename: string): Promise<void>;
+  download(filename: string): Promise<Buffer>;
+  getPath(): string;
+  isAccessible(): Promise<boolean>;
 }
 ```
 
 **Tasks:**
+
 - [x] Define storage interface (`storage/types.ts`)
 - [x] LocalStorageBackend implementation (`storage/localStorageBackend.ts`)
 - [x] GDriveStorageBackend implementation (`storage/gdriveStorageBackend.ts`)
@@ -84,6 +86,7 @@ KANBU_SOURCE_PATH=/app                # Source backup location
 ```
 
 **Tasks:**
+
 - [x] Environment variables for all backup settings
 - [x] Configuration via `getBackupConfig()` function
 - [x] Documentation in `.env.example` files
@@ -114,16 +117,17 @@ KANBU_SOURCE_PATH=/app                # Source backup location
 ```typescript
 // List backups endpoint
 listBackups: adminProcedure.query(async () => {
-  return await backupService.listBackups()
-})
+  return await backupService.listBackups();
+});
 
 // Status endpoint
 getBackupStatus: adminProcedure.query(async () => {
-  return await backupService.getStatus()
-})
+  return await backupService.getStatus();
+});
 ```
 
 **UI Features:**
+
 - [x] Table with all backups (date, type, size)
 - [x] Filter by type (database/source) - separate tables
 - [ ] Sort by date/size - Future enhancement
@@ -137,16 +141,17 @@ getBackupStatus: adminProcedure.query(async () => {
 downloadBackup: adminProcedure
   .input(z.object({ filename: z.string() }))
   .mutation(async ({ input }) => {
-    const buffer = await backupService.downloadBackup(input.filename)
+    const buffer = await backupService.downloadBackup(input.filename);
     return {
       filename: input.filename,
       data: buffer.toString('base64'),
       size: buffer.length,
-    }
-  })
+    };
+  });
 ```
 
 **UI Features:**
+
 - [x] Download button per backup
 - [x] Progress indicator (spinner during download)
 - [x] Direct browser download via blob URL
@@ -158,6 +163,7 @@ downloadBackup: adminProcedure
 Restore functionality was deferred to Phase 3 due to complexity. See Phase 3.4 for full implementation details.
 
 **Completed Tasks:**
+
 - [x] Restore confirmation dialog with warnings
 - [x] Pre-restore backup (automatically backup before restore)
 - [x] Multi-step confirmation (2 clicks required)
@@ -171,12 +177,13 @@ Restore functionality was deferred to Phase 3 due to complexity. See Phase 3.4 f
 deleteBackup: adminProcedure
   .input(z.object({ filename: z.string() }))
   .mutation(async ({ ctx, input }) => {
-    await backupService.deleteBackup(input.filename)
+    await backupService.deleteBackup(input.filename);
     // Audit logging included
-  })
+  });
 ```
 
 **UI Features:**
+
 - [x] Delete button per backup
 - [x] Confirmation required (click twice)
 - [x] Auto-cancel after 3 seconds
@@ -204,11 +211,13 @@ deleteBackup: adminProcedure
 **Implementation:** `apps/api/src/services/backup/scheduler/`
 
 The scheduler supports three modes via `BACKUP_SCHEDULER_MODE` environment variable:
+
 - `internal` - node-cron in API process (default for self-hosted)
 - `external` - Only HTTP trigger endpoints (for SaaS with external cron)
 - `both` - Both active (maximum flexibility)
 
 **Files:**
+
 - `scheduleService.ts` - Schedule CRUD, execution logic, cron validation
 - `internalScheduler.ts` - node-cron based scheduler with hot reload
 
@@ -231,6 +240,7 @@ model BackupSchedule {
 ```
 
 **Tasks:**
+
 - [x] Schedule configuration UI (create, edit, delete, toggle)
 - [x] Internal scheduler with node-cron
 - [x] External HTTP trigger endpoint (`/api/backup/trigger`)
@@ -245,14 +255,15 @@ Smart retention with daily/weekly/monthly bucketing:
 
 ```typescript
 interface RetentionPolicy {
-  retentionDays: number   // Max age in days
-  keepDaily: number       // Keep last N daily backups
-  keepWeekly: number      // Keep last N weekly backups (Sunday)
-  keepMonthly: number     // Keep last N monthly backups (1st)
+  retentionDays: number; // Max age in days
+  keepDaily: number; // Keep last N daily backups
+  keepWeekly: number; // Keep last N weekly backups (Sunday)
+  keepMonthly: number; // Keep last N monthly backups (1st)
 }
 ```
 
 **Tasks:**
+
 - [x] Retention policy per schedule
 - [x] Automatic cleanup after successful backup
 - [x] Preview what would be deleted
@@ -273,6 +284,7 @@ model BackupNotificationConfig {
 ```
 
 **Tasks:**
+
 - [x] In-app notifications for admins
 - [x] Webhook support with signed payloads (X-Kanbu-Signature)
 - [x] Test webhook button
@@ -294,6 +306,7 @@ Safe restore workflow with multiple safety checks:
 7. Send notification
 
 **Tasks:**
+
 - [x] Restore validation (file exists, valid format)
 - [x] Pre-restore backup (automatic safety backup)
 - [x] Multi-step confirmation UI (2 clicks required)
@@ -321,6 +334,7 @@ model BackupExecution {
 ```
 
 **Tasks:**
+
 - [x] Log all backup executions
 - [x] Execution history UI with status, duration, trigger
 - [x] Execution statistics (total, success rate)
@@ -359,12 +373,13 @@ BACKUP_CRON_TIMEZONE=Europe/Amsterdam # Timezone for cron expressions
 // Key derived via PBKDF2 from BACKUP_ENCRYPTION_KEY env var
 // File format: [16 bytes IV][encrypted data][16 bytes auth tag]
 
-await encryptFile(inputPath, outputPath)  // Encrypt backup
-await decryptFile(inputPath, outputPath)  // Decrypt for restore
-isEncryptionEnabled()                      // Check if key is set
+await encryptFile(inputPath, outputPath); // Encrypt backup
+await decryptFile(inputPath, outputPath); // Decrypt for restore
+isEncryptionEnabled(); // Check if key is set
 ```
 
 **Tasks:**
+
 - [x] Encryption at backup creation (AES-256-GCM)
 - [x] Decryption at restore
 - [x] Key derivation (PBKDF2 for passphrases, direct hex for 32-byte keys)
@@ -382,6 +397,7 @@ backup:
 ```
 
 **Tasks:**
+
 - [ ] Parallel upload to multiple storages
 - [ ] Verification per storage
 - [ ] Fallback if primary fails
@@ -391,13 +407,14 @@ backup:
 ```typescript
 // WAL archiving for PostgreSQL
 interface PITRConfig {
-  enabled: boolean
-  walArchivePath: string
-  retentionDays: number
+  enabled: boolean;
+  walArchivePath: string;
+  retentionDays: number;
 }
 ```
 
 **Tasks:**
+
 - [ ] PostgreSQL WAL archiving setup
 - [ ] PITR restore interface
 - [ ] Timeline management
@@ -412,13 +429,14 @@ interface PITRConfig {
 // SHA-256 checksum verification
 // Checksums generated BEFORE encryption for integrity of original data
 
-await verificationService.verifyBackup(filename)     // Verify single backup
-await verificationService.verifyAllPending()         // Batch verification
-await verificationService.getVerificationStats()     // Get stats
-await verificationService.quickCheck(filename)       // Quick existence check
+await verificationService.verifyBackup(filename); // Verify single backup
+await verificationService.verifyAllPending(); // Batch verification
+await verificationService.getVerificationStats(); // Get stats
+await verificationService.quickCheck(filename); // Quick existence check
 ```
 
 **Tasks:**
+
 - [x] SHA-256 checksum generation (before encryption)
 - [x] Checksum validation at restore
 - [x] Verification service with single/batch operations
@@ -438,16 +456,19 @@ await verificationService.quickCheck(filename)       // Quick existence check
 ## Implementation Priorities
 
 ### Must Have (Phase 1)
+
 1. Coolify/production compatibility
 2. Environment-based configuration
 3. Basic error handling
 
 ### Should Have (Phase 2)
+
 1. Backup list in UI
 2. Download functionality
 3. Basic restore
 
 ### Nice to Have (Phase 3-4)
+
 1. Scheduled backups
 2. Retention policies
 3. Encryption
@@ -459,21 +480,21 @@ await verificationService.quickCheck(filename)       // Quick existence check
 
 ### Database Size
 
-| Users | Estimated DB Size | Backup Time |
-|-------|-------------------|-------------|
-| <100 | <50 MB | <5 sec |
-| 100-1000 | 50-500 MB | 5-30 sec |
-| 1000-10000 | 500 MB - 5 GB | 30 sec - 5 min |
-| >10000 | >5 GB | Consider streaming |
+| Users      | Estimated DB Size | Backup Time        |
+| ---------- | ----------------- | ------------------ |
+| <100       | <50 MB            | <5 sec             |
+| 100-1000   | 50-500 MB         | 5-30 sec           |
+| 1000-10000 | 500 MB - 5 GB     | 30 sec - 5 min     |
+| >10000     | >5 GB             | Consider streaming |
 
 ### Storage Costs (Estimated)
 
-| Storage | Price | Notes |
-|---------|-------|-------|
-| Local | Free | Limited capacity |
-| Google Drive | Free (15GB) | Shared with other data |
-| S3 | ~$0.023/GB/month | + transfer costs |
-| Backblaze B2 | ~$0.005/GB/month | Cheaper alternative |
+| Storage      | Price            | Notes                  |
+| ------------ | ---------------- | ---------------------- |
+| Local        | Free             | Limited capacity       |
+| Google Drive | Free (15GB)      | Shared with other data |
+| S3           | ~$0.023/GB/month | + transfer costs       |
+| Backblaze B2 | ~$0.005/GB/month | Cheaper alternative    |
 
 ---
 

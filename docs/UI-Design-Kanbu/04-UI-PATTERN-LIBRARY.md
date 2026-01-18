@@ -20,17 +20,18 @@ BaseLayout (508 lines)
 
 **Location:** `src/components/layout/BaseLayout.tsx`
 
-| Property | Value |
-|----------|-------|
-| Header height | `h-10` (40px) |
-| Sidebar default width | 224px (w-56) |
-| Sidebar collapsed width | 56px (w-14) |
-| Sidebar min width | 160px |
-| Sidebar max width | 400px |
-| Content max width | 1600px (when not full-width) |
-| Content padding | `p-6` (24px) |
+| Property                | Value                        |
+| ----------------------- | ---------------------------- |
+| Header height           | `h-10` (40px)                |
+| Sidebar default width   | 224px (w-56)                 |
+| Sidebar collapsed width | 56px (w-14)                  |
+| Sidebar min width       | 160px                        |
+| Sidebar max width       | 400px                        |
+| Content max width       | 1600px (when not full-width) |
+| Content padding         | `p-6` (24px)                 |
 
 **Features:**
+
 - Resizable sidebar with drag handle
 - Collapsible sidebar (icons-only mode)
 - Mobile responsive with overlay menu
@@ -39,24 +40,24 @@ BaseLayout (508 lines)
 
 ### 1.3 Specific Layouts
 
-| Layout | Sidebar | Extra Header |
-|--------|---------|--------------|
-| DashboardLayout | DashboardSidebar | - |
-| ProjectLayout | ProjectSidebar | Presence indicator |
-| AdminLayout | AdminSidebar | Page header with title |
-| ProfileLayout | ProfileSidebar | Page header with title |
+| Layout          | Sidebar          | Extra Header           |
+| --------------- | ---------------- | ---------------------- |
+| DashboardLayout | DashboardSidebar | -                      |
+| ProjectLayout   | ProjectSidebar   | Presence indicator     |
+| AdminLayout     | AdminSidebar     | Page header with title |
+| ProfileLayout   | ProfileSidebar   | Page header with title |
 
 ### 1.4 Sidebar Variants (7 found)
 
-| Sidebar | Location | Lines |
-|---------|----------|-------|
-| DashboardSidebar | `src/components/layout/DashboardSidebar.tsx` | ~200 |
-| ProjectSidebar | `src/components/layout/ProjectSidebar.tsx` | ~250 |
-| AdminSidebar | `src/components/layout/AdminSidebar.tsx` | ~150 |
-| ProfileSidebar | `src/components/layout/ProfileSidebar.tsx` | ~100 |
-| WikiSidebar | `src/components/wiki/WikiSidebar.tsx` | ~300 |
-| TaskDetailSidebar | `src/components/task/TaskDetailSidebar.tsx` | ~150 |
-| FilterSidebar | Various locations | Varies |
+| Sidebar           | Location                                     | Lines  |
+| ----------------- | -------------------------------------------- | ------ |
+| DashboardSidebar  | `src/components/layout/DashboardSidebar.tsx` | ~200   |
+| ProjectSidebar    | `src/components/layout/ProjectSidebar.tsx`   | ~250   |
+| AdminSidebar      | `src/components/layout/AdminSidebar.tsx`     | ~150   |
+| ProfileSidebar    | `src/components/layout/ProfileSidebar.tsx`   | ~100   |
+| WikiSidebar       | `src/components/wiki/WikiSidebar.tsx`        | ~300   |
+| TaskDetailSidebar | `src/components/task/TaskDetailSidebar.tsx`  | ~150   |
+| FilterSidebar     | Various locations                            | Varies |
 
 ---
 
@@ -66,26 +67,26 @@ BaseLayout (508 lines)
 
 There are **7 different title styles** found in the codebase:
 
-| Style | Examples |
-|-------|----------|
+| Style                               | Examples                                                                 |
+| ----------------------------------- | ------------------------------------------------------------------------ |
 | `text-3xl font-bold tracking-tight` | WorkspaceSettings, WikiPage, TagManagement, WorkspaceGroups, UserProfile |
-| `text-2xl font-bold` | ImportExport, AcceptInvite, BoardSettings |
-| `text-2xl font-semibold` | AnalyticsDashboard |
-| `text-xl font-bold` | WebhookSettings |
-| `text-xl font-semibold` | ApiSettings, AclPage |
-| `text-lg font-semibold` | Dialog titles, smaller sections |
-| `text-lg font-medium` | Subsections |
+| `text-2xl font-bold`                | ImportExport, AcceptInvite, BoardSettings                                |
+| `text-2xl font-semibold`            | AnalyticsDashboard                                                       |
+| `text-xl font-bold`                 | WebhookSettings                                                          |
+| `text-xl font-semibold`             | ApiSettings, AclPage                                                     |
+| `text-lg font-semibold`             | Dialog titles, smaller sections                                          |
+| `text-lg font-medium`               | Subsections                                                              |
 
 ### 2.2 Header Layout Patterns
 
 **Pattern A - Simple Header:**
+
 ```tsx
-<h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-  Page Title
-</h1>
+<h1 className="text-2xl font-bold text-gray-900 dark:text-white">Page Title</h1>
 ```
 
 **Pattern B - Header with Icon:**
+
 ```tsx
 <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
   <Icon className="w-8 h-8 text-blue-600" />
@@ -94,6 +95,7 @@ There are **7 different title styles** found in the codebase:
 ```
 
 **Pattern C - Header with Stats:**
+
 ```tsx
 <div className="flex items-center justify-between mb-4">
   <h1>...</h1>
@@ -107,6 +109,7 @@ There are **7 different title styles** found in the codebase:
 ```
 
 **Pattern D - Header with Back Button:**
+
 ```tsx
 <div className="flex items-center gap-4">
   <Link to="..." className="p-2 hover:bg-gray-100 rounded-lg">
@@ -118,12 +121,12 @@ There are **7 different title styles** found in the codebase:
 
 ### 2.3 Page Container Patterns
 
-| Pattern | Classes | Used in |
-|---------|---------|---------|
+| Pattern             | Classes                       | Used in            |
+| ------------------- | ----------------------------- | ------------------ |
 | Max width container | `max-w-7xl mx-auto px-6 py-8` | AnalyticsDashboard |
-| Max width smaller | `max-w-4xl mx-auto` | Profile pages |
-| Full width | `px-6 py-8` | Board views |
-| No padding | - | Custom layouts |
+| Max width smaller   | `max-w-4xl mx-auto`           | Profile pages      |
+| Full width          | `px-6 py-8`                   | Board views        |
+| No padding          | -                             | Custom layouts     |
 
 ---
 
@@ -135,35 +138,35 @@ There are **7 different title styles** found in the codebase:
 
 ```tsx
 // Basic Card styling
-className="rounded-lg border bg-card text-card-foreground shadow-sm"
+className = 'rounded-lg border bg-card text-card-foreground shadow-sm';
 
 // CardHeader
-className="flex flex-col space-y-1.5 p-6"
+className = 'flex flex-col space-y-1.5 p-6';
 
 // CardTitle
-className="text-2xl font-semibold leading-none tracking-tight"
+className = 'text-2xl font-semibold leading-none tracking-tight';
 
 // CardContent
-className="p-6 pt-0"
+className = 'p-6 pt-0';
 ```
 
 ### 3.2 Manual Card Styles (common)
 
-| Style | Count | Example |
-|-------|-------|---------|
-| `bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700` | 50+ | Most pages |
-| `bg-white dark:bg-gray-700 rounded-lg p-3 shadow-sm` | 20+ | TaskCard, inline cards |
-| `bg-gray-50 dark:bg-gray-900 rounded-lg` | 15+ | Nested cards, sidebars |
-| `bg-white rounded-lg border shadow-sm` | 10+ | Simple cards |
+| Style                                                                              | Count | Example                |
+| ---------------------------------------------------------------------------------- | ----- | ---------------------- |
+| `bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700` | 50+   | Most pages             |
+| `bg-white dark:bg-gray-700 rounded-lg p-3 shadow-sm`                               | 20+   | TaskCard, inline cards |
+| `bg-gray-50 dark:bg-gray-900 rounded-lg`                                           | 15+   | Nested cards, sidebars |
+| `bg-white rounded-lg border shadow-sm`                                             | 10+   | Simple cards           |
 
 ### 3.3 Card Padding Variants
 
-| Padding | Used for |
-|---------|----------|
-| `p-3` | Small cards, list items |
-| `p-4` | Medium cards |
-| `p-6` | Large cards, settings sections |
-| `p-8` | Hero sections, empty states |
+| Padding | Used for                       |
+| ------- | ------------------------------ |
+| `p-3`   | Small cards, list items        |
+| `p-4`   | Medium cards                   |
+| `p-6`   | Large cards, settings sections |
+| `p-8`   | Hero sections, empty states    |
 
 ### 3.4 Card Headers Within Cards
 
@@ -201,6 +204,7 @@ className="flex h-10 w-full rounded-md border border-input bg-background px-3 py
 There are **108 manual `<input>` or `<Input>` components** used.
 
 **Most common manual style:**
+
 ```tsx
 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg
            bg-white dark:bg-gray-700 text-gray-900 dark:text-white
@@ -210,6 +214,7 @@ className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-
 ### 4.3 Form Layout Patterns
 
 **Pattern A - Vertical Stack:**
+
 ```tsx
 <div className="space-y-4">
   <div>
@@ -220,6 +225,7 @@ className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-
 ```
 
 **Pattern B - Grid Layout:**
+
 ```tsx
 <div className="grid grid-cols-2 gap-4">
   <div>
@@ -231,11 +237,11 @@ className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-
 
 ### 4.4 Label Styles
 
-| Style | Examples |
-|-------|----------|
-| `text-sm font-medium text-gray-700 dark:text-gray-300` | Most common |
-| `text-sm font-medium mb-1` | Compact |
-| `block text-sm font-medium mb-2` | With spacing |
+| Style                                                  | Examples     |
+| ------------------------------------------------------ | ------------ |
+| `text-sm font-medium text-gray-700 dark:text-gray-300` | Most common  |
+| `text-sm font-medium mb-1`                             | Compact      |
+| `block text-sm font-medium mb-2`                       | With spacing |
 
 ### 4.5 Select/Dropdown Components
 
@@ -250,39 +256,39 @@ className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-
 
 **Location:** `src/components/ui/dialog.tsx`
 
-| Component | Styling |
-|-----------|---------|
-| Overlay | `bg-black/50 backdrop-blur-sm` |
-| Content | `max-w-4xl p-6 rounded-lg shadow-lg` |
-| Title | `text-lg font-semibold leading-none tracking-tight` |
-| Description | `text-sm text-muted-foreground` |
+| Component   | Styling                                             |
+| ----------- | --------------------------------------------------- |
+| Overlay     | `bg-black/50 backdrop-blur-sm`                      |
+| Content     | `max-w-4xl p-6 rounded-lg shadow-lg`                |
+| Title       | `text-lg font-semibold leading-none tracking-tight` |
+| Description | `text-sm text-muted-foreground`                     |
 
 ### 5.2 Dialog Usage Locations (16 files)
 
-| Component | Type |
-|-----------|------|
-| TaskDetailModal | Large, complex |
-| SubtaskEditModal | Medium |
-| WikiSearchDialog | Medium |
-| FactCheckDialog | Medium |
-| ContradictionDialog | Medium |
-| AddMembersModal | Medium |
-| ConflictWarningModal | Small |
-| WikiDuplicateManager | Medium |
-| WikiVersionHistory | Large |
-| WikiTemporalSearch | Medium |
+| Component            | Type           |
+| -------------------- | -------------- |
+| TaskDetailModal      | Large, complex |
+| SubtaskEditModal     | Medium         |
+| WikiSearchDialog     | Medium         |
+| FactCheckDialog      | Medium         |
+| ContradictionDialog  | Medium         |
+| AddMembersModal      | Medium         |
+| ConflictWarningModal | Small          |
+| WikiDuplicateManager | Medium         |
+| WikiVersionHistory   | Large          |
+| WikiTemporalSearch   | Medium         |
 
 ### 5.3 Modal Widths
 
-| Width | Usage |
-|-------|-------|
-| `max-w-sm` | Confirmation dialogs |
-| `max-w-md` | Small forms |
-| `max-w-lg` | Medium forms |
-| `max-w-xl` | Large forms |
-| `max-w-2xl` | Detail views |
+| Width       | Usage                    |
+| ----------- | ------------------------ |
+| `max-w-sm`  | Confirmation dialogs     |
+| `max-w-md`  | Small forms              |
+| `max-w-lg`  | Medium forms             |
+| `max-w-xl`  | Large forms              |
+| `max-w-2xl` | Detail views             |
 | `max-w-4xl` | Complex modals (default) |
-| `max-w-6xl` | Full feature modals |
+| `max-w-6xl` | Full feature modals      |
 
 ---
 
@@ -292,23 +298,23 @@ className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-
 
 **Location:** `src/components/ui/button.tsx`
 
-| Variant | Styling |
-|---------|---------|
-| `default` | `bg-primary text-primary-foreground hover:bg-primary/90` |
+| Variant       | Styling                                                              |
+| ------------- | -------------------------------------------------------------------- |
+| `default`     | `bg-primary text-primary-foreground hover:bg-primary/90`             |
 | `destructive` | `bg-destructive text-destructive-foreground hover:bg-destructive/90` |
-| `outline` | `border border-input bg-background hover:bg-accent` |
-| `secondary` | `bg-secondary text-secondary-foreground hover:bg-secondary/80` |
-| `ghost` | `hover:bg-accent hover:text-accent-foreground` |
-| `link` | `text-primary underline-offset-4 hover:underline` |
+| `outline`     | `border border-input bg-background hover:bg-accent`                  |
+| `secondary`   | `bg-secondary text-secondary-foreground hover:bg-secondary/80`       |
+| `ghost`       | `hover:bg-accent hover:text-accent-foreground`                       |
+| `link`        | `text-primary underline-offset-4 hover:underline`                    |
 
 ### 6.2 Button Sizes
 
-| Size | Styling |
-|------|---------|
-| `default` | `h-10 px-4 py-2` |
-| `sm` | `h-9 rounded-md px-3` |
-| `lg` | `h-11 rounded-md px-8` |
-| `icon` | `h-10 w-10` |
+| Size      | Styling                |
+| --------- | ---------------------- |
+| `default` | `h-10 px-4 py-2`       |
+| `sm`      | `h-9 rounded-md px-3`  |
+| `lg`      | `h-11 rounded-md px-8` |
+| `icon`    | `h-10 w-10`            |
 
 ### 6.3 Button Usage Statistics
 
@@ -338,28 +344,28 @@ className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg"
 
 ### 7.1 shadcn/ui Components (20 files)
 
-| Component | File | Radix-based |
-|-----------|------|-------------|
-| Button | button.tsx | No (Slot) |
-| Card | card.tsx | No |
-| Input | input.tsx | No |
-| Label | label.tsx | Yes |
-| Dialog | dialog.tsx | Yes |
-| Dropdown Menu | dropdown-menu.tsx | Yes |
-| Select | select.tsx | Yes |
-| Tabs | tabs.tsx | Yes |
-| Tooltip | tooltip.tsx | Yes |
-| Badge | badge.tsx | No |
-| Checkbox | checkbox.tsx | Yes |
-| Switch | switch.tsx | Yes |
-| Slider | slider.tsx | Yes |
-| Progress | progress.tsx | Yes |
-| Scroll Area | scroll-area.tsx | Yes |
-| Separator | separator.tsx | Yes |
-| Collapsible | collapsible.tsx | Yes |
-| Sonner (Toast) | sonner.tsx | No |
-| HoverPopover | HoverPopover.tsx | Custom |
-| UndoRedoButtons | UndoRedoButtons.tsx | Custom |
+| Component       | File                | Radix-based |
+| --------------- | ------------------- | ----------- |
+| Button          | button.tsx          | No (Slot)   |
+| Card            | card.tsx            | No          |
+| Input           | input.tsx           | No          |
+| Label           | label.tsx           | Yes         |
+| Dialog          | dialog.tsx          | Yes         |
+| Dropdown Menu   | dropdown-menu.tsx   | Yes         |
+| Select          | select.tsx          | Yes         |
+| Tabs            | tabs.tsx            | Yes         |
+| Tooltip         | tooltip.tsx         | Yes         |
+| Badge           | badge.tsx           | No          |
+| Checkbox        | checkbox.tsx        | Yes         |
+| Switch          | switch.tsx          | Yes         |
+| Slider          | slider.tsx          | Yes         |
+| Progress        | progress.tsx        | Yes         |
+| Scroll Area     | scroll-area.tsx     | Yes         |
+| Separator       | separator.tsx       | Yes         |
+| Collapsible     | collapsible.tsx     | Yes         |
+| Sonner (Toast)  | sonner.tsx          | No          |
+| HoverPopover    | HoverPopover.tsx    | Custom      |
+| UndoRedoButtons | UndoRedoButtons.tsx | Custom      |
 
 ---
 
@@ -367,32 +373,32 @@ className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg"
 
 ### 8.1 Spacing Scale (Tailwind)
 
-| Token | Pixels | Usage |
-|-------|--------|-------|
-| `1` | 4px | Micro spacing |
-| `2` | 8px | Small gaps |
-| `3` | 12px | List item padding |
-| `4` | 16px | Card padding, gaps |
-| `6` | 24px | Section padding |
-| `8` | 32px | Large spacing |
+| Token | Pixels | Usage              |
+| ----- | ------ | ------------------ |
+| `1`   | 4px    | Micro spacing      |
+| `2`   | 8px    | Small gaps         |
+| `3`   | 12px   | List item padding  |
+| `4`   | 16px   | Card padding, gaps |
+| `6`   | 24px   | Section padding    |
+| `8`   | 32px   | Large spacing      |
 
 ### 8.2 Gap Patterns
 
-| Pattern | Usage |
-|---------|-------|
+| Pattern | Usage              |
+| ------- | ------------------ |
 | `gap-2` | Icons next to text |
-| `gap-3` | List items |
-| `gap-4` | Card grids |
-| `gap-6` | Section spacing |
+| `gap-3` | List items         |
+| `gap-4` | Card grids         |
+| `gap-6` | Section spacing    |
 
 ### 8.3 Margin Patterns
 
-| Pattern | Usage |
-|---------|-------|
-| `mb-2` | Label to input |
-| `mb-4` | Section headers |
-| `mb-6` | Page sections |
-| `mb-8` | Major sections |
+| Pattern | Usage           |
+| ------- | --------------- |
+| `mb-2`  | Label to input  |
+| `mb-4`  | Section headers |
+| `mb-6`  | Page sections   |
+| `mb-8`  | Major sections  |
 
 ---
 
@@ -402,31 +408,31 @@ className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg"
 
 Design tokens are defined in `globals.css`:
 
-| Token | Light | Dark |
-|-------|-------|------|
-| `--background` | `0 0% 100%` | `240 10% 3.9%` |
-| `--foreground` | `240 10% 3.9%` | `0 0% 98%` |
-| `--primary` | `240 5.9% 10%` | `0 0% 98%` |
-| `--secondary` | `240 4.8% 95.9%` | `240 3.7% 15.9%` |
-| `--muted` | `240 4.8% 95.9%` | `240 3.7% 15.9%` |
-| `--accent` | `240 4.8% 95.9%` | `240 3.7% 15.9%` |
-| `--destructive` | `0 84.2% 60.2%` | `0 62.8% 30.6%` |
+| Token           | Light            | Dark             |
+| --------------- | ---------------- | ---------------- |
+| `--background`  | `0 0% 100%`      | `240 10% 3.9%`   |
+| `--foreground`  | `240 10% 3.9%`   | `0 0% 98%`       |
+| `--primary`     | `240 5.9% 10%`   | `0 0% 98%`       |
+| `--secondary`   | `240 4.8% 95.9%` | `240 3.7% 15.9%` |
+| `--muted`       | `240 4.8% 95.9%` | `240 3.7% 15.9%` |
+| `--accent`      | `240 4.8% 95.9%` | `240 3.7% 15.9%` |
+| `--destructive` | `0 84.2% 60.2%`  | `0 62.8% 30.6%`  |
 
 ### 9.2 Hardcoded Colors (Problem)
 
-| Type | Count |
-|------|-------|
-| Hardcoded `bg-*` classes | 1,443 |
-| Hardcoded `text-*` classes | 2,405 |
-| Design system usage | 804 |
+| Type                                 | Count    |
+| ------------------------------------ | -------- |
+| Hardcoded `bg-*` classes             | 1,443    |
+| Hardcoded `text-*` classes           | 2,405    |
+| Design system usage                  | 804      |
 | **Ratio hardcoded vs design system** | **~5:1** |
 
 ### 9.3 Priority Color Inconsistency
 
-| View | LOW | MEDIUM | HIGH | URGENT |
-|------|-----|--------|------|--------|
-| FilterBar, TaskCountWidget | gray | blue | **orange** | red |
-| CalendarView, TimelineView | gray | blue | **yellow** | red |
+| View                       | LOW  | MEDIUM | HIGH       | URGENT |
+| -------------------------- | ---- | ------ | ---------- | ------ |
+| FilterBar, TaskCountWidget | gray | blue   | **orange** | red    |
+| CalendarView, TimelineView | gray | blue   | **yellow** | red    |
 
 ---
 
@@ -435,29 +441,32 @@ Design tokens are defined in `globals.css`:
 ### 10.1 Breakpoints (Tailwind defaults)
 
 | Prefix | Min-width |
-|--------|-----------|
-| `sm` | 640px |
-| `md` | 768px |
-| `lg` | 1024px |
-| `xl` | 1280px |
-| `2xl` | 1536px |
+| ------ | --------- |
+| `sm`   | 640px     |
+| `md`   | 768px     |
+| `lg`   | 1024px    |
+| `xl`   | 1280px    |
+| `2xl`  | 1536px    |
 
 ### 10.2 Responsive Patterns
 
 **Grid Responsive:**
+
 ```tsx
-className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4';
 ```
 
 **Hide/Show:**
+
 ```tsx
-className="hidden md:block"  // Hide on mobile
-className="md:hidden"        // Mobile only
+className = 'hidden md:block'; // Hide on mobile
+className = 'md:hidden'; // Mobile only
 ```
 
 **Text Size:**
+
 ```tsx
-className="text-sm md:text-base"
+className = 'text-sm md:text-base';
 ```
 
 ---
@@ -503,20 +512,20 @@ className="text-sm md:text-base"
 
 ## 12. Statistics Summary
 
-| Metric | Value |
-|--------|-------|
-| **Total frontend files** | 180+ |
-| **Total lines of code** | 85,000+ |
-| **shadcn/ui components** | 20 |
-| **Layout components** | 5 |
-| **Sidebar variants** | 7 |
-| **Dialog/Modal files** | 16 |
-| **Button instances** | 217 |
-| **Input instances** | 108 |
-| **Hardcoded colors** | 3,848 |
-| **Design system colors** | 804 |
-| **Title style variants** | 7 |
-| **Card style variants** | 4+ |
+| Metric                   | Value   |
+| ------------------------ | ------- |
+| **Total frontend files** | 180+    |
+| **Total lines of code**  | 85,000+ |
+| **shadcn/ui components** | 20      |
+| **Layout components**    | 5       |
+| **Sidebar variants**     | 7       |
+| **Dialog/Modal files**   | 16      |
+| **Button instances**     | 217     |
+| **Input instances**      | 108     |
+| **Hardcoded colors**     | 3,848   |
+| **Design system colors** | 804     |
+| **Title style variants** | 7       |
+| **Card style variants**  | 4+      |
 
 ---
 
@@ -566,5 +575,5 @@ src/components/ui/
 
 ---
 
-*Document generated: 2026-01-15*
-*Version: 1.0.0*
+_Document generated: 2026-01-15_
+_Version: 1.0.0_

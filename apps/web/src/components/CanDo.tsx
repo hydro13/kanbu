@@ -28,8 +28,8 @@
  * =============================================================================
  */
 
-import { type ReactNode } from 'react'
-import { usePermissions, type PermissionContext } from '@/hooks/usePermissions'
+import { type ReactNode } from 'react';
+import { usePermissions, type PermissionContext } from '@/hooks/usePermissions';
 
 // =============================================================================
 // Types
@@ -37,25 +37,25 @@ import { usePermissions, type PermissionContext } from '@/hooks/usePermissions'
 
 export interface CanDoProps extends PermissionContext {
   /** Single permission to check */
-  permission?: string
+  permission?: string;
 
   /** Multiple permissions to check */
-  permissions?: string[]
+  permissions?: string[];
 
   /** How to combine multiple permissions: 'all' (AND) or 'any' (OR) */
-  mode?: 'all' | 'any'
+  mode?: 'all' | 'any';
 
   /** Content to render when permission is granted */
-  children: ReactNode
+  children: ReactNode;
 
   /** Content to render when permission is denied */
-  fallback?: ReactNode
+  fallback?: ReactNode;
 
   /** Content to render while loading permissions */
-  loading?: ReactNode
+  loading?: ReactNode;
 
   /** If true, hide content while loading (default: show loading) */
-  hideWhileLoading?: boolean
+  hideWhileLoading?: boolean;
 }
 
 // =============================================================================
@@ -76,34 +76,34 @@ export function CanDo({
   const { canDo, canDoAll, canDoAny, isLoading } = usePermissions({
     workspaceId,
     projectId,
-  })
+  });
 
   // Handle loading state
   if (isLoading) {
-    if (hideWhileLoading) return null
-    return <>{loading}</>
+    if (hideWhileLoading) return null;
+    return <>{loading}</>;
   }
 
   // Determine which permissions to check
-  const permissionsToCheck = permissions ?? (permission ? [permission] : [])
+  const permissionsToCheck = permissions ?? (permission ? [permission] : []);
 
   if (permissionsToCheck.length === 0) {
     // No permissions specified, always render children
-    return <>{children}</>
+    return <>{children}</>;
   }
 
   // Check permissions based on mode
-  let hasPermission: boolean
+  let hasPermission: boolean;
   if (permissionsToCheck.length === 1) {
-    hasPermission = canDo(permissionsToCheck[0]!)
+    hasPermission = canDo(permissionsToCheck[0]!);
   } else if (mode === 'any') {
-    hasPermission = canDoAny(permissionsToCheck)
+    hasPermission = canDoAny(permissionsToCheck);
   } else {
-    hasPermission = canDoAll(permissionsToCheck)
+    hasPermission = canDoAll(permissionsToCheck);
   }
 
   // Render based on permission check result
-  return <>{hasPermission ? children : fallback}</>
+  return <>{hasPermission ? children : fallback}</>;
 }
 
 // =============================================================================
@@ -118,19 +118,15 @@ export function CanDoIfDomainAdmin({
   fallback = null,
   loading = null,
 }: {
-  children: ReactNode
-  fallback?: ReactNode
-  loading?: ReactNode
+  children: ReactNode;
+  fallback?: ReactNode;
+  loading?: ReactNode;
 }) {
   return (
-    <CanDo
-      permission="system.admin"
-      fallback={fallback}
-      loading={loading}
-    >
+    <CanDo permission="system.admin" fallback={fallback} loading={loading}>
       {children}
     </CanDo>
-  )
+  );
 }
 
 /**
@@ -142,10 +138,10 @@ export function CanDoIfWorkspaceAdmin({
   fallback = null,
   loading = null,
 }: {
-  workspaceId: number
-  children: ReactNode
-  fallback?: ReactNode
-  loading?: ReactNode
+  workspaceId: number;
+  children: ReactNode;
+  fallback?: ReactNode;
+  loading?: ReactNode;
 }) {
   return (
     <CanDo
@@ -156,7 +152,7 @@ export function CanDoIfWorkspaceAdmin({
     >
       {children}
     </CanDo>
-  )
+  );
 }
 
 /**
@@ -168,21 +164,16 @@ export function CanDoIfProjectAdmin({
   fallback = null,
   loading = null,
 }: {
-  projectId: number
-  children: ReactNode
-  fallback?: ReactNode
-  loading?: ReactNode
+  projectId: number;
+  children: ReactNode;
+  fallback?: ReactNode;
+  loading?: ReactNode;
 }) {
   return (
-    <CanDo
-      permission="project.admin"
-      projectId={projectId}
-      fallback={fallback}
-      loading={loading}
-    >
+    <CanDo permission="project.admin" projectId={projectId} fallback={fallback} loading={loading}>
       {children}
     </CanDo>
-  )
+  );
 }
 
-export default CanDo
+export default CanDo;

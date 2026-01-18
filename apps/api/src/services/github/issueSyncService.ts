@@ -15,58 +15,57 @@
  * =============================================================================
  */
 
-import crypto from 'crypto'
-import { prisma } from '../../lib/prisma'
-import { getInstallationOctokit } from './githubService'
-import { generateTaskReference } from '../../lib/project'
-import { getNextTaskPosition } from '../../lib/task'
-import { processGitHubImages } from './githubImageService'
-import type { SyncDirection } from '@kanbu/shared'
+import crypto from 'crypto';
+import { prisma } from '../../lib/prisma';
+import { getInstallationOctokit } from './githubService';
+import { generateTaskReference } from '../../lib/project';
+import { getNextTaskPosition } from '../../lib/task';
+import { processGitHubImages } from './githubImageService';
+import type { SyncDirection } from '@kanbu/shared';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface GitHubIssueData {
-  number: number
-  id: number
-  title: string
-  body: string | null
-  body_html?: string | null // HTML rendered body with JWT-embedded image URLs
-  state: 'open' | 'closed'
-  labels: Array<{ name: string; color?: string }>
-  assignees: Array<{ login: string; id: number }>
-  milestone?: { title: string; number: number } | null
-  created_at: string
-  updated_at: string
-  closed_at?: string | null
+  number: number;
+  id: number;
+  title: string;
+  body: string | null;
+  body_html?: string | null; // HTML rendered body with JWT-embedded image URLs
+  state: 'open' | 'closed';
+  labels: Array<{ name: string; color?: string }>;
+  assignees: Array<{ login: string; id: number }>;
+  milestone?: { title: string; number: number } | null;
+  created_at: string;
+  updated_at: string;
+  closed_at?: string | null;
 }
 
 export interface ImportResult {
-  imported: number
-  skipped: number
-  failed: number
-  errors: Array<{ issueNumber: number; error: string }>
+  imported: number;
+  skipped: number;
+  failed: number;
+  errors: Array<{ issueNumber: number; error: string }>;
 }
 
 export interface ImportProgress {
-  total: number
-  processed: number
-  status: 'pending' | 'running' | 'completed' | 'failed'
-  result?: ImportResult
-  error?: string
+  total: number;
+  processed: number;
+  status: 'pending' | 'running' | 'completed' | 'failed';
+  result?: ImportResult;
+  error?: string;
 }
 
 interface OutboundSyncResult {
-  issueNumber: number
-  issueId: bigint
-  created: boolean
-  updated: boolean
+  issueNumber: number;
+  issueId: bigint;
+  created: boolean;
+  updated: boolean;
 }
 
-
 // In-memory import progress tracking
-const importProgress = new Map<number, ImportProgress>()
+const importProgress = new Map<number, ImportProgress>();
 
 // =============================================================================
 // User Mapping
@@ -87,9 +86,9 @@ export async function mapGitHubUserToKanbu(
       },
     },
     select: { userId: true },
-  })
+  });
 
-  return mapping?.userId ?? null
+  return mapping?.userId ?? null;
 }
 
 /**
@@ -99,19 +98,19 @@ export async function mapGitHubAssignees(
   assignees: Array<{ login: string }>,
   workspaceId: number
 ): Promise<{ mapped: number[]; unmapped: string[] }> {
-  const mapped: number[] = []
-  const unmapped: string[] = []
+  const mapped: number[] = [];
+  const unmapped: string[] = [];
 
   for (const assignee of assignees) {
-    const userId = await mapGitHubUserToKanbu(assignee.login, workspaceId)
+    const userId = await mapGitHubUserToKanbu(assignee.login, workspaceId);
     if (userId) {
-      mapped.push(userId)
+      mapped.push(userId);
     } else {
-      unmapped.push(assignee.login)
+      unmapped.push(assignee.login);
     }
   }
 
-  return { mapped, unmapped }
+  return { mapped, unmapped };
 }
 
 /**
@@ -129,9 +128,9 @@ export async function mapKanbuUserToGitHub(
       },
     },
     select: { githubLogin: true },
-  })
+  });
 
-  return mapping?.githubLogin ?? null
+  return mapping?.githubLogin ?? null;
 }
 
 /**
@@ -141,19 +140,19 @@ export async function mapKanbuAssigneesToGitHub(
   userIds: number[],
   workspaceId: number
 ): Promise<{ mapped: string[]; unmapped: number[] }> {
-  const mapped: string[] = []
-  const unmapped: number[] = []
+  const mapped: string[] = [];
+  const unmapped: number[] = [];
 
   for (const userId of userIds) {
-    const githubLogin = await mapKanbuUserToGitHub(userId, workspaceId)
+    const githubLogin = await mapKanbuUserToGitHub(userId, workspaceId);
     if (githubLogin) {
-      mapped.push(githubLogin)
+      mapped.push(githubLogin);
     } else {
-      unmapped.push(userId)
+      unmapped.push(userId);
     }
   }
 
-  return { mapped, unmapped }
+  return { mapped, unmapped };
 }
 
 // =============================================================================
@@ -173,8 +172,8 @@ export function calculateSyncHash(
     title: title.trim(),
     description: (description || '').trim(),
     state,
-  })
-  return crypto.createHash('sha256').update(content).digest('hex').substring(0, 64)
+  });
+  return crypto.createHash('sha256').update(content).digest('hex').substring(0, 64);
 }
 
 /**
@@ -193,25 +192,25 @@ export async function hasTaskChangedSinceSync(
         select: { syncHash: true },
       },
     },
-  })
+  });
 
   if (!task) {
-    throw new Error(`Task ${taskId} not found`)
+    throw new Error(`Task ${taskId} not found`);
   }
 
   const currentHash = calculateSyncHash(
     task.title,
     task.description,
     task.isActive ? 'open' : 'closed'
-  )
+  );
 
-  const lastHash = task.githubIssue?.syncHash ?? null
+  const lastHash = task.githubIssue?.syncHash ?? null;
 
   return {
     changed: lastHash !== currentHash,
     currentHash,
     lastHash,
-  }
+  };
 }
 
 // =============================================================================
@@ -226,7 +225,7 @@ export async function getOrCreateTagsFromLabels(
   projectId: number,
   labels: Array<{ name: string; color?: string }>
 ): Promise<number[]> {
-  const tagIds: number[] = []
+  const tagIds: number[] = [];
 
   for (const label of labels) {
     // Try to find existing tag
@@ -237,7 +236,7 @@ export async function getOrCreateTagsFromLabels(
           name: label.name,
         },
       },
-    })
+    });
 
     // Create if doesn't exist
     if (!tag) {
@@ -247,22 +246,20 @@ export async function getOrCreateTagsFromLabels(
           name: label.name,
           color: label.color ? `#${label.color}` : 'grey',
         },
-      })
+      });
     }
 
-    tagIds.push(tag.id)
+    tagIds.push(tag.id);
   }
 
-  return tagIds
+  return tagIds;
 }
 
 /**
  * Convert Kanbu tags to GitHub label names (for outbound sync)
  * Returns array of label names
  */
-export async function getLabelsFromTags(
-  taskId: number
-): Promise<string[]> {
+export async function getLabelsFromTags(taskId: number): Promise<string[]> {
   const taskTags = await prisma.taskTag.findMany({
     where: { taskId },
     include: {
@@ -270,9 +267,9 @@ export async function getLabelsFromTags(
         select: { name: true },
       },
     },
-  })
+  });
 
-  return taskTags.map((tt) => tt.tag.name)
+  return taskTags.map((tt) => tt.tag.name);
 }
 
 // =============================================================================
@@ -298,10 +295,10 @@ export async function getKanbuMilestoneFromGitHub(
     include: {
       kanbuMilestone: true,
     },
-  })
+  });
 
   // Return linked Kanbu milestone ID if exists
-  return githubMilestone?.kanbuMilestone?.id ?? null
+  return githubMilestone?.kanbuMilestone?.id ?? null;
 }
 
 /**
@@ -311,16 +308,16 @@ export async function getKanbuMilestoneFromGitHub(
 export async function getGitHubMilestoneFromKanbu(
   milestoneId: number | null
 ): Promise<number | null> {
-  if (!milestoneId) return null
+  if (!milestoneId) return null;
 
   const milestone = await prisma.milestone.findUnique({
     where: { id: milestoneId },
     include: {
       githubMilestone: true,
     },
-  })
+  });
 
-  return milestone?.githubMilestone?.milestoneNumber ?? null
+  return milestone?.githubMilestone?.milestoneNumber ?? null;
 }
 
 // =============================================================================
@@ -340,16 +337,16 @@ export async function getColumnForIssueState(
     where: { projectId },
     orderBy: { position: 'asc' },
     select: { id: true, position: true },
-  })
+  });
 
   if (columns.length === 0) {
-    throw new Error(`Project ${projectId} has no columns`)
+    throw new Error(`Project ${projectId} has no columns`);
   }
 
   // Open issues go to first column, closed to last
   // columns is guaranteed to have at least one element due to check above
-  const column = state === 'open' ? columns[0]! : columns[columns.length - 1]!
-  return column.id
+  const column = state === 'open' ? columns[0]! : columns[columns.length - 1]!;
+  return column.id;
 }
 
 // =============================================================================
@@ -364,11 +361,11 @@ export async function createTaskFromGitHubIssue(
   repositoryId: number,
   issue: GitHubIssueData,
   options: {
-    syncDirection?: SyncDirection
-    skipExisting?: boolean
+    syncDirection?: SyncDirection;
+    skipExisting?: boolean;
   } = {}
 ): Promise<{ taskId: number; created: boolean; skipped: boolean }> {
-  const { syncDirection = 'github_to_kanbu', skipExisting = true } = options
+  const { syncDirection = 'github_to_kanbu', skipExisting = true } = options;
 
   // Get repository with project info and installation (for image downloads)
   const repository = await prisma.gitHubRepository.findFirst({
@@ -381,14 +378,14 @@ export async function createTaskFromGitHubIssue(
       },
       installation: true,
     },
-  })
+  });
 
   if (!repository) {
-    throw new Error(`Repository ${repositoryId} not found`)
+    throw new Error(`Repository ${repositoryId} not found`);
   }
 
-  const { project } = repository
-  const workspaceId = project.workspaceId
+  const { project } = repository;
+  const workspaceId = project.workspaceId;
 
   // Check if issue already exists
   const existingIssue = await prisma.gitHubIssue.findUnique({
@@ -399,12 +396,12 @@ export async function createTaskFromGitHubIssue(
       },
     },
     include: { task: true },
-  })
+  });
 
   // Get Kanbu milestone from GitHub milestone (if set)
-  let milestoneId: number | null = null
+  let milestoneId: number | null = null;
   if (issue.milestone?.number) {
-    milestoneId = await getKanbuMilestoneFromGitHub(repositoryId, issue.milestone.number)
+    milestoneId = await getKanbuMilestoneFromGitHub(repositoryId, issue.milestone.number);
   }
 
   if (existingIssue?.task && skipExisting) {
@@ -413,35 +410,34 @@ export async function createTaskFromGitHubIssue(
       await prisma.task.update({
         where: { id: existingIssue.task.id },
         data: { milestoneId },
-      })
-      console.log(`[IssueSyncService] Updated milestone for existing task ${existingIssue.task.id} (issue #${issue.number})`)
+      });
+      console.log(
+        `[IssueSyncService] Updated milestone for existing task ${existingIssue.task.id} (issue #${issue.number})`
+      );
     }
-    return { taskId: existingIssue.task.id, created: false, skipped: true }
+    return { taskId: existingIssue.task.id, created: false, skipped: true };
   }
 
   // Get column based on issue state
-  const columnId = await getColumnForIssueState(project.id, issue.state)
+  const columnId = await getColumnForIssueState(project.id, issue.state);
 
   // Map assignees
-  const { mapped: assigneeIds, unmapped } = await mapGitHubAssignees(
-    issue.assignees,
-    workspaceId
-  )
+  const { mapped: assigneeIds, unmapped } = await mapGitHubAssignees(issue.assignees, workspaceId);
 
   // Create or get tags from labels
-  const tagIds = await getOrCreateTagsFromLabels(project.id, issue.labels)
+  const tagIds = await getOrCreateTagsFromLabels(project.id, issue.labels);
 
   // Get next position
-  const position = await getNextTaskPosition(columnId)
+  const position = await getNextTaskPosition(columnId);
 
   // Generate task reference
-  const reference = await generateTaskReference(project.id)
+  const reference = await generateTaskReference(project.id);
 
   // Determine creator: use first assignee, workspace creator, or any active user
-  let creatorId: number | null = assigneeIds.length > 0 ? assigneeIds[0]! : null
+  let creatorId: number | null = assigneeIds.length > 0 ? assigneeIds[0]! : null;
 
   if (!creatorId && project.workspace.createdById) {
-    creatorId = project.workspace.createdById
+    creatorId = project.workspace.createdById;
   }
 
   // Fallback: find any active user
@@ -449,40 +445,40 @@ export async function createTaskFromGitHubIssue(
     const anyUser = await prisma.user.findFirst({
       where: { isActive: true },
       select: { id: true },
-    })
+    });
     if (anyUser) {
-      creatorId = anyUser.id
+      creatorId = anyUser.id;
     }
   }
 
   if (!creatorId) {
-    throw new Error('No user available to act as task creator')
+    throw new Error('No user available to act as task creator');
   }
 
   // Process GitHub images in the issue body - download and store locally
   // Uses body_html (if available) to get JWT-embedded URLs for user-attachments
-  let processedDescription = issue.body || undefined
+  let processedDescription = issue.body || undefined;
   if (issue.body && repository.installation) {
     try {
       const imageResult = await processGitHubImages(
         issue.body,
         repository.installation.installationId,
         issue.body_html // Contains JWT-embedded URLs for downloading
-      )
-      processedDescription = imageResult.content || undefined
+      );
+      processedDescription = imageResult.content || undefined;
 
       if (imageResult.imagesDownloaded > 0) {
         console.log(
           `[IssueSyncService] Downloaded ${imageResult.imagesDownloaded} images for issue #${issue.number}`
-        )
+        );
       }
       if (imageResult.imagesFailed > 0) {
         console.warn(
           `[IssueSyncService] Failed to download ${imageResult.imagesFailed} images for issue #${issue.number}`
-        )
+        );
       }
     } catch (error) {
-      console.warn('[IssueSyncService] Failed to process images, using original body:', error)
+      console.warn('[IssueSyncService] Failed to process images, using original body:', error);
       // Continue with original body if image processing fails
     }
   }
@@ -515,7 +511,7 @@ export async function createTaskFromGitHubIssue(
         },
       }),
     },
-  })
+  });
 
   // Create or update GitHubIssue record
   await prisma.gitHubIssue.upsert({
@@ -541,7 +537,7 @@ export async function createTaskFromGitHubIssue(
       state: issue.state,
       lastSyncAt: new Date(),
     },
-  })
+  });
 
   // Log sync operation
   await prisma.gitHubSyncLog.create({
@@ -561,9 +557,9 @@ export async function createTaskFromGitHubIssue(
         tagsCreated: tagIds.length,
       },
     },
-  })
+  });
 
-  return { taskId: task.id, created: true, skipped: false }
+  return { taskId: task.id, created: true, skipped: false };
 }
 
 // =============================================================================
@@ -589,43 +585,46 @@ export async function updateTaskFromGitHubIssue(
         },
       },
     },
-  })
+  });
 
   if (!githubIssue || !githubIssue.task) {
-    return { updated: false, taskId: null }
+    return { updated: false, taskId: null };
   }
 
-  const { task, repository } = githubIssue
-  const project = repository.project
+  const { task, repository } = githubIssue;
+  const project = repository.project;
 
   // Get column for current state (may have changed)
-  const columnId = await getColumnForIssueState(project.id, issue.state)
+  const columnId = await getColumnForIssueState(project.id, issue.state);
 
   // Get Kanbu milestone from GitHub milestone (may have changed)
-  let milestoneId: number | null = null
+  let milestoneId: number | null = null;
   if (issue.milestone?.number) {
-    milestoneId = await getKanbuMilestoneFromGitHub(repository.id, issue.milestone.number)
+    milestoneId = await getKanbuMilestoneFromGitHub(repository.id, issue.milestone.number);
   }
 
   // Process GitHub images in the issue body - download and store locally
   // Uses body_html (if available) to get JWT-embedded URLs for user-attachments
-  let processedDescription = issue.body || undefined
+  let processedDescription = issue.body || undefined;
   if (issue.body && repository.installation) {
     try {
       const imageResult = await processGitHubImages(
         issue.body,
         repository.installation.installationId,
         issue.body_html // Contains JWT-embedded URLs for downloading
-      )
-      processedDescription = imageResult.content || undefined
+      );
+      processedDescription = imageResult.content || undefined;
 
       if (imageResult.imagesDownloaded > 0) {
         console.log(
           `[IssueSyncService] Downloaded ${imageResult.imagesDownloaded} images for issue update #${issue.number}`
-        )
+        );
       }
     } catch (error) {
-      console.warn('[IssueSyncService] Failed to process images on update, using original body:', error)
+      console.warn(
+        '[IssueSyncService] Failed to process images on update, using original body:',
+        error
+      );
     }
   }
 
@@ -640,7 +639,7 @@ export async function updateTaskFromGitHubIssue(
       isActive: issue.state === 'open',
       updatedAt: new Date(),
     },
-  })
+  });
 
   // Update GitHubIssue record
   await prisma.gitHubIssue.update({
@@ -650,7 +649,7 @@ export async function updateTaskFromGitHubIssue(
       state: issue.state,
       lastSyncAt: new Date(),
     },
-  })
+  });
 
   // Log sync operation
   await prisma.gitHubSyncLog.create({
@@ -667,9 +666,9 @@ export async function updateTaskFromGitHubIssue(
         newState: issue.state,
       },
     },
-  })
+  });
 
-  return { updated: true, taskId: task.id }
+  return { updated: true, taskId: task.id };
 }
 
 // =============================================================================
@@ -682,12 +681,12 @@ export async function updateTaskFromGitHubIssue(
 export async function importIssuesFromGitHub(
   repositoryId: number,
   options: {
-    state?: 'open' | 'closed' | 'all'
-    since?: Date
-    limit?: number
+    state?: 'open' | 'closed' | 'all';
+    since?: Date;
+    limit?: number;
   } = {}
 ): Promise<ImportResult> {
-  const { state = 'all', since, limit = 1000 } = options
+  const { state = 'all', since, limit = 1000 } = options;
 
   // Get repository with installation info
   const repository = await prisma.gitHubRepository.findFirst({
@@ -695,10 +694,10 @@ export async function importIssuesFromGitHub(
     include: {
       installation: true,
     },
-  })
+  });
 
   if (!repository) {
-    throw new Error(`Repository ${repositoryId} not found`)
+    throw new Error(`Repository ${repositoryId} not found`);
   }
 
   // Initialize progress tracking
@@ -706,18 +705,18 @@ export async function importIssuesFromGitHub(
     total: 0,
     processed: 0,
     status: 'running',
-  })
+  });
 
   const result: ImportResult = {
     imported: 0,
     skipped: 0,
     failed: 0,
     errors: [],
-  }
+  };
 
   try {
     // Get Octokit client for installation
-    const octokit = await getInstallationOctokit(repository.installation.installationId)
+    const octokit = await getInstallationOctokit(repository.installation.installationId);
 
     // Fetch issues from GitHub with full media type to get body_html
     // body_html contains JWT-embedded image URLs that allow downloading user-attachments
@@ -730,15 +729,15 @@ export async function importIssuesFromGitHub(
       sort: 'created',
       direction: 'asc',
       mediaType: { format: 'full' },
-    })
+    });
 
     // Filter out pull requests (GitHub API returns PRs in issues endpoint)
-    type GitHubApiIssue = typeof issues.data[number]
-    const actualIssues = issues.data.filter((issue: GitHubApiIssue) => !issue.pull_request)
+    type GitHubApiIssue = (typeof issues.data)[number];
+    const actualIssues = issues.data.filter((issue: GitHubApiIssue) => !issue.pull_request);
 
     // Update progress
-    const progress = importProgress.get(repositoryId)!
-    progress.total = Math.min(actualIssues.length, limit)
+    const progress = importProgress.get(repositoryId)!;
+    progress.total = Math.min(actualIssues.length, limit);
 
     // Import each issue
     for (const issue of actualIssues.slice(0, limit)) {
@@ -751,52 +750,57 @@ export async function importIssuesFromGitHub(
           body_html: (issue as { body_html?: string }).body_html ?? null,
           state: issue.state as 'open' | 'closed',
           labels: (issue.labels as Array<{ name?: string; color?: string } | string>)
-            .filter((label): label is { name: string; color?: string } =>
-              typeof label === 'object' && label !== null && 'name' in label && typeof label.name === 'string'
+            .filter(
+              (label): label is { name: string; color?: string } =>
+                typeof label === 'object' &&
+                label !== null &&
+                'name' in label &&
+                typeof label.name === 'string'
             )
             .map((label) => ({
               name: label.name,
               color: label.color,
             })),
-          assignees: issue.assignees?.map((a: { login: string; id: number }) => ({
-            login: a.login,
-            id: a.id,
-          })) || [],
-          milestone: issue.milestone ? {
-            title: issue.milestone.title,
-            number: issue.milestone.number,
-          } : null,
+          assignees:
+            issue.assignees?.map((a: { login: string; id: number }) => ({
+              login: a.login,
+              id: a.id,
+            })) || [],
+          milestone: issue.milestone
+            ? {
+                title: issue.milestone.title,
+                number: issue.milestone.number,
+              }
+            : null,
           created_at: issue.created_at,
           updated_at: issue.updated_at,
           closed_at: issue.closed_at,
-        }
+        };
 
-        const { created, skipped } = await createTaskFromGitHubIssue(
-          repositoryId,
-          issueData,
-          { skipExisting: true }
-        )
+        const { created, skipped } = await createTaskFromGitHubIssue(repositoryId, issueData, {
+          skipExisting: true,
+        });
 
         if (created) {
-          result.imported++
+          result.imported++;
         } else if (skipped) {
-          result.skipped++
+          result.skipped++;
         }
       } catch (error) {
-        result.failed++
+        result.failed++;
         result.errors.push({
           issueNumber: issue.number,
           error: error instanceof Error ? error.message : String(error),
-        })
+        });
       }
 
       // Update progress
-      progress.processed++
+      progress.processed++;
     }
 
     // Mark as completed
-    progress.status = 'completed'
-    progress.result = result
+    progress.status = 'completed';
+    progress.result = result;
 
     // Log bulk import
     await prisma.gitHubSyncLog.create({
@@ -813,22 +817,22 @@ export async function importIssuesFromGitHub(
           totalIssues: actualIssues.length,
         },
       },
-    })
+    });
 
     // Update last sync time
     await prisma.gitHubRepository.update({
       where: { id: repositoryId },
       data: { lastSyncAt: new Date() },
-    })
+    });
 
-    return result
+    return result;
   } catch (error) {
     // Mark as failed
-    const progress = importProgress.get(repositoryId)!
-    progress.status = 'failed'
-    progress.error = error instanceof Error ? error.message : String(error)
+    const progress = importProgress.get(repositoryId)!;
+    progress.status = 'failed';
+    progress.error = error instanceof Error ? error.message : String(error);
 
-    throw error
+    throw error;
   }
 }
 
@@ -836,14 +840,14 @@ export async function importIssuesFromGitHub(
  * Get import progress for a repository
  */
 export function getImportProgress(repositoryId: number): ImportProgress | null {
-  return importProgress.get(repositoryId) || null
+  return importProgress.get(repositoryId) || null;
 }
 
 /**
  * Clear import progress (cleanup after retrieving results)
  */
 export function clearImportProgress(repositoryId: number): void {
-  importProgress.delete(repositoryId)
+  importProgress.delete(repositoryId);
 }
 
 // =============================================================================
@@ -857,10 +861,10 @@ export function clearImportProgress(repositoryId: number): void {
 export async function createGitHubIssueFromTask(
   taskId: number,
   options: {
-    syncDirection?: SyncDirection
+    syncDirection?: SyncDirection;
   } = {}
 ): Promise<OutboundSyncResult> {
-  const { syncDirection = 'kanbu_to_github' } = options
+  const { syncDirection = 'kanbu_to_github' } = options;
 
   // Get task with all related data
   const task = await prisma.task.findUnique({
@@ -888,40 +892,38 @@ export async function createGitHubIssueFromTask(
       },
       githubIssue: true,
     },
-  })
+  });
 
   if (!task) {
-    throw new Error(`Task ${taskId} not found`)
+    throw new Error(`Task ${taskId} not found`);
   }
 
   // Get primary repository or first available
-  const repository = task.project.githubRepositories.find(r => r.isPrimary) || task.project.githubRepositories[0]
+  const repository =
+    task.project.githubRepositories.find((r) => r.isPrimary) || task.project.githubRepositories[0];
   if (!repository) {
-    throw new Error(`Project ${task.project.id} has no linked GitHub repository`)
+    throw new Error(`Project ${task.project.id} has no linked GitHub repository`);
   }
 
   // Check if task already has a GitHub issue
   if (task.githubIssue) {
-    throw new Error(`Task ${taskId} already has GitHub issue #${task.githubIssue.issueNumber}`)
+    throw new Error(`Task ${taskId} already has GitHub issue #${task.githubIssue.issueNumber}`);
   }
 
-  const workspaceId = task.project.workspaceId
+  const workspaceId = task.project.workspaceId;
 
   // Get Octokit client
-  const octokit = await getInstallationOctokit(repository.installation.installationId)
+  const octokit = await getInstallationOctokit(repository.installation.installationId);
 
   // Map assignees to GitHub logins
-  const assigneeUserIds = task.assignees.map((a) => a.user.id)
-  const { mapped: assigneeLogins } = await mapKanbuAssigneesToGitHub(
-    assigneeUserIds,
-    workspaceId
-  )
+  const assigneeUserIds = task.assignees.map((a) => a.user.id);
+  const { mapped: assigneeLogins } = await mapKanbuAssigneesToGitHub(assigneeUserIds, workspaceId);
 
   // Get labels from tags
-  const labels = await getLabelsFromTags(taskId)
+  const labels = await getLabelsFromTags(taskId);
 
   // Determine state based on isActive
-  const state: 'open' | 'closed' = task.isActive ? 'open' : 'closed'
+  const state: 'open' | 'closed' = task.isActive ? 'open' : 'closed';
 
   // Create the GitHub issue
   const response = await octokit.rest.issues.create({
@@ -931,10 +933,10 @@ export async function createGitHubIssueFromTask(
     body: task.description || undefined,
     labels: labels.length > 0 ? labels : undefined,
     assignees: assigneeLogins.length > 0 ? assigneeLogins : undefined,
-  })
+  });
 
-  const issueNumber = response.data.number
-  const issueId = BigInt(response.data.id)
+  const issueNumber = response.data.number;
+  const issueId = BigInt(response.data.id);
 
   // If task is inactive (closed), close the issue
   if (!task.isActive) {
@@ -943,11 +945,11 @@ export async function createGitHubIssueFromTask(
       repo: repository.name,
       issue_number: issueNumber,
       state: 'closed',
-    })
+    });
   }
 
   // Calculate sync hash
-  const syncHash = calculateSyncHash(task.title, task.description, state)
+  const syncHash = calculateSyncHash(task.title, task.description, state);
 
   // Create GitHubIssue record
   await prisma.gitHubIssue.create({
@@ -962,7 +964,7 @@ export async function createGitHubIssueFromTask(
       syncHash,
       lastSyncAt: new Date(),
     },
-  })
+  });
 
   // Log sync operation
   await prisma.gitHubSyncLog.create({
@@ -981,14 +983,14 @@ export async function createGitHubIssueFromTask(
         labelsAdded: labels.length,
       },
     },
-  })
+  });
 
   return {
     issueNumber,
     issueId,
     created: true,
     updated: false,
-  }
+  };
 }
 
 /**
@@ -998,10 +1000,10 @@ export async function createGitHubIssueFromTask(
 export async function updateGitHubIssueFromTask(
   taskId: number,
   options: {
-    force?: boolean // Skip conflict check
+    force?: boolean; // Skip conflict check
   } = {}
 ): Promise<OutboundSyncResult> {
-  const { force = false } = options
+  const { force = false } = options;
 
   // Get task with all related data
   const task = await prisma.task.findUnique({
@@ -1034,29 +1036,30 @@ export async function updateGitHubIssueFromTask(
         },
       },
     },
-  })
+  });
 
   if (!task) {
-    throw new Error(`Task ${taskId} not found`)
+    throw new Error(`Task ${taskId} not found`);
   }
 
   // Get primary repository or first available
-  const repository = task.project.githubRepositories.find(r => r.isPrimary) || task.project.githubRepositories[0]
+  const repository =
+    task.project.githubRepositories.find((r) => r.isPrimary) || task.project.githubRepositories[0];
   if (!repository) {
-    throw new Error(`Project ${task.project.id} has no linked GitHub repository`)
+    throw new Error(`Project ${task.project.id} has no linked GitHub repository`);
   }
 
-  const githubIssue = task.githubIssue
+  const githubIssue = task.githubIssue;
   if (!githubIssue) {
-    throw new Error(`Task ${taskId} has no linked GitHub issue`)
+    throw new Error(`Task ${taskId} has no linked GitHub issue`);
   }
 
-  const workspaceId = task.project.workspaceId
+  const workspaceId = task.project.workspaceId;
 
   // Conflict detection (unless force is true)
   if (!force) {
-    const state: 'open' | 'closed' = task.isActive ? 'open' : 'closed'
-    const currentHash = calculateSyncHash(task.title, task.description, state)
+    const state: 'open' | 'closed' = task.isActive ? 'open' : 'closed';
+    const currentHash = calculateSyncHash(task.title, task.description, state);
 
     // If the hash hasn't changed, skip the update
     if (githubIssue.syncHash === currentHash) {
@@ -1065,28 +1068,25 @@ export async function updateGitHubIssueFromTask(
         issueId: githubIssue.issueId,
         created: false,
         updated: false,
-      }
+      };
     }
   }
 
   // Get Octokit client
-  const octokit = await getInstallationOctokit(repository.installation.installationId)
+  const octokit = await getInstallationOctokit(repository.installation.installationId);
 
   // Map assignees to GitHub logins
-  const assigneeUserIds = task.assignees.map((a) => a.user.id)
-  const { mapped: assigneeLogins } = await mapKanbuAssigneesToGitHub(
-    assigneeUserIds,
-    workspaceId
-  )
+  const assigneeUserIds = task.assignees.map((a) => a.user.id);
+  const { mapped: assigneeLogins } = await mapKanbuAssigneesToGitHub(assigneeUserIds, workspaceId);
 
   // Get labels from tags
-  const labels = await getLabelsFromTags(taskId)
+  const labels = await getLabelsFromTags(taskId);
 
   // Get GitHub milestone number from Kanbu milestone
-  const milestoneNumber = task.milestone?.githubMilestone?.milestoneNumber ?? null
+  const milestoneNumber = task.milestone?.githubMilestone?.milestoneNumber ?? null;
 
   // Determine state
-  const state: 'open' | 'closed' = task.isActive ? 'open' : 'closed'
+  const state: 'open' | 'closed' = task.isActive ? 'open' : 'closed';
 
   // Update the GitHub issue
   await octokit.rest.issues.update({
@@ -1099,10 +1099,10 @@ export async function updateGitHubIssueFromTask(
     assignees: assigneeLogins,
     state,
     milestone: milestoneNumber, // Sync milestone assignment to GitHub
-  })
+  });
 
   // Calculate new sync hash
-  const syncHash = calculateSyncHash(task.title, task.description, state)
+  const syncHash = calculateSyncHash(task.title, task.description, state);
 
   // Update GitHubIssue record
   await prisma.gitHubIssue.update({
@@ -1113,7 +1113,7 @@ export async function updateGitHubIssueFromTask(
       syncHash,
       lastSyncAt: new Date(),
     },
-  })
+  });
 
   // Log sync operation
   await prisma.gitHubSyncLog.create({
@@ -1132,14 +1132,14 @@ export async function updateGitHubIssueFromTask(
         labelsUpdated: labels.length,
       },
     },
-  })
+  });
 
   return {
     issueNumber: githubIssue.issueNumber,
     issueId: githubIssue.issueId,
     created: false,
     updated: true,
-  }
+  };
 }
 
 /**
@@ -1148,26 +1148,26 @@ export async function updateGitHubIssueFromTask(
 export async function syncTaskToGitHub(
   taskId: number,
   options: {
-    syncDirection?: SyncDirection
-    force?: boolean
+    syncDirection?: SyncDirection;
+    force?: boolean;
   } = {}
 ): Promise<OutboundSyncResult> {
   // Check if task already has a GitHub issue
   const task = await prisma.task.findUnique({
     where: { id: taskId },
     include: { githubIssue: true },
-  })
+  });
 
   if (!task) {
-    throw new Error(`Task ${taskId} not found`)
+    throw new Error(`Task ${taskId} not found`);
   }
 
   if (task.githubIssue) {
     // Update existing issue
-    return updateGitHubIssueFromTask(taskId, { force: options.force })
+    return updateGitHubIssueFromTask(taskId, { force: options.force });
   } else {
     // Create new issue
-    return createGitHubIssueFromTask(taskId, { syncDirection: options.syncDirection })
+    return createGitHubIssueFromTask(taskId, { syncDirection: options.syncDirection });
   }
 }
 
@@ -1197,4 +1197,4 @@ export const issueSyncService = {
   createGitHubIssueFromTask,
   updateGitHubIssueFromTask,
   syncTaskToGitHub,
-}
+};

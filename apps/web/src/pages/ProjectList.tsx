@@ -17,23 +17,23 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState, useEffect } from 'react'
-import { useSearchParams, Link, useNavigate } from 'react-router-dom'
-import { DashboardLayout } from '@/components/dashboard'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
-import { ProjectCard } from '@/components/project/ProjectCard'
-import { useAppDispatch } from '@/store'
-import { setProjects, setLoading, setError } from '@/store/projectSlice'
-import { trpc, getMediaUrl } from '@/lib/trpc'
-import { lexicalToPlainText, isLexicalContent } from '@/components/editor'
+import { useState, useEffect } from 'react';
+import { useSearchParams, Link, useNavigate } from 'react-router-dom';
+import { DashboardLayout } from '@/components/dashboard';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { ProjectCard } from '@/components/project/ProjectCard';
+import { useAppDispatch } from '@/store';
+import { setProjects, setLoading, setError } from '@/store/projectSlice';
+import { trpc, getMediaUrl } from '@/lib/trpc';
+import { lexicalToPlainText, isLexicalContent } from '@/components/editor';
 
 // =============================================================================
 // Types
 // =============================================================================
 
-type ViewMode = 'grid' | 'list'
+type ViewMode = 'grid' | 'list';
 
 // =============================================================================
 // Helper Functions
@@ -41,12 +41,12 @@ type ViewMode = 'grid' | 'list'
 
 /** Get plain text description for display in cards (handles Lexical JSON) */
 function getPlainDescription(description: string | null): string {
-  if (!description) return 'No description'
+  if (!description) return 'No description';
   if (isLexicalContent(description)) {
-    const plainText = lexicalToPlainText(description).trim()
-    return plainText || 'No description'
+    const plainText = lexicalToPlainText(description).trim();
+    return plainText || 'No description';
   }
-  return description
+  return description;
 }
 
 // =============================================================================
@@ -54,33 +54,35 @@ function getPlainDescription(description: string | null): string {
 // =============================================================================
 
 export function ProjectListPage() {
-  const dispatch = useAppDispatch()
-  const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
+  const dispatch = useAppDispatch();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
-  const [viewMode, setViewMode] = useState<ViewMode>('list')
-  const [showArchived, setShowArchived] = useState(false)
-  const [showCreateModal, setShowCreateModal] = useState(false)
-  const [showCreateWorkspaceModal, setShowCreateWorkspaceModal] = useState(false)
-  const [editingWorkspace, setEditingWorkspace] = useState<{ id: number; name: string; description: string | null } | null>(null)
-  const [searchQuery, setSearchQuery] = useState('')
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [showArchived, setShowArchived] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showCreateWorkspaceModal, setShowCreateWorkspaceModal] = useState(false);
+  const [editingWorkspace, setEditingWorkspace] = useState<{
+    id: number;
+    name: string;
+    description: string | null;
+  } | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Get workspace ID from URL query param
-  const workspaceIdParam = searchParams.get('workspace')
-  const workspaceId = workspaceIdParam ? parseInt(workspaceIdParam, 10) : null
+  const workspaceIdParam = searchParams.get('workspace');
+  const workspaceId = workspaceIdParam ? parseInt(workspaceIdParam, 10) : null;
 
   // Check if user is Domain Admin (can create/edit workspaces)
-  const { data: adminScope } = trpc.group.myAdminScope.useQuery()
-  const isDomainAdmin = adminScope?.isDomainAdmin ?? false
+  const { data: adminScope } = trpc.group.myAdminScope.useQuery();
+  const isDomainAdmin = adminScope?.isDomainAdmin ?? false;
 
   // Fetch all workspaces the user has access to
-  const workspacesQuery = trpc.workspace.list.useQuery()
-  const workspaces = workspacesQuery.data ?? []
+  const workspacesQuery = trpc.workspace.list.useQuery();
+  const workspaces = workspacesQuery.data ?? [];
 
   // Find the current workspace from the list
-  const currentWorkspace = workspaceId
-    ? workspaces.find((w) => w.id === workspaceId)
-    : null
+  const currentWorkspace = workspaceId ? workspaces.find((w) => w.id === workspaceId) : null;
 
   // Fetch projects for current workspace (if one is selected)
   const {
@@ -91,32 +93,32 @@ export function ProjectListPage() {
   } = trpc.project.list.useQuery(
     { workspaceId: workspaceId ?? 0, includeArchived: showArchived },
     { enabled: !!workspaceId }
-  )
+  );
 
   // Sync API data to Redux store
   useEffect(() => {
     if (isFetching) {
-      dispatch(setLoading(true))
+      dispatch(setLoading(true));
     } else if (error) {
-      dispatch(setError(error.message))
+      dispatch(setError(error.message));
     } else if (data) {
-      dispatch(setProjects(data))
+      dispatch(setProjects(data));
     }
-  }, [data, isFetching, error, dispatch])
+  }, [data, isFetching, error, dispatch]);
 
   // Use fetched data directly instead of Redux
-  const projects = data ?? []
+  const projects = data ?? [];
 
   // Filter projects by search query
   const filteredProjects = projects.filter((project) => {
-    if (!searchQuery) return true
-    const query = searchQuery.toLowerCase()
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
     return (
       project.name.toLowerCase().includes(query) ||
       project.identifier?.toLowerCase().includes(query) ||
       project.description?.toLowerCase().includes(query)
-    )
-  })
+    );
+  });
 
   // No workspace selected - show workspace selection
   if (!workspaceId || !currentWorkspace) {
@@ -126,9 +128,7 @@ export function ProjectListPage() {
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-page-title-lg tracking-tight text-foreground">My Workspaces</h1>
-              <p className="text-muted-foreground">
-                Select a workspace to view projects
-              </p>
+              <p className="text-muted-foreground">Select a workspace to view projects</p>
             </div>
             {isDomainAdmin && (
               <Button onClick={() => setShowCreateWorkspaceModal(true)}>
@@ -154,10 +154,7 @@ export function ProjectListPage() {
                 <div className="text-center py-8 text-muted-foreground">
                   <p>No workspaces available</p>
                   {isDomainAdmin ? (
-                    <Button
-                      className="mt-4"
-                      onClick={() => setShowCreateWorkspaceModal(true)}
-                    >
+                    <Button className="mt-4" onClick={() => setShowCreateWorkspaceModal(true)}>
                       <PlusIcon className="h-4 w-4 mr-2" />
                       Create your first workspace
                     </Button>
@@ -170,7 +167,10 @@ export function ProjectListPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {workspaces.map((workspace) => (
-                <Card key={workspace.id} className="hover:bg-accent/50 transition-colors h-full group relative">
+                <Card
+                  key={workspace.id}
+                  className="hover:bg-accent/50 transition-colors h-full group relative"
+                >
                   <Link to={`/workspace/${workspace.slug}`} className="block">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
@@ -203,13 +203,13 @@ export function ProjectListPage() {
                         variant="ghost"
                         size="sm"
                         onClick={(e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
+                          e.preventDefault();
+                          e.stopPropagation();
                           setEditingWorkspace({
                             id: workspace.id,
                             name: workspace.name,
                             description: workspace.description,
-                          })
+                          });
                         }}
                         title="Edit workspace"
                       >
@@ -219,9 +219,9 @@ export function ProjectListPage() {
                         variant="ghost"
                         size="sm"
                         onClick={(e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          navigate(`/workspace/${workspace.slug}/settings`)
+                          e.preventDefault();
+                          e.stopPropagation();
+                          navigate(`/workspace/${workspace.slug}/settings`);
                         }}
                         title="Workspace settings"
                       >
@@ -239,8 +239,8 @@ export function ProjectListPage() {
             <CreateWorkspaceModal
               onClose={() => setShowCreateWorkspaceModal(false)}
               onCreated={() => {
-                setShowCreateWorkspaceModal(false)
-                workspacesQuery.refetch()
+                setShowCreateWorkspaceModal(false);
+                workspacesQuery.refetch();
               }}
             />
           )}
@@ -251,14 +251,14 @@ export function ProjectListPage() {
               workspace={editingWorkspace}
               onClose={() => setEditingWorkspace(null)}
               onUpdated={() => {
-                setEditingWorkspace(null)
-                workspacesQuery.refetch()
+                setEditingWorkspace(null);
+                workspacesQuery.refetch();
               }}
             />
           )}
         </div>
       </DashboardLayout>
-    )
+    );
   }
 
   return (
@@ -268,9 +268,7 @@ export function ProjectListPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-page-title-lg tracking-tight text-foreground">Projects</h1>
-            <p className="text-muted-foreground">
-              Manage projects in {currentWorkspace.name}
-            </p>
+            <p className="text-muted-foreground">Manage projects in {currentWorkspace.name}</p>
           </div>
           {currentWorkspace.role === 'ADMIN' && (
             <Button onClick={() => setShowCreateModal(true)}>
@@ -375,14 +373,14 @@ export function ProjectListPage() {
             workspaceId={currentWorkspace.id}
             onClose={() => setShowCreateModal(false)}
             onCreated={() => {
-              setShowCreateModal(false)
-              refetch()
+              setShowCreateModal(false);
+              refetch();
             }}
           />
         )}
       </div>
     </DashboardLayout>
-  )
+  );
 }
 
 // =============================================================================
@@ -390,31 +388,31 @@ export function ProjectListPage() {
 // =============================================================================
 
 interface CreateProjectModalProps {
-  workspaceId: number
-  onClose: () => void
-  onCreated: () => void
+  workspaceId: number;
+  onClose: () => void;
+  onCreated: () => void;
 }
 
 function CreateProjectModal({ workspaceId, onClose, onCreated }: CreateProjectModalProps) {
-  const [name, setName] = useState('')
-  const [identifier, setIdentifier] = useState('')
-  const [description, setDescription] = useState('')
+  const [name, setName] = useState('');
+  const [identifier, setIdentifier] = useState('');
+  const [description, setDescription] = useState('');
 
   const createMutation = trpc.project.create.useMutation({
     onSuccess: () => {
-      onCreated()
+      onCreated();
     },
-  })
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     createMutation.mutate({
       workspaceId,
       name,
       identifier: identifier || undefined,
       description: description || undefined,
-    })
-  }
+    });
+  };
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -470,7 +468,7 @@ function CreateProjectModal({ workspaceId, onClose, onCreated }: CreateProjectMo
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -491,7 +489,7 @@ function PlusIcon({ className }: { className?: string }) {
     >
       <path d="M12 5v14M5 12h14" />
     </svg>
-  )
+  );
 }
 
 function GridIcon({ className }: { className?: string }) {
@@ -511,7 +509,7 @@ function GridIcon({ className }: { className?: string }) {
       <rect x="14" y="14" width="7" height="7" />
       <rect x="3" y="14" width="7" height="7" />
     </svg>
-  )
+  );
 }
 
 function ListIcon({ className }: { className?: string }) {
@@ -533,7 +531,7 @@ function ListIcon({ className }: { className?: string }) {
       <line x1="3" y1="12" x2="3.01" y2="12" />
       <line x1="3" y1="18" x2="3.01" y2="18" />
     </svg>
-  )
+  );
 }
 
 function WorkspaceIcon({ className }: { className?: string }) {
@@ -550,7 +548,7 @@ function WorkspaceIcon({ className }: { className?: string }) {
     >
       <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
     </svg>
-  )
+  );
 }
 
 function EditIcon({ className }: { className?: string }) {
@@ -568,7 +566,7 @@ function EditIcon({ className }: { className?: string }) {
       <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
       <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
     </svg>
-  )
+  );
 }
 
 function SettingsIcon({ className }: { className?: string }) {
@@ -586,7 +584,7 @@ function SettingsIcon({ className }: { className?: string }) {
       <circle cx="12" cy="12" r="3" />
       <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" />
     </svg>
-  )
+  );
 }
 
 // =============================================================================
@@ -594,27 +592,27 @@ function SettingsIcon({ className }: { className?: string }) {
 // =============================================================================
 
 interface CreateWorkspaceModalProps {
-  onClose: () => void
-  onCreated: () => void
+  onClose: () => void;
+  onCreated: () => void;
 }
 
 function CreateWorkspaceModal({ onClose, onCreated }: CreateWorkspaceModalProps) {
-  const [name, setName] = useState('')
-  const [description, setDescription] = useState('')
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
 
   const createMutation = trpc.workspace.create.useMutation({
     onSuccess: () => {
-      onCreated()
+      onCreated();
     },
-  })
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     createMutation.mutate({
       name,
       description: description || undefined,
-    })
-  }
+    });
+  };
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -659,7 +657,7 @@ function CreateWorkspaceModal({ onClose, onCreated }: CreateWorkspaceModalProps)
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -667,29 +665,29 @@ function CreateWorkspaceModal({ onClose, onCreated }: CreateWorkspaceModalProps)
 // =============================================================================
 
 interface EditWorkspaceModalProps {
-  workspace: { id: number; name: string; description: string | null }
-  onClose: () => void
-  onUpdated: () => void
+  workspace: { id: number; name: string; description: string | null };
+  onClose: () => void;
+  onUpdated: () => void;
 }
 
 function EditWorkspaceModal({ workspace, onClose, onUpdated }: EditWorkspaceModalProps) {
-  const [name, setName] = useState(workspace.name)
-  const [description, setDescription] = useState(workspace.description || '')
+  const [name, setName] = useState(workspace.name);
+  const [description, setDescription] = useState(workspace.description || '');
 
   const updateMutation = trpc.workspace.update.useMutation({
     onSuccess: () => {
-      onUpdated()
+      onUpdated();
     },
-  })
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     updateMutation.mutate({
       workspaceId: workspace.id,
       name,
       description: description || undefined,
-    })
-  }
+    });
+  };
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -734,11 +732,11 @@ function EditWorkspaceModal({ workspace, onClose, onUpdated }: EditWorkspaceModa
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
 
 // =============================================================================
 // Exports
 // =============================================================================
 
-export default ProjectListPage
+export default ProjectListPage;

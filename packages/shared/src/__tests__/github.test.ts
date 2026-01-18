@@ -5,7 +5,7 @@
  * Tests for type exports, const arrays, and interface structures.
  */
 
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect } from 'vitest';
 import {
   // Const arrays
   GITHUB_ACCOUNT_TYPES,
@@ -34,7 +34,7 @@ import {
   type LinkRepositoryInput,
   type CreateUserMappingInput,
   type UpdateSyncSettingsInput,
-} from '../types/github'
+} from '../types/github';
 
 // =============================================================================
 // Const Array Tests
@@ -43,81 +43,81 @@ import {
 describe('GitHub Const Arrays', () => {
   describe('GITHUB_ACCOUNT_TYPES', () => {
     it('contains user and organization', () => {
-      expect(GITHUB_ACCOUNT_TYPES).toContain('user')
-      expect(GITHUB_ACCOUNT_TYPES).toContain('organization')
-    })
+      expect(GITHUB_ACCOUNT_TYPES).toContain('user');
+      expect(GITHUB_ACCOUNT_TYPES).toContain('organization');
+    });
 
     it('has exactly 2 values', () => {
-      expect(GITHUB_ACCOUNT_TYPES.length).toBe(2)
-    })
+      expect(GITHUB_ACCOUNT_TYPES.length).toBe(2);
+    });
 
     it('is readonly', () => {
       // TypeScript ensures this at compile time, but we can verify the values are stable
-      const expected = ['user', 'organization'] as const
-      expect(GITHUB_ACCOUNT_TYPES).toEqual(expected)
-    })
-  })
+      const expected = ['user', 'organization'] as const;
+      expect(GITHUB_ACCOUNT_TYPES).toEqual(expected);
+    });
+  });
 
   describe('GITHUB_ISSUE_STATES', () => {
     it('contains open and closed', () => {
-      expect(GITHUB_ISSUE_STATES).toContain('open')
-      expect(GITHUB_ISSUE_STATES).toContain('closed')
-    })
+      expect(GITHUB_ISSUE_STATES).toContain('open');
+      expect(GITHUB_ISSUE_STATES).toContain('closed');
+    });
 
     it('has exactly 2 values', () => {
-      expect(GITHUB_ISSUE_STATES.length).toBe(2)
-    })
-  })
+      expect(GITHUB_ISSUE_STATES.length).toBe(2);
+    });
+  });
 
   describe('GITHUB_PR_STATES', () => {
     it('contains open, closed, and merged', () => {
-      expect(GITHUB_PR_STATES).toContain('open')
-      expect(GITHUB_PR_STATES).toContain('closed')
-      expect(GITHUB_PR_STATES).toContain('merged')
-    })
+      expect(GITHUB_PR_STATES).toContain('open');
+      expect(GITHUB_PR_STATES).toContain('closed');
+      expect(GITHUB_PR_STATES).toContain('merged');
+    });
 
     it('has exactly 3 values', () => {
-      expect(GITHUB_PR_STATES.length).toBe(3)
-    })
-  })
+      expect(GITHUB_PR_STATES.length).toBe(3);
+    });
+  });
 
   describe('SYNC_DIRECTIONS', () => {
     it('contains all sync directions', () => {
-      expect(SYNC_DIRECTIONS).toContain('kanbu_to_github')
-      expect(SYNC_DIRECTIONS).toContain('github_to_kanbu')
-      expect(SYNC_DIRECTIONS).toContain('bidirectional')
-    })
+      expect(SYNC_DIRECTIONS).toContain('kanbu_to_github');
+      expect(SYNC_DIRECTIONS).toContain('github_to_kanbu');
+      expect(SYNC_DIRECTIONS).toContain('bidirectional');
+    });
 
     it('has exactly 3 values', () => {
-      expect(SYNC_DIRECTIONS.length).toBe(3)
-    })
-  })
+      expect(SYNC_DIRECTIONS.length).toBe(3);
+    });
+  });
 
   describe('SYNC_STATUSES', () => {
     it('contains success, failed, and skipped', () => {
-      expect(SYNC_STATUSES).toContain('success')
-      expect(SYNC_STATUSES).toContain('failed')
-      expect(SYNC_STATUSES).toContain('skipped')
-    })
+      expect(SYNC_STATUSES).toContain('success');
+      expect(SYNC_STATUSES).toContain('failed');
+      expect(SYNC_STATUSES).toContain('skipped');
+    });
 
     it('has exactly 3 values', () => {
-      expect(SYNC_STATUSES.length).toBe(3)
-    })
-  })
+      expect(SYNC_STATUSES.length).toBe(3);
+    });
+  });
 
   describe('SYNC_ENTITY_TYPES', () => {
     it('contains all entity types', () => {
-      expect(SYNC_ENTITY_TYPES).toContain('issue')
-      expect(SYNC_ENTITY_TYPES).toContain('pr')
-      expect(SYNC_ENTITY_TYPES).toContain('commit')
-      expect(SYNC_ENTITY_TYPES).toContain('task')
-    })
+      expect(SYNC_ENTITY_TYPES).toContain('issue');
+      expect(SYNC_ENTITY_TYPES).toContain('pr');
+      expect(SYNC_ENTITY_TYPES).toContain('commit');
+      expect(SYNC_ENTITY_TYPES).toContain('task');
+    });
 
     it('has exactly 4 values', () => {
-      expect(SYNC_ENTITY_TYPES.length).toBe(4)
-    })
-  })
-})
+      expect(SYNC_ENTITY_TYPES.length).toBe(4);
+    });
+  });
+});
 
 // =============================================================================
 // Type Value Tests
@@ -126,74 +126,74 @@ describe('GitHub Const Arrays', () => {
 describe('GitHub Types', () => {
   describe('GitHubAccountType', () => {
     it('accepts valid account types', () => {
-      const userType: GitHubAccountType = 'user'
-      const orgType: GitHubAccountType = 'organization'
+      const userType: GitHubAccountType = 'user';
+      const orgType: GitHubAccountType = 'organization';
 
-      expect(userType).toBe('user')
-      expect(orgType).toBe('organization')
-    })
-  })
+      expect(userType).toBe('user');
+      expect(orgType).toBe('organization');
+    });
+  });
 
   describe('GitHubIssueState', () => {
     it('accepts valid issue states', () => {
-      const open: GitHubIssueState = 'open'
-      const closed: GitHubIssueState = 'closed'
+      const open: GitHubIssueState = 'open';
+      const closed: GitHubIssueState = 'closed';
 
-      expect(open).toBe('open')
-      expect(closed).toBe('closed')
-    })
-  })
+      expect(open).toBe('open');
+      expect(closed).toBe('closed');
+    });
+  });
 
   describe('GitHubPRState', () => {
     it('accepts valid PR states', () => {
-      const open: GitHubPRState = 'open'
-      const closed: GitHubPRState = 'closed'
-      const merged: GitHubPRState = 'merged'
+      const open: GitHubPRState = 'open';
+      const closed: GitHubPRState = 'closed';
+      const merged: GitHubPRState = 'merged';
 
-      expect(open).toBe('open')
-      expect(closed).toBe('closed')
-      expect(merged).toBe('merged')
-    })
-  })
+      expect(open).toBe('open');
+      expect(closed).toBe('closed');
+      expect(merged).toBe('merged');
+    });
+  });
 
   describe('SyncDirection', () => {
     it('accepts valid sync directions', () => {
-      const toGithub: SyncDirection = 'kanbu_to_github'
-      const toKanbu: SyncDirection = 'github_to_kanbu'
-      const bidirectional: SyncDirection = 'bidirectional'
+      const toGithub: SyncDirection = 'kanbu_to_github';
+      const toKanbu: SyncDirection = 'github_to_kanbu';
+      const bidirectional: SyncDirection = 'bidirectional';
 
-      expect(toGithub).toBe('kanbu_to_github')
-      expect(toKanbu).toBe('github_to_kanbu')
-      expect(bidirectional).toBe('bidirectional')
-    })
-  })
+      expect(toGithub).toBe('kanbu_to_github');
+      expect(toKanbu).toBe('github_to_kanbu');
+      expect(bidirectional).toBe('bidirectional');
+    });
+  });
 
   describe('SyncStatus', () => {
     it('accepts valid sync statuses', () => {
-      const success: SyncStatus = 'success'
-      const failed: SyncStatus = 'failed'
-      const skipped: SyncStatus = 'skipped'
+      const success: SyncStatus = 'success';
+      const failed: SyncStatus = 'failed';
+      const skipped: SyncStatus = 'skipped';
 
-      expect(success).toBe('success')
-      expect(failed).toBe('failed')
-      expect(skipped).toBe('skipped')
-    })
-  })
+      expect(success).toBe('success');
+      expect(failed).toBe('failed');
+      expect(skipped).toBe('skipped');
+    });
+  });
 
   describe('SyncEntityType', () => {
     it('accepts valid entity types', () => {
-      const issue: SyncEntityType = 'issue'
-      const pr: SyncEntityType = 'pr'
-      const commit: SyncEntityType = 'commit'
-      const task: SyncEntityType = 'task'
+      const issue: SyncEntityType = 'issue';
+      const pr: SyncEntityType = 'pr';
+      const commit: SyncEntityType = 'commit';
+      const task: SyncEntityType = 'task';
 
-      expect(issue).toBe('issue')
-      expect(pr).toBe('pr')
-      expect(commit).toBe('commit')
-      expect(task).toBe('task')
-    })
-  })
-})
+      expect(issue).toBe('issue');
+      expect(pr).toBe('pr');
+      expect(commit).toBe('commit');
+      expect(task).toBe('task');
+    });
+  });
+});
 
 // =============================================================================
 // Interface Structure Tests
@@ -202,9 +202,9 @@ describe('GitHub Types', () => {
 describe('GitHub Interfaces', () => {
   describe('GitHubSyncSettings', () => {
     it('allows empty settings', () => {
-      const settings: GitHubSyncSettings = {}
-      expect(settings).toEqual({})
-    })
+      const settings: GitHubSyncSettings = {};
+      expect(settings).toEqual({});
+    });
 
     it('allows partial settings', () => {
       const settings: GitHubSyncSettings = {
@@ -212,19 +212,19 @@ describe('GitHub Interfaces', () => {
           enabled: true,
           direction: 'bidirectional',
         },
-      }
+      };
 
-      expect(settings.issues?.enabled).toBe(true)
-      expect(settings.issues?.direction).toBe('bidirectional')
-    })
+      expect(settings.issues?.enabled).toBe(true);
+      expect(settings.issues?.direction).toBe('bidirectional');
+    });
 
     it('allows full settings', () => {
       const settings: GitHubSyncSettings = {
         issues: {
           enabled: true,
           direction: 'bidirectional',
-          labelMapping: { 'bug': 'Bug', 'feature': 'Feature' },
-          stateMapping: { 'open': 'To Do', 'closed': 'Done' },
+          labelMapping: { bug: 'Bug', feature: 'Feature' },
+          stateMapping: { open: 'To Do', closed: 'Done' },
         },
         pullRequests: {
           enabled: true,
@@ -239,15 +239,15 @@ describe('GitHub Interfaces', () => {
           enabled: true,
           pattern: 'feature/{reference}',
         },
-      }
+      };
 
-      expect(settings.issues?.enabled).toBe(true)
-      expect(settings.issues?.labelMapping?.['bug']).toBe('Bug')
-      expect(settings.pullRequests?.autoLink).toBe(true)
-      expect(settings.commits?.pattern).toBe('KANBU-\\d+')
-      expect(settings.branches?.pattern).toBe('feature/{reference}')
-    })
-  })
+      expect(settings.issues?.enabled).toBe(true);
+      expect(settings.issues?.labelMapping?.['bug']).toBe('Bug');
+      expect(settings.pullRequests?.autoLink).toBe(true);
+      expect(settings.commits?.pattern).toBe('KANBU-\\d+');
+      expect(settings.branches?.pattern).toBe('feature/{reference}');
+    });
+  });
 
   describe('GitHubInstallationInfo', () => {
     it('has required fields', () => {
@@ -260,13 +260,13 @@ describe('GitHub Interfaces', () => {
         permissions: { issues: 'write', pull_requests: 'write' },
         events: ['issues', 'pull_request'],
         createdAt: new Date(),
-      }
+      };
 
-      expect(installation.id).toBe(1)
-      expect(installation.accountType).toBe('organization')
-      expect(installation.permissions.issues).toBe('write')
-      expect(installation.events).toContain('issues')
-    })
+      expect(installation.id).toBe(1);
+      expect(installation.accountType).toBe('organization');
+      expect(installation.permissions.issues).toBe('write');
+      expect(installation.events).toContain('issues');
+    });
 
     it('allows optional suspendedAt', () => {
       const installation: GitHubInstallationInfo = {
@@ -279,11 +279,11 @@ describe('GitHub Interfaces', () => {
         events: [],
         suspendedAt: new Date(),
         createdAt: new Date(),
-      }
+      };
 
-      expect(installation.suspendedAt).toBeDefined()
-    })
-  })
+      expect(installation.suspendedAt).toBeDefined();
+    });
+  });
 
   describe('GitHubRepositoryInfo', () => {
     it('has required fields', () => {
@@ -297,11 +297,11 @@ describe('GitHub Interfaces', () => {
         isPrivate: false,
         syncEnabled: true,
         syncSettings: {},
-      }
+      };
 
-      expect(repo.fullName).toBe('my-org/my-repo')
-      expect(repo.syncEnabled).toBe(true)
-    })
+      expect(repo.fullName).toBe('my-org/my-repo');
+      expect(repo.syncEnabled).toBe(true);
+    });
 
     it('allows optional lastSyncAt', () => {
       const repo: GitHubRepositoryInfo = {
@@ -315,11 +315,11 @@ describe('GitHub Interfaces', () => {
         syncEnabled: true,
         syncSettings: {},
         lastSyncAt: new Date(),
-      }
+      };
 
-      expect(repo.lastSyncAt).toBeDefined()
-    })
-  })
+      expect(repo.lastSyncAt).toBeDefined();
+    });
+  });
 
   describe('GitHubUserMappingInfo', () => {
     it('has required fields', () => {
@@ -329,11 +329,11 @@ describe('GitHub Interfaces', () => {
         userId: 1,
         githubLogin: 'octocat',
         autoMatched: false,
-      }
+      };
 
-      expect(mapping.githubLogin).toBe('octocat')
-      expect(mapping.autoMatched).toBe(false)
-    })
+      expect(mapping.githubLogin).toBe('octocat');
+      expect(mapping.autoMatched).toBe(false);
+    });
 
     it('allows optional user object', () => {
       const mapping: GitHubUserMappingInfo = {
@@ -350,12 +350,12 @@ describe('GitHub Interfaces', () => {
           username: 'robin',
           avatarUrl: '/avatars/robin.png',
         },
-      }
+      };
 
-      expect(mapping.user?.name).toBe('Robin Waslander')
-      expect(mapping.githubId).toBe(BigInt(583231))
-    })
-  })
+      expect(mapping.user?.name).toBe('Robin Waslander');
+      expect(mapping.githubId).toBe(BigInt(583231));
+    });
+  });
 
   describe('GitHubIssueInfo', () => {
     it('has required fields', () => {
@@ -367,11 +367,11 @@ describe('GitHub Interfaces', () => {
         title: 'Fix bug in authentication',
         state: 'open',
         syncDirection: 'bidirectional',
-      }
+      };
 
-      expect(issue.issueNumber).toBe(42)
-      expect(issue.state).toBe('open')
-    })
+      expect(issue.issueNumber).toBe(42);
+      expect(issue.state).toBe('open');
+    });
 
     it('allows optional taskId', () => {
       const issue: GitHubIssueInfo = {
@@ -384,11 +384,11 @@ describe('GitHub Interfaces', () => {
         state: 'closed',
         syncDirection: 'github_to_kanbu',
         lastSyncAt: new Date(),
-      }
+      };
 
-      expect(issue.taskId).toBe(100)
-    })
-  })
+      expect(issue.taskId).toBe(100);
+    });
+  });
 
   describe('GitHubPullRequestInfo', () => {
     it('has required fields', () => {
@@ -402,11 +402,11 @@ describe('GitHub Interfaces', () => {
         headBranch: 'feature/KANBU-42',
         baseBranch: 'main',
         authorLogin: 'developer',
-      }
+      };
 
-      expect(pr.prNumber).toBe(123)
-      expect(pr.headBranch).toBe('feature/KANBU-42')
-    })
+      expect(pr.prNumber).toBe(123);
+      expect(pr.headBranch).toBe('feature/KANBU-42');
+    });
 
     it('allows merged state with mergedAt', () => {
       const pr: GitHubPullRequestInfo = {
@@ -422,12 +422,12 @@ describe('GitHub Interfaces', () => {
         authorLogin: 'developer',
         mergedAt: new Date(),
         closedAt: new Date(),
-      }
+      };
 
-      expect(pr.state).toBe('merged')
-      expect(pr.mergedAt).toBeDefined()
-    })
-  })
+      expect(pr.state).toBe('merged');
+      expect(pr.mergedAt).toBeDefined();
+    });
+  });
 
   describe('GitHubCommitInfo', () => {
     it('has required fields', () => {
@@ -439,11 +439,11 @@ describe('GitHub Interfaces', () => {
         authorName: 'Robin Waslander',
         authorEmail: 'R.Waslander@gmail.com',
         committedAt: new Date(),
-      }
+      };
 
-      expect(commit.sha.length).toBe(40)
-      expect(commit.authorName).toBe('Robin Waslander')
-    })
+      expect(commit.sha.length).toBe(40);
+      expect(commit.authorName).toBe('Robin Waslander');
+    });
 
     it('allows optional authorLogin and taskId', () => {
       const commit: GitHubCommitInfo = {
@@ -456,12 +456,12 @@ describe('GitHub Interfaces', () => {
         authorEmail: 'robin@example.com',
         authorLogin: 'robin',
         committedAt: new Date(),
-      }
+      };
 
-      expect(commit.authorLogin).toBe('robin')
-      expect(commit.taskId).toBe(42)
-    })
-  })
+      expect(commit.authorLogin).toBe('robin');
+      expect(commit.taskId).toBe(42);
+    });
+  });
 
   describe('GitHubSyncLogEntry', () => {
     it('has required fields', () => {
@@ -474,11 +474,11 @@ describe('GitHub Interfaces', () => {
         details: { issueNumber: 42 },
         status: 'success',
         createdAt: new Date(),
-      }
+      };
 
-      expect(log.action).toBe('issue_created')
-      expect(log.status).toBe('success')
-    })
+      expect(log.action).toBe('issue_created');
+      expect(log.status).toBe('success');
+    });
 
     it('allows error message on failure', () => {
       const log: GitHubSyncLogEntry = {
@@ -492,13 +492,13 @@ describe('GitHub Interfaces', () => {
         status: 'failed',
         errorMessage: 'GitHub API rate limit exceeded',
         createdAt: new Date(),
-      }
+      };
 
-      expect(log.status).toBe('failed')
-      expect(log.errorMessage).toContain('rate limit')
-    })
-  })
-})
+      expect(log.status).toBe('failed');
+      expect(log.errorMessage).toContain('rate limit');
+    });
+  });
+});
 
 // =============================================================================
 // Input Type Tests
@@ -514,11 +514,11 @@ describe('GitHub Input Types', () => {
         owner: 'my-org',
         name: 'my-repo',
         fullName: 'my-org/my-repo',
-      }
+      };
 
-      expect(input.projectId).toBe(1)
-      expect(input.fullName).toBe('my-org/my-repo')
-    })
+      expect(input.projectId).toBe(1);
+      expect(input.fullName).toBe('my-org/my-repo');
+    });
 
     it('allows optional fields', () => {
       const input: LinkRepositoryInput = {
@@ -533,13 +533,13 @@ describe('GitHub Input Types', () => {
         syncSettings: {
           issues: { enabled: true, direction: 'bidirectional' },
         },
-      }
+      };
 
-      expect(input.defaultBranch).toBe('develop')
-      expect(input.isPrivate).toBe(true)
-      expect(input.syncSettings?.issues?.enabled).toBe(true)
-    })
-  })
+      expect(input.defaultBranch).toBe('develop');
+      expect(input.isPrivate).toBe(true);
+      expect(input.syncSettings?.issues?.enabled).toBe(true);
+    });
+  });
 
   describe('CreateUserMappingInput', () => {
     it('has required fields', () => {
@@ -547,10 +547,10 @@ describe('GitHub Input Types', () => {
         workspaceId: 1,
         userId: 1,
         githubLogin: 'octocat',
-      }
+      };
 
-      expect(input.githubLogin).toBe('octocat')
-    })
+      expect(input.githubLogin).toBe('octocat');
+    });
 
     it('allows optional GitHub details', () => {
       const input: CreateUserMappingInput = {
@@ -561,30 +561,30 @@ describe('GitHub Input Types', () => {
         githubEmail: 'octocat@github.com',
         githubAvatarUrl: 'https://avatars.githubusercontent.com/u/583231',
         autoMatched: true,
-      }
+      };
 
-      expect(input.githubId).toBe(BigInt(583231))
-      expect(input.autoMatched).toBe(true)
-    })
-  })
+      expect(input.githubId).toBe(BigInt(583231));
+      expect(input.autoMatched).toBe(true);
+    });
+  });
 
   describe('UpdateSyncSettingsInput', () => {
     it('requires repositoryId', () => {
       const input: UpdateSyncSettingsInput = {
         repositoryId: 1,
-      }
+      };
 
-      expect(input.repositoryId).toBe(1)
-    })
+      expect(input.repositoryId).toBe(1);
+    });
 
     it('allows updating syncEnabled', () => {
       const input: UpdateSyncSettingsInput = {
         repositoryId: 1,
         syncEnabled: false,
-      }
+      };
 
-      expect(input.syncEnabled).toBe(false)
-    })
+      expect(input.syncEnabled).toBe(false);
+    });
 
     it('allows updating syncSettings', () => {
       const input: UpdateSyncSettingsInput = {
@@ -593,12 +593,12 @@ describe('GitHub Input Types', () => {
           issues: { enabled: true, direction: 'kanbu_to_github' },
           pullRequests: { enabled: true, autoLink: true },
         },
-      }
+      };
 
-      expect(input.syncSettings?.issues?.direction).toBe('kanbu_to_github')
-    })
-  })
-})
+      expect(input.syncSettings?.issues?.direction).toBe('kanbu_to_github');
+    });
+  });
+});
 
 // =============================================================================
 // Export Verification Tests
@@ -606,22 +606,22 @@ describe('GitHub Input Types', () => {
 
 describe('GitHub Exports', () => {
   it('exports all const arrays', () => {
-    expect(GITHUB_ACCOUNT_TYPES).toBeDefined()
-    expect(GITHUB_ISSUE_STATES).toBeDefined()
-    expect(GITHUB_PR_STATES).toBeDefined()
-    expect(SYNC_DIRECTIONS).toBeDefined()
-    expect(SYNC_STATUSES).toBeDefined()
-    expect(SYNC_ENTITY_TYPES).toBeDefined()
-  })
+    expect(GITHUB_ACCOUNT_TYPES).toBeDefined();
+    expect(GITHUB_ISSUE_STATES).toBeDefined();
+    expect(GITHUB_PR_STATES).toBeDefined();
+    expect(SYNC_DIRECTIONS).toBeDefined();
+    expect(SYNC_STATUSES).toBeDefined();
+    expect(SYNC_ENTITY_TYPES).toBeDefined();
+  });
 
   it('const arrays have expected values', () => {
     // TypeScript 'as const' provides compile-time readonly, not runtime freeze
     // We verify the arrays contain the expected values
-    expect(GITHUB_ACCOUNT_TYPES).toEqual(['user', 'organization'])
-    expect(GITHUB_ISSUE_STATES).toEqual(['open', 'closed'])
-    expect(GITHUB_PR_STATES).toEqual(['open', 'closed', 'merged'])
-    expect(SYNC_DIRECTIONS).toEqual(['kanbu_to_github', 'github_to_kanbu', 'bidirectional'])
-    expect(SYNC_STATUSES).toEqual(['success', 'failed', 'skipped'])
-    expect(SYNC_ENTITY_TYPES).toEqual(['issue', 'pr', 'commit', 'task'])
-  })
-})
+    expect(GITHUB_ACCOUNT_TYPES).toEqual(['user', 'organization']);
+    expect(GITHUB_ISSUE_STATES).toEqual(['open', 'closed']);
+    expect(GITHUB_PR_STATES).toEqual(['open', 'closed', 'merged']);
+    expect(SYNC_DIRECTIONS).toEqual(['kanbu_to_github', 'github_to_kanbu', 'bidirectional']);
+    expect(SYNC_STATUSES).toEqual(['success', 'failed', 'skipped']);
+    expect(SYNC_ENTITY_TYPES).toEqual(['issue', 'pr', 'commit', 'task']);
+  });
+});

@@ -10,10 +10,10 @@
  * ===================================================================
  */
 
-import type { Meta, StoryObj } from '@storybook/react-vite'
-import { HoverPopover, PopoverHeader, PopoverContent } from './HoverPopover'
-import { Button } from './button'
-import { User, Info, HelpCircle, Settings, Mail, Star } from 'lucide-react'
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import { HoverPopover, PopoverHeader, PopoverContent } from './HoverPopover';
+import { Button } from './button';
+import { User, Info, HelpCircle, Settings, Mail, Star } from 'lucide-react';
 
 const meta: Meta<typeof HoverPopover> = {
   title: 'UI/HoverPopover',
@@ -27,10 +27,10 @@ const meta: Meta<typeof HoverPopover> = {
       },
     },
   },
-}
+};
 
-export default meta
-type Story = StoryObj<typeof HoverPopover>
+export default meta;
+type Story = StoryObj<typeof HoverPopover>;
 
 // =============================================================================
 // Basic Variants
@@ -50,7 +50,7 @@ export const Default: Story = {
       </HoverPopover>
     </div>
   ),
-}
+};
 
 export const WithHeader: Story = {
   render: () => (
@@ -74,7 +74,7 @@ export const WithHeader: Story = {
       </HoverPopover>
     </div>
   ),
-}
+};
 
 // =============================================================================
 // Positions
@@ -137,7 +137,7 @@ export const Positions: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Content Variations
@@ -153,9 +153,7 @@ export const RichContent: Story = {
             <div className="p-4 space-y-3">
               <div>
                 <h4 className="font-medium text-sm">General Settings</h4>
-                <p className="text-sm text-muted-foreground">
-                  Configure your preferences
-                </p>
+                <p className="text-sm text-muted-foreground">Configure your preferences</p>
               </div>
               <div className="space-y-2">
                 <label className="flex items-center space-x-2">
@@ -184,7 +182,7 @@ export const RichContent: Story = {
       },
     },
   },
-}
+};
 
 export const LongContent: Story = {
   render: () => (
@@ -197,20 +195,20 @@ export const LongContent: Story = {
             <PopoverContent className="p-4">
               <div className="space-y-2 text-sm text-muted-foreground">
                 <p>
-                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do
-                  eiusmod tempor incididunt ut labore et dolore magna aliqua.
+                  Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor
+                  incididunt ut labore et dolore magna aliqua.
                 </p>
                 <p>
-                  Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris
-                  nisi ut aliquip ex ea commodo consequat.
+                  Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip
+                  ex ea commodo consequat.
                 </p>
                 <p>
-                  Duis aute irure dolor in reprehenderit in voluptate velit esse
-                  cillum dolore eu fugiat nulla pariatur.
+                  Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu
+                  fugiat nulla pariatur.
                 </p>
                 <p>
-                  Excepteur sint occaecat cupidatat non proident, sunt in culpa qui
-                  officia deserunt mollit anim id est laborum.
+                  Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt
+                  mollit anim id est laborum.
                 </p>
               </div>
             </PopoverContent>
@@ -228,7 +226,7 @@ export const LongContent: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Width Variations
@@ -284,7 +282,7 @@ export const CustomWidth: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Real-World Examples
@@ -296,7 +294,11 @@ export const UserCard: Story = {
       <HoverPopover
         content={
           <>
-            <PopoverHeader icon={<User className="h-4 w-4" />} title="John Doe" subtitle="@johndoe" />
+            <PopoverHeader
+              icon={<User className="h-4 w-4" />}
+              title="John Doe"
+              subtitle="@johndoe"
+            />
             <div className="p-4 space-y-3">
               <div className="flex items-center gap-4 text-sm">
                 <div>
@@ -309,8 +311,7 @@ export const UserCard: Story = {
                 </div>
               </div>
               <p className="text-sm text-muted-foreground">
-                Software developer passionate about design systems and user
-                experience.
+                Software developer passionate about design systems and user experience.
               </p>
               <div className="flex gap-2 pt-2">
                 <Button size="sm" className="flex-1">
@@ -324,9 +325,7 @@ export const UserCard: Story = {
           </>
         }
       >
-        <button className="text-sm font-medium text-primary hover:underline">
-          @johndoe
-        </button>
+        <button className="text-sm font-medium text-primary hover:underline">@johndoe</button>
       </HoverPopover>
     </div>
   ),
@@ -337,7 +336,7 @@ export const UserCard: Story = {
       },
     },
   },
-}
+};
 
 export const HelpTooltip: Story = {
   render: () => (
@@ -351,8 +350,8 @@ export const HelpTooltip: Story = {
               <PopoverHeader icon={<HelpCircle className="h-4 w-4" />} title="Help" />
               <div className="p-4">
                 <p className="text-sm text-muted-foreground">
-                  This setting controls how the system handles data synchronization.
-                  When enabled, changes are synced automatically every 5 minutes.
+                  This setting controls how the system handles data synchronization. When enabled,
+                  changes are synced automatically every 5 minutes.
                 </p>
                 <div className="mt-3 text-sm">
                   <p className="font-medium">Recommended:</p>
@@ -374,7 +373,7 @@ export const HelpTooltip: Story = {
       },
     },
   },
-}
+};
 
 export const FeaturePreview: Story = {
   render: () => (
@@ -387,8 +386,8 @@ export const FeaturePreview: Story = {
               <PopoverHeader icon={<Star className="h-4 w-4" />} title={`${feature} Feature`} />
               <div className="p-4">
                 <p className="text-sm text-muted-foreground mb-3">
-                  This feature allows you to {feature.toLowerCase()} your data with
-                  advanced filtering and customization options.
+                  This feature allows you to {feature.toLowerCase()} your data with advanced
+                  filtering and customization options.
                 </p>
                 <div className="space-y-2 text-sm">
                   <div className="flex items-center gap-2">
@@ -423,7 +422,7 @@ export const FeaturePreview: Story = {
       },
     },
   },
-}
+};
 
 export const MultiplePopovers: Story = {
   render: () => (
@@ -452,7 +451,7 @@ export const MultiplePopovers: Story = {
       },
     },
   },
-}
+};
 
 export const Disabled: Story = {
   render: () => (
@@ -478,7 +477,7 @@ export const Disabled: Story = {
       },
     },
   },
-}
+};
 
 export const OnText: Story = {
   render: () => (
@@ -507,4 +506,4 @@ export const OnText: Story = {
       },
     },
   },
-}
+};

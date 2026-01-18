@@ -11,34 +11,34 @@
  * ===================================================================
  */
 
-import { useState, useCallback } from 'react'
-import { useTheme, type ThemeMode, type AccentName } from '@/contexts/ThemeContext'
-import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { toast } from 'sonner'
-import { Upload, Copy, Check } from 'lucide-react'
-import type { Density } from './DensityPicker'
-import type { SidebarPosition } from './SidebarPositionPicker'
-import type { CustomAccentHSL } from '@/lib/themes/accents'
+import { useState, useCallback } from 'react';
+import { useTheme, type ThemeMode, type AccentName } from '@/contexts/ThemeContext';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
+import { Upload, Copy, Check } from 'lucide-react';
+import type { Density } from './DensityPicker';
+import type { SidebarPosition } from './SidebarPositionPicker';
+import type { CustomAccentHSL } from '@/lib/themes/accents';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface ThemeExport {
-  version: '1.0'
-  theme: ThemeMode
-  accent: AccentName
-  customAccent?: CustomAccentHSL | null
-  density: Density
-  sidebarPosition: SidebarPosition
+  version: '1.0';
+  theme: ThemeMode;
+  accent: AccentName;
+  customAccent?: CustomAccentHSL | null;
+  density: Density;
+  sidebarPosition: SidebarPosition;
 }
 
 interface ThemeExportImportProps {
   /** Optional className */
-  className?: string
+  className?: string;
 }
 
 // =============================================================================
@@ -46,26 +46,29 @@ interface ThemeExportImportProps {
 // =============================================================================
 
 function encodeTheme(settings: ThemeExport): string {
-  return btoa(JSON.stringify(settings))
+  return btoa(JSON.stringify(settings));
 }
 
 function decodeTheme(encoded: string): ThemeExport | null {
   try {
-    const decoded = JSON.parse(atob(encoded)) as unknown
-    if (typeof decoded !== 'object' || decoded === null) return null
+    const decoded = JSON.parse(atob(encoded)) as unknown;
+    if (typeof decoded !== 'object' || decoded === null) return null;
 
-    const obj = decoded as Record<string, unknown>
-    if (obj.version !== '1.0') return null
+    const obj = decoded as Record<string, unknown>;
+    if (obj.version !== '1.0') return null;
 
     // Validate required fields
-    if (!['light', 'dark', 'system'].includes(obj.theme as string)) return null
-    if (!['slate', 'blue', 'teal', 'violet', 'rose', 'amber', 'custom'].includes(obj.accent as string)) return null
-    if (!['compact', 'normal', 'spacious'].includes(obj.density as string)) return null
-    if (!['left', 'right'].includes(obj.sidebarPosition as string)) return null
+    if (!['light', 'dark', 'system'].includes(obj.theme as string)) return null;
+    if (
+      !['slate', 'blue', 'teal', 'violet', 'rose', 'amber', 'custom'].includes(obj.accent as string)
+    )
+      return null;
+    if (!['compact', 'normal', 'spacious'].includes(obj.density as string)) return null;
+    if (!['left', 'right'].includes(obj.sidebarPosition as string)) return null;
 
-    return obj as unknown as ThemeExport
+    return obj as unknown as ThemeExport;
   } catch {
-    return null
+    return null;
   }
 }
 
@@ -85,10 +88,10 @@ export function ThemeExportImport({ className }: ThemeExportImportProps) {
     setCustomAccent,
     setDensity,
     setSidebarPosition,
-  } = useTheme()
+  } = useTheme();
 
-  const [importCode, setImportCode] = useState('')
-  const [copied, setCopied] = useState(false)
+  const [importCode, setImportCode] = useState('');
+  const [copied, setCopied] = useState(false);
 
   // Export current settings
   const handleExport = useCallback(() => {
@@ -99,41 +102,41 @@ export function ThemeExportImport({ className }: ThemeExportImportProps) {
       customAccent: accent === 'custom' ? customAccent : null,
       density,
       sidebarPosition,
-    }
+    };
 
-    const code = encodeTheme(settings)
-    navigator.clipboard.writeText(code)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-    toast.success('Theme code gekopieerd naar klembord')
-  }, [theme, accent, customAccent, density, sidebarPosition])
+    const code = encodeTheme(settings);
+    navigator.clipboard.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+    toast.success('Theme code gekopieerd naar klembord');
+  }, [theme, accent, customAccent, density, sidebarPosition]);
 
   // Import settings from code
   const handleImport = useCallback(() => {
-    const trimmedCode = importCode.trim()
+    const trimmedCode = importCode.trim();
     if (!trimmedCode) {
-      toast.error('Voer een theme code in')
-      return
+      toast.error('Voer een theme code in');
+      return;
     }
 
-    const settings = decodeTheme(trimmedCode)
+    const settings = decodeTheme(trimmedCode);
     if (!settings) {
-      toast.error('Ongeldige theme code')
-      return
+      toast.error('Ongeldige theme code');
+      return;
     }
 
     // Apply all settings
-    setTheme(settings.theme)
-    setAccent(settings.accent)
+    setTheme(settings.theme);
+    setAccent(settings.accent);
     if (settings.accent === 'custom' && settings.customAccent) {
-      setCustomAccent(settings.customAccent)
+      setCustomAccent(settings.customAccent);
     }
-    setDensity(settings.density)
-    setSidebarPosition(settings.sidebarPosition)
+    setDensity(settings.density);
+    setSidebarPosition(settings.sidebarPosition);
 
-    setImportCode('')
-    toast.success('Theme instellingen toegepast')
-  }, [importCode, setTheme, setAccent, setCustomAccent, setDensity, setSidebarPosition])
+    setImportCode('');
+    toast.success('Theme instellingen toegepast');
+  }, [importCode, setTheme, setAccent, setCustomAccent, setDensity, setSidebarPosition]);
 
   return (
     <div className={cn('space-y-4', className)}>
@@ -143,13 +146,7 @@ export function ThemeExportImport({ className }: ThemeExportImportProps) {
         <p className="text-xs text-muted-foreground">
           Kopieer je huidige theme instellingen om te delen.
         </p>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={handleExport}
-          className="w-full"
-        >
+        <Button type="button" variant="outline" size="sm" onClick={handleExport} className="w-full">
           {copied ? (
             <>
               <Check className="h-4 w-4 mr-2" />
@@ -187,19 +184,14 @@ export function ThemeExportImport({ className }: ThemeExportImportProps) {
             onChange={(e) => setImportCode(e.target.value)}
             className="flex-1"
           />
-          <Button
-            type="button"
-            size="sm"
-            onClick={handleImport}
-            disabled={!importCode.trim()}
-          >
+          <Button type="button" size="sm" onClick={handleImport} disabled={!importCode.trim()}>
             <Upload className="h-4 w-4 mr-2" />
             Importeren
           </Button>
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default ThemeExportImport
+export default ThemeExportImport;

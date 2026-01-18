@@ -9,10 +9,10 @@
  * - Update communities button (regenerates clusters)
  */
 
-import { RefreshCw } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { useCommunityDetails, useUpdateCommunities } from '@/hooks/wiki'
-import { cn } from '@/lib/utils'
+import { RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useCommunityDetails, useUpdateCommunities } from '@/hooks/wiki';
+import { cn } from '@/lib/utils';
 
 // =============================================================================
 // Types
@@ -20,15 +20,15 @@ import { cn } from '@/lib/utils'
 
 export interface ClusterDetailPanelProps {
   /** Community UUID to display */
-  communityUuid: string | null
+  communityUuid: string | null;
   /** Optional workspace ID for update operation */
-  workspaceId?: number
+  workspaceId?: number;
   /** Optional project ID for update operation */
-  projectId?: number
+  projectId?: number;
   /** Callback when a member entity is clicked */
-  onMemberClick?: (entityUuid: string) => void
+  onMemberClick?: (entityUuid: string) => void;
   /** Additional CSS classes */
-  className?: string
+  className?: string;
 }
 
 // =============================================================================
@@ -42,30 +42,28 @@ export function ClusterDetailPanel({
   onMemberClick,
   className,
 }: ClusterDetailPanelProps) {
-  const { data, isLoading } = useCommunityDetails(communityUuid)
-  const updateMutation = useUpdateCommunities()
+  const { data, isLoading } = useCommunityDetails(communityUuid);
+  const updateMutation = useUpdateCommunities();
 
   const handleUpdate = () => {
     if (!workspaceId) {
-      console.warn('Cannot update communities without workspaceId')
-      return
+      console.warn('Cannot update communities without workspaceId');
+      return;
     }
 
     updateMutation.mutate({
       workspaceId,
       projectId,
       forceRecalculate: true,
-    })
-  }
+    });
+  };
 
   if (!communityUuid) {
     return (
       <div className={cn('p-4', className)}>
-        <div className="text-muted-foreground text-sm">
-          Select a community to view details
-        </div>
+        <div className="text-muted-foreground text-sm">Select a community to view details</div>
       </div>
-    )
+    );
   }
 
   if (isLoading) {
@@ -73,7 +71,7 @@ export function ClusterDetailPanel({
       <div className={cn('p-4', className)}>
         <div className="animate-pulse text-muted-foreground">Loading community details...</div>
       </div>
-    )
+    );
   }
 
   if (!data?.community) {
@@ -81,10 +79,10 @@ export function ClusterDetailPanel({
       <div className={cn('p-4', className)}>
         <div className="text-muted-foreground text-sm">Community not found</div>
       </div>
-    )
+    );
   }
 
-  const { community, members } = data
+  const { community, members } = data;
 
   return (
     <div className={cn('space-y-4 p-4', className)}>
@@ -103,12 +101,7 @@ export function ClusterDetailPanel({
             onClick={handleUpdate}
             disabled={updateMutation.isPending}
           >
-            <RefreshCw
-              className={cn(
-                'w-4 h-4 mr-2',
-                updateMutation.isPending && 'animate-spin'
-              )}
-            />
+            <RefreshCw className={cn('w-4 h-4 mr-2', updateMutation.isPending && 'animate-spin')} />
             {updateMutation.isPending ? 'Updating...' : 'Update Communities'}
           </Button>
         </div>
@@ -140,5 +133,5 @@ export function ClusterDetailPanel({
         <div>Updated: {new Date(community.updatedAt).toLocaleDateString()}</div>
       </div>
     </div>
-  )
+  );
 }

@@ -13,13 +13,13 @@
  * =============================================================================
  */
 
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect } from 'vitest';
 import type {
   CheckRunData,
   CheckRunStatus,
   CheckRunConclusion,
   CheckRunWebhookPayload,
-} from '../checkRunService'
+} from '../checkRunService';
 
 describe('checkRunService', () => {
   // ===========================================================================
@@ -28,14 +28,10 @@ describe('checkRunService', () => {
 
   describe('CheckRunStatus type', () => {
     it('should accept valid check run statuses', () => {
-      const validStatuses: CheckRunStatus[] = [
-        'queued',
-        'in_progress',
-        'completed',
-      ]
-      expect(validStatuses).toHaveLength(3)
-    })
-  })
+      const validStatuses: CheckRunStatus[] = ['queued', 'in_progress', 'completed'];
+      expect(validStatuses).toHaveLength(3);
+    });
+  });
 
   describe('CheckRunConclusion type', () => {
     it('should accept valid conclusions', () => {
@@ -48,10 +44,10 @@ describe('checkRunService', () => {
         'timed_out',
         'action_required',
         'stale',
-      ]
-      expect(validConclusions).toHaveLength(8)
-    })
-  })
+      ];
+      expect(validConclusions).toHaveLength(8);
+    });
+  });
 
   describe('CheckRunData type', () => {
     it('should have correct structure for completed check', () => {
@@ -67,10 +63,10 @@ describe('checkRunService', () => {
         completedAt: new Date('2026-01-09T10:05:00Z'),
         outputTitle: 'Build succeeded',
         outputSummary: 'All tests passed',
-      }
-      expect(data.status).toBe('completed')
-      expect(data.conclusion).toBe('success')
-    })
+      };
+      expect(data.status).toBe('completed');
+      expect(data.conclusion).toBe('success');
+    });
 
     it('should allow in-progress check without conclusion', () => {
       const data: CheckRunData = {
@@ -81,10 +77,10 @@ describe('checkRunService', () => {
         status: 'in_progress',
         conclusion: null,
         startedAt: new Date('2026-01-09T10:00:00Z'),
-      }
-      expect(data.status).toBe('in_progress')
-      expect(data.conclusion).toBeNull()
-    })
+      };
+      expect(data.status).toBe('in_progress');
+      expect(data.conclusion).toBeNull();
+    });
 
     it('should allow queued check without times', () => {
       const data: CheckRunData = {
@@ -93,11 +89,11 @@ describe('checkRunService', () => {
         name: 'lint',
         headSha: 'abc123def456789',
         status: 'queued',
-      }
-      expect(data.status).toBe('queued')
-      expect(data.startedAt).toBeUndefined()
-    })
-  })
+      };
+      expect(data.status).toBe('queued');
+      expect(data.startedAt).toBeUndefined();
+    });
+  });
 
   describe('CheckRunWebhookPayload type', () => {
     it('should have correct structure for completed check', () => {
@@ -121,11 +117,11 @@ describe('checkRunService', () => {
           id: 789,
           full_name: 'owner/repo',
         },
-      }
-      expect(payload.action).toBe('completed')
-      expect(payload.check_run.conclusion).toBe('success')
-      expect(payload.check_run.pull_requests).toHaveLength(1)
-    })
+      };
+      expect(payload.action).toBe('completed');
+      expect(payload.check_run.conclusion).toBe('success');
+      expect(payload.check_run.pull_requests).toHaveLength(1);
+    });
 
     it('should handle check without PR', () => {
       const payload: CheckRunWebhookPayload = {
@@ -145,10 +141,10 @@ describe('checkRunService', () => {
           id: 789,
           full_name: 'owner/repo',
         },
-      }
-      expect(payload.check_run.pull_requests).toHaveLength(0)
-      expect(payload.check_run.output).toBeNull()
-    })
+      };
+      expect(payload.check_run.pull_requests).toHaveLength(0);
+      expect(payload.check_run.output).toBeNull();
+    });
 
     it('should handle rerequested action', () => {
       const payload: CheckRunWebhookPayload = {
@@ -168,10 +164,10 @@ describe('checkRunService', () => {
           id: 789,
           full_name: 'owner/repo',
         },
-      }
-      expect(payload.action).toBe('rerequested')
-    })
-  })
+      };
+      expect(payload.action).toBe('rerequested');
+    });
+  });
 
   // ===========================================================================
   // Common Check Names
@@ -194,7 +190,7 @@ describe('checkRunService', () => {
         'codecov/project',
         'vercel',
         'netlify',
-      ]
+      ];
       checkNames.forEach((name) => {
         const data: CheckRunData = {
           repositoryId: 1,
@@ -203,11 +199,11 @@ describe('checkRunService', () => {
           headSha: 'abc123',
           status: 'completed',
           conclusion: 'success',
-        }
-        expect(data.name).toBe(name)
-      })
-    })
-  })
+        };
+        expect(data.name).toBe(name);
+      });
+    });
+  });
 
   // ===========================================================================
   // Conclusion Scenarios
@@ -222,9 +218,9 @@ describe('checkRunService', () => {
         headSha: 'abc123',
         status: 'completed',
         conclusion: 'success',
-      }
-      expect(data.conclusion).toBe('success')
-    })
+      };
+      expect(data.conclusion).toBe('success');
+    });
 
     it('should handle failure conclusion', () => {
       const data: CheckRunData = {
@@ -236,10 +232,10 @@ describe('checkRunService', () => {
         conclusion: 'failure',
         outputTitle: '3 tests failed',
         outputSummary: 'FAIL src/auth.test.ts\nFAIL src/api.test.ts',
-      }
-      expect(data.conclusion).toBe('failure')
-      expect(data.outputTitle).toContain('failed')
-    })
+      };
+      expect(data.conclusion).toBe('failure');
+      expect(data.outputTitle).toContain('failed');
+    });
 
     it('should handle timed_out conclusion', () => {
       const data: CheckRunData = {
@@ -249,9 +245,9 @@ describe('checkRunService', () => {
         headSha: 'abc123',
         status: 'completed',
         conclusion: 'timed_out',
-      }
-      expect(data.conclusion).toBe('timed_out')
-    })
+      };
+      expect(data.conclusion).toBe('timed_out');
+    });
 
     it('should handle cancelled conclusion', () => {
       const data: CheckRunData = {
@@ -261,9 +257,9 @@ describe('checkRunService', () => {
         headSha: 'abc123',
         status: 'completed',
         conclusion: 'cancelled',
-      }
-      expect(data.conclusion).toBe('cancelled')
-    })
+      };
+      expect(data.conclusion).toBe('cancelled');
+    });
 
     it('should handle action_required conclusion', () => {
       const data: CheckRunData = {
@@ -275,10 +271,10 @@ describe('checkRunService', () => {
         conclusion: 'action_required',
         outputTitle: 'Security vulnerabilities found',
         outputSummary: '2 high severity issues require attention',
-      }
-      expect(data.conclusion).toBe('action_required')
-    })
-  })
+      };
+      expect(data.conclusion).toBe('action_required');
+    });
+  });
 
   // ===========================================================================
   // Edge Cases
@@ -294,9 +290,9 @@ describe('checkRunService', () => {
         status: 'completed',
         conclusion: 'failure',
         outputSummary: 'x'.repeat(10000), // Long summary
-      }
-      expect(data.outputSummary?.length).toBe(10000)
-    })
+      };
+      expect(data.outputSummary?.length).toBe(10000);
+    });
 
     it('should handle multiple PRs in webhook', () => {
       const payload: CheckRunWebhookPayload = {
@@ -316,9 +312,9 @@ describe('checkRunService', () => {
           id: 789,
           full_name: 'owner/repo',
         },
-      }
-      expect(payload.check_run.pull_requests).toHaveLength(3)
-    })
+      };
+      expect(payload.check_run.pull_requests).toHaveLength(3);
+    });
 
     it('should handle large check run IDs', () => {
       const data: CheckRunData = {
@@ -328,16 +324,16 @@ describe('checkRunService', () => {
         headSha: 'abc123',
         status: 'completed',
         conclusion: 'success',
-      }
-      expect(data.checkRunId).toBe(BigInt('9007199254740991'))
-    })
+      };
+      expect(data.checkRunId).toBe(BigInt('9007199254740991'));
+    });
 
     it('should handle duration calculation', () => {
-      const startedAt = new Date('2026-01-09T10:00:00Z')
-      const completedAt = new Date('2026-01-09T10:05:30Z')
-      const durationMs = completedAt.getTime() - startedAt.getTime()
-      const durationSeconds = durationMs / 1000
-      expect(durationSeconds).toBe(330) // 5 minutes 30 seconds
-    })
-  })
-})
+      const startedAt = new Date('2026-01-09T10:00:00Z');
+      const completedAt = new Date('2026-01-09T10:05:30Z');
+      const durationMs = completedAt.getTime() - startedAt.getTime();
+      const durationSeconds = durationMs / 1000;
+      expect(durationSeconds).toBe(330); // 5 minutes 30 seconds
+    });
+  });
+});

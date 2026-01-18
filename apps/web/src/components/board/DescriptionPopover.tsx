@@ -14,16 +14,16 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { HoverPopover, PopoverHeader, PopoverContent } from '@/components/ui/HoverPopover'
-import DOMPurify from 'dompurify'
+import { HoverPopover, PopoverHeader, PopoverContent } from '@/components/ui/HoverPopover';
+import DOMPurify from 'dompurify';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface DescriptionPopoverProps {
-  description: string | null
-  children: React.ReactNode
+  description: string | null;
+  children: React.ReactNode;
 }
 
 // =============================================================================
@@ -32,36 +32,50 @@ interface DescriptionPopoverProps {
 
 function DescriptionContent({ description }: { description: string }) {
   // Check if description contains HTML (from GitHub sync)
-  const containsHtml = /<[^>]+>/.test(description)
+  const containsHtml = /<[^>]+>/.test(description);
 
   // Sanitize HTML to prevent XSS, allow img tags with src/alt/width/height
   const sanitizeHtml = (html: string) => {
     return DOMPurify.sanitize(html, {
-      ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'a', 'img', 'ul', 'ol', 'li', 'code', 'pre', 'blockquote', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
+      ALLOWED_TAGS: [
+        'p',
+        'br',
+        'strong',
+        'em',
+        'a',
+        'img',
+        'ul',
+        'ol',
+        'li',
+        'code',
+        'pre',
+        'blockquote',
+        'h1',
+        'h2',
+        'h3',
+        'h4',
+        'h5',
+        'h6',
+      ],
       ALLOWED_ATTR: ['href', 'src', 'alt', 'width', 'height', 'class', 'target', 'rel'],
-    })
-  }
+    });
+  };
 
   // Format plain text description for preview
   const formatPlainText = (text: string) => {
-    const lines = text.split('\n').slice(0, 20)
+    const lines = text.split('\n').slice(0, 20);
     return lines.map((line, i) => (
       <p key={i} className={`${line === '' ? 'h-3' : ''}`}>
         {line || '\u00A0'}
       </p>
-    ))
-  }
+    ));
+  };
 
   return (
     <>
       <PopoverHeader
         icon={
-          <svg
-            className="h-4 w-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -90,7 +104,7 @@ function DescriptionContent({ description }: { description: string }) {
         )}
       </PopoverContent>
     </>
-  )
+  );
 }
 
 // =============================================================================
@@ -100,7 +114,7 @@ function DescriptionContent({ description }: { description: string }) {
 export function DescriptionPopover({ description, children }: DescriptionPopoverProps) {
   // If no description, just render children
   if (!description) {
-    return <>{children}</>
+    return <>{children}</>;
   }
 
   return (
@@ -112,7 +126,7 @@ export function DescriptionPopover({ description, children }: DescriptionPopover
     >
       {children}
     </HoverPopover>
-  )
+  );
 }
 
-export default DescriptionPopover
+export default DescriptionPopover;

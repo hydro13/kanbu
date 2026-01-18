@@ -52,10 +52,7 @@ export interface UsePresenceReturn {
  *   currentUserId: user.id,
  * });
  */
-export function usePresence({
-  projectId,
-  currentUserId,
-}: UsePresenceOptions): UsePresenceReturn {
+export function usePresence({ projectId, currentUserId }: UsePresenceOptions): UsePresenceReturn {
   const { socket, isConnected } = useSocketContext();
   const [onlineUsers, setOnlineUsers] = useState<PresenceUser[]>([]);
 
@@ -71,11 +68,15 @@ export function usePresence({
     socket.emit(
       'presence:request',
       roomName,
-      (users: { id: number; username: string; name: string | null; avatarUrl: string | null }[]) => {
+      (
+        users: { id: number; username: string; name: string | null; avatarUrl: string | null }[]
+      ) => {
         console.log(`[Presence] Got ${users?.length ?? 0} users in ${roomName}:`, users);
         // Filter out current user
         const filtered = users?.filter((u) => u.id !== currentUserId) ?? [];
-        console.log(`[Presence] After filtering self (id=${currentUserId}): ${filtered.length} other users`);
+        console.log(
+          `[Presence] After filtering self (id=${currentUserId}): ${filtered.length} other users`
+        );
         setOnlineUsers(filtered);
       }
     );
@@ -99,10 +100,7 @@ export function usePresence({
     void initPresence();
 
     // Handle user joined
-    const handleJoined = (payload: {
-      user: PresenceUser;
-      roomName: string;
-    }) => {
+    const handleJoined = (payload: { user: PresenceUser; roomName: string }) => {
       console.log('[Presence] presence:joined event:', payload);
       if (payload.roomName !== `project:${projectId}`) {
         console.log(`[Presence] Ignoring join for different room: ${payload.roomName}`);
@@ -125,10 +123,7 @@ export function usePresence({
     };
 
     // Handle user left
-    const handleLeft = (payload: {
-      user: { id: number };
-      roomName: string;
-    }) => {
+    const handleLeft = (payload: { user: { id: number }; roomName: string }) => {
       console.log('[Presence] presence:left event:', payload);
       if (payload.roomName !== `project:${projectId}`) return;
 

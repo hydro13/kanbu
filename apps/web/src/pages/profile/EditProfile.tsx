@@ -12,13 +12,13 @@
  * Change: Added accent color picker (Fase 3.2)
  */
 
-import { useState, useEffect } from 'react'
-import { ProfileLayout } from '../../components/profile/ProfileLayout'
-import { Button } from '../../components/ui/button'
-import { SocialLinksEditor } from '../../components/profile/SocialLinksEditor'
-import { AccentPicker } from '../../components/theme'
-import { trpc } from '../../lib/trpc'
-import { useTheme, type ThemeMode } from '@/contexts/ThemeContext'
+import { useState, useEffect } from 'react';
+import { ProfileLayout } from '../../components/profile/ProfileLayout';
+import { Button } from '../../components/ui/button';
+import { SocialLinksEditor } from '../../components/profile/SocialLinksEditor';
+import { AccentPicker } from '../../components/theme';
+import { trpc } from '../../lib/trpc';
+import { useTheme, type ThemeMode } from '@/contexts/ThemeContext';
 
 // =============================================================================
 // Compact Input Components
@@ -34,14 +34,14 @@ function CompactInput({
   hint,
   type = 'text',
 }: {
-  id: string
-  label: string
-  value: string
-  onChange?: (value: string) => void
-  disabled?: boolean
-  placeholder?: string
-  hint?: string
-  type?: string
+  id: string;
+  label: string;
+  value: string;
+  onChange?: (value: string) => void;
+  disabled?: boolean;
+  placeholder?: string;
+  hint?: string;
+  type?: string;
 }) {
   return (
     <div className="space-y-1">
@@ -61,7 +61,7 @@ function CompactInput({
       />
       {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -69,32 +69,32 @@ function CompactInput({
 // =============================================================================
 
 export function EditProfile() {
-  const [name, setName] = useState('')
-  const [timezone, setTimezone] = useState('')
-  const [language, setLanguage] = useState('')
-  const [hasChanges, setHasChanges] = useState(false)
+  const [name, setName] = useState('');
+  const [timezone, setTimezone] = useState('');
+  const [language, setLanguage] = useState('');
+  const [hasChanges, setHasChanges] = useState(false);
 
   // Theme is managed by ThemeContext - changes are applied immediately
-  const { theme, setTheme: setThemeGlobal, isSyncing: isThemeSyncing } = useTheme()
+  const { theme, setTheme: setThemeGlobal, isSyncing: isThemeSyncing } = useTheme();
 
-  const utils = trpc.useUtils()
-  const { data: profile, isLoading } = trpc.user.getProfile.useQuery()
+  const utils = trpc.useUtils();
+  const { data: profile, isLoading } = trpc.user.getProfile.useQuery();
 
   const updateProfile = trpc.user.updateProfile.useMutation({
     onSuccess: () => {
-      utils.user.getProfile.invalidate()
-      setHasChanges(false)
+      utils.user.getProfile.invalidate();
+      setHasChanges(false);
     },
-  })
+  });
 
   // Initialize form with profile data (excluding theme - handled by ThemeContext)
   useEffect(() => {
     if (profile) {
-      setName(profile.name ?? '')
-      setTimezone(profile.timezone ?? '')
-      setLanguage(profile.language ?? '')
+      setName(profile.name ?? '');
+      setTimezone(profile.timezone ?? '');
+      setLanguage(profile.language ?? '');
     }
-  }, [profile])
+  }, [profile]);
 
   // Track changes (excluding theme - it's saved immediately via ThemeContext)
   useEffect(() => {
@@ -102,25 +102,25 @@ export function EditProfile() {
       const changed =
         name !== (profile.name ?? '') ||
         timezone !== (profile.timezone ?? '') ||
-        language !== (profile.language ?? '')
-      setHasChanges(changed)
+        language !== (profile.language ?? '');
+      setHasChanges(changed);
     }
-  }, [name, timezone, language, profile])
+  }, [name, timezone, language, profile]);
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     // Note: theme is NOT included here - it's saved immediately via ThemeContext
     updateProfile.mutate({
       name: name || undefined,
       timezone: timezone || undefined,
       language: language || undefined,
-    })
-  }
+    });
+  };
 
   // Handle theme change - this saves immediately to backend via ThemeContext
   const handleThemeChange = (newTheme: string) => {
-    setThemeGlobal(newTheme as ThemeMode)
-  }
+    setThemeGlobal(newTheme as ThemeMode);
+  };
 
   if (isLoading) {
     return (
@@ -129,7 +129,7 @@ export function EditProfile() {
           <p className="text-muted-foreground">Loading profile...</p>
         </div>
       </ProfileLayout>
-    )
+    );
   }
 
   if (!profile) {
@@ -139,7 +139,7 @@ export function EditProfile() {
           <p className="text-muted-foreground">Could not load profile</p>
         </div>
       </ProfileLayout>
-    )
+    );
   }
 
   return (
@@ -247,9 +247,9 @@ export function EditProfile() {
               size="sm"
               onClick={() => {
                 if (profile) {
-                  setName(profile.name ?? '')
-                  setTimezone(profile.timezone ?? '')
-                  setLanguage(profile.language ?? '')
+                  setName(profile.name ?? '');
+                  setTimezone(profile.timezone ?? '');
+                  setLanguage(profile.language ?? '');
                   // Note: theme is not reset here - it's managed separately
                 }
               }}
@@ -257,11 +257,7 @@ export function EditProfile() {
             >
               Reset
             </Button>
-            <Button
-              type="submit"
-              size="sm"
-              disabled={!hasChanges || updateProfile.isPending}
-            >
+            <Button type="submit" size="sm" disabled={!hasChanges || updateProfile.isPending}>
               {updateProfile.isPending ? 'Saving...' : 'Save Changes'}
             </Button>
           </div>
@@ -273,7 +269,7 @@ export function EditProfile() {
         <SocialLinksEditor />
       </div>
     </ProfileLayout>
-  )
+  );
 }
 
-export default EditProfile
+export default EditProfile;

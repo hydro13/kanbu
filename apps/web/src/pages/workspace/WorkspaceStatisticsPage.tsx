@@ -14,11 +14,11 @@
  * ===================================================================
  */
 
-import { useState, useEffect, useCallback } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import { WorkspaceLayout } from '@/components/layout/WorkspaceLayout'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { trpc } from '@/lib/trpc'
+import { useState, useEffect, useCallback } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { WorkspaceLayout } from '@/components/layout/WorkspaceLayout';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { trpc } from '@/lib/trpc';
 import {
   BarChart3,
   CheckCircle2,
@@ -27,27 +27,27 @@ import {
   FolderKanban,
   ArrowLeft,
   TrendingUp,
-} from 'lucide-react'
-import { cn } from '@/lib/utils'
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface ProjectInfo {
-  id: number
-  name: string
-  identifier: string | null
+  id: number;
+  name: string;
+  identifier: string | null;
 }
 
 interface ProjectStats {
-  projectId: number
-  projectName: string
-  projectIdentifier: string
-  totalTasks: number
-  openTasks: number
-  closedTasks: number
-  completionRate: number
+  projectId: number;
+  projectName: string;
+  projectIdentifier: string;
+  totalTasks: number;
+  openTasks: number;
+  closedTasks: number;
+  completionRate: number;
 }
 
 // =============================================================================
@@ -55,37 +55,34 @@ interface ProjectStats {
 // =============================================================================
 
 export function WorkspaceStatisticsPage() {
-  const { slug } = useParams<{ slug: string }>()
+  const { slug } = useParams<{ slug: string }>();
 
   // State to collect stats from child components
-  const [projectStatsMap, setProjectStatsMap] = useState<Map<number, ProjectStats>>(new Map())
+  const [projectStatsMap, setProjectStatsMap] = useState<Map<number, ProjectStats>>(new Map());
 
   // Fetch workspace
-  const workspaceQuery = trpc.workspace.getBySlug.useQuery(
-    { slug: slug! },
-    { enabled: !!slug }
-  )
-  const workspace = workspaceQuery.data
+  const workspaceQuery = trpc.workspace.getBySlug.useQuery({ slug: slug! }, { enabled: !!slug });
+  const workspace = workspaceQuery.data;
 
   // Fetch projects
   const projectsQuery = trpc.project.list.useQuery(
     { workspaceId: workspace?.id ?? 0 },
     { enabled: !!workspace?.id }
-  )
-  const projects = projectsQuery.data ?? []
+  );
+  const projects = projectsQuery.data ?? [];
 
   // Callback for child components to report their stats
   // Wrapped in useCallback to prevent infinite re-render loops
   const handleStatsLoaded = useCallback((projectId: number, stats: ProjectStats) => {
     setProjectStatsMap((prev) => {
-      const next = new Map(prev)
-      next.set(projectId, stats)
-      return next
-    })
-  }, [])
+      const next = new Map(prev);
+      next.set(projectId, stats);
+      return next;
+    });
+  }, []);
 
   // Get collected stats as array
-  const projectStats = Array.from(projectStatsMap.values())
+  const projectStats = Array.from(projectStatsMap.values());
 
   // Calculate totals from collected stats
   const totals = projectStats.reduce(
@@ -95,14 +92,12 @@ export function WorkspaceStatisticsPage() {
       closedTasks: acc.closedTasks + project.closedTasks,
     }),
     { totalTasks: 0, openTasks: 0, closedTasks: 0 }
-  )
+  );
 
   const overallCompletionRate =
-    totals.totalTasks > 0
-      ? Math.round((totals.closedTasks / totals.totalTasks) * 100)
-      : 0
+    totals.totalTasks > 0 ? Math.round((totals.closedTasks / totals.totalTasks) * 100) : 0;
 
-  const isLoading = workspaceQuery.isLoading || projectsQuery.isLoading
+  const isLoading = workspaceQuery.isLoading || projectsQuery.isLoading;
 
   // Loading state
   if (isLoading) {
@@ -125,7 +120,7 @@ export function WorkspaceStatisticsPage() {
           </div>
         </div>
       </WorkspaceLayout>
-    )
+    );
   }
 
   // Workspace not found
@@ -140,7 +135,7 @@ export function WorkspaceStatisticsPage() {
           </Link>
         </div>
       </WorkspaceLayout>
-    )
+    );
   }
 
   return (
@@ -152,9 +147,7 @@ export function WorkspaceStatisticsPage() {
             <BarChart3 className="h-8 w-8" />
             Statistics
           </h1>
-          <p className="text-muted-foreground">
-            Overview of all projects in {workspace.name}
-          </p>
+          <p className="text-muted-foreground">Overview of all projects in {workspace.name}</p>
         </div>
 
         {/* Summary Stats */}
@@ -281,7 +274,7 @@ export function WorkspaceStatisticsPage() {
         </div>
       </div>
     </WorkspaceLayout>
-  )
+  );
 }
 
 // =============================================================================
@@ -289,20 +282,24 @@ export function WorkspaceStatisticsPage() {
 // =============================================================================
 
 interface ProjectStatCardWithFetchProps {
-  project: ProjectInfo
-  workspaceSlug: string
-  onStatsLoaded: (projectId: number, stats: ProjectStats) => void
+  project: ProjectInfo;
+  workspaceSlug: string;
+  onStatsLoaded: (projectId: number, stats: ProjectStats) => void;
 }
 
-function ProjectStatCardWithFetch({ project, workspaceSlug, onStatsLoaded }: ProjectStatCardWithFetchProps) {
+function ProjectStatCardWithFetch({
+  project,
+  workspaceSlug,
+  onStatsLoaded,
+}: ProjectStatCardWithFetchProps) {
   // Each card fetches its own stats - this is valid because each component
   // always calls the same hooks in the same order
   const statsQuery = trpc.analytics.getProjectStats.useQuery(
     { projectId: project.id },
     { enabled: !!project.id }
-  )
+  );
 
-  const stats = statsQuery.data
+  const stats = statsQuery.data;
 
   // Report stats to parent when loaded
   useEffect(() => {
@@ -315,9 +312,9 @@ function ProjectStatCardWithFetch({ project, workspaceSlug, onStatsLoaded }: Pro
         openTasks: stats.openTasks ?? 0,
         closedTasks: stats.closedTasks ?? 0,
         completionRate: stats.completionRate ?? 0,
-      })
+      });
     }
-  }, [stats, project.id, project.name, project.identifier, onStatsLoaded])
+  }, [stats, project.id, project.name, project.identifier, onStatsLoaded]);
 
   // Loading state for individual card
   if (statsQuery.isLoading) {
@@ -340,16 +337,16 @@ function ProjectStatCardWithFetch({ project, workspaceSlug, onStatsLoaded }: Pro
           </div>
         </CardContent>
       </Card>
-    )
+    );
   }
 
-  const completionRate = stats?.completionRate ?? 0
+  const completionRate = stats?.completionRate ?? 0;
   const completionColor =
     completionRate >= 75
       ? 'text-green-600 dark:text-green-400'
       : completionRate >= 50
         ? 'text-amber-600 dark:text-amber-400'
-        : 'text-red-600 dark:text-red-400'
+        : 'text-red-600 dark:text-red-400';
 
   return (
     <Link
@@ -366,13 +363,9 @@ function ProjectStatCardWithFetch({ project, workspaceSlug, onStatsLoaded }: Pro
               <div>
                 <div className="flex items-center gap-2">
                   <p className="font-medium">{project.name}</p>
-                  <span className="text-xs text-muted-foreground">
-                    ({project.identifier})
-                  </span>
+                  <span className="text-xs text-muted-foreground">({project.identifier})</span>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  {stats?.totalTasks ?? 0} tasks
-                </p>
+                <p className="text-sm text-muted-foreground">{stats?.totalTasks ?? 0} tasks</p>
               </div>
             </div>
 
@@ -386,9 +379,7 @@ function ProjectStatCardWithFetch({ project, workspaceSlug, onStatsLoaded }: Pro
                 <p className="text-xs text-muted-foreground">Done</p>
               </div>
               <div className="text-center min-w-[60px]">
-                <p className={cn('text-lg font-bold', completionColor)}>
-                  {completionRate}%
-                </p>
+                <p className={cn('text-lg font-bold', completionColor)}>{completionRate}%</p>
                 <p className="text-xs text-muted-foreground">Complete</p>
               </div>
             </div>
@@ -396,7 +387,7 @@ function ProjectStatCardWithFetch({ project, workspaceSlug, onStatsLoaded }: Pro
         </CardContent>
       </Card>
     </Link>
-  )
+  );
 }
 
-export default WorkspaceStatisticsPage
+export default WorkspaceStatisticsPage;

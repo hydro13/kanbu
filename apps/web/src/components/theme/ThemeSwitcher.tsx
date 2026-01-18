@@ -12,16 +12,16 @@
  * ===================================================================
  */
 
-import { Sun, Moon, Monitor, Check, Loader2 } from 'lucide-react'
+import { Sun, Moon, Monitor, Check, Loader2 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import { Button } from '@/components/ui/button'
-import { useTheme, type ThemeMode } from '@/contexts/ThemeContext'
-import { cn } from '@/lib/utils'
+} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
+import { useTheme, type ThemeMode } from '@/contexts/ThemeContext';
+import { cn } from '@/lib/utils';
 
 // =============================================================================
 // Types
@@ -29,13 +29,13 @@ import { cn } from '@/lib/utils'
 
 interface ThemeSwitcherProps {
   /** Variant of the trigger button */
-  variant?: 'default' | 'outline' | 'ghost'
+  variant?: 'default' | 'outline' | 'ghost';
   /** Size of the trigger button */
-  size?: 'default' | 'sm' | 'lg' | 'icon'
+  size?: 'default' | 'sm' | 'lg' | 'icon';
   /** Additional class names */
-  className?: string
+  className?: string;
   /** Show label next to icon */
-  showLabel?: boolean
+  showLabel?: boolean;
 }
 
 // =============================================================================
@@ -46,7 +46,7 @@ const themeOptions: { value: ThemeMode; label: string; icon: typeof Sun }[] = [
   { value: 'light', label: 'Light', icon: Sun },
   { value: 'dark', label: 'Dark', icon: Moon },
   { value: 'system', label: 'System', icon: Monitor },
-]
+];
 
 // =============================================================================
 // Component
@@ -58,10 +58,10 @@ export function ThemeSwitcher({
   className,
   showLabel = false,
 }: ThemeSwitcherProps) {
-  const { theme, resolvedTheme, setTheme, isSyncing } = useTheme()
+  const { theme, resolvedTheme, setTheme, isSyncing } = useTheme();
 
   // Get the icon for current theme
-  const CurrentIcon = resolvedTheme === 'dark' ? Moon : Sun
+  const CurrentIcon = resolvedTheme === 'dark' ? Moon : Sun;
 
   return (
     <DropdownMenu>
@@ -87,27 +87,24 @@ export function ThemeSwitcher({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         {themeOptions.map((option) => {
-          const Icon = option.icon
-          const isSelected = theme === option.value
+          const Icon = option.icon;
+          const isSelected = theme === option.value;
 
           return (
             <DropdownMenuItem
               key={option.value}
               onClick={() => setTheme(option.value)}
-              className={cn(
-                'flex items-center gap-2 cursor-pointer',
-                isSelected && 'bg-accent'
-              )}
+              className={cn('flex items-center gap-2 cursor-pointer', isSelected && 'bg-accent')}
             >
               <Icon className="h-4 w-4" />
               <span className="flex-1">{option.label}</span>
               {isSelected && <Check className="h-4 w-4" />}
             </DropdownMenuItem>
-          )
+          );
         })}
       </DropdownMenuContent>
     </DropdownMenu>
-  )
+  );
 }
 
 // =============================================================================
@@ -115,7 +112,7 @@ export function ThemeSwitcher({
 // =============================================================================
 
 interface ThemeToggleProps {
-  className?: string
+  className?: string;
 }
 
 /**
@@ -123,7 +120,7 @@ interface ThemeToggleProps {
  * Useful for compact UI like headers.
  */
 export function ThemeToggle({ className }: ThemeToggleProps) {
-  const { theme, resolvedTheme, setTheme, isSyncing } = useTheme()
+  const { theme, resolvedTheme, setTheme, isSyncing } = useTheme();
 
   const handleToggle = () => {
     // Cycle: system -> light -> dark -> system
@@ -131,11 +128,11 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
       system: 'light',
       light: 'dark',
       dark: 'system',
-    }
-    setTheme(next[theme])
-  }
+    };
+    setTheme(next[theme]);
+  };
 
-  const CurrentIcon = resolvedTheme === 'dark' ? Moon : Sun
+  const CurrentIcon = resolvedTheme === 'dark' ? Moon : Sun;
 
   return (
     <Button
@@ -153,7 +150,7 @@ export function ThemeToggle({ className }: ThemeToggleProps) {
       )}
       <span className="sr-only">Toggle theme</span>
     </Button>
-  )
+  );
 }
 
-export default ThemeSwitcher
+export default ThemeSwitcher;

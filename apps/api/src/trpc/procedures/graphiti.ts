@@ -23,16 +23,16 @@
  * ===================================================================
  */
 
-import { z } from 'zod'
-import { router, protectedProcedure } from '../router'
-import { getGraphitiService } from '../../services/graphitiService'
+import { z } from 'zod';
+import { router, protectedProcedure } from '../router';
+import { getGraphitiService } from '../../services/graphitiService';
 import {
   getWikiNodeEmbeddingService,
   getWikiDeduplicationService,
   getWikiAiService,
   type EmbeddableNodeType,
   type WikiContext,
-} from '../../lib/ai/wiki'
+} from '../../lib/ai/wiki';
 
 // =============================================================================
 // Input Schemas
@@ -40,30 +40,30 @@ import {
 
 const getBacklinksSchema = z.object({
   pageId: z.number(),
-})
+});
 
 const getRelatedSchema = z.object({
   pageId: z.number(),
   limit: z.number().min(1).max(20).default(5),
-})
+});
 
 const getEntitiesSchema = z.object({
   pageId: z.number(),
-})
+});
 
 const searchSchema = z.object({
   query: z.string().min(1).max(200),
   groupId: z.string().optional(), // e.g., 'wiki-ws-1' or 'wiki-proj-5'
   limit: z.number().min(1).max(50).default(10),
-})
+});
 
 const getStatsSchema = z.object({
   groupId: z.string().optional(),
-})
+});
 
 const getGraphSchema = z.object({
   groupId: z.string(), // e.g., 'wiki-ws-1' or 'wiki-proj-5'
-})
+});
 
 const syncPageSchema = z.object({
   pageId: z.number(),
@@ -71,20 +71,20 @@ const syncPageSchema = z.object({
   slug: z.string(),
   content: z.string(),
   groupId: z.string(),
-})
+});
 
 const temporalSearchSchema = z.object({
   query: z.string().min(1).max(200),
   groupId: z.string(),
   asOf: z.string().datetime(), // ISO datetime string: "What did we know at this time?"
   limit: z.number().min(1).max(50).default(10),
-})
+});
 
 const getFactsAsOfSchema = z.object({
   groupId: z.string(), // e.g., 'wiki-ws-1' or 'wiki-proj-5'
   asOf: z.string().datetime(), // ISO datetime string: "Show facts valid at this time"
   limit: z.number().min(1).max(200).default(100),
-})
+});
 
 // Fase 21.5 - Entity Resolution Schemas
 const entitySuggestSchema = z.object({
@@ -96,42 +96,42 @@ const entitySuggestSchema = z.object({
   limit: z.number().min(1).max(20).default(10),
   threshold: z.number().min(0).max(1).default(0.85),
   excludeNodeId: z.string().optional(),
-})
+});
 
 const findDuplicatesSchema = z.object({
   workspaceId: z.number(),
   projectId: z.number().optional(),
   groupId: z.string().optional(),
   nodeType: z.enum(['Concept', 'Person', 'Task', 'Project']).optional(),
-  threshold: z.number().min(0).max(1).default(0.90),
+  threshold: z.number().min(0).max(1).default(0.9),
   limit: z.number().min(1).max(100).default(50),
-})
+});
 
 // Fase 22.6 - Entity Deduplication Schemas
 const getDuplicatesOfSchema = z.object({
   nodeUuid: z.string(),
-})
+});
 
 const getCanonicalNodeSchema = z.object({
   nodeUuid: z.string(),
-})
+});
 
 const markAsDuplicateSchema = z.object({
   sourceUuid: z.string(),
   targetUuid: z.string(),
   confidence: z.number().min(0).max(1).default(1.0),
-})
+});
 
 const unmarkDuplicateSchema = z.object({
   sourceUuid: z.string(),
   targetUuid: z.string(),
-})
+});
 
 const mergeDuplicatesSchema = z.object({
   sourceUuid: z.string(),
   targetUuid: z.string(),
   keepTarget: z.boolean().default(true),
-})
+});
 
 const runBatchDedupSchema = z.object({
   workspaceId: z.number(),
@@ -141,7 +141,7 @@ const runBatchDedupSchema = z.object({
   threshold: z.number().min(0).max(1).default(0.85),
   dryRun: z.boolean().default(true),
   limit: z.number().min(1).max(100).default(50),
-})
+});
 
 // Fase 22.8 - Get existing confirmed duplicates
 const getWorkspaceDuplicatesSchema = z.object({
@@ -149,7 +149,7 @@ const getWorkspaceDuplicatesSchema = z.object({
   projectId: z.number().optional(),
   groupId: z.string().optional(),
   nodeTypes: z.array(z.enum(['Concept', 'Person', 'Task', 'Project'])).optional(),
-})
+});
 
 // Fase 23.6 - Reflexion Extraction Endpoints
 const reflexionNodesSchema = z.object({
@@ -158,20 +158,22 @@ const reflexionNodesSchema = z.object({
   content: z.string().min(1).max(50000),
   extractedEntities: z.array(z.string()),
   previousEpisodes: z.array(z.string()).optional(),
-})
+});
 
 const reflexionEdgesSchema = z.object({
   workspaceId: z.number(),
   projectId: z.number().optional(),
   content: z.string().min(1).max(50000),
   extractedNodes: z.array(z.string()),
-  extractedFacts: z.array(z.object({
-    source: z.string(),
-    target: z.string(),
-    fact: z.string(),
-  })),
+  extractedFacts: z.array(
+    z.object({
+      source: z.string(),
+      target: z.string(),
+      fact: z.string(),
+    })
+  ),
   previousEpisodes: z.array(z.string()).optional(),
-})
+});
 
 // =============================================================================
 // Graphiti Router
@@ -181,122 +183,105 @@ export const graphitiRouter = router({
   /**
    * Get pages that link to a specific page (backlinks)
    */
-  getBacklinks: protectedProcedure
-    .input(getBacklinksSchema)
-    .query(async ({ input }) => {
-      const graphiti = getGraphitiService()
-      const backlinks = await graphiti.getBacklinks(input.pageId)
-      return backlinks
-    }),
+  getBacklinks: protectedProcedure.input(getBacklinksSchema).query(async ({ input }) => {
+    const graphiti = getGraphitiService();
+    const backlinks = await graphiti.getBacklinks(input.pageId);
+    return backlinks;
+  }),
 
   /**
    * Get pages related through shared entities
    */
-  getRelated: protectedProcedure
-    .input(getRelatedSchema)
-    .query(async ({ input }) => {
-      const graphiti = getGraphitiService()
-      const related = await graphiti.getRelatedPages(input.pageId, input.limit)
-      return related
-    }),
+  getRelated: protectedProcedure.input(getRelatedSchema).query(async ({ input }) => {
+    const graphiti = getGraphitiService();
+    const related = await graphiti.getRelatedPages(input.pageId, input.limit);
+    return related;
+  }),
 
   /**
    * Get entities mentioned in a page
    */
-  getEntities: protectedProcedure
-    .input(getEntitiesSchema)
-    .query(async ({ input }) => {
-      const graphiti = getGraphitiService()
-      const entities = await graphiti.getPageEntities(input.pageId)
-      return entities
-    }),
+  getEntities: protectedProcedure.input(getEntitiesSchema).query(async ({ input }) => {
+    const graphiti = getGraphitiService();
+    const entities = await graphiti.getPageEntities(input.pageId);
+    return entities;
+  }),
 
   /**
    * Search wiki pages by content/entities
    */
-  search: protectedProcedure
-    .input(searchSchema)
-    .query(async ({ input }) => {
-      const graphiti = getGraphitiService()
-      const results = await graphiti.search(input.query, input.groupId, input.limit)
-      return results
-    }),
+  search: protectedProcedure.input(searchSchema).query(async ({ input }) => {
+    const graphiti = getGraphitiService();
+    const results = await graphiti.search(input.query, input.groupId, input.limit);
+    return results;
+  }),
 
   /**
    * Get graph statistics
    */
-  getStats: protectedProcedure
-    .input(getStatsSchema)
-    .query(async ({ input }) => {
-      const graphiti = getGraphitiService()
-      const stats = await graphiti.getStats(input.groupId)
-      return stats
-    }),
+  getStats: protectedProcedure.input(getStatsSchema).query(async ({ input }) => {
+    const graphiti = getGraphitiService();
+    const stats = await graphiti.getStats(input.groupId);
+    return stats;
+  }),
 
   /**
    * Get full graph data for visualization
    */
-  getGraph: protectedProcedure
-    .input(getGraphSchema)
-    .query(async ({ input }) => {
-      const graphiti = getGraphitiService()
-      const graph = await graphiti.getGraph(input.groupId)
-      return graph
-    }),
+  getGraph: protectedProcedure.input(getGraphSchema).query(async ({ input }) => {
+    const graphiti = getGraphitiService();
+    const graph = await graphiti.getGraph(input.groupId);
+    return graph;
+  }),
 
   /**
    * Check if Graphiti service is connected
    */
-  isConnected: protectedProcedure
-    .query(async () => {
-      const graphiti = getGraphitiService()
-      const connected = await graphiti.isConnected()
-      return { connected }
-    }),
+  isConnected: protectedProcedure.query(async () => {
+    const graphiti = getGraphitiService();
+    const connected = await graphiti.isConnected();
+    return { connected };
+  }),
 
   /**
    * Temporal search - "What did we know at time X?"
    * Returns facts that were valid at the specified point in time.
    * Only available when Python Graphiti service is running.
    */
-  temporalSearch: protectedProcedure
-    .input(temporalSearchSchema)
-    .query(async ({ input }) => {
-      const graphiti = getGraphitiService()
-      const asOfDate = new Date(input.asOf)
-      const results = await graphiti.temporalSearch(
-        input.query,
-        input.groupId,
-        asOfDate,
-        input.limit
-      )
-      return {
-        results,
-        asOf: input.asOf,
-        query: input.query,
-      }
-    }),
+  temporalSearch: protectedProcedure.input(temporalSearchSchema).query(async ({ input }) => {
+    const graphiti = getGraphitiService();
+    const asOfDate = new Date(input.asOf);
+    const results = await graphiti.temporalSearch(
+      input.query,
+      input.groupId,
+      asOfDate,
+      input.limit
+    );
+    return {
+      results,
+      asOf: input.asOf,
+      query: input.query,
+    };
+  }),
 
   /**
    * Manually trigger sync for a page (for admin/debugging)
    */
-  syncPage: protectedProcedure
-    .input(syncPageSchema)
-    .mutation(async ({ ctx, input }) => {
-      const graphiti = getGraphitiService()
+  syncPage: protectedProcedure.input(syncPageSchema).mutation(async ({ ctx, input }) => {
+    const graphiti = getGraphitiService();
 
-      await graphiti.syncWikiPage({
-        pageId: input.pageId,
-        title: input.title,
-        slug: input.slug,
-        content: input.content,
-        groupId: input.groupId,
-        userId: ctx.user.id,
-        timestamp: new Date(),
-      })
+    await graphiti.syncWikiPage({
+      pageId: input.pageId,
+      title: input.title,
+      slug: input.slug,
+      content: input.content,
+      groupId: input.groupId,
+      userId: ctx.user.id,
+      timestamp: new Date(),
+    });
 
-      return { success: true, pageId: input.pageId }
-    }),
+    return { success: true, pageId: input.pageId };
+  }),
 
   /**
    * Get all facts valid at a specific point in time (Fase 16.4)
@@ -307,23 +292,17 @@ export const graphitiRouter = router({
    *
    * Works without Python service by querying FalkorDB directly.
    */
-  getFactsAsOf: protectedProcedure
-    .input(getFactsAsOfSchema)
-    .query(async ({ input }) => {
-      const graphiti = getGraphitiService()
-      const asOfDate = new Date(input.asOf)
-      const facts = await graphiti.getFactsAsOf(
-        input.groupId,
-        asOfDate,
-        input.limit
-      )
-      return {
-        facts,
-        asOf: input.asOf,
-        groupId: input.groupId,
-        count: facts.length,
-      }
-    }),
+  getFactsAsOf: protectedProcedure.input(getFactsAsOfSchema).query(async ({ input }) => {
+    const graphiti = getGraphitiService();
+    const asOfDate = new Date(input.asOf);
+    const facts = await graphiti.getFactsAsOf(input.groupId, asOfDate, input.limit);
+    return {
+      facts,
+      asOf: input.asOf,
+      groupId: input.groupId,
+      count: facts.length,
+    };
+  }),
 
   /**
    * Find similar entities using semantic vector search (Fase 21.5)
@@ -331,36 +310,30 @@ export const graphitiRouter = router({
    * Use for entity resolution: typing "Jan" might suggest "Jan Janssen"
    * Returns entities sorted by similarity score.
    */
-  entitySuggest: protectedProcedure
-    .input(entitySuggestSchema)
-    .query(async ({ ctx, input }) => {
-      const nodeEmbeddingService = getWikiNodeEmbeddingService(ctx.prisma)
+  entitySuggest: protectedProcedure.input(entitySuggestSchema).query(async ({ ctx, input }) => {
+    const nodeEmbeddingService = getWikiNodeEmbeddingService(ctx.prisma);
 
-      const context = {
-        workspaceId: input.workspaceId,
-        projectId: input.projectId,
-      }
+    const context = {
+      workspaceId: input.workspaceId,
+      projectId: input.projectId,
+    };
 
-      const suggestions = await nodeEmbeddingService.findSimilarEntities(
-        context,
-        input.name,
-        {
-          workspaceId: input.workspaceId,
-          projectId: input.projectId,
-          groupId: input.groupId,
-          nodeType: input.nodeType as EmbeddableNodeType | undefined,
-          limit: input.limit,
-          threshold: input.threshold,
-          excludeNodeId: input.excludeNodeId,
-        }
-      )
+    const suggestions = await nodeEmbeddingService.findSimilarEntities(context, input.name, {
+      workspaceId: input.workspaceId,
+      projectId: input.projectId,
+      groupId: input.groupId,
+      nodeType: input.nodeType as EmbeddableNodeType | undefined,
+      limit: input.limit,
+      threshold: input.threshold,
+      excludeNodeId: input.excludeNodeId,
+    });
 
-      return {
-        query: input.name,
-        suggestions,
-        count: suggestions.length,
-      }
-    }),
+    return {
+      query: input.name,
+      suggestions,
+      count: suggestions.length,
+    };
+  }),
 
   /**
    * Find potential duplicate entities (Fase 22.6)
@@ -368,61 +341,57 @@ export const graphitiRouter = router({
    * Uses WikiDeduplicationService to scan entity embeddings and find pairs
    * with high similarity scores using MinHash/LSH and Jaccard similarity.
    */
-  findDuplicates: protectedProcedure
-    .input(findDuplicatesSchema)
-    .query(async ({ ctx, input }) => {
-      const graphiti = getGraphitiService()
-      const nodeEmbeddingService = getWikiNodeEmbeddingService(ctx.prisma)
-      const deduplicationService = getWikiDeduplicationService(nodeEmbeddingService)
+  findDuplicates: protectedProcedure.input(findDuplicatesSchema).query(async ({ ctx, input }) => {
+    const graphiti = getGraphitiService();
+    const nodeEmbeddingService = getWikiNodeEmbeddingService(ctx.prisma);
+    const deduplicationService = getWikiDeduplicationService(nodeEmbeddingService);
 
-      // Build groupId from workspace/project
-      const groupId = input.groupId || (input.projectId
-        ? `wiki-proj-${input.projectId}`
-        : `wiki-ws-${input.workspaceId}`)
+    // Build groupId from workspace/project
+    const groupId =
+      input.groupId ||
+      (input.projectId ? `wiki-proj-${input.projectId}` : `wiki-ws-${input.workspaceId}`);
 
-      // Get all nodes in workspace
-      const nodeTypes = input.nodeType
-        ? [input.nodeType]
-        : ['Concept', 'Person', 'Task', 'Project']
+    // Get all nodes in workspace
+    const nodeTypes = input.nodeType ? [input.nodeType] : ['Concept', 'Person', 'Task', 'Project'];
 
-      const nodes = await graphiti.getWorkspaceNodes(groupId, nodeTypes)
+    const nodes = await graphiti.getWorkspaceNodes(groupId, nodeTypes);
 
-      if (nodes.length === 0) {
-        return {
-          duplicates: [],
-          count: 0,
-          totalNodes: 0,
-          message: 'No nodes found in workspace',
-        }
-      }
-
-      // Use WikiDeduplicationService to find duplicates
-      const duplicates = await deduplicationService.findDuplicatesInWorkspace(
-        nodes.map(n => ({
-          uuid: n.uuid,
-          name: n.name,
-          type: n.type,
-          groupId: n.groupId,
-        })),
-        { threshold: input.threshold, limit: input.limit }
-      )
-
+    if (nodes.length === 0) {
       return {
-        duplicates: duplicates.map(d => ({
-          sourceUuid: d.sourceNode.uuid,
-          sourceName: d.sourceNode.name,
-          sourceType: d.sourceNode.type,
-          targetUuid: d.targetNode.uuid,
-          targetName: d.targetNode.name,
-          targetType: d.targetNode.type,
-          confidence: d.confidence,
-          matchType: d.matchType,
-        })),
-        count: duplicates.length,
-        totalNodes: nodes.length,
-        threshold: input.threshold,
-      }
-    }),
+        duplicates: [],
+        count: 0,
+        totalNodes: 0,
+        message: 'No nodes found in workspace',
+      };
+    }
+
+    // Use WikiDeduplicationService to find duplicates
+    const duplicates = await deduplicationService.findDuplicatesInWorkspace(
+      nodes.map((n) => ({
+        uuid: n.uuid,
+        name: n.name,
+        type: n.type,
+        groupId: n.groupId,
+      })),
+      { threshold: input.threshold, limit: input.limit }
+    );
+
+    return {
+      duplicates: duplicates.map((d) => ({
+        sourceUuid: d.sourceNode.uuid,
+        sourceName: d.sourceNode.name,
+        sourceType: d.sourceNode.type,
+        targetUuid: d.targetNode.uuid,
+        targetName: d.targetNode.name,
+        targetType: d.targetNode.type,
+        confidence: d.confidence,
+        matchType: d.matchType,
+      })),
+      count: duplicates.length,
+      totalNodes: nodes.length,
+      threshold: input.threshold,
+    };
+  }),
 
   // =========================================================================
   // Fase 22.6 - Entity Deduplication Endpoints
@@ -431,30 +400,26 @@ export const graphitiRouter = router({
   /**
    * Get all nodes marked as duplicates of a given node
    */
-  getDuplicatesOf: protectedProcedure
-    .input(getDuplicatesOfSchema)
-    .query(async ({ input }) => {
-      const graphiti = getGraphitiService()
-      const duplicates = await graphiti.getDuplicatesOf(input.nodeUuid)
-      return {
-        duplicates,
-        count: duplicates.length,
-      }
-    }),
+  getDuplicatesOf: protectedProcedure.input(getDuplicatesOfSchema).query(async ({ input }) => {
+    const graphiti = getGraphitiService();
+    const duplicates = await graphiti.getDuplicatesOf(input.nodeUuid);
+    return {
+      duplicates,
+      count: duplicates.length,
+    };
+  }),
 
   /**
    * Get canonical (root) node by following IS_DUPLICATE_OF chain
    */
-  getCanonicalNode: protectedProcedure
-    .input(getCanonicalNodeSchema)
-    .query(async ({ input }) => {
-      const graphiti = getGraphitiService()
-      const canonical = await graphiti.getCanonicalNode(input.nodeUuid)
-      return {
-        canonical,
-        isCanonical: canonical?.uuid === input.nodeUuid,
-      }
-    }),
+  getCanonicalNode: protectedProcedure.input(getCanonicalNodeSchema).query(async ({ input }) => {
+    const graphiti = getGraphitiService();
+    const canonical = await graphiti.getCanonicalNode(input.nodeUuid);
+    return {
+      canonical,
+      isCanonical: canonical?.uuid === input.nodeUuid,
+    };
+  }),
 
   /**
    * Mark two nodes as duplicates (manual user action)
@@ -462,15 +427,15 @@ export const graphitiRouter = router({
   markAsDuplicate: protectedProcedure
     .input(markAsDuplicateSchema)
     .mutation(async ({ ctx, input }) => {
-      const graphiti = getGraphitiService()
+      const graphiti = getGraphitiService();
 
       // Check if edge already exists
-      const exists = await graphiti.duplicateEdgeExists(input.sourceUuid, input.targetUuid)
+      const exists = await graphiti.duplicateEdgeExists(input.sourceUuid, input.targetUuid);
       if (exists) {
         return {
           success: false,
           message: 'Duplicate relationship already exists',
-        }
+        };
       }
 
       // Create IS_DUPLICATE_OF edge with 'manual' matchType
@@ -480,61 +445,57 @@ export const graphitiRouter = router({
         input.confidence,
         'exact', // Manual marking treated as exact match
         ctx.user?.id?.toString() || null
-      )
+      );
 
       return {
         success: true,
         sourceUuid: input.sourceUuid,
         targetUuid: input.targetUuid,
-      }
+      };
     }),
 
   /**
    * Remove duplicate relationship between two nodes
    */
-  unmarkDuplicate: protectedProcedure
-    .input(unmarkDuplicateSchema)
-    .mutation(async ({ input }) => {
-      const graphiti = getGraphitiService()
+  unmarkDuplicate: protectedProcedure.input(unmarkDuplicateSchema).mutation(async ({ input }) => {
+    const graphiti = getGraphitiService();
 
-      // Check if edge exists
-      const exists = await graphiti.duplicateEdgeExists(input.sourceUuid, input.targetUuid)
-      if (!exists) {
-        return {
-          success: false,
-          message: 'No duplicate relationship found',
-        }
-      }
-
-      await graphiti.removeDuplicateEdge(input.sourceUuid, input.targetUuid)
-
+    // Check if edge exists
+    const exists = await graphiti.duplicateEdgeExists(input.sourceUuid, input.targetUuid);
+    if (!exists) {
       return {
-        success: true,
-        sourceUuid: input.sourceUuid,
-        targetUuid: input.targetUuid,
-      }
-    }),
+        success: false,
+        message: 'No duplicate relationship found',
+      };
+    }
+
+    await graphiti.removeDuplicateEdge(input.sourceUuid, input.targetUuid);
+
+    return {
+      success: true,
+      sourceUuid: input.sourceUuid,
+      targetUuid: input.targetUuid,
+    };
+  }),
 
   /**
    * Merge duplicate nodes: transfer all edges to canonical node
    */
-  mergeDuplicates: protectedProcedure
-    .input(mergeDuplicatesSchema)
-    .mutation(async ({ input }) => {
-      const graphiti = getGraphitiService()
+  mergeDuplicates: protectedProcedure.input(mergeDuplicatesSchema).mutation(async ({ input }) => {
+    const graphiti = getGraphitiService();
 
-      const canonicalUuid = input.keepTarget ? input.targetUuid : input.sourceUuid
-      const duplicateUuid = input.keepTarget ? input.sourceUuid : input.targetUuid
+    const canonicalUuid = input.keepTarget ? input.targetUuid : input.sourceUuid;
+    const duplicateUuid = input.keepTarget ? input.sourceUuid : input.targetUuid;
 
-      const result = await graphiti.mergeNodes(duplicateUuid, canonicalUuid)
+    const result = await graphiti.mergeNodes(duplicateUuid, canonicalUuid);
 
-      return {
-        success: true,
-        canonicalUuid,
-        mergedUuid: duplicateUuid,
-        edgesTransferred: result.edgesTransferred,
-      }
-    }),
+    return {
+      success: true,
+      canonicalUuid,
+      mergedUuid: duplicateUuid,
+      edgesTransferred: result.edgesTransferred,
+    };
+  }),
 
   /**
    * Run batch deduplication scan for workspace (Fase 22.6)
@@ -543,103 +504,103 @@ export const graphitiRouter = router({
    * With dryRun=true (default), only returns candidates without creating edges.
    * With dryRun=false, creates IS_DUPLICATE_OF edges for matches.
    */
-  runBatchDedup: protectedProcedure
-    .input(runBatchDedupSchema)
-    .mutation(async ({ ctx, input }) => {
-      const graphiti = getGraphitiService()
-      const nodeEmbeddingService = getWikiNodeEmbeddingService(ctx.prisma)
-      const deduplicationService = getWikiDeduplicationService(nodeEmbeddingService)
+  runBatchDedup: protectedProcedure.input(runBatchDedupSchema).mutation(async ({ ctx, input }) => {
+    const graphiti = getGraphitiService();
+    const nodeEmbeddingService = getWikiNodeEmbeddingService(ctx.prisma);
+    const deduplicationService = getWikiDeduplicationService(nodeEmbeddingService);
 
-      // Build groupId from workspace/project
-      const groupId = input.groupId || (input.projectId
-        ? `wiki-proj-${input.projectId}`
-        : `wiki-ws-${input.workspaceId}`)
+    // Build groupId from workspace/project
+    const groupId =
+      input.groupId ||
+      (input.projectId ? `wiki-proj-${input.projectId}` : `wiki-ws-${input.workspaceId}`);
 
-      // Get all nodes in workspace
-      const nodeTypes = input.nodeTypes || ['Concept', 'Person', 'Task', 'Project']
-      const nodes = await graphiti.getWorkspaceNodes(groupId, nodeTypes)
+    // Get all nodes in workspace
+    const nodeTypes = input.nodeTypes || ['Concept', 'Person', 'Task', 'Project'];
+    const nodes = await graphiti.getWorkspaceNodes(groupId, nodeTypes);
 
-      if (nodes.length === 0) {
-        return {
-          duplicatesFound: 0,
-          edgesCreated: 0,
-          totalNodes: 0,
-          dryRun: input.dryRun,
-          message: 'No nodes found in workspace',
-        }
-      }
-
-      // Filter out nodes without valid names (prevents toLowerCase errors)
-      const validNodes = nodes.filter(n => n.name && typeof n.name === 'string' && n.name.trim() !== '')
-
-      if (validNodes.length === 0) {
-        return {
-          duplicatesFound: 0,
-          edgesCreated: 0,
-          totalNodes: nodes.length,
-          validNodes: 0,
-          dryRun: input.dryRun,
-          message: `Found ${nodes.length} nodes but none have valid names`,
-        }
-      }
-
-      // Find duplicates using WikiDeduplicationService
-      const duplicates = await deduplicationService.findDuplicatesInWorkspace(
-        validNodes.map(n => ({
-          uuid: n.uuid,
-          name: n.name,
-          type: n.type,
-          groupId: n.groupId,
-        })),
-        { threshold: input.threshold, limit: input.limit }
-      )
-
-      let edgesCreated = 0
-
-      // Check which candidates are already linked and optionally create edges
-      const candidatesWithStatus = await Promise.all(
-        duplicates.map(async (dup) => {
-          const alreadyLinked = await graphiti.duplicateEdgeExists(
-            dup.sourceNode.uuid,
-            dup.targetNode.uuid
-          )
-
-          // If not dry run and not already linked, create edge
-          if (!input.dryRun && !alreadyLinked) {
-            await graphiti.createDuplicateOfEdge(
-              dup.sourceNode.uuid,
-              dup.targetNode.uuid,
-              dup.confidence,
-              dup.matchType,
-              ctx.user?.id?.toString() || 'batch'
-            )
-            edgesCreated++
-          }
-
-          return {
-            sourceUuid: dup.sourceNode.uuid,
-            sourceName: dup.sourceNode.name,
-            sourceType: dup.sourceNode.type,
-            targetUuid: dup.targetNode.uuid,
-            targetName: dup.targetNode.name,
-            targetType: dup.targetNode.type,
-            confidence: dup.confidence,
-            matchType: dup.matchType,
-            alreadyLinked,
-          }
-        })
-      )
-
+    if (nodes.length === 0) {
       return {
-        duplicatesFound: duplicates.length,
-        edgesCreated,
-        totalNodes: nodes.length,
-        validNodes: validNodes.length,
+        duplicatesFound: 0,
+        edgesCreated: 0,
+        totalNodes: 0,
         dryRun: input.dryRun,
-        threshold: input.threshold,
-        candidates: candidatesWithStatus,
-      }
-    }),
+        message: 'No nodes found in workspace',
+      };
+    }
+
+    // Filter out nodes without valid names (prevents toLowerCase errors)
+    const validNodes = nodes.filter(
+      (n) => n.name && typeof n.name === 'string' && n.name.trim() !== ''
+    );
+
+    if (validNodes.length === 0) {
+      return {
+        duplicatesFound: 0,
+        edgesCreated: 0,
+        totalNodes: nodes.length,
+        validNodes: 0,
+        dryRun: input.dryRun,
+        message: `Found ${nodes.length} nodes but none have valid names`,
+      };
+    }
+
+    // Find duplicates using WikiDeduplicationService
+    const duplicates = await deduplicationService.findDuplicatesInWorkspace(
+      validNodes.map((n) => ({
+        uuid: n.uuid,
+        name: n.name,
+        type: n.type,
+        groupId: n.groupId,
+      })),
+      { threshold: input.threshold, limit: input.limit }
+    );
+
+    let edgesCreated = 0;
+
+    // Check which candidates are already linked and optionally create edges
+    const candidatesWithStatus = await Promise.all(
+      duplicates.map(async (dup) => {
+        const alreadyLinked = await graphiti.duplicateEdgeExists(
+          dup.sourceNode.uuid,
+          dup.targetNode.uuid
+        );
+
+        // If not dry run and not already linked, create edge
+        if (!input.dryRun && !alreadyLinked) {
+          await graphiti.createDuplicateOfEdge(
+            dup.sourceNode.uuid,
+            dup.targetNode.uuid,
+            dup.confidence,
+            dup.matchType,
+            ctx.user?.id?.toString() || 'batch'
+          );
+          edgesCreated++;
+        }
+
+        return {
+          sourceUuid: dup.sourceNode.uuid,
+          sourceName: dup.sourceNode.name,
+          sourceType: dup.sourceNode.type,
+          targetUuid: dup.targetNode.uuid,
+          targetName: dup.targetNode.name,
+          targetType: dup.targetNode.type,
+          confidence: dup.confidence,
+          matchType: dup.matchType,
+          alreadyLinked,
+        };
+      })
+    );
+
+    return {
+      duplicatesFound: duplicates.length,
+      edgesCreated,
+      totalNodes: nodes.length,
+      validNodes: validNodes.length,
+      dryRun: input.dryRun,
+      threshold: input.threshold,
+      candidates: candidatesWithStatus,
+    };
+  }),
 
   /**
    * Get existing confirmed duplicates in workspace (Fase 22.8)
@@ -650,19 +611,19 @@ export const graphitiRouter = router({
   getWorkspaceDuplicates: protectedProcedure
     .input(getWorkspaceDuplicatesSchema)
     .query(async ({ input }) => {
-      const graphiti = getGraphitiService()
+      const graphiti = getGraphitiService();
 
       // Build groupId from workspace/project
-      const groupId = input.groupId || (input.projectId
-        ? `wiki-proj-${input.projectId}`
-        : `wiki-ws-${input.workspaceId}`)
+      const groupId =
+        input.groupId ||
+        (input.projectId ? `wiki-proj-${input.projectId}` : `wiki-ws-${input.workspaceId}`);
 
-      const nodeTypes = input.nodeTypes || ['Concept', 'Person', 'Task', 'Project']
+      const nodeTypes = input.nodeTypes || ['Concept', 'Person', 'Task', 'Project'];
 
-      const duplicates = await graphiti.getWorkspaceDuplicates(groupId, nodeTypes)
+      const duplicates = await graphiti.getWorkspaceDuplicates(groupId, nodeTypes);
 
       return {
-        duplicates: duplicates.map(d => ({
+        duplicates: duplicates.map((d) => ({
           sourceUuid: d.sourceUuid,
           sourceName: d.sourceName,
           sourceType: d.sourceType,
@@ -675,7 +636,7 @@ export const graphitiRouter = router({
           detectedBy: d.detectedBy,
         })),
         total: duplicates.length,
-      }
+      };
     }),
 
   // ===========================================================================
@@ -691,26 +652,26 @@ export const graphitiRouter = router({
   reflexionNodes: protectedProcedure
     .input(reflexionNodesSchema)
     .mutation(async ({ input, ctx }) => {
-      const wikiAiService = getWikiAiService(ctx.prisma)
+      const wikiAiService = getWikiAiService(ctx.prisma);
 
       const context: WikiContext = {
         workspaceId: input.workspaceId,
         projectId: input.projectId,
-      }
+      };
 
       const result = await wikiAiService.extractNodesReflexion(
         context,
         input.content,
         input.extractedEntities,
         input.previousEpisodes
-      )
+      );
 
       return {
         missedEntities: result.missedEntities,
         reasoning: result.reasoning,
         provider: result.provider,
         model: result.model,
-      }
+      };
     }),
 
   /**
@@ -722,12 +683,12 @@ export const graphitiRouter = router({
   reflexionEdges: protectedProcedure
     .input(reflexionEdgesSchema)
     .mutation(async ({ input, ctx }) => {
-      const wikiAiService = getWikiAiService(ctx.prisma)
+      const wikiAiService = getWikiAiService(ctx.prisma);
 
       const context: WikiContext = {
         workspaceId: input.workspaceId,
         projectId: input.projectId,
-      }
+      };
 
       const result = await wikiAiService.extractEdgesReflexion(
         context,
@@ -735,13 +696,13 @@ export const graphitiRouter = router({
         input.extractedNodes,
         input.extractedFacts,
         input.previousEpisodes
-      )
+      );
 
       return {
         missedFacts: result.missedFacts,
         reasoning: result.reasoning,
         provider: result.provider,
         model: result.model,
-      }
+      };
     }),
-})
+});

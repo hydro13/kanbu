@@ -1,46 +1,49 @@
 {
-    "name": "kanbu",
-    "version": "0.1.0-beta.3",
-    "private": true,
-    "description": "Kanbu - Project Management System with enterprise-grade ACL and real-time collaboration",
-    "author": "Robin Waslander",
-    "license": "AGPL-3.0",
-    "repository": {
-          "type": "git",
-          "url": "https://github.com/hydro13/kanbu.git"
-    },
-    "homepage": "https://hydro13.github.io/kanbu/",
-    "bugs": {
-          "url": "https://github.com/hydro13/kanbu/issues"
-    },
-    "keywords": [
-          "project-management",
-          "task-management",
-          "collaboration",
-          "acl",
-          "permissions",
-          "ntfs",
-          "real-time",
-          "typescript",
-          "react"
-    ],
-    "scripts": {
-          "build": "pnpm -r build",
-          "dev": "pnpm -r --parallel dev",
-          "lint": "pnpm -r lint",
-          "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
-          "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
-          "typecheck": "pnpm -r typecheck",
-          "clean": "pnpm -r clean && rm -rf node_modules"
-    },
-    "devDependencies": {
-          "@types/node": "^22.0.0",
-          "prettier": "^3.4.0",
-          "typescript": "^5.7.0"
-    },
-    "engines": {
-          "node": ">=22.0.0",
-          "pnpm": ">=9.0.0"
-    },
-    "packageManager": "pnpm@9.15.0"
+  "name": "kanbu",
+  "version": "0.1.0-beta.3",
+  "private": true,
+  "description": "Kanbu - Project Management System with enterprise-grade ACL and real-time collaboration",
+  "author": "Robin Waslander",
+  "license": "AGPL-3.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hydro13/kanbu.git"
+  },
+  "homepage": "https://hydro13.github.io/kanbu/",
+  "bugs": {
+    "url": "https://github.com/hydro13/kanbu/issues"
+  },
+  "keywords": [
+    "project-management",
+    "task-management",
+    "collaboration",
+    "acl",
+    "permissions",
+    "ntfs",
+    "real-time",
+    "typescript",
+    "react"
+  ],
+  "scripts": {
+    "build": "pnpm -r build",
+    "dev": "pnpm -r --parallel dev",
+    "lint": "pnpm -r lint",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "typecheck": "pnpm -r typecheck",
+    "clean": "pnpm -r clean && rm -rf node_modules"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.2",
+    "@types/node": "^22.0.0",
+    "eslint-plugin-storybook": "^10.1.11",
+    "prettier": "^3.4.0",
+    "typescript": "^5.7.0",
+    "typescript-eslint": "^8.53.0"
+  },
+  "engines": {
+    "node": ">=22.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.15.0"
 }

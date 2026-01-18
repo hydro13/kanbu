@@ -4,15 +4,15 @@
  * Mutation to detect communities using Label Propagation algorithm
  */
 
-import { trpc } from '@/lib/trpc'
+import { trpc } from '@/lib/trpc';
 
 export function useDetectCommunities() {
-  const utils = trpc.useUtils()
+  const utils = trpc.useUtils();
 
   return trpc.wikiCommunity.detect.useMutation({
     onSuccess: () => {
       // Invalidate communities cache
-      utils.wikiCommunity.list.invalidate()
+      utils.wikiCommunity.list.invalidate();
     },
-  })
+  });
 }

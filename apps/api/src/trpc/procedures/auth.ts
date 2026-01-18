@@ -20,7 +20,13 @@
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { router, publicProcedure } from '../router';
-import { hashPassword, verifyPassword, generateToken, verifyToken, extractBearerToken } from '../../lib/auth';
+import {
+  hashPassword,
+  verifyPassword,
+  generateToken,
+  verifyToken,
+  extractBearerToken,
+} from '../../lib/auth';
 
 // =============================================================================
 // Input Schemas
@@ -28,14 +34,17 @@ import { hashPassword, verifyPassword, generateToken, verifyToken, extractBearer
 
 const registerSchema = z.object({
   email: z.string().email('Invalid email address'),
-  username: z.string()
+  username: z
+    .string()
     .min(3, 'Username must be at least 3 characters')
     .max(50, 'Username must be at most 50 characters')
-    .regex(/^[a-zA-Z0-9_-]+$/, 'Username can only contain letters, numbers, underscores and hyphens'),
-  name: z.string()
-    .min(1, 'Name is required')
-    .max(255, 'Name must be at most 255 characters'),
-  password: z.string()
+    .regex(
+      /^[a-zA-Z0-9_-]+$/,
+      'Username can only contain letters, numbers, underscores and hyphens'
+    ),
+  name: z.string().min(1, 'Name is required').max(255, 'Name must be at most 255 characters'),
+  password: z
+    .string()
     .min(8, 'Password must be at least 8 characters')
     .max(128, 'Password must be at most 128 characters'),
 });
@@ -47,14 +56,17 @@ const loginSchema = z.object({
 
 const acceptInviteSchema = z.object({
   token: z.string().min(1, 'Invite token is required'),
-  username: z.string()
+  username: z
+    .string()
     .min(3, 'Username must be at least 3 characters')
     .max(50, 'Username must be at most 50 characters')
-    .regex(/^[a-zA-Z0-9_-]+$/, 'Username can only contain letters, numbers, underscores and hyphens'),
-  name: z.string()
-    .min(1, 'Name is required')
-    .max(255, 'Name must be at most 255 characters'),
-  password: z.string()
+    .regex(
+      /^[a-zA-Z0-9_-]+$/,
+      'Username can only contain letters, numbers, underscores and hyphens'
+    ),
+  name: z.string().min(1, 'Name is required').max(255, 'Name must be at most 255 characters'),
+  password: z
+    .string()
     .min(8, 'Password must be at least 8 characters')
     .max(128, 'Password must be at most 128 characters'),
 });
@@ -116,7 +128,8 @@ export const authRouter = router({
         if (!registrationEnabled) {
           throw new TRPCError({
             code: 'FORBIDDEN',
-            message: 'Self-registration is disabled. Please contact an administrator for an invite.',
+            message:
+              'Self-registration is disabled. Please contact an administrator for an invite.',
           });
         }
       }
@@ -258,7 +271,7 @@ export const authRouter = router({
           },
         },
       });
-      const settingsMap = new Map(securitySettings.map(s => [s.key, s.value]));
+      const settingsMap = new Map(securitySettings.map((s) => [s.key, s.value]));
       const maxAttempts = parseInt(settingsMap.get('security.max_login_attempts') ?? '5', 10);
       const baseLockoutMinutes = parseInt(settingsMap.get('security.lockout_duration') ?? '15', 10);
       const maxLockouts = parseInt(settingsMap.get('security.max_lockouts') ?? '5', 10); // 0 = no permanent lock
@@ -267,7 +280,8 @@ export const authRouter = router({
       if (maxLockouts > 0 && user.lockoutCount >= maxLockouts) {
         throw new TRPCError({
           code: 'FORBIDDEN',
-          message: 'Account is permanently locked due to repeated failed login attempts. Contact an administrator.',
+          message:
+            'Account is permanently locked due to repeated failed login attempts. Contact an administrator.',
         });
       }
 
@@ -315,7 +329,8 @@ export const authRouter = router({
 
             throw new TRPCError({
               code: 'FORBIDDEN',
-              message: 'Account is now permanently locked due to repeated failed login attempts. Contact an administrator.',
+              message:
+                'Account is now permanently locked due to repeated failed login attempts. Contact an administrator.',
             });
           }
 
@@ -376,9 +391,10 @@ export const authRouter = router({
       }
 
       // Get IP and user agent from request
-      const ip = ctx.req.headers['x-forwarded-for']?.toString().split(',')[0] ||
-                 ctx.req.socket?.remoteAddress ||
-                 'unknown';
+      const ip =
+        ctx.req.headers['x-forwarded-for']?.toString().split(',')[0] ||
+        ctx.req.socket?.remoteAddress ||
+        'unknown';
       const userAgent = ctx.req.headers['user-agent'] || 'unknown';
 
       // Update last login timestamp on user
@@ -432,59 +448,57 @@ export const authRouter = router({
    * Note: With stateless JWT, logout is primarily client-side.
    * For token blacklisting, use sessions table.
    */
-  logout: publicProcedure
-    .mutation(async () => {
-      // With stateless JWT, logout is handled client-side by removing the token
-      // For enhanced security, we could add the token to a blacklist table
-      // But for now, we just return success
-      return {
-        success: true,
-        message: 'Logged out successfully',
-      };
-    }),
+  logout: publicProcedure.mutation(async () => {
+    // With stateless JWT, logout is handled client-side by removing the token
+    // For enhanced security, we could add the token to a blacklist table
+    // But for now, we just return success
+    return {
+      success: true,
+      message: 'Logged out successfully',
+    };
+  }),
 
   /**
    * Get current authenticated user
    */
-  me: publicProcedure
-    .query(async ({ ctx }): Promise<UserResponse | null> => {
-      // Extract token from Authorization header
-      const authHeader = ctx.req.headers.authorization;
-      const token = extractBearerToken(authHeader);
+  me: publicProcedure.query(async ({ ctx }): Promise<UserResponse | null> => {
+    // Extract token from Authorization header
+    const authHeader = ctx.req.headers.authorization;
+    const token = extractBearerToken(authHeader);
 
-      if (!token) {
-        return null;
-      }
+    if (!token) {
+      return null;
+    }
 
-      // Verify token
-      const payload = await verifyToken(token);
-      if (!payload || !payload.sub) {
-        return null;
-      }
+    // Verify token
+    const payload = await verifyToken(token);
+    if (!payload || !payload.sub) {
+      return null;
+    }
 
-      // Get user from database
-      const userId = parseInt(payload.sub, 10);
-      const user = await ctx.prisma.user.findUnique({
-        where: { id: userId },
-      });
+    // Get user from database
+    const userId = parseInt(payload.sub, 10);
+    const user = await ctx.prisma.user.findUnique({
+      where: { id: userId },
+    });
 
-      if (!user || !user.isActive) {
-        return null;
-      }
+    if (!user || !user.isActive) {
+      return null;
+    }
 
-      return {
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        name: user.name,
-        avatarUrl: user.avatarUrl,
-        role: user.role,
-        timezone: user.timezone,
-        language: user.language,
-        emailVerified: user.emailVerified,
-        createdAt: user.createdAt.toISOString(),
-      };
-    }),
+    return {
+      id: user.id,
+      email: user.email,
+      username: user.username,
+      name: user.name,
+      avatarUrl: user.avatarUrl,
+      role: user.role,
+      timezone: user.timezone,
+      language: user.language,
+      emailVerified: user.emailVerified,
+      createdAt: user.createdAt.toISOString(),
+    };
+  }),
 
   /**
    * Validate an invite token (public endpoint)

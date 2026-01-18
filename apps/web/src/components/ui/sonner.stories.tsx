@@ -10,10 +10,10 @@
  * ===================================================================
  */
 
-import type { Meta, StoryObj } from '@storybook/react-vite'
-import { Toaster } from './sonner'
-import { Button } from './button'
-import { toast } from 'sonner'
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import { Toaster } from './sonner';
+import { Button } from './button';
+import { toast } from 'sonner';
 
 const meta: Meta<typeof Toaster> = {
   title: 'UI/Sonner',
@@ -35,22 +35,18 @@ const meta: Meta<typeof Toaster> = {
       },
     },
   },
-}
+};
 
-export default meta
-type Story = StoryObj<typeof Toaster>
+export default meta;
+type Story = StoryObj<typeof Toaster>;
 
 // =============================================================================
 // Basic Variants
 // =============================================================================
 
 export const Default: Story = {
-  render: () => (
-    <Button onClick={() => toast('This is a toast notification')}>
-      Show Toast
-    </Button>
-  ),
-}
+  render: () => <Button onClick={() => toast('This is a toast notification')}>Show Toast</Button>,
+};
 
 export const WithDescription: Story = {
   render: () => (
@@ -71,7 +67,7 @@ export const WithDescription: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Status Variants
@@ -79,47 +75,35 @@ export const WithDescription: Story = {
 
 export const Success: Story = {
   render: () => (
-    <Button
-      onClick={() => toast.success('Changes saved successfully')}
-      variant="outline"
-    >
+    <Button onClick={() => toast.success('Changes saved successfully')} variant="outline">
       Success Toast
     </Button>
   ),
-}
+};
 
 export const Error: Story = {
   render: () => (
-    <Button
-      onClick={() => toast.error('Failed to save changes')}
-      variant="outline"
-    >
+    <Button onClick={() => toast.error('Failed to save changes')} variant="outline">
       Error Toast
     </Button>
   ),
-}
+};
 
 export const Warning: Story = {
   render: () => (
-    <Button
-      onClick={() => toast.warning('Your session will expire soon')}
-      variant="outline"
-    >
+    <Button onClick={() => toast.warning('Your session will expire soon')} variant="outline">
       Warning Toast
     </Button>
   ),
-}
+};
 
 export const Info: Story = {
   render: () => (
-    <Button
-      onClick={() => toast.info('New update available')}
-      variant="outline"
-    >
+    <Button onClick={() => toast.info('New update available')} variant="outline">
       Info Toast
     </Button>
   ),
-}
+};
 
 // =============================================================================
 // With Actions
@@ -148,7 +132,7 @@ export const WithAction: Story = {
       },
     },
   },
-}
+};
 
 export const WithCancel: Story = {
   render: () => (
@@ -177,7 +161,7 @@ export const WithCancel: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Loading States
@@ -187,14 +171,11 @@ export const LoadingPromise: Story = {
   render: () => (
     <Button
       onClick={() => {
-        toast.promise(
-          new Promise((resolve) => setTimeout(resolve, 2000)),
-          {
-            loading: 'Saving changes...',
-            success: 'Changes saved!',
-            error: 'Failed to save changes',
-          }
-        )
+        toast.promise(new Promise((resolve) => setTimeout(resolve, 2000)), {
+          loading: 'Saving changes...',
+          success: 'Changes saved!',
+          error: 'Failed to save changes',
+        });
       }}
     >
       Promise Toast
@@ -203,20 +184,17 @@ export const LoadingPromise: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          'Toast that shows loading, success, or error state based on a promise.',
+        story: 'Toast that shows loading, success, or error state based on a promise.',
       },
     },
   },
-}
+};
 
 export const Loading: Story = {
   render: () => (
-    <Button onClick={() => toast.loading('Processing your request...')}>
-      Loading Toast
-    </Button>
+    <Button onClick={() => toast.loading('Processing your request...')}>Loading Toast</Button>
   ),
-}
+};
 
 // =============================================================================
 // Duration and Dismissal
@@ -267,7 +245,7 @@ export const CustomDuration: Story = {
       },
     },
   },
-}
+};
 
 export const PersistentToast: Story = {
   render: () => (
@@ -288,7 +266,7 @@ export const PersistentToast: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Multiple Toasts
@@ -298,9 +276,9 @@ export const MultipleToasts: Story = {
   render: () => (
     <Button
       onClick={() => {
-        toast.success('Task 1 completed')
-        setTimeout(() => toast.success('Task 2 completed'), 500)
-        setTimeout(() => toast.success('Task 3 completed'), 1000)
+        toast.success('Task 1 completed');
+        setTimeout(() => toast.success('Task 2 completed'), 500);
+        setTimeout(() => toast.success('Task 3 completed'), 1000);
       }}
     >
       Show Multiple
@@ -313,7 +291,7 @@ export const MultipleToasts: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Real-World Examples
@@ -353,14 +331,11 @@ export const FileOperations: Story = {
       </Button>
       <Button
         onClick={() => {
-          toast.promise(
-            new Promise((resolve) => setTimeout(resolve, 3000)),
-            {
-              loading: 'Uploading file...',
-              success: 'File uploaded successfully',
-              error: 'Upload failed',
-            }
-          )
+          toast.promise(new Promise((resolve) => setTimeout(resolve, 3000)), {
+            loading: 'Uploading file...',
+            success: 'File uploaded successfully',
+            error: 'Upload failed',
+          });
         }}
         variant="outline"
         size="sm"
@@ -376,7 +351,7 @@ export const FileOperations: Story = {
       },
     },
   },
-}
+};
 
 export const FormValidation: Story = {
   render: () => (
@@ -411,7 +386,7 @@ export const FormValidation: Story = {
       },
     },
   },
-}
+};
 
 export const UserActions: Story = {
   render: () => (
@@ -470,24 +445,28 @@ export const UserActions: Story = {
       },
     },
   },
-}
+};
 
 export const NetworkStatus: Story = {
   render: () => (
     <div className="flex gap-2 flex-wrap">
       <Button
-        onClick={() => toast.error('Connection lost', {
-          description: 'Please check your internet connection',
-        })}
+        onClick={() =>
+          toast.error('Connection lost', {
+            description: 'Please check your internet connection',
+          })
+        }
         variant="outline"
         size="sm"
       >
         Offline
       </Button>
       <Button
-        onClick={() => toast.success('Connected', {
-          description: 'Your internet connection has been restored',
-        })}
+        onClick={() =>
+          toast.success('Connected', {
+            description: 'Your internet connection has been restored',
+          })
+        }
         variant="outline"
         size="sm"
       >
@@ -495,10 +474,10 @@ export const NetworkStatus: Story = {
       </Button>
       <Button
         onClick={() => {
-          const id = toast.loading('Connecting...')
+          const id = toast.loading('Connecting...');
           setTimeout(() => {
-            toast.success('Connected successfully', { id })
-          }, 2000)
+            toast.success('Connected successfully', { id });
+          }, 2000);
         }}
         variant="outline"
         size="sm"
@@ -514,4 +493,4 @@ export const NetworkStatus: Story = {
       },
     },
   },
-}
+};

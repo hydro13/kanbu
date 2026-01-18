@@ -14,28 +14,28 @@
  * =============================================================================
  */
 
-import { Input } from '../ui/input'
+import { Input } from '../ui/input';
 
 // =============================================================================
 // Types
 // =============================================================================
 
-export type MemberRole = 'SYSTEM' | 'ADMIN' | 'MEMBER' | 'VIEWER' | 'ALL'
-export type SortField = 'name' | 'email' | 'role' | 'joinedAt'
-export type SortOrder = 'asc' | 'desc'
+export type MemberRole = 'SYSTEM' | 'ADMIN' | 'MEMBER' | 'VIEWER' | 'ALL';
+export type SortField = 'name' | 'email' | 'role' | 'joinedAt';
+export type SortOrder = 'asc' | 'desc';
 
 export interface MemberFiltersState {
-  search: string
-  role: MemberRole
-  sortField: SortField
-  sortOrder: SortOrder
+  search: string;
+  role: MemberRole;
+  sortField: SortField;
+  sortOrder: SortOrder;
 }
 
 interface MemberFiltersProps {
-  filters: MemberFiltersState
-  onFiltersChange: (filters: MemberFiltersState) => void
-  totalCount: number
-  filteredCount: number
+  filters: MemberFiltersState;
+  onFiltersChange: (filters: MemberFiltersState) => void;
+  totalCount: number;
+  filteredCount: number;
 }
 
 // =============================================================================
@@ -58,7 +58,7 @@ function SearchIcon({ className }: { className?: string }) {
         d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
       />
     </svg>
-  )
+  );
 }
 
 function SortAscIcon({ className }: { className?: string }) {
@@ -77,7 +77,7 @@ function SortAscIcon({ className }: { className?: string }) {
         d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12"
       />
     </svg>
-  )
+  );
 }
 
 function SortDescIcon({ className }: { className?: string }) {
@@ -96,7 +96,7 @@ function SortDescIcon({ className }: { className?: string }) {
         d="M3 4h13M3 8h9m-9 4h9m5-4v12m0 0l-4-4m4 4l4-4"
       />
     </svg>
-  )
+  );
 }
 
 // =============================================================================
@@ -110,25 +110,25 @@ export function MemberFilters({
   filteredCount,
 }: MemberFiltersProps) {
   const handleSearchChange = (value: string) => {
-    onFiltersChange({ ...filters, search: value })
-  }
+    onFiltersChange({ ...filters, search: value });
+  };
 
   const handleRoleChange = (value: string) => {
-    onFiltersChange({ ...filters, role: value as MemberRole })
-  }
+    onFiltersChange({ ...filters, role: value as MemberRole });
+  };
 
   const handleSortFieldChange = (value: string) => {
-    onFiltersChange({ ...filters, sortField: value as SortField })
-  }
+    onFiltersChange({ ...filters, sortField: value as SortField });
+  };
 
   const toggleSortOrder = () => {
     onFiltersChange({
       ...filters,
       sortOrder: filters.sortOrder === 'asc' ? 'desc' : 'asc',
-    })
-  }
+    });
+  };
 
-  const showingFiltered = filteredCount !== totalCount
+  const showingFiltered = filteredCount !== totalCount;
 
   return (
     <div className="space-y-3">
@@ -192,7 +192,7 @@ export function MemberFilters({
         </p>
       )}
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -200,36 +200,33 @@ export function MemberFilters({
 // =============================================================================
 
 interface Member {
-  id: number
-  name: string | null
-  email: string
-  role: string
-  joinedAt?: string | Date
-  source?: 'workspace_user' | 'group' | 'both' | 'acl'
+  id: number;
+  name: string | null;
+  email: string;
+  role: string;
+  joinedAt?: string | Date;
+  source?: 'workspace_user' | 'group' | 'both' | 'acl';
 }
 
-export function filterMembers(
-  members: Member[],
-  filters: MemberFiltersState
-): Member[] {
+export function filterMembers(members: Member[], filters: MemberFiltersState): Member[] {
   return members.filter((member) => {
     // Search filter
     if (filters.search) {
-      const searchLower = filters.search.toLowerCase()
-      const nameMatch = member.name?.toLowerCase().includes(searchLower)
-      const emailMatch = member.email.toLowerCase().includes(searchLower)
+      const searchLower = filters.search.toLowerCase();
+      const nameMatch = member.name?.toLowerCase().includes(searchLower);
+      const emailMatch = member.email.toLowerCase().includes(searchLower);
       if (!nameMatch && !emailMatch) {
-        return false
+        return false;
       }
     }
 
     // Role filter
     if (filters.role !== 'ALL' && member.role !== filters.role) {
-      return false
+      return false;
     }
 
-    return true
-  })
+    return true;
+  });
 }
 
 export function sortMembers(
@@ -237,38 +234,36 @@ export function sortMembers(
   sortField: SortField,
   sortOrder: SortOrder
 ): Member[] {
-  const roleOrder = ['SYSTEM', 'ADMIN', 'MEMBER', 'VIEWER']
+  const roleOrder = ['SYSTEM', 'ADMIN', 'MEMBER', 'VIEWER'];
 
   return [...members].sort((a, b) => {
-    let comparison = 0
+    let comparison = 0;
 
     switch (sortField) {
       case 'name':
-        comparison = (a.name ?? '').localeCompare(b.name ?? '')
-        break
+        comparison = (a.name ?? '').localeCompare(b.name ?? '');
+        break;
       case 'email':
-        comparison = a.email.localeCompare(b.email)
-        break
+        comparison = a.email.localeCompare(b.email);
+        break;
       case 'role':
-        comparison = roleOrder.indexOf(a.role) - roleOrder.indexOf(b.role)
-        break
-      case 'joinedAt':
-        const dateA = a.joinedAt ? new Date(a.joinedAt).getTime() : 0
-        const dateB = b.joinedAt ? new Date(b.joinedAt).getTime() : 0
-        comparison = dateA - dateB
-        break
+        comparison = roleOrder.indexOf(a.role) - roleOrder.indexOf(b.role);
+        break;
+      case 'joinedAt': {
+        const dateA = a.joinedAt ? new Date(a.joinedAt).getTime() : 0;
+        const dateB = b.joinedAt ? new Date(b.joinedAt).getTime() : 0;
+        comparison = dateA - dateB;
+        break;
+      }
     }
 
-    return sortOrder === 'asc' ? comparison : -comparison
-  })
+    return sortOrder === 'asc' ? comparison : -comparison;
+  });
 }
 
-export function filterAndSortMembers(
-  members: Member[],
-  filters: MemberFiltersState
-): Member[] {
-  const filtered = filterMembers(members, filters)
-  return sortMembers(filtered, filters.sortField, filters.sortOrder)
+export function filterAndSortMembers(members: Member[], filters: MemberFiltersState): Member[] {
+  const filtered = filterMembers(members, filters);
+  return sortMembers(filtered, filters.sortField, filters.sortOrder);
 }
 
 // =============================================================================
@@ -276,19 +271,16 @@ export function filterAndSortMembers(
 // =============================================================================
 
 export interface PaginationState {
-  page: number
-  pageSize: number
+  page: number;
+  pageSize: number;
 }
 
-export function paginateMembers<T>(
-  items: T[],
-  pagination: PaginationState
-): T[] {
-  const start = (pagination.page - 1) * pagination.pageSize
-  const end = start + pagination.pageSize
-  return items.slice(start, end)
+export function paginateMembers<T>(items: T[], pagination: PaginationState): T[] {
+  const start = (pagination.page - 1) * pagination.pageSize;
+  const end = start + pagination.pageSize;
+  return items.slice(start, end);
 }
 
 export function getTotalPages(totalItems: number, pageSize: number): number {
-  return Math.ceil(totalItems / pageSize)
+  return Math.ceil(totalItems / pageSize);
 }

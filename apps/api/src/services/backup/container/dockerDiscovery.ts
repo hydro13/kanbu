@@ -11,20 +11,20 @@
  * - BACKUP_PG_MODE=auto    → Auto-detect (default): try direct first, fall back to docker
  */
 
-import { exec } from 'child_process'
-import { promisify } from 'util'
-import { getBackupConfig } from '../storage/types'
+import { exec } from 'child_process';
+import { promisify } from 'util';
+import { getBackupConfig } from '../storage/types';
 
-const execAsync = promisify(exec)
+const execAsync = promisify(exec);
 
-type BackupMode = 'docker' | 'direct' | 'auto'
+type BackupMode = 'docker' | 'direct' | 'auto';
 
 interface PostgresConnectionConfig {
-  host: string
-  port: number
-  user: string
-  password: string
-  database: string
+  host: string;
+  port: number;
+  user: string;
+  password: string;
+  database: string;
 }
 
 /**
@@ -32,22 +32,22 @@ interface PostgresConnectionConfig {
  * Format: postgresql://user:password@host:port/database
  */
 function parseDatabaseUrl(): PostgresConnectionConfig | null {
-  const url = process.env.DATABASE_URL
-  if (!url) return null
+  const url = process.env.DATABASE_URL;
+  if (!url) return null;
 
   try {
     // Handle both postgresql:// and postgres:// schemes
-    const parsed = new URL(url.replace(/^postgres:\/\//, 'postgresql://'))
+    const parsed = new URL(url.replace(/^postgres:\/\//, 'postgresql://'));
     return {
       host: parsed.hostname || 'localhost',
       port: parseInt(parsed.port) || 5432,
       user: parsed.username || 'kanbu',
       password: decodeURIComponent(parsed.password || ''),
       database: parsed.pathname.slice(1) || 'kanbu', // Remove leading /
-    }
+    };
   } catch {
-    console.error('Failed to parse DATABASE_URL')
-    return null
+    console.error('Failed to parse DATABASE_URL');
+    return null;
   }
 }
 
@@ -55,11 +55,11 @@ function parseDatabaseUrl(): PostgresConnectionConfig | null {
  * Get the backup mode from environment or auto-detect
  */
 function getBackupMode(): BackupMode {
-  const mode = process.env.BACKUP_PG_MODE?.toLowerCase()
+  const mode = process.env.BACKUP_PG_MODE?.toLowerCase();
   if (mode === 'docker' || mode === 'direct') {
-    return mode
+    return mode;
   }
-  return 'auto'
+  return 'auto';
 }
 
 /**
@@ -67,10 +67,10 @@ function getBackupMode(): BackupMode {
  */
 async function isPgDumpAvailable(): Promise<boolean> {
   try {
-    await execAsync('which pg_dump', { shell: '/bin/sh' })
-    return true
+    await execAsync('which pg_dump', { shell: '/bin/sh' });
+    return true;
   } catch {
-    return false
+    return false;
   }
 }
 
@@ -79,10 +79,10 @@ async function isPgDumpAvailable(): Promise<boolean> {
  */
 async function isDockerAvailable(): Promise<boolean> {
   try {
-    await execAsync('docker --version', { shell: '/bin/sh' })
-    return true
+    await execAsync('docker --version', { shell: '/bin/sh' });
+    return true;
   } catch {
-    return false
+    return false;
   }
 }
 
@@ -95,38 +95,38 @@ async function isDockerAvailable(): Promise<boolean> {
  * 3. Default fallback: 'kanbu-postgres'
  */
 export async function findPostgresContainer(): Promise<string> {
-  const config = getBackupConfig()
+  const config = getBackupConfig();
 
   // 1. Check explicit container name
   if (config.postgresContainer) {
-    const exists = await containerExists(config.postgresContainer)
+    const exists = await containerExists(config.postgresContainer);
     if (exists) {
-      return config.postgresContainer
+      return config.postgresContainer;
     }
     console.warn(
       `Configured POSTGRES_CONTAINER '${config.postgresContainer}' not found, ` +
         'falling back to pattern matching'
-    )
+    );
   }
 
   // 2. Try pattern matching
-  const containerName = await findContainerByPattern(config.postgresContainerPattern)
+  const containerName = await findContainerByPattern(config.postgresContainerPattern);
   if (containerName) {
-    return containerName
+    return containerName;
   }
 
   // 3. Try default container name
-  const defaultContainer = 'kanbu-postgres'
-  const defaultExists = await containerExists(defaultContainer)
+  const defaultContainer = 'kanbu-postgres';
+  const defaultExists = await containerExists(defaultContainer);
   if (defaultExists) {
-    return defaultContainer
+    return defaultContainer;
   }
 
   throw new Error(
     'PostgreSQL container not found. ' +
       `Tried pattern '${config.postgresContainerPattern}' and default 'kanbu-postgres'. ` +
       'Set POSTGRES_CONTAINER environment variable with the correct container name.'
-  )
+  );
 }
 
 /**
@@ -134,12 +134,15 @@ export async function findPostgresContainer(): Promise<string> {
  */
 async function containerExists(name: string): Promise<boolean> {
   try {
-    const { stdout } = await execAsync(`docker ps --filter "name=^${name}$" --format "{{.Names}}"`, {
-      shell: '/bin/sh',
-    })
-    return stdout.trim() === name
+    const { stdout } = await execAsync(
+      `docker ps --filter "name=^${name}$" --format "{{.Names}}"`,
+      {
+        shell: '/bin/sh',
+      }
+    );
+    return stdout.trim() === name;
   } catch {
-    return false
+    return false;
   }
 }
 
@@ -148,13 +151,16 @@ async function containerExists(name: string): Promise<boolean> {
  */
 async function findContainerByPattern(pattern: string): Promise<string | null> {
   try {
-    const { stdout } = await execAsync(`docker ps --format "{{.Names}}" | grep "${pattern}" | head -1`, {
-      shell: '/bin/sh',
-    })
-    const containerName = stdout.trim()
-    return containerName || null
+    const { stdout } = await execAsync(
+      `docker ps --format "{{.Names}}" | grep "${pattern}" | head -1`,
+      {
+        shell: '/bin/sh',
+      }
+    );
+    const containerName = stdout.trim();
+    return containerName || null;
   } catch {
-    return null
+    return null;
   }
 }
 
@@ -163,36 +169,36 @@ async function findContainerByPattern(pattern: string): Promise<string | null> {
  * Uses DATABASE_URL from environment (same as Prisma)
  */
 async function execPgDumpDirect(outputPath: string): Promise<{ success: boolean; stderr: string }> {
-  const config = parseDatabaseUrl()
+  const config = parseDatabaseUrl();
   if (!config) {
     return {
       success: false,
       stderr: 'DATABASE_URL not set or invalid. Cannot use direct backup mode.',
-    }
+    };
   }
 
   try {
     // Use PGPASSWORD environment variable for password
     // pg_dump with network connection
-    const command = `PGPASSWORD='${config.password}' pg_dump -h ${config.host} -p ${config.port} -U ${config.user} -d ${config.database} > "${outputPath}"`
+    const command = `PGPASSWORD='${config.password}' pg_dump -h ${config.host} -p ${config.port} -U ${config.user} -d ${config.database} > "${outputPath}"`;
 
     const { stderr } = await execAsync(command, {
       shell: '/bin/sh',
       maxBuffer: 50 * 1024 * 1024, // 50MB buffer for large dumps
-    })
+    });
 
     // pg_dump may output warnings that aren't fatal
-    const hasError = stderr && !stderr.includes('WARNING')
+    const hasError = stderr && !stderr.includes('WARNING');
     return {
       success: !hasError,
       stderr: stderr || '',
-    }
+    };
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
+    const message = error instanceof Error ? error.message : String(error);
     return {
       success: false,
       stderr: message,
-    }
+    };
   }
 }
 
@@ -201,32 +207,32 @@ async function execPgDumpDirect(outputPath: string): Promise<{ success: boolean;
  */
 async function execPgDumpDocker(outputPath: string): Promise<{ success: boolean; stderr: string }> {
   try {
-    const container = await findPostgresContainer()
+    const container = await findPostgresContainer();
 
     // Note: Using sudo for Docker access on development machines
     // On production with Docker socket mounted, no sudo needed
     const command =
       process.env.NODE_ENV === 'production'
         ? `docker exec ${container} pg_dump -U kanbu -d kanbu > "${outputPath}"`
-        : `sudo docker exec ${container} pg_dump -U kanbu -d kanbu > "${outputPath}"`
+        : `sudo docker exec ${container} pg_dump -U kanbu -d kanbu > "${outputPath}"`;
 
     const { stderr } = await execAsync(command, {
       shell: '/bin/sh',
       maxBuffer: 50 * 1024 * 1024, // 50MB buffer for large dumps
-    })
+    });
 
     // pg_dump may output warnings that aren't fatal
-    const hasError = stderr && !stderr.includes('WARNING')
+    const hasError = stderr && !stderr.includes('WARNING');
     return {
       success: !hasError,
       stderr: stderr || '',
-    }
+    };
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
+    const message = error instanceof Error ? error.message : String(error);
     return {
       success: false,
       stderr: message,
-    }
+    };
   }
 }
 
@@ -236,38 +242,40 @@ async function execPgDumpDocker(outputPath: string): Promise<{ success: boolean;
  * @param outputPath - Path to write the SQL dump
  * @returns Object with success status and any stderr output
  */
-export async function execPgDump(outputPath: string): Promise<{ success: boolean; stderr: string; mode: string }> {
-  const requestedMode = getBackupMode()
+export async function execPgDump(
+  outputPath: string
+): Promise<{ success: boolean; stderr: string; mode: string }> {
+  const requestedMode = getBackupMode();
 
   // Forced Docker mode
   if (requestedMode === 'docker') {
-    const result = await execPgDumpDocker(outputPath)
-    return { ...result, mode: 'docker' }
+    const result = await execPgDumpDocker(outputPath);
+    return { ...result, mode: 'docker' };
   }
 
   // Forced Direct mode
   if (requestedMode === 'direct') {
-    const result = await execPgDumpDirect(outputPath)
-    return { ...result, mode: 'direct' }
+    const result = await execPgDumpDirect(outputPath);
+    return { ...result, mode: 'direct' };
   }
 
   // Auto mode: try direct first (works in containers), then fall back to docker
-  const hasPgDump = await isPgDumpAvailable()
-  const hasDbUrl = !!parseDatabaseUrl()
+  const hasPgDump = await isPgDumpAvailable();
+  const hasDbUrl = !!parseDatabaseUrl();
 
   if (hasPgDump && hasDbUrl) {
-    const result = await execPgDumpDirect(outputPath)
+    const result = await execPgDumpDirect(outputPath);
     if (result.success) {
-      return { ...result, mode: 'direct' }
+      return { ...result, mode: 'direct' };
     }
-    console.warn('Direct pg_dump failed, falling back to Docker mode:', result.stderr)
+    console.warn('Direct pg_dump failed, falling back to Docker mode:', result.stderr);
   }
 
   // Fall back to Docker mode
-  const hasDocker = await isDockerAvailable()
+  const hasDocker = await isDockerAvailable();
   if (hasDocker) {
-    const result = await execPgDumpDocker(outputPath)
-    return { ...result, mode: 'docker' }
+    const result = await execPgDumpDocker(outputPath);
+    return { ...result, mode: 'docker' };
   }
 
   return {
@@ -277,45 +285,45 @@ export async function execPgDump(outputPath: string): Promise<{ success: boolean
       'Direct mode requires pg_dump and DATABASE_URL. ' +
       'Docker mode requires Docker access and the postgres container.',
     mode: 'none',
-  }
+  };
 }
 
 /**
  * Get PostgreSQL backup info for diagnostics
  */
 export async function getPostgresBackupInfo(): Promise<{
-  available: boolean
-  mode: 'direct' | 'docker' | 'none'
+  available: boolean;
+  mode: 'direct' | 'docker' | 'none';
   details: {
-    pgDumpAvailable: boolean
-    databaseUrlSet: boolean
-    dockerAvailable: boolean
-    containerFound: boolean
-    containerName: string | null
-  }
+    pgDumpAvailable: boolean;
+    databaseUrlSet: boolean;
+    dockerAvailable: boolean;
+    containerFound: boolean;
+    containerName: string | null;
+  };
 }> {
-  const hasPgDump = await isPgDumpAvailable()
-  const hasDbUrl = !!parseDatabaseUrl()
-  const hasDocker = await isDockerAvailable()
+  const hasPgDump = await isPgDumpAvailable();
+  const hasDbUrl = !!parseDatabaseUrl();
+  const hasDocker = await isDockerAvailable();
 
-  let containerFound = false
-  let containerName: string | null = null
+  let containerFound = false;
+  let containerName: string | null = null;
 
   if (hasDocker) {
     try {
-      containerName = await findPostgresContainer()
-      containerFound = true
+      containerName = await findPostgresContainer();
+      containerFound = true;
     } catch {
-      containerFound = false
+      containerFound = false;
     }
   }
 
   // Determine available mode
-  let mode: 'direct' | 'docker' | 'none' = 'none'
+  let mode: 'direct' | 'docker' | 'none' = 'none';
   if (hasPgDump && hasDbUrl) {
-    mode = 'direct'
+    mode = 'direct';
   } else if (hasDocker && containerFound) {
-    mode = 'docker'
+    mode = 'docker';
   }
 
   return {
@@ -328,7 +336,7 @@ export async function getPostgresBackupInfo(): Promise<{
       containerFound,
       containerName,
     },
-  }
+  };
 }
 
 /**
@@ -336,31 +344,31 @@ export async function getPostgresBackupInfo(): Promise<{
  * @deprecated Use getPostgresBackupInfo() instead
  */
 export async function getPostgresContainerInfo(): Promise<{
-  found: boolean
-  containerName: string | null
-  method: 'explicit' | 'pattern' | 'default' | 'none'
+  found: boolean;
+  containerName: string | null;
+  method: 'explicit' | 'pattern' | 'default' | 'none';
 }> {
-  const config = getBackupConfig()
+  const config = getBackupConfig();
 
   // Check explicit
   if (config.postgresContainer) {
-    const exists = await containerExists(config.postgresContainer)
+    const exists = await containerExists(config.postgresContainer);
     if (exists) {
-      return { found: true, containerName: config.postgresContainer, method: 'explicit' }
+      return { found: true, containerName: config.postgresContainer, method: 'explicit' };
     }
   }
 
   // Check pattern
-  const patternMatch = await findContainerByPattern(config.postgresContainerPattern)
+  const patternMatch = await findContainerByPattern(config.postgresContainerPattern);
   if (patternMatch) {
-    return { found: true, containerName: patternMatch, method: 'pattern' }
+    return { found: true, containerName: patternMatch, method: 'pattern' };
   }
 
   // Check default
-  const defaultExists = await containerExists('kanbu-postgres')
+  const defaultExists = await containerExists('kanbu-postgres');
   if (defaultExists) {
-    return { found: true, containerName: 'kanbu-postgres', method: 'default' }
+    return { found: true, containerName: 'kanbu-postgres', method: 'default' };
   }
 
-  return { found: false, containerName: null, method: 'none' }
+  return { found: false, containerName: null, method: 'none' };
 }

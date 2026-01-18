@@ -8,8 +8,8 @@
  * Task: USER-01 (Task 247), Task 264 - UX improvements
  */
 
-import { ProfileLayout } from '../../components/profile/ProfileLayout'
-import { trpc } from '../../lib/trpc'
+import { ProfileLayout } from '../../components/profile/ProfileLayout';
+import { trpc } from '../../lib/trpc';
 
 // =============================================================================
 // Helper Components
@@ -20,9 +20,9 @@ function Toggle({
   onChange,
   disabled,
 }: {
-  checked: boolean
-  onChange: (checked: boolean) => void
-  disabled?: boolean
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  disabled?: boolean;
 }) {
   return (
     <button
@@ -46,7 +46,7 @@ function Toggle({
         `}
       />
     </button>
-  )
+  );
 }
 
 // =============================================================================
@@ -54,20 +54,20 @@ function Toggle({
 // =============================================================================
 
 export function NotificationPreferences() {
-  const utils = trpc.useUtils()
-  const { data: settings, isLoading } = trpc.notification.getSettings.useQuery()
+  const utils = trpc.useUtils();
+  const { data: settings, isLoading } = trpc.notification.getSettings.useQuery();
 
   const updateSettings = trpc.notification.updateSettings.useMutation({
     onSuccess: () => {
-      utils.notification.getSettings.invalidate()
+      utils.notification.getSettings.invalidate();
     },
-  })
+  });
 
   const updateTypeSetting = trpc.notification.updateTypeSetting.useMutation({
     onSuccess: () => {
-      utils.notification.getSettings.invalidate()
+      utils.notification.getSettings.invalidate();
     },
-  })
+  });
 
   if (isLoading) {
     return (
@@ -76,7 +76,7 @@ export function NotificationPreferences() {
           <p className="text-muted-foreground">Loading...</p>
         </div>
       </ProfileLayout>
-    )
+    );
   }
 
   const filterOptions = [
@@ -84,13 +84,13 @@ export function NotificationPreferences() {
     { value: 2, label: 'Assigned to me' },
     { value: 3, label: 'Created by me' },
     { value: 4, label: 'Assigned or created' },
-  ]
+  ];
 
   const typeLabels: Record<string, string> = {
     email: 'Email',
     web: 'Web',
     push: 'Push',
-  }
+  };
 
   return (
     <ProfileLayout title="Notifications" description="Manage your notification preferences">
@@ -98,7 +98,9 @@ export function NotificationPreferences() {
         {/* Left column: Filter + Delivery */}
         <div className="space-y-4">
           {/* Task Filter */}
-          <div className={`bg-card rounded-card border border-border ${!settings?.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
+          <div
+            className={`bg-card rounded-card border border-border ${!settings?.enabled ? 'opacity-50 pointer-events-none' : ''}`}
+          >
             <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
               <h3 className="text-sm font-semibold text-foreground">Task Filter</h3>
             </div>
@@ -127,14 +129,18 @@ export function NotificationPreferences() {
           </div>
 
           {/* Delivery Methods */}
-          <div className={`bg-card rounded-card border border-border ${!settings?.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
+          <div
+            className={`bg-card rounded-card border border-border ${!settings?.enabled ? 'opacity-50 pointer-events-none' : ''}`}
+          >
             <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
               <h3 className="text-sm font-semibold text-foreground">Delivery Methods</h3>
             </div>
             <div className="p-4 space-y-2">
               {settings?.types.map((typeSetting) => (
                 <div key={typeSetting.type} className="flex items-center justify-between py-1">
-                  <span className="text-sm">{typeLabels[typeSetting.type] ?? typeSetting.type}</span>
+                  <span className="text-sm">
+                    {typeLabels[typeSetting.type] ?? typeSetting.type}
+                  </span>
                   <Toggle
                     checked={typeSetting.enabled}
                     onChange={(checked) =>
@@ -167,14 +173,20 @@ export function NotificationPreferences() {
             />
           </div>
           <div className="p-4 text-xs text-muted-foreground space-y-1">
-            <p><strong>Task:</strong> Assignments, due dates, comments</p>
-            <p><strong>Project:</strong> Invitations, member changes</p>
-            <p><strong>System:</strong> Security alerts, announcements</p>
+            <p>
+              <strong>Task:</strong> Assignments, due dates, comments
+            </p>
+            <p>
+              <strong>Project:</strong> Invitations, member changes
+            </p>
+            <p>
+              <strong>System:</strong> Security alerts, announcements
+            </p>
           </div>
         </div>
       </div>
     </ProfileLayout>
-  )
+  );
 }
 
-export default NotificationPreferences
+export default NotificationPreferences;

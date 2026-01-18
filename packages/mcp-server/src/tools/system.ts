@@ -14,102 +14,102 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { z } from 'zod'
-import { requireAuth, client, success, error } from '../tools.js'
+import { z } from 'zod';
+import { requireAuth, client, success, error } from '../tools.js';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface SystemSetting {
-  id: number
-  key: string
-  value: string | null
-  description: string | null
-  createdAt: string
-  updatedAt: string
+  id: number;
+  key: string;
+  value: string | null;
+  description: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface SettingsListResponse {
-  settings: SystemSetting[]
+  settings: SystemSetting[];
 }
 
 interface BackupResponse {
-  success: boolean
-  fileName: string
-  timestamp: string
-  fileSizeKB?: number
-  fileSizeMB?: number
-  backupsKept: number
-  message: string
-  instructions?: string[]
+  success: boolean;
+  fileName: string;
+  timestamp: string;
+  fileSizeKB?: number;
+  fileSizeMB?: number;
+  backupsKept: number;
+  message: string;
+  instructions?: string[];
 }
 
 interface AdminWorkspace {
-  id: number
-  name: string
-  slug: string
-  description: string | null
-  logoUrl: string | null
-  isActive: boolean
-  createdAt: string
-  updatedAt: string
-  memberCount?: number
-  projectCount?: number
+  id: number;
+  name: string;
+  slug: string;
+  description: string | null;
+  logoUrl: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  memberCount?: number;
+  projectCount?: number;
   owner?: {
-    id: number
-    name: string
-    email: string
-  }
+    id: number;
+    name: string;
+    email: string;
+  };
   stats?: {
-    totalTasks: number
-    completedTasks: number
-    activeTasks: number
-  }
+    totalTasks: number;
+    completedTasks: number;
+    activeTasks: number;
+  };
 }
 
 interface AdminWorkspaceListResponse {
-  workspaces: AdminWorkspace[]
-  total: number
-  limit: number
-  offset: number
-  hasMore: boolean
+  workspaces: AdminWorkspace[];
+  total: number;
+  limit: number;
+  offset: number;
+  hasMore: boolean;
 }
 
 // =============================================================================
 // Schemas
 // =============================================================================
 
-export const GetSettingsSchema = z.object({})
+export const GetSettingsSchema = z.object({});
 
 export const GetSettingSchema = z.object({
   key: z.string().describe('Setting key'),
-})
+});
 
 export const SetSettingSchema = z.object({
   key: z.string().min(1).max(100).describe('Setting key'),
   value: z.string().nullable().describe('Setting value (null to clear)'),
   description: z.string().optional().describe('Optional description'),
-})
+});
 
 export const SetSettingsSchema = z.object({
   settings: z.record(z.string(), z.string().nullable()).describe('Key-value pairs of settings'),
-})
+});
 
 export const DeleteSettingSchema = z.object({
   key: z.string().describe('Setting key to delete'),
-})
+});
 
 export const AdminListWorkspacesSchema = z.object({
   search: z.string().optional().describe('Search in name/slug'),
   isActive: z.boolean().optional().describe('Filter by active status'),
   limit: z.number().optional().describe('Max results (default 50)'),
   offset: z.number().optional().describe('Pagination offset'),
-})
+});
 
 export const AdminWorkspaceIdSchema = z.object({
   workspaceId: z.number().describe('Workspace ID'),
-})
+});
 
 export const AdminUpdateWorkspaceSchema = z.object({
   workspaceId: z.number().describe('Workspace ID'),
@@ -117,7 +117,7 @@ export const AdminUpdateWorkspaceSchema = z.object({
   description: z.string().max(2000).nullable().optional().describe('Description'),
   logoUrl: z.string().url().max(500).nullable().optional().describe('Logo URL'),
   isActive: z.boolean().optional().describe('Active status'),
-})
+});
 
 // =============================================================================
 // Tool Definitions
@@ -193,7 +193,8 @@ export const systemToolDefinitions = [
   },
   {
     name: 'kanbu_create_source_backup',
-    description: 'Create a full source code backup to Google Drive. Includes everything needed to deploy Kanbu. Keeps last 5 backups.',
+    description:
+      'Create a full source code backup to Google Drive. Includes everything needed to deploy Kanbu. Keeps last 5 backups.',
     inputSchema: {
       type: 'object',
       properties: {},
@@ -204,7 +205,8 @@ export const systemToolDefinitions = [
   // Admin Workspace Tools
   {
     name: 'kanbu_admin_list_workspaces',
-    description: 'List all workspaces (admin view). Domain Admins see all, Workspace Admins see only their workspaces.',
+    description:
+      'List all workspaces (admin view). Domain Admins see all, Workspace Admins see only their workspaces.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -218,7 +220,8 @@ export const systemToolDefinitions = [
   },
   {
     name: 'kanbu_admin_get_workspace',
-    description: 'Get detailed workspace information (admin view). Includes member count, project count, and stats.',
+    description:
+      'Get detailed workspace information (admin view). Includes member count, project count, and stats.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -229,7 +232,8 @@ export const systemToolDefinitions = [
   },
   {
     name: 'kanbu_admin_update_workspace',
-    description: 'Update workspace properties. Domain Admins can update any, Workspace Admins only their own.',
+    description:
+      'Update workspace properties. Domain Admins can update any, Workspace Admins only their own.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -264,18 +268,18 @@ export const systemToolDefinitions = [
       required: ['workspaceId'],
     },
   },
-]
+];
 
 // =============================================================================
 // Helpers
 // =============================================================================
 
 function formatDate(date: string | null): string {
-  if (!date) return 'N/A'
+  if (!date) return 'N/A';
   return new Date(date).toLocaleString('nl-NL', {
     dateStyle: 'short',
     timeStyle: 'short',
-  })
+  });
 }
 
 // =============================================================================
@@ -286,7 +290,7 @@ function formatDate(date: string | null): string {
  * Get all system settings
  */
 export async function handleGetSettings(_args: unknown) {
-  const config = requireAuth()
+  const config = requireAuth();
 
   try {
     const result = await client.call<SystemSetting[]>(
@@ -294,27 +298,24 @@ export async function handleGetSettings(_args: unknown) {
       config.token,
       'admin.getSettings',
       {}
-    )
+    );
 
     if (result.length === 0) {
-      return success('No system settings configured.')
+      return success('No system settings configured.');
     }
 
-    const lines: string[] = [
-      `System Settings (${result.length})`,
-      '',
-    ]
+    const lines: string[] = [`System Settings (${result.length})`, ''];
 
     for (const setting of result) {
-      lines.push(`${setting.key}: ${setting.value ?? '(null)'}`)
+      lines.push(`${setting.key}: ${setting.value ?? '(null)'}`);
       if (setting.description) {
-        lines.push(`   ${setting.description}`)
+        lines.push(`   ${setting.description}`);
       }
     }
 
-    return success(lines.join('\n'))
+    return success(lines.join('\n'));
   } catch (err) {
-    return error(`Failed to get settings: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    return error(`Failed to get settings: ${err instanceof Error ? err.message : 'Unknown error'}`);
   }
 }
 
@@ -322,8 +323,8 @@ export async function handleGetSettings(_args: unknown) {
  * Get a single setting
  */
 export async function handleGetSetting(args: unknown) {
-  const input = GetSettingSchema.parse(args)
-  const config = requireAuth()
+  const input = GetSettingSchema.parse(args);
+  const config = requireAuth();
 
   try {
     const setting = await client.call<SystemSetting | null>(
@@ -331,10 +332,10 @@ export async function handleGetSetting(args: unknown) {
       config.token,
       'admin.getSetting',
       { key: input.key }
-    )
+    );
 
     if (!setting) {
-      return success(`Setting "${input.key}" not found.`)
+      return success(`Setting "${input.key}" not found.`);
     }
 
     const lines: string[] = [
@@ -343,11 +344,11 @@ export async function handleGetSetting(args: unknown) {
       `Value: ${setting.value ?? '(null)'}`,
       `Description: ${setting.description ?? 'N/A'}`,
       `Updated: ${formatDate(setting.updatedAt)}`,
-    ]
+    ];
 
-    return success(lines.join('\n'))
+    return success(lines.join('\n'));
   } catch (err) {
-    return error(`Failed to get setting: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    return error(`Failed to get setting: ${err instanceof Error ? err.message : 'Unknown error'}`);
   }
 }
 
@@ -355,8 +356,8 @@ export async function handleGetSetting(args: unknown) {
  * Set a system setting
  */
 export async function handleSetSetting(args: unknown) {
-  const input = SetSettingSchema.parse(args)
-  const config = requireAuth()
+  const input = SetSettingSchema.parse(args);
+  const config = requireAuth();
 
   try {
     const setting = await client.call<SystemSetting>(
@@ -364,16 +365,15 @@ export async function handleSetSetting(args: unknown) {
       config.token,
       'admin.setSetting',
       input
-    )
+    );
 
-    return success([
-      `Setting updated!`,
-      '',
-      `Key: ${setting.key}`,
-      `Value: ${setting.value ?? '(null)'}`,
-    ].join('\n'))
+    return success(
+      [`Setting updated!`, '', `Key: ${setting.key}`, `Value: ${setting.value ?? '(null)'}`].join(
+        '\n'
+      )
+    );
   } catch (err) {
-    return error(`Failed to set setting: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    return error(`Failed to set setting: ${err instanceof Error ? err.message : 'Unknown error'}`);
   }
 }
 
@@ -381,8 +381,8 @@ export async function handleSetSetting(args: unknown) {
  * Set multiple settings
  */
 export async function handleSetSettings(args: unknown) {
-  const input = SetSettingsSchema.parse(args)
-  const config = requireAuth()
+  const input = SetSettingsSchema.parse(args);
+  const config = requireAuth();
 
   try {
     const result = await client.call<{ updated: number }>(
@@ -390,11 +390,11 @@ export async function handleSetSettings(args: unknown) {
       config.token,
       'admin.setSettings',
       input
-    )
+    );
 
-    return success(`Updated ${result.updated} settings.`)
+    return success(`Updated ${result.updated} settings.`);
   } catch (err) {
-    return error(`Failed to set settings: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    return error(`Failed to set settings: ${err instanceof Error ? err.message : 'Unknown error'}`);
   }
 }
 
@@ -402,20 +402,19 @@ export async function handleSetSettings(args: unknown) {
  * Delete a setting
  */
 export async function handleDeleteSetting(args: unknown) {
-  const input = DeleteSettingSchema.parse(args)
-  const config = requireAuth()
+  const input = DeleteSettingSchema.parse(args);
+  const config = requireAuth();
 
   try {
-    await client.call<{ success: boolean }>(
-      config.kanbuUrl,
-      config.token,
-      'admin.deleteSetting',
-      { key: input.key }
-    )
+    await client.call<{ success: boolean }>(config.kanbuUrl, config.token, 'admin.deleteSetting', {
+      key: input.key,
+    });
 
-    return success(`Setting "${input.key}" deleted.`)
+    return success(`Setting "${input.key}" deleted.`);
   } catch (err) {
-    return error(`Failed to delete setting: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    return error(
+      `Failed to delete setting: ${err instanceof Error ? err.message : 'Unknown error'}`
+    );
   }
 }
 
@@ -427,7 +426,7 @@ export async function handleDeleteSetting(args: unknown) {
  * Create database backup
  */
 export async function handleCreateDbBackup(_args: unknown) {
-  const config = requireAuth()
+  const config = requireAuth();
 
   try {
     const result = await client.call<BackupResponse>(
@@ -435,7 +434,7 @@ export async function handleCreateDbBackup(_args: unknown) {
       config.token,
       'admin.createBackup',
       {}
-    )
+    );
 
     const lines: string[] = [
       `Database Backup Created!`,
@@ -446,11 +445,13 @@ export async function handleCreateDbBackup(_args: unknown) {
       `Backups kept: ${result.backupsKept}`,
       '',
       `Location: Google Drive (max-backups)`,
-    ]
+    ];
 
-    return success(lines.join('\n'))
+    return success(lines.join('\n'));
   } catch (err) {
-    return error(`Failed to create database backup: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    return error(
+      `Failed to create database backup: ${err instanceof Error ? err.message : 'Unknown error'}`
+    );
   }
 }
 
@@ -458,7 +459,7 @@ export async function handleCreateDbBackup(_args: unknown) {
  * Create source backup
  */
 export async function handleCreateSourceBackup(_args: unknown) {
-  const config = requireAuth()
+  const config = requireAuth();
 
   try {
     const result = await client.call<BackupResponse>(
@@ -466,7 +467,7 @@ export async function handleCreateSourceBackup(_args: unknown) {
       config.token,
       'admin.createSourceBackup',
       {}
-    )
+    );
 
     const lines: string[] = [
       `Source Backup Created!`,
@@ -477,19 +478,21 @@ export async function handleCreateSourceBackup(_args: unknown) {
       `Backups kept: ${result.backupsKept}`,
       '',
       `Location: Google Drive (max-backups)`,
-    ]
+    ];
 
     if (result.instructions) {
-      lines.push('')
-      lines.push('== Deployment Instructions ==')
+      lines.push('');
+      lines.push('== Deployment Instructions ==');
       for (const instruction of result.instructions) {
-        lines.push(instruction)
+        lines.push(instruction);
       }
     }
 
-    return success(lines.join('\n'))
+    return success(lines.join('\n'));
   } catch (err) {
-    return error(`Failed to create source backup: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    return error(
+      `Failed to create source backup: ${err instanceof Error ? err.message : 'Unknown error'}`
+    );
   }
 }
 
@@ -501,8 +504,8 @@ export async function handleCreateSourceBackup(_args: unknown) {
  * List all workspaces (admin view)
  */
 export async function handleAdminListWorkspaces(args: unknown) {
-  const input = AdminListWorkspacesSchema.parse(args)
-  const config = requireAuth()
+  const input = AdminListWorkspacesSchema.parse(args);
+  const config = requireAuth();
 
   try {
     const result = await client.call<AdminWorkspaceListResponse>(
@@ -515,33 +518,34 @@ export async function handleAdminListWorkspaces(args: unknown) {
         limit: input.limit ?? 50,
         offset: input.offset ?? 0,
       }
-    )
+    );
 
     if (result.workspaces.length === 0) {
-      return success('No workspaces found.')
+      return success('No workspaces found.');
     }
 
-    const lines: string[] = [
-      `Workspaces (${result.total} total)`,
-      '',
-    ]
+    const lines: string[] = [`Workspaces (${result.total} total)`, ''];
 
     for (const ws of result.workspaces) {
-      const status = ws.isActive ? '✅' : '❌'
-      lines.push(`${status} #${ws.id} ${ws.name} (${ws.slug})`)
+      const status = ws.isActive ? '✅' : '❌';
+      lines.push(`${status} #${ws.id} ${ws.name} (${ws.slug})`);
       if (ws.memberCount !== undefined) {
-        lines.push(`   Members: ${ws.memberCount} | Projects: ${ws.projectCount ?? 0}`)
+        lines.push(`   Members: ${ws.memberCount} | Projects: ${ws.projectCount ?? 0}`);
       }
     }
 
     if (result.hasMore) {
-      lines.push('')
-      lines.push(`Showing ${result.workspaces.length} of ${result.total}. Use offset=${result.offset + result.limit} for more.`)
+      lines.push('');
+      lines.push(
+        `Showing ${result.workspaces.length} of ${result.total}. Use offset=${result.offset + result.limit} for more.`
+      );
     }
 
-    return success(lines.join('\n'))
+    return success(lines.join('\n'));
   } catch (err) {
-    return error(`Failed to list workspaces: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    return error(
+      `Failed to list workspaces: ${err instanceof Error ? err.message : 'Unknown error'}`
+    );
   }
 }
 
@@ -549,8 +553,8 @@ export async function handleAdminListWorkspaces(args: unknown) {
  * Get workspace details (admin view)
  */
 export async function handleAdminGetWorkspace(args: unknown) {
-  const input = AdminWorkspaceIdSchema.parse(args)
-  const config = requireAuth()
+  const input = AdminWorkspaceIdSchema.parse(args);
+  const config = requireAuth();
 
   try {
     const ws = await client.call<AdminWorkspace>(
@@ -558,7 +562,7 @@ export async function handleAdminGetWorkspace(args: unknown) {
       config.token,
       'admin.getWorkspace',
       { workspaceId: input.workspaceId }
-    )
+    );
 
     const lines: string[] = [
       `Workspace #${ws.id}`,
@@ -571,29 +575,31 @@ export async function handleAdminGetWorkspace(args: unknown) {
       '',
       `Created: ${formatDate(ws.createdAt)}`,
       `Updated: ${formatDate(ws.updatedAt)}`,
-    ]
+    ];
 
     if (ws.owner) {
-      lines.push('')
-      lines.push(`Owner: ${ws.owner.name} (${ws.owner.email})`)
+      lines.push('');
+      lines.push(`Owner: ${ws.owner.name} (${ws.owner.email})`);
     }
 
     if (ws.memberCount !== undefined) {
-      lines.push('')
-      lines.push('== Statistics ==')
-      lines.push(`Members: ${ws.memberCount}`)
-      lines.push(`Projects: ${ws.projectCount ?? 0}`)
+      lines.push('');
+      lines.push('== Statistics ==');
+      lines.push(`Members: ${ws.memberCount}`);
+      lines.push(`Projects: ${ws.projectCount ?? 0}`);
     }
 
     if (ws.stats) {
-      lines.push(`Total Tasks: ${ws.stats.totalTasks}`)
-      lines.push(`Completed: ${ws.stats.completedTasks}`)
-      lines.push(`Active: ${ws.stats.activeTasks}`)
+      lines.push(`Total Tasks: ${ws.stats.totalTasks}`);
+      lines.push(`Completed: ${ws.stats.completedTasks}`);
+      lines.push(`Active: ${ws.stats.activeTasks}`);
     }
 
-    return success(lines.join('\n'))
+    return success(lines.join('\n'));
   } catch (err) {
-    return error(`Failed to get workspace: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    return error(
+      `Failed to get workspace: ${err instanceof Error ? err.message : 'Unknown error'}`
+    );
   }
 }
 
@@ -601,8 +607,8 @@ export async function handleAdminGetWorkspace(args: unknown) {
  * Update workspace (admin)
  */
 export async function handleAdminUpdateWorkspace(args: unknown) {
-  const input = AdminUpdateWorkspaceSchema.parse(args)
-  const config = requireAuth()
+  const input = AdminUpdateWorkspaceSchema.parse(args);
+  const config = requireAuth();
 
   try {
     const ws = await client.call<AdminWorkspace>(
@@ -610,7 +616,7 @@ export async function handleAdminUpdateWorkspace(args: unknown) {
       config.token,
       'admin.updateWorkspace',
       input
-    )
+    );
 
     const lines: string[] = [
       `Workspace updated!`,
@@ -619,11 +625,13 @@ export async function handleAdminUpdateWorkspace(args: unknown) {
       `Name: ${ws.name}`,
       `Slug: ${ws.slug}`,
       `Status: ${ws.isActive ? 'Active' : 'Inactive'}`,
-    ]
+    ];
 
-    return success(lines.join('\n'))
+    return success(lines.join('\n'));
   } catch (err) {
-    return error(`Failed to update workspace: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    return error(
+      `Failed to update workspace: ${err instanceof Error ? err.message : 'Unknown error'}`
+    );
   }
 }
 
@@ -631,8 +639,8 @@ export async function handleAdminUpdateWorkspace(args: unknown) {
  * Delete (deactivate) workspace
  */
 export async function handleAdminDeleteWorkspace(args: unknown) {
-  const input = AdminWorkspaceIdSchema.parse(args)
-  const config = requireAuth()
+  const input = AdminWorkspaceIdSchema.parse(args);
+  const config = requireAuth();
 
   try {
     await client.call<{ success: boolean }>(
@@ -640,11 +648,13 @@ export async function handleAdminDeleteWorkspace(args: unknown) {
       config.token,
       'admin.deleteWorkspace',
       { workspaceId: input.workspaceId }
-    )
+    );
 
-    return success(`Workspace #${input.workspaceId} has been deactivated.`)
+    return success(`Workspace #${input.workspaceId} has been deactivated.`);
   } catch (err) {
-    return error(`Failed to delete workspace: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    return error(
+      `Failed to delete workspace: ${err instanceof Error ? err.message : 'Unknown error'}`
+    );
   }
 }
 
@@ -652,8 +662,8 @@ export async function handleAdminDeleteWorkspace(args: unknown) {
  * Reactivate workspace
  */
 export async function handleAdminReactivateWorkspace(args: unknown) {
-  const input = AdminWorkspaceIdSchema.parse(args)
-  const config = requireAuth()
+  const input = AdminWorkspaceIdSchema.parse(args);
+  const config = requireAuth();
 
   try {
     await client.call<{ success: boolean }>(
@@ -661,10 +671,12 @@ export async function handleAdminReactivateWorkspace(args: unknown) {
       config.token,
       'admin.reactivateWorkspace',
       { workspaceId: input.workspaceId }
-    )
+    );
 
-    return success(`Workspace #${input.workspaceId} has been reactivated.`)
+    return success(`Workspace #${input.workspaceId} has been reactivated.`);
   } catch (err) {
-    return error(`Failed to reactivate workspace: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    return error(
+      `Failed to reactivate workspace: ${err instanceof Error ? err.message : 'Unknown error'}`
+    );
   }
 }

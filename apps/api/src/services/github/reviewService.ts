@@ -17,47 +17,47 @@
  * =============================================================================
  */
 
-import { prisma } from '../../lib/prisma'
-import { getInstallationOctokit } from './githubService'
+import { prisma } from '../../lib/prisma';
+import { getInstallationOctokit } from './githubService';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface ReviewData {
-  pullRequestId: number
-  reviewId: bigint
-  authorLogin: string
-  state: 'PENDING' | 'COMMENTED' | 'APPROVED' | 'CHANGES_REQUESTED' | 'DISMISSED'
-  body: string | null
-  htmlUrl: string | null
-  submittedAt: Date | null
+  pullRequestId: number;
+  reviewId: bigint;
+  authorLogin: string;
+  state: 'PENDING' | 'COMMENTED' | 'APPROVED' | 'CHANGES_REQUESTED' | 'DISMISSED';
+  body: string | null;
+  htmlUrl: string | null;
+  submittedAt: Date | null;
 }
 
 export interface ReviewCommentData {
-  reviewId: number
-  commentId: bigint
-  path: string
-  line: number | null
-  side: 'LEFT' | 'RIGHT' | null
-  body: string
-  authorLogin: string
-  htmlUrl: string | null
+  reviewId: number;
+  commentId: bigint;
+  path: string;
+  line: number | null;
+  side: 'LEFT' | 'RIGHT' | null;
+  body: string;
+  authorLogin: string;
+  htmlUrl: string | null;
 }
 
-export type ReviewState = 'PENDING' | 'COMMENTED' | 'APPROVED' | 'CHANGES_REQUESTED' | 'DISMISSED'
+export type ReviewState = 'PENDING' | 'COMMENTED' | 'APPROVED' | 'CHANGES_REQUESTED' | 'DISMISSED';
 
 export interface PRReviewSummary {
-  approved: number
-  changesRequested: number
-  commented: number
-  pending: number
-  latestState: ReviewState | null
+  approved: number;
+  changesRequested: number;
+  commented: number;
+  pending: number;
+  latestState: ReviewState | null;
   reviewers: Array<{
-    login: string
-    state: ReviewState
-    submittedAt: Date | null
-  }>
+    login: string;
+    state: ReviewState;
+    submittedAt: Date | null;
+  }>;
 }
 
 // =============================================================================
@@ -91,9 +91,9 @@ export async function upsertReview(data: ReviewData): Promise<{ id: number }> {
       submittedAt: data.submittedAt,
     },
     select: { id: true },
-  })
+  });
 
-  return review
+  return review;
 }
 
 /**
@@ -125,9 +125,9 @@ export async function upsertReviewComment(data: ReviewCommentData): Promise<{ id
       htmlUrl: data.htmlUrl,
     },
     select: { id: true },
-  })
+  });
 
-  return comment
+  return comment;
 }
 
 // =============================================================================
@@ -146,7 +146,7 @@ export async function getReviewsForPR(pullRequestId: number) {
         orderBy: { createdAt: 'asc' },
       },
     },
-  })
+  });
 }
 
 /**
@@ -164,38 +164,38 @@ export async function getPRReviewSummary(pullRequestId: number): Promise<PRRevie
       state: true,
       submittedAt: true,
     },
-  })
+  });
 
   // Get latest review per author (most recent takes precedence)
-  const latestByAuthor = new Map<string, { state: ReviewState; submittedAt: Date | null }>()
+  const latestByAuthor = new Map<string, { state: ReviewState; submittedAt: Date | null }>();
   for (const review of reviews) {
     if (!latestByAuthor.has(review.authorLogin)) {
       latestByAuthor.set(review.authorLogin, {
         state: review.state as ReviewState,
         submittedAt: review.submittedAt,
-      })
+      });
     }
   }
 
   // Count by state
-  let approved = 0
-  let changesRequested = 0
-  let commented = 0
+  let approved = 0;
+  let changesRequested = 0;
+  let commented = 0;
 
-  const reviewers: PRReviewSummary['reviewers'] = []
+  const reviewers: PRReviewSummary['reviewers'] = [];
 
   for (const [login, data] of latestByAuthor) {
-    reviewers.push({ login, state: data.state, submittedAt: data.submittedAt })
-    if (data.state === 'APPROVED') approved++
-    else if (data.state === 'CHANGES_REQUESTED') changesRequested++
-    else if (data.state === 'COMMENTED') commented++
+    reviewers.push({ login, state: data.state, submittedAt: data.submittedAt });
+    if (data.state === 'APPROVED') approved++;
+    else if (data.state === 'CHANGES_REQUESTED') changesRequested++;
+    else if (data.state === 'COMMENTED') commented++;
   }
 
   // Determine latest state (priority: changes_requested > approved > commented)
-  let latestState: ReviewState | null = null
-  if (changesRequested > 0) latestState = 'CHANGES_REQUESTED'
-  else if (approved > 0) latestState = 'APPROVED'
-  else if (commented > 0) latestState = 'COMMENTED'
+  let latestState: ReviewState | null = null;
+  if (changesRequested > 0) latestState = 'CHANGES_REQUESTED';
+  else if (approved > 0) latestState = 'APPROVED';
+  else if (commented > 0) latestState = 'COMMENTED';
 
   // Get pending count
   const pending = await prisma.gitHubReview.count({
@@ -203,7 +203,7 @@ export async function getPRReviewSummary(pullRequestId: number): Promise<PRRevie
       pullRequestId,
       state: 'PENDING',
     },
-  })
+  });
 
   return {
     approved,
@@ -212,7 +212,7 @@ export async function getPRReviewSummary(pullRequestId: number): Promise<PRRevie
     pending,
     latestState,
     reviewers,
-  }
+  };
 }
 
 /**
@@ -229,7 +229,7 @@ export async function getReviewsForTask(taskId: number) {
         },
       },
     },
-  })
+  });
 
   return prs.flatMap((pr) =>
     pr.reviews.map((review) => ({
@@ -237,17 +237,19 @@ export async function getReviewsForTask(taskId: number) {
       prNumber: pr.prNumber,
       prTitle: pr.title,
     }))
-  )
+  );
 }
 
 /**
  * Get review summary for a task (aggregates all PR reviews)
  */
-export async function getTaskReviewSummary(taskId: number): Promise<PRReviewSummary & { prCount: number }> {
+export async function getTaskReviewSummary(
+  taskId: number
+): Promise<PRReviewSummary & { prCount: number }> {
   const prs = await prisma.gitHubPullRequest.findMany({
     where: { taskId },
     select: { id: true },
-  })
+  });
 
   if (prs.length === 0) {
     return {
@@ -258,7 +260,7 @@ export async function getTaskReviewSummary(taskId: number): Promise<PRReviewSumm
       latestState: null,
       reviewers: [],
       prCount: 0,
-    }
+    };
   }
 
   // Get all reviews across all PRs
@@ -273,43 +275,43 @@ export async function getTaskReviewSummary(taskId: number): Promise<PRReviewSumm
       state: true,
       submittedAt: true,
     },
-  })
+  });
 
   // Get latest review per author across all PRs
-  const latestByAuthor = new Map<string, { state: ReviewState; submittedAt: Date | null }>()
+  const latestByAuthor = new Map<string, { state: ReviewState; submittedAt: Date | null }>();
   for (const review of reviews) {
     if (!latestByAuthor.has(review.authorLogin)) {
       latestByAuthor.set(review.authorLogin, {
         state: review.state as ReviewState,
         submittedAt: review.submittedAt,
-      })
+      });
     }
   }
 
-  let approved = 0
-  let changesRequested = 0
-  let commented = 0
+  let approved = 0;
+  let changesRequested = 0;
+  let commented = 0;
 
-  const reviewers: PRReviewSummary['reviewers'] = []
+  const reviewers: PRReviewSummary['reviewers'] = [];
 
   for (const [login, data] of latestByAuthor) {
-    reviewers.push({ login, state: data.state, submittedAt: data.submittedAt })
-    if (data.state === 'APPROVED') approved++
-    else if (data.state === 'CHANGES_REQUESTED') changesRequested++
-    else if (data.state === 'COMMENTED') commented++
+    reviewers.push({ login, state: data.state, submittedAt: data.submittedAt });
+    if (data.state === 'APPROVED') approved++;
+    else if (data.state === 'CHANGES_REQUESTED') changesRequested++;
+    else if (data.state === 'COMMENTED') commented++;
   }
 
-  let latestState: ReviewState | null = null
-  if (changesRequested > 0) latestState = 'CHANGES_REQUESTED'
-  else if (approved > 0) latestState = 'APPROVED'
-  else if (commented > 0) latestState = 'COMMENTED'
+  let latestState: ReviewState | null = null;
+  if (changesRequested > 0) latestState = 'CHANGES_REQUESTED';
+  else if (approved > 0) latestState = 'APPROVED';
+  else if (commented > 0) latestState = 'COMMENTED';
 
   const pending = await prisma.gitHubReview.count({
     where: {
       pullRequestId: { in: prs.map((pr) => pr.id) },
       state: 'PENDING',
     },
-  })
+  });
 
   return {
     approved,
@@ -319,7 +321,7 @@ export async function getTaskReviewSummary(taskId: number): Promise<PRReviewSumm
     latestState,
     reviewers,
     prCount: prs.length,
-  }
+  };
 }
 
 // =============================================================================
@@ -336,19 +338,19 @@ export async function requestReview(
   prNumber: number,
   reviewers: string[]
 ): Promise<{ success: boolean; requestedReviewers: string[] }> {
-  const octokit = await getInstallationOctokit(installationId)
+  const octokit = await getInstallationOctokit(installationId);
 
   const response = await octokit.pulls.requestReviewers({
     owner,
     repo,
     pull_number: prNumber,
     reviewers,
-  })
+  });
 
   return {
     success: true,
     requestedReviewers: response.data.requested_reviewers?.map((r) => r.login) ?? [],
-  }
+  };
 }
 
 /**
@@ -360,21 +362,21 @@ export async function getSuggestedReviewers(
   repo: string,
   prNumber: number
 ): Promise<Array<{ login: string; avatarUrl: string }>> {
-  const octokit = await getInstallationOctokit(installationId)
+  const octokit = await getInstallationOctokit(installationId);
 
   // Get PR details to see who already reviewed or is requested
   const { data: pr } = await octokit.pulls.get({
     owner,
     repo,
     pull_number: prNumber,
-  })
+  });
 
   // Get list of contributors (potential reviewers)
   const { data: contributors } = await octokit.repos.listContributors({
     owner,
     repo,
     per_page: 20,
-  })
+  });
 
   // Filter out the PR author
   const suggestions = contributors
@@ -383,9 +385,9 @@ export async function getSuggestedReviewers(
       login: c.login ?? '',
       avatarUrl: c.avatar_url ?? '',
     }))
-    .filter((c) => c.login !== '')
+    .filter((c) => c.login !== '');
 
-  return suggestions
+  return suggestions;
 }
 
 /**
@@ -397,20 +399,20 @@ export async function getPendingReviewRequests(
   repo: string,
   prNumber: number
 ): Promise<Array<{ login: string; avatarUrl: string }>> {
-  const octokit = await getInstallationOctokit(installationId)
+  const octokit = await getInstallationOctokit(installationId);
 
   const { data: reviewRequests } = await octokit.pulls.listRequestedReviewers({
     owner,
     repo,
     pull_number: prNumber,
-  })
+  });
 
   return (
     reviewRequests.users?.map((u) => ({
       login: u.login,
       avatarUrl: u.avatar_url,
     })) ?? []
-  )
+  );
 }
 
 /**
@@ -423,7 +425,7 @@ export async function syncReviewsFromGitHub(
   prNumber: number,
   pullRequestId: number
 ): Promise<{ synced: number }> {
-  const octokit = await getInstallationOctokit(installationId)
+  const octokit = await getInstallationOctokit(installationId);
 
   // Get all reviews from GitHub
   const { data: reviews } = await octokit.pulls.listReviews({
@@ -431,9 +433,9 @@ export async function syncReviewsFromGitHub(
     repo,
     pull_number: prNumber,
     per_page: 100,
-  })
+  });
 
-  let synced = 0
+  let synced = 0;
 
   for (const review of reviews) {
     await upsertReview({
@@ -444,8 +446,8 @@ export async function syncReviewsFromGitHub(
       body: review.body ?? null,
       htmlUrl: review.html_url ?? null,
       submittedAt: review.submitted_at ? new Date(review.submitted_at) : null,
-    })
-    synced++
+    });
+    synced++;
 
     // Optionally sync review comments
     if (review.id) {
@@ -455,7 +457,7 @@ export async function syncReviewsFromGitHub(
         pull_number: prNumber,
         review_id: review.id,
         per_page: 100,
-      })
+      });
 
       const dbReview = await prisma.gitHubReview.findUnique({
         where: {
@@ -465,7 +467,7 @@ export async function syncReviewsFromGitHub(
           },
         },
         select: { id: true },
-      })
+      });
 
       if (dbReview) {
         for (const comment of comments) {
@@ -478,13 +480,13 @@ export async function syncReviewsFromGitHub(
             body: comment.body,
             authorLogin: comment.user?.login ?? 'unknown',
             htmlUrl: comment.html_url ?? null,
-          })
+          });
         }
       }
     }
   }
 
-  return { synced }
+  return { synced };
 }
 
 // =============================================================================
@@ -502,4 +504,4 @@ export default {
   getSuggestedReviewers,
   getPendingReviewRequests,
   syncReviewsFromGitHub,
-}
+};

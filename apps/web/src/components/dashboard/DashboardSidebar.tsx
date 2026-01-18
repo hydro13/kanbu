@@ -26,12 +26,22 @@
  * ===================================================================
  */
 
-import { useState } from 'react'
-import { Link, useLocation, useParams } from 'react-router-dom'
-import { Home, CheckSquare, ListChecks, StickyNote, Building2, LayoutGrid, Star, Inbox, GripVertical } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { trpc } from '@/lib/trpc'
-import { FavoriteContextMenu } from './FavoriteContextMenu'
+import { useState } from 'react';
+import { Link, useLocation, useParams } from 'react-router-dom';
+import {
+  Home,
+  CheckSquare,
+  ListChecks,
+  StickyNote,
+  Building2,
+  LayoutGrid,
+  Star,
+  Inbox,
+  GripVertical,
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { trpc } from '@/lib/trpc';
+import { FavoriteContextMenu } from './FavoriteContextMenu';
 import {
   DndContext,
   closestCenter,
@@ -40,30 +50,30 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
-} from '@dnd-kit/core'
+} from '@dnd-kit/core';
 import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
-} from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface NavItem {
-  label: string
-  path: string
-  icon: React.ComponentType<{ className?: string }>
-  exact?: boolean
+  label: string;
+  path: string;
+  icon: React.ComponentType<{ className?: string }>;
+  exact?: boolean;
 }
 
 export interface DashboardSidebarProps {
-  collapsed?: boolean
-  onCollapse?: (collapsed: boolean) => void
+  collapsed?: boolean;
+  onCollapse?: (collapsed: boolean) => void;
 }
 
 // =============================================================================
@@ -75,7 +85,7 @@ const personalItems: NavItem[] = [
   { label: 'My Tasks', path: '/dashboard/tasks', icon: CheckSquare },
   { label: 'My Subtasks', path: '/dashboard/subtasks', icon: ListChecks },
   { label: 'Inbox', path: '/dashboard/inbox', icon: Inbox },
-]
+];
 
 // =============================================================================
 // Sortable Favorite Item
@@ -83,35 +93,35 @@ const personalItems: NavItem[] = [
 
 interface SortableFavoriteItemProps {
   fav: {
-    id: number
-    projectId: number
-    projectName: string
-    workspaceName: string
-    workspaceSlug: string
-    projectIdentifier: string | null
-  }
-  isActive: boolean
-  collapsed: boolean
-  onContextMenu: (e: React.MouseEvent) => void
+    id: number;
+    projectId: number;
+    projectName: string;
+    workspaceName: string;
+    workspaceSlug: string;
+    projectIdentifier: string | null;
+  };
+  isActive: boolean;
+  collapsed: boolean;
+  onContextMenu: (e: React.MouseEvent) => void;
 }
 
-function SortableFavoriteItem({ fav, isActive, collapsed, onContextMenu }: SortableFavoriteItemProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: fav.id })
+function SortableFavoriteItem({
+  fav,
+  isActive,
+  collapsed,
+  onContextMenu,
+}: SortableFavoriteItemProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: fav.id,
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
-  }
+  };
 
-  const projectPath = `/workspace/${fav.workspaceSlug}/project/${fav.projectIdentifier ?? fav.projectId}`
+  const projectPath = `/workspace/${fav.workspaceSlug}/project/${fav.projectIdentifier ?? fav.projectId}`;
 
   return (
     <li ref={setNodeRef} style={style}>
@@ -152,7 +162,7 @@ function SortableFavoriteItem({ fav, isActive, collapsed, onContextMenu }: Sorta
         </Link>
       </div>
     </li>
-  )
+  );
 }
 
 // =============================================================================
@@ -160,40 +170,40 @@ function SortableFavoriteItem({ fav, isActive, collapsed, onContextMenu }: Sorta
 // =============================================================================
 
 export function DashboardSidebar({ collapsed = false }: DashboardSidebarProps) {
-  const location = useLocation()
-  const params = useParams<{ workspaceSlug?: string; slug?: string }>()
+  const location = useLocation();
+  const params = useParams<{ workspaceSlug?: string; slug?: string }>();
 
   // Fetch favorites
-  const favoritesQuery = trpc.favorite.list.useQuery()
-  const favorites = favoritesQuery.data ?? []
+  const favoritesQuery = trpc.favorite.list.useQuery();
+  const favorites = favoritesQuery.data ?? [];
 
   // Reorder mutation
-  const utils = trpc.useUtils()
+  const utils = trpc.useUtils();
   const reorderMutation = trpc.favorite.reorder.useMutation({
     onMutate: async ({ projectIds }) => {
       // Cancel outgoing refetches
-      await utils.favorite.list.cancel()
+      await utils.favorite.list.cancel();
       // Snapshot previous value
-      const previousFavorites = utils.favorite.list.getData()
+      const previousFavorites = utils.favorite.list.getData();
       // Optimistically update to new order
       if (previousFavorites) {
         const reorderedFavorites = projectIds
           .map((id) => previousFavorites.find((f) => f.projectId === id))
-          .filter(Boolean) as typeof previousFavorites
-        utils.favorite.list.setData(undefined, reorderedFavorites)
+          .filter(Boolean) as typeof previousFavorites;
+        utils.favorite.list.setData(undefined, reorderedFavorites);
       }
-      return { previousFavorites }
+      return { previousFavorites };
     },
     onError: (_err, _vars, context) => {
       // Rollback on error
       if (context?.previousFavorites) {
-        utils.favorite.list.setData(undefined, context.previousFavorites)
+        utils.favorite.list.setData(undefined, context.previousFavorites);
       }
     },
     onSettled: () => {
-      utils.favorite.list.invalidate()
+      utils.favorite.list.invalidate();
     },
-  })
+  });
 
   // DnD sensors
   const sensors = useSensors(
@@ -205,62 +215,63 @@ export function DashboardSidebar({ collapsed = false }: DashboardSidebarProps) {
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
-  )
+  );
 
   // Handle drag end
   const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event
+    const { active, over } = event;
     if (over && active.id !== over.id) {
-      const oldIndex = favorites.findIndex((f) => f.id === active.id)
-      const newIndex = favorites.findIndex((f) => f.id === over.id)
-      const newOrder = arrayMove(favorites, oldIndex, newIndex)
-      reorderMutation.mutate({ projectIds: newOrder.map((f) => f.projectId) })
+      const oldIndex = favorites.findIndex((f) => f.id === active.id);
+      const newIndex = favorites.findIndex((f) => f.id === over.id);
+      const newOrder = arrayMove(favorites, oldIndex, newIndex);
+      reorderMutation.mutate({ projectIds: newOrder.map((f) => f.projectId) });
     }
-  }
+  };
 
   // Fetch unread notification count
-  const unreadCountQuery = trpc.notification.getUnreadCount.useQuery()
-  const unreadCount = unreadCountQuery.data?.count ?? 0
+  const unreadCountQuery = trpc.notification.getUnreadCount.useQuery();
+  const unreadCount = unreadCountQuery.data?.count ?? 0;
 
   // Context menu state for favorites
   const [contextMenu, setContextMenu] = useState<{
-    isOpen: boolean
-    position: { x: number; y: number }
-    favorite: typeof favorites[0] | null
+    isOpen: boolean;
+    position: { x: number; y: number };
+    favorite: (typeof favorites)[0] | null;
   }>({
     isOpen: false,
     position: { x: 0, y: 0 },
     favorite: null,
-  })
+  });
 
-  const openContextMenu = (e: React.MouseEvent, favorite: typeof favorites[0]) => {
-    e.preventDefault()
-    e.stopPropagation()
+  const openContextMenu = (e: React.MouseEvent, favorite: (typeof favorites)[0]) => {
+    e.preventDefault();
+    e.stopPropagation();
     setContextMenu({
       isOpen: true,
       position: { x: e.clientX, y: e.clientY },
       favorite,
-    })
-  }
+    });
+  };
 
   const closeContextMenu = () => {
-    setContextMenu((prev) => ({ ...prev, isOpen: false }))
-  }
+    setContextMenu((prev) => ({ ...prev, isOpen: false }));
+  };
 
   // Determine active workspace from URL
   // Can be either /workspace/:workspaceSlug/project/... or /workspace/:slug
-  const workspaceSlug = params.workspaceSlug || params.slug
-  const isInWorkspace = !!workspaceSlug
+  const workspaceSlug = params.workspaceSlug || params.slug;
+  const isInWorkspace = !!workspaceSlug;
 
   const isActive = (item: NavItem) => {
     if (item.exact) {
-      return location.pathname === item.path
+      return location.pathname === item.path;
     }
-    return location.pathname.startsWith(item.path)
-  }
+    return location.pathname.startsWith(item.path);
+  };
 
-  const isWorkspacesActive = location.pathname === '/workspaces'
-  const isProjectsActive = isInWorkspace && location.pathname.includes(`/workspace/${workspaceSlug}`)
+  const isWorkspacesActive = location.pathname === '/workspaces';
+  const isProjectsActive =
+    isInWorkspace && location.pathname.includes(`/workspace/${workspaceSlug}`);
 
   return (
     <aside className="flex flex-col h-full">
@@ -274,10 +285,10 @@ export function DashboardSidebar({ collapsed = false }: DashboardSidebarProps) {
           )}
           <ul className="space-y-0.5 px-2">
             {personalItems.map((item) => {
-              const Icon = item.icon
-              const active = isActive(item)
-              const isInbox = item.path === '/dashboard/inbox'
-              const showBadge = isInbox && unreadCount > 0
+              const Icon = item.icon;
+              const active = isActive(item);
+              const isInbox = item.path === '/dashboard/inbox';
+              const showBadge = isInbox && unreadCount > 0;
 
               return (
                 <li key={item.path}>
@@ -292,20 +303,20 @@ export function DashboardSidebar({ collapsed = false }: DashboardSidebarProps) {
                     title={collapsed ? item.label : undefined}
                   >
                     <Icon className="h-4 w-4 flex-shrink-0" />
-                    {!collapsed && (
-                      <span className="flex-1">{item.label}</span>
-                    )}
+                    {!collapsed && <span className="flex-1">{item.label}</span>}
                     {showBadge && (
-                      <span className={cn(
-                        'inline-flex items-center justify-center min-w-5 h-5 px-1.5 text-xs font-medium rounded-full',
-                        'bg-primary text-primary-foreground'
-                      )}>
+                      <span
+                        className={cn(
+                          'inline-flex items-center justify-center min-w-5 h-5 px-1.5 text-xs font-medium rounded-full',
+                          'bg-primary text-primary-foreground'
+                        )}
+                      >
                         {unreadCount > 99 ? '99+' : unreadCount}
                       </span>
                     )}
                   </Link>
                 </li>
-              )
+              );
             })}
           </ul>
         </div>
@@ -332,8 +343,8 @@ export function DashboardSidebar({ collapsed = false }: DashboardSidebarProps) {
               >
                 <ul className="space-y-0.5 px-2">
                   {favorites.map((fav) => {
-                    const projectPath = `/workspace/${fav.workspaceSlug}/project/${fav.projectIdentifier}`
-                    const isProjectActive = location.pathname.startsWith(projectPath)
+                    const projectPath = `/workspace/${fav.workspaceSlug}/project/${fav.projectIdentifier}`;
+                    const isProjectActive = location.pathname.startsWith(projectPath);
 
                     return (
                       <SortableFavoriteItem
@@ -343,7 +354,7 @@ export function DashboardSidebar({ collapsed = false }: DashboardSidebarProps) {
                         collapsed={collapsed}
                         onContextMenu={(e) => openContextMenu(e, fav)}
                       />
-                    )
+                    );
                   })}
                 </ul>
               </SortableContext>
@@ -436,7 +447,7 @@ export function DashboardSidebar({ collapsed = false }: DashboardSidebarProps) {
         </ul>
       </nav>
     </aside>
-  )
+  );
 }
 
-export default DashboardSidebar
+export default DashboardSidebar;

@@ -13,13 +13,13 @@
  * =============================================================================
  */
 
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect } from 'vitest';
 import type {
   DeploymentData,
   DeploymentStatus,
   DeploymentWebhookPayload,
   DeploymentStatusWebhookPayload,
-} from '../deploymentService'
+} from '../deploymentService';
 
 describe('deploymentService', () => {
   // ===========================================================================
@@ -36,10 +36,10 @@ describe('deploymentService', () => {
         'failure',
         'error',
         'inactive',
-      ]
-      expect(validStatuses).toHaveLength(7)
-    })
-  })
+      ];
+      expect(validStatuses).toHaveLength(7);
+    });
+  });
 
   describe('DeploymentData type', () => {
     it('should have correct structure', () => {
@@ -54,11 +54,11 @@ describe('deploymentService', () => {
         creator: 'developer',
         status: 'pending',
         targetUrl: 'https://example.com',
-      }
-      expect(data.repositoryId).toBe(1)
-      expect(data.environment).toBe('production')
-      expect(data.status).toBe('pending')
-    })
+      };
+      expect(data.repositoryId).toBe(1);
+      expect(data.environment).toBe('production');
+      expect(data.status).toBe('pending');
+    });
 
     it('should allow optional fields to be null', () => {
       const data: DeploymentData = {
@@ -72,11 +72,11 @@ describe('deploymentService', () => {
         description: null,
         creator: null,
         targetUrl: null,
-      }
-      expect(data.task).toBeNull()
-      expect(data.description).toBeNull()
-    })
-  })
+      };
+      expect(data.task).toBeNull();
+      expect(data.description).toBeNull();
+    });
+  });
 
   describe('DeploymentWebhookPayload type', () => {
     it('should have correct structure', () => {
@@ -94,10 +94,10 @@ describe('deploymentService', () => {
           id: 789,
           full_name: 'owner/repo',
         },
-      }
-      expect(payload.deployment.environment).toBe('production')
-      expect(payload.repository.full_name).toBe('owner/repo')
-    })
+      };
+      expect(payload.deployment.environment).toBe('production');
+      expect(payload.repository.full_name).toBe('owner/repo');
+    });
 
     it('should allow null creator', () => {
       const payload: DeploymentWebhookPayload = {
@@ -114,10 +114,10 @@ describe('deploymentService', () => {
           id: 789,
           full_name: 'owner/repo',
         },
-      }
-      expect(payload.deployment.creator).toBeNull()
-    })
-  })
+      };
+      expect(payload.deployment.creator).toBeNull();
+    });
+  });
 
   describe('DeploymentStatusWebhookPayload type', () => {
     it('should have correct structure', () => {
@@ -134,9 +134,9 @@ describe('deploymentService', () => {
           id: 789,
           full_name: 'owner/repo',
         },
-      }
-      expect(payload.deployment_status.state).toBe('success')
-    })
+      };
+      expect(payload.deployment_status.state).toBe('success');
+    });
 
     it('should allow null target_url and description', () => {
       const payload: DeploymentStatusWebhookPayload = {
@@ -152,10 +152,10 @@ describe('deploymentService', () => {
           id: 789,
           full_name: 'owner/repo',
         },
-      }
-      expect(payload.deployment_status.target_url).toBeNull()
-    })
-  })
+      };
+      expect(payload.deployment_status.target_url).toBeNull();
+    });
+  });
 
   // ===========================================================================
   // Environment Tests
@@ -163,14 +163,7 @@ describe('deploymentService', () => {
 
   describe('environment handling', () => {
     it('should support common environment names', () => {
-      const environments = [
-        'production',
-        'staging',
-        'development',
-        'preview',
-        'qa',
-        'uat',
-      ]
+      const environments = ['production', 'staging', 'development', 'preview', 'qa', 'uat'];
       environments.forEach((env) => {
         const data: DeploymentData = {
           repositoryId: 1,
@@ -179,11 +172,11 @@ describe('deploymentService', () => {
           ref: 'main',
           sha: 'abc123',
           status: 'pending',
-        }
-        expect(data.environment).toBe(env)
-      })
-    })
-  })
+        };
+        expect(data.environment).toBe(env);
+      });
+    });
+  });
 
   // ===========================================================================
   // Status Transition Tests
@@ -191,31 +184,21 @@ describe('deploymentService', () => {
 
   describe('status transitions', () => {
     it('should handle typical deployment flow', () => {
-      const statuses: DeploymentStatus[] = [
-        'pending',
-        'queued',
-        'in_progress',
-        'success',
-      ]
-      expect(statuses[0]).toBe('pending')
-      expect(statuses[statuses.length - 1]).toBe('success')
-    })
+      const statuses: DeploymentStatus[] = ['pending', 'queued', 'in_progress', 'success'];
+      expect(statuses[0]).toBe('pending');
+      expect(statuses[statuses.length - 1]).toBe('success');
+    });
 
     it('should handle failure flow', () => {
-      const statuses: DeploymentStatus[] = [
-        'pending',
-        'queued',
-        'in_progress',
-        'failure',
-      ]
-      expect(statuses[statuses.length - 1]).toBe('failure')
-    })
+      const statuses: DeploymentStatus[] = ['pending', 'queued', 'in_progress', 'failure'];
+      expect(statuses[statuses.length - 1]).toBe('failure');
+    });
 
     it('should handle error flow', () => {
-      const statuses: DeploymentStatus[] = ['pending', 'error']
-      expect(statuses[statuses.length - 1]).toBe('error')
-    })
-  })
+      const statuses: DeploymentStatus[] = ['pending', 'error'];
+      expect(statuses[statuses.length - 1]).toBe('error');
+    });
+  });
 
   // ===========================================================================
   // Edge Cases
@@ -230,9 +213,9 @@ describe('deploymentService', () => {
         ref: 'main',
         sha: 'a'.repeat(40), // Full SHA
         status: 'success',
-      }
-      expect(data.sha).toHaveLength(40)
-    })
+      };
+      expect(data.sha).toHaveLength(40);
+    });
 
     it('should handle long ref names', () => {
       const data: DeploymentData = {
@@ -242,9 +225,9 @@ describe('deploymentService', () => {
         ref: 'refs/heads/feature/very-long-branch-name-with-many-segments',
         sha: 'abc123',
         status: 'pending',
-      }
-      expect(data.ref).toContain('feature/')
-    })
+      };
+      expect(data.ref).toContain('feature/');
+    });
 
     it('should handle large deployment IDs', () => {
       const data: DeploymentData = {
@@ -254,8 +237,8 @@ describe('deploymentService', () => {
         ref: 'main',
         sha: 'abc123',
         status: 'success',
-      }
-      expect(data.deploymentId).toBe(BigInt('9007199254740991'))
-    })
-  })
-})
+      };
+      expect(data.deploymentId).toBe(BigInt('9007199254740991'));
+    });
+  });
+});

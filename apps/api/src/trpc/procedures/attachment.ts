@@ -50,10 +50,7 @@ const listAttachmentsSchema = z.object({
 // Helpers
 // =============================================================================
 
-async function getTaskProjectId(
-  prisma: any,
-  taskId: number
-): Promise<number> {
+async function getTaskProjectId(prisma: any, taskId: number): Promise<number> {
   const task = await prisma.task.findUnique({
     where: { id: taskId },
     select: { projectId: true },
@@ -109,41 +106,39 @@ export const attachmentRouter = router({
    * List attachments for a task
    * Requires at least VIEWER access
    */
-  list: protectedProcedure
-    .input(listAttachmentsSchema)
-    .query(async ({ ctx, input }) => {
-      const projectId = await getTaskProjectId(ctx.prisma, input.taskId);
-      await permissionService.requireProjectAccess(ctx.user.id, projectId, 'VIEWER');
+  list: protectedProcedure.input(listAttachmentsSchema).query(async ({ ctx, input }) => {
+    const projectId = await getTaskProjectId(ctx.prisma, input.taskId);
+    await permissionService.requireProjectAccess(ctx.user.id, projectId, 'VIEWER');
 
-      const attachments = await ctx.prisma.attachment.findMany({
-        where: { taskId: input.taskId },
-        select: {
-          id: true,
-          name: true,
-          path: true,
-          mimeType: true,
-          size: true,
-          isImage: true,
-          createdAt: true,
-          user: {
-            select: {
-              id: true,
-              username: true,
-              name: true,
-              avatarUrl: true,
-            },
+    const attachments = await ctx.prisma.attachment.findMany({
+      where: { taskId: input.taskId },
+      select: {
+        id: true,
+        name: true,
+        path: true,
+        mimeType: true,
+        size: true,
+        isImage: true,
+        createdAt: true,
+        user: {
+          select: {
+            id: true,
+            username: true,
+            name: true,
+            avatarUrl: true,
           },
         },
-        orderBy: { createdAt: 'desc' },
-      });
+      },
+      orderBy: { createdAt: 'desc' },
+    });
 
-      // Add download URLs
-      const storage = getStorageProvider();
-      return attachments.map((att) => ({
-        ...att,
-        url: storage.getUrl(att.path),
-      }));
-    }),
+    // Add download URLs
+    const storage = getStorageProvider();
+    return attachments.map((att) => ({
+      ...att,
+      url: storage.getUrl(att.path),
+    }));
+  }),
 
   /**
    * Get file size limits configuration
@@ -160,166 +155,155 @@ export const attachmentRouter = router({
    * Upload a new attachment
    * Requires at least MEMBER access
    */
-  upload: protectedProcedure
-    .input(uploadAttachmentSchema)
-    .mutation(async ({ ctx, input }) => {
-      const projectId = await getTaskProjectId(ctx.prisma, input.taskId);
-      await permissionService.requireProjectAccess(ctx.user.id, projectId, 'MEMBER');
+  upload: protectedProcedure.input(uploadAttachmentSchema).mutation(async ({ ctx, input }) => {
+    const projectId = await getTaskProjectId(ctx.prisma, input.taskId);
+    await permissionService.requireProjectAccess(ctx.user.id, projectId, 'MEMBER');
 
-      // Decode base64 data
-      const buffer = Buffer.from(input.data, 'base64');
-      const fileSize = buffer.length;
+    // Decode base64 data
+    const buffer = Buffer.from(input.data, 'base64');
+    const fileSize = buffer.length;
 
-      // Validate file
-      const validation = validateFile(input.filename, input.mimeType, fileSize);
-      if (!validation.valid) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: validation.error ?? 'Invalid file',
-        });
-      }
+    // Validate file
+    const validation = validateFile(input.filename, input.mimeType, fileSize);
+    if (!validation.valid) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: validation.error ?? 'Invalid file',
+      });
+    }
 
-      // Save file to storage
-      const storage = getStorageProvider();
-      const storedFile = await storage.save(buffer, input.filename, input.mimeType);
+    // Save file to storage
+    const storage = getStorageProvider();
+    const storedFile = await storage.save(buffer, input.filename, input.mimeType);
 
-      // Create database record
-      const attachment = await ctx.prisma.attachment.create({
-        data: {
-          taskId: input.taskId,
-          userId: ctx.user.id,
-          name: input.filename,
-          path: storedFile.path,
-          mimeType: input.mimeType,
-          size: fileSize,
-          isImage: isImageMimeType(input.mimeType),
-        },
-        select: {
-          id: true,
-          name: true,
-          path: true,
-          mimeType: true,
-          size: true,
-          isImage: true,
-          createdAt: true,
-          user: {
-            select: {
-              id: true,
-              username: true,
-              name: true,
-            },
+    // Create database record
+    const attachment = await ctx.prisma.attachment.create({
+      data: {
+        taskId: input.taskId,
+        userId: ctx.user.id,
+        name: input.filename,
+        path: storedFile.path,
+        mimeType: input.mimeType,
+        size: fileSize,
+        isImage: isImageMimeType(input.mimeType),
+      },
+      select: {
+        id: true,
+        name: true,
+        path: true,
+        mimeType: true,
+        size: true,
+        isImage: true,
+        createdAt: true,
+        user: {
+          select: {
+            id: true,
+            username: true,
+            name: true,
           },
         },
-      });
+      },
+    });
 
-      // Update project last activity
-      await ctx.prisma.project.update({
-        where: { id: projectId },
-        data: { lastActivityAt: new Date() },
-      });
+    // Update project last activity
+    await ctx.prisma.project.update({
+      where: { id: projectId },
+      data: { lastActivityAt: new Date() },
+    });
 
-      return {
-        ...attachment,
-        url: storage.getUrl(storedFile.path),
-      };
-    }),
+    return {
+      ...attachment,
+      url: storage.getUrl(storedFile.path),
+    };
+  }),
 
   /**
    * Get a single attachment
    * Requires at least VIEWER access
    */
-  get: protectedProcedure
-    .input(attachmentIdSchema)
-    .query(async ({ ctx, input }) => {
-      const { projectId } = await getAttachmentInfo(ctx.prisma, input.attachmentId);
-      await permissionService.requireProjectAccess(ctx.user.id, projectId, 'VIEWER');
+  get: protectedProcedure.input(attachmentIdSchema).query(async ({ ctx, input }) => {
+    const { projectId } = await getAttachmentInfo(ctx.prisma, input.attachmentId);
+    await permissionService.requireProjectAccess(ctx.user.id, projectId, 'VIEWER');
 
-      const attachment = await ctx.prisma.attachment.findUnique({
-        where: { id: input.attachmentId },
-        select: {
-          id: true,
-          taskId: true,
-          name: true,
-          path: true,
-          mimeType: true,
-          size: true,
-          isImage: true,
-          createdAt: true,
-          user: {
-            select: {
-              id: true,
-              username: true,
-              name: true,
-              avatarUrl: true,
-            },
+    const attachment = await ctx.prisma.attachment.findUnique({
+      where: { id: input.attachmentId },
+      select: {
+        id: true,
+        taskId: true,
+        name: true,
+        path: true,
+        mimeType: true,
+        size: true,
+        isImage: true,
+        createdAt: true,
+        user: {
+          select: {
+            id: true,
+            username: true,
+            name: true,
+            avatarUrl: true,
           },
         },
+      },
+    });
+
+    if (!attachment) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Attachment not found',
       });
+    }
 
-      if (!attachment) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Attachment not found',
-        });
-      }
-
-      const storage = getStorageProvider();
-      return {
-        ...attachment,
-        url: storage.getUrl(attachment.path),
-      };
-    }),
+    const storage = getStorageProvider();
+    return {
+      ...attachment,
+      url: storage.getUrl(attachment.path),
+    };
+  }),
 
   /**
    * Delete an attachment
    * Author can delete their own attachment
    * MANAGER+ can delete any attachment
    */
-  delete: protectedProcedure
-    .input(attachmentIdSchema)
-    .mutation(async ({ ctx, input }) => {
-      const { projectId, userId, path } = await getAttachmentInfo(
-        ctx.prisma,
-        input.attachmentId
-      );
-      const access = await permissionService.requireProjectAccess(ctx.user.id, projectId, 'MEMBER');
+  delete: protectedProcedure.input(attachmentIdSchema).mutation(async ({ ctx, input }) => {
+    const { projectId, userId, path } = await getAttachmentInfo(ctx.prisma, input.attachmentId);
+    const access = await permissionService.requireProjectAccess(ctx.user.id, projectId, 'MEMBER');
 
-      // Author can always delete their own attachment
-      // MANAGER+ can delete any attachment
-      const isAuthor = userId === ctx.user.id;
-      const isManager = access.role === 'MANAGER' || access.role === 'OWNER';
+    // Author can always delete their own attachment
+    // MANAGER+ can delete any attachment
+    const isAuthor = userId === ctx.user.id;
+    const isManager = access.role === 'MANAGER' || access.role === 'OWNER';
 
-      if (!isAuthor && !isManager) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You can only delete your own attachments',
-        });
-      }
-
-      // Delete from storage
-      const storage = getStorageProvider();
-      await storage.delete(path);
-
-      // Delete database record
-      await ctx.prisma.attachment.delete({
-        where: { id: input.attachmentId },
+    if (!isAuthor && !isManager) {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: 'You can only delete your own attachments',
       });
+    }
 
-      return { success: true };
-    }),
+    // Delete from storage
+    const storage = getStorageProvider();
+    await storage.delete(path);
+
+    // Delete database record
+    await ctx.prisma.attachment.delete({
+      where: { id: input.attachmentId },
+    });
+
+    return { success: true };
+  }),
 
   /**
    * Get file size limit for a specific MIME type
    * Useful for frontend preview of limits
    */
-  getSizeLimit: protectedProcedure
-    .input(z.object({ mimeType: z.string() }))
-    .query(({ input }) => {
-      const limit = getFileSizeLimit(input.mimeType);
-      return {
-        mimeType: input.mimeType,
-        maxBytes: limit,
-        maxMB: Math.round(limit / (1024 * 1024)),
-      };
-    }),
+  getSizeLimit: protectedProcedure.input(z.object({ mimeType: z.string() })).query(({ input }) => {
+    const limit = getFileSizeLimit(input.mimeType);
+    return {
+      mimeType: input.mimeType,
+      maxBytes: limit,
+      maxMB: Math.round(limit / (1024 * 1024)),
+    };
+  }),
 });

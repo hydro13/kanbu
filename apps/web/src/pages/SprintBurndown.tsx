@@ -18,11 +18,11 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useParams, Link } from 'react-router-dom'
-import { Loader2, AlertCircle, ArrowLeft, Calendar, Clock, CheckSquare } from 'lucide-react'
-import { ProjectLayout } from '@/components/layout/ProjectLayout'
-import { BurndownChart } from '@/components/sprint/BurndownChart'
-import { trpc } from '@/lib/trpc'
+import { useParams, Link } from 'react-router-dom';
+import { Loader2, AlertCircle, ArrowLeft, Calendar, Clock, CheckSquare } from 'lucide-react';
+import { ProjectLayout } from '@/components/layout/ProjectLayout';
+import { BurndownChart } from '@/components/sprint/BurndownChart';
+import { trpc } from '@/lib/trpc';
 
 // =============================================================================
 // Helpers
@@ -34,14 +34,14 @@ function formatDate(date: string): string {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
-  })
+  });
 }
 
 function getDaysRemaining(endDate: string): number {
-  const end = new Date(endDate)
-  const now = new Date()
-  const diff = end.getTime() - now.getTime()
-  return Math.ceil(diff / (1000 * 60 * 60 * 24))
+  const end = new Date(endDate);
+  const now = new Date();
+  const diff = end.getTime() - now.getTime();
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
 }
 
 // =============================================================================
@@ -49,26 +49,29 @@ function getDaysRemaining(endDate: string): number {
 // =============================================================================
 
 export function SprintBurndown() {
-  const { projectIdentifier, sprintId } = useParams<{ projectIdentifier: string; sprintId: string }>()
-  const sprintIdNum = parseInt(sprintId ?? '0', 10)
+  const { projectIdentifier, sprintId } = useParams<{
+    projectIdentifier: string;
+    sprintId: string;
+  }>();
+  const sprintIdNum = parseInt(sprintId ?? '0', 10);
 
   // Fetch project by identifier (SEO-friendly URL)
   const { data: project, isLoading: isProjectLoading } = trpc.project.getByIdentifier.useQuery(
     { identifier: projectIdentifier! },
     { enabled: !!projectIdentifier }
-  )
+  );
 
   const { data: sprint, isLoading: isSprintLoading } = trpc.sprint.get.useQuery(
     { sprintId: sprintIdNum, includeTasks: false },
     { enabled: sprintIdNum > 0 }
-  )
+  );
 
   const { data: burndownData, isLoading: isBurndownLoading } = trpc.sprint.getBurndown.useQuery(
     { sprintId: sprintIdNum },
     { enabled: sprintIdNum > 0 }
-  )
+  );
 
-  const isLoading = isProjectLoading || isSprintLoading || isBurndownLoading
+  const isLoading = isProjectLoading || isSprintLoading || isBurndownLoading;
 
   // Loading state
   if (isLoading) {
@@ -78,7 +81,7 @@ export function SprintBurndown() {
           <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
         </div>
       </ProjectLayout>
-    )
+    );
   }
 
   // Error state
@@ -87,9 +90,7 @@ export function SprintBurndown() {
       <ProjectLayout>
         <div className="flex flex-col items-center justify-center h-64 gap-4">
           <AlertCircle className="w-12 h-12 text-red-500" />
-          <h2 className="text-xl font-semibold text-foreground">
-            Sprint not found
-          </h2>
+          <h2 className="text-xl font-semibold text-foreground">Sprint not found</h2>
           <Link
             to={`/project/${projectIdentifier}/sprints`}
             className="text-blue-500 hover:text-blue-600 dark:text-blue-400"
@@ -98,10 +99,10 @@ export function SprintBurndown() {
           </Link>
         </div>
       </ProjectLayout>
-    )
+    );
   }
 
-  const daysRemaining = getDaysRemaining(sprint.dateEnd)
+  const daysRemaining = getDaysRemaining(sprint.dateEnd);
 
   return (
     <ProjectLayout>
@@ -116,12 +117,8 @@ export function SprintBurndown() {
               <ArrowLeft className="w-5 h-5" />
             </Link>
             <div>
-              <h1 className="text-page-title text-foreground">
-                {sprint.name} - Burndown
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                {project.name}
-              </p>
+              <h1 className="text-page-title text-foreground">{sprint.name} - Burndown</h1>
+              <p className="text-sm text-muted-foreground">{project.name}</p>
             </div>
           </div>
 
@@ -132,9 +129,7 @@ export function SprintBurndown() {
                 <Calendar className="w-4 h-4" />
                 <span className="text-xs font-medium uppercase">Duration</span>
               </div>
-              <p className="text-sm text-foreground">
-                {formatDate(sprint.dateStart)}
-              </p>
+              <p className="text-sm text-foreground">{formatDate(sprint.dateStart)}</p>
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 to {formatDate(sprint.dateEnd)}
               </p>
@@ -146,12 +141,14 @@ export function SprintBurndown() {
                 <span className="text-xs font-medium uppercase">Time Left</span>
               </div>
               <p className="text-lg font-semibold text-foreground">
-                {daysRemaining > 0 ? `${daysRemaining} days` : daysRemaining === 0 ? 'Today' : 'Ended'}
+                {daysRemaining > 0
+                  ? `${daysRemaining} days`
+                  : daysRemaining === 0
+                    ? 'Today'
+                    : 'Ended'}
               </p>
               {sprint.status === 'ACTIVE' && daysRemaining < 0 && (
-                <p className="text-xs text-red-500">
-                  Overdue by {Math.abs(daysRemaining)} days
-                </p>
+                <p className="text-xs text-red-500">Overdue by {Math.abs(daysRemaining)} days</p>
               )}
             </div>
 
@@ -172,9 +169,7 @@ export function SprintBurndown() {
               <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 mb-1">
                 <span className="text-xs font-medium uppercase">Progress</span>
               </div>
-              <p className="text-lg font-semibold text-foreground">
-                {sprint.progress}%
-              </p>
+              <p className="text-lg font-semibold text-foreground">{sprint.progress}%</p>
               <div className="mt-1 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                 <div
                   className={`h-full transition-all ${
@@ -194,10 +189,7 @@ export function SprintBurndown() {
         </div>
 
         {/* Burndown Chart */}
-        <BurndownChart
-          data={burndownData?.dataPoints ?? []}
-          totalTasks={sprint.totalTasks}
-        />
+        <BurndownChart data={burndownData?.dataPoints ?? []} totalTasks={sprint.totalTasks} />
 
         {/* Navigation */}
         <div className="flex gap-3 mt-6">
@@ -216,7 +208,7 @@ export function SprintBurndown() {
         </div>
       </div>
     </ProjectLayout>
-  )
+  );
 }
 
-export default SprintBurndown
+export default SprintBurndown;

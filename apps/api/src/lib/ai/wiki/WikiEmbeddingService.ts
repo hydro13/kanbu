@@ -25,45 +25,45 @@
  * =============================================================================
  */
 
-import { QdrantClient } from '@qdrant/js-client-rest'
-import type { PrismaClient } from '@prisma/client'
-import { getWikiAiService, type WikiAiService, type WikiContext } from './WikiAiService'
-import { ChunkingService } from './ChunkingService'
+import { QdrantClient } from '@qdrant/js-client-rest';
+import type { PrismaClient } from '@prisma/client';
+import { getWikiAiService, type WikiAiService, type WikiContext } from './WikiAiService';
+import { ChunkingService } from './ChunkingService';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface WikiEmbeddingConfig {
-  qdrantHost: string
-  qdrantPort: number
-  collectionName: string
+  qdrantHost: string;
+  qdrantPort: number;
+  collectionName: string;
 }
 
 export interface WikiPageEmbedding {
-  pageId: number
-  workspaceId: number
-  projectId?: number
-  groupId: string
-  title: string
-  embedding: number[]
-  contentHash: string
-  updatedAt: Date
+  pageId: number;
+  workspaceId: number;
+  projectId?: number;
+  groupId: string;
+  title: string;
+  embedding: number[];
+  contentHash: string;
+  updatedAt: Date;
 }
 
 export interface SemanticSearchResult {
-  pageId: number
-  title: string
-  score: number
-  groupId: string
+  pageId: number;
+  title: string;
+  score: number;
+  groupId: string;
 }
 
 export interface SemanticSearchOptions {
-  workspaceId: number
-  projectId?: number
-  groupId?: string
-  limit?: number
-  scoreThreshold?: number
+  workspaceId: number;
+  projectId?: number;
+  groupId?: string;
+  limit?: number;
+  scoreThreshold?: number;
 }
 
 // =============================================================================
@@ -71,19 +71,19 @@ export interface SemanticSearchOptions {
 // =============================================================================
 
 export class WikiEmbeddingService {
-  private client: QdrantClient
-  private collectionName: string
-  private wikiAiService: WikiAiService
-  private initialized: boolean = false
-  private embeddingDimensions: number | null = null
+  private client: QdrantClient;
+  private collectionName: string;
+  private wikiAiService: WikiAiService;
+  private initialized: boolean = false;
+  private embeddingDimensions: number | null = null;
 
   constructor(prisma: PrismaClient, config?: Partial<WikiEmbeddingConfig>) {
-    const host = config?.qdrantHost ?? process.env.QDRANT_HOST ?? 'localhost'
-    const port = config?.qdrantPort ?? parseInt(process.env.QDRANT_PORT ?? '6333')
-    this.collectionName = config?.collectionName ?? 'kanbu_wiki_embeddings'
+    const host = config?.qdrantHost ?? process.env.QDRANT_HOST ?? 'localhost';
+    const port = config?.qdrantPort ?? parseInt(process.env.QDRANT_PORT ?? '6333');
+    this.collectionName = config?.collectionName ?? 'kanbu_wiki_embeddings';
 
-    this.client = new QdrantClient({ host, port })
-    this.wikiAiService = getWikiAiService(prisma)
+    this.client = new QdrantClient({ host, port });
+    this.wikiAiService = getWikiAiService(prisma);
   }
 
   // ===========================================================================
@@ -95,20 +95,22 @@ export class WikiEmbeddingService {
    * Auto-detects embedding dimensions from the configured provider
    */
   async initialize(context: WikiContext): Promise<void> {
-    if (this.initialized) return
+    if (this.initialized) return;
 
     // Get embedding dimensions from provider
-    const embeddingInfo = await this.wikiAiService.getEmbeddingInfo(context)
+    const embeddingInfo = await this.wikiAiService.getEmbeddingInfo(context);
     if (!embeddingInfo.available || !embeddingInfo.dimensions) {
-      console.warn('[WikiEmbeddingService] No embedding provider available, skipping initialization')
-      return
+      console.warn(
+        '[WikiEmbeddingService] No embedding provider available, skipping initialization'
+      );
+      return;
     }
 
-    this.embeddingDimensions = embeddingInfo.dimensions
+    this.embeddingDimensions = embeddingInfo.dimensions;
 
     // Check if collection exists
-    const collections = await this.client.getCollections()
-    const exists = collections.collections.some(c => c.name === this.collectionName)
+    const collections = await this.client.getCollections();
+    const exists = collections.collections.some((c) => c.name === this.collectionName);
 
     if (!exists) {
       // Create collection with vector config
@@ -121,30 +123,30 @@ export class WikiEmbeddingService {
         optimizers_config: {
           indexing_threshold: 1000,
         },
-      })
+      });
 
       // Create payload indexes for filtering
       await this.client.createPayloadIndex(this.collectionName, {
         field_name: 'workspaceId',
         field_schema: 'integer',
-      })
+      });
       await this.client.createPayloadIndex(this.collectionName, {
         field_name: 'projectId',
         field_schema: 'integer',
-      })
+      });
       await this.client.createPayloadIndex(this.collectionName, {
         field_name: 'groupId',
         field_schema: 'keyword',
-      })
+      });
 
       console.log(
         `[WikiEmbeddingService] Created collection "${this.collectionName}" with ${this.embeddingDimensions} dimensions`
-      )
+      );
     } else {
-      console.log(`[WikiEmbeddingService] Collection "${this.collectionName}" already exists`)
+      console.log(`[WikiEmbeddingService] Collection "${this.collectionName}" already exists`);
     }
 
-    this.initialized = true
+    this.initialized = true;
   }
 
   // ===========================================================================
@@ -163,18 +165,20 @@ export class WikiEmbeddingService {
   ): Promise<boolean> {
     try {
       // Initialize if needed
-      await this.initialize(context)
+      await this.initialize(context);
 
       if (!this.initialized || !this.embeddingDimensions) {
-        console.warn(`[WikiEmbeddingService] Not initialized, skipping embedding for page ${pageId}`)
-        return false
+        console.warn(
+          `[WikiEmbeddingService] Not initialized, skipping embedding for page ${pageId}`
+        );
+        return false;
       }
 
       // Create text for embedding (title + content preview)
-      const textForEmbedding = this.createEmbeddingText(title, content)
+      const textForEmbedding = this.createEmbeddingText(title, content);
 
       // Generate embedding via WikiAiService
-      const embeddingResult = await this.wikiAiService.embed(context, textForEmbedding)
+      const embeddingResult = await this.wikiAiService.embed(context, textForEmbedding);
 
       // Store in Qdrant
       await this.client.upsert(this.collectionName, {
@@ -194,18 +198,18 @@ export class WikiEmbeddingService {
             },
           },
         ],
-      })
+      });
 
       console.log(
         `[WikiEmbeddingService] Stored embedding for page ${pageId}: "${title}" (${embeddingResult.dimensions} dim)`
-      )
-      return true
+      );
+      return true;
     } catch (error) {
       console.error(
         `[WikiEmbeddingService] Failed to store embedding for page ${pageId}:`,
         error instanceof Error ? error.message : error
-      )
-      return false
+      );
+      return false;
     }
   }
 
@@ -217,16 +221,16 @@ export class WikiEmbeddingService {
       await this.client.delete(this.collectionName, {
         wait: true,
         points: [pageId],
-      })
+      });
 
-      console.log(`[WikiEmbeddingService] Deleted embedding for page ${pageId}`)
-      return true
+      console.log(`[WikiEmbeddingService] Deleted embedding for page ${pageId}`);
+      return true;
     } catch (error) {
       console.error(
         `[WikiEmbeddingService] Failed to delete embedding for page ${pageId}:`,
         error instanceof Error ? error.message : error
-      )
-      return false
+      );
+      return false;
     }
   }
 
@@ -242,23 +246,23 @@ export class WikiEmbeddingService {
     query: string,
     options: Partial<SemanticSearchOptions> = {}
   ): Promise<SemanticSearchResult[]> {
-    const limit = options.limit ?? 10
-    const scoreThreshold = options.scoreThreshold ?? 0.5
+    const limit = options.limit ?? 10;
+    const scoreThreshold = options.scoreThreshold ?? 0.5;
 
     try {
       // Initialize if needed
-      await this.initialize(context)
+      await this.initialize(context);
 
       if (!this.initialized || !this.embeddingDimensions) {
-        console.warn('[WikiEmbeddingService] Not initialized, returning empty results')
-        return []
+        console.warn('[WikiEmbeddingService] Not initialized, returning empty results');
+        return [];
       }
 
       // Generate query embedding
-      const queryEmbedding = await this.wikiAiService.embed(context, query)
+      const queryEmbedding = await this.wikiAiService.embed(context, query);
 
       // Build filter for workspace/project/group
-      const filter = this.buildSearchFilter(context, options.groupId)
+      const filter = this.buildSearchFilter(context, options.groupId);
 
       // Search in Qdrant
       const searchResult = await this.client.search(this.collectionName, {
@@ -267,21 +271,21 @@ export class WikiEmbeddingService {
         limit,
         score_threshold: scoreThreshold,
         with_payload: true,
-      })
+      });
 
       // Map results
-      return searchResult.map(result => ({
+      return searchResult.map((result) => ({
         pageId: result.payload?.pageId as number,
         title: result.payload?.title as string,
         score: result.score,
         groupId: result.payload?.groupId as string,
-      }))
+      }));
     } catch (error) {
       console.error(
         '[WikiEmbeddingService] Semantic search failed:',
         error instanceof Error ? error.message : error
-      )
-      return []
+      );
+      return [];
     }
   }
 
@@ -295,35 +299,31 @@ export class WikiEmbeddingService {
   ): Promise<SemanticSearchResult[]> {
     try {
       // Initialize if needed
-      await this.initialize(context)
+      await this.initialize(context);
 
       if (!this.initialized) {
-        return []
+        return [];
       }
 
       // Get the embedding for the source page
       const points = await this.client.retrieve(this.collectionName, {
         ids: [pageId],
         with_vector: true,
-      })
+      });
 
-      const point = points[0]
+      const point = points[0];
       if (!point || !point.vector) {
-        console.warn(`[WikiEmbeddingService] No embedding found for page ${pageId}`)
-        return []
+        console.warn(`[WikiEmbeddingService] No embedding found for page ${pageId}`);
+        return [];
       }
 
-      const sourceVector = point.vector as number[]
+      const sourceVector = point.vector as number[];
 
       // Build filter (same workspace, exclude source page)
       const filter = {
-        must: [
-          { key: 'workspaceId', match: { value: context.workspaceId } },
-        ],
-        must_not: [
-          { has_id: [pageId] },
-        ],
-      }
+        must: [{ key: 'workspaceId', match: { value: context.workspaceId } }],
+        must_not: [{ has_id: [pageId] }],
+      };
 
       // Search for similar pages
       const searchResult = await this.client.search(this.collectionName, {
@@ -331,20 +331,20 @@ export class WikiEmbeddingService {
         filter,
         limit,
         with_payload: true,
-      })
+      });
 
-      return searchResult.map(result => ({
+      return searchResult.map((result) => ({
         pageId: result.payload?.pageId as number,
         title: result.payload?.title as string,
         score: result.score,
         groupId: result.payload?.groupId as string,
-      }))
+      }));
     } catch (error) {
       console.error(
         '[WikiEmbeddingService] Find similar pages failed:',
         error instanceof Error ? error.message : error
-      )
-      return []
+      );
+      return [];
     }
   }
 
@@ -357,20 +357,20 @@ export class WikiEmbeddingService {
    */
   async getStats(): Promise<{ totalPages: number; collectionExists: boolean }> {
     try {
-      const collections = await this.client.getCollections()
-      const exists = collections.collections.some(c => c.name === this.collectionName)
+      const collections = await this.client.getCollections();
+      const exists = collections.collections.some((c) => c.name === this.collectionName);
 
       if (!exists) {
-        return { totalPages: 0, collectionExists: false }
+        return { totalPages: 0, collectionExists: false };
       }
 
-      const info = await this.client.getCollection(this.collectionName)
+      const info = await this.client.getCollection(this.collectionName);
       return {
         totalPages: info.points_count ?? 0,
         collectionExists: true,
-      }
+      };
     } catch {
-      return { totalPages: 0, collectionExists: false }
+      return { totalPages: 0, collectionExists: false };
     }
   }
 
@@ -381,10 +381,10 @@ export class WikiEmbeddingService {
     try {
       const points = await this.client.retrieve(this.collectionName, {
         ids: [pageId],
-      })
-      return points.length > 0
+      });
+      return points.length > 0;
     } catch {
-      return false
+      return false;
     }
   }
 
@@ -392,32 +392,35 @@ export class WikiEmbeddingService {
    * Check if a page's embedding is up-to-date based on content hash
    * Returns { needsUpdate: boolean, currentHash?: string }
    */
-  async checkEmbeddingStatus(pageId: number, content: string): Promise<{
-    needsUpdate: boolean
-    hasEmbedding: boolean
-    currentHash?: string
+  async checkEmbeddingStatus(
+    pageId: number,
+    content: string
+  ): Promise<{
+    needsUpdate: boolean;
+    hasEmbedding: boolean;
+    currentHash?: string;
   }> {
     try {
       const points = await this.client.retrieve(this.collectionName, {
         ids: [pageId],
         with_payload: true,
-      })
+      });
 
-      const point = points[0]
+      const point = points[0];
       if (!point) {
-        return { needsUpdate: true, hasEmbedding: false }
+        return { needsUpdate: true, hasEmbedding: false };
       }
 
-      const storedHash = point.payload?.contentHash as string
-      const currentHash = this.hashContent(content)
+      const storedHash = point.payload?.contentHash as string;
+      const currentHash = this.hashContent(content);
 
       return {
         needsUpdate: storedHash !== currentHash,
         hasEmbedding: true,
         currentHash: storedHash,
-      }
+      };
     } catch {
-      return { needsUpdate: true, hasEmbedding: false }
+      return { needsUpdate: true, hasEmbedding: false };
     }
   }
 
@@ -433,23 +436,23 @@ export class WikiEmbeddingService {
     groupId: string
   ): Promise<'stored' | 'skipped' | 'error'> {
     try {
-      const status = await this.checkEmbeddingStatus(pageId, content)
+      const status = await this.checkEmbeddingStatus(pageId, content);
 
       if (!status.needsUpdate) {
         console.log(
           `[WikiEmbeddingService] Skipping embedding for page ${pageId}: content unchanged`
-        )
-        return 'skipped'
+        );
+        return 'skipped';
       }
 
-      const success = await this.storePageEmbedding(context, pageId, title, content, groupId)
-      return success ? 'stored' : 'error'
+      const success = await this.storePageEmbedding(context, pageId, title, content, groupId);
+      return success ? 'stored' : 'error';
     } catch (error) {
       console.error(
         `[WikiEmbeddingService] Failed to check/store embedding for page ${pageId}:`,
         error instanceof Error ? error.message : error
-      )
-      return 'error'
+      );
+      return 'error';
     }
   }
 
@@ -468,62 +471,61 @@ export class WikiEmbeddingService {
    * @param content - Page content
    */
   private createEmbeddingText(title: string, content: string): string {
-    const chunkingService = new ChunkingService()
+    const chunkingService = new ChunkingService();
 
     // Small content - use as-is
     if (!chunkingService.needsChunking(content)) {
-      return `${title}\n\n${content}`
+      return `${title}\n\n${content}`;
     }
 
     // Large content - use first chunk with context about total size
-    const result = chunkingService.chunkMarkdown(content)
-    const firstChunk = result.chunks[0]?.text ?? content
+    const result = chunkingService.chunkMarkdown(content);
+    const firstChunk = result.chunks[0]?.text ?? content;
 
     // Add note about remaining content if multiple chunks
-    const suffix = result.chunks.length > 1
-      ? `\n\n[...${result.chunks.length - 1} more sections, ${result.totalTokens} total tokens]`
-      : ''
+    const suffix =
+      result.chunks.length > 1
+        ? `\n\n[...${result.chunks.length - 1} more sections, ${result.totalTokens} total tokens]`
+        : '';
 
     console.log(
       `[WikiEmbeddingService] Large content chunked: ${result.totalTokens} tokens → ` +
-      `using first chunk (${result.chunks[0]?.tokenCount ?? 0} tokens)`
-    )
+        `using first chunk (${result.chunks[0]?.tokenCount ?? 0} tokens)`
+    );
 
-    return `${title}\n\n${firstChunk}${suffix}`
+    return `${title}\n\n${firstChunk}${suffix}`;
   }
 
   /**
    * Create simple hash of content for change detection
    */
   private hashContent(content: string): string {
-    let hash = 0
+    let hash = 0;
     for (let i = 0; i < content.length; i++) {
-      const char = content.charCodeAt(i)
-      hash = ((hash << 5) - hash) + char
-      hash = hash & hash // Convert to 32bit integer
+      const char = content.charCodeAt(i);
+      hash = (hash << 5) - hash + char;
+      hash = hash & hash; // Convert to 32bit integer
     }
-    return hash.toString(16)
+    return hash.toString(16);
   }
 
   /**
    * Build Qdrant filter for search
    */
   private buildSearchFilter(context: WikiContext, groupId?: string): Record<string, unknown> {
-    const must: unknown[] = [
-      { key: 'workspaceId', match: { value: context.workspaceId } },
-    ]
+    const must: unknown[] = [{ key: 'workspaceId', match: { value: context.workspaceId } }];
 
     // Filter by project if specified
     if (context.projectId) {
-      must.push({ key: 'projectId', match: { value: context.projectId } })
+      must.push({ key: 'projectId', match: { value: context.projectId } });
     }
 
     // Filter by group if specified
     if (groupId) {
-      must.push({ key: 'groupId', match: { value: groupId } })
+      must.push({ key: 'groupId', match: { value: groupId } });
     }
 
-    return { must }
+    return { must };
   }
 }
 
@@ -531,21 +533,21 @@ export class WikiEmbeddingService {
 // Singleton Instance
 // =============================================================================
 
-let embeddingServiceInstance: WikiEmbeddingService | null = null
+let embeddingServiceInstance: WikiEmbeddingService | null = null;
 
 /**
  * Get or create the singleton WikiEmbeddingService
  */
 export function getWikiEmbeddingService(prisma: PrismaClient): WikiEmbeddingService {
   if (!embeddingServiceInstance) {
-    embeddingServiceInstance = new WikiEmbeddingService(prisma)
+    embeddingServiceInstance = new WikiEmbeddingService(prisma);
   }
-  return embeddingServiceInstance
+  return embeddingServiceInstance;
 }
 
 /**
  * Reset the singleton (useful for testing)
  */
 export function resetWikiEmbeddingService(): void {
-  embeddingServiceInstance = null
+  embeddingServiceInstance = null;
 }

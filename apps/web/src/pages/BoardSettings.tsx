@@ -18,34 +18,28 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import { ProjectLayout } from '@/components/layout/ProjectLayout'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from '@/components/ui/card'
-import { trpc } from '@/lib/trpc'
-import { cn } from '@/lib/utils'
+import { useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { ProjectLayout } from '@/components/layout/ProjectLayout';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { trpc } from '@/lib/trpc';
+import { cn } from '@/lib/utils';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface ColumnFormData {
-  title: string
-  description: string
-  taskLimit: number
+  title: string;
+  description: string;
+  taskLimit: number;
 }
 
 interface SwimlaneFormData {
-  name: string
-  description: string
+  name: string;
+  description: string;
 }
 
 // =============================================================================
@@ -54,119 +48,113 @@ interface SwimlaneFormData {
 
 export function BoardSettingsPage() {
   const { projectIdentifier, workspaceSlug } = useParams<{
-    projectIdentifier: string
-    workspaceSlug: string
-  }>()
-  const utils = trpc.useUtils()
+    projectIdentifier: string;
+    workspaceSlug: string;
+  }>();
+  const utils = trpc.useUtils();
 
   // Form states
-  const [showColumnForm, setShowColumnForm] = useState(false)
-  const [showSwimlaneForm, setShowSwimlaneForm] = useState(false)
-  const [editingColumnId, setEditingColumnId] = useState<number | null>(null)
-  const [editingSwimlaneId, setEditingSwimlaneId] = useState<number | null>(null)
+  const [showColumnForm, setShowColumnForm] = useState(false);
+  const [showSwimlaneForm, setShowSwimlaneForm] = useState(false);
+  const [editingColumnId, setEditingColumnId] = useState<number | null>(null);
+  const [editingSwimlaneId, setEditingSwimlaneId] = useState<number | null>(null);
 
   // Column form
   const [columnForm, setColumnForm] = useState<ColumnFormData>({
     title: '',
     description: '',
     taskLimit: 0,
-  })
+  });
 
   // Swimlane form
   const [swimlaneForm, setSwimlaneForm] = useState<SwimlaneFormData>({
     name: '',
     description: '',
-  })
+  });
 
   // Fetch project by identifier (SEO-friendly URL)
   const projectQuery = trpc.project.getByIdentifier.useQuery(
     { identifier: projectIdentifier! },
     { enabled: !!projectIdentifier }
-  )
+  );
 
   // Get project ID from fetched data
-  const projectId = projectQuery.data?.id ?? 0
+  const projectId = projectQuery.data?.id ?? 0;
 
-  const columnsQuery = trpc.column.list.useQuery(
-    { projectId },
-    { enabled: projectId > 0 }
-  )
+  const columnsQuery = trpc.column.list.useQuery({ projectId }, { enabled: projectId > 0 });
 
-  const swimlanesQuery = trpc.swimlane.list.useQuery(
-    { projectId },
-    { enabled: projectId > 0 }
-  )
+  const swimlanesQuery = trpc.swimlane.list.useQuery({ projectId }, { enabled: projectId > 0 });
 
   // Column mutations
   const createColumnMutation = trpc.column.create.useMutation({
     onSuccess: () => {
-      resetColumnForm()
-      utils.column.list.invalidate({ projectId })
+      resetColumnForm();
+      utils.column.list.invalidate({ projectId });
     },
-  })
+  });
 
   const updateColumnMutation = trpc.column.update.useMutation({
     onSuccess: () => {
-      resetColumnForm()
-      utils.column.list.invalidate({ projectId })
+      resetColumnForm();
+      utils.column.list.invalidate({ projectId });
     },
-  })
+  });
 
   const deleteColumnMutation = trpc.column.delete.useMutation({
     onSuccess: () => {
-      utils.column.list.invalidate({ projectId })
+      utils.column.list.invalidate({ projectId });
     },
-  })
+  });
 
   const reorderColumnMutation = trpc.column.reorder.useMutation({
     onSuccess: () => {
-      utils.column.list.invalidate({ projectId })
+      utils.column.list.invalidate({ projectId });
     },
-  })
+  });
 
   // Swimlane mutations
   const createSwimlaneMutation = trpc.swimlane.create.useMutation({
     onSuccess: () => {
-      resetSwimlaneForm()
-      utils.swimlane.list.invalidate({ projectId })
+      resetSwimlaneForm();
+      utils.swimlane.list.invalidate({ projectId });
     },
-  })
+  });
 
   const updateSwimlaneMutation = trpc.swimlane.update.useMutation({
     onSuccess: () => {
-      resetSwimlaneForm()
-      utils.swimlane.list.invalidate({ projectId })
+      resetSwimlaneForm();
+      utils.swimlane.list.invalidate({ projectId });
     },
-  })
+  });
 
   const deleteSwimlaneMutation = trpc.swimlane.delete.useMutation({
     onSuccess: () => {
-      utils.swimlane.list.invalidate({ projectId })
+      utils.swimlane.list.invalidate({ projectId });
     },
-  })
+  });
 
   const toggleSwimlaneMutation = trpc.swimlane.toggleActive.useMutation({
     onSuccess: () => {
-      utils.swimlane.list.invalidate({ projectId })
+      utils.swimlane.list.invalidate({ projectId });
     },
-  })
+  });
 
   // Form handlers
   const resetColumnForm = () => {
-    setColumnForm({ title: '', description: '', taskLimit: 0 })
-    setShowColumnForm(false)
-    setEditingColumnId(null)
-  }
+    setColumnForm({ title: '', description: '', taskLimit: 0 });
+    setShowColumnForm(false);
+    setEditingColumnId(null);
+  };
 
   const resetSwimlaneForm = () => {
-    setSwimlaneForm({ name: '', description: '' })
-    setShowSwimlaneForm(false)
-    setEditingSwimlaneId(null)
-  }
+    setSwimlaneForm({ name: '', description: '' });
+    setShowSwimlaneForm(false);
+    setEditingSwimlaneId(null);
+  };
 
   const handleColumnSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!columnForm.title.trim()) return
+    e.preventDefault();
+    if (!columnForm.title.trim()) return;
 
     if (editingColumnId) {
       updateColumnMutation.mutate({
@@ -174,88 +162,90 @@ export function BoardSettingsPage() {
         title: columnForm.title,
         description: columnForm.description || undefined,
         taskLimit: columnForm.taskLimit,
-      })
+      });
     } else {
       createColumnMutation.mutate({
         projectId,
         title: columnForm.title,
         description: columnForm.description || undefined,
         taskLimit: columnForm.taskLimit,
-      })
+      });
     }
-  }
+  };
 
   const handleSwimlaneSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!swimlaneForm.name.trim()) return
+    e.preventDefault();
+    if (!swimlaneForm.name.trim()) return;
 
     if (editingSwimlaneId) {
       updateSwimlaneMutation.mutate({
         swimlaneId: editingSwimlaneId,
         name: swimlaneForm.name,
         description: swimlaneForm.description || undefined,
-      })
+      });
     } else {
       createSwimlaneMutation.mutate({
         projectId,
         name: swimlaneForm.name,
         description: swimlaneForm.description || undefined,
-      })
+      });
     }
-  }
+  };
 
   const startEditColumn = (column: NonNullable<typeof columnsQuery.data>[number]) => {
     setColumnForm({
       title: column.title,
       description: column.description ?? '',
       taskLimit: column.taskLimit,
-    })
-    setEditingColumnId(column.id)
-    setShowColumnForm(true)
-  }
+    });
+    setEditingColumnId(column.id);
+    setShowColumnForm(true);
+  };
 
   const startEditSwimlane = (swimlane: NonNullable<typeof swimlanesQuery.data>[number]) => {
     setSwimlaneForm({
       name: swimlane.name,
       description: swimlane.description ?? '',
-    })
-    setEditingSwimlaneId(swimlane.id)
-    setShowSwimlaneForm(true)
-  }
+    });
+    setEditingSwimlaneId(swimlane.id);
+    setShowSwimlaneForm(true);
+  };
 
   const handleMoveColumn = (columnId: number, direction: 'up' | 'down') => {
-    const columns = columnsQuery.data ?? []
-    const currentIndex = columns.findIndex(c => c.id === columnId)
-    const newPosition = direction === 'up' ? currentIndex : currentIndex + 2
+    const columns = columnsQuery.data ?? [];
+    const currentIndex = columns.findIndex((c) => c.id === columnId);
+    const newPosition = direction === 'up' ? currentIndex : currentIndex + 2;
 
-    if (newPosition < 1 || newPosition > columns.length) return
+    if (newPosition < 1 || newPosition > columns.length) return;
 
     reorderColumnMutation.mutate({
       projectId,
       columnId,
       newPosition,
-    })
-  }
+    });
+  };
 
   const handleDeleteColumn = (columnId: number, taskCount: number) => {
     if (taskCount > 0) {
-      alert(`Cannot delete column: it contains ${taskCount} task(s). Move or delete tasks first.`)
-      return
+      alert(`Cannot delete column: it contains ${taskCount} task(s). Move or delete tasks first.`);
+      return;
     }
     if (confirm('Are you sure you want to delete this column?')) {
-      deleteColumnMutation.mutate({ columnId })
+      deleteColumnMutation.mutate({ columnId });
     }
-  }
+  };
 
   const handleDeleteSwimlane = (swimlaneId: number, taskCount: number) => {
     if (taskCount > 0) {
-      alert(`Cannot delete swimlane: it contains ${taskCount} task(s). Move or delete tasks first.`)
-      return
+      alert(
+        `Cannot delete swimlane: it contains ${taskCount} task(s). Move or delete tasks first.`
+      );
+      return;
     }
     if (confirm('Are you sure you want to delete this swimlane?')) {
-      deleteSwimlaneMutation.mutate({ swimlaneId })
+      deleteSwimlaneMutation.mutate({ swimlaneId });
     }
-  }
+  };
 
   // Loading state
   if (projectQuery.isLoading) {
@@ -265,7 +255,7 @@ export function BoardSettingsPage() {
           <p className="text-muted-foreground">Loading...</p>
         </div>
       </ProjectLayout>
-    )
+    );
   }
 
   // Error state
@@ -279,12 +269,12 @@ export function BoardSettingsPage() {
           </Link>
         </div>
       </ProjectLayout>
-    )
+    );
   }
 
-  const project = projectQuery.data
-  const columns = columnsQuery.data ?? []
-  const swimlanes = swimlanesQuery.data ?? []
+  const project = projectQuery.data;
+  const columns = columnsQuery.data ?? [];
+  const swimlanes = swimlanesQuery.data ?? [];
 
   return (
     <ProjectLayout>
@@ -292,16 +282,17 @@ export function BoardSettingsPage() {
         {/* Header */}
         <div className="mb-6">
           <nav className="text-sm text-muted-foreground mb-2">
-            <Link to={`/workspace/${workspaceSlug}/project/${projectIdentifier}/board`} className="hover:text-primary">
+            <Link
+              to={`/workspace/${workspaceSlug}/project/${projectIdentifier}/board`}
+              className="hover:text-primary"
+            >
               {project?.name}
             </Link>
             {' / '}
             <span>Settings</span>
           </nav>
           <h1 className="text-page-title text-foreground">Board Settings</h1>
-          <p className="text-muted-foreground mt-1">
-            Manage columns, swimlanes, and WIP limits
-          </p>
+          <p className="text-muted-foreground mt-1">Manage columns, swimlanes, and WIP limits</p>
         </div>
 
         <div className="space-y-8">
@@ -310,8 +301,8 @@ export function BoardSettingsPage() {
             <CardHeader>
               <CardTitle>Archive Column</CardTitle>
               <CardDescription>
-                Closed tasks are automatically moved to the Archive column.
-                Toggle visibility to show or hide archived tasks on the board.
+                Closed tasks are automatically moved to the Archive column. Toggle visibility to
+                show or hide archived tasks on the board.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -337,16 +328,14 @@ export function BoardSettingsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>Columns</CardTitle>
-                  <CardDescription>
-                    Board columns represent workflow stages
-                  </CardDescription>
+                  <CardDescription>Board columns represent workflow stages</CardDescription>
                 </div>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    resetColumnForm()
-                    setShowColumnForm(true)
+                    resetColumnForm();
+                    setShowColumnForm(true);
                   }}
                 >
                   <PlusIcon className="h-4 w-4 mr-1" />
@@ -357,7 +346,10 @@ export function BoardSettingsPage() {
             <CardContent>
               {/* Column Form */}
               {showColumnForm && (
-                <form onSubmit={handleColumnSubmit} className="mb-6 p-4 border rounded-lg bg-muted/50">
+                <form
+                  onSubmit={handleColumnSubmit}
+                  className="mb-6 p-4 border rounded-lg bg-muted/50"
+                >
                   <h4 className="font-medium mb-3">
                     {editingColumnId ? 'Edit Column' : 'New Column'}
                   </h4>
@@ -375,7 +367,9 @@ export function BoardSettingsPage() {
                       <label className="text-sm font-medium">Description (optional)</label>
                       <Input
                         value={columnForm.description}
-                        onChange={(e) => setColumnForm({ ...columnForm, description: e.target.value })}
+                        onChange={(e) =>
+                          setColumnForm({ ...columnForm, description: e.target.value })
+                        }
                         placeholder="Column description"
                       />
                     </div>
@@ -385,7 +379,9 @@ export function BoardSettingsPage() {
                         type="number"
                         min="0"
                         value={columnForm.taskLimit}
-                        onChange={(e) => setColumnForm({ ...columnForm, taskLimit: parseInt(e.target.value) || 0 })}
+                        onChange={(e) =>
+                          setColumnForm({ ...columnForm, taskLimit: parseInt(e.target.value) || 0 })
+                        }
                       />
                     </div>
                     <div className="flex gap-2 pt-2">
@@ -403,70 +399,66 @@ export function BoardSettingsPage() {
               {/* Columns List */}
               <div className="space-y-2">
                 {columns.length === 0 ? (
-                  <p className="text-muted-foreground text-sm py-4 text-center">
-                    No columns yet
-                  </p>
+                  <p className="text-muted-foreground text-sm py-4 text-center">No columns yet</p>
                 ) : (
-                  columns.filter(col => !col.isArchive).map((column, index, filteredCols) => (
-                    <div
-                      key={column.id}
-                      className="flex items-center justify-between p-3 border rounded-lg"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="flex flex-col gap-0.5">
-                          <button
-                            onClick={() => handleMoveColumn(column.id, 'up')}
-                            disabled={index === 0}
-                            className="p-0.5 hover:bg-muted rounded disabled:opacity-30"
-                          >
-                            <ChevronUpIcon className="h-3 w-3" />
-                          </button>
-                          <button
-                            onClick={() => handleMoveColumn(column.id, 'down')}
-                            disabled={index === filteredCols.length - 1}
-                            className="p-0.5 hover:bg-muted rounded disabled:opacity-30"
-                          >
-                            <ChevronDownIcon className="h-3 w-3" />
-                          </button>
-                        </div>
-                        <div>
-                          <span className="font-medium">{column.title}</span>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <span>{column.taskCount} tasks</span>
-                            {column.taskLimit > 0 && (
-                              <span
-                                className={cn(
-                                  'px-1.5 py-0.5 rounded',
-                                  column.isOverLimit
-                                    ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
-                                    : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-                                )}
-                              >
-                                WIP: {column.taskLimit}
-                              </span>
-                            )}
+                  columns
+                    .filter((col) => !col.isArchive)
+                    .map((column, index, filteredCols) => (
+                      <div
+                        key={column.id}
+                        className="flex items-center justify-between p-3 border rounded-lg"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="flex flex-col gap-0.5">
+                            <button
+                              onClick={() => handleMoveColumn(column.id, 'up')}
+                              disabled={index === 0}
+                              className="p-0.5 hover:bg-muted rounded disabled:opacity-30"
+                            >
+                              <ChevronUpIcon className="h-3 w-3" />
+                            </button>
+                            <button
+                              onClick={() => handleMoveColumn(column.id, 'down')}
+                              disabled={index === filteredCols.length - 1}
+                              className="p-0.5 hover:bg-muted rounded disabled:opacity-30"
+                            >
+                              <ChevronDownIcon className="h-3 w-3" />
+                            </button>
+                          </div>
+                          <div>
+                            <span className="font-medium">{column.title}</span>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              <span>{column.taskCount} tasks</span>
+                              {column.taskLimit > 0 && (
+                                <span
+                                  className={cn(
+                                    'px-1.5 py-0.5 rounded',
+                                    column.isOverLimit
+                                      ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+                                      : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                                  )}
+                                >
+                                  WIP: {column.taskLimit}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="sm" onClick={() => startEditColumn(column)}>
+                            Edit
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-destructive hover:text-destructive"
+                            onClick={() => handleDeleteColumn(column.id, column.taskCount)}
+                          >
+                            Delete
+                          </Button>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => startEditColumn(column)}
-                        >
-                          Edit
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-destructive hover:text-destructive"
-                          onClick={() => handleDeleteColumn(column.id, column.taskCount)}
-                        >
-                          Delete
-                        </Button>
-                      </div>
-                    </div>
-                  ))
+                    ))
                 )}
               </div>
             </CardContent>
@@ -478,16 +470,14 @@ export function BoardSettingsPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle>Swimlanes</CardTitle>
-                  <CardDescription>
-                    Horizontal lanes for categorizing tasks
-                  </CardDescription>
+                  <CardDescription>Horizontal lanes for categorizing tasks</CardDescription>
                 </div>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    resetSwimlaneForm()
-                    setShowSwimlaneForm(true)
+                    resetSwimlaneForm();
+                    setShowSwimlaneForm(true);
                   }}
                 >
                   <PlusIcon className="h-4 w-4 mr-1" />
@@ -498,7 +488,10 @@ export function BoardSettingsPage() {
             <CardContent>
               {/* Swimlane Form */}
               {showSwimlaneForm && (
-                <form onSubmit={handleSwimlaneSubmit} className="mb-6 p-4 border rounded-lg bg-muted/50">
+                <form
+                  onSubmit={handleSwimlaneSubmit}
+                  className="mb-6 p-4 border rounded-lg bg-muted/50"
+                >
                   <h4 className="font-medium mb-3">
                     {editingSwimlaneId ? 'Edit Swimlane' : 'New Swimlane'}
                   </h4>
@@ -516,7 +509,9 @@ export function BoardSettingsPage() {
                       <label className="text-sm font-medium">Description (optional)</label>
                       <Input
                         value={swimlaneForm.description}
-                        onChange={(e) => setSwimlaneForm({ ...swimlaneForm, description: e.target.value })}
+                        onChange={(e) =>
+                          setSwimlaneForm({ ...swimlaneForm, description: e.target.value })
+                        }
                         placeholder="Swimlane description"
                       />
                     </div>
@@ -535,9 +530,7 @@ export function BoardSettingsPage() {
               {/* Swimlanes List */}
               <div className="space-y-2">
                 {swimlanes.length === 0 ? (
-                  <p className="text-muted-foreground text-sm py-4 text-center">
-                    No swimlanes yet
-                  </p>
+                  <p className="text-muted-foreground text-sm py-4 text-center">No swimlanes yet</p>
                 ) : (
                   swimlanes.map((swimlane) => (
                     <div
@@ -593,7 +586,7 @@ export function BoardSettingsPage() {
         </div>
       </div>
     </ProjectLayout>
-  )
+  );
 }
 
 // =============================================================================
@@ -601,23 +594,23 @@ export function BoardSettingsPage() {
 // =============================================================================
 
 function ArchiveToggle({ projectId, initialValue }: { projectId: number; initialValue: boolean }) {
-  const [isEnabled, setIsEnabled] = useState(initialValue)
-  const utils = trpc.useUtils()
+  const [isEnabled, setIsEnabled] = useState(initialValue);
+  const utils = trpc.useUtils();
 
   const updateSettingsMutation = trpc.project.updateSettings.useMutation({
     onSuccess: () => {
-      utils.project.getByIdentifier.invalidate()
+      utils.project.getByIdentifier.invalidate();
     },
-  })
+  });
 
   const handleToggle = () => {
-    const newValue = !isEnabled
-    setIsEnabled(newValue)
+    const newValue = !isEnabled;
+    setIsEnabled(newValue);
     updateSettingsMutation.mutate({
       projectId,
       settings: { showArchiveColumn: newValue },
-    })
-  }
+    });
+  };
 
   return (
     <button
@@ -636,7 +629,7 @@ function ArchiveToggle({ projectId, initialValue }: { projectId: number; initial
         )}
       />
     </button>
-  )
+  );
 }
 
 // =============================================================================
@@ -658,7 +651,7 @@ function PlusIcon({ className }: { className?: string }) {
       <path d="M5 12h14" />
       <path d="M12 5v14" />
     </svg>
-  )
+  );
 }
 
 function ChevronUpIcon({ className }: { className?: string }) {
@@ -675,7 +668,7 @@ function ChevronUpIcon({ className }: { className?: string }) {
     >
       <path d="m18 15-6-6-6 6" />
     </svg>
-  )
+  );
 }
 
 function ChevronDownIcon({ className }: { className?: string }) {
@@ -692,11 +685,11 @@ function ChevronDownIcon({ className }: { className?: string }) {
     >
       <path d="m6 9 6 6 6-6" />
     </svg>
-  )
+  );
 }
 
 // =============================================================================
 // Exports
 // =============================================================================
 
-export default BoardSettingsPage
+export default BoardSettingsPage;

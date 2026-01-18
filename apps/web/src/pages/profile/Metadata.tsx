@@ -8,24 +8,24 @@
  * Task: USER-01 (Task 247), Task 264 - UX improvements
  */
 
-import { useState } from 'react'
-import { ProfileLayout } from '../../components/profile/ProfileLayout'
-import { Button } from '../../components/ui/button'
-import { trpc } from '../../lib/trpc'
+import { useState } from 'react';
+import { ProfileLayout } from '../../components/profile/ProfileLayout';
+import { Button } from '../../components/ui/button';
+import { trpc } from '../../lib/trpc';
 
 // =============================================================================
 // Helper Functions
 // =============================================================================
 
 function formatDateTime(date: Date | string): string {
-  const d = typeof date === 'string' ? new Date(date) : date
+  const d = typeof date === 'string' ? new Date(date) : date;
   return d.toLocaleString('en-US', {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-  })
+  });
 }
 
 // =============================================================================
@@ -33,46 +33,46 @@ function formatDateTime(date: Date | string): string {
 // =============================================================================
 
 export function Metadata() {
-  const [newKey, setNewKey] = useState('')
-  const [newValue, setNewValue] = useState('')
-  const [editingKey, setEditingKey] = useState<string | null>(null)
-  const [editValue, setEditValue] = useState('')
+  const [newKey, setNewKey] = useState('');
+  const [newValue, setNewValue] = useState('');
+  const [editingKey, setEditingKey] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState('');
 
-  const utils = trpc.useUtils()
-  const { data: metadata, isLoading } = trpc.user.getMetadata.useQuery()
+  const utils = trpc.useUtils();
+  const { data: metadata, isLoading } = trpc.user.getMetadata.useQuery();
 
   const setMetadata = trpc.user.setMetadata.useMutation({
     onSuccess: () => {
-      utils.user.getMetadata.invalidate()
-      setNewKey('')
-      setNewValue('')
-      setEditingKey(null)
-      setEditValue('')
+      utils.user.getMetadata.invalidate();
+      setNewKey('');
+      setNewValue('');
+      setEditingKey(null);
+      setEditValue('');
     },
-  })
+  });
 
   const deleteMetadata = trpc.user.deleteMetadata.useMutation({
     onSuccess: () => {
-      utils.user.getMetadata.invalidate()
+      utils.user.getMetadata.invalidate();
     },
-  })
+  });
 
   const handleAdd = () => {
     if (newKey.trim() && newValue.trim()) {
-      setMetadata.mutate({ key: newKey.trim(), value: newValue.trim() })
+      setMetadata.mutate({ key: newKey.trim(), value: newValue.trim() });
     }
-  }
+  };
 
   const handleEdit = (key: string) => {
     if (editValue.trim()) {
-      setMetadata.mutate({ key, value: editValue.trim() })
+      setMetadata.mutate({ key, value: editValue.trim() });
     }
-  }
+  };
 
   const startEditing = (key: string, value: string) => {
-    setEditingKey(key)
-    setEditValue(value)
-  }
+    setEditingKey(key);
+    setEditValue(value);
+  };
 
   if (isLoading) {
     return (
@@ -81,7 +81,7 @@ export function Metadata() {
           <p className="text-muted-foreground">Loading metadata...</p>
         </div>
       </ProfileLayout>
-    )
+    );
   }
 
   return (
@@ -110,7 +110,9 @@ export function Metadata() {
             >
               {setMetadata.isPending ? '...' : 'Add'}
             </Button>
-            <span className="text-xs text-muted-foreground ml-2">{metadata?.length ?? 0} items</span>
+            <span className="text-xs text-muted-foreground ml-2">
+              {metadata?.length ?? 0} items
+            </span>
           </div>
         </div>
 
@@ -136,10 +138,20 @@ export function Metadata() {
                         className="flex-1 h-7 px-2 text-sm rounded border border-input bg-white dark:bg-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
                         autoFocus
                       />
-                      <Button size="sm" onClick={() => handleEdit(item.key)} disabled={setMetadata.isPending} className="h-7 px-2 text-xs">
+                      <Button
+                        size="sm"
+                        onClick={() => handleEdit(item.key)}
+                        disabled={setMetadata.isPending}
+                        className="h-7 px-2 text-xs"
+                      >
                         Save
                       </Button>
-                      <Button size="sm" variant="ghost" onClick={() => setEditingKey(null)} className="h-7 px-2 text-xs">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setEditingKey(null)}
+                        className="h-7 px-2 text-xs"
+                      >
                         Cancel
                       </Button>
                     </>
@@ -149,8 +161,15 @@ export function Metadata() {
                         {item.key}
                       </span>
                       <span className="flex-1 text-sm truncate">{item.value}</span>
-                      <span className="text-xs text-muted-foreground">{formatDateTime(item.createdAt)}</span>
-                      <Button size="sm" variant="ghost" onClick={() => startEditing(item.key, item.value)} className="h-7 px-2 text-xs">
+                      <span className="text-xs text-muted-foreground">
+                        {formatDateTime(item.createdAt)}
+                      </span>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => startEditing(item.key, item.value)}
+                        className="h-7 px-2 text-xs"
+                      >
                         Edit
                       </Button>
                       <Button
@@ -171,7 +190,7 @@ export function Metadata() {
         </div>
       </div>
     </ProfileLayout>
-  )
+  );
 }
 
-export default Metadata
+export default Metadata;

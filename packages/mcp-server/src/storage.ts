@@ -13,30 +13,30 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync, chmodSync } from 'fs'
-import { join } from 'path'
-import { homedir } from 'os'
+import { existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync, chmodSync } from 'fs';
+import { join } from 'path';
+import { homedir } from 'os';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface TokenConfig {
-  kanbuUrl: string
-  token: string
-  machineId: string
-  userId: number
-  userName: string
-  userEmail: string
-  connectedAt: string
+  kanbuUrl: string;
+  token: string;
+  machineId: string;
+  userId: number;
+  userName: string;
+  userEmail: string;
+  connectedAt: string;
 }
 
 // =============================================================================
 // Constants
 // =============================================================================
 
-const CONFIG_DIR = join(homedir(), '.config', 'kanbu')
-const TOKEN_FILE = join(CONFIG_DIR, 'mcp.json')
+const CONFIG_DIR = join(homedir(), '.config', 'kanbu');
+const TOKEN_FILE = join(CONFIG_DIR, 'mcp.json');
 
 // =============================================================================
 // Token Storage Class
@@ -47,7 +47,7 @@ export class TokenStorage {
    * Check if a token is stored
    */
   hasToken(): boolean {
-    return existsSync(TOKEN_FILE)
+    return existsSync(TOKEN_FILE);
   }
 
   /**
@@ -56,12 +56,12 @@ export class TokenStorage {
   loadToken(): TokenConfig | null {
     try {
       if (!existsSync(TOKEN_FILE)) {
-        return null
+        return null;
       }
-      const content = readFileSync(TOKEN_FILE, 'utf-8')
-      return JSON.parse(content) as TokenConfig
+      const content = readFileSync(TOKEN_FILE, 'utf-8');
+      return JSON.parse(content) as TokenConfig;
     } catch {
-      return null
+      return null;
     }
   }
 
@@ -72,15 +72,15 @@ export class TokenStorage {
   saveToken(config: TokenConfig): void {
     // Ensure config directory exists
     if (!existsSync(CONFIG_DIR)) {
-      mkdirSync(CONFIG_DIR, { recursive: true, mode: 0o700 })
+      mkdirSync(CONFIG_DIR, { recursive: true, mode: 0o700 });
     }
 
     // Write token file
-    writeFileSync(TOKEN_FILE, JSON.stringify(config, null, 2), { mode: 0o600 })
+    writeFileSync(TOKEN_FILE, JSON.stringify(config, null, 2), { mode: 0o600 });
 
     // Ensure correct permissions (in case file already existed)
     try {
-      chmodSync(TOKEN_FILE, 0o600)
+      chmodSync(TOKEN_FILE, 0o600);
     } catch {
       // Ignore permission errors on Windows
     }
@@ -92,7 +92,7 @@ export class TokenStorage {
   removeToken(): void {
     try {
       if (existsSync(TOKEN_FILE)) {
-        unlinkSync(TOKEN_FILE)
+        unlinkSync(TOKEN_FILE);
       }
     } catch {
       // Ignore errors
@@ -103,10 +103,10 @@ export class TokenStorage {
    * Get the Kanbu URL from stored config or environment
    */
   getKanbuUrl(): string | null {
-    const config = this.loadToken()
+    const config = this.loadToken();
     if (config?.kanbuUrl) {
-      return config.kanbuUrl
+      return config.kanbuUrl;
     }
-    return process.env.KANBU_URL || null
+    return process.env.KANBU_URL || null;
   }
 }

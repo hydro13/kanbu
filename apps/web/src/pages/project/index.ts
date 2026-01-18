@@ -13,6 +13,6 @@
  * =============================================================================
  */
 
-export { GitHubProjectSettings } from './GitHubProjectSettings'
-export { ProjectDetailsPage } from './ProjectDetailsPage'
-export { ProjectWikiPage } from './ProjectWikiPage'
+export { GitHubProjectSettings } from './GitHubProjectSettings';
+export { ProjectDetailsPage } from './ProjectDetailsPage';
+export { ProjectWikiPage } from './ProjectWikiPage';

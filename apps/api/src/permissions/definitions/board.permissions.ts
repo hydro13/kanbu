@@ -7,7 +7,7 @@
  * - Swimlanes management
  */
 
-import { definePermissions } from '../registry'
+import { definePermissions } from '../registry';
 
 export const boardPermissions = definePermissions('board', {
   view: {
@@ -80,4 +80,4 @@ export const boardPermissions = definePermissions('board', {
       },
     },
   },
-})
+});

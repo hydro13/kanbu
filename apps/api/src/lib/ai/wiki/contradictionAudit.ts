@@ -9,12 +9,12 @@
  * - Revert capability within 24h window
  */
 
-import type { PrismaClient, WikiContradictionAudit } from '@prisma/client'
+import type { PrismaClient, WikiContradictionAudit } from '@prisma/client';
 import {
   ResolutionStrategy as PrismaResolutionStrategy,
   ContradictionCategory as PrismaContradictionCategory,
-} from '@prisma/client'
-import { ContradictionCategory } from './prompts'
+} from '@prisma/client';
+import { ContradictionCategory } from './prompts';
 
 // =============================================================================
 // Types
@@ -30,9 +30,9 @@ export const ResolutionStrategy = {
   KEEP_BOTH: 'KEEP_BOTH',
   MERGE: 'MERGE',
   ASK_USER: 'ASK_USER',
-} as const
+} as const;
 
-export type ResolutionStrategy = (typeof ResolutionStrategy)[keyof typeof ResolutionStrategy]
+export type ResolutionStrategy = (typeof ResolutionStrategy)[keyof typeof ResolutionStrategy];
 
 /**
  * Default resolution strategies per category
@@ -43,7 +43,7 @@ export const DEFAULT_RESOLUTION_STRATEGIES: Record<ContradictionCategory, Resolu
   [ContradictionCategory.ATTRIBUTE]: ResolutionStrategy.INVALIDATE_OLD,
   [ContradictionCategory.TEMPORAL]: ResolutionStrategy.ASK_USER,
   [ContradictionCategory.SEMANTIC]: ResolutionStrategy.ASK_USER,
-}
+};
 
 /**
  * Workspace resolution strategy configuration
@@ -51,86 +51,86 @@ export const DEFAULT_RESOLUTION_STRATEGIES: Record<ContradictionCategory, Resolu
  */
 export interface WorkspaceResolutionConfig {
   /** Default strategy when none specified */
-  defaultStrategy: ResolutionStrategy
+  defaultStrategy: ResolutionStrategy;
   /** Per-category overrides */
-  categoryStrategies?: Partial<Record<ContradictionCategory, ResolutionStrategy>>
+  categoryStrategies?: Partial<Record<ContradictionCategory, ResolutionStrategy>>;
   /** Minimum confidence required for auto-resolution */
-  autoResolveThreshold: number
+  autoResolveThreshold: number;
   /** Hours until revert is no longer possible */
-  revertWindowHours: number
+  revertWindowHours: number;
 }
 
 export const DEFAULT_WORKSPACE_RESOLUTION_CONFIG: WorkspaceResolutionConfig = {
   defaultStrategy: ResolutionStrategy.INVALIDATE_OLD,
   autoResolveThreshold: 0.8,
   revertWindowHours: 24,
-}
+};
 
 /**
  * Audit entry for contradiction resolution
  */
 export interface ContradictionAuditEntry {
-  id: number
-  workspaceId: number
-  projectId: number | null
-  wikiPageId: number
-  userId: number
+  id: number;
+  workspaceId: number;
+  projectId: number | null;
+  wikiPageId: number;
+  userId: number;
 
   // The new fact that caused the contradiction
-  newFactId: string
-  newFact: string
+  newFactId: string;
+  newFact: string;
 
   // The invalidated facts
   invalidatedFacts: Array<{
-    id: string
-    fact: string
-  }>
+    id: string;
+    fact: string;
+  }>;
 
   // Resolution details
-  strategy: ResolutionStrategy
-  confidence: number
-  category: ContradictionCategory
-  reasoning: string | null
+  strategy: ResolutionStrategy;
+  confidence: number;
+  category: ContradictionCategory;
+  reasoning: string | null;
 
   // Timestamps
-  createdAt: Date
-  revertedAt: Date | null
-  revertedBy: number | null
-  revertExpiresAt: Date
+  createdAt: Date;
+  revertedAt: Date | null;
+  revertedBy: number | null;
+  revertExpiresAt: Date;
 
   // Computed
-  canRevert: boolean
+  canRevert: boolean;
 }
 
 /**
  * Input for logging a contradiction resolution
  */
 export interface LogContradictionInput {
-  workspaceId: number
-  projectId?: number
-  wikiPageId: number
-  userId: number
-  newFactId: string
-  newFact: string
+  workspaceId: number;
+  projectId?: number;
+  wikiPageId: number;
+  userId: number;
+  newFactId: string;
+  newFact: string;
   invalidatedFacts: Array<{
-    id: string
-    fact: string
-  }>
-  strategy: ResolutionStrategy
-  confidence: number
-  category: ContradictionCategory
-  reasoning?: string
-  revertWindowHours?: number
+    id: string;
+    fact: string;
+  }>;
+  strategy: ResolutionStrategy;
+  confidence: number;
+  category: ContradictionCategory;
+  reasoning?: string;
+  revertWindowHours?: number;
 }
 
 /**
  * Result of a revert operation
  */
 export interface RevertResult {
-  success: boolean
-  auditId: number
-  error?: string
-  edgeIdsToRestore?: string[]
+  success: boolean;
+  auditId: number;
+  error?: string;
+  edgeIdsToRestore?: string[];
 }
 
 // =============================================================================
@@ -142,10 +142,10 @@ export interface RevertResult {
  * Manages audit trail for wiki contradiction resolutions
  */
 export class ContradictionAuditService {
-  private prisma: PrismaClient
+  private prisma: PrismaClient;
 
   constructor(prisma: PrismaClient) {
-    this.prisma = prisma
+    this.prisma = prisma;
   }
 
   // ---------------------------------------------------------------------------
@@ -156,12 +156,13 @@ export class ContradictionAuditService {
    * Log a contradiction resolution to the audit trail
    */
   async logContradictionResolution(input: LogContradictionInput): Promise<ContradictionAuditEntry> {
-    const revertWindowHours = input.revertWindowHours ?? DEFAULT_WORKSPACE_RESOLUTION_CONFIG.revertWindowHours
-    const revertExpiresAt = new Date(Date.now() + revertWindowHours * 60 * 60 * 1000)
+    const revertWindowHours =
+      input.revertWindowHours ?? DEFAULT_WORKSPACE_RESOLUTION_CONFIG.revertWindowHours;
+    const revertExpiresAt = new Date(Date.now() + revertWindowHours * 60 * 60 * 1000);
 
     // Map TypeScript enums to Prisma enums
-    const prismaStrategy = this.mapToPrismaStrategy(input.strategy)
-    const prismaCategory = this.mapToPrismaCategory(input.category)
+    const prismaStrategy = this.mapToPrismaStrategy(input.strategy);
+    const prismaCategory = this.mapToPrismaCategory(input.category);
 
     const audit = await this.prisma.wikiContradictionAudit.create({
       data: {
@@ -178,9 +179,9 @@ export class ContradictionAuditService {
         reasoning: input.reasoning ?? null,
         revertExpiresAt,
       },
-    })
+    });
 
-    return this.toAuditEntry(audit)
+    return this.toAuditEntry(audit);
   }
 
   // ---------------------------------------------------------------------------
@@ -193,9 +194,9 @@ export class ContradictionAuditService {
   async getAuditEntriesForPage(
     wikiPageId: number,
     options?: {
-      limit?: number
-      offset?: number
-      includeReverted?: boolean
+      limit?: number;
+      offset?: number;
+      includeReverted?: boolean;
     }
   ): Promise<ContradictionAuditEntry[]> {
     const audits = await this.prisma.wikiContradictionAudit.findMany({
@@ -206,9 +207,9 @@ export class ContradictionAuditService {
       orderBy: { createdAt: 'desc' },
       take: options?.limit ?? 50,
       skip: options?.offset ?? 0,
-    })
+    });
 
-    return audits.map((a) => this.toAuditEntry(a))
+    return audits.map((a) => this.toAuditEntry(a));
   }
 
   /**
@@ -217,10 +218,10 @@ export class ContradictionAuditService {
   async getAuditEntriesForWorkspace(
     workspaceId: number,
     options?: {
-      projectId?: number
-      limit?: number
-      offset?: number
-      includeReverted?: boolean
+      projectId?: number;
+      limit?: number;
+      offset?: number;
+      includeReverted?: boolean;
     }
   ): Promise<ContradictionAuditEntry[]> {
     const audits = await this.prisma.wikiContradictionAudit.findMany({
@@ -232,9 +233,9 @@ export class ContradictionAuditService {
       orderBy: { createdAt: 'desc' },
       take: options?.limit ?? 50,
       skip: options?.offset ?? 0,
-    })
+    });
 
-    return audits.map((a) => this.toAuditEntry(a))
+    return audits.map((a) => this.toAuditEntry(a));
   }
 
   /**
@@ -243,9 +244,9 @@ export class ContradictionAuditService {
   async getAuditEntry(id: number): Promise<ContradictionAuditEntry | null> {
     const audit = await this.prisma.wikiContradictionAudit.findUnique({
       where: { id },
-    })
+    });
 
-    return audit ? this.toAuditEntry(audit) : null
+    return audit ? this.toAuditEntry(audit) : null;
   }
 
   // ---------------------------------------------------------------------------
@@ -257,14 +258,14 @@ export class ContradictionAuditService {
    */
   canRevertAudit(audit: ContradictionAuditEntry): { canRevert: boolean; reason?: string } {
     if (audit.revertedAt) {
-      return { canRevert: false, reason: 'Already reverted' }
+      return { canRevert: false, reason: 'Already reverted' };
     }
 
     if (new Date() > audit.revertExpiresAt) {
-      return { canRevert: false, reason: 'Revert window expired' }
+      return { canRevert: false, reason: 'Revert window expired' };
     }
 
-    return { canRevert: true }
+    return { canRevert: true };
   }
 
   /**
@@ -276,27 +277,24 @@ export class ContradictionAuditService {
    * Note: The actual FalkorDB restoration must be done by the caller
    * (graphitiService.restoreEdges())
    */
-  async revertContradictionResolution(
-    auditId: number,
-    userId: number
-  ): Promise<RevertResult> {
-    const audit = await this.getAuditEntry(auditId)
+  async revertContradictionResolution(auditId: number, userId: number): Promise<RevertResult> {
+    const audit = await this.getAuditEntry(auditId);
 
     if (!audit) {
       return {
         success: false,
         auditId,
         error: 'Audit entry not found',
-      }
+      };
     }
 
-    const { canRevert, reason } = this.canRevertAudit(audit)
+    const { canRevert, reason } = this.canRevertAudit(audit);
     if (!canRevert) {
       return {
         success: false,
         auditId,
         error: reason,
-      }
+      };
     }
 
     // Mark as reverted
@@ -306,16 +304,16 @@ export class ContradictionAuditService {
         revertedAt: new Date(),
         revertedBy: userId,
       },
-    })
+    });
 
     // Return the edge IDs that need to be restored
-    const edgeIdsToRestore = audit.invalidatedFacts.map((f) => f.id)
+    const edgeIdsToRestore = audit.invalidatedFacts.map((f) => f.id);
 
     return {
       success: true,
       auditId,
       edgeIdsToRestore,
-    }
+    };
   }
 
   // ---------------------------------------------------------------------------
@@ -330,41 +328,42 @@ export class ContradictionAuditService {
     category: ContradictionCategory,
     confidence: number
   ): Promise<{
-    strategy: ResolutionStrategy
-    autoResolve: boolean
-    reason: string
+    strategy: ResolutionStrategy;
+    autoResolve: boolean;
+    reason: string;
   }> {
     // Get workspace config from settings
     const workspace = await this.prisma.workspace.findUnique({
       where: { id: workspaceId },
       select: { settings: true },
-    })
+    });
 
-    const settings = (workspace?.settings as Record<string, unknown>) || {}
-    const resolutionConfig = (settings.contradictionResolution as WorkspaceResolutionConfig) ||
-      DEFAULT_WORKSPACE_RESOLUTION_CONFIG
+    const settings = (workspace?.settings as Record<string, unknown>) || {};
+    const resolutionConfig =
+      (settings.contradictionResolution as WorkspaceResolutionConfig) ||
+      DEFAULT_WORKSPACE_RESOLUTION_CONFIG;
 
     // Get strategy for this category
     const strategy =
       resolutionConfig.categoryStrategies?.[category] ??
       DEFAULT_RESOLUTION_STRATEGIES[category] ??
-      resolutionConfig.defaultStrategy
+      resolutionConfig.defaultStrategy;
 
     // Determine if we should auto-resolve
     const autoResolve =
       strategy !== ResolutionStrategy.ASK_USER &&
-      confidence >= resolutionConfig.autoResolveThreshold
+      confidence >= resolutionConfig.autoResolveThreshold;
 
-    let reason: string
+    let reason: string;
     if (strategy === ResolutionStrategy.ASK_USER) {
-      reason = `Category ${category} requires user confirmation`
+      reason = `Category ${category} requires user confirmation`;
     } else if (confidence < resolutionConfig.autoResolveThreshold) {
-      reason = `Confidence ${confidence.toFixed(2)} below threshold ${resolutionConfig.autoResolveThreshold}`
+      reason = `Confidence ${confidence.toFixed(2)} below threshold ${resolutionConfig.autoResolveThreshold}`;
     } else {
-      reason = `Auto-resolving with ${strategy} (confidence: ${confidence.toFixed(2)})`
+      reason = `Auto-resolving with ${strategy} (confidence: ${confidence.toFixed(2)})`;
     }
 
-    return { strategy, autoResolve, reason }
+    return { strategy, autoResolve, reason };
   }
 
   /**
@@ -377,28 +376,29 @@ export class ContradictionAuditService {
     const workspace = await this.prisma.workspace.findUnique({
       where: { id: workspaceId },
       select: { settings: true },
-    })
+    });
 
-    const currentSettings = (workspace?.settings as Record<string, unknown>) || {}
-    const currentConfig = (currentSettings.contradictionResolution as WorkspaceResolutionConfig) ||
-      DEFAULT_WORKSPACE_RESOLUTION_CONFIG
+    const currentSettings = (workspace?.settings as Record<string, unknown>) || {};
+    const currentConfig =
+      (currentSettings.contradictionResolution as WorkspaceResolutionConfig) ||
+      DEFAULT_WORKSPACE_RESOLUTION_CONFIG;
 
     const newConfig: WorkspaceResolutionConfig = {
       ...currentConfig,
       ...config,
-    }
+    };
 
     const updatedSettings = {
       ...currentSettings,
       contradictionResolution: newConfig,
-    }
+    };
 
     await this.prisma.workspace.update({
       where: { id: workspaceId },
       data: {
         settings: updatedSettings as object,
       },
-    })
+    });
   }
 
   // ---------------------------------------------------------------------------
@@ -409,8 +409,8 @@ export class ContradictionAuditService {
    * Convert Prisma model to audit entry
    */
   private toAuditEntry(audit: WikiContradictionAudit): ContradictionAuditEntry {
-    const now = new Date()
-    const canRevert = !audit.revertedAt && now <= audit.revertExpiresAt
+    const now = new Date();
+    const canRevert = !audit.revertedAt && now <= audit.revertExpiresAt;
 
     return {
       id: audit.id,
@@ -430,35 +430,35 @@ export class ContradictionAuditService {
       revertedBy: audit.revertedBy,
       revertExpiresAt: audit.revertExpiresAt,
       canRevert,
-    }
+    };
   }
 
   /**
    * Map TypeScript ResolutionStrategy to Prisma enum
    */
   private mapToPrismaStrategy(strategy: ResolutionStrategy): PrismaResolutionStrategy {
-    return strategy as PrismaResolutionStrategy
+    return strategy as PrismaResolutionStrategy;
   }
 
   /**
    * Map Prisma enum to TypeScript ResolutionStrategy
    */
   private mapFromPrismaStrategy(strategy: PrismaResolutionStrategy): ResolutionStrategy {
-    return strategy as ResolutionStrategy
+    return strategy as ResolutionStrategy;
   }
 
   /**
    * Map TypeScript ContradictionCategory to Prisma enum
    */
   private mapToPrismaCategory(category: ContradictionCategory): PrismaContradictionCategory {
-    return category as PrismaContradictionCategory
+    return category as PrismaContradictionCategory;
   }
 
   /**
    * Map Prisma enum to TypeScript ContradictionCategory
    */
   private mapFromPrismaCategory(category: PrismaContradictionCategory): ContradictionCategory {
-    return category as ContradictionCategory
+    return category as ContradictionCategory;
   }
 }
 
@@ -466,21 +466,21 @@ export class ContradictionAuditService {
 // Singleton
 // =============================================================================
 
-let auditServiceInstance: ContradictionAuditService | null = null
+let auditServiceInstance: ContradictionAuditService | null = null;
 
 /**
  * Get or create the ContradictionAuditService instance
  */
 export function getContradictionAuditService(prisma: PrismaClient): ContradictionAuditService {
   if (!auditServiceInstance) {
-    auditServiceInstance = new ContradictionAuditService(prisma)
+    auditServiceInstance = new ContradictionAuditService(prisma);
   }
-  return auditServiceInstance
+  return auditServiceInstance;
 }
 
 /**
  * Reset the singleton instance (for testing)
  */
 export function resetContradictionAuditService(): void {
-  auditServiceInstance = null
+  auditServiceInstance = null;
 }

@@ -11,4 +11,4 @@ export const KANBU_VERSION = '0.1.0';
 // Run `pnpm db:generate` in packages/shared to regenerate the client
 
 // GitHub Connector Types (Fase 1)
-export * from './types/github'
+export * from './types/github';

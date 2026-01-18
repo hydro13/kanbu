@@ -13,39 +13,39 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { describe, it, expect } from 'vitest'
-import { hashPassword, verifyPassword } from '../auth'
+import { describe, it, expect } from 'vitest';
+import { hashPassword, verifyPassword } from '../auth';
 
 describe('auth', () => {
   describe('hashPassword', () => {
     it('returns a hash that is different from the input', async () => {
-      const password = 'testPassword123'
-      const hash = await hashPassword(password)
+      const password = 'testPassword123';
+      const hash = await hashPassword(password);
 
-      expect(hash).toBeDefined()
-      expect(hash).not.toBe(password)
-      expect(hash.length).toBeGreaterThan(password.length)
-    })
-  })
+      expect(hash).toBeDefined();
+      expect(hash).not.toBe(password);
+      expect(hash.length).toBeGreaterThan(password.length);
+    });
+  });
 
   describe('verifyPassword', () => {
     it('returns true for correct password', async () => {
-      const password = 'correctPassword123'
-      const hash = await hashPassword(password)
+      const password = 'correctPassword123';
+      const hash = await hashPassword(password);
 
-      const result = await verifyPassword(hash, password)
+      const result = await verifyPassword(hash, password);
 
-      expect(result).toBe(true)
-    })
+      expect(result).toBe(true);
+    });
 
     it('returns false for incorrect password', async () => {
-      const password = 'correctPassword123'
-      const wrongPassword = 'wrongPassword456'
-      const hash = await hashPassword(password)
+      const password = 'correctPassword123';
+      const wrongPassword = 'wrongPassword456';
+      const hash = await hashPassword(password);
 
-      const result = await verifyPassword(hash, wrongPassword)
+      const result = await verifyPassword(hash, wrongPassword);
 
-      expect(result).toBe(false)
-    })
-  })
-})
+      expect(result).toBe(false);
+    });
+  });
+});

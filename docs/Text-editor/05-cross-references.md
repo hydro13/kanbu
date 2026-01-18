@@ -22,6 +22,7 @@ See [[Getting Started]] for more information.
 ```
 
 **Resolution order:**
+
 1. Project wiki (if in project context)
 2. Workspace wiki (parent)
 3. Exact match on title
@@ -37,6 +38,7 @@ See [[Project Wiki/API Docs]] for the API.
 ```
 
 **Syntax:**
+
 - `[[Workspace Wiki/Page]]` - Link to workspace wiki
 - `[[Project Wiki/Page]]` - Link to project wiki (in project context)
 - `[[/Absolute/Path]]` - Absolute path in wiki hierarchy
@@ -51,6 +53,7 @@ See also #123 for the backend implementation.
 ```
 
 **Features:**
+
 - Hover preview with task details
 - Status indicator (open/closed)
 - Click to open task modal
@@ -65,6 +68,7 @@ CC: @team-frontend
 ```
 
 **Features:**
+
 - Autocomplete while typing
 - Notification to mentioned user
 - Show avatar
@@ -78,6 +82,7 @@ Categorization tags:
 ```
 
 **Note:** Tags and task links both use `#`, but are distinguished by:
+
 - `#TASK-123` or `#123` (only digits) = Task link
 - `#tag-name` (contains letters) = Tag
 
@@ -90,6 +95,7 @@ Check https://example.com for more info.
 ```
 
 **Features:**
+
 - Automatic URL detection
 - Link preview card (unfurl)
 - Open in new tab
@@ -246,11 +252,11 @@ export class TagNode extends TextNode {
 ```typescript
 const TRIGGERS = {
   wikiLink: {
-    pattern: /\[\[([^\]]*)/,       // [[ followed by text
+    pattern: /\[\[([^\]]*)/, // [[ followed by text
     handler: 'wiki-autocomplete',
   },
   mention: {
-    pattern: /@(\w*)/,             // @ followed by word chars
+    pattern: /@(\w*)/, // @ followed by word chars
     handler: 'mention-autocomplete',
   },
   tag: {
@@ -258,7 +264,7 @@ const TRIGGERS = {
     handler: 'tag-autocomplete',
   },
   taskLink: {
-    pattern: /#(TASK-)?(\d+)/i,    // # followed by number
+    pattern: /#(TASK-)?(\d+)/i, // # followed by number
     handler: 'task-autocomplete',
   },
 };
@@ -452,20 +458,18 @@ function LinkPreviewCard({ link, type }: LinkPreviewProps) {
       {data.icon && <span className="preview-icon">{data.icon}</span>}
       <div className="preview-content">
         <h4 className="preview-title">{data.title}</h4>
-        {data.description && (
-          <p className="preview-description">{data.description}</p>
-        )}
+        {data.description && <p className="preview-description">{data.description}</p>}
         {data.tags && data.tags.length > 0 && (
           <div className="preview-tags">
-            {data.tags.map(tag => (
-              <span key={tag} className="preview-tag">#{tag}</span>
+            {data.tags.map((tag) => (
+              <span key={tag} className="preview-tag">
+                #{tag}
+              </span>
             ))}
           </div>
         )}
         <div className="preview-meta">
-          {data.updatedAt && (
-            <span>Updated {formatRelative(data.updatedAt)}</span>
-          )}
+          {data.updatedAt && <span>Updated {formatRelative(data.updatedAt)}</span>}
         </div>
       </div>
       <div className="preview-actions">
@@ -652,10 +656,7 @@ class LinkResolutionService {
     // 3. Fuzzy search by title
     const fuzzyMatch = await this.prisma.wikiPage.findFirst({
       where: {
-        OR: [
-          { workspaceId: context.workspaceId },
-          { projectId: context.projectId },
-        ],
+        OR: [{ workspaceId: context.workspaceId }, { projectId: context.projectId }],
         title: { contains: pageName, mode: 'insensitive' },
       },
     });
@@ -674,10 +675,7 @@ class LinkResolutionService {
 
     return this.prisma.task.findFirst({
       where: {
-        OR: [
-          { id: parseInt(taskId, 10) },
-          { identifier: taskRef.toUpperCase() },
-        ],
+        OR: [{ id: parseInt(taskId, 10) }, { identifier: taskRef.toUpperCase() }],
       },
     });
   }

@@ -9,27 +9,27 @@
  * Modified: 2026-01-09 - Fase 9.6: Added scope selector and service account support
  */
 
-import { useState } from 'react'
-import { ProfileLayout } from '../../components/profile/ProfileLayout'
-import { Button } from '../../components/ui/button'
-import { trpc } from '../../lib/trpc'
+import { useState } from 'react';
+import { ProfileLayout } from '../../components/profile/ProfileLayout';
+import { Button } from '../../components/ui/button';
+import { trpc } from '../../lib/trpc';
 
-type ApiKeyScope = 'USER' | 'WORKSPACE' | 'PROJECT'
+type ApiKeyScope = 'USER' | 'WORKSPACE' | 'PROJECT';
 
 // =============================================================================
 // Helper Functions
 // =============================================================================
 
 function formatDateTime(date: Date | string | null): string {
-  if (!date) return 'Never'
-  const d = typeof date === 'string' ? new Date(date) : date
+  if (!date) return 'Never';
+  const d = typeof date === 'string' ? new Date(date) : date;
   return d.toLocaleString('en-US', {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-  })
+  });
 }
 
 // =============================================================================
@@ -37,61 +37,61 @@ function formatDateTime(date: Date | string | null): string {
 // =============================================================================
 
 export function ApiTokens() {
-  const [showCreate, setShowCreate] = useState(false)
-  const [newKeyName, setNewKeyName] = useState('')
-  const [selectedPermissions, setSelectedPermissions] = useState<string[]>([])
-  const [expiresIn, setExpiresIn] = useState<string>('never')
-  const [newlyCreatedKey, setNewlyCreatedKey] = useState<string | null>(null)
-  const [confirmRevoke, setConfirmRevoke] = useState<number | null>(null)
-  const [copied, setCopied] = useState(false)
+  const [showCreate, setShowCreate] = useState(false);
+  const [newKeyName, setNewKeyName] = useState('');
+  const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
+  const [expiresIn, setExpiresIn] = useState<string>('never');
+  const [newlyCreatedKey, setNewlyCreatedKey] = useState<string | null>(null);
+  const [confirmRevoke, setConfirmRevoke] = useState<number | null>(null);
+  const [copied, setCopied] = useState(false);
   // Scope fields (Fase 9.6)
-  const [scope, setScope] = useState<ApiKeyScope>('USER')
-  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<number | null>(null)
-  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null)
-  const [isServiceAccount, setIsServiceAccount] = useState(false)
-  const [serviceAccountName, setServiceAccountName] = useState('')
+  const [scope, setScope] = useState<ApiKeyScope>('USER');
+  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<number | null>(null);
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+  const [isServiceAccount, setIsServiceAccount] = useState(false);
+  const [serviceAccountName, setServiceAccountName] = useState('');
 
-  const utils = trpc.useUtils()
-  const { data: keys, isLoading } = trpc.apiKey.list.useQuery()
-  const { data: permissions } = trpc.apiKey.getPermissions.useQuery()
+  const utils = trpc.useUtils();
+  const { data: keys, isLoading } = trpc.apiKey.list.useQuery();
+  const { data: permissions } = trpc.apiKey.getPermissions.useQuery();
   // Fetch workspaces and projects for scope selection
-  const { data: workspaces } = trpc.workspace.list.useQuery()
+  const { data: workspaces } = trpc.workspace.list.useQuery();
   const { data: projects } = trpc.project.list.useQuery(
     { workspaceId: selectedWorkspaceId ?? 0 },
     { enabled: scope === 'PROJECT' && selectedWorkspaceId !== null }
-  )
+  );
 
   const createKey = trpc.apiKey.create.useMutation({
     onSuccess: (data) => {
-      setNewlyCreatedKey(data.key)
-      setShowCreate(false)
-      setNewKeyName('')
-      setSelectedPermissions([])
-      setExpiresIn('never')
+      setNewlyCreatedKey(data.key);
+      setShowCreate(false);
+      setNewKeyName('');
+      setSelectedPermissions([]);
+      setExpiresIn('never');
       // Reset scope fields
-      setScope('USER')
-      setSelectedWorkspaceId(null)
-      setSelectedProjectId(null)
-      setIsServiceAccount(false)
-      setServiceAccountName('')
-      utils.apiKey.list.invalidate()
+      setScope('USER');
+      setSelectedWorkspaceId(null);
+      setSelectedProjectId(null);
+      setIsServiceAccount(false);
+      setServiceAccountName('');
+      utils.apiKey.list.invalidate();
     },
-  })
+  });
 
   const revokeKey = trpc.apiKey.revoke.useMutation({
     onSuccess: () => {
-      utils.apiKey.list.invalidate()
-      setConfirmRevoke(null)
+      utils.apiKey.list.invalidate();
+      setConfirmRevoke(null);
     },
-  })
+  });
 
   const handleCreate = () => {
-    let expiresAt: string | undefined
+    let expiresAt: string | undefined;
     if (expiresIn !== 'never') {
-      const days = parseInt(expiresIn)
-      const date = new Date()
-      date.setDate(date.getDate() + days)
-      expiresAt = date.toISOString()
+      const days = parseInt(expiresIn);
+      const date = new Date();
+      date.setDate(date.getDate() + days);
+      expiresAt = date.toISOString();
     }
 
     createKey.mutate({
@@ -100,38 +100,39 @@ export function ApiTokens() {
       expiresAt,
       // Scope fields (Fase 9.6)
       scope,
-      workspaceId: (scope === 'WORKSPACE' || scope === 'PROJECT') ? selectedWorkspaceId ?? undefined : undefined,
-      projectId: scope === 'PROJECT' ? selectedProjectId ?? undefined : undefined,
+      workspaceId:
+        scope === 'WORKSPACE' || scope === 'PROJECT'
+          ? (selectedWorkspaceId ?? undefined)
+          : undefined,
+      projectId: scope === 'PROJECT' ? (selectedProjectId ?? undefined) : undefined,
       isServiceAccount,
       serviceAccountName: isServiceAccount ? serviceAccountName : undefined,
-    })
-  }
+    });
+  };
 
   const resetCreateForm = () => {
-    setShowCreate(false)
-    setNewKeyName('')
-    setSelectedPermissions([])
-    setExpiresIn('never')
-    setScope('USER')
-    setSelectedWorkspaceId(null)
-    setSelectedProjectId(null)
-    setIsServiceAccount(false)
-    setServiceAccountName('')
-  }
+    setShowCreate(false);
+    setNewKeyName('');
+    setSelectedPermissions([]);
+    setExpiresIn('never');
+    setScope('USER');
+    setSelectedWorkspaceId(null);
+    setSelectedProjectId(null);
+    setIsServiceAccount(false);
+    setServiceAccountName('');
+  };
 
   const copyToClipboard = async (text: string) => {
-    await navigator.clipboard.writeText(text)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
+    await navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   const togglePermission = (perm: string) => {
     setSelectedPermissions((prev) =>
-      prev.includes(perm)
-        ? prev.filter((p) => p !== perm)
-        : [...prev, perm]
-    )
-  }
+      prev.includes(perm) ? prev.filter((p) => p !== perm) : [...prev, perm]
+    );
+  };
 
   if (isLoading) {
     return (
@@ -140,7 +141,7 @@ export function ApiTokens() {
           <p className="text-muted-foreground">Loading...</p>
         </div>
       </ProfileLayout>
-    )
+    );
   }
 
   // Show newly created key (one-time display)
@@ -149,7 +150,9 @@ export function ApiTokens() {
       <ProfileLayout title="API Tokens" description="Manage your personal access tokens">
         <div className="bg-card rounded-card border border-border">
           <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-            <h3 className="text-sm font-semibold text-green-600 dark:text-green-400">Token Created!</h3>
+            <h3 className="text-sm font-semibold text-green-600 dark:text-green-400">
+              Token Created!
+            </h3>
             <p className="text-xs text-muted-foreground mt-0.5">Copy now - won't be shown again</p>
           </div>
           <div className="p-4 space-y-3">
@@ -161,11 +164,13 @@ export function ApiTokens() {
                 {copied ? 'Copied!' : 'Copy'}
               </Button>
             </div>
-            <Button size="sm" onClick={() => setNewlyCreatedKey(null)} className="w-full">Done</Button>
+            <Button size="sm" onClick={() => setNewlyCreatedKey(null)} className="w-full">
+              Done
+            </Button>
           </div>
         </div>
       </ProfileLayout>
-    )
+    );
   }
 
   return (
@@ -177,7 +182,9 @@ export function ApiTokens() {
             <p className="text-xs text-muted-foreground mt-0.5">{keys?.length ?? 0} tokens</p>
           </div>
           {!showCreate && (
-            <Button size="sm" onClick={() => setShowCreate(true)}>Create</Button>
+            <Button size="sm" onClick={() => setShowCreate(true)}>
+              Create
+            </Button>
           )}
         </div>
 
@@ -205,14 +212,16 @@ export function ApiTokens() {
 
             {/* Scope selection (Fase 9.6) */}
             <div className="space-y-2">
-              <label className="text-xs font-medium text-gray-600 dark:text-gray-400">Access Scope</label>
+              <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                Access Scope
+              </label>
               <div className="flex gap-2">
                 <select
                   value={scope}
                   onChange={(e) => {
-                    setScope(e.target.value as ApiKeyScope)
-                    setSelectedWorkspaceId(null)
-                    setSelectedProjectId(null)
+                    setScope(e.target.value as ApiKeyScope);
+                    setSelectedWorkspaceId(null);
+                    setSelectedProjectId(null);
                   }}
                   className="h-8 px-2 text-sm rounded border border-input bg-white dark:bg-gray-900"
                 >
@@ -226,14 +235,16 @@ export function ApiTokens() {
                   <select
                     value={selectedWorkspaceId ?? ''}
                     onChange={(e) => {
-                      setSelectedWorkspaceId(e.target.value ? Number(e.target.value) : null)
-                      setSelectedProjectId(null)
+                      setSelectedWorkspaceId(e.target.value ? Number(e.target.value) : null);
+                      setSelectedProjectId(null);
                     }}
                     className="flex-1 h-8 px-2 text-sm rounded border border-input bg-white dark:bg-gray-900"
                   >
                     <option value="">Select workspace...</option>
                     {workspaces?.map((ws) => (
-                      <option key={ws.id} value={ws.id}>{ws.name}</option>
+                      <option key={ws.id} value={ws.id}>
+                        {ws.name}
+                      </option>
                     ))}
                   </select>
                 )}
@@ -242,12 +253,16 @@ export function ApiTokens() {
                 {scope === 'PROJECT' && selectedWorkspaceId && (
                   <select
                     value={selectedProjectId ?? ''}
-                    onChange={(e) => setSelectedProjectId(e.target.value ? Number(e.target.value) : null)}
+                    onChange={(e) =>
+                      setSelectedProjectId(e.target.value ? Number(e.target.value) : null)
+                    }
                     className="flex-1 h-8 px-2 text-sm rounded border border-input bg-white dark:bg-gray-900"
                   >
                     <option value="">Select project...</option>
                     {projects?.map((proj) => (
-                      <option key={proj.id} value={proj.id}>{proj.name}</option>
+                      <option key={proj.id} value={proj.id}>
+                        {proj.name}
+                      </option>
                     ))}
                   </select>
                 )}
@@ -263,7 +278,9 @@ export function ApiTokens() {
                   onChange={(e) => setIsServiceAccount(e.target.checked)}
                   className="h-4 w-4 rounded border-gray-300"
                 />
-                <span className="text-xs text-gray-600 dark:text-gray-400">Service Account (for integrations)</span>
+                <span className="text-xs text-gray-600 dark:text-gray-400">
+                  Service Account (for integrations)
+                </span>
               </label>
               {isServiceAccount && (
                 <input
@@ -325,20 +342,31 @@ export function ApiTokens() {
           ) : (
             <div className="space-y-2">
               {keys.map((key) => (
-                <div key={key.id} className="flex items-center justify-between py-2 border-b border-gray-50 dark:border-gray-700/50 last:border-0">
+                <div
+                  key={key.id}
+                  className="flex items-center justify-between py-2 border-b border-gray-50 dark:border-gray-700/50 last:border-0"
+                >
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-sm font-medium">{key.name}</span>
-                      <code className="text-xs bg-gray-100 dark:bg-gray-800 px-1 rounded">{key.keyPrefix}...</code>
+                      <code className="text-xs bg-gray-100 dark:bg-gray-800 px-1 rounded">
+                        {key.keyPrefix}...
+                      </code>
                       {/* Scope badge */}
-                      <span className={`px-1.5 py-0.5 rounded text-xs ${
-                        key.scope === 'USER'
-                          ? 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                      <span
+                        className={`px-1.5 py-0.5 rounded text-xs ${
+                          key.scope === 'USER'
+                            ? 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                            : key.scope === 'WORKSPACE'
+                              ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                              : 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
+                        }`}
+                      >
+                        {key.scope === 'USER'
+                          ? 'User'
                           : key.scope === 'WORKSPACE'
-                            ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-                            : 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
-                      }`}>
-                        {key.scope === 'USER' ? 'User' : key.scope === 'WORKSPACE' ? 'Workspace' : 'Project'}
+                            ? 'Workspace'
+                            : 'Project'}
                       </span>
                       {/* Service account indicator */}
                       {key.isServiceAccount && (
@@ -347,27 +375,48 @@ export function ApiTokens() {
                         </span>
                       )}
                       {key.isExpired && (
-                        <span className="px-1.5 py-0.5 rounded text-xs bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">Expired</span>
+                        <span className="px-1.5 py-0.5 rounded text-xs bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400">
+                          Expired
+                        </span>
                       )}
                     </div>
                     <div className="text-xs text-muted-foreground mt-0.5">
                       Last: {formatDateTime(key.lastUsedAt)}
                       {key.scope === 'WORKSPACE' && key.workspace && ` • ${key.workspace.name}`}
                       {key.scope === 'PROJECT' && key.project && ` • ${key.project.name}`}
-                      {key.isServiceAccount && key.serviceAccountName && ` • ${key.serviceAccountName}`}
+                      {key.isServiceAccount &&
+                        key.serviceAccountName &&
+                        ` • ${key.serviceAccountName}`}
                       {key.permissions.length > 0 && ` • ${key.permissions.join(', ')}`}
                     </div>
                   </div>
                   <div>
                     {confirmRevoke === key.id ? (
                       <div className="flex gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => setConfirmRevoke(null)} className="h-7 px-2 text-xs">Cancel</Button>
-                        <Button size="sm" onClick={() => revokeKey.mutate({ keyId: key.id })} disabled={revokeKey.isPending} className="h-7 px-2 text-xs bg-red-600 hover:bg-red-700 text-white">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setConfirmRevoke(null)}
+                          className="h-7 px-2 text-xs"
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => revokeKey.mutate({ keyId: key.id })}
+                          disabled={revokeKey.isPending}
+                          className="h-7 px-2 text-xs bg-red-600 hover:bg-red-700 text-white"
+                        >
                           {revokeKey.isPending ? '...' : 'Confirm'}
                         </Button>
                       </div>
                     ) : (
-                      <Button variant="ghost" size="sm" onClick={() => setConfirmRevoke(key.id)} className="h-7 px-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setConfirmRevoke(key.id)}
+                        className="h-7 px-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                      >
                         Revoke
                       </Button>
                     )}
@@ -379,7 +428,7 @@ export function ApiTokens() {
         </div>
       </div>
     </ProfileLayout>
-  )
+  );
 }
 
-export default ApiTokens
+export default ApiTokens;

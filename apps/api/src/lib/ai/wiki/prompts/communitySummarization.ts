@@ -20,7 +20,7 @@ import type {
   SummarizePairOutput,
   GenerateCommunityNameInput,
   GenerateCommunityNameOutput,
-} from '../types/community'
+} from '../types/community';
 
 // ============================================================================
 // Pair-wise Summarization (Hierarchical)
@@ -44,14 +44,14 @@ Guidelines:
 - Do NOT introduce new information not present in the inputs
 - Combine overlapping concepts naturally
 - Maintain factual accuracy
-- Use clear, professional language`
+- Use clear, professional language`;
 }
 
 /**
  * Get user prompt for combining two summaries
  */
 export function getSummarizePairUserPrompt(input: SummarizePairInput): string {
-  const [summary1, summary2] = input.summaries
+  const [summary1, summary2] = input.summaries;
 
   return `<SUMMARY 1>
 ${summary1}
@@ -68,7 +68,7 @@ Respond with a JSON object:
   "summary": "The combined summary text"
 }
 
-Keep the combined summary concise but comprehensive.`
+Keep the combined summary concise but comprehensive.`;
 }
 
 /**
@@ -76,38 +76,38 @@ Keep the combined summary concise but comprehensive.`
  */
 export function parseSummarizePairResponse(response: string): SummarizePairOutput {
   // First check if response is empty
-  const trimmedResponse = response.trim()
+  const trimmedResponse = response.trim();
   if (!trimmedResponse) {
-    throw new Error('Failed to parse summarization response: empty result')
+    throw new Error('Failed to parse summarization response: empty result');
   }
 
   try {
     // Try to extract JSON from response (handle markdown code blocks)
-    let jsonStr = trimmedResponse
+    let jsonStr = trimmedResponse;
 
     // Remove markdown code block if present
-    const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/)
+    const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
     if (jsonMatch && jsonMatch[1]) {
-      jsonStr = jsonMatch[1].trim()
+      jsonStr = jsonMatch[1].trim();
     }
 
-    const parsed = JSON.parse(jsonStr)
+    const parsed = JSON.parse(jsonStr);
 
-    const summary = String(parsed.summary || '').trim()
+    const summary = String(parsed.summary || '').trim();
 
     if (!summary) {
-      throw new Error('Empty summary in response')
+      throw new Error('Empty summary in response');
     }
 
-    return { summary }
+    return { summary };
   } catch (error) {
     // If it's an "empty summary" error, re-throw it
     if (error instanceof Error && error.message.includes('Empty summary')) {
-      throw error
+      throw error;
     }
 
     // Fallback: treat entire response as summary
-    return { summary: trimmedResponse }
+    return { summary: trimmedResponse };
   }
 }
 
@@ -141,16 +141,14 @@ Good examples:
 Bad examples:
 - "Community 1" (too generic)
 - "Important Stuff" (not specific)
-- "The Group With People And Things" (too vague)`
+- "The Group With People And Things" (too vague)`;
 }
 
 /**
  * Get user prompt for community name generation
  */
-export function getGenerateCommunityNameUserPrompt(
-  input: GenerateCommunityNameInput
-): string {
-  const { summary, topEntityNames } = input
+export function getGenerateCommunityNameUserPrompt(input: GenerateCommunityNameInput): string {
+  const { summary, topEntityNames } = input;
 
   const topEntitiesSection =
     topEntityNames.length > 0
@@ -159,7 +157,7 @@ ${topEntityNames.map((name, i) => `${i + 1}. ${name}`).join('\n')}
 </TOP ENTITIES>
 
 `
-      : ''
+      : '';
 
   return `${topEntitiesSection}<COMMUNITY SUMMARY>
 ${summary}
@@ -173,72 +171,70 @@ Respond with a JSON object:
   "description": "Optional longer description if the name alone is not sufficient"
 }
 
-The name should be specific, memorable, and capture the essence of this community.`
+The name should be specific, memorable, and capture the essence of this community.`;
 }
 
 /**
  * Parse LLM response for community name generation
  */
-export function parseGenerateCommunityNameResponse(
-  response: string
-): GenerateCommunityNameOutput {
+export function parseGenerateCommunityNameResponse(response: string): GenerateCommunityNameOutput {
   // First check if response is empty
-  const trimmedResponse = response.trim()
+  const trimmedResponse = response.trim();
   if (!trimmedResponse) {
-    throw new Error('Failed to parse community name response: empty result')
+    throw new Error('Failed to parse community name response: empty result');
   }
 
   try {
     // Try to extract JSON from response (handle markdown code blocks)
-    let jsonStr = trimmedResponse
+    let jsonStr = trimmedResponse;
 
     // Remove markdown code block if present
-    const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/)
+    const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
     if (jsonMatch && jsonMatch[1]) {
-      jsonStr = jsonMatch[1].trim()
+      jsonStr = jsonMatch[1].trim();
     }
 
-    const parsed = JSON.parse(jsonStr)
+    const parsed = JSON.parse(jsonStr);
 
-    let name = String(parsed.name || '').trim()
+    let name = String(parsed.name || '').trim();
 
     // Validate max length
     if (name.length > 100) {
-      name = name.substring(0, 97) + '...'
+      name = name.substring(0, 97) + '...';
     }
 
     if (!name) {
-      throw new Error('Empty name in response')
+      throw new Error('Empty name in response');
     }
 
-    const description = parsed.description ? String(parsed.description).trim() : undefined
+    const description = parsed.description ? String(parsed.description).trim() : undefined;
 
     return {
       name,
       description: description || undefined,
-    }
+    };
   } catch (error) {
     // If it's an "empty name" error, re-throw it
     if (error instanceof Error && error.message.includes('Empty name')) {
-      throw error
+      throw error;
     }
 
     // Fallback: extract first line as name
-    const lines = trimmedResponse.split('\n')
-    let name = (lines[0] || '').trim()
+    const lines = trimmedResponse.split('\n');
+    let name = (lines[0] || '').trim();
 
     // Remove common prefixes (match "Name:", "Community Name:", etc.)
-    name = name.replace(/^(Name|Community\s*Name|Community|Title)\s*:\s*/i, '')
+    name = name.replace(/^(Name|Community\s*Name|Community|Title)\s*:\s*/i, '');
 
     // Validate max length
     if (name.length > 100) {
-      name = name.substring(0, 97) + '...'
+      name = name.substring(0, 97) + '...';
     }
 
     if (!name) {
-      throw new Error('Failed to parse community name response: empty result')
+      throw new Error('Failed to parse community name response: empty result');
     }
 
-    return { name }
+    return { name };
   }
 }

@@ -340,10 +340,7 @@ export function emitSubtaskDeleted(payload: SubtaskEventPayload): void {
 /**
  * Emit typing indicator to task room
  */
-export function emitTypingStart(
-  taskId: number,
-  user: { id: number; username: string }
-): void {
+export function emitTypingStart(taskId: number, user: { id: number; username: string }): void {
   if (!ioInstance) return;
 
   const roomName = RoomNames.task(taskId);
@@ -357,10 +354,7 @@ export function emitTypingStart(
 /**
  * Emit typing stopped to task room
  */
-export function emitTypingStop(
-  taskId: number,
-  user: { id: number; username: string }
-): void {
+export function emitTypingStop(taskId: number, user: { id: number; username: string }): void {
   if (!ioInstance) return;
 
   const roomName = RoomNames.task(taskId);

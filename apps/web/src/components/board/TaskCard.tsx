@@ -19,26 +19,26 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState } from 'react'
-import { TaskQuickActions } from '@/components/task/TaskQuickActions'
-import { GitBranchIndicator } from './WorkflowStatusBadge'
-import { SubtaskPopover } from './SubtaskPopover'
-import { DescriptionPopover } from './DescriptionPopover'
-import { CommentPopover } from './CommentPopover'
-import { UserPopover } from './UserPopover'
-import { TaskContextProvider } from '@/contexts/TaskContext'
-import { getMediaUrl } from '@/lib/trpc'
-import type { BoardTask } from './Board'
+import { useState } from 'react';
+import { TaskQuickActions } from '@/components/task/TaskQuickActions';
+import { GitBranchIndicator } from './WorkflowStatusBadge';
+import { SubtaskPopover } from './SubtaskPopover';
+import { DescriptionPopover } from './DescriptionPopover';
+import { CommentPopover } from './CommentPopover';
+import { UserPopover } from './UserPopover';
+import { TaskContextProvider } from '@/contexts/TaskContext';
+import { getMediaUrl } from '@/lib/trpc';
+import type { BoardTask } from './Board';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface TaskCardProps {
-  task: BoardTask
-  projectId: number
-  onTaskClick?: (taskId: number) => void
-  onContextMenu?: (taskId: number, event: React.MouseEvent) => void
+  task: BoardTask;
+  projectId: number;
+  onTaskClick?: (taskId: number) => void;
+  onContextMenu?: (taskId: number, event: React.MouseEvent) => void;
 }
 
 // =============================================================================
@@ -50,21 +50,21 @@ const PRIORITY_COLORS: Record<number, string> = {
   1: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
   2: 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300',
   3: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300',
-}
+};
 
 const PRIORITY_LABELS: Record<number, string> = {
   0: 'Low',
   1: 'Normal',
   2: 'High',
   3: 'Urgent',
-}
+};
 
 // =============================================================================
 // Helper Components
 // =============================================================================
 
 function PriorityBadge({ priority }: { priority: number }) {
-  if (priority === 0) return null // Don't show low priority
+  if (priority === 0) return null; // Don't show low priority
 
   return (
     <span
@@ -72,11 +72,11 @@ function PriorityBadge({ priority }: { priority: number }) {
     >
       {PRIORITY_LABELS[priority] ?? 'Low'}
     </span>
-  )
+  );
 }
 
 function TagBadge({ tag }: { tag: { id: number; name: string; color: string | null } }) {
-  const bgColor = tag.color ?? '#6B7280'
+  const bgColor = tag.color ?? '#6B7280';
 
   return (
     <span
@@ -85,20 +85,26 @@ function TagBadge({ tag }: { tag: { id: number; name: string; color: string | nu
     >
       {tag.name}
     </span>
-  )
+  );
 }
 
 function AssigneeAvatar({
   assignee,
 }: {
-  assignee: { id: number; username: string; name: string | null; email: string | null; avatarUrl: string | null }
+  assignee: {
+    id: number;
+    username: string;
+    name: string | null;
+    email: string | null;
+    avatarUrl: string | null;
+  };
 }) {
   const initials = (assignee.name ?? assignee.username)
     .split(' ')
     .map((n) => n[0])
     .join('')
     .slice(0, 2)
-    .toUpperCase()
+    .toUpperCase();
 
   if (assignee.avatarUrl) {
     return (
@@ -107,16 +113,14 @@ function AssigneeAvatar({
         alt={assignee.name ?? assignee.username}
         className="h-6 w-6 rounded-full ring-2 ring-white dark:ring-gray-800"
       />
-    )
+    );
   }
 
   return (
-    <div
-      className="h-6 w-6 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center text-xs font-medium text-gray-700 dark:text-gray-300 ring-2 ring-white dark:ring-gray-800"
-    >
+    <div className="h-6 w-6 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center text-xs font-medium text-gray-700 dark:text-gray-300 ring-2 ring-white dark:ring-gray-800">
       {initials}
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -139,7 +143,7 @@ function SubtaskIcon() {
         d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
       />
     </svg>
-  )
+  );
 }
 
 function CommentIcon() {
@@ -158,7 +162,7 @@ function CommentIcon() {
         d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
       />
     </svg>
-  )
+  );
 }
 
 function CalendarIcon() {
@@ -177,7 +181,7 @@ function CalendarIcon() {
         d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
       />
     </svg>
-  )
+  );
 }
 
 function NoteIcon() {
@@ -196,26 +200,30 @@ function NoteIcon() {
         d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
       />
     </svg>
-  )
+  );
 }
 
 // =============================================================================
 // Helper Functions
 // =============================================================================
 
-function formatDueDate(dateString: string): { text: string; isOverdue: boolean; isDueSoon: boolean } {
-  const date = new Date(dateString)
-  const now = new Date()
-  const diffDays = Math.ceil((date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+function formatDueDate(dateString: string): {
+  text: string;
+  isOverdue: boolean;
+  isDueSoon: boolean;
+} {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffDays = Math.ceil((date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
-  const isOverdue = diffDays < 0
-  const isDueSoon = diffDays >= 0 && diffDays <= 2
+  const isOverdue = diffDays < 0;
+  const isDueSoon = diffDays >= 0 && diffDays <= 2;
 
   // Format the date
-  const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' }
-  const text = date.toLocaleDateString(undefined, options)
+  const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
+  const text = date.toLocaleDateString(undefined, options);
 
-  return { text, isOverdue, isDueSoon }
+  return { text, isOverdue, isDueSoon };
 }
 
 // =============================================================================
@@ -223,21 +231,21 @@ function formatDueDate(dateString: string): { text: string; isOverdue: boolean; 
 // =============================================================================
 
 export function TaskCard({ task, projectId, onTaskClick, onContextMenu }: TaskCardProps) {
-  const [isHovered, setIsHovered] = useState(false)
+  const [isHovered, setIsHovered] = useState(false);
 
   const handleClick = () => {
     if (onTaskClick) {
-      onTaskClick(task.id)
+      onTaskClick(task.id);
     }
-  }
+  };
 
   const handleContextMenu = (e: React.MouseEvent) => {
     if (onContextMenu) {
-      onContextMenu(task.id, e)
+      onContextMenu(task.id, e);
     }
-  }
+  };
 
-  const dueInfo = task.dateDue ? formatDueDate(task.dateDue) : null
+  const dueInfo = task.dateDue ? formatDueDate(task.dateDue) : null;
 
   return (
     <div
@@ -270,9 +278,7 @@ export function TaskCard({ task, projectId, onTaskClick, onContextMenu }: TaskCa
       </div>
 
       {/* Title */}
-      <h4 className="text-sm font-medium text-foreground mb-2 line-clamp-2">
-        {task.title}
-      </h4>
+      <h4 className="text-sm font-medium text-foreground mb-2 line-clamp-2">{task.title}</h4>
 
       {/* Tags */}
       {task.tags.length > 0 && (
@@ -350,9 +356,7 @@ export function TaskCard({ task, projectId, onTaskClick, onContextMenu }: TaskCa
               {dueInfo.text}
             </span>
           )}
-          {task.githubBranch && (
-            <GitBranchIndicator branchName={task.githubBranch} />
-          )}
+          {task.githubBranch && <GitBranchIndicator branchName={task.githubBranch} />}
         </div>
 
         {/* Assignees */}
@@ -379,7 +383,7 @@ export function TaskCard({ task, projectId, onTaskClick, onContextMenu }: TaskCa
         )}
       </div>
     </div>
-  )
+  );
 }
 
-export default TaskCard
+export default TaskCard;

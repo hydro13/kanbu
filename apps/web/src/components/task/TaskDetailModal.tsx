@@ -31,40 +31,35 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useCallback, useEffect, useState } from 'react'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { useTaskDetail } from '@/hooks/useTaskDetail'
-import { trpc } from '@/lib/trpc'
-import { TaskContextProvider } from '@/contexts/TaskContext'
-import { TaskDetailHeader } from './TaskDetailHeader'
-import { TaskDescription } from './TaskDescription'
-import { SubtaskList, type Subtask } from './SubtaskList'
-import { SubtaskEditModal } from './SubtaskEditModal'
-import { CommentSection } from './CommentSection'
-import { TaskSidebar } from './TaskSidebar'
-import { ConflictWarningModal } from './ConflictWarningModal'
-import { TaskCICDPanel } from './TaskCICDPanel'
-import { TaskReviewPanel } from './TaskReviewPanel'
-import { useEditingPresence } from '@/hooks/useEditingPresence'
-import { useSocket } from '@/hooks/useSocket'
-import { useAppSelector } from '@/store'
-import { selectUser } from '@/store/authSlice'
+import { useCallback, useEffect, useState } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useTaskDetail } from '@/hooks/useTaskDetail';
+import { trpc } from '@/lib/trpc';
+import { TaskContextProvider } from '@/contexts/TaskContext';
+import { TaskDetailHeader } from './TaskDetailHeader';
+import { TaskDescription } from './TaskDescription';
+import { SubtaskList, type Subtask } from './SubtaskList';
+import { SubtaskEditModal } from './SubtaskEditModal';
+import { CommentSection } from './CommentSection';
+import { TaskSidebar } from './TaskSidebar';
+import { ConflictWarningModal } from './ConflictWarningModal';
+import { TaskCICDPanel } from './TaskCICDPanel';
+import { TaskReviewPanel } from './TaskReviewPanel';
+import { useEditingPresence } from '@/hooks/useEditingPresence';
+import { useSocket } from '@/hooks/useSocket';
+import { useAppSelector } from '@/store';
+import { selectUser } from '@/store/authSlice';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface TaskDetailModalProps {
-  taskId: number | null
-  projectId: number
-  isOpen: boolean
-  onClose: () => void
+  taskId: number | null;
+  projectId: number;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
 // =============================================================================
@@ -78,7 +73,7 @@ function LoadingSkeleton() {
       <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/4" />
       <div className="h-32 bg-gray-200 dark:bg-gray-700 rounded" />
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -95,20 +90,15 @@ function ErrorState({ message }: { message: string }) {
         <div className="text-gray-500 dark:text-gray-400 text-sm">{message}</div>
       </div>
     </div>
-  )
+  );
 }
 
 // =============================================================================
 // Component
 // =============================================================================
 
-export function TaskDetailModal({
-  taskId,
-  projectId,
-  isOpen,
-  onClose,
-}: TaskDetailModalProps) {
-  const currentUser = useAppSelector(selectUser)
+export function TaskDetailModal({ taskId, projectId, isOpen, onClose }: TaskDetailModalProps) {
+  const currentUser = useAppSelector(selectUser);
 
   const {
     task,
@@ -137,116 +127,111 @@ export function TaskDetailModal({
   } = useTaskDetail({
     taskId: taskId ?? 0,
     enabled: isOpen && taskId !== null,
-  })
+  });
 
   // Join task room for real-time events (editing presence, typing, etc.)
   // This ensures we receive editing:start/stop events from other users
   useSocket({
     taskId: isOpen && taskId ? taskId : undefined,
-  })
+  });
 
   // Editing presence for live collaboration
-  const {
-    getFieldEditor,
-    startEditing,
-    stopEditing,
-    stopAllEditing,
-  } = useEditingPresence({
+  const { getFieldEditor, startEditing, stopEditing, stopAllEditing } = useEditingPresence({
     taskId: taskId ?? 0,
     currentUserId: currentUser?.id ?? 0,
-  })
+  });
 
   // Handle conflict reload
   const handleConflictReload = useCallback(() => {
-    clearConflict()
-    refetch()
-  }, [clearConflict, refetch])
+    clearConflict();
+    refetch();
+  }, [clearConflict, refetch]);
 
   // Cleanup editing state when modal closes
   useEffect(() => {
     if (!isOpen) {
-      stopAllEditing()
+      stopAllEditing();
     }
-  }, [isOpen, stopAllEditing])
+  }, [isOpen, stopAllEditing]);
 
   // Description editing handlers
   const handleDescriptionEditStart = useCallback(() => {
-    startEditing('description')
-  }, [startEditing])
+    startEditing('description');
+  }, [startEditing]);
 
   const handleDescriptionEditStop = useCallback(() => {
-    stopEditing('description')
-  }, [stopEditing])
+    stopEditing('description');
+  }, [stopEditing]);
 
   // Fetch project members for subtask assignee selection
   const projectMembersQuery = trpc.project.getMembers.useQuery(
     { projectId },
     { enabled: isOpen && projectId > 0 }
-  )
+  );
 
   // Subtask edit modal state
-  const [editingSubtask, setEditingSubtask] = useState<Subtask | null>(null)
-  const [isSubtaskEditModalOpen, setIsSubtaskEditModalOpen] = useState(false)
+  const [editingSubtask, setEditingSubtask] = useState<Subtask | null>(null);
+  const [isSubtaskEditModalOpen, setIsSubtaskEditModalOpen] = useState(false);
 
   const handleEditSubtask = useCallback((subtask: Subtask) => {
-    setEditingSubtask(subtask)
-    setIsSubtaskEditModalOpen(true)
-  }, [])
+    setEditingSubtask(subtask);
+    setIsSubtaskEditModalOpen(true);
+  }, []);
 
   const handleCloseSubtaskEditModal = useCallback(() => {
-    setIsSubtaskEditModalOpen(false)
-    setEditingSubtask(null)
-  }, [])
+    setIsSubtaskEditModalOpen(false);
+    setEditingSubtask(null);
+  }, []);
 
   // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
-        onClose()
+        onClose();
       }
-    }
+    };
 
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen, onClose])
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   // Handle title update
   const handleTitleUpdate = useCallback(
     async (title: string) => {
-      if (!taskId || !title.trim()) return
-      await updateTask({ taskId, title: title.trim() })
+      if (!taskId || !title.trim()) return;
+      await updateTask({ taskId, title: title.trim() });
     },
     [taskId, updateTask]
-  )
+  );
 
   // Handle description update
   const handleDescriptionUpdate = useCallback(
     async (description: string) => {
-      if (!taskId) return
-      await updateTask({ taskId, description })
+      if (!taskId) return;
+      await updateTask({ taskId, description });
     },
     [taskId, updateTask]
-  )
+  );
 
   // Handle priority update
   const handlePriorityUpdate = useCallback(
     async (priority: number) => {
-      if (!taskId) return
-      await updateTask({ taskId, priority })
+      if (!taskId) return;
+      await updateTask({ taskId, priority });
     },
     [taskId, updateTask]
-  )
+  );
 
   // Handle task close/reopen
   const handleCloseTask = useCallback(async () => {
-    if (!taskId) return
-    await closeTask({ taskId })
-  }, [taskId, closeTask])
+    if (!taskId) return;
+    await closeTask({ taskId });
+  }, [taskId, closeTask]);
 
   const handleReopenTask = useCallback(async () => {
-    if (!taskId) return
-    await reopenTask({ taskId })
-  }, [taskId, reopenTask])
+    if (!taskId) return;
+    await reopenTask({ taskId });
+  }, [taskId, reopenTask]);
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -266,7 +251,8 @@ export function TaskDetailModal({
             <DialogHeader className="flex-shrink-0">
               {/* Visually hidden title for accessibility */}
               <DialogTitle className="sr-only">
-                {task.reference ? `${task.reference}: ` : ''}{task.title}
+                {task.reference ? `${task.reference}: ` : ''}
+                {task.title}
               </DialogTitle>
               <TaskDetailHeader
                 task={task}
@@ -286,18 +272,10 @@ export function TaskDetailModal({
                 <Tabs defaultValue="details" className="w-full">
                   <TabsList className="mb-4">
                     <TabsTrigger value="details">Details</TabsTrigger>
-                    <TabsTrigger value="subtasks">
-                      Subtasks ({subtasks.length})
-                    </TabsTrigger>
-                    <TabsTrigger value="comments">
-                      Comments ({comments.length})
-                    </TabsTrigger>
-                    <TabsTrigger value="cicd">
-                      CI/CD
-                    </TabsTrigger>
-                    <TabsTrigger value="reviews">
-                      Reviews
-                    </TabsTrigger>
+                    <TabsTrigger value="subtasks">Subtasks ({subtasks.length})</TabsTrigger>
+                    <TabsTrigger value="comments">Comments ({comments.length})</TabsTrigger>
+                    <TabsTrigger value="cicd">CI/CD</TabsTrigger>
+                    <TabsTrigger value="reviews">Reviews</TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="details" className="mt-0">
@@ -366,12 +344,14 @@ export function TaskDetailModal({
         isOpen={isSubtaskEditModalOpen}
         onClose={handleCloseSubtaskEditModal}
         onSave={updateSubtask}
-        projectMembers={projectMembersQuery.data?.map((m) => ({
-          id: m.id,
-          username: m.username,
-          name: m.name,
-          avatarUrl: m.avatarUrl,
-        })) ?? []}
+        projectMembers={
+          projectMembersQuery.data?.map((m) => ({
+            id: m.id,
+            username: m.username,
+            name: m.name,
+            avatarUrl: m.avatarUrl,
+          })) ?? []
+        }
       />
 
       {/* Conflict Warning Modal */}
@@ -381,7 +361,7 @@ export function TaskDetailModal({
         onReload={handleConflictReload}
       />
     </Dialog>
-  )
+  );
 }
 
-export default TaskDetailModal
+export default TaskDetailModal;

@@ -6,8 +6,8 @@
  * ===================================================================
  */
 
-export { WorkspaceMembersPage } from './WorkspaceMembersPage'
-export { WorkspaceStatisticsPage } from './WorkspaceStatisticsPage'
-export { WorkspaceSettingsWrapper } from './WorkspaceSettingsWrapper'
-export { WorkspaceWikiPage } from './WorkspaceWikiPage'
-export { WorkspaceGroupsPage } from './WorkspaceGroupsPage'
+export { WorkspaceMembersPage } from './WorkspaceMembersPage';
+export { WorkspaceStatisticsPage } from './WorkspaceStatisticsPage';
+export { WorkspaceSettingsWrapper } from './WorkspaceSettingsWrapper';
+export { WorkspaceWikiPage } from './WorkspaceWikiPage';
+export { WorkspaceGroupsPage } from './WorkspaceGroupsPage';

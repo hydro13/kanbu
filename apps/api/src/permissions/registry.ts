@@ -18,22 +18,22 @@
  * =============================================================================
  */
 
-import { prisma } from '../lib/prisma'
+import { prisma } from '../lib/prisma';
 import type {
   PermissionDefinitions,
   RegisteredPermission,
   PermissionNode,
   PermissionScope,
   SyncResult,
-} from './types'
+} from './types';
 
 // =============================================================================
 // Permission Registry Class
 // =============================================================================
 
 class PermissionRegistry {
-  private permissions: Map<string, RegisteredPermission> = new Map()
-  private sortCounter = 0
+  private permissions: Map<string, RegisteredPermission> = new Map();
+  private sortCounter = 0;
 
   // ===========================================================================
   // Registration
@@ -44,7 +44,7 @@ class PermissionRegistry {
    * Call this for each module during initialization.
    */
   register(module: string, definitions: PermissionDefinitions): void {
-    this.registerRecursive(module, module, null, definitions)
+    this.registerRecursive(module, module, null, definitions);
   }
 
   /**
@@ -57,8 +57,8 @@ class PermissionRegistry {
     definitions: PermissionDefinitions
   ): void {
     for (const [key, def] of Object.entries(definitions)) {
-      const path = `${basePath}.${key}`
-      this.sortCounter++
+      const path = `${basePath}.${key}`;
+      this.sortCounter++;
 
       const registered: RegisteredPermission = {
         path,
@@ -69,13 +69,13 @@ class PermissionRegistry {
         defaultFor: def.defaultFor ?? [],
         scope: def.scope ?? this.inferScope(module),
         sortOrder: this.sortCounter,
-      }
+      };
 
-      this.permissions.set(path, registered)
+      this.permissions.set(path, registered);
 
       // Register children recursively
       if (def.children) {
-        this.registerRecursive(module, path, path, def.children)
+        this.registerRecursive(module, path, path, def.children);
       }
     }
   }
@@ -84,9 +84,9 @@ class PermissionRegistry {
    * Infer permission scope from module name.
    */
   private inferScope(module: string): PermissionScope {
-    if (module === 'system') return 'SYSTEM'
-    if (module === 'workspace') return 'WORKSPACE'
-    return 'PROJECT'
+    if (module === 'system') return 'SYSTEM';
+    if (module === 'workspace') return 'WORKSPACE';
+    return 'PROJECT';
   }
 
   // ===========================================================================
@@ -97,36 +97,36 @@ class PermissionRegistry {
    * Get a registered permission by path.
    */
   get(path: string): RegisteredPermission | undefined {
-    return this.permissions.get(path)
+    return this.permissions.get(path);
   }
 
   /**
    * Check if a permission path is registered.
    */
   has(path: string): boolean {
-    return this.permissions.has(path)
+    return this.permissions.has(path);
   }
 
   /**
    * Get all registered permissions as a flat list.
    */
   getAll(): RegisteredPermission[] {
-    return Array.from(this.permissions.values())
+    return Array.from(this.permissions.values());
   }
 
   /**
    * Get all registered permission paths.
    */
   getAllPaths(): string[] {
-    return Array.from(this.permissions.keys())
+    return Array.from(this.permissions.keys());
   }
 
   /**
    * Get permissions as a hierarchical tree for UI display.
    */
   getTree(): PermissionNode[] {
-    const rootNodes: PermissionNode[] = []
-    const nodeMap = new Map<string, PermissionNode>()
+    const rootNodes: PermissionNode[] = [];
+    const nodeMap = new Map<string, PermissionNode>();
 
     // Create nodes for all permissions
     for (const perm of this.permissions.values()) {
@@ -137,48 +137,48 @@ class PermissionRegistry {
         scope: perm.scope,
         defaultFor: perm.defaultFor,
         children: [],
-      }
-      nodeMap.set(perm.path, node)
+      };
+      nodeMap.set(perm.path, node);
     }
 
     // Build tree structure
     for (const perm of this.permissions.values()) {
-      const node = nodeMap.get(perm.path)!
+      const node = nodeMap.get(perm.path)!;
       if (perm.parentPath) {
-        const parent = nodeMap.get(perm.parentPath)
+        const parent = nodeMap.get(perm.parentPath);
         if (parent) {
-          parent.children.push(node)
+          parent.children.push(node);
         } else {
           // Parent not found, add to root
-          rootNodes.push(node)
+          rootNodes.push(node);
         }
       } else {
         // No parent, this is a top-level permission
-        rootNodes.push(node)
+        rootNodes.push(node);
       }
     }
 
     // Sort children by sortOrder
     const sortNodes = (nodes: PermissionNode[]): void => {
       nodes.sort((a, b) => {
-        const permA = this.permissions.get(a.path)
-        const permB = this.permissions.get(b.path)
-        return (permA?.sortOrder ?? 0) - (permB?.sortOrder ?? 0)
-      })
+        const permA = this.permissions.get(a.path);
+        const permB = this.permissions.get(b.path);
+        return (permA?.sortOrder ?? 0) - (permB?.sortOrder ?? 0);
+      });
       for (const node of nodes) {
-        sortNodes(node.children)
+        sortNodes(node.children);
       }
-    }
-    sortNodes(rootNodes)
+    };
+    sortNodes(rootNodes);
 
-    return rootNodes
+    return rootNodes;
   }
 
   /**
    * Get permissions for a specific module.
    */
   getByModule(module: string): RegisteredPermission[] {
-    return this.getAll().filter((p) => p.module === module)
+    return this.getAll().filter((p) => p.module === module);
   }
 
   // ===========================================================================
@@ -196,10 +196,10 @@ class PermissionRegistry {
       created: [],
       updated: [],
       deprecated: [],
-    }
+    };
 
     // Get all registered permission paths
-    const registeredPaths = new Set(this.getAllPaths())
+    const registeredPaths = new Set(this.getAllPaths());
 
     // Get all existing permissions from database
     const existingPermissions = await prisma.permission.findMany({
@@ -212,27 +212,27 @@ class PermissionRegistry {
         sortOrder: true,
         parentId: true,
       },
-    })
+    });
 
-    const existingByPath = new Map(existingPermissions.map((p) => [p.name, p]))
+    const existingByPath = new Map(existingPermissions.map((p) => [p.name, p]));
 
     // Find or create parent permission, returns ID
     const getParentId = async (parentPath: string | null): Promise<number | null> => {
-      if (!parentPath) return null
+      if (!parentPath) return null;
       const parent = await prisma.permission.findUnique({
         where: { name: parentPath },
         select: { id: true },
-      })
-      return parent?.id ?? null
-    }
+      });
+      return parent?.id ?? null;
+    };
 
     // Create or update permissions
     for (const perm of this.permissions.values()) {
-      const existing = existingByPath.get(perm.path)
+      const existing = existingByPath.get(perm.path);
 
       if (!existing) {
         // Create new permission
-        const parentId = await getParentId(perm.parentPath)
+        const parentId = await getParentId(perm.parentPath);
         await prisma.permission.create({
           data: {
             name: perm.path,
@@ -242,17 +242,17 @@ class PermissionRegistry {
             sortOrder: perm.sortOrder,
             parentId,
           },
-        })
-        result.created.push(perm.path)
+        });
+        result.created.push(perm.path);
       } else {
         // Check if update needed
-        const parentId = await getParentId(perm.parentPath)
+        const parentId = await getParentId(perm.parentPath);
         const needsUpdate =
           existing.displayName !== perm.name ||
           existing.description !== perm.description ||
           existing.category !== perm.module ||
           existing.sortOrder !== perm.sortOrder ||
-          existing.parentId !== parentId
+          existing.parentId !== parentId;
 
         if (needsUpdate) {
           await prisma.permission.update({
@@ -264,8 +264,8 @@ class PermissionRegistry {
               sortOrder: perm.sortOrder,
               parentId,
             },
-          })
-          result.updated.push(perm.path)
+          });
+          result.updated.push(perm.path);
         }
       }
     }
@@ -275,12 +275,12 @@ class PermissionRegistry {
     for (const existing of existingPermissions) {
       if (!registeredPaths.has(existing.name)) {
         // Permission was removed from code - log it
-        result.deprecated.push(existing.name)
+        result.deprecated.push(existing.name);
         // Could mark as deprecated in DB if we add that field
       }
     }
 
-    return result
+    return result;
   }
 
   // ===========================================================================
@@ -292,27 +292,27 @@ class PermissionRegistry {
    * Useful for testing.
    */
   clear(): void {
-    this.permissions.clear()
-    this.sortCounter = 0
+    this.permissions.clear();
+    this.sortCounter = 0;
   }
 
   /**
    * Get statistics about registered permissions.
    */
   getStats(): { total: number; byModule: Record<string, number>; byScope: Record<string, number> } {
-    const byModule: Record<string, number> = {}
-    const byScope: Record<string, number> = {}
+    const byModule: Record<string, number> = {};
+    const byScope: Record<string, number> = {};
 
     for (const perm of this.permissions.values()) {
-      byModule[perm.module] = (byModule[perm.module] ?? 0) + 1
-      byScope[perm.scope] = (byScope[perm.scope] ?? 0) + 1
+      byModule[perm.module] = (byModule[perm.module] ?? 0) + 1;
+      byScope[perm.scope] = (byScope[perm.scope] ?? 0) + 1;
     }
 
     return {
       total: this.permissions.size,
       byModule,
       byScope,
-    }
+    };
   }
 }
 
@@ -328,11 +328,11 @@ export function definePermissions<T extends PermissionDefinitions>(
   _module: string,
   definitions: T
 ): T {
-  return definitions
+  return definitions;
 }
 
 // =============================================================================
 // Singleton Export
 // =============================================================================
 
-export const permissionRegistry = new PermissionRegistry()
+export const permissionRegistry = new PermissionRegistry();

@@ -15,7 +15,7 @@
  * ===================================================================
  */
 
-import { useCallback, type ReactNode } from 'react'
+import { useCallback, type ReactNode } from 'react';
 import {
   ThemeProvider,
   type ThemeMode,
@@ -23,18 +23,18 @@ import {
   type Density,
   type SidebarPosition,
   type CustomAccentHSL,
-} from '@/contexts/ThemeContext'
-import { isValidAccent } from '@/lib/themes/accents'
-import { useAppSelector } from '@/store'
-import { selectIsAuthenticated } from '@/store/authSlice'
-import { trpc } from '@/lib/trpc'
+} from '@/contexts/ThemeContext';
+import { isValidAccent } from '@/lib/themes/accents';
+import { useAppSelector } from '@/store';
+import { selectIsAuthenticated } from '@/store/authSlice';
+import { trpc } from '@/lib/trpc';
 
 interface ThemeProviderWithAuthProps {
-  children: ReactNode
+  children: ReactNode;
 }
 
 export function ThemeProviderWithAuth({ children }: ThemeProviderWithAuthProps) {
-  const isAuthenticated = useAppSelector(selectIsAuthenticated)
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
 
   // Fetch user profile to get current theme and accent settings
   // Only fetch when authenticated
@@ -42,32 +42,32 @@ export function ThemeProviderWithAuth({ children }: ThemeProviderWithAuthProps) 
     enabled: isAuthenticated,
     // Don't refetch too often - theme changes are rare
     staleTime: 5 * 60 * 1000, // 5 minutes
-  })
+  });
 
   // Mutation to update profile in backend
-  const utils = trpc.useUtils()
+  const utils = trpc.useUtils();
   const updateProfile = trpc.user.updateProfile.useMutation({
     onSuccess: () => {
       // Invalidate profile cache so it refetches
-      utils.user.getProfile.invalidate()
+      utils.user.getProfile.invalidate();
     },
-  })
+  });
 
   // Callback when theme changes
   const handleThemeChange = useCallback(
     async (theme: ThemeMode) => {
-      await updateProfile.mutateAsync({ theme })
+      await updateProfile.mutateAsync({ theme });
     },
     [updateProfile]
-  )
+  );
 
   // Callback when accent changes
   const handleAccentChange = useCallback(
     async (accent: AccentName) => {
-      await updateProfile.mutateAsync({ accent })
+      await updateProfile.mutateAsync({ accent });
     },
     [updateProfile]
-  )
+  );
 
   // Callback when custom accent changes
   const handleCustomAccentChange = useCallback(
@@ -77,31 +77,30 @@ export function ThemeProviderWithAuth({ children }: ThemeProviderWithAuthProps) 
         customAccentHue: hsl.h,
         customAccentSat: hsl.s,
         customAccentLight: hsl.l,
-      })
+      });
     },
     [updateProfile]
-  )
+  );
 
   // Callback when density changes
   const handleDensityChange = useCallback(
     async (density: Density) => {
-      await updateProfile.mutateAsync({ density })
+      await updateProfile.mutateAsync({ density });
     },
     [updateProfile]
-  )
+  );
 
   // Callback when sidebar position changes
   const handleSidebarPositionChange = useCallback(
     async (position: SidebarPosition) => {
-      await updateProfile.mutateAsync({ sidebarPosition: position })
+      await updateProfile.mutateAsync({ sidebarPosition: position });
     },
     [updateProfile]
-  )
+  );
 
   // Extract theme and accent from profile
-  const userTheme = profile?.theme as ThemeMode | undefined
-  const userAccent =
-    profile?.accent && isValidAccent(profile.accent) ? profile.accent : undefined
+  const userTheme = profile?.theme as ThemeMode | undefined;
+  const userAccent = profile?.accent && isValidAccent(profile.accent) ? profile.accent : undefined;
 
   // Extract custom accent from profile
   const userCustomAccent: CustomAccentHSL | undefined =
@@ -113,11 +112,11 @@ export function ThemeProviderWithAuth({ children }: ThemeProviderWithAuthProps) 
           s: profile.customAccentSat,
           l: profile.customAccentLight,
         }
-      : undefined
+      : undefined;
 
   // Extract density and sidebar position
-  const userDensity = profile?.density as Density | undefined
-  const userSidebarPosition = profile?.sidebarPosition as SidebarPosition | undefined
+  const userDensity = profile?.density as Density | undefined;
+  const userSidebarPosition = profile?.sidebarPosition as SidebarPosition | undefined;
 
   return (
     <ThemeProvider
@@ -135,7 +134,7 @@ export function ThemeProviderWithAuth({ children }: ThemeProviderWithAuthProps) 
     >
       {children}
     </ThemeProvider>
-  )
+  );
 }
 
-export default ThemeProviderWithAuth
+export default ThemeProviderWithAuth;

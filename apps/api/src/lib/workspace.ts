@@ -27,20 +27,20 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { TRPCError } from '@trpc/server'
-import { WorkspaceRole, AppRole } from '@prisma/client'
-import { prisma } from './prisma'
-import { permissionService } from '../services/permissions'
-import { ACL_PERMISSIONS } from '../services/aclService'
+import { TRPCError } from '@trpc/server';
+import { WorkspaceRole, AppRole } from '@prisma/client';
+import { prisma } from './prisma';
+import { permissionService } from '../services/permissions';
+import { ACL_PERMISSIONS } from '../services/aclService';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface WorkspaceAccess {
-  workspaceId: number
-  userId: number
-  role: WorkspaceRole
+  workspaceId: number;
+  userId: number;
+  role: WorkspaceRole;
 }
 
 // Role hierarchy for permission checks
@@ -49,7 +49,7 @@ const ROLE_HIERARCHY: Record<WorkspaceRole, number> = {
   MEMBER: 2,
   ADMIN: 3,
   OWNER: 4,
-}
+};
 
 // =============================================================================
 // Permission Helpers
@@ -72,12 +72,12 @@ export async function requireWorkspaceAccess(
   minRole: WorkspaceRole = 'VIEWER'
 ): Promise<WorkspaceAccess> {
   // Delegate to permissionService (ACL-based)
-  const access = await permissionService.requireWorkspaceAccess(userId, workspaceId, minRole)
+  const access = await permissionService.requireWorkspaceAccess(userId, workspaceId, minRole);
   return {
     workspaceId: access.workspaceId,
     userId: access.userId,
     role: access.role,
-  }
+  };
 }
 
 /**
@@ -94,13 +94,13 @@ export async function getWorkspaceAccess(
   workspaceId: number
 ): Promise<WorkspaceAccess | null> {
   // Delegate to permissionService (ACL-based)
-  const access = await permissionService.getWorkspaceAccess(userId, workspaceId)
-  if (!access) return null
+  const access = await permissionService.getWorkspaceAccess(userId, workspaceId);
+  if (!access) return null;
   return {
     workspaceId: access.workspaceId,
     userId: access.userId,
     role: access.role,
-  }
+  };
 }
 
 /**
@@ -112,7 +112,7 @@ export async function getWorkspaceAccess(
  * @returns true if userRole >= minRole
  */
 export function hasMinRole(userRole: WorkspaceRole, minRole: WorkspaceRole): boolean {
-  return ROLE_HIERARCHY[userRole] >= ROLE_HIERARCHY[minRole]
+  return ROLE_HIERARCHY[userRole] >= ROLE_HIERARCHY[minRole];
 }
 
 // =============================================================================
@@ -128,7 +128,7 @@ export function hasMinRole(userRole: WorkspaceRole, minRole: WorkspaceRole): boo
  * @returns true if user is a SYSTEM_ADMIN
  */
 export function isSystemAdmin(appRole: AppRole): boolean {
-  return appRole === 'ADMIN'
+  return appRole === 'ADMIN';
 }
 
 /**
@@ -144,7 +144,7 @@ export function requireSystemAdmin(appRole: AppRole): void {
     throw new TRPCError({
       code: 'FORBIDDEN',
       message: 'This action requires system administrator privileges',
-    })
+    });
   }
 }
 
@@ -169,10 +169,10 @@ export async function createDefaultWorkspace(
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '')
-    .substring(0, 50)
+    .substring(0, 50);
 
   // Ensure uniqueness by appending user ID
-  const slug = `${baseSlug}-${userId}`
+  const slug = `${baseSlug}-${userId}`;
 
   // Create workspace and ACL entry in a transaction
   const workspace = await prisma.$transaction(async (tx) => {
@@ -188,7 +188,7 @@ export async function createDefaultWorkspace(
         name: true,
         slug: true,
       },
-    })
+    });
 
     // Create ACL entry granting full access (RWXDP = OWNER equivalent)
     await tx.aclEntry.create({
@@ -197,17 +197,21 @@ export async function createDefaultWorkspace(
         principalId: userId,
         resourceType: 'workspace',
         resourceId: ws.id,
-        permissions: ACL_PERMISSIONS.READ | ACL_PERMISSIONS.WRITE | ACL_PERMISSIONS.EXECUTE |
-                     ACL_PERMISSIONS.DELETE | ACL_PERMISSIONS.PERMISSIONS,
+        permissions:
+          ACL_PERMISSIONS.READ |
+          ACL_PERMISSIONS.WRITE |
+          ACL_PERMISSIONS.EXECUTE |
+          ACL_PERMISSIONS.DELETE |
+          ACL_PERMISSIONS.PERMISSIONS,
         deny: false,
         createdById: userId,
       },
-    })
+    });
 
-    return ws
-  })
+    return ws;
+  });
 
-  return workspace
+  return workspace;
 }
 
 /**
@@ -222,33 +226,33 @@ export async function generateUniqueSlug(name: string): Promise<string> {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '')
-    .substring(0, 90) // Leave room for suffix
+    .substring(0, 90); // Leave room for suffix
 
   // Check if base slug exists
-  let slug = baseSlug
-  let counter = 1
+  let slug = baseSlug;
+  let counter = 1;
 
   while (true) {
     const existing = await prisma.workspace.findUnique({
       where: { slug },
       select: { id: true },
-    })
+    });
 
     if (!existing) {
-      break
+      break;
     }
 
-    slug = `${baseSlug}-${counter}`
-    counter++
+    slug = `${baseSlug}-${counter}`;
+    counter++;
 
     // Safety limit
     if (counter > 100) {
-      slug = `${baseSlug}-${Date.now()}`
-      break
+      slug = `${baseSlug}-${Date.now()}`;
+      break;
     }
   }
 
-  return slug
+  return slug;
 }
 
 // =============================================================================
@@ -261,11 +265,11 @@ export async function generateUniqueSlug(name: string): Promise<string> {
  * @returns A 64-character hex token
  */
 export function generateInviteToken(): string {
-  const bytes = new Uint8Array(32)
-  crypto.getRandomValues(bytes)
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
   return Array.from(bytes)
     .map((b) => b.toString(16).padStart(2, '0'))
-    .join('')
+    .join('');
 }
 
 /**
@@ -275,7 +279,7 @@ export function generateInviteToken(): string {
  * @returns Expiration date
  */
 export function getInviteExpiration(days: number = 7): Date {
-  const date = new Date()
-  date.setDate(date.getDate() + days)
-  return date
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  return date;
 }

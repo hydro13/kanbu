@@ -7,17 +7,17 @@
  * Task: 253 - Multi-Workspace / Organisatie Systeem
  */
 
-import { useState, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { AdminLayout } from '@/components/admin'
-import { trpc } from '@/lib/trpc'
+import { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { AdminLayout } from '@/components/admin';
+import { trpc } from '@/lib/trpc';
 
 // =============================================================================
 // Constants
 // =============================================================================
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
 // =============================================================================
 // Icons
@@ -25,26 +25,59 @@ const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
 
 function BuildingIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+      />
     </svg>
-  )
+  );
 }
 
 function UploadIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+      />
     </svg>
-  )
+  );
 }
 
 function TrashIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+      />
     </svg>
-  )
+  );
 }
 
 // =============================================================================
@@ -52,13 +85,15 @@ function TrashIcon({ className }: { className?: string }) {
 // =============================================================================
 
 export function WorkspaceCreatePage() {
-  const navigate = useNavigate()
-  const [name, setName] = useState('')
-  const [description, setDescription] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [logoPreview, setLogoPreview] = useState<string | null>(null)
-  const [selectedLogo, setSelectedLogo] = useState<{ base64: string; mimeType: string } | null>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const navigate = useNavigate();
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [selectedLogo, setSelectedLogo] = useState<{ base64: string; mimeType: string } | null>(
+    null
+  );
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const createMutation = trpc.workspace.create.useMutation({
     onSuccess: async (workspace) => {
@@ -68,86 +103,87 @@ export function WorkspaceCreatePage() {
           await uploadLogoMutation.mutateAsync({
             workspaceId: workspace.id,
             base64: selectedLogo.base64,
-            mimeType: selectedLogo.mimeType as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp',
-          })
+            mimeType: selectedLogo.mimeType as
+              | 'image/jpeg'
+              | 'image/png'
+              | 'image/gif'
+              | 'image/webp',
+          });
         } catch {
           // Continue even if logo upload fails - workspace was created
         }
       }
-      navigate(`/admin/workspaces`)
+      navigate(`/admin/workspaces`);
     },
     onError: (err) => {
-      setError(err.message)
+      setError(err.message);
     },
-  })
+  });
 
-  const uploadLogoMutation = trpc.workspace.uploadLogo.useMutation()
+  const uploadLogoMutation = trpc.workspace.uploadLogo.useMutation();
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-    setError(null)
+    setError(null);
 
     // Validate file type
     if (!ALLOWED_TYPES.includes(file.type)) {
-      setError('Please select a valid image file (JPEG, PNG, GIF, or WebP)')
-      return
+      setError('Please select a valid image file (JPEG, PNG, GIF, or WebP)');
+      return;
     }
 
     // Validate file size
     if (file.size > MAX_FILE_SIZE) {
-      setError('File size must be less than 5MB')
-      return
+      setError('File size must be less than 5MB');
+      return;
     }
 
     // Read file as base64
-    const reader = new FileReader()
+    const reader = new FileReader();
     reader.onload = (event) => {
-      const result = event.target?.result as string
+      const result = event.target?.result as string;
       // Remove data URL prefix to get pure base64
-      const base64 = result.split(',')[1]
+      const base64 = result.split(',')[1];
       if (base64) {
-        setLogoPreview(result)
+        setLogoPreview(result);
         setSelectedLogo({
           base64,
           mimeType: file.type,
-        })
+        });
       }
-    }
-    reader.readAsDataURL(file)
-  }
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleRemoveLogo = () => {
-    setLogoPreview(null)
-    setSelectedLogo(null)
+    setLogoPreview(null);
+    setSelectedLogo(null);
     if (fileInputRef.current) {
-      fileInputRef.current.value = ''
+      fileInputRef.current.value = '';
     }
-  }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    setError(null)
+    e.preventDefault();
+    setError(null);
 
     if (!name.trim()) {
-      setError('Name is required')
-      return
+      setError('Name is required');
+      return;
     }
 
     createMutation.mutate({
       name: name.trim(),
       description: description.trim() || undefined,
-    })
-  }
+    });
+  };
 
-  const isPending = createMutation.isPending || uploadLogoMutation.isPending
+  const isPending = createMutation.isPending || uploadLogoMutation.isPending;
 
   return (
-    <AdminLayout
-      title="Create Workspace"
-      description="Create a new organisation workspace"
-    >
+    <AdminLayout title="Create Workspace" description="Create a new organisation workspace">
       <div className="max-w-2xl">
         {/* Error */}
         {error && (
@@ -184,9 +220,7 @@ export function WorkspaceCreatePage() {
                 )}
               </div>
               <div className="flex-1">
-                <h3 className="font-medium text-foreground mb-1">
-                  Workspace Logo
-                </h3>
+                <h3 className="font-medium text-foreground mb-1">Workspace Logo</h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
                   Upload a logo for your workspace (JPEG, PNG, GIF, WebP - max 5MB)
                 </p>
@@ -269,7 +303,7 @@ export function WorkspaceCreatePage() {
         </form>
       </div>
     </AdminLayout>
-  )
+  );
 }
 
-export default WorkspaceCreatePage
+export default WorkspaceCreatePage;

@@ -19,28 +19,28 @@
  * =============================================================================
  */
 
-import { prisma } from '../lib/prisma'
-import type { AssignmentRole } from '@prisma/client'
+import { prisma } from '../lib/prisma';
+import type { AssignmentRole } from '@prisma/client';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface AssignGroupInput {
-  groupId: number
-  workspaceId?: number
-  projectId?: number
-  role: AssignmentRole
-  inheritToChildren?: boolean
-  createdById?: number
+  groupId: number;
+  workspaceId?: number;
+  projectId?: number;
+  role: AssignmentRole;
+  inheritToChildren?: boolean;
+  createdById?: number;
 }
 
 export interface EffectiveRole {
-  role: AssignmentRole | null
-  source: 'direct' | 'inherited' | 'none'
-  sourceGroupId?: number
-  sourceGroupName?: string
-  inheritedFromWorkspaceId?: number
+  role: AssignmentRole | null;
+  source: 'direct' | 'inherited' | 'none';
+  sourceGroupId?: number;
+  sourceGroupName?: string;
+  inheritedFromWorkspaceId?: number;
 }
 
 // Role hierarchy for comparison (higher = more permissions)
@@ -50,7 +50,7 @@ const ROLE_HIERARCHY: Record<AssignmentRole, number> = {
   MANAGER: 3,
   ADMIN: 4,
   OWNER: 5,
-}
+};
 
 // =============================================================================
 // Service Functions
@@ -61,25 +61,27 @@ const ROLE_HIERARCHY: Record<AssignmentRole, number> = {
  * Only works for groups with isSecurityGroup = true.
  */
 export async function assignGroupToScope(input: AssignGroupInput) {
-  const { groupId, workspaceId, projectId, role, inheritToChildren = true, createdById } = input
+  const { groupId, workspaceId, projectId, role, inheritToChildren = true, createdById } = input;
 
   // Validate: exactly one of workspaceId or projectId must be set
   if ((!workspaceId && !projectId) || (workspaceId && projectId)) {
-    throw new Error('Exactly one of workspaceId or projectId must be provided')
+    throw new Error('Exactly one of workspaceId or projectId must be provided');
   }
 
   // Verify the group is a security group
   const group = await prisma.group.findUnique({
     where: { id: groupId },
     select: { id: true, isSecurityGroup: true, type: true },
-  })
+  });
 
   if (!group) {
-    throw new Error('Group not found')
+    throw new Error('Group not found');
   }
 
   if (!group.isSecurityGroup && group.type !== 'SYSTEM' && group.type !== 'CUSTOM') {
-    throw new Error('Only security groups, system groups, or custom groups can be assigned via role assignments')
+    throw new Error(
+      'Only security groups, system groups, or custom groups can be assigned via role assignments'
+    );
   }
 
   // Check if assignment already exists
@@ -89,7 +91,7 @@ export async function assignGroupToScope(input: AssignGroupInput) {
       workspaceId: workspaceId ?? null,
       projectId: projectId ?? null,
     },
-  })
+  });
 
   if (existing) {
     // Update existing assignment
@@ -99,7 +101,7 @@ export async function assignGroupToScope(input: AssignGroupInput) {
         role,
         inheritToChildren,
       },
-    })
+    });
   }
 
   // Create new assignment
@@ -112,7 +114,7 @@ export async function assignGroupToScope(input: AssignGroupInput) {
       inheritToChildren,
       createdById,
     },
-  })
+  });
 }
 
 /**
@@ -121,7 +123,7 @@ export async function assignGroupToScope(input: AssignGroupInput) {
 export async function removeAssignment(assignmentId: number) {
   return prisma.roleAssignment.delete({
     where: { id: assignmentId },
-  })
+  });
 }
 
 /**
@@ -139,15 +141,15 @@ export async function removeAssignmentByScope(
       workspaceId: workspaceId ?? null,
       projectId: projectId ?? null,
     },
-  })
+  });
 
   if (!existing) {
-    throw new Error('Role assignment not found')
+    throw new Error('Role assignment not found');
   }
 
   return prisma.roleAssignment.delete({
     where: { id: existing.id },
-  })
+  });
 }
 
 /**
@@ -171,7 +173,7 @@ export async function getWorkspaceAssignments(workspaceId: number) {
       },
     },
     orderBy: { createdAt: 'desc' },
-  })
+  });
 }
 
 /**
@@ -195,7 +197,7 @@ export async function getProjectAssignments(projectId: number) {
       },
     },
     orderBy: { createdAt: 'desc' },
-  })
+  });
 }
 
 /**
@@ -206,10 +208,10 @@ export async function getProjectAssignmentsWithInherited(projectId: number) {
   const project = await prisma.project.findUnique({
     where: { id: projectId },
     select: { workspaceId: true },
-  })
+  });
 
   if (!project) {
-    throw new Error('Project not found')
+    throw new Error('Project not found');
   }
 
   // Get direct project assignments
@@ -226,7 +228,7 @@ export async function getProjectAssignmentsWithInherited(projectId: number) {
         },
       },
     },
-  })
+  });
 
   // Get inherited workspace assignments (where inheritToChildren = true)
   const inheritedAssignments = await prisma.roleAssignment.findMany({
@@ -245,7 +247,7 @@ export async function getProjectAssignmentsWithInherited(projectId: number) {
         },
       },
     },
-  })
+  });
 
   return {
     direct: directAssignments,
@@ -254,7 +256,7 @@ export async function getProjectAssignmentsWithInherited(projectId: number) {
       _inherited: true,
       _sourceWorkspaceId: project.workspaceId,
     })),
-  }
+  };
 }
 
 /**
@@ -286,7 +288,7 @@ export async function getGroupAssignments(groupId: number) {
       },
     },
     orderBy: { createdAt: 'desc' },
-  })
+  });
 }
 
 /**
@@ -301,10 +303,7 @@ export async function getUserWorkspaceRoleViaGroups(
   const userGroups = await prisma.groupMember.findMany({
     where: {
       userId,
-      OR: [
-        { expiresAt: null },
-        { expiresAt: { gt: new Date() } },
-      ],
+      OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
     },
     select: {
       group: {
@@ -324,18 +323,18 @@ export async function getUserWorkspaceRoleViaGroups(
         },
       },
     },
-  })
+  });
 
   // Find the highest role among all groups
-  let highestRole: AssignmentRole | null = null
-  let sourceGroup: { id: number; name: string } | null = null
+  let highestRole: AssignmentRole | null = null;
+  let sourceGroup: { id: number; name: string } | null = null;
 
   for (const membership of userGroups) {
-    const group = membership.group
+    const group = membership.group;
     for (const assignment of group.roleAssignments) {
       if (!highestRole || ROLE_HIERARCHY[assignment.role] > ROLE_HIERARCHY[highestRole]) {
-        highestRole = assignment.role
-        sourceGroup = { id: group.id, name: group.displayName }
+        highestRole = assignment.role;
+        sourceGroup = { id: group.id, name: group.displayName };
       }
     }
   }
@@ -346,10 +345,10 @@ export async function getUserWorkspaceRoleViaGroups(
       source: 'direct',
       sourceGroupId: sourceGroup.id,
       sourceGroupName: sourceGroup.name,
-    }
+    };
   }
 
-  return { role: null, source: 'none' }
+  return { role: null, source: 'none' };
 }
 
 /**
@@ -364,20 +363,17 @@ export async function getUserProjectRoleViaGroups(
   const project = await prisma.project.findUnique({
     where: { id: projectId },
     select: { workspaceId: true },
-  })
+  });
 
   if (!project) {
-    return { role: null, source: 'none' }
+    return { role: null, source: 'none' };
   }
 
   // Get all groups the user is a member of
   const userGroups = await prisma.groupMember.findMany({
     where: {
       userId,
-      OR: [
-        { expiresAt: null },
-        { expiresAt: { gt: new Date() } },
-      ],
+      OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
     },
     select: {
       group: {
@@ -387,10 +383,7 @@ export async function getUserProjectRoleViaGroups(
           displayName: true,
           roleAssignments: {
             where: {
-              OR: [
-                { projectId },
-                { workspaceId: project.workspaceId, inheritToChildren: true },
-              ],
+              OR: [{ projectId }, { workspaceId: project.workspaceId, inheritToChildren: true }],
             },
             select: {
               role: true,
@@ -402,30 +395,36 @@ export async function getUserProjectRoleViaGroups(
         },
       },
     },
-  })
+  });
 
   // Find the highest role, preferring direct project assignments
-  let highestDirectRole: AssignmentRole | null = null
-  let highestInheritedRole: AssignmentRole | null = null
-  let directSourceGroup: { id: number; name: string } | null = null
-  let inheritedSourceGroup: { id: number; name: string } | null = null
-  let inheritedFromWorkspaceId: number | undefined
+  let highestDirectRole: AssignmentRole | null = null;
+  let highestInheritedRole: AssignmentRole | null = null;
+  let directSourceGroup: { id: number; name: string } | null = null;
+  let inheritedSourceGroup: { id: number; name: string } | null = null;
+  let inheritedFromWorkspaceId: number | undefined;
 
   for (const membership of userGroups) {
-    const group = membership.group
+    const group = membership.group;
     for (const assignment of group.roleAssignments) {
       if (assignment.projectId === projectId) {
         // Direct project assignment
-        if (!highestDirectRole || ROLE_HIERARCHY[assignment.role] > ROLE_HIERARCHY[highestDirectRole]) {
-          highestDirectRole = assignment.role
-          directSourceGroup = { id: group.id, name: group.displayName }
+        if (
+          !highestDirectRole ||
+          ROLE_HIERARCHY[assignment.role] > ROLE_HIERARCHY[highestDirectRole]
+        ) {
+          highestDirectRole = assignment.role;
+          directSourceGroup = { id: group.id, name: group.displayName };
         }
       } else if (assignment.workspaceId && assignment.inheritToChildren) {
         // Inherited from workspace
-        if (!highestInheritedRole || ROLE_HIERARCHY[assignment.role] > ROLE_HIERARCHY[highestInheritedRole]) {
-          highestInheritedRole = assignment.role
-          inheritedSourceGroup = { id: group.id, name: group.displayName }
-          inheritedFromWorkspaceId = assignment.workspaceId
+        if (
+          !highestInheritedRole ||
+          ROLE_HIERARCHY[assignment.role] > ROLE_HIERARCHY[highestInheritedRole]
+        ) {
+          highestInheritedRole = assignment.role;
+          inheritedSourceGroup = { id: group.id, name: group.displayName };
+          inheritedFromWorkspaceId = assignment.workspaceId;
         }
       }
     }
@@ -433,13 +432,16 @@ export async function getUserProjectRoleViaGroups(
 
   // Direct assignment takes precedence, unless inherited is higher
   if (highestDirectRole && directSourceGroup) {
-    if (!highestInheritedRole || ROLE_HIERARCHY[highestDirectRole] >= ROLE_HIERARCHY[highestInheritedRole]) {
+    if (
+      !highestInheritedRole ||
+      ROLE_HIERARCHY[highestDirectRole] >= ROLE_HIERARCHY[highestInheritedRole]
+    ) {
       return {
         role: highestDirectRole,
         source: 'direct',
         sourceGroupId: directSourceGroup.id,
         sourceGroupName: directSourceGroup.name,
-      }
+      };
     }
   }
 
@@ -450,18 +452,18 @@ export async function getUserProjectRoleViaGroups(
       sourceGroupId: inheritedSourceGroup.id,
       sourceGroupName: inheritedSourceGroup.name,
       inheritedFromWorkspaceId,
-    }
+    };
   }
 
-  return { role: null, source: 'none' }
+  return { role: null, source: 'none' };
 }
 
 /**
  * Check if a role is at least a certain level.
  */
 export function roleIsAtLeast(role: AssignmentRole | null, minRole: AssignmentRole): boolean {
-  if (!role) return false
-  return ROLE_HIERARCHY[role] >= ROLE_HIERARCHY[minRole]
+  if (!role) return false;
+  return ROLE_HIERARCHY[role] >= ROLE_HIERARCHY[minRole];
 }
 
 /**
@@ -471,9 +473,9 @@ export function getHigherRole(
   role1: AssignmentRole | null,
   role2: AssignmentRole | null
 ): AssignmentRole | null {
-  if (!role1) return role2
-  if (!role2) return role1
-  return ROLE_HIERARCHY[role1] >= ROLE_HIERARCHY[role2] ? role1 : role2
+  if (!role1) return role2;
+  if (!role2) return role1;
+  return ROLE_HIERARCHY[role1] >= ROLE_HIERARCHY[role2] ? role1 : role2;
 }
 
 /**
@@ -484,10 +486,7 @@ export async function getUserWorkspacesViaGroups(userId: number) {
   const userGroups = await prisma.groupMember.findMany({
     where: {
       userId,
-      OR: [
-        { expiresAt: null },
-        { expiresAt: { gt: new Date() } },
-      ],
+      OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
     },
     select: {
       group: {
@@ -512,20 +511,26 @@ export async function getUserWorkspacesViaGroups(userId: number) {
         },
       },
     },
-  })
+  });
 
   // Aggregate workspaces with highest role
-  const workspaceMap = new Map<number, { workspace: NonNullable<typeof userGroups[0]['group']['roleAssignments'][0]['workspace']>; role: AssignmentRole }>()
+  const workspaceMap = new Map<
+    number,
+    {
+      workspace: NonNullable<(typeof userGroups)[0]['group']['roleAssignments'][0]['workspace']>;
+      role: AssignmentRole;
+    }
+  >();
 
   for (const membership of userGroups) {
     for (const assignment of membership.group.roleAssignments) {
       if (assignment.workspace && assignment.workspaceId) {
-        const existing = workspaceMap.get(assignment.workspaceId)
+        const existing = workspaceMap.get(assignment.workspaceId);
         if (!existing || ROLE_HIERARCHY[assignment.role] > ROLE_HIERARCHY[existing.role]) {
           workspaceMap.set(assignment.workspaceId, {
             workspace: assignment.workspace,
             role: assignment.role,
-          })
+          });
         }
       }
     }
@@ -536,5 +541,5 @@ export async function getUserWorkspacesViaGroups(userId: number) {
     .map((w) => ({
       ...w.workspace,
       roleViaGroup: w.role,
-    }))
+    }));
 }

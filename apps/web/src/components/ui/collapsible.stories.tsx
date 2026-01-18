@@ -10,15 +10,11 @@
  * ===================================================================
  */
 
-import type { Meta, StoryObj } from '@storybook/react-vite'
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from './collapsible'
-import { Button } from './button'
-import { ChevronDown, ChevronRight } from 'lucide-react'
-import { useState } from 'react'
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './collapsible';
+import { Button } from './button';
+import { ChevronDown, ChevronRight } from 'lucide-react';
+import { useState } from 'react';
 
 const meta: Meta<typeof Collapsible> = {
   title: 'UI/Collapsible',
@@ -32,10 +28,10 @@ const meta: Meta<typeof Collapsible> = {
       },
     },
   },
-}
+};
 
-export default meta
-type Story = StoryObj<typeof Collapsible>
+export default meta;
+type Story = StoryObj<typeof Collapsible>;
 
 // =============================================================================
 // Basic Variants
@@ -43,14 +39,12 @@ type Story = StoryObj<typeof Collapsible>
 
 export const Default: Story = {
   render: () => {
-    const [isOpen, setIsOpen] = useState(false)
+    const [isOpen, setIsOpen] = useState(false);
 
     return (
       <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-[350px]">
         <div className="flex items-center justify-between space-x-4">
-          <h4 className="text-sm font-semibold">
-            @peduarte starred 3 repositories
-          </h4>
+          <h4 className="text-sm font-semibold">@peduarte starred 3 repositories</h4>
           <CollapsibleTrigger asChild>
             <Button variant="ghost" size="sm">
               <ChevronDown
@@ -60,23 +54,19 @@ export const Default: Story = {
             </Button>
           </CollapsibleTrigger>
         </div>
-        <div className="rounded-md border px-4 py-2 text-sm">
-          @radix-ui/primitives
-        </div>
+        <div className="rounded-md border px-4 py-2 text-sm">@radix-ui/primitives</div>
         <CollapsibleContent className="space-y-2 mt-2">
-          <div className="rounded-md border px-4 py-2 text-sm">
-            @radix-ui/colors
-          </div>
+          <div className="rounded-md border px-4 py-2 text-sm">@radix-ui/colors</div>
           <div className="rounded-md border px-4 py-2 text-sm">@stitches/react</div>
         </CollapsibleContent>
       </Collapsible>
-    )
+    );
   },
-}
+};
 
 export const WithButton: Story = {
   render: () => {
-    const [isOpen, setIsOpen] = useState(false)
+    const [isOpen, setIsOpen] = useState(false);
 
     return (
       <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-[350px] space-y-2">
@@ -91,12 +81,13 @@ export const WithButton: Story = {
         <CollapsibleContent className="space-y-2">
           <div className="rounded-md border p-4 text-sm">
             <p className="text-muted-foreground">
-              Yes! This project is MIT licensed. You are free to use it in your own projects, both commercial and non-commercial.
+              Yes! This project is MIT licensed. You are free to use it in your own projects, both
+              commercial and non-commercial.
             </p>
           </div>
         </CollapsibleContent>
       </Collapsible>
-    )
+    );
   },
   parameters: {
     docs: {
@@ -105,7 +96,7 @@ export const WithButton: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Icon Rotation
@@ -113,7 +104,7 @@ export const WithButton: Story = {
 
 export const WithIconRotation: Story = {
   render: () => {
-    const [isOpen, setIsOpen] = useState(false)
+    const [isOpen, setIsOpen] = useState(false);
 
     return (
       <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-[400px]">
@@ -139,7 +130,7 @@ export const WithIconRotation: Story = {
           </div>
         </CollapsibleContent>
       </Collapsible>
-    )
+    );
   },
   parameters: {
     docs: {
@@ -148,7 +139,7 @@ export const WithIconRotation: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // FAQ Style
@@ -156,23 +147,19 @@ export const WithIconRotation: Story = {
 
 export const FAQItem: Story = {
   render: () => {
-    const [isOpen, setIsOpen] = useState(false)
+    const [isOpen, setIsOpen] = useState(false);
 
     return (
       <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-[500px]">
         <CollapsibleTrigger className="flex w-full items-center justify-between rounded-lg border p-4 hover:bg-accent">
-          <span className="font-medium text-left">
-            How do I get started with the platform?
-          </span>
+          <span className="font-medium text-left">How do I get started with the platform?</span>
           <ChevronRight
             className={`h-4 w-4 shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`}
           />
         </CollapsibleTrigger>
         <CollapsibleContent className="px-4 pb-4 pt-2">
           <div className="text-sm text-muted-foreground">
-            <p>
-              Getting started is easy! Follow these steps:
-            </p>
+            <p>Getting started is easy! Follow these steps:</p>
             <ol className="list-decimal list-inside mt-2 space-y-1">
               <li>Create an account</li>
               <li>Complete your profile</li>
@@ -182,7 +169,7 @@ export const FAQItem: Story = {
           </div>
         </CollapsibleContent>
       </Collapsible>
-    )
+    );
   },
   parameters: {
     docs: {
@@ -191,7 +178,7 @@ export const FAQItem: Story = {
       },
     },
   },
-}
+};
 
 export const MultipleFAQs: Story = {
   render: () => (
@@ -207,7 +194,8 @@ export const MultipleFAQs: Story = {
         },
         {
           question: 'How do I cancel my subscription?',
-          answer: 'You can cancel your subscription from the billing section in your account settings.',
+          answer:
+            'You can cancel your subscription from the billing section in your account settings.',
         },
       ].map((faq, index) => (
         <Collapsible key={index}>
@@ -229,7 +217,7 @@ export const MultipleFAQs: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Nested Collapsibles
@@ -282,7 +270,7 @@ export const Nested: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Real-World Examples
@@ -358,7 +346,7 @@ export const SettingsPanel: Story = {
       },
     },
   },
-}
+};
 
 export const FilterPanel: Story = {
   render: () => (
@@ -440,4 +428,4 @@ export const FilterPanel: Story = {
       },
     },
   },
-}
+};

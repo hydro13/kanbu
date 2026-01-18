@@ -72,13 +72,13 @@ The connector is built with a **two-tier structure**: Admin (Workspace) level an
 
 ### Why Two Levels?
 
-| Aspect | Admin Level | Project Level |
-|--------|-------------|----------------|
-| **Scope** | Entire workspace | Single project only |
-| **GitHub App Install** | Once per org/user | Select repo from installation |
-| **User Mapping** | Centrally managed | Automatically used during sync |
-| **Permissions** | Workspace P | Project P |
-| **Who** | Workspace Admins | Project Managers |
+| Aspect                 | Admin Level       | Project Level                  |
+| ---------------------- | ----------------- | ------------------------------ |
+| **Scope**              | Entire workspace  | Single project only            |
+| **GitHub App Install** | Once per org/user | Select repo from installation  |
+| **User Mapping**       | Centrally managed | Automatically used during sync |
+| **Permissions**        | Workspace P       | Project P                      |
+| **Who**                | Workspace Admins  | Project Managers               |
 
 ---
 
@@ -86,13 +86,13 @@ The connector is built with a **two-tier structure**: Admin (Workspace) level an
 
 We use a **GitHub App** (not an OAuth App) for the following reasons:
 
-| Aspect | GitHub App | OAuth App |
-|--------|------------|-----------|
-| Permissions | Fine-grained, per-resource | Broad, user-level |
-| Rate limits | 5000/hour (higher) | 5000/hour (shared with user) |
-| Installation | Org/user install once | Per-user auth |
-| Webhooks | App-level, automatic | Manual per-repo |
-| Token lifetime | 1 hour (renewable) | Long-lived |
+| Aspect         | GitHub App                 | OAuth App                    |
+| -------------- | -------------------------- | ---------------------------- |
+| Permissions    | Fine-grained, per-resource | Broad, user-level            |
+| Rate limits    | 5000/hour (higher)         | 5000/hour (shared with user) |
+| Installation   | Org/user install once      | Per-user auth                |
+| Webhooks       | App-level, automatic       | Manual per-repo              |
+| Token lifetime | 1 hour (renewable)         | Long-lived                   |
 
 ### GitHub App Configuration
 
@@ -166,39 +166,39 @@ Installation access tokens expire after 1 hour. Refresh flow:
 ```typescript
 async function getInstallationToken(installationId: number): Promise<string> {
   const installation = await db.gitHubInstallation.findUnique({
-    where: { installationId }
-  })
+    where: { installationId },
+  });
 
   // Check if token is still valid (with 5 min buffer)
   if (installation.tokenExpiresAt > new Date(Date.now() + 5 * 60 * 1000)) {
-    return decrypt(installation.accessToken)
+    return decrypt(installation.accessToken);
   }
 
   // Generate new token using App JWT
-  const jwt = generateAppJWT()
+  const jwt = generateAppJWT();
   const response = await fetch(
     `https://api.github.com/app/installations/${installationId}/access_tokens`,
     {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${jwt}`,
-        Accept: 'application/vnd.github+json'
-      }
+        Accept: 'application/vnd.github+json',
+      },
     }
-  )
+  );
 
-  const { token, expires_at } = await response.json()
+  const { token, expires_at } = await response.json();
 
   // Store encrypted token
   await db.gitHubInstallation.update({
     where: { installationId },
     data: {
       accessToken: encrypt(token),
-      tokenExpiresAt: new Date(expires_at)
-    }
-  })
+      tokenExpiresAt: new Date(expires_at),
+    },
+  });
 
-  return token
+  return token;
 }
 ```
 
@@ -211,57 +211,47 @@ async function getInstallationToken(installationId: number): Promise<string> {
 ```typescript
 // apps/api/src/routes/webhooks/github.ts
 
-import crypto from 'crypto'
+import crypto from 'crypto';
 
-function verifyWebhookSignature(
-  payload: string,
-  signature: string,
-  secret: string
-): boolean {
-  const expected = `sha256=${crypto
-    .createHmac('sha256', secret)
-    .update(payload)
-    .digest('hex')}`
+function verifyWebhookSignature(payload: string, signature: string, secret: string): boolean {
+  const expected = `sha256=${crypto.createHmac('sha256', secret).update(payload).digest('hex')}`;
 
-  return crypto.timingSafeEqual(
-    Buffer.from(signature),
-    Buffer.from(expected)
-  )
+  return crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
 }
 
 app.post('/api/webhooks/github', async (req, reply) => {
-  const signature = req.headers['x-hub-signature-256'] as string
-  const event = req.headers['x-github-event'] as string
-  const deliveryId = req.headers['x-github-delivery'] as string
+  const signature = req.headers['x-hub-signature-256'] as string;
+  const event = req.headers['x-github-event'] as string;
+  const deliveryId = req.headers['x-github-delivery'] as string;
 
   // Get repository from payload
-  const { repository } = req.body
+  const { repository } = req.body;
   const repo = await db.gitHubRepository.findUnique({
-    where: { fullName: repository.full_name }
-  })
+    where: { fullName: repository.full_name },
+  });
 
   if (!repo) {
-    return reply.code(404).send({ error: 'Repository not configured' })
+    return reply.code(404).send({ error: 'Repository not configured' });
   }
 
   // Verify signature
   if (!verifyWebhookSignature(req.rawBody, signature, repo.webhookSecret)) {
-    return reply.code(401).send({ error: 'Invalid signature' })
+    return reply.code(401).send({ error: 'Invalid signature' });
   }
 
   // Check idempotency
   const existing = await db.gitHubSyncLog.findFirst({
-    where: { details: { path: ['delivery_id'], equals: deliveryId } }
-  })
+    where: { details: { path: ['delivery_id'], equals: deliveryId } },
+  });
   if (existing) {
-    return reply.code(200).send({ status: 'already_processed' })
+    return reply.code(200).send({ status: 'already_processed' });
   }
 
   // Route to handler
-  await routeWebhookEvent(event, req.body, repo)
+  await routeWebhookEvent(event, req.body, repo);
 
-  return reply.code(200).send({ status: 'ok' })
-})
+  return reply.code(200).send({ status: 'ok' });
+});
 ```
 
 ### 3.2 Event Routing
@@ -269,7 +259,7 @@ app.post('/api/webhooks/github', async (req, reply) => {
 ```typescript
 // apps/api/src/services/github/webhookRouter.ts
 
-type WebhookHandler = (payload: any, repo: GitHubRepository) => Promise<void>
+type WebhookHandler = (payload: any, repo: GitHubRepository) => Promise<void>;
 
 const handlers: Record<string, Record<string, WebhookHandler>> = {
   issues: {
@@ -288,22 +278,22 @@ const handlers: Record<string, Record<string, WebhookHandler>> = {
   push: {
     default: handlePush,
   },
-}
+};
 
 async function routeWebhookEvent(
   event: string,
   payload: any,
   repo: GitHubRepository
 ): Promise<void> {
-  const action = payload.action || 'default'
-  const handler = handlers[event]?.[action]
+  const action = payload.action || 'default';
+  const handler = handlers[event]?.[action];
 
   if (!handler) {
-    console.log(`No handler for ${event}.${action}`)
-    return
+    console.log(`No handler for ${event}.${action}`);
+    return;
   }
 
-  await handler(payload, repo)
+  await handler(payload, repo);
 }
 ```
 
@@ -321,11 +311,11 @@ function computeIssueHash(issue: GitHubIssuePayload): string {
     title: issue.title,
     body: issue.body,
     state: issue.state,
-    labels: issue.labels.map(l => l.name).sort(),
-    assignees: issue.assignees.map(a => a.login).sort(),
+    labels: issue.labels.map((l) => l.name).sort(),
+    assignees: issue.assignees.map((a) => a.login).sort(),
     milestone: issue.milestone?.title || null,
-  }
-  return crypto.createHash('sha256').update(JSON.stringify(data)).digest('hex')
+  };
+  return crypto.createHash('sha256').update(JSON.stringify(data)).digest('hex');
 }
 
 function computeTaskHash(task: Task): string {
@@ -333,11 +323,11 @@ function computeTaskHash(task: Task): string {
     title: task.title,
     body: task.description,
     state: task.columnId, // Map column to state
-    labels: task.tags.map(t => t.name).sort(),
-    assignees: task.assignees.map(a => a.email).sort(),
+    labels: task.tags.map((t) => t.name).sort(),
+    assignees: task.assignees.map((a) => a.email).sort(),
     milestone: task.milestone?.name || null,
-  }
-  return crypto.createHash('sha256').update(JSON.stringify(data)).digest('hex')
+  };
+  return crypto.createHash('sha256').update(JSON.stringify(data)).digest('hex');
 }
 ```
 
@@ -346,7 +336,7 @@ function computeTaskHash(task: Task): string {
 With bidirectional sync, conflicts can occur:
 
 ```typescript
-type SyncDirection = 'github_to_kanbu' | 'kanbu_to_github' | 'skip'
+type SyncDirection = 'github_to_kanbu' | 'kanbu_to_github' | 'skip';
 
 function resolveConflict(
   githubIssue: GitHubIssue,
@@ -354,25 +344,23 @@ function resolveConflict(
   settings: SyncSettings
 ): SyncDirection {
   // If only one side changed, sync from that side
-  const githubChanged = githubIssue.updatedAt > githubIssue.lastSyncAt
-  const taskChanged = task.updatedAt > githubIssue.lastSyncAt
+  const githubChanged = githubIssue.updatedAt > githubIssue.lastSyncAt;
+  const taskChanged = task.updatedAt > githubIssue.lastSyncAt;
 
-  if (githubChanged && !taskChanged) return 'github_to_kanbu'
-  if (taskChanged && !githubChanged) return 'kanbu_to_github'
+  if (githubChanged && !taskChanged) return 'github_to_kanbu';
+  if (taskChanged && !githubChanged) return 'kanbu_to_github';
 
   // Both changed - use configured strategy
   switch (settings.issueSync.conflictStrategy) {
     case 'github_wins':
-      return 'github_to_kanbu'
+      return 'github_to_kanbu';
     case 'kanbu_wins':
-      return 'kanbu_to_github'
+      return 'kanbu_to_github';
     case 'newest_wins':
-      return githubIssue.updatedAt > task.updatedAt
-        ? 'github_to_kanbu'
-        : 'kanbu_to_github'
+      return githubIssue.updatedAt > task.updatedAt ? 'github_to_kanbu' : 'kanbu_to_github';
     case 'skip':
     default:
-      return 'skip'
+      return 'skip';
   }
 }
 ```
@@ -389,16 +377,14 @@ const issueToTask: FieldMapping = {
       // Map state to column ID based on settings
       return state === 'open'
         ? repo.syncSettings.mapping.openColumnId
-        : repo.syncSettings.mapping.closedColumnId
-    }
+        : repo.syncSettings.mapping.closedColumnId;
+    },
   },
   labels: {
     transform: (labels: Label[], repo: GitHubRepository) => {
       // Map GitHub labels to Kanbu tags
-      return labels
-        .map(l => repo.syncSettings.labelMapping[l.name])
-        .filter(Boolean)
-    }
+      return labels.map((l) => repo.syncSettings.labelMapping[l.name]).filter(Boolean);
+    },
   },
   assignees: {
     transform: async (assignees: User[], projectId: number) => {
@@ -406,13 +392,13 @@ const issueToTask: FieldMapping = {
       const mappings = await db.gitHubUserMapping.findMany({
         where: {
           projectId,
-          githubLogin: { in: assignees.map(a => a.login) }
-        }
-      })
-      return mappings.map(m => m.userId)
-    }
-  }
-}
+          githubLogin: { in: assignees.map((a) => a.login) },
+        },
+      });
+      return mappings.map((m) => m.userId);
+    },
+  },
+};
 ```
 
 ---
@@ -428,31 +414,33 @@ The GitHub connector requires permission checks at **two levels**:
 ```typescript
 // apps/api/src/trpc/procedures/githubAdmin.ts
 
-import { checkWorkspacePermission } from '@/services/permissionService'
+import { checkWorkspacePermission } from '@/services/permissionService';
 
 export const githubAdminRouter = router({
   // List installations (requires Workspace R)
   listInstallations: protectedProcedure
     .input(z.object({ workspaceId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await checkWorkspacePermission(ctx.user.id, input.workspaceId, 'R')
+      await checkWorkspacePermission(ctx.user.id, input.workspaceId, 'R');
       return db.gitHubInstallation.findMany({
-        where: { workspaceId: input.workspaceId }
-      })
+        where: { workspaceId: input.workspaceId },
+      });
     }),
 
   // Create user mapping (requires Workspace P)
   createUserMapping: protectedProcedure
-    .input(z.object({
-      workspaceId: z.number(),
-      userId: z.number(),
-      githubLogin: z.string(),
-    }))
+    .input(
+      z.object({
+        workspaceId: z.number(),
+        userId: z.number(),
+        githubLogin: z.string(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
-      await checkWorkspacePermission(ctx.user.id, input.workspaceId, 'P')
+      await checkWorkspacePermission(ctx.user.id, input.workspaceId, 'P');
       // ... create mapping logic
     }),
-})
+});
 ```
 
 #### Project-Level Procedures
@@ -460,40 +448,42 @@ export const githubAdminRouter = router({
 ```typescript
 // apps/api/src/trpc/procedures/github.ts
 
-import { checkProjectPermission } from '@/services/permissionService'
+import { checkProjectPermission } from '@/services/permissionService';
 
 export const githubRouter = router({
   // View linked repository (requires Project R)
   getLinkedRepository: protectedProcedure
     .input(z.object({ projectId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await checkProjectPermission(ctx.user.id, input.projectId, 'R')
+      await checkProjectPermission(ctx.user.id, input.projectId, 'R');
       return db.gitHubRepository.findUnique({
-        where: { projectId: input.projectId }
-      })
+        where: { projectId: input.projectId },
+      });
     }),
 
   // Link repository (requires Project P)
   // Note: repository must come from a workspace installation
   linkRepository: protectedProcedure
-    .input(z.object({
-      projectId: z.number(),
-      installationId: z.number(),
-      repoId: z.number(),
-    }))
+    .input(
+      z.object({
+        projectId: z.number(),
+        installationId: z.number(),
+        repoId: z.number(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
-      await checkProjectPermission(ctx.user.id, input.projectId, 'P')
+      await checkProjectPermission(ctx.user.id, input.projectId, 'P');
 
       // Verify installation belongs to project's workspace
       const project = await db.project.findUnique({
         where: { id: input.projectId },
-        select: { workspaceId: true }
-      })
+        select: { workspaceId: true },
+      });
       const installation = await db.gitHubInstallation.findUnique({
-        where: { id: input.installationId }
-      })
+        where: { id: input.installationId },
+      });
       if (installation.workspaceId !== project.workspaceId) {
-        throw new TRPCError({ code: 'FORBIDDEN' })
+        throw new TRPCError({ code: 'FORBIDDEN' });
       }
 
       // ... link logic
@@ -503,11 +493,11 @@ export const githubRouter = router({
   triggerSync: protectedProcedure
     .input(z.object({ projectId: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      await checkProjectPermission(ctx.user.id, input.projectId, 'W')
+      await checkProjectPermission(ctx.user.id, input.projectId, 'W');
 
       // ... sync logic
     }),
-})
+});
 ```
 
 ### 5.2 Feature Visibility
@@ -525,12 +515,12 @@ export const PROJECT_FEATURES: FeatureDefinition[] = [
     defaultVisibility: {
       OWNER: true,
       MANAGER: true,
-      MEMBER: false,  // Members can't see GitHub settings by default
+      MEMBER: false, // Members can't see GitHub settings by default
       VIEWER: false,
     },
-    requiredPermission: 'R',  // Minimum to see in sidebar
+    requiredPermission: 'R', // Minimum to see in sidebar
   },
-]
+];
 ```
 
 ### 5.3 Audit Logging
@@ -547,7 +537,7 @@ export const GITHUB_AUDIT_ACTIONS = {
   ISSUE_EXPORTED: 'github:issue_exported',
   PR_LINKED: 'github:pr_linked',
   BRANCH_CREATED: 'github:branch_created',
-}
+};
 
 // Example usage
 await auditLog({
@@ -560,7 +550,7 @@ await auditLog({
     repository: `${owner}/${name}`,
     installationId,
   },
-})
+});
 ```
 
 ---
@@ -630,15 +620,15 @@ await auditLog({
 
 ### 6.2 Scope per Model
 
-| Model | Scope | Key Relations |
-|-------|-------|---------------|
+| Model                | Scope     | Key Relations                       |
+| -------------------- | --------- | ----------------------------------- |
 | `GitHubInstallation` | Workspace | Shared by all projects in workspace |
-| `GitHubUserMapping` | Workspace | Maps GitHub login → Kanbu user |
-| `GitHubRepository` | Project | 1:1 with Project |
-| `GitHubIssue` | Project | Links to Task |
-| `GitHubPullRequest` | Project | Links to Task |
-| `GitHubCommit` | Project | Links to Task |
-| `GitHubSyncLog` | Project | Audit trail for sync operations |
+| `GitHubUserMapping`  | Workspace | Maps GitHub login → Kanbu user      |
+| `GitHubRepository`   | Project   | 1:1 with Project                    |
+| `GitHubIssue`        | Project   | Links to Task                       |
+| `GitHubPullRequest`  | Project   | Links to Task                       |
+| `GitHubCommit`       | Project   | Links to Task                       |
+| `GitHubSyncLog`      | Project   | Audit trail for sync operations     |
 
 ### 6.3 Indexes
 
@@ -695,18 +685,18 @@ model GitHubSyncLog {
 
 ### 7.1 GitHub API Limits
 
-| Limit Type | Value | Scope |
-|------------|-------|-------|
-| Core API | 5000/hour | Per installation |
-| Search API | 30/min | Per installation |
-| GraphQL | 5000 points/hour | Per installation |
+| Limit Type | Value            | Scope            |
+| ---------- | ---------------- | ---------------- |
+| Core API   | 5000/hour        | Per installation |
+| Search API | 30/min           | Per installation |
+| GraphQL    | 5000 points/hour | Per installation |
 
 ### 7.2 Rate Limit Handling
 
 ```typescript
 // apps/api/src/lib/github.ts
 
-import Bottleneck from 'bottleneck'
+import Bottleneck from 'bottleneck';
 
 const limiter = new Bottleneck({
   reservoir: 5000,
@@ -714,7 +704,7 @@ const limiter = new Bottleneck({
   reservoirRefreshInterval: 60 * 60 * 1000, // 1 hour
   maxConcurrent: 10,
   minTime: 100, // 100ms between requests
-})
+});
 
 export async function githubRequest<T>(
   token: string,
@@ -730,25 +720,27 @@ export async function githubRequest<T>(
         'X-GitHub-Api-Version': '2022-11-28',
         ...options?.headers,
       },
-    })
+    });
 
     // Check rate limit headers
-    const remaining = parseInt(response.headers.get('x-ratelimit-remaining') || '0')
-    const reset = parseInt(response.headers.get('x-ratelimit-reset') || '0')
+    const remaining = parseInt(response.headers.get('x-ratelimit-remaining') || '0');
+    const reset = parseInt(response.headers.get('x-ratelimit-reset') || '0');
 
     if (remaining < 100) {
-      console.warn(`GitHub rate limit low: ${remaining} remaining, resets at ${new Date(reset * 1000)}`)
+      console.warn(
+        `GitHub rate limit low: ${remaining} remaining, resets at ${new Date(reset * 1000)}`
+      );
     }
 
     if (!response.ok) {
       if (response.status === 403 && remaining === 0) {
-        throw new RateLimitError(`Rate limit exceeded, resets at ${new Date(reset * 1000)}`)
+        throw new RateLimitError(`Rate limit exceeded, resets at ${new Date(reset * 1000)}`);
       }
-      throw new GitHubAPIError(response.status, await response.text())
+      throw new GitHubAPIError(response.status, await response.text());
     }
 
-    return response.json()
-  })
+    return response.json();
+  });
 }
 ```
 
@@ -762,27 +754,33 @@ export async function githubRequest<T>(
 // apps/api/src/services/github/errors.ts
 
 export class GitHubError extends Error {
-  constructor(message: string, public code: string) {
-    super(message)
-    this.name = 'GitHubError'
+  constructor(
+    message: string,
+    public code: string
+  ) {
+    super(message);
+    this.name = 'GitHubError';
   }
 }
 
 export class GitHubAPIError extends GitHubError {
-  constructor(public status: number, message: string) {
-    super(message, `GITHUB_API_${status}`)
+  constructor(
+    public status: number,
+    message: string
+  ) {
+    super(message, `GITHUB_API_${status}`);
   }
 }
 
 export class RateLimitError extends GitHubError {
   constructor(message: string) {
-    super(message, 'RATE_LIMIT_EXCEEDED')
+    super(message, 'RATE_LIMIT_EXCEEDED');
   }
 }
 
 export class WebhookValidationError extends GitHubError {
   constructor(message: string) {
-    super(message, 'WEBHOOK_VALIDATION_FAILED')
+    super(message, 'WEBHOOK_VALIDATION_FAILED');
   }
 }
 
@@ -792,7 +790,7 @@ export class SyncConflictError extends GitHubError {
     public issueNumber: number,
     message: string
   ) {
-    super(message, 'SYNC_CONFLICT')
+    super(message, 'SYNC_CONFLICT');
   }
 }
 ```
@@ -802,7 +800,7 @@ export class SyncConflictError extends GitHubError {
 ```typescript
 // apps/api/src/services/github/retry.ts
 
-import pRetry from 'p-retry'
+import pRetry from 'p-retry';
 
 export async function withRetry<T>(
   fn: () => Promise<T>,
@@ -814,14 +812,14 @@ export async function withRetry<T>(
       // Don't retry on 4xx errors (except 429)
       if (error instanceof GitHubAPIError) {
         if (error.status >= 400 && error.status < 500 && error.status !== 429) {
-          throw error
+          throw error;
         }
       }
-      options?.onRetry?.(error)
+      options?.onRetry?.(error);
     },
     minTimeout: 1000,
     maxTimeout: 30000,
-  })
+  });
 }
 ```
 
@@ -860,19 +858,19 @@ const githubSyncDuration = new Histogram({
   name: 'kanbu_github_sync_duration_seconds',
   help: 'Duration of GitHub sync operations',
   labelNames: ['direction', 'entity_type', 'status'],
-})
+});
 
 const githubWebhookCounter = new Counter({
   name: 'kanbu_github_webhooks_total',
   help: 'Total GitHub webhooks received',
   labelNames: ['event', 'action', 'status'],
-})
+});
 
 const githubAPIRequests = new Counter({
   name: 'kanbu_github_api_requests_total',
   help: 'Total GitHub API requests',
   labelNames: ['method', 'endpoint', 'status'],
-})
+});
 ```
 
 ### 10.2 Logging
@@ -886,17 +884,17 @@ logger.info('GitHub sync completed', {
   issuesUpdated: 3,
   issuesSkipped: 2,
   duration: 1234,
-})
+});
 ```
 
 ---
 
 ## Changelog
 
-| Date | Change |
-|------|--------|
-| 2026-01-09 | Added two-tier architecture (Admin + Project level) |
-| 2026-01-09 | Added GitHubUserMapping model to ERD |
+| Date       | Change                                               |
+| ---------- | ---------------------------------------------------- |
+| 2026-01-09 | Added two-tier architecture (Admin + Project level)  |
+| 2026-01-09 | Added GitHubUserMapping model to ERD                 |
 | 2026-01-09 | Split permission checks into Admin and Project level |
-| 2026-01-09 | Added Scope per Model table |
-| 2026-01-09 | Initial architecture document |
+| 2026-01-09 | Added Scope per Model table                          |
+| 2026-01-09 | Initial architecture document                        |

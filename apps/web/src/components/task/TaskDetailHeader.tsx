@@ -14,31 +14,31 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState, useCallback, useRef, useEffect } from 'react'
-import { Check, X, Archive, RotateCcw } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { Check, X, Archive, RotateCcw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface Task {
-  id: number
-  title: string
-  reference: string | null
-  priority: number
-  isActive: boolean
+  id: number;
+  title: string;
+  reference: string | null;
+  priority: number;
+  isActive: boolean;
 }
 
 export interface TaskDetailHeaderProps {
-  task: Task
-  onTitleUpdate: (title: string) => Promise<void>
-  onPriorityUpdate: (priority: number) => Promise<void>
-  onClose: () => Promise<void>
-  onReopen: () => Promise<void>
-  isUpdating: boolean
+  task: Task;
+  onTitleUpdate: (title: string) => Promise<void>;
+  onPriorityUpdate: (priority: number) => Promise<void>;
+  onClose: () => Promise<void>;
+  onReopen: () => Promise<void>;
+  isUpdating: boolean;
   /** Auto-focus title field when modal opens (for new tasks) */
-  autoFocusTitle?: boolean
+  autoFocusTitle?: boolean;
 }
 
 // =============================================================================
@@ -46,11 +46,23 @@ export interface TaskDetailHeaderProps {
 // =============================================================================
 
 const PRIORITY_OPTIONS = [
-  { value: 0, label: 'Low', color: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300' },
-  { value: 1, label: 'Normal', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' },
-  { value: 2, label: 'High', color: 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300' },
+  {
+    value: 0,
+    label: 'Low',
+    color: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
+  },
+  {
+    value: 1,
+    label: 'Normal',
+    color: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
+  },
+  {
+    value: 2,
+    label: 'High',
+    color: 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300',
+  },
   { value: 3, label: 'Urgent', color: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300' },
-]
+];
 
 // =============================================================================
 // Component
@@ -65,61 +77,62 @@ export function TaskDetailHeader({
   isUpdating,
   autoFocusTitle = false,
 }: TaskDetailHeaderProps) {
-  const [isEditingTitle, setIsEditingTitle] = useState(false)
-  const [editedTitle, setEditedTitle] = useState(task.title)
-  const [showPriorityDropdown, setShowPriorityDropdown] = useState(false)
-  const titleInputRef = useRef<HTMLInputElement>(null)
-  const hasAutoFocused = useRef(false)
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editedTitle, setEditedTitle] = useState(task.title);
+  const [showPriorityDropdown, setShowPriorityDropdown] = useState(false);
+  const titleInputRef = useRef<HTMLInputElement>(null);
+  const hasAutoFocused = useRef(false);
 
   // Auto-focus title when autoFocusTitle is true (for new tasks)
   useEffect(() => {
     if (autoFocusTitle && !hasAutoFocused.current) {
-      hasAutoFocused.current = true
-      setIsEditingTitle(true)
+      hasAutoFocused.current = true;
+      setIsEditingTitle(true);
     }
-  }, [autoFocusTitle])
+  }, [autoFocusTitle]);
 
   // Focus input when editing starts
   useEffect(() => {
     if (isEditingTitle && titleInputRef.current) {
-      titleInputRef.current.focus()
-      titleInputRef.current.select()
+      titleInputRef.current.focus();
+      titleInputRef.current.select();
     }
-  }, [isEditingTitle])
+  }, [isEditingTitle]);
 
   // Reset edited title when task changes
   useEffect(() => {
-    setEditedTitle(task.title)
-  }, [task.title])
+    setEditedTitle(task.title);
+  }, [task.title]);
 
   const handleTitleSubmit = useCallback(async () => {
     if (editedTitle.trim() && editedTitle !== task.title) {
-      await onTitleUpdate(editedTitle)
+      await onTitleUpdate(editedTitle);
     }
-    setIsEditingTitle(false)
-  }, [editedTitle, task.title, onTitleUpdate])
+    setIsEditingTitle(false);
+  }, [editedTitle, task.title, onTitleUpdate]);
 
   const handleTitleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === 'Enter') {
-        handleTitleSubmit()
+        handleTitleSubmit();
       } else if (e.key === 'Escape') {
-        setEditedTitle(task.title)
-        setIsEditingTitle(false)
+        setEditedTitle(task.title);
+        setIsEditingTitle(false);
       }
     },
     [handleTitleSubmit, task.title]
-  )
+  );
 
   const handlePrioritySelect = useCallback(
     async (priority: number) => {
-      await onPriorityUpdate(priority)
-      setShowPriorityDropdown(false)
+      await onPriorityUpdate(priority);
+      setShowPriorityDropdown(false);
     },
     [onPriorityUpdate]
-  )
+  );
 
-  const currentPriority = PRIORITY_OPTIONS.find((p) => p.value === task.priority) ?? PRIORITY_OPTIONS[0]
+  const currentPriority =
+    PRIORITY_OPTIONS.find((p) => p.value === task.priority) ?? PRIORITY_OPTIONS[0];
 
   return (
     <div className="space-y-3">
@@ -151,20 +164,15 @@ export function TaskDetailHeader({
               className="flex-1 text-xl font-semibold bg-transparent border-b-2 border-blue-500 focus:outline-none text-foreground"
               disabled={isUpdating}
             />
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={handleTitleSubmit}
-              disabled={isUpdating}
-            >
+            <Button size="sm" variant="ghost" onClick={handleTitleSubmit} disabled={isUpdating}>
               <Check className="h-4 w-4" />
             </Button>
             <Button
               size="sm"
               variant="ghost"
               onClick={() => {
-                setEditedTitle(task.title)
-                setIsEditingTitle(false)
+                setEditedTitle(task.title);
+                setIsEditingTitle(false);
               }}
             >
               <X className="h-4 w-4" />
@@ -214,7 +222,9 @@ export function TaskDetailHeader({
                     option.value === task.priority ? 'bg-gray-50 dark:bg-gray-750' : ''
                   }`}
                 >
-                  <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${option.color}`}>
+                  <span
+                    className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${option.color}`}
+                  >
                     {option.label}
                   </span>
                 </button>
@@ -251,7 +261,7 @@ export function TaskDetailHeader({
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default TaskDetailHeader
+export default TaskDetailHeader;

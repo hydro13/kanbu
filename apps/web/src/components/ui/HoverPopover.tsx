@@ -15,36 +15,36 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState, useRef, useCallback, useEffect, type ReactNode } from 'react'
-import { createPortal } from 'react-dom'
+import { useState, useRef, useCallback, useEffect, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 
 // =============================================================================
 // Types
 // =============================================================================
 
-type PopoverPosition = 'top' | 'bottom' | 'left' | 'right' | 'auto'
+type PopoverPosition = 'top' | 'bottom' | 'left' | 'right' | 'auto';
 
 interface HoverPopoverProps {
   /** The trigger element that shows popover on hover */
-  children: ReactNode
+  children: ReactNode;
   /** The content to show in the popover */
-  content: ReactNode
+  content: ReactNode;
   /** Preferred position (default: auto) */
-  position?: PopoverPosition
+  position?: PopoverPosition;
   /** Delay before showing popover in ms (default: 200) */
-  delay?: number
+  delay?: number;
   /** Delay before hiding popover in ms (default: 150) - allows mouse to reach popover */
-  closeDelay?: number
+  closeDelay?: number;
   /** Custom width for popover */
-  width?: number | string
+  width?: number | string;
   /** Maximum height before scrolling */
-  maxHeight?: number
+  maxHeight?: number;
   /** Whether popover is disabled */
-  disabled?: boolean
+  disabled?: boolean;
   /** Custom className for the popover container */
-  popoverClassName?: string
+  popoverClassName?: string;
   /** Offset from trigger in pixels */
-  offset?: number
+  offset?: number;
 }
 
 // =============================================================================
@@ -63,178 +63,183 @@ export function HoverPopover({
   popoverClassName = '',
   offset = 8,
 }: HoverPopoverProps) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [coords, setCoords] = useState<{ top: number; left: number } | null>(null)
-  const [actualPosition, setActualPosition] = useState<PopoverPosition>(position)
-  const triggerRef = useRef<HTMLDivElement>(null)
-  const popoverRef = useRef<HTMLDivElement>(null)
-  const openTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const closeTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const isHoveringPopover = useRef(false)
-  const isHoveringTrigger = useRef(false)
+  const [isOpen, setIsOpen] = useState(false);
+  const [coords, setCoords] = useState<{ top: number; left: number } | null>(null);
+  const [actualPosition, setActualPosition] = useState<PopoverPosition>(position);
+  const triggerRef = useRef<HTMLDivElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
+  const openTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const closeTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isHoveringPopover = useRef(false);
+  const isHoveringTrigger = useRef(false);
 
   const calculatePosition = useCallback(() => {
-    if (!triggerRef.current) return null
+    if (!triggerRef.current) return null;
 
-    const rect = triggerRef.current.getBoundingClientRect()
-    const viewportWidth = window.innerWidth
-    const viewportHeight = window.innerHeight
-    const popoverWidth = typeof width === 'number' ? width : 320
-    const popoverEstimatedHeight = maxHeight
+    const rect = triggerRef.current.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const popoverWidth = typeof width === 'number' ? width : 320;
+    const popoverEstimatedHeight = maxHeight;
 
     // Calculate available space in each direction
-    const spaceAbove = rect.top
-    const spaceBelow = viewportHeight - rect.bottom
-    const spaceLeft = rect.left
-    const spaceRight = viewportWidth - rect.right
+    const spaceAbove = rect.top;
+    const spaceBelow = viewportHeight - rect.bottom;
+    const spaceLeft = rect.left;
+    const spaceRight = viewportWidth - rect.right;
 
     // Determine best position
-    let bestPosition = position
+    let bestPosition = position;
     if (position === 'auto') {
       // Prefer bottom, then right, then top, then left
       if (spaceBelow >= popoverEstimatedHeight || spaceBelow >= spaceAbove) {
-        bestPosition = 'bottom'
+        bestPosition = 'bottom';
       } else if (spaceRight >= popoverWidth) {
-        bestPosition = 'right'
+        bestPosition = 'right';
       } else if (spaceAbove >= popoverEstimatedHeight) {
-        bestPosition = 'top'
+        bestPosition = 'top';
       } else if (spaceLeft >= popoverWidth) {
-        bestPosition = 'left'
+        bestPosition = 'left';
       } else {
-        bestPosition = 'bottom' // fallback
+        bestPosition = 'bottom'; // fallback
       }
     }
 
-    setActualPosition(bestPosition)
+    setActualPosition(bestPosition);
 
-    let top = 0
-    let left = 0
+    let top = 0;
+    let left = 0;
 
     switch (bestPosition) {
       case 'top':
-        top = rect.top + window.scrollY - offset
-        left = rect.left + window.scrollX + rect.width / 2 - popoverWidth / 2
-        break
+        top = rect.top + window.scrollY - offset;
+        left = rect.left + window.scrollX + rect.width / 2 - popoverWidth / 2;
+        break;
       case 'bottom':
-        top = rect.bottom + window.scrollY + offset
-        left = rect.left + window.scrollX + rect.width / 2 - popoverWidth / 2
-        break
+        top = rect.bottom + window.scrollY + offset;
+        left = rect.left + window.scrollX + rect.width / 2 - popoverWidth / 2;
+        break;
       case 'left':
-        top = rect.top + window.scrollY + rect.height / 2
-        left = rect.left + window.scrollX - popoverWidth - offset
-        break
+        top = rect.top + window.scrollY + rect.height / 2;
+        left = rect.left + window.scrollX - popoverWidth - offset;
+        break;
       case 'right':
-        top = rect.top + window.scrollY + rect.height / 2
-        left = rect.right + window.scrollX + offset
-        break
+        top = rect.top + window.scrollY + rect.height / 2;
+        left = rect.right + window.scrollX + offset;
+        break;
     }
 
     // Clamp to viewport
-    left = Math.max(8, Math.min(left, viewportWidth - popoverWidth - 8))
-    top = Math.max(8, top)
+    left = Math.max(8, Math.min(left, viewportWidth - popoverWidth - 8));
+    top = Math.max(8, top);
 
-    return { top, left }
-  }, [position, width, maxHeight, offset])
+    return { top, left };
+  }, [position, width, maxHeight, offset]);
 
   const clearAllTimeouts = useCallback(() => {
     if (openTimeout.current) {
-      clearTimeout(openTimeout.current)
-      openTimeout.current = null
+      clearTimeout(openTimeout.current);
+      openTimeout.current = null;
     }
     if (closeTimeout.current) {
-      clearTimeout(closeTimeout.current)
-      closeTimeout.current = null
+      clearTimeout(closeTimeout.current);
+      closeTimeout.current = null;
     }
-  }, [])
+  }, []);
 
   const scheduleOpen = useCallback(() => {
-    clearAllTimeouts()
+    clearAllTimeouts();
     openTimeout.current = setTimeout(() => {
-      const pos = calculatePosition()
+      const pos = calculatePosition();
       if (pos) {
-        setCoords(pos)
-        setIsOpen(true)
+        setCoords(pos);
+        setIsOpen(true);
       }
-    }, delay)
-  }, [delay, calculatePosition, clearAllTimeouts])
+    }, delay);
+  }, [delay, calculatePosition, clearAllTimeouts]);
 
   const scheduleClose = useCallback(() => {
     // Don't close if hovering either trigger or popover
-    if (isHoveringTrigger.current || isHoveringPopover.current) return
+    if (isHoveringTrigger.current || isHoveringPopover.current) return;
 
-    clearAllTimeouts()
+    clearAllTimeouts();
     closeTimeout.current = setTimeout(() => {
       // Double-check before closing
       if (!isHoveringTrigger.current && !isHoveringPopover.current) {
-        setIsOpen(false)
+        setIsOpen(false);
       }
-    }, closeDelay)
-  }, [closeDelay, clearAllTimeouts])
+    }, closeDelay);
+  }, [closeDelay, clearAllTimeouts]);
 
   const handleTriggerEnter = useCallback(() => {
-    if (disabled) return
-    isHoveringTrigger.current = true
-    scheduleOpen()
-  }, [disabled, scheduleOpen])
+    if (disabled) return;
+    isHoveringTrigger.current = true;
+    scheduleOpen();
+  }, [disabled, scheduleOpen]);
 
   const handleTriggerLeave = useCallback(() => {
-    isHoveringTrigger.current = false
-    scheduleClose()
-  }, [scheduleClose])
+    isHoveringTrigger.current = false;
+    scheduleClose();
+  }, [scheduleClose]);
 
   const handlePopoverEnter = useCallback(() => {
-    isHoveringPopover.current = true
-    clearAllTimeouts()
-  }, [clearAllTimeouts])
+    isHoveringPopover.current = true;
+    clearAllTimeouts();
+  }, [clearAllTimeouts]);
 
   const handlePopoverLeave = useCallback(() => {
-    isHoveringPopover.current = false
-    scheduleClose()
-  }, [scheduleClose])
+    isHoveringPopover.current = false;
+    scheduleClose();
+  }, [scheduleClose]);
 
   // Cleanup timeouts on unmount
   useEffect(() => {
     return () => {
-      clearAllTimeouts()
-    }
-  }, [clearAllTimeouts])
+      clearAllTimeouts();
+    };
+  }, [clearAllTimeouts]);
 
   // Adjust position if popover goes off-screen after rendering
   useEffect(() => {
     if (isOpen && popoverRef.current && coords) {
-      const rect = popoverRef.current.getBoundingClientRect()
-      const viewportHeight = window.innerHeight
-      const viewportWidth = window.innerWidth
+      const rect = popoverRef.current.getBoundingClientRect();
+      const viewportHeight = window.innerHeight;
+      const viewportWidth = window.innerWidth;
 
-      let newTop = coords.top
-      let newLeft = coords.left
+      let newTop = coords.top;
+      let newLeft = coords.left;
 
       // Adjust if overflowing bottom
       if (rect.bottom > viewportHeight - 8) {
-        newTop = coords.top - (rect.bottom - viewportHeight) - 16
+        newTop = coords.top - (rect.bottom - viewportHeight) - 16;
       }
 
       // Adjust if overflowing right
       if (rect.right > viewportWidth - 8) {
-        newLeft = viewportWidth - rect.width - 16
+        newLeft = viewportWidth - rect.width - 16;
       }
 
       if (newTop !== coords.top || newLeft !== coords.left) {
-        setCoords({ top: newTop, left: newLeft })
+        setCoords({ top: newTop, left: newLeft });
       }
     }
-  }, [isOpen, coords])
+  }, [isOpen, coords]);
 
   // Get transform origin based on position
   const getTransformOrigin = () => {
     switch (actualPosition) {
-      case 'top': return 'bottom center'
-      case 'bottom': return 'top center'
-      case 'left': return 'right center'
-      case 'right': return 'left center'
-      default: return 'top center'
+      case 'top':
+        return 'bottom center';
+      case 'bottom':
+        return 'top center';
+      case 'left':
+        return 'right center';
+      case 'right':
+        return 'left center';
+      default:
+        return 'top center';
     }
-  }
+  };
 
   const popoverContent = isOpen && coords && (
     <div
@@ -252,7 +257,7 @@ export function HoverPopover({
     >
       {content}
     </div>
-  )
+  );
 
   return (
     <>
@@ -266,7 +271,7 @@ export function HoverPopover({
       </div>
       {typeof document !== 'undefined' && createPortal(popoverContent, document.body)}
     </>
-  )
+  );
 }
 
 // =============================================================================
@@ -274,9 +279,9 @@ export function HoverPopover({
 // =============================================================================
 
 interface PopoverHeaderProps {
-  icon?: ReactNode
-  title: string
-  subtitle?: string
+  icon?: ReactNode;
+  title: string;
+  subtitle?: string;
 }
 
 export function PopoverHeader({ icon, title, subtitle }: PopoverHeaderProps) {
@@ -284,30 +289,20 @@ export function PopoverHeader({ icon, title, subtitle }: PopoverHeaderProps) {
     <div className="px-3 py-2 border-b border-border bg-muted rounded-t-lg">
       <div className="flex items-center gap-2">
         {icon && <span className="text-muted-foreground">{icon}</span>}
-        <span className="text-sm font-medium text-foreground">
-          {title}
-        </span>
-        {subtitle && (
-          <span className="text-sm text-muted-foreground ml-auto">
-            {subtitle}
-          </span>
-        )}
+        <span className="text-sm font-medium text-foreground">{title}</span>
+        {subtitle && <span className="text-sm text-muted-foreground ml-auto">{subtitle}</span>}
       </div>
     </div>
-  )
+  );
 }
 
 interface PopoverContentProps {
-  children: ReactNode
-  className?: string
+  children: ReactNode;
+  className?: string;
 }
 
 export function PopoverContent({ children, className = '' }: PopoverContentProps) {
-  return (
-    <div className={`overflow-y-auto ${className}`}>
-      {children}
-    </div>
-  )
+  return <div className={`overflow-y-auto ${className}`}>{children}</div>;
 }
 
-export default HoverPopover
+export default HoverPopover;

@@ -48,11 +48,11 @@ User drops/pastes image
 
 ```typescript
 interface ImageNode extends DecoratorNode {
-  src: string;                     // Image URL
-  altText: string;                 // Alt text for accessibility
-  width?: number;                  // Display width
-  height?: number;                 // Display height
-  caption?: string;                // Optional caption
+  src: string; // Image URL
+  altText: string; // Alt text for accessibility
+  width?: number; // Display width
+  height?: number; // Display height
+  caption?: string; // Optional caption
 
   // Metadata
   originalWidth: number;
@@ -64,34 +64,34 @@ interface ImageNode extends DecoratorNode {
 
 #### Supported Formats
 
-| Format | Max Size | Notes |
-|--------|----------|-------|
-| JPEG | 10MB | Auto-compress above 2MB |
-| PNG | 10MB | Preserve transparency |
-| GIF | 5MB | Animated supported |
-| WebP | 10MB | Preferred format |
-| SVG | 1MB | Sanitized for security |
+| Format | Max Size | Notes                   |
+| ------ | -------- | ----------------------- |
+| JPEG   | 10MB     | Auto-compress above 2MB |
+| PNG    | 10MB     | Preserve transparency   |
+| GIF    | 5MB      | Animated supported      |
+| WebP   | 10MB     | Preferred format        |
+| SVG    | 1MB      | Sanitized for security  |
 
 #### Image Processing
 
 ```typescript
 interface ImageProcessingConfig {
   // Compression
-  maxWidth: 2000,                  // Max dimension
-  quality: 85,                     // JPEG quality
-  format: 'webp',                  // Output format
+  maxWidth: 2000; // Max dimension
+  quality: 85; // JPEG quality
+  format: 'webp'; // Output format
 
   // Thumbnails
   thumbnails: [
-    { name: 'thumb', width: 150, height: 150, fit: 'cover' },
-    { name: 'preview', width: 400, height: 300, fit: 'inside' },
-    { name: 'full', width: 1200, height: 900, fit: 'inside' },
-  ],
+    { name: 'thumb'; width: 150; height: 150; fit: 'cover' },
+    { name: 'preview'; width: 400; height: 300; fit: 'inside' },
+    { name: 'full'; width: 1200; height: 900; fit: 'inside' },
+  ];
 
   // Storage
-  storage: 's3',                   // Or 'local', 'cloudflare'
-  bucket: 'kanbu-media',
-  cdnUrl: 'https://cdn.kanbu.io',
+  storage: 's3'; // Or 'local', 'cloudflare'
+  bucket: 'kanbu-media';
+  cdnUrl: 'https://cdn.kanbu.io';
 }
 ```
 
@@ -99,19 +99,19 @@ interface ImageProcessingConfig {
 
 #### Video Sources
 
-| Source | Method | Features |
-|--------|--------|----------|
-| YouTube | Embed URL | Autoplay, timestamps |
-| Vimeo | Embed URL | Privacy settings |
-| Upload | Direct | Processing, transcoding |
-| URL | Direct link | MP4, WebM |
+| Source  | Method      | Features                |
+| ------- | ----------- | ----------------------- |
+| YouTube | Embed URL   | Autoplay, timestamps    |
+| Vimeo   | Embed URL   | Privacy settings        |
+| Upload  | Direct      | Processing, transcoding |
+| URL     | Direct link | MP4, WebM               |
 
 #### Video Node
 
 ```typescript
 interface VideoNode extends DecoratorNode {
   videoType: 'youtube' | 'vimeo' | 'upload' | 'url';
-  src: string;                     // URL or embed ID
+  src: string; // URL or embed ID
 
   // Display
   width?: number;
@@ -122,7 +122,7 @@ interface VideoNode extends DecoratorNode {
   autoplay?: boolean;
   loop?: boolean;
   muted?: boolean;
-  startTime?: number;              // Start at timestamp
+  startTime?: number; // Start at timestamp
 
   // Metadata
   title?: string;
@@ -179,24 +179,24 @@ interface FileNode extends DecoratorNode {
   downloadUrl: string;
 
   // Preview
-  previewUrl?: string;             // For PDFs, docs
+  previewUrl?: string; // For PDFs, docs
   previewable: boolean;
 
   // Icons
-  icon: string;                    // File type icon
+  icon: string; // File type icon
 }
 ```
 
 #### Supported File Types
 
-| Category | Extensions | Max Size | Preview |
-|----------|------------|----------|---------|
-| Documents | pdf, doc, docx | 25MB | Yes (PDF) |
-| Spreadsheets | xls, xlsx, csv | 10MB | No |
-| Presentations | ppt, pptx | 25MB | No |
-| Archives | zip, rar, 7z | 50MB | No |
-| Code | js, ts, py, etc | 5MB | Syntax highlight |
-| Text | txt, md, json | 5MB | Yes |
+| Category      | Extensions      | Max Size | Preview          |
+| ------------- | --------------- | -------- | ---------------- |
+| Documents     | pdf, doc, docx  | 25MB     | Yes (PDF)        |
+| Spreadsheets  | xls, xlsx, csv  | 10MB     | No               |
+| Presentations | ppt, pptx       | 25MB     | No               |
+| Archives      | zip, rar, 7z    | 50MB     | No               |
+| Code          | js, ts, py, etc | 5MB      | Syntax highlight |
+| Text          | txt, md, json   | 5MB      | Yes              |
 
 ### 4. Code Blocks
 
@@ -204,20 +204,21 @@ interface FileNode extends DecoratorNode {
 
 ```typescript
 interface CodeNode extends ElementNode {
-  language: string;                // 'typescript', 'python', etc.
-  code: string;                    // The actual code
+  language: string; // 'typescript', 'python', etc.
+  code: string; // The actual code
 
   // Display options
   showLineNumbers: boolean;
-  highlightLines?: number[];       // Lines to highlight
-  startLineNumber?: number;        // Start numbering from
-  fileName?: string;               // Optional file name header
+  highlightLines?: number[]; // Lines to highlight
+  startLineNumber?: number; // Start numbering from
+  fileName?: string; // Optional file name header
 }
 ```
 
 #### Supported Languages
 
 Via Prism.js:
+
 - JavaScript/TypeScript
 - Python
 - Go
@@ -237,23 +238,23 @@ Via Prism.js:
 
 #### Embed Types
 
-| Provider | Type | Example |
-|----------|------|---------|
-| Twitter/X | Tweet | Tweet embed |
-| GitHub | Gist, PR, Issue | Code snippets |
-| Figma | Design | Interactive design |
-| Miro | Board | Whiteboard embed |
-| Loom | Video | Screen recording |
-| CodeSandbox | Code | Interactive sandbox |
-| Google Maps | Map | Location embed |
+| Provider    | Type            | Example             |
+| ----------- | --------------- | ------------------- |
+| Twitter/X   | Tweet           | Tweet embed         |
+| GitHub      | Gist, PR, Issue | Code snippets       |
+| Figma       | Design          | Interactive design  |
+| Miro        | Board           | Whiteboard embed    |
+| Loom        | Video           | Screen recording    |
+| CodeSandbox | Code            | Interactive sandbox |
+| Google Maps | Map             | Location embed      |
 
 #### Embed Node
 
 ```typescript
 interface EmbedNode extends DecoratorNode {
-  provider: string;                // 'twitter', 'figma', etc.
-  embedUrl: string;                // URL to embed
-  embedHtml?: string;              // oEmbed HTML
+  provider: string; // 'twitter', 'figma', etc.
+  embedUrl: string; // URL to embed
+  embedHtml?: string; // oEmbed HTML
 
   // Display
   width?: number;
@@ -397,8 +398,8 @@ interface PresignedUrlRequest {
 }
 
 interface PresignedUrlResponse {
-  uploadUrl: string;               // PUT here
-  fileKey: string;                 // Path in S3
+  uploadUrl: string; // PUT here
+  fileKey: string; // Path in S3
   expiresAt: Date;
 }
 
@@ -425,9 +426,7 @@ function ImagePlugin(): null {
       (event: ClipboardEvent) => {
         const files = event.clipboardData?.files;
         if (files && files.length > 0) {
-          const imageFiles = Array.from(files).filter(f =>
-            f.type.startsWith('image/')
-          );
+          const imageFiles = Array.from(files).filter((f) => f.type.startsWith('image/'));
 
           if (imageFiles.length > 0) {
             event.preventDefault();
@@ -448,9 +447,7 @@ function ImagePlugin(): null {
       (event: DragEvent) => {
         const files = event.dataTransfer?.files;
         if (files && files.length > 0) {
-          const imageFile = Array.from(files).find(f =>
-            f.type.startsWith('image/')
-          );
+          const imageFile = Array.from(files).find((f) => f.type.startsWith('image/'));
 
           if (imageFile) {
             event.preventDefault();
@@ -523,13 +520,7 @@ function MediaToolbar() {
         <EmbedIcon />
       </button>
 
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/*"
-        onChange={handleFileSelect}
-        hidden
-      />
+      <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} hidden />
     </div>
   );
 }
@@ -597,13 +588,13 @@ function getMediaDisplayMode(node: MediaNode): 'inline' | 'block' {
 const ALLOWED_MIME_TYPES = {
   image: ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'],
   video: ['video/mp4', 'video/webm', 'video/quicktime'],
-  document: ['application/pdf', 'application/msword', /* ... */],
+  document: ['application/pdf', 'application/msword' /* ... */],
 };
 
 const MAX_FILE_SIZES = {
-  image: 10 * 1024 * 1024,         // 10MB
-  video: 100 * 1024 * 1024,        // 100MB
-  document: 25 * 1024 * 1024,      // 25MB
+  image: 10 * 1024 * 1024, // 10MB
+  video: 100 * 1024 * 1024, // 100MB
+  document: 25 * 1024 * 1024, // 25MB
 };
 
 async function validateUpload(file: File, type: string): Promise<void> {

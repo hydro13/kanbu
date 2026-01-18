@@ -14,106 +14,106 @@
  * =============================================================================
  */
 
-import Anthropic from '@anthropic-ai/sdk'
+import Anthropic from '@anthropic-ai/sdk';
 
 // =============================================================================
 // Types
 // =============================================================================
 
-export type AIProvider = 'anthropic' | 'openai'
+export type AIProvider = 'anthropic' | 'openai';
 
 export interface AIConfig {
-  provider: AIProvider
-  anthropicApiKey?: string
-  anthropicModel?: string
-  openaiApiKey?: string
-  openaiModel?: string
+  provider: AIProvider;
+  anthropicApiKey?: string;
+  anthropicModel?: string;
+  openaiApiKey?: string;
+  openaiModel?: string;
 }
 
 export interface PRSummaryInput {
-  title: string
+  title: string;
   commits: Array<{
-    sha: string
-    message: string
-    author: string
-  }>
-  diff?: string
-  baseBranch: string
-  headBranch: string
+    sha: string;
+    message: string;
+    author: string;
+  }>;
+  diff?: string;
+  baseBranch: string;
+  headBranch: string;
 }
 
 export interface PRSummary {
-  summary: string
-  keyChanges: string[]
-  breakingChanges: string[]
-  affectedAreas: string[]
-  suggestedReviewers?: string[]
+  summary: string;
+  keyChanges: string[];
+  breakingChanges: string[];
+  affectedAreas: string[];
+  suggestedReviewers?: string[];
 }
 
 export interface CodeReviewInput {
-  diff: string
-  language?: string
-  context?: string
+  diff: string;
+  language?: string;
+  context?: string;
 }
 
 export interface CodeReviewSuggestion {
-  type: 'security' | 'performance' | 'style' | 'bug' | 'complexity' | 'suggestion'
-  severity: 'info' | 'warning' | 'error'
-  file?: string
-  line?: number
-  message: string
-  suggestion?: string
+  type: 'security' | 'performance' | 'style' | 'bug' | 'complexity' | 'suggestion';
+  severity: 'info' | 'warning' | 'error';
+  file?: string;
+  line?: number;
+  message: string;
+  suggestion?: string;
 }
 
 export interface CodeReviewResult {
-  suggestions: CodeReviewSuggestion[]
-  overallAssessment: string
-  score: number // 0-100
+  suggestions: CodeReviewSuggestion[];
+  overallAssessment: string;
+  score: number; // 0-100
 }
 
 export interface ReleaseNotesInput {
-  projectName: string
-  version?: string
+  projectName: string;
+  version?: string;
   prs: Array<{
-    number: number
-    title: string
-    body?: string
-    author: string
-    labels?: string[]
-    mergedAt: string
-  }>
-  previousVersion?: string
+    number: number;
+    title: string;
+    body?: string;
+    author: string;
+    labels?: string[];
+    mergedAt: string;
+  }>;
+  previousVersion?: string;
 }
 
 export interface ReleaseNotes {
-  title: string
-  summary: string
+  title: string;
+  summary: string;
   sections: {
-    features: string[]
-    fixes: string[]
-    improvements: string[]
-    breaking: string[]
-    other: string[]
-  }
-  contributors: string[]
-  markdown: string
+    features: string[];
+    fixes: string[];
+    improvements: string[];
+    breaking: string[];
+    other: string[];
+  };
+  contributors: string[];
+  markdown: string;
 }
 
 export interface CommitMessageInput {
   files: Array<{
-    path: string
-    status: 'added' | 'modified' | 'deleted' | 'renamed'
-    diff?: string
-  }>
-  context?: string
+    path: string;
+    status: 'added' | 'modified' | 'deleted' | 'renamed';
+    diff?: string;
+  }>;
+  context?: string;
 }
 
 export interface CommitMessage {
-  title: string
-  body?: string
-  type: 'feat' | 'fix' | 'refactor' | 'docs' | 'style' | 'test' | 'chore'
-  scope?: string
-  full: string
+  title: string;
+  body?: string;
+  type: 'feat' | 'fix' | 'refactor' | 'docs' | 'style' | 'test' | 'chore';
+  scope?: string;
+  full: string;
 }
 
 // =============================================================================
@@ -127,48 +127,48 @@ function getConfig(): AIConfig {
     anthropicModel: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-20250514',
     openaiApiKey: process.env.OPENAI_API_KEY,
     openaiModel: process.env.OPENAI_MODEL || 'gpt-4o',
-  }
+  };
 }
 
 /**
  * Check if AI service is configured and available
  */
 export function isAIConfigured(): boolean {
-  const config = getConfig()
+  const config = getConfig();
   if (config.provider === 'anthropic') {
-    return !!config.anthropicApiKey
+    return !!config.anthropicApiKey;
   }
   if (config.provider === 'openai') {
-    return !!config.openaiApiKey
+    return !!config.openaiApiKey;
   }
-  return false
+  return false;
 }
 
 /**
  * Get the current AI provider name
  */
 export function getAIProvider(): AIProvider | null {
-  if (!isAIConfigured()) return null
-  return getConfig().provider
+  if (!isAIConfigured()) return null;
+  return getConfig().provider;
 }
 
 // =============================================================================
 // Anthropic Client
 // =============================================================================
 
-let anthropicClient: Anthropic | null = null
+let anthropicClient: Anthropic | null = null;
 
 function getAnthropicClient(): Anthropic {
   if (!anthropicClient) {
-    const config = getConfig()
+    const config = getConfig();
     if (!config.anthropicApiKey) {
-      throw new Error('Anthropic API key not configured')
+      throw new Error('Anthropic API key not configured');
     }
     anthropicClient = new Anthropic({
       apiKey: config.anthropicApiKey,
-    })
+    });
   }
-  return anthropicClient
+  return anthropicClient;
 }
 
 // =============================================================================
@@ -180,30 +180,30 @@ async function aiRequest(
   userPrompt: string,
   options: { maxTokens?: number; temperature?: number } = {}
 ): Promise<string> {
-  const config = getConfig()
-  const { maxTokens = 2048, temperature = 0.3 } = options
+  const config = getConfig();
+  const { maxTokens = 2048, temperature = 0.3 } = options;
 
   if (config.provider === 'anthropic') {
-    const client = getAnthropicClient()
+    const client = getAnthropicClient();
     const response = await client.messages.create({
       model: config.anthropicModel || 'claude-sonnet-4-20250514',
       max_tokens: maxTokens,
       temperature,
       system: systemPrompt,
       messages: [{ role: 'user', content: userPrompt }],
-    })
+    });
 
-    const textBlock = response.content.find((block) => block.type === 'text')
+    const textBlock = response.content.find((block) => block.type === 'text');
     if (!textBlock || textBlock.type !== 'text') {
-      throw new Error('No text response from AI')
+      throw new Error('No text response from AI');
     }
-    return textBlock.text
+    return textBlock.text;
   }
 
   if (config.provider === 'openai') {
     // OpenAI implementation
     if (!config.openaiApiKey) {
-      throw new Error('OpenAI API key not configured')
+      throw new Error('OpenAI API key not configured');
     }
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -221,20 +221,20 @@ async function aiRequest(
           { role: 'user', content: userPrompt },
         ],
       }),
-    })
+    });
 
     if (!response.ok) {
-      const error = await response.text()
-      throw new Error(`OpenAI API error: ${error}`)
+      const error = await response.text();
+      throw new Error(`OpenAI API error: ${error}`);
     }
 
     const data = (await response.json()) as {
-      choices: Array<{ message: { content: string } }>
-    }
-    return data.choices[0]?.message?.content || ''
+      choices: Array<{ message: { content: string } }>;
+    };
+    return data.choices[0]?.message?.content || '';
   }
 
-  throw new Error(`Unsupported AI provider: ${config.provider}`)
+  throw new Error(`Unsupported AI provider: ${config.provider}`);
 }
 
 // =============================================================================
@@ -251,16 +251,16 @@ Output format (JSON):
   "affectedAreas": ["Area 1", "Area 2"]
 }
 
-Be concise and technical. Focus on what changed and why it matters.`
+Be concise and technical. Focus on what changed and why it matters.`;
 
 export async function generatePRSummary(input: PRSummaryInput): Promise<PRSummary> {
   if (!isAIConfigured()) {
-    throw new Error('AI service not configured')
+    throw new Error('AI service not configured');
   }
 
   const commitList = input.commits
     .map((c) => `- ${c.sha.substring(0, 7)}: ${c.message} (${c.author})`)
-    .join('\n')
+    .join('\n');
 
   const userPrompt = `PR: ${input.title}
 Branch: ${input.headBranch} -> ${input.baseBranch}
@@ -268,29 +268,29 @@ Branch: ${input.headBranch} -> ${input.baseBranch}
 Commits:
 ${commitList}
 
-${input.diff ? `\nDiff (truncated to 10000 chars):\n${input.diff.substring(0, 10000)}` : ''}`
+${input.diff ? `\nDiff (truncated to 10000 chars):\n${input.diff.substring(0, 10000)}` : ''}`;
 
   const response = await aiRequest(PR_SUMMARY_SYSTEM, userPrompt, {
     maxTokens: 1024,
     temperature: 0.2,
-  })
+  });
 
   try {
     // Extract JSON from response (handle markdown code blocks)
-    const jsonMatch = response.match(/```json\n?([\s\S]*?)\n?```/) || [null, response]
-    const jsonStr = jsonMatch[1] || response
+    const jsonMatch = response.match(/```json\n?([\s\S]*?)\n?```/) || [null, response];
+    const jsonStr = jsonMatch[1] || response;
     const parsed = JSON.parse(jsonStr.trim()) as {
-      summary: string
-      keyChanges: string[]
-      breakingChanges: string[]
-      affectedAreas: string[]
-    }
+      summary: string;
+      keyChanges: string[];
+      breakingChanges: string[];
+      affectedAreas: string[];
+    };
     return {
       summary: parsed.summary || '',
       keyChanges: parsed.keyChanges || [],
       breakingChanges: parsed.breakingChanges || [],
       affectedAreas: parsed.affectedAreas || [],
-    }
+    };
   } catch {
     // Fallback: return the raw response as summary
     return {
@@ -298,7 +298,7 @@ ${input.diff ? `\nDiff (truncated to 10000 chars):\n${input.diff.substring(0, 10
       keyChanges: [],
       breakingChanges: [],
       affectedAreas: [],
-    }
+    };
   }
 }
 
@@ -331,40 +331,40 @@ Output format (JSON):
   "score": 85
 }
 
-Be constructive and specific. Only mention actual issues, not theoretical ones.`
+Be constructive and specific. Only mention actual issues, not theoretical ones.`;
 
 export async function reviewCode(input: CodeReviewInput): Promise<CodeReviewResult> {
   if (!isAIConfigured()) {
-    throw new Error('AI service not configured')
+    throw new Error('AI service not configured');
   }
 
   const userPrompt = `${input.context ? `Context: ${input.context}\n\n` : ''}${input.language ? `Language: ${input.language}\n\n` : ''}Diff to review:
-${input.diff.substring(0, 15000)}`
+${input.diff.substring(0, 15000)}`;
 
   const response = await aiRequest(CODE_REVIEW_SYSTEM, userPrompt, {
     maxTokens: 2048,
     temperature: 0.2,
-  })
+  });
 
   try {
-    const jsonMatch = response.match(/```json\n?([\s\S]*?)\n?```/) || [null, response]
-    const jsonStr = jsonMatch[1] || response
+    const jsonMatch = response.match(/```json\n?([\s\S]*?)\n?```/) || [null, response];
+    const jsonStr = jsonMatch[1] || response;
     const parsed = JSON.parse(jsonStr.trim()) as {
-      suggestions: CodeReviewSuggestion[]
-      overallAssessment: string
-      score: number
-    }
+      suggestions: CodeReviewSuggestion[];
+      overallAssessment: string;
+      score: number;
+    };
     return {
       suggestions: parsed.suggestions || [],
       overallAssessment: parsed.overallAssessment || '',
       score: typeof parsed.score === 'number' ? parsed.score : 70,
-    }
+    };
   } catch {
     return {
       suggestions: [],
       overallAssessment: response.substring(0, 500),
       score: 70,
-    }
+    };
   }
 }
 
@@ -389,11 +389,11 @@ Output format (JSON):
 }
 
 Categorize PRs based on their title prefixes (feat, fix, refactor, etc.) or content.
-Be concise but informative.`
+Be concise but informative.`;
 
 export async function generateReleaseNotes(input: ReleaseNotesInput): Promise<ReleaseNotes> {
   if (!isAIConfigured()) {
-    throw new Error('AI service not configured')
+    throw new Error('AI service not configured');
   }
 
   const prList = input.prs
@@ -401,46 +401,46 @@ export async function generateReleaseNotes(input: ReleaseNotesInput): Promise<Re
       (pr) =>
         `#${pr.number}: ${pr.title} by @${pr.author}${pr.labels?.length ? ` [${pr.labels.join(', ')}]` : ''}`
     )
-    .join('\n')
+    .join('\n');
 
   const userPrompt = `Project: ${input.projectName}
 ${input.version ? `Version: ${input.version}` : ''}
 ${input.previousVersion ? `Previous: ${input.previousVersion}` : ''}
 
 Merged PRs:
-${prList}`
+${prList}`;
 
   const response = await aiRequest(RELEASE_NOTES_SYSTEM, userPrompt, {
     maxTokens: 2048,
     temperature: 0.3,
-  })
+  });
 
   try {
-    const jsonMatch = response.match(/```json\n?([\s\S]*?)\n?```/) || [null, response]
-    const jsonStr = jsonMatch[1] || response
+    const jsonMatch = response.match(/```json\n?([\s\S]*?)\n?```/) || [null, response];
+    const jsonStr = jsonMatch[1] || response;
     const parsed = JSON.parse(jsonStr.trim()) as {
-      title: string
-      summary: string
+      title: string;
+      summary: string;
       sections: {
-        features: string[]
-        fixes: string[]
-        improvements: string[]
-        breaking: string[]
-        other: string[]
-      }
-      contributors: string[]
-    }
+        features: string[];
+        fixes: string[];
+        improvements: string[];
+        breaking: string[];
+        other: string[];
+      };
+      contributors: string[];
+    };
 
     // Generate markdown
-    const markdown = generateReleaseMarkdown(parsed, input)
+    const markdown = generateReleaseMarkdown(parsed, input);
 
     return {
       ...parsed,
       markdown,
-    }
+    };
   } catch {
     // Fallback
-    const contributors = [...new Set(input.prs.map((pr) => pr.author))]
+    const contributors = [...new Set(input.prs.map((pr) => pr.author))];
     return {
       title: input.version ? `Release ${input.version}` : 'New Release',
       summary: response.substring(0, 500),
@@ -453,7 +453,7 @@ ${prList}`
       },
       contributors,
       markdown: response,
-    }
+    };
   }
 }
 
@@ -461,54 +461,56 @@ function generateReleaseMarkdown(
   notes: Omit<ReleaseNotes, 'markdown'>,
   input: ReleaseNotesInput
 ): string {
-  const lines: string[] = []
+  const lines: string[] = [];
 
-  lines.push(`# ${notes.title}`)
-  lines.push('')
-  lines.push(notes.summary)
-  lines.push('')
+  lines.push(`# ${notes.title}`);
+  lines.push('');
+  lines.push(notes.summary);
+  lines.push('');
 
   if (notes.sections.breaking.length > 0) {
-    lines.push('## Breaking Changes')
-    notes.sections.breaking.forEach((item) => lines.push(`- ${item}`))
-    lines.push('')
+    lines.push('## Breaking Changes');
+    notes.sections.breaking.forEach((item) => lines.push(`- ${item}`));
+    lines.push('');
   }
 
   if (notes.sections.features.length > 0) {
-    lines.push('## New Features')
-    notes.sections.features.forEach((item) => lines.push(`- ${item}`))
-    lines.push('')
+    lines.push('## New Features');
+    notes.sections.features.forEach((item) => lines.push(`- ${item}`));
+    lines.push('');
   }
 
   if (notes.sections.fixes.length > 0) {
-    lines.push('## Bug Fixes')
-    notes.sections.fixes.forEach((item) => lines.push(`- ${item}`))
-    lines.push('')
+    lines.push('## Bug Fixes');
+    notes.sections.fixes.forEach((item) => lines.push(`- ${item}`));
+    lines.push('');
   }
 
   if (notes.sections.improvements.length > 0) {
-    lines.push('## Improvements')
-    notes.sections.improvements.forEach((item) => lines.push(`- ${item}`))
-    lines.push('')
+    lines.push('## Improvements');
+    notes.sections.improvements.forEach((item) => lines.push(`- ${item}`));
+    lines.push('');
   }
 
   if (notes.sections.other.length > 0) {
-    lines.push('## Other Changes')
-    notes.sections.other.forEach((item) => lines.push(`- ${item}`))
-    lines.push('')
+    lines.push('## Other Changes');
+    notes.sections.other.forEach((item) => lines.push(`- ${item}`));
+    lines.push('');
   }
 
   if (notes.contributors.length > 0) {
-    lines.push('## Contributors')
-    lines.push('')
-    lines.push(`Thanks to ${notes.contributors.map((c) => `@${c}`).join(', ')} for their contributions!`)
-    lines.push('')
+    lines.push('## Contributors');
+    lines.push('');
+    lines.push(
+      `Thanks to ${notes.contributors.map((c) => `@${c}`).join(', ')} for their contributions!`
+    );
+    lines.push('');
   }
 
-  lines.push('---')
-  lines.push(`*Release notes generated for ${input.projectName}*`)
+  lines.push('---');
+  lines.push(`*Release notes generated for ${input.projectName}*`);
 
-  return lines.join('\n')
+  return lines.join('\n');
 }
 
 // =============================================================================
@@ -527,38 +529,38 @@ Output format (JSON):
   "body": "Optional longer description"
 }
 
-Be concise and descriptive. Use imperative mood (add, fix, update, not added, fixed, updated).`
+Be concise and descriptive. Use imperative mood (add, fix, update, not added, fixed, updated).`;
 
 export async function generateCommitMessage(input: CommitMessageInput): Promise<CommitMessage> {
   if (!isAIConfigured()) {
-    throw new Error('AI service not configured')
+    throw new Error('AI service not configured');
   }
 
   const fileList = input.files
     .map((f) => `${f.status}: ${f.path}${f.diff ? `\n${f.diff.substring(0, 500)}` : ''}`)
-    .join('\n\n')
+    .join('\n\n');
 
   const userPrompt = `${input.context ? `Context: ${input.context}\n\n` : ''}Changed files:
-${fileList.substring(0, 8000)}`
+${fileList.substring(0, 8000)}`;
 
   const response = await aiRequest(COMMIT_MESSAGE_SYSTEM, userPrompt, {
     maxTokens: 512,
     temperature: 0.2,
-  })
+  });
 
   try {
-    const jsonMatch = response.match(/```json\n?([\s\S]*?)\n?```/) || [null, response]
-    const jsonStr = jsonMatch[1] || response
+    const jsonMatch = response.match(/```json\n?([\s\S]*?)\n?```/) || [null, response];
+    const jsonStr = jsonMatch[1] || response;
     const parsed = JSON.parse(jsonStr.trim()) as {
-      type: CommitMessage['type']
-      scope?: string
-      title: string
-      body?: string
-    }
+      type: CommitMessage['type'];
+      scope?: string;
+      title: string;
+      body?: string;
+    };
 
     const full = parsed.scope
       ? `${parsed.type}(${parsed.scope}): ${parsed.title}${parsed.body ? `\n\n${parsed.body}` : ''}`
-      : `${parsed.type}: ${parsed.title}${parsed.body ? `\n\n${parsed.body}` : ''}`
+      : `${parsed.type}: ${parsed.title}${parsed.body ? `\n\n${parsed.body}` : ''}`;
 
     return {
       type: parsed.type || 'chore',
@@ -566,13 +568,13 @@ ${fileList.substring(0, 8000)}`
       title: parsed.title || 'Update code',
       body: parsed.body,
       full,
-    }
+    };
   } catch {
     return {
       type: 'chore',
       title: 'Update code',
       full: 'chore: Update code',
-    }
+    };
   }
 }
 
@@ -587,6 +589,6 @@ export const aiService = {
   reviewCode,
   generateReleaseNotes,
   generateCommitMessage,
-}
+};
 
-export default aiService
+export default aiService;

@@ -11,8 +11,8 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useNavigate } from 'react-router-dom'
-import { trpc } from '@/lib/trpc'
+import { useNavigate } from 'react-router-dom';
+import { trpc } from '@/lib/trpc';
 import {
   ContextMenu,
   useContextMenu,
@@ -21,20 +21,20 @@ import {
   StarIcon,
   CopyIcon,
   ExternalLinkIcon,
-} from '@/components/common/ContextMenu'
+} from '@/components/common/ContextMenu';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface FavoriteContextMenuProps {
-  favoriteId: number
-  projectId: number
-  projectName: string
-  projectPath: string
-  isOpen: boolean
-  position: { x: number; y: number }
-  onClose: () => void
+  favoriteId: number;
+  projectId: number;
+  projectName: string;
+  projectPath: string;
+  isOpen: boolean;
+  position: { x: number; y: number };
+  onClose: () => void;
 }
 
 // =============================================================================
@@ -51,17 +51,17 @@ export function FavoriteContextMenu({
   onClose,
 }: FavoriteContextMenuProps) {
   // _favoriteId and _projectName reserved for future use (e.g., confirm dialogs)
-  const navigate = useNavigate()
-  const utils = trpc.useUtils()
+  const navigate = useNavigate();
+  const utils = trpc.useUtils();
 
   // Remove from favorites mutation
   const removeFavorite = trpc.favorite.toggle.useMutation({
     onSuccess: () => {
-      utils.favorite.list.invalidate()
-      utils.favorite.isFavorite.invalidate({ projectId })
-      onClose()
+      utils.favorite.list.invalidate();
+      utils.favorite.isFavorite.invalidate({ projectId });
+      onClose();
     },
-  })
+  });
 
   // Build menu items
   const menuItems: MenuItemProps[] = [
@@ -70,7 +70,7 @@ export function FavoriteContextMenu({
       label: 'Open Project',
       icon: <OpenIcon />,
       onClick: () => {
-        navigate(projectPath)
+        navigate(projectPath);
       },
     },
     {
@@ -78,7 +78,7 @@ export function FavoriteContextMenu({
       label: 'Open in New Tab',
       icon: <ExternalLinkIcon />,
       onClick: () => {
-        window.open(projectPath, '_blank')
+        window.open(projectPath, '_blank');
       },
     },
     {
@@ -91,8 +91,8 @@ export function FavoriteContextMenu({
       label: 'Copy Link',
       icon: <CopyIcon />,
       onClick: () => {
-        const url = `${window.location.origin}${projectPath}`
-        navigator.clipboard.writeText(url)
+        const url = `${window.location.origin}${projectPath}`;
+        navigator.clipboard.writeText(url);
       },
     },
     {
@@ -106,10 +106,10 @@ export function FavoriteContextMenu({
       icon: <StarIcon />,
       danger: true,
       onClick: () => {
-        removeFavorite.mutate({ projectId })
+        removeFavorite.mutate({ projectId });
       },
     },
-  ]
+  ];
 
   return (
     <ContextMenu
@@ -119,10 +119,10 @@ export function FavoriteContextMenu({
       onClose={onClose}
       minWidth={160}
     />
-  )
+  );
 }
 
 // Re-export useContextMenu for convenience
-export { useContextMenu }
+export { useContextMenu };
 
-export default FavoriteContextMenu
+export default FavoriteContextMenu;

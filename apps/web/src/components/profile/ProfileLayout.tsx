@@ -21,13 +21,13 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { DashboardLayout } from '../dashboard/DashboardLayout'
-import { ProfileSidebar } from './ProfileSidebar'
+import { DashboardLayout } from '../dashboard/DashboardLayout';
+import { ProfileSidebar } from './ProfileSidebar';
 
 interface ProfileLayoutProps {
-  children: React.ReactNode
-  title: string
-  description?: string
+  children: React.ReactNode;
+  title: string;
+  description?: string;
 }
 
 export function ProfileLayout({ children, title, description }: ProfileLayoutProps) {
@@ -36,14 +36,12 @@ export function ProfileLayout({ children, title, description }: ProfileLayoutPro
       <div className="max-w-4xl">
         <div className="mb-6">
           <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
-          {description && (
-            <p className="text-muted-foreground mt-1">{description}</p>
-          )}
+          {description && <p className="text-muted-foreground mt-1">{description}</p>}
         </div>
         {children}
       </div>
     </DashboardLayout>
-  )
+  );
 }
 
-export default ProfileLayout
+export default ProfileLayout;

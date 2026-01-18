@@ -1,24 +1,25 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import path from 'path'
-import fs from 'fs'
-import { fileURLToPath } from 'url'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
 
 // ESM-compatible __dirname
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Check if HTTPS certificates exist (mkcert)
-const certsPath = path.resolve(__dirname, '../../certs')
-const certFile = path.join(certsPath, 'localhost+4.pem')
-const keyFile = path.join(certsPath, 'localhost+4-key.pem')
+const certsPath = path.resolve(__dirname, '../../certs');
+const certFile = path.join(certsPath, 'localhost+4.pem');
+const keyFile = path.join(certsPath, 'localhost+4-key.pem');
 
-const httpsConfig = fs.existsSync(certFile) && fs.existsSync(keyFile)
-  ? {
-      key: fs.readFileSync(keyFile),
-      cert: fs.readFileSync(certFile),
-    }
-  : undefined
+const httpsConfig =
+  fs.existsSync(certFile) && fs.existsSync(keyFile)
+    ? {
+        key: fs.readFileSync(keyFile),
+        cert: fs.readFileSync(certFile),
+      }
+    : undefined;
 
 export default defineConfig({
   plugins: [react()],
@@ -55,4 +56,4 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: true,
   },
-})
+});

@@ -13,10 +13,10 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState, useEffect } from 'react'
-import { Layout } from '../components/layout/Layout'
-import { Button } from '../components/ui/button'
-import { Input } from '../components/ui/input'
+import { useState, useEffect } from 'react';
+import { Layout } from '../components/layout/Layout';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
 import {
   Card,
   CardHeader,
@@ -24,64 +24,64 @@ import {
   CardDescription,
   CardContent,
   CardFooter,
-} from '../components/ui/card'
-import { useAppDispatch } from '../store'
-import { logout } from '../store/authSlice'
-import { trpc } from '../lib/trpc'
-import { useNavigate } from 'react-router-dom'
+} from '../components/ui/card';
+import { useAppDispatch } from '../store';
+import { logout } from '../store/authSlice';
+import { trpc } from '../lib/trpc';
+import { useNavigate } from 'react-router-dom';
 
 // =============================================================================
 // Component
 // =============================================================================
 
 export function UserProfilePage() {
-  const navigate = useNavigate()
-  const dispatch = useAppDispatch()
-  const utils = trpc.useUtils()
+  const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const utils = trpc.useUtils();
 
   // Fetch profile
-  const { data: profile, isLoading } = trpc.user.getProfile.useQuery()
+  const { data: profile, isLoading } = trpc.user.getProfile.useQuery();
 
   // Form states
-  const [name, setName] = useState('')
-  const [timezone, setTimezone] = useState('')
-  const [language, setLanguage] = useState('')
-  const [currentPassword, setCurrentPassword] = useState('')
-  const [newPassword, setNewPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [deletePassword, setDeletePassword] = useState('')
+  const [name, setName] = useState('');
+  const [timezone, setTimezone] = useState('');
+  const [language, setLanguage] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [deletePassword, setDeletePassword] = useState('');
 
   // Sync profile data to form
   useEffect(() => {
     if (profile) {
-      setName(profile.name)
-      setTimezone(profile.timezone ?? '')
-      setLanguage(profile.language ?? '')
+      setName(profile.name);
+      setTimezone(profile.timezone ?? '');
+      setLanguage(profile.language ?? '');
     }
-  }, [profile])
+  }, [profile]);
 
   // Mutations
   const updateProfileMutation = trpc.user.updateProfile.useMutation({
     onSuccess: () => {
-      utils.user.getProfile.invalidate()
+      utils.user.getProfile.invalidate();
     },
-  })
+  });
 
   const changePasswordMutation = trpc.user.changePassword.useMutation({
     onSuccess: () => {
-      setCurrentPassword('')
-      setNewPassword('')
-      setConfirmPassword('')
-      alert('Password changed successfully!')
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      alert('Password changed successfully!');
     },
-  })
+  });
 
   const deleteAccountMutation = trpc.user.deleteAccount.useMutation({
     onSuccess: () => {
-      dispatch(logout())
-      navigate('/login')
+      dispatch(logout());
+      navigate('/login');
     },
-  })
+  });
 
   // Handlers
   const handleUpdateProfile = () => {
@@ -89,34 +89,38 @@ export function UserProfilePage() {
       name: name || undefined,
       timezone: timezone || undefined,
       language: language || undefined,
-    })
-  }
+    });
+  };
 
   const handleChangePassword = () => {
     if (newPassword !== confirmPassword) {
-      alert('Passwords do not match')
-      return
+      alert('Passwords do not match');
+      return;
     }
     if (newPassword.length < 8) {
-      alert('Password must be at least 8 characters')
-      return
+      alert('Password must be at least 8 characters');
+      return;
     }
     changePasswordMutation.mutate({
       currentPassword,
       newPassword,
-    })
-  }
+    });
+  };
 
   const handleDeleteAccount = () => {
     if (!deletePassword) {
-      alert('Please enter your password')
-      return
+      alert('Please enter your password');
+      return;
     }
-    if (!confirm('Are you absolutely sure you want to delete your account? This action cannot be undone.')) {
-      return
+    if (
+      !confirm(
+        'Are you absolutely sure you want to delete your account? This action cannot be undone.'
+      )
+    ) {
+      return;
     }
-    deleteAccountMutation.mutate({ password: deletePassword })
-  }
+    deleteAccountMutation.mutate({ password: deletePassword });
+  };
 
   // Loading state
   if (isLoading) {
@@ -126,7 +130,7 @@ export function UserProfilePage() {
           <p className="text-muted-foreground">Loading profile...</p>
         </div>
       </Layout>
-    )
+    );
   }
 
   if (!profile) {
@@ -136,7 +140,7 @@ export function UserProfilePage() {
           <p className="text-muted-foreground">Profile not found</p>
         </div>
       </Layout>
-    )
+    );
   }
 
   return (
@@ -144,34 +148,26 @@ export function UserProfilePage() {
       <div className="space-y-6 max-w-2xl">
         <div>
           <h1 className="text-page-title-lg tracking-tight text-foreground">Profile Settings</h1>
-          <p className="text-muted-foreground">
-            Manage your account settings and preferences
-          </p>
+          <p className="text-muted-foreground">Manage your account settings and preferences</p>
         </div>
 
         {/* Profile Info */}
         <Card>
           <CardHeader>
             <CardTitle>Profile Information</CardTitle>
-            <CardDescription>
-              Your public profile information
-            </CardDescription>
+            <CardDescription>Your public profile information</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Email</label>
                 <Input value={profile.email} disabled />
-                <p className="text-xs text-muted-foreground">
-                  Email cannot be changed
-                </p>
+                <p className="text-xs text-muted-foreground">Email cannot be changed</p>
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Username</label>
                 <Input value={`@${profile.username}`} disabled />
-                <p className="text-xs text-muted-foreground">
-                  Username cannot be changed
-                </p>
+                <p className="text-xs text-muted-foreground">Username cannot be changed</p>
               </div>
             </div>
             <div className="space-y-2">
@@ -202,10 +198,7 @@ export function UserProfilePage() {
             </div>
           </CardContent>
           <CardFooter>
-            <Button
-              onClick={handleUpdateProfile}
-              disabled={updateProfileMutation.isPending}
-            >
+            <Button onClick={handleUpdateProfile} disabled={updateProfileMutation.isPending}>
               {updateProfileMutation.isPending ? 'Saving...' : 'Save Changes'}
             </Button>
           </CardFooter>
@@ -223,9 +216,7 @@ export function UserProfilePage() {
                 <p className="text-sm text-muted-foreground">Workspaces</p>
               </div>
               <div className="space-y-1">
-                <p className="text-2xl font-bold">
-                  {profile.emailVerified ? 'Yes' : 'No'}
-                </p>
+                <p className="text-2xl font-bold">{profile.emailVerified ? 'Yes' : 'No'}</p>
                 <p className="text-sm text-muted-foreground">Email Verified</p>
               </div>
               <div className="space-y-1">
@@ -244,9 +235,7 @@ export function UserProfilePage() {
         <Card>
           <CardHeader>
             <CardTitle>Change Password</CardTitle>
-            <CardDescription>
-              Update your password regularly for security
-            </CardDescription>
+            <CardDescription>Update your password regularly for security</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -291,9 +280,7 @@ export function UserProfilePage() {
         <Card className="border-destructive">
           <CardHeader>
             <CardTitle className="text-destructive">Danger Zone</CardTitle>
-            <CardDescription>
-              Irreversible actions - proceed with caution
-            </CardDescription>
+            <CardDescription>Irreversible actions - proceed with caution</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -328,5 +315,5 @@ export function UserProfilePage() {
         </Card>
       </div>
     </Layout>
-  )
+  );
 }

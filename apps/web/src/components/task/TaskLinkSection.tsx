@@ -14,25 +14,11 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState, useCallback } from 'react'
-import {
-  Link2,
-  Plus,
-  Trash2,
-  Search,
-  Ban,
-  ArrowRight,
-  ArrowLeft,
-  X,
-} from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { trpc } from '@/lib/trpc'
+import { useState, useCallback } from 'react';
+import { Link2, Plus, Trash2, Search, Ban, ArrowRight, ArrowLeft, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { trpc } from '@/lib/trpc';
 
 // =============================================================================
 // Types
@@ -49,28 +35,28 @@ type LinkType =
   | 'FOLLOWS'
   | 'IS_FOLLOWED_BY'
   | 'FIXES'
-  | 'IS_FIXED_BY'
+  | 'IS_FIXED_BY';
 
 interface LinkedTask {
-  id: number
-  title: string
-  reference: string | null
-  isActive: boolean
-  columnTitle: string
+  id: number;
+  title: string;
+  reference: string | null;
+  isActive: boolean;
+  columnTitle: string;
 }
 
 interface TaskLink {
-  id: number
-  direction: 'outgoing' | 'incoming'
-  linkType: LinkType | string
-  originalLinkType?: string
-  linkedTask: LinkedTask
-  createdAt: string | Date
+  id: number;
+  direction: 'outgoing' | 'incoming';
+  linkType: LinkType | string;
+  originalLinkType?: string;
+  linkedTask: LinkedTask;
+  createdAt: string | Date;
 }
 
 export interface TaskLinkSectionProps {
-  taskId: number
-  projectId: number
+  taskId: number;
+  projectId: number;
 }
 
 // =============================================================================
@@ -89,7 +75,7 @@ const LINK_TYPE_LABELS: Record<string, string> = {
   IS_FOLLOWED_BY: 'Is followed by',
   FIXES: 'Fixes',
   IS_FIXED_BY: 'Is fixed by',
-}
+};
 
 const LINK_TYPE_ICONS: Record<string, React.ReactNode> = {
   BLOCKS: <Ban className="h-3 w-3 text-red-500" />,
@@ -103,7 +89,7 @@ const LINK_TYPE_ICONS: Record<string, React.ReactNode> = {
   IS_FOLLOWED_BY: <ArrowLeft className="h-3 w-3 text-cyan-500" />,
   FIXES: <Link2 className="h-3 w-3 text-emerald-500" />,
   IS_FIXED_BY: <Link2 className="h-3 w-3 text-emerald-400" />,
-}
+};
 
 // =============================================================================
 // LinkItem Component
@@ -115,13 +101,13 @@ function LinkItem({
   onDelete,
   isDeleting,
 }: {
-  link: TaskLink
-  onNavigate: (taskId: number) => void
-  onDelete: (linkId: number) => void
-  isDeleting: boolean
+  link: TaskLink;
+  onNavigate: (taskId: number) => void;
+  onDelete: (linkId: number) => void;
+  isDeleting: boolean;
 }) {
-  const label = LINK_TYPE_LABELS[link.linkType] ?? link.linkType
-  const icon = LINK_TYPE_ICONS[link.linkType] ?? <Link2 className="h-3 w-3" />
+  const label = LINK_TYPE_LABELS[link.linkType] ?? link.linkType;
+  const icon = LINK_TYPE_ICONS[link.linkType] ?? <Link2 className="h-3 w-3" />;
 
   return (
     <div className="group flex items-center gap-2 py-1.5 px-2 rounded hover:bg-accent">
@@ -150,7 +136,7 @@ function LinkItem({
         <Trash2 className="h-3 w-3 text-red-500" />
       </Button>
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -163,46 +149,46 @@ function AddLinkModal({
   taskId,
   onSuccess,
 }: {
-  isOpen: boolean
-  onClose: () => void
-  taskId: number
-  onSuccess: () => void
+  isOpen: boolean;
+  onClose: () => void;
+  taskId: number;
+  onSuccess: () => void;
 }) {
-  const [searchQuery, setSearchQuery] = useState('')
-  const [selectedType, setSelectedType] = useState<LinkType>('RELATES_TO')
-  const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null)
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedType, setSelectedType] = useState<LinkType>('RELATES_TO');
+  const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
 
-  const utils = trpc.useUtils()
+  const utils = trpc.useUtils();
 
   // Search for tasks
   const searchQuery$ = trpc.taskLink.searchTasks.useQuery(
     { taskId, query: searchQuery, limit: 10 },
     { enabled: searchQuery.length >= 1 }
-  )
+  );
 
   // Get link types
-  const linkTypes = trpc.taskLink.getLinkTypes.useQuery()
+  const linkTypes = trpc.taskLink.getLinkTypes.useQuery();
 
   // Create link mutation
   const createLink = trpc.taskLink.create.useMutation({
     onSuccess: () => {
-      utils.taskLink.list.invalidate({ taskId })
-      utils.taskLink.getBlocking.invalidate({ taskId })
-      onSuccess()
-      onClose()
-      setSearchQuery('')
-      setSelectedTaskId(null)
+      utils.taskLink.list.invalidate({ taskId });
+      utils.taskLink.getBlocking.invalidate({ taskId });
+      onSuccess();
+      onClose();
+      setSearchQuery('');
+      setSelectedTaskId(null);
     },
-  })
+  });
 
   const handleCreate = useCallback(() => {
-    if (selectedTaskId === null) return
+    if (selectedTaskId === null) return;
     createLink.mutate({
       taskId,
       oppositeTaskId: selectedTaskId,
       linkType: selectedType,
-    })
-  }, [taskId, selectedTaskId, selectedType, createLink])
+    });
+  }, [taskId, selectedTaskId, selectedType, createLink]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -262,9 +248,7 @@ function AddLinkModal({
                       }`}
                     >
                       <div className="flex items-center gap-2">
-                        {task.reference && (
-                          <span className="text-gray-400">#{task.reference}</span>
-                        )}
+                        {task.reference && <span className="text-gray-400">#{task.reference}</span>}
                         <span className={task.isActive ? '' : 'line-through text-gray-400'}>
                           {task.title}
                         </span>
@@ -280,9 +264,7 @@ function AddLinkModal({
           {/* Selected Task */}
           {selectedTaskId !== null && (
             <div className="flex items-center gap-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-md">
-              <span className="text-sm flex-1">
-                Selected: Task #{selectedTaskId}
-              </span>
+              <span className="text-sm flex-1">Selected: Task #{selectedTaskId}</span>
               <Button
                 variant="ghost"
                 size="sm"
@@ -309,14 +291,12 @@ function AddLinkModal({
 
           {/* Error */}
           {createLink.isError && (
-            <div className="text-sm text-red-500">
-              {createLink.error.message}
-            </div>
+            <div className="text-sm text-red-500">{createLink.error.message}</div>
           )}
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
 
 // =============================================================================
@@ -324,31 +304,37 @@ function AddLinkModal({
 // =============================================================================
 
 export function TaskLinkSection({ taskId, projectId }: TaskLinkSectionProps) {
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
-  const utils = trpc.useUtils()
+  const utils = trpc.useUtils();
 
   // Fetch links
-  const linksQuery = trpc.taskLink.list.useQuery({ taskId })
+  const linksQuery = trpc.taskLink.list.useQuery({ taskId });
 
   // Delete link mutation
   const deleteLink = trpc.taskLink.delete.useMutation({
     onSuccess: () => {
-      utils.taskLink.list.invalidate({ taskId })
-      utils.taskLink.getBlocking.invalidate({ taskId })
+      utils.taskLink.list.invalidate({ taskId });
+      utils.taskLink.getBlocking.invalidate({ taskId });
     },
-  })
+  });
 
-  const handleNavigate = useCallback((taskId: number) => {
-    // Navigate to task - could be updated to use router
-    window.location.href = `/project/${projectId}/task/${taskId}`
-  }, [projectId])
+  const handleNavigate = useCallback(
+    (taskId: number) => {
+      // Navigate to task - could be updated to use router
+      window.location.href = `/project/${projectId}/task/${taskId}`;
+    },
+    [projectId]
+  );
 
-  const handleDelete = useCallback((linkId: number) => {
-    deleteLink.mutate({ linkId })
-  }, [deleteLink])
+  const handleDelete = useCallback(
+    (linkId: number) => {
+      deleteLink.mutate({ linkId });
+    },
+    [deleteLink]
+  );
 
-  const allLinks = linksQuery.data?.all ?? []
+  const allLinks = linksQuery.data?.all ?? [];
 
   return (
     <div className="space-y-2">
@@ -398,7 +384,7 @@ export function TaskLinkSection({ taskId, projectId }: TaskLinkSectionProps) {
         onSuccess={() => {}}
       />
     </div>
-  )
+  );
 }
 
-export default TaskLinkSection
+export default TaskLinkSection;

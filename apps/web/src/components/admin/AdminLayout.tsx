@@ -20,13 +20,13 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { DashboardLayout } from '../dashboard/DashboardLayout'
-import { AdminSidebar } from './AdminSidebar'
+import { DashboardLayout } from '../dashboard/DashboardLayout';
+import { AdminSidebar } from './AdminSidebar';
 
 interface AdminLayoutProps {
-  children: React.ReactNode
-  title: string
-  description?: string
+  children: React.ReactNode;
+  title: string;
+  description?: string;
 }
 
 export function AdminLayout({ children, title, description }: AdminLayoutProps) {
@@ -35,14 +35,12 @@ export function AdminLayout({ children, title, description }: AdminLayoutProps) 
       <div className="max-w-6xl">
         <div className="mb-6">
           <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
-          {description && (
-            <p className="text-muted-foreground mt-1">{description}</p>
-          )}
+          {description && <p className="text-muted-foreground mt-1">{description}</p>}
         </div>
         {children}
       </div>
     </DashboardLayout>
-  )
+  );
 }
 
-export default AdminLayout
+export default AdminLayout;

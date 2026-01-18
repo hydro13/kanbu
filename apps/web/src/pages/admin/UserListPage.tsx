@@ -16,19 +16,19 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { AdminLayout } from '@/components/admin'
-import { trpc } from '@/lib/trpc'
-import { cn } from '@/lib/utils'
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { AdminLayout } from '@/components/admin';
+import { trpc } from '@/lib/trpc';
+import { cn } from '@/lib/utils';
 
 // =============================================================================
 // Types
 // =============================================================================
 
-type StatusFilter = boolean | undefined
-type SortField = 'id' | 'email' | 'username' | 'name' | 'createdAt' | 'lastLoginAt'
-type SortOrder = 'asc' | 'desc'
+type StatusFilter = boolean | undefined;
+type SortField = 'id' | 'email' | 'username' | 'name' | 'createdAt' | 'lastLoginAt';
+type SortOrder = 'asc' | 'desc';
 
 // =============================================================================
 // Icons
@@ -36,34 +36,68 @@ type SortOrder = 'asc' | 'desc'
 
 function SearchIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+      />
     </svg>
-  )
+  );
 }
 
 function ChevronUpIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
     </svg>
-  )
+  );
 }
 
 function ChevronDownIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
     </svg>
-  )
+  );
 }
 
 function PencilIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+      />
     </svg>
-  )
+  );
 }
 
 // =============================================================================
@@ -71,12 +105,12 @@ function PencilIcon({ className }: { className?: string }) {
 // =============================================================================
 
 export function UserListPage() {
-  const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>(undefined)
-  const [sortBy, setSortBy] = useState<SortField>('id')
-  const [sortOrder, setSortOrder] = useState<SortOrder>('asc')
-  const [page, setPage] = useState(0)
-  const limit = 25
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(undefined);
+  const [sortBy, setSortBy] = useState<SortField>('id');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+  const [page, setPage] = useState(0);
+  const limit = 25;
 
   const { data, isLoading, error } = trpc.admin.listUsers.useQuery({
     search: search || undefined,
@@ -85,52 +119,49 @@ export function UserListPage() {
     sortOrder,
     limit,
     offset: page * limit,
-  })
+  });
 
   const handleSort = (field: SortField) => {
     if (sortBy === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
     } else {
-      setSortBy(field)
-      setSortOrder('asc')
+      setSortBy(field);
+      setSortOrder('asc');
     }
-    setPage(0)
-  }
+    setPage(0);
+  };
 
   const SortIcon = ({ field }: { field: SortField }) => {
-    if (sortBy !== field) return null
+    if (sortBy !== field) return null;
     return sortOrder === 'asc' ? (
       <ChevronUpIcon className="h-4 w-4 inline ml-1" />
     ) : (
       <ChevronDownIcon className="h-4 w-4 inline ml-1" />
-    )
-  }
+    );
+  };
 
   const formatDate = (date: string | Date | null) => {
-    if (!date) return '-'
+    if (!date) return '-';
     return new Date(date).toLocaleDateString('nl-NL', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
-    })
-  }
+    });
+  };
 
   const formatDateTime = (date: string | Date | null) => {
-    if (!date) return 'Never'
+    if (!date) return 'Never';
     return new Date(date).toLocaleString('nl-NL', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-    })
-  }
+    });
+  };
 
   return (
-    <AdminLayout
-      title="Users"
-      description="Manage user accounts and permissions"
-    >
+    <AdminLayout title="Users" description="Manage user accounts and permissions">
       {/* Filters */}
       <div className="mb-6 flex flex-wrap gap-4">
         {/* Search */}
@@ -141,8 +172,8 @@ export function UserListPage() {
             placeholder="Search by email, username, or name..."
             value={search}
             onChange={(e) => {
-              setSearch(e.target.value)
-              setPage(0)
+              setSearch(e.target.value);
+              setPage(0);
             }}
             className="w-full pl-10 pr-4 py-2 border border-input rounded-lg bg-card text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
@@ -152,9 +183,9 @@ export function UserListPage() {
         <select
           value={statusFilter === undefined ? '' : statusFilter ? 'active' : 'inactive'}
           onChange={(e) => {
-            const val = e.target.value
-            setStatusFilter(val === '' ? undefined : val === 'active')
-            setPage(0)
+            const val = e.target.value;
+            setStatusFilter(val === '' ? undefined : val === 'active');
+            setPage(0);
           }}
           className="px-4 py-2 border border-input rounded-lg bg-card text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         >
@@ -180,11 +211,7 @@ export function UserListPage() {
       )}
 
       {/* Loading state */}
-      {isLoading && (
-        <div className="text-center py-12 text-gray-500">
-          Loading users...
-        </div>
-      )}
+      {isLoading && <div className="text-center py-12 text-gray-500">Loading users...</div>}
 
       {/* Users table */}
       {data && (
@@ -255,9 +282,7 @@ export function UserListPage() {
                           </div>
                         )}
                         <div>
-                          <div className="font-medium text-foreground">
-                            {user.name}
-                          </div>
+                          <div className="font-medium text-foreground">{user.name}</div>
                           <div className="text-sm text-gray-500 dark:text-gray-400">
                             @{user.username}
                           </div>
@@ -275,11 +300,16 @@ export function UserListPage() {
                               key={group.id}
                               className={cn(
                                 'inline-flex items-center px-2 py-0.5 rounded text-xs font-medium',
-                                group.type === 'SYSTEM' && 'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300',
-                                group.type === 'WORKSPACE_ADMIN' && 'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300',
-                                group.type === 'WORKSPACE' && 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300',
-                                group.type === 'PROJECT' && 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300',
-                                group.type === 'CUSTOM' && 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                                group.type === 'SYSTEM' &&
+                                  'bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300',
+                                group.type === 'WORKSPACE_ADMIN' &&
+                                  'bg-orange-100 dark:bg-orange-900/40 text-orange-700 dark:text-orange-300',
+                                group.type === 'WORKSPACE' &&
+                                  'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300',
+                                group.type === 'PROJECT' &&
+                                  'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300',
+                                group.type === 'CUSTOM' &&
+                                  'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
                               )}
                               title={group.displayName}
                             >
@@ -290,7 +320,9 @@ export function UserListPage() {
                           <span className="text-gray-400 text-sm">No groups</span>
                         )}
                         {user.groups && user.groups.length > 3 && (
-                          <span className="text-gray-500 text-xs">+{user.groups.length - 3} more</span>
+                          <span className="text-gray-500 text-xs">
+                            +{user.groups.length - 3} more
+                          </span>
                         )}
                       </div>
                     </td>
@@ -340,7 +372,8 @@ export function UserListPage() {
           {/* Pagination */}
           <div className="mt-4 flex items-center justify-between">
             <div className="text-sm text-gray-600 dark:text-gray-400">
-              Showing {page * limit + 1} to {Math.min((page + 1) * limit, data.total)} of {data.total} users
+              Showing {page * limit + 1} to {Math.min((page + 1) * limit, data.total)} of{' '}
+              {data.total} users
             </div>
             <div className="flex gap-2">
               <button
@@ -377,7 +410,7 @@ export function UserListPage() {
         </div>
       )}
     </AdminLayout>
-  )
+  );
 }
 
-export default UserListPage
+export default UserListPage;

@@ -13,8 +13,8 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useMemo } from 'react'
-import { Loader2, Info, AlertTriangle } from 'lucide-react'
+import { useMemo } from 'react';
+import { Loader2, Info, AlertTriangle } from 'lucide-react';
 
 // =============================================================================
 // Types
@@ -22,27 +22,27 @@ import { Loader2, Info, AlertTriangle } from 'lucide-react'
 
 interface CycleTimeData {
   cycleTimeByColumn: Array<{
-    columnId: number
-    columnName: string
-    position: number
-    avgHours: number
-    avgDays: number
-    taskCount: number
-  }>
+    columnId: number;
+    columnName: string;
+    position: number;
+    avgHours: number;
+    avgDays: number;
+    taskCount: number;
+  }>;
   bottleneck: {
-    columnId: number
-    columnName: string
-    avgHours: number
-    avgDays: number
-  } | null
-  avgTotalCycleHours: number
-  avgTotalCycleDays: number
-  completedTasksAnalyzed: number
+    columnId: number;
+    columnName: string;
+    avgHours: number;
+    avgDays: number;
+  } | null;
+  avgTotalCycleHours: number;
+  avgTotalCycleDays: number;
+  completedTasksAnalyzed: number;
 }
 
 export interface CycleTimeChartProps {
-  data: CycleTimeData | undefined
-  isLoading: boolean
+  data: CycleTimeData | undefined;
+  isLoading: boolean;
 }
 
 // =============================================================================
@@ -50,9 +50,9 @@ export interface CycleTimeChartProps {
 // =============================================================================
 
 function formatDuration(hours: number): string {
-  if (hours < 1) return `${Math.round(hours * 60)}m`
-  if (hours < 24) return `${Math.round(hours * 10) / 10}h`
-  return `${Math.round((hours / 24) * 10) / 10}d`
+  if (hours < 1) return `${Math.round(hours * 60)}m`;
+  if (hours < 24) return `${Math.round(hours * 10) / 10}h`;
+  return `${Math.round((hours / 24) * 10) / 10}d`;
 }
 
 // =============================================================================
@@ -61,9 +61,9 @@ function formatDuration(hours: number): string {
 
 export function CycleTimeChart({ data, isLoading }: CycleTimeChartProps) {
   const chartData = useMemo(() => {
-    if (!data?.cycleTimeByColumn || data.cycleTimeByColumn.length === 0) return null
+    if (!data?.cycleTimeByColumn || data.cycleTimeByColumn.length === 0) return null;
 
-    const maxHours = Math.max(...data.cycleTimeByColumn.map((c) => c.avgHours), 1)
+    const maxHours = Math.max(...data.cycleTimeByColumn.map((c) => c.avgHours), 1);
 
     return {
       columns: data.cycleTimeByColumn,
@@ -72,15 +72,15 @@ export function CycleTimeChart({ data, isLoading }: CycleTimeChartProps) {
       avgTotalCycleHours: data.avgTotalCycleHours,
       avgTotalCycleDays: data.avgTotalCycleDays,
       completedTasksAnalyzed: data.completedTasksAnalyzed,
-    }
-  }, [data])
+    };
+  }, [data]);
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-48">
         <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
       </div>
-    )
+    );
   }
 
   if (!chartData || chartData.columns.every((c) => c.taskCount === 0)) {
@@ -89,7 +89,7 @@ export function CycleTimeChart({ data, isLoading }: CycleTimeChartProps) {
         <Info className="w-5 h-5 mr-2" />
         Not enough data to calculate cycle time
       </div>
-    )
+    );
   }
 
   return (
@@ -115,8 +115,8 @@ export function CycleTimeChart({ data, isLoading }: CycleTimeChartProps) {
         <div className="flex items-center gap-2 mb-4 p-3 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg">
           <AlertTriangle className="w-4 h-4 text-orange-500" />
           <span className="text-sm text-orange-700 dark:text-orange-400">
-            <strong>Bottleneck:</strong> &ldquo;{chartData.bottleneck.columnName}&rdquo; has the longest
-            average time ({formatDuration(chartData.bottleneck.avgHours)})
+            <strong>Bottleneck:</strong> &ldquo;{chartData.bottleneck.columnName}&rdquo; has the
+            longest average time ({formatDuration(chartData.bottleneck.avgHours)})
           </span>
         </div>
       )}
@@ -124,17 +124,15 @@ export function CycleTimeChart({ data, isLoading }: CycleTimeChartProps) {
       {/* Horizontal Bar Chart */}
       <div className="space-y-3">
         {chartData.columns.map((column) => {
-          const widthPercent = (column.avgHours / chartData.maxHours) * 100
-          const isBottleneck = chartData.bottleneck?.columnId === column.columnId
+          const widthPercent = (column.avgHours / chartData.maxHours) * 100;
+          const isBottleneck = chartData.bottleneck?.columnId === column.columnId;
 
           return (
             <div key={column.columnId}>
               <div className="flex items-center justify-between mb-1">
                 <span className="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-1">
                   {column.columnName}
-                  {isBottleneck && (
-                    <AlertTriangle className="w-3 h-3 text-orange-500" />
-                  )}
+                  {isBottleneck && <AlertTriangle className="w-3 h-3 text-orange-500" />}
                 </span>
                 <span className="text-sm font-medium text-foreground">
                   {formatDuration(column.avgHours)}
@@ -143,9 +141,7 @@ export function CycleTimeChart({ data, isLoading }: CycleTimeChartProps) {
               <div className="h-6 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden relative">
                 <div
                   className={`h-full rounded-full transition-all ${
-                    isBottleneck
-                      ? 'bg-orange-500'
-                      : 'bg-blue-500'
+                    isBottleneck ? 'bg-orange-500' : 'bg-blue-500'
                   }`}
                   style={{ width: `${Math.max(widthPercent, column.taskCount > 0 ? 2 : 0)}%` }}
                 />
@@ -156,7 +152,7 @@ export function CycleTimeChart({ data, isLoading }: CycleTimeChartProps) {
                 )}
               </div>
             </div>
-          )
+          );
         })}
       </div>
 
@@ -186,7 +182,7 @@ export function CycleTimeChart({ data, isLoading }: CycleTimeChartProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default CycleTimeChart
+export default CycleTimeChart;

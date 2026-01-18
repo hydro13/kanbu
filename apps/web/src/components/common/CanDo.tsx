@@ -24,8 +24,8 @@
  * =============================================================================
  */
 
-import type { ReactNode } from 'react'
-import { usePermissions } from '@/hooks/usePermissions'
+import type { ReactNode } from 'react';
+import { usePermissions } from '@/hooks/usePermissions';
 
 // =============================================================================
 // Types
@@ -33,62 +33,62 @@ import { usePermissions } from '@/hooks/usePermissions'
 
 export interface CanDoProps {
   /** Permission path to check, e.g., "task.create" */
-  permission: string
+  permission: string;
 
   /** Optional workspace context */
-  workspaceId?: number
+  workspaceId?: number;
 
   /** Optional project context */
-  projectId?: number
+  projectId?: number;
 
   /** Content to render if permission is granted */
-  children: ReactNode
+  children: ReactNode;
 
   /** Optional content to render if permission is denied */
-  fallback?: ReactNode
+  fallback?: ReactNode;
 
   /** If true, show children while loading (optimistic) */
-  optimistic?: boolean
+  optimistic?: boolean;
 }
 
 export interface CanDoAnyProps {
   /** Permission paths to check - shows if user has ANY of these */
-  permissions: string[]
+  permissions: string[];
 
   /** Optional workspace context */
-  workspaceId?: number
+  workspaceId?: number;
 
   /** Optional project context */
-  projectId?: number
+  projectId?: number;
 
   /** Content to render if any permission is granted */
-  children: ReactNode
+  children: ReactNode;
 
   /** Optional content to render if all permissions are denied */
-  fallback?: ReactNode
+  fallback?: ReactNode;
 
   /** If true, show children while loading (optimistic) */
-  optimistic?: boolean
+  optimistic?: boolean;
 }
 
 export interface CanDoAllProps {
   /** Permission paths to check - shows only if user has ALL of these */
-  permissions: string[]
+  permissions: string[];
 
   /** Optional workspace context */
-  workspaceId?: number
+  workspaceId?: number;
 
   /** Optional project context */
-  projectId?: number
+  projectId?: number;
 
   /** Content to render if all permissions are granted */
-  children: ReactNode
+  children: ReactNode;
 
   /** Optional content to render if any permission is denied */
-  fallback?: ReactNode
+  fallback?: ReactNode;
 
   /** If true, show children while loading (optimistic) */
-  optimistic?: boolean
+  optimistic?: boolean;
 }
 
 // =============================================================================
@@ -106,13 +106,13 @@ export function CanDo({
   fallback = null,
   optimistic = false,
 }: CanDoProps): ReactNode {
-  const { canDo, isLoading } = usePermissions({ workspaceId, projectId })
+  const { canDo, isLoading } = usePermissions({ workspaceId, projectId });
 
   if (isLoading) {
-    return optimistic ? children : null
+    return optimistic ? children : null;
   }
 
-  return canDo(permission) ? children : fallback
+  return canDo(permission) ? children : fallback;
 }
 
 /**
@@ -126,13 +126,13 @@ export function CanDoAny({
   fallback = null,
   optimistic = false,
 }: CanDoAnyProps): ReactNode {
-  const { canDoAny, isLoading } = usePermissions({ workspaceId, projectId })
+  const { canDoAny, isLoading } = usePermissions({ workspaceId, projectId });
 
   if (isLoading) {
-    return optimistic ? children : null
+    return optimistic ? children : null;
   }
 
-  return canDoAny(permissions) ? children : fallback
+  return canDoAny(permissions) ? children : fallback;
 }
 
 /**
@@ -146,17 +146,17 @@ export function CanDoAll({
   fallback = null,
   optimistic = false,
 }: CanDoAllProps): ReactNode {
-  const { canDoAll, isLoading } = usePermissions({ workspaceId, projectId })
+  const { canDoAll, isLoading } = usePermissions({ workspaceId, projectId });
 
   if (isLoading) {
-    return optimistic ? children : null
+    return optimistic ? children : null;
   }
 
-  return canDoAll(permissions) ? children : fallback
+  return canDoAll(permissions) ? children : fallback;
 }
 
 // =============================================================================
 // Default Export
 // =============================================================================
 
-export default CanDo
+export default CanDo;

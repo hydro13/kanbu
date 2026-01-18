@@ -51,81 +51,79 @@ export function parseRoomName(room: string): { type: string; id: number | null }
 /**
  * Register room-related event handlers for a socket
  */
-export function registerRoomHandlers(
-  _io: Server,
-  socket: AuthenticatedSocket
-): void {
+export function registerRoomHandlers(_io: Server, socket: AuthenticatedSocket): void {
   // Auto-join user's workspace rooms on connect
   for (const workspaceId of socket.data.workspaceIds) {
     const roomName = RoomNames.workspace(workspaceId);
     void socket.join(roomName);
-    console.log(
-      `[Socket] User ${socket.data.user.username} joined ${roomName}`
-    );
+    console.log(`[Socket] User ${socket.data.user.username} joined ${roomName}`);
   }
 
   // Handle explicit room join requests
-  socket.on('room:join', async (roomName: string, callback?: (result: { success: boolean; error?: string }) => void) => {
-    try {
-      const parsed = parseRoomName(roomName);
-      if (!parsed) {
-        callback?.({ success: false, error: 'Invalid room name' });
-        return;
+  socket.on(
+    'room:join',
+    async (roomName: string, callback?: (result: { success: boolean; error?: string }) => void) => {
+      try {
+        const parsed = parseRoomName(roomName);
+        if (!parsed) {
+          callback?.({ success: false, error: 'Invalid room name' });
+          return;
+        }
+
+        // Check authorization based on room type
+        let authorized = false;
+
+        switch (parsed.type) {
+          case 'workspace':
+            authorized = parsed.id !== null && socket.data.workspaceIds.includes(parsed.id);
+            break;
+          case 'project':
+            authorized = parsed.id !== null && (await canAccessProject(socket, parsed.id));
+            break;
+          case 'task':
+            // Task rooms are accessible if user can access the parent project
+            // For now, allow if user is authenticated (task permissions checked elsewhere)
+            authorized = true;
+            break;
+          case 'admin':
+            // Admin room is accessible to Domain Admins only
+            // Check is done via socket.data.isDomainAdmin (set during auth)
+            authorized = socket.data.isDomainAdmin === true;
+            break;
+        }
+
+        if (!authorized) {
+          callback?.({ success: false, error: 'Access denied' });
+          return;
+        }
+
+        await socket.join(roomName);
+
+        // Log current room members for debugging
+        const socketsInRoom = await _io.in(roomName).fetchSockets();
+        const otherMembers = socketsInRoom
+          .filter((s) => s.id !== socket.id)
+          .map((s) => (s as unknown as AuthenticatedSocket).data?.user?.username)
+          .filter(Boolean);
+
+        console.log(
+          `[Socket] User ${socket.data.user.username} joined ${roomName} (${otherMembers.length} others: ${otherMembers.join(', ') || 'none'})`
+        );
+        callback?.({ success: true });
+
+        // Notify others in the room about new presence
+        socket.to(roomName).emit('presence:joined', {
+          user: socket.data.user,
+          roomName,
+          timestamp: new Date().toISOString(),
+        });
+        console.log(`[Socket] Emitted presence:joined to ${otherMembers.length} other users`);
+      } catch (error) {
+        console.error('[Socket] Error joining room:', error);
+        callback?.({ success: false, error: 'Failed to join room' });
       }
-
-      // Check authorization based on room type
-      let authorized = false;
-
-      switch (parsed.type) {
-        case 'workspace':
-          authorized = parsed.id !== null && socket.data.workspaceIds.includes(parsed.id);
-          break;
-        case 'project':
-          authorized = parsed.id !== null && await canAccessProject(socket, parsed.id);
-          break;
-        case 'task':
-          // Task rooms are accessible if user can access the parent project
-          // For now, allow if user is authenticated (task permissions checked elsewhere)
-          authorized = true;
-          break;
-        case 'admin':
-          // Admin room is accessible to Domain Admins only
-          // Check is done via socket.data.isDomainAdmin (set during auth)
-          authorized = socket.data.isDomainAdmin === true;
-          break;
-      }
-
-      if (!authorized) {
-        callback?.({ success: false, error: 'Access denied' });
-        return;
-      }
-
-      await socket.join(roomName);
-
-      // Log current room members for debugging
-      const socketsInRoom = await _io.in(roomName).fetchSockets();
-      const otherMembers = socketsInRoom
-        .filter(s => s.id !== socket.id)
-        .map(s => (s as unknown as AuthenticatedSocket).data?.user?.username)
-        .filter(Boolean);
-
-      console.log(
-        `[Socket] User ${socket.data.user.username} joined ${roomName} (${otherMembers.length} others: ${otherMembers.join(', ') || 'none'})`
-      );
-      callback?.({ success: true });
-
-      // Notify others in the room about new presence
-      socket.to(roomName).emit('presence:joined', {
-        user: socket.data.user,
-        roomName,
-        timestamp: new Date().toISOString(),
-      });
-      console.log(`[Socket] Emitted presence:joined to ${otherMembers.length} other users`);
-    } catch (error) {
-      console.error('[Socket] Error joining room:', error);
-      callback?.({ success: false, error: 'Failed to join room' });
     }
-  });
+  );
 
   // Handle room leave requests
   socket.on('room:leave', (roomName: string, callback?: (result: { success: boolean }) => void) => {
@@ -138,9 +136,7 @@ export function registerRoomHandlers(
     }
 
     void socket.leave(roomName);
-    console.log(
-      `[Socket] User ${socket.data.user.username} left ${roomName}`
-    );
+    console.log(`[Socket] User ${socket.data.user.username} left ${roomName}`);
     callback?.({ success: true });
 
     // Notify others about departure
@@ -177,7 +173,8 @@ export async function getRoomUsers(
   roomName: string
 ): Promise<{ id: number; username: string; name: string | null; avatarUrl: string | null }[]> {
   const sockets = await io.in(roomName).fetchSockets();
-  const users: { id: number; username: string; name: string | null; avatarUrl: string | null }[] = [];
+  const users: { id: number; username: string; name: string | null; avatarUrl: string | null }[] =
+    [];
   const seen = new Set<number>();
 
   for (const socket of sockets) {

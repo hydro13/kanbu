@@ -13,21 +13,21 @@
  * =============================================================================
  */
 
-import { execSync } from 'child_process'
-import { existsSync, readFileSync, writeFileSync, unlinkSync, renameSync } from 'fs'
-import { join, dirname } from 'path'
-import Conf from 'conf'
+import { execSync } from 'child_process';
+import { existsSync, readFileSync, writeFileSync, unlinkSync, renameSync } from 'fs';
+import { join, dirname } from 'path';
+import Conf from 'conf';
 
 // =============================================================================
 // Configuration
 // =============================================================================
 
 interface HooksConfig {
-  apiUrl: string
-  apiToken: string
-  projectPrefix: string
-  branchPattern: string
-  enabled: boolean
+  apiUrl: string;
+  apiToken: string;
+  projectPrefix: string;
+  branchPattern: string;
+  enabled: boolean;
 }
 
 const config = new Conf<HooksConfig>({
@@ -39,7 +39,7 @@ const config = new Conf<HooksConfig>({
     branchPattern: '(?:feature|fix|bugfix|hotfix)/([A-Z]+-\\d+)',
     enabled: true,
   },
-})
+});
 
 export function getConfig(): HooksConfig {
   return {
@@ -48,16 +48,16 @@ export function getConfig(): HooksConfig {
     projectPrefix: config.get('projectPrefix'),
     branchPattern: config.get('branchPattern'),
     enabled: config.get('enabled'),
-  }
+  };
 }
 
 export function setConfig(key: keyof HooksConfig, value: string | boolean): void {
-  config.set(key, value)
+  config.set(key, value);
 }
 
 export function isConfigured(): boolean {
-  const cfg = getConfig()
-  return !!cfg.apiToken && !!cfg.apiUrl
+  const cfg = getConfig();
+  return !!cfg.apiToken && !!cfg.apiUrl;
 }
 
 // =============================================================================
@@ -69,9 +69,9 @@ export function isConfigured(): boolean {
  */
 export function getGitRoot(): string | null {
   try {
-    return execSync('git rev-parse --show-toplevel', { encoding: 'utf-8' }).trim()
+    return execSync('git rev-parse --show-toplevel', { encoding: 'utf-8' }).trim();
   } catch {
-    return null
+    return null;
   }
 }
 
@@ -80,9 +80,9 @@ export function getGitRoot(): string | null {
  */
 export function getCurrentBranch(): string | null {
   try {
-    return execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf-8' }).trim()
+    return execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf-8' }).trim();
   } catch {
-    return null
+    return null;
   }
 }
 
@@ -90,9 +90,9 @@ export function getCurrentBranch(): string | null {
  * Get the .git/hooks directory path
  */
 export function getHooksDir(): string | null {
-  const gitRoot = getGitRoot()
-  if (!gitRoot) return null
-  return join(gitRoot, '.git', 'hooks')
+  const gitRoot = getGitRoot();
+  if (!gitRoot) return null;
+  return join(gitRoot, '.git', 'hooks');
 }
 
 /**
@@ -103,26 +103,26 @@ export function getHooksDir(): string | null {
  * - bugfix/ABC-789-some-feature
  */
 export function extractTaskFromBranch(branch: string): string | null {
-  const cfg = getConfig()
+  const cfg = getConfig();
 
   // Try configured pattern first
   try {
-    const regex = new RegExp(cfg.branchPattern, 'i')
-    const match = branch.match(regex)
+    const regex = new RegExp(cfg.branchPattern, 'i');
+    const match = branch.match(regex);
     if (match?.[1]) {
-      return match[1].toUpperCase()
+      return match[1].toUpperCase();
     }
   } catch {
     // Invalid regex, fall through to default
   }
 
   // Default pattern: any PROJ-123 style reference
-  const defaultMatch = branch.match(/([A-Z]+-\d+)/i)
+  const defaultMatch = branch.match(/([A-Z]+-\d+)/i);
   if (defaultMatch?.[1]) {
-    return defaultMatch[1].toUpperCase()
+    return defaultMatch[1].toUpperCase();
   }
 
-  return null
+  return null;
 }
 
 /**
@@ -130,18 +130,18 @@ export function extractTaskFromBranch(branch: string): string | null {
  */
 export function extractTaskFromMessage(message: string): string | null {
   // Look for [PROJ-123] or PROJ-123 patterns
-  const match = message.match(/\[?([A-Z]+-\d+)\]?/i)
+  const match = message.match(/\[?([A-Z]+-\d+)\]?/i);
   if (match?.[1]) {
-    return match[1].toUpperCase()
+    return match[1].toUpperCase();
   }
-  return null
+  return null;
 }
 
 /**
  * Check if commit message already contains a task reference
  */
 export function hasTaskReference(message: string): boolean {
-  return /\[?[A-Z]+-\d+\]?/i.test(message)
+  return /\[?[A-Z]+-\d+\]?/i.test(message);
 }
 
 /**
@@ -150,29 +150,29 @@ export function hasTaskReference(message: string): boolean {
 export function addTaskToMessage(message: string, taskRef: string): string {
   // Don't add if already present
   if (hasTaskReference(message)) {
-    return message
+    return message;
   }
 
   // Add at the end of the first line
-  const lines = message.split('\n')
-  lines[0] = `${lines[0]} [${taskRef}]`
-  return lines.join('\n')
+  const lines = message.split('\n');
+  lines[0] = `${lines[0]} [${taskRef}]`;
+  return lines.join('\n');
 }
 
 // =============================================================================
 // Hook File Management
 // =============================================================================
 
-const HOOK_HEADER = '#!/bin/sh\n# Kanbu Git Hook - Do not edit manually\n'
-const HOOK_MARKER = '# KANBU_HOOK_MARKER'
+const HOOK_HEADER = '#!/bin/sh\n# Kanbu Git Hook - Do not edit manually\n';
+const HOOK_MARKER = '# KANBU_HOOK_MARKER';
 
 /**
  * Check if a hook file is managed by Kanbu
  */
 export function isKanbuHook(hookPath: string): boolean {
-  if (!existsSync(hookPath)) return false
-  const content = readFileSync(hookPath, 'utf-8')
-  return content.includes(HOOK_MARKER)
+  if (!existsSync(hookPath)) return false;
+  const content = readFileSync(hookPath, 'utf-8');
+  return content.includes(HOOK_MARKER);
 }
 
 /**
@@ -181,7 +181,7 @@ export function isKanbuHook(hookPath: string): boolean {
 export function getHookScriptPath(hookName: string): string {
   // In production, hooks are in the package's dist directory
   // We use npx to run them
-  return `npx kanbu-hooks run ${hookName}`
+  return `npx kanbu-hooks run ${hookName}`;
 }
 
 /**
@@ -192,68 +192,68 @@ export function generateHookContent(hookName: string): string {
 
 # Run Kanbu hook
 exec npx @kanbu/git-hooks run ${hookName} "$@"
-`
+`;
 }
 
 /**
  * Install a hook
  */
 export function installHook(hookName: string): boolean {
-  const hooksDir = getHooksDir()
+  const hooksDir = getHooksDir();
   if (!hooksDir) {
-    console.error('Not in a git repository')
-    return false
+    console.error('Not in a git repository');
+    return false;
   }
 
-  const hookPath = join(hooksDir, hookName)
-  const backupPath = `${hookPath}.backup`
+  const hookPath = join(hooksDir, hookName);
+  const backupPath = `${hookPath}.backup`;
 
   // Backup existing hook if not already a Kanbu hook
   if (existsSync(hookPath) && !isKanbuHook(hookPath)) {
-    const existing = readFileSync(hookPath, 'utf-8')
-    writeFileSync(backupPath, existing)
-    console.log(`Backed up existing ${hookName} to ${hookName}.backup`)
+    const existing = readFileSync(hookPath, 'utf-8');
+    writeFileSync(backupPath, existing);
+    console.log(`Backed up existing ${hookName} to ${hookName}.backup`);
   }
 
   // Write new hook
-  const content = generateHookContent(hookName)
-  writeFileSync(hookPath, content, { mode: 0o755 })
+  const content = generateHookContent(hookName);
+  writeFileSync(hookPath, content, { mode: 0o755 });
 
-  return true
+  return true;
 }
 
 /**
  * Uninstall a hook
  */
 export function uninstallHook(hookName: string): boolean {
-  const hooksDir = getHooksDir()
+  const hooksDir = getHooksDir();
   if (!hooksDir) {
-    console.error('Not in a git repository')
-    return false
+    console.error('Not in a git repository');
+    return false;
   }
 
-  const hookPath = join(hooksDir, hookName)
-  const backupPath = `${hookPath}.backup`
+  const hookPath = join(hooksDir, hookName);
+  const backupPath = `${hookPath}.backup`;
 
   if (!existsSync(hookPath)) {
-    return true // Already uninstalled
+    return true; // Already uninstalled
   }
 
   if (!isKanbuHook(hookPath)) {
-    console.error(`${hookName} is not a Kanbu hook, skipping`)
-    return false
+    console.error(`${hookName} is not a Kanbu hook, skipping`);
+    return false;
   }
 
   // Remove Kanbu hook
-  unlinkSync(hookPath)
+  unlinkSync(hookPath);
 
   // Restore backup if exists
   if (existsSync(backupPath)) {
-    renameSync(backupPath, hookPath)
-    console.log(`Restored ${hookName} from backup`)
+    renameSync(backupPath, hookPath);
+    console.log(`Restored ${hookName} from backup`);
   }
 
-  return true
+  return true;
 }
 
 // =============================================================================
@@ -261,20 +261,20 @@ export function uninstallHook(hookName: string): boolean {
 // =============================================================================
 
 export interface TaskInfo {
-  id: number
-  reference: string
-  title: string
-  status: string
-  columnId: number
+  id: number;
+  reference: string;
+  title: string;
+  status: string;
+  columnId: number;
 }
 
 /**
  * Fetch task info from Kanbu API
  */
 export async function fetchTask(taskRef: string): Promise<TaskInfo | null> {
-  const cfg = getConfig()
+  const cfg = getConfig();
   if (!cfg.apiToken) {
-    return null
+    return null;
   }
 
   try {
@@ -287,19 +287,19 @@ export async function fetchTask(taskRef: string): Promise<TaskInfo | null> {
       body: JSON.stringify({
         json: { reference: taskRef },
       }),
-    })
+    });
 
     if (!response.ok) {
-      return null
+      return null;
     }
 
-    const data = await response.json() as {
-      result?: { data?: { json?: TaskInfo } }
-    }
+    const data = (await response.json()) as {
+      result?: { data?: { json?: TaskInfo } };
+    };
 
-    return data.result?.data?.json || null
+    return data.result?.data?.json || null;
   } catch {
-    return null
+    return null;
   }
 }
 
@@ -311,9 +311,9 @@ export async function linkCommitToTask(
   commitSha: string,
   commitMessage: string
 ): Promise<boolean> {
-  const cfg = getConfig()
+  const cfg = getConfig();
   if (!cfg.apiToken) {
-    return false
+    return false;
   }
 
   try {
@@ -330,10 +330,10 @@ export async function linkCommitToTask(
           message: commitMessage,
         },
       }),
-    })
+    });
 
-    return response.ok
+    return response.ok;
   } catch {
-    return false
+    return false;
   }
 }

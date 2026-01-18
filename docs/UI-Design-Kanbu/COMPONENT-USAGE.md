@@ -26,21 +26,21 @@
 ### Import
 
 ```tsx
-import { Button } from '@/components/ui/button'
+import { Button } from '@/components/ui/button';
 ```
 
 ### Variants
 
-| Variant | Use Case | Example |
-|---------|----------|---------|
-| `default` | Primary actions | Save, Submit, Create |
-| `secondary` | Secondary actions | Cancel, Back |
-| `outline` | Less prominent actions | Filter, Sort |
-| `ghost` | Minimal UI actions | Menu items, icons |
-| `link` | Navigation links | Learn more, View details |
-| `destructive` | Dangerous actions | Delete, Remove |
-| `success` | Positive confirmations | Approve, Complete |
-| `warning` | Cautionary actions | Archive, Disable |
+| Variant       | Use Case               | Example                  |
+| ------------- | ---------------------- | ------------------------ |
+| `default`     | Primary actions        | Save, Submit, Create     |
+| `secondary`   | Secondary actions      | Cancel, Back             |
+| `outline`     | Less prominent actions | Filter, Sort             |
+| `ghost`       | Minimal UI actions     | Menu items, icons        |
+| `link`        | Navigation links       | Learn more, View details |
+| `destructive` | Dangerous actions      | Delete, Remove           |
+| `success`     | Positive confirmations | Approve, Complete        |
+| `warning`     | Cautionary actions     | Archive, Disable         |
 
 ### Basic Usage
 
@@ -113,6 +113,7 @@ import { Button } from '@/components/ui/button'
 ### Do's and Don'ts
 
 **Do:**
+
 - Use `variant="destructive"` for delete/remove actions
 - Use `variant="success"` for positive confirmations
 - Provide clear, action-oriented labels ("Save" not "OK")
@@ -120,6 +121,7 @@ import { Button } from '@/components/ui/button'
 - Group related buttons together
 
 **Don't:**
+
 - Use custom colors: `className="bg-red-500"`
 - Mix icon-only with text buttons in the same group
 - Use destructive styling for non-destructive actions
@@ -153,25 +155,25 @@ import { Button } from '@/components/ui/button'
 ### Import
 
 ```tsx
-import { Badge } from '@/components/ui/badge'
+import { Badge } from '@/components/ui/badge';
 ```
 
 ### Variants
 
-| Variant | Use Case |
-|---------|----------|
-| `default` | Generic labels |
-| `secondary` | Muted labels |
-| `outline` | Bordered labels |
-| `destructive` | Error states |
-| `success` | Success states |
-| `warning` | Warning states |
-| `error` | Error states (alias) |
-| `info` | Information |
-| `priority-low` | Low priority |
-| `priority-medium` | Medium priority |
-| `priority-high` | High priority |
-| `priority-urgent` | Urgent priority |
+| Variant           | Use Case             |
+| ----------------- | -------------------- |
+| `default`         | Generic labels       |
+| `secondary`       | Muted labels         |
+| `outline`         | Bordered labels      |
+| `destructive`     | Error states         |
+| `success`         | Success states       |
+| `warning`         | Warning states       |
+| `error`           | Error states (alias) |
+| `info`            | Information          |
+| `priority-low`    | Low priority         |
+| `priority-medium` | Medium priority      |
+| `priority-high`   | High priority        |
+| `priority-urgent` | Urgent priority      |
 
 ### Status Badges
 
@@ -205,12 +207,14 @@ import { Badge } from '@/components/ui/badge'
 ### Do's and Don'ts
 
 **Do:**
+
 - Use semantic variants (success/warning/error) for status
 - Use priority variants for task priorities
 - Keep badge text short (1-2 words)
 - Use consistent variants throughout the app
 
 **Don't:**
+
 - Create custom colored badges: `className="bg-purple-500"`
 - Use badges for long text
 - Use badges for interactive elements (use buttons instead)
@@ -230,7 +234,7 @@ import {
   CardDescription,
   CardContent,
   CardFooter,
-} from '@/components/ui/card'
+} from '@/components/ui/card';
 ```
 
 ### Basic Structure
@@ -239,13 +243,9 @@ import {
 <Card>
   <CardHeader>
     <CardTitle>Project Settings</CardTitle>
-    <CardDescription>
-      Manage your project configuration
-    </CardDescription>
+    <CardDescription>Manage your project configuration</CardDescription>
   </CardHeader>
-  <CardContent>
-    {/* Card content */}
-  </CardContent>
+  <CardContent>{/* Card content */}</CardContent>
   <CardFooter>
     <Button>Save Changes</Button>
   </CardFooter>
@@ -279,12 +279,14 @@ import {
 ### Do's and Don'ts
 
 **Do:**
+
 - Use `Card` for grouping related content
 - Use `CardHeader` for titles and descriptions
 - Use `CardFooter` for actions
 - Apply `shadow-sm` (already included) for subtle elevation
 
 **Don't:**
+
 - Nest cards within cards
 - Override card background: `className="bg-gray-100"`
 - Use cards for single elements
@@ -297,11 +299,11 @@ import {
 ### Import
 
 ```tsx
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Checkbox } from '@/components/ui/checkbox'
-import { Switch } from '@/components/ui/switch'
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Switch } from '@/components/ui/switch';
 ```
 
 ### Basic Input
@@ -309,11 +311,7 @@ import { Switch } from '@/components/ui/switch'
 ```tsx
 <div className="space-y-2">
   <Label htmlFor="email">Email</Label>
-  <Input
-    id="email"
-    type="email"
-    placeholder="you@example.com"
-  />
+  <Input id="email" type="email" placeholder="you@example.com" />
 </div>
 ```
 
@@ -340,11 +338,7 @@ import { Switch } from '@/components/ui/switch'
 ```tsx
 <div className="space-y-2">
   <Label htmlFor="description">Description</Label>
-  <Textarea
-    id="description"
-    placeholder="Enter a description..."
-    rows={4}
-  />
+  <Textarea id="description" placeholder="Enter a description..." rows={4} />
 </div>
 ```
 
@@ -371,12 +365,14 @@ import { Switch } from '@/components/ui/switch'
 ### Do's and Don'ts
 
 **Do:**
+
 - Always pair inputs with labels
 - Use `id` and `htmlFor` for accessibility
 - Show clear error states with `aria-invalid`
 - Use placeholders as hints, not labels
 
 **Don't:**
+
 - Use placeholder as the only label
 - Override input colors: `className="bg-blue-50"`
 - Hide labels (use `sr-only` if needed visually)
@@ -424,7 +420,7 @@ import {
   DialogDescription,
   DialogFooter,
   DialogClose,
-} from '@/components/ui/dialog'
+} from '@/components/ui/dialog';
 ```
 
 ### Basic Usage
@@ -437,13 +433,9 @@ import {
   <DialogContent>
     <DialogHeader>
       <DialogTitle>Edit Profile</DialogTitle>
-      <DialogDescription>
-        Make changes to your profile here.
-      </DialogDescription>
+      <DialogDescription>Make changes to your profile here.</DialogDescription>
     </DialogHeader>
-    <div className="py-4">
-      {/* Dialog body content */}
-    </div>
+    <div className="py-4">{/* Dialog body content */}</div>
     <DialogFooter>
       <DialogClose asChild>
         <Button variant="outline">Cancel</Button>
@@ -465,8 +457,8 @@ import {
     <DialogHeader>
       <DialogTitle>Are you sure?</DialogTitle>
       <DialogDescription>
-        This action cannot be undone. This will permanently delete
-        the project and all associated data.
+        This action cannot be undone. This will permanently delete the project and all associated
+        data.
       </DialogDescription>
     </DialogHeader>
     <DialogFooter>
@@ -482,12 +474,14 @@ import {
 ### Do's and Don'ts
 
 **Do:**
+
 - Always include `DialogTitle` for accessibility
 - Use `DialogDescription` to explain the purpose
 - Put primary action on the right in `DialogFooter`
 - Use `DialogClose` for cancel buttons
 
 **Don't:**
+
 - Create dialogs without titles
 - Nest dialogs within dialogs
 - Override overlay color: `className="bg-black/80"`
@@ -508,7 +502,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuGroup,
-} from '@/components/ui/dropdown-menu'
+} from '@/components/ui/dropdown-menu';
 ```
 
 ### Basic Usage
@@ -543,12 +537,14 @@ import {
 ### Do's and Don'ts
 
 **Do:**
+
 - Use consistent icon sizes (`h-4 w-4`)
 - Group related items with `DropdownMenuSeparator`
 - Use `DropdownMenuLabel` for group headings
 - Put destructive actions at the bottom
 
 **Don't:**
+
 - Override menu background colors
 - Create deeply nested menus
 - Use long labels in menu items
@@ -561,12 +557,7 @@ import {
 ### Import
 
 ```tsx
-import {
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
-  TooltipProvider,
-} from '@/components/ui/tooltip'
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 ```
 
 ### Basic Usage
@@ -608,12 +599,14 @@ import {
 ### Do's and Don'ts
 
 **Do:**
+
 - Use tooltips for supplementary information
 - Keep tooltip text short (1 line preferred)
 - Use on icon-only buttons
 - Wrap app with `TooltipProvider`
 
 **Don't:**
+
 - Put essential information in tooltips only
 - Use tooltips on touch devices (not accessible)
 - Put interactive elements in tooltips
@@ -626,23 +619,23 @@ import {
 ### Import
 
 ```tsx
-import { toast } from 'sonner'
+import { toast } from 'sonner';
 ```
 
 ### Basic Usage
 
 ```tsx
 // Success
-toast.success('Changes saved successfully')
+toast.success('Changes saved successfully');
 
 // Error
-toast.error('Failed to save changes')
+toast.error('Failed to save changes');
 
 // Warning
-toast.warning('Your session will expire soon')
+toast.warning('Your session will expire soon');
 
 // Info
-toast.info('New updates available')
+toast.info('New updates available');
 
 // Custom
 toast('Hello World', {
@@ -651,7 +644,7 @@ toast('Hello World', {
     label: 'Undo',
     onClick: () => console.log('Undo clicked'),
   },
-})
+});
 ```
 
 ### With Actions
@@ -662,28 +655,30 @@ toast.success('Item deleted', {
     label: 'Undo',
     onClick: () => restoreItem(),
   },
-})
+});
 ```
 
 ### Loading State
 
 ```tsx
-const id = toast.loading('Saving...')
+const id = toast.loading('Saving...');
 // Later...
-toast.success('Saved!', { id })
+toast.success('Saved!', { id });
 // Or on error
-toast.error('Failed to save', { id })
+toast.error('Failed to save', { id });
 ```
 
 ### Do's and Don'ts
 
 **Do:**
+
 - Use appropriate status (success/error/warning/info)
 - Keep messages concise
 - Provide undo actions when appropriate
 - Use loading toasts for async operations
 
 **Don't:**
+
 - Use toasts for critical errors (use dialogs)
 - Show multiple toasts at once
 - Use toasts for form validation errors
@@ -700,12 +695,8 @@ toast.error('Failed to save', { id })
   <table className="w-full">
     <thead className="bg-surface-2">
       <tr>
-        <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-          Name
-        </th>
-        <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
-          Status
-        </th>
+        <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Name</th>
+        <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Status</th>
       </tr>
     </thead>
     <tbody>
@@ -723,12 +714,14 @@ toast.error('Failed to save', { id })
 ### Do's and Don'ts
 
 **Do:**
+
 - Use `bg-surface-2` for header background
 - Use `hover:bg-muted/50` for row hover
 - Use semantic badges for status columns
 - Align text consistently (left for text, right for numbers)
 
 **Don't:**
+
 - Override table colors: `className="bg-gray-100"`
 - Use custom hover colors
 - Create tables without headers
@@ -806,5 +799,5 @@ useEffect(() => {
 
 ---
 
-*Document Version: 2.0.0*
-*Last Updated: 2026-01-16*
+_Document Version: 2.0.0_
+_Last Updated: 2026-01-16_

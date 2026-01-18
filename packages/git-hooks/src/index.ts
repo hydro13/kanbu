@@ -31,9 +31,9 @@ export {
   fetchTask,
   linkCommitToTask,
   type TaskInfo,
-} from './utils.js'
+} from './utils.js';
 
 // Export hook runners
-export { run as runPrepareCommitMsg } from './hooks/prepare-commit-msg.js'
-export { run as runCommitMsg } from './hooks/commit-msg.js'
-export { run as runPostCommit } from './hooks/post-commit.js'
+export { run as runPrepareCommitMsg } from './hooks/prepare-commit-msg.js';
+export { run as runCommitMsg } from './hooks/commit-msg.js';
+export { run as runPostCommit } from './hooks/post-commit.js';

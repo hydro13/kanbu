@@ -16,7 +16,7 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 // =============================================================================
 // Types
@@ -24,29 +24,29 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 
 export interface UseTimerOptions {
   /** Whether the timer is currently running */
-  isRunning: boolean
+  isRunning: boolean;
   /** When the timer was started */
-  startedAt: Date | null
+  startedAt: Date | null;
   /** Storage key for persistence (optional) */
-  storageKey?: string
+  storageKey?: string;
 }
 
 export interface UseTimerResult {
   /** Elapsed time in hours */
-  elapsedHours: number
+  elapsedHours: number;
   /** Elapsed time in seconds */
-  elapsedSeconds: number
+  elapsedSeconds: number;
   /** Formatted elapsed time (HH:MM:SS) */
-  formattedElapsed: string
+  formattedElapsed: string;
   /** Formatted elapsed time short (1h 30m) */
-  formattedElapsedShort: string
+  formattedElapsedShort: string;
 }
 
 // =============================================================================
 // Storage Keys
 // =============================================================================
 
-const STORAGE_PREFIX = 'kanbu_timer_'
+const STORAGE_PREFIX = 'kanbu_timer_';
 
 // =============================================================================
 // Helper Functions
@@ -56,69 +56,65 @@ const STORAGE_PREFIX = 'kanbu_timer_'
  * Calculate elapsed seconds between two dates
  */
 function calculateElapsedSeconds(startedAt: Date, now: Date = new Date()): number {
-  const elapsed = now.getTime() - startedAt.getTime()
-  return Math.max(0, Math.floor(elapsed / 1000))
+  const elapsed = now.getTime() - startedAt.getTime();
+  return Math.max(0, Math.floor(elapsed / 1000));
 }
 
 /**
  * Format seconds as HH:MM:SS
  */
 function formatHHMMSS(seconds: number): string {
-  const h = Math.floor(seconds / 3600)
-  const m = Math.floor((seconds % 3600) / 60)
-  const s = seconds % 60
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
 
-  const parts = []
-  if (h > 0) parts.push(h.toString().padStart(2, '0'))
-  parts.push(m.toString().padStart(2, '0'))
-  parts.push(s.toString().padStart(2, '0'))
+  const parts = [];
+  if (h > 0) parts.push(h.toString().padStart(2, '0'));
+  parts.push(m.toString().padStart(2, '0'));
+  parts.push(s.toString().padStart(2, '0'));
 
-  return parts.join(':')
+  return parts.join(':');
 }
 
 /**
  * Format seconds as short string (1h 30m)
  */
 function formatShort(seconds: number): string {
-  const h = Math.floor(seconds / 3600)
-  const m = Math.floor((seconds % 3600) / 60)
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
 
-  if (h === 0 && m === 0) return `${seconds}s`
-  if (h === 0) return `${m}m`
-  if (m === 0) return `${h}h`
-  return `${h}h ${m}m`
+  if (h === 0 && m === 0) return `${seconds}s`;
+  if (h === 0) return `${m}m`;
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}m`;
 }
 
 // =============================================================================
 // useTimer Hook
 // =============================================================================
 
-export function useTimer({
-  isRunning,
-  startedAt,
-  storageKey,
-}: UseTimerOptions): UseTimerResult {
-  const [elapsedSeconds, setElapsedSeconds] = useState(0)
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+export function useTimer({ isRunning, startedAt, storageKey }: UseTimerOptions): UseTimerResult {
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Load from storage on mount
   useEffect(() => {
     if (storageKey && isRunning && !startedAt) {
-      const stored = localStorage.getItem(`${STORAGE_PREFIX}${storageKey}`)
+      const stored = localStorage.getItem(`${STORAGE_PREFIX}${storageKey}`);
       if (stored) {
         try {
-          const parsed = JSON.parse(stored)
+          const parsed = JSON.parse(stored);
           if (parsed.startedAt) {
             // We have a stored start time, calculate elapsed
-            const storedStart = new Date(parsed.startedAt)
-            setElapsedSeconds(calculateElapsedSeconds(storedStart))
+            const storedStart = new Date(parsed.startedAt);
+            setElapsedSeconds(calculateElapsedSeconds(storedStart));
           }
         } catch {
           // Invalid storage, ignore
         }
       }
     }
-  }, [storageKey, isRunning, startedAt])
+  }, [storageKey, isRunning, startedAt]);
 
   // Save to storage when running
   useEffect(() => {
@@ -126,49 +122,49 @@ export function useTimer({
       localStorage.setItem(
         `${STORAGE_PREFIX}${storageKey}`,
         JSON.stringify({ startedAt: startedAt.toISOString() })
-      )
+      );
     } else if (storageKey && !isRunning) {
-      localStorage.removeItem(`${STORAGE_PREFIX}${storageKey}`)
+      localStorage.removeItem(`${STORAGE_PREFIX}${storageKey}`);
     }
-  }, [storageKey, isRunning, startedAt])
+  }, [storageKey, isRunning, startedAt]);
 
   // Update elapsed time every second when running
   useEffect(() => {
     if (isRunning && startedAt) {
       // Initial calculation
-      setElapsedSeconds(calculateElapsedSeconds(startedAt))
+      setElapsedSeconds(calculateElapsedSeconds(startedAt));
 
       // Update every second
       intervalRef.current = setInterval(() => {
-        setElapsedSeconds(calculateElapsedSeconds(startedAt))
-      }, 1000)
+        setElapsedSeconds(calculateElapsedSeconds(startedAt));
+      }, 1000);
 
       return () => {
         if (intervalRef.current) {
-          clearInterval(intervalRef.current)
-          intervalRef.current = null
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
         }
-      }
+      };
     } else {
       // Not running, clear interval
       if (intervalRef.current) {
-        clearInterval(intervalRef.current)
-        intervalRef.current = null
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
       }
-      setElapsedSeconds(0)
+      setElapsedSeconds(0);
     }
-  }, [isRunning, startedAt])
+  }, [isRunning, startedAt]);
 
-  const elapsedHours = elapsedSeconds / 3600
-  const formattedElapsed = formatHHMMSS(elapsedSeconds)
-  const formattedElapsedShort = formatShort(elapsedSeconds)
+  const elapsedHours = elapsedSeconds / 3600;
+  const formattedElapsed = formatHHMMSS(elapsedSeconds);
+  const formattedElapsedShort = formatShort(elapsedSeconds);
 
   return {
     elapsedHours,
     elapsedSeconds,
     formattedElapsed,
     formattedElapsedShort,
-  }
+  };
 }
 
 // =============================================================================
@@ -176,61 +172,61 @@ export function useTimer({
 // =============================================================================
 
 export interface ActiveTimer {
-  subtaskId: number
-  startedAt: string
+  subtaskId: number;
+  startedAt: string;
 }
 
-const ACTIVE_TIMERS_KEY = 'kanbu_active_timers'
+const ACTIVE_TIMERS_KEY = 'kanbu_active_timers';
 
 /**
  * Hook to persist active timers across page refreshes
  */
 export function useTimerPersist() {
-  const [activeTimers, setActiveTimers] = useState<ActiveTimer[]>([])
+  const [activeTimers, setActiveTimers] = useState<ActiveTimer[]>([]);
 
   // Load from storage on mount
   useEffect(() => {
-    const stored = localStorage.getItem(ACTIVE_TIMERS_KEY)
+    const stored = localStorage.getItem(ACTIVE_TIMERS_KEY);
     if (stored) {
       try {
-        setActiveTimers(JSON.parse(stored))
+        setActiveTimers(JSON.parse(stored));
       } catch {
         // Invalid storage, reset
-        setActiveTimers([])
+        setActiveTimers([]);
       }
     }
-  }, [])
+  }, []);
 
   // Save to storage when timers change
   useEffect(() => {
-    localStorage.setItem(ACTIVE_TIMERS_KEY, JSON.stringify(activeTimers))
-  }, [activeTimers])
+    localStorage.setItem(ACTIVE_TIMERS_KEY, JSON.stringify(activeTimers));
+  }, [activeTimers]);
 
   const startTimer = useCallback((subtaskId: number) => {
     setActiveTimers((prev) => {
       // Remove existing timer for this subtask
-      const filtered = prev.filter((t) => t.subtaskId !== subtaskId)
-      return [...filtered, { subtaskId, startedAt: new Date().toISOString() }]
-    })
-  }, [])
+      const filtered = prev.filter((t) => t.subtaskId !== subtaskId);
+      return [...filtered, { subtaskId, startedAt: new Date().toISOString() }];
+    });
+  }, []);
 
   const stopTimer = useCallback((subtaskId: number) => {
-    setActiveTimers((prev) => prev.filter((t) => t.subtaskId !== subtaskId))
-  }, [])
+    setActiveTimers((prev) => prev.filter((t) => t.subtaskId !== subtaskId));
+  }, []);
 
   const getTimer = useCallback(
     (subtaskId: number): ActiveTimer | undefined => {
-      return activeTimers.find((t) => t.subtaskId === subtaskId)
+      return activeTimers.find((t) => t.subtaskId === subtaskId);
     },
     [activeTimers]
-  )
+  );
 
   return {
     activeTimers,
     startTimer,
     stopTimer,
     getTimer,
-  }
+  };
 }
 
-export default useTimer
+export default useTimer;

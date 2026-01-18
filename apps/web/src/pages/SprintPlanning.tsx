@@ -19,8 +19,8 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState } from 'react'
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useState } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
   Loader2,
   AlertCircle,
@@ -36,19 +36,19 @@ import {
   ChevronDown,
   ChevronRight,
   X,
-} from 'lucide-react'
-import { ProjectLayout } from '@/components/layout/ProjectLayout'
-import { trpc } from '@/lib/trpc'
+} from 'lucide-react';
+import { ProjectLayout } from '@/components/layout/ProjectLayout';
+import { trpc } from '@/lib/trpc';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface CreateSprintFormData {
-  name: string
-  description: string
-  dateStart: string
-  dateEnd: string
+  name: string;
+  description: string;
+  dateStart: string;
+  dateEnd: string;
 }
 
 // =============================================================================
@@ -60,7 +60,7 @@ function formatDate(date: string): string {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
-  })
+  });
 }
 
 function getStatusBadge(status: string) {
@@ -70,21 +70,21 @@ function getStatusBadge(status: string) {
         <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
           Active
         </span>
-      )
+      );
     case 'PLANNING':
       return (
         <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
           Planning
         </span>
-      )
+      );
     case 'COMPLETED':
       return (
         <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
           Completed
         </span>
-      )
+      );
     default:
-      return null
+      return null;
   }
 }
 
@@ -93,10 +93,10 @@ function getStatusBadge(status: string) {
 // =============================================================================
 
 interface CreateSprintModalProps {
-  projectId: number
-  isOpen: boolean
-  onClose: () => void
-  onSuccess: () => void
+  projectId: number;
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
 }
 
 function CreateSprintModal({ projectId, isOpen, onClose, onSuccess }: CreateSprintModalProps) {
@@ -105,42 +105,40 @@ function CreateSprintModal({ projectId, isOpen, onClose, onSuccess }: CreateSpri
     description: '',
     dateStart: new Date().toISOString().split('T')[0]!,
     dateEnd: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]!,
-  })
+  });
 
   const createMutation = trpc.sprint.create.useMutation({
     onSuccess: () => {
-      onSuccess()
-      onClose()
+      onSuccess();
+      onClose();
       setFormData({
         name: '',
         description: '',
         dateStart: new Date().toISOString().split('T')[0]!,
         dateEnd: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]!,
-      })
+      });
     },
-  })
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     createMutation.mutate({
       projectId,
       name: formData.name,
       description: formData.description || undefined,
       dateStart: new Date(formData.dateStart).toISOString(),
       dateEnd: new Date(formData.dateEnd).toISOString(),
-    })
-  }
+    });
+  };
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
       <div className="relative bg-card rounded-lg shadow-xl w-full max-w-md p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-foreground">
-            Create Sprint
-          </h2>
+          <h2 className="text-lg font-semibold text-foreground">Create Sprint</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
             <X className="w-5 h-5" />
           </button>
@@ -225,7 +223,7 @@ function CreateSprintModal({ projectId, isOpen, onClose, onSuccess }: CreateSpri
         </form>
       </div>
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -234,60 +232,60 @@ function CreateSprintModal({ projectId, isOpen, onClose, onSuccess }: CreateSpri
 
 interface SprintCardProps {
   sprint: {
-    id: number
-    name: string
-    status: string
-    description: string | null
-    dateStart: string
-    dateEnd: string
-    totalTasks: number
-    completedTasks: number
-    progress: number
-  }
-  projectId: number
-  onRefresh: () => void
+    id: number;
+    name: string;
+    status: string;
+    description: string | null;
+    dateStart: string;
+    dateEnd: string;
+    totalTasks: number;
+    completedTasks: number;
+    progress: number;
+  };
+  projectId: number;
+  onRefresh: () => void;
 }
 
 function SprintCard({ sprint, projectId, onRefresh }: SprintCardProps) {
-  const [isExpanded, setIsExpanded] = useState(false)
-  const navigate = useNavigate()
-  const utils = trpc.useUtils()
+  const [isExpanded, setIsExpanded] = useState(false);
+  const navigate = useNavigate();
+  const utils = trpc.useUtils();
 
   const startMutation = trpc.sprint.start.useMutation({
     onSuccess: () => {
-      utils.sprint.list.invalidate()
-      onRefresh()
+      utils.sprint.list.invalidate();
+      onRefresh();
     },
-  })
+  });
 
   const completeMutation = trpc.sprint.complete.useMutation({
     onSuccess: () => {
-      utils.sprint.list.invalidate()
-      utils.task.list.invalidate()
-      onRefresh()
+      utils.sprint.list.invalidate();
+      utils.task.list.invalidate();
+      onRefresh();
     },
-  })
+  });
 
   const deleteMutation = trpc.sprint.delete.useMutation({
     onSuccess: () => {
-      utils.sprint.list.invalidate()
-      onRefresh()
+      utils.sprint.list.invalidate();
+      onRefresh();
     },
-  })
+  });
 
   const handleStart = () => {
-    startMutation.mutate({ sprintId: sprint.id })
-  }
+    startMutation.mutate({ sprintId: sprint.id });
+  };
 
   const handleComplete = () => {
-    completeMutation.mutate({ sprintId: sprint.id, moveRemainingToBacklog: true })
-  }
+    completeMutation.mutate({ sprintId: sprint.id, moveRemainingToBacklog: true });
+  };
 
   const handleDelete = () => {
     if (confirm(`Are you sure you want to delete "${sprint.name}"?`)) {
-      deleteMutation.mutate({ sprintId: sprint.id })
+      deleteMutation.mutate({ sprintId: sprint.id });
     }
-  }
+  };
 
   return (
     <div className="bg-card border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
@@ -306,9 +304,7 @@ function SprintCard({ sprint, projectId, onRefresh }: SprintCardProps) {
           </button>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="font-medium text-foreground">
-                {sprint.name}
-              </h3>
+              <h3 className="font-medium text-foreground">{sprint.name}</h3>
               {getStatusBadge(sprint.status)}
             </div>
             <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -407,9 +403,7 @@ function SprintCard({ sprint, projectId, onRefresh }: SprintCardProps) {
       {isExpanded && (
         <div className="px-4 pb-4 border-t border-gray-200 dark:border-gray-700 pt-3">
           {sprint.description && (
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-              {sprint.description}
-            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">{sprint.description}</p>
           )}
           <div className="flex gap-3">
             <Link
@@ -428,7 +422,7 @@ function SprintCard({ sprint, projectId, onRefresh }: SprintCardProps) {
         </div>
       )}
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -436,42 +430,43 @@ function SprintCard({ sprint, projectId, onRefresh }: SprintCardProps) {
 // =============================================================================
 
 export function SprintPlanning() {
-  const { projectIdentifier } = useParams<{ projectIdentifier: string }>()
+  const { projectIdentifier } = useParams<{ projectIdentifier: string }>();
 
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
-  const [activeTab, setActiveTab] = useState<'active' | 'planning' | 'completed'>('active')
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<'active' | 'planning' | 'completed'>('active');
 
   // Fetch project by identifier (SEO-friendly URL)
   const { data: project, isLoading: isProjectLoading } = trpc.project.getByIdentifier.useQuery(
     { identifier: projectIdentifier! },
     { enabled: !!projectIdentifier }
-  )
+  );
 
   // Get project ID from fetched data
-  const projectIdNum = project?.id ?? 0
+  const projectIdNum = project?.id ?? 0;
 
-  const { data: sprints, isLoading: isSprintsLoading, refetch } = trpc.sprint.list.useQuery(
-    { projectId: projectIdNum },
-    { enabled: projectIdNum > 0 }
-  )
+  const {
+    data: sprints,
+    isLoading: isSprintsLoading,
+    refetch,
+  } = trpc.sprint.list.useQuery({ projectId: projectIdNum }, { enabled: projectIdNum > 0 });
 
   // Filter sprints by tab
   const filteredSprints = (sprints ?? []).filter((sprint) => {
     switch (activeTab) {
       case 'active':
-        return sprint.status === 'ACTIVE'
+        return sprint.status === 'ACTIVE';
       case 'planning':
-        return sprint.status === 'PLANNING'
+        return sprint.status === 'PLANNING';
       case 'completed':
-        return sprint.status === 'COMPLETED'
+        return sprint.status === 'COMPLETED';
       default:
-        return true
+        return true;
     }
-  })
+  });
 
-  const activeSprints = (sprints ?? []).filter((s) => s.status === 'ACTIVE')
-  const planningSprints = (sprints ?? []).filter((s) => s.status === 'PLANNING')
-  const completedSprints = (sprints ?? []).filter((s) => s.status === 'COMPLETED')
+  const activeSprints = (sprints ?? []).filter((s) => s.status === 'ACTIVE');
+  const planningSprints = (sprints ?? []).filter((s) => s.status === 'PLANNING');
+  const completedSprints = (sprints ?? []).filter((s) => s.status === 'COMPLETED');
 
   // Loading state
   if (isProjectLoading || isSprintsLoading) {
@@ -481,7 +476,7 @@ export function SprintPlanning() {
           <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
         </div>
       </ProjectLayout>
-    )
+    );
   }
 
   // Error state
@@ -490,18 +485,13 @@ export function SprintPlanning() {
       <ProjectLayout>
         <div className="flex flex-col items-center justify-center h-64 gap-4">
           <AlertCircle className="w-12 h-12 text-red-500" />
-          <h2 className="text-xl font-semibold text-foreground">
-            Project not found
-          </h2>
-          <Link
-            to="/"
-            className="text-blue-500 hover:text-blue-600 dark:text-blue-400"
-          >
+          <h2 className="text-xl font-semibold text-foreground">Project not found</h2>
+          <Link to="/" className="text-blue-500 hover:text-blue-600 dark:text-blue-400">
             Return to projects
           </Link>
         </div>
       </ProjectLayout>
-    )
+    );
   }
 
   return (
@@ -517,12 +507,8 @@ export function SprintPlanning() {
               <ArrowLeft className="w-5 h-5" />
             </Link>
             <div>
-              <h1 className="text-page-title text-foreground">
-                Sprint Planning
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                {project.name}
-              </p>
+              <h1 className="text-page-title text-foreground">Sprint Planning</h1>
+              <p className="text-sm text-muted-foreground">{project.name}</p>
             </div>
           </div>
           <button
@@ -573,9 +559,7 @@ export function SprintPlanning() {
           {filteredSprints.length === 0 ? (
             <div className="text-center py-12 bg-card rounded-card border border-border">
               <Calendar className="w-12 h-12 mx-auto text-gray-400 mb-3" />
-              <h3 className="text-lg font-medium text-foreground mb-1">
-                No {activeTab} sprints
-              </h3>
+              <h3 className="text-lg font-medium text-foreground mb-1">No {activeTab} sprints</h3>
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
                 {activeTab === 'active'
                   ? 'Start a planning sprint to begin working'
@@ -614,7 +598,7 @@ export function SprintPlanning() {
         onSuccess={() => refetch()}
       />
     </ProjectLayout>
-  )
+  );
 }
 
-export default SprintPlanning
+export default SprintPlanning;

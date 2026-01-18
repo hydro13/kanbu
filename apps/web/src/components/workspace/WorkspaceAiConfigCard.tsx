@@ -15,28 +15,22 @@
  * =============================================================================
  */
 
-import { useState } from 'react'
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from '../ui/card'
-import { Button } from '../ui/button'
-import { trpc } from '../../lib/trpc'
-import { cn } from '../../lib/utils'
+import { useState } from 'react';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui/card';
+import { Button } from '../ui/button';
+import { trpc } from '../../lib/trpc';
+import { cn } from '../../lib/utils';
 
 // =============================================================================
 // Types
 // =============================================================================
 
-type Capability = 'EMBEDDING' | 'REASONING' | 'VISION'
-type ProviderType = 'OPENAI' | 'OLLAMA' | 'LM_STUDIO'
+type Capability = 'EMBEDDING' | 'REASONING' | 'VISION';
+type ProviderType = 'OPENAI' | 'OLLAMA' | 'LM_STUDIO';
 
 interface WorkspaceAiConfigCardProps {
-  workspaceId: number
-  isAdmin: boolean
+  workspaceId: number;
+  isAdmin: boolean;
 }
 
 // =============================================================================
@@ -45,60 +39,129 @@ interface WorkspaceAiConfigCardProps {
 
 function CpuIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"
+      />
     </svg>
-  )
+  );
 }
 
 function CheckCircleIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
     </svg>
-  )
+  );
 }
 
 function XCircleIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
     </svg>
-  )
+  );
 }
 
 function ArrowPathIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"
+      />
     </svg>
-  )
+  );
 }
 
 function GlobeAltIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"
+      />
     </svg>
-  )
+  );
 }
 
 function BuildingOfficeIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21"
+      />
     </svg>
-  )
+  );
 }
 
 // =============================================================================
 // Config
 // =============================================================================
 
-const PROVIDER_CONFIG: Record<ProviderType, {
-  label: string
-  color: string
-}> = {
+const PROVIDER_CONFIG: Record<
+  ProviderType,
+  {
+    label: string;
+    color: string;
+  }
+> = {
   OPENAI: {
     label: 'OpenAI',
     color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
@@ -111,13 +174,16 @@ const PROVIDER_CONFIG: Record<ProviderType, {
     label: 'LM Studio',
     color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
   },
-}
+};
 
-const CAPABILITY_CONFIG: Record<Capability, {
-  label: string
-  description: string
-  icon: string
-}> = {
+const CAPABILITY_CONFIG: Record<
+  Capability,
+  {
+    label: string;
+    description: string;
+    icon: string;
+  }
+> = {
   EMBEDDING: {
     label: 'Embedding',
     description: 'Vector embeddings for search',
@@ -133,38 +199,38 @@ const CAPABILITY_CONFIG: Record<Capability, {
     description: 'Image understanding',
     icon: '👁️',
   },
-}
+};
 
 // =============================================================================
 // Component
 // =============================================================================
 
 export function WorkspaceAiConfigCard({ workspaceId, isAdmin }: WorkspaceAiConfigCardProps) {
-  const [showDetails, setShowDetails] = useState(false)
+  const [showDetails, setShowDetails] = useState(false);
 
-  const utils = trpc.useUtils()
+  const utils = trpc.useUtils();
 
   // Query effective providers for all capabilities
   const { data, isLoading, error } = trpc.workspaceAiProvider.getEffectiveAll.useQuery(
     { workspaceId },
     { enabled: workspaceId > 0 }
-  )
+  );
 
   // Query workspace providers list
   const providersQuery = trpc.workspaceAiProvider.list.useQuery(
     { workspaceId },
     { enabled: workspaceId > 0 && showDetails }
-  )
+  );
 
   // Test connection mutation
-  const testMutation = trpc.workspaceAiProvider.testConnection.useMutation()
+  const testMutation = trpc.workspaceAiProvider.testConnection.useMutation();
 
   const handleTestConnection = (providerId: number) => {
-    testMutation.mutate({ workspaceId, id: providerId })
-  }
+    testMutation.mutate({ workspaceId, id: providerId });
+  };
 
   // Check if any capability has a workspace override
-  const hasAnyOverride = data && Object.values(data).some(v => v.isOverride)
+  const hasAnyOverride = data && Object.values(data).some((v) => v.isOverride);
 
   if (isLoading) {
     return (
@@ -179,7 +245,7 @@ export function WorkspaceAiConfigCard({ workspaceId, isAdmin }: WorkspaceAiConfi
           <p className="text-sm text-muted-foreground">Loading...</p>
         </CardContent>
       </Card>
-    )
+    );
   }
 
   if (error) {
@@ -195,7 +261,7 @@ export function WorkspaceAiConfigCard({ workspaceId, isAdmin }: WorkspaceAiConfi
           <p className="text-sm text-destructive">Failed to load AI configuration</p>
         </CardContent>
       </Card>
-    )
+    );
   }
 
   return (
@@ -206,9 +272,7 @@ export function WorkspaceAiConfigCard({ workspaceId, isAdmin }: WorkspaceAiConfi
             <CpuIcon className="h-5 w-5" />
             <div>
               <CardTitle>AI Configuration</CardTitle>
-              <CardDescription>
-                Providers for Wiki and Graphiti features
-              </CardDescription>
+              <CardDescription>Providers for Wiki and Graphiti features</CardDescription>
             </div>
           </div>
           {hasAnyOverride && (
@@ -223,10 +287,12 @@ export function WorkspaceAiConfigCard({ workspaceId, isAdmin }: WorkspaceAiConfi
         {/* Capability summary */}
         <div className="grid gap-3">
           {(['EMBEDDING', 'REASONING', 'VISION'] as Capability[]).map((capability) => {
-            const config = CAPABILITY_CONFIG[capability]
-            const effective = data?.[capability]
-            const provider = effective?.provider
-            const providerConfig = provider ? PROVIDER_CONFIG[provider.providerType as ProviderType] : null
+            const config = CAPABILITY_CONFIG[capability];
+            const effective = data?.[capability];
+            const provider = effective?.provider;
+            const providerConfig = provider
+              ? PROVIDER_CONFIG[provider.providerType as ProviderType]
+              : null;
 
             return (
               <div
@@ -243,7 +309,12 @@ export function WorkspaceAiConfigCard({ workspaceId, isAdmin }: WorkspaceAiConfi
                 <div className="flex items-center gap-2">
                   {provider ? (
                     <>
-                      <span className={cn('px-2 py-0.5 text-xs font-medium rounded', providerConfig?.color)}>
+                      <span
+                        className={cn(
+                          'px-2 py-0.5 text-xs font-medium rounded',
+                          providerConfig?.color
+                        )}
+                      >
                         {providerConfig?.label}
                       </span>
                       {effective.isOverride ? (
@@ -261,7 +332,7 @@ export function WorkspaceAiConfigCard({ workspaceId, isAdmin }: WorkspaceAiConfi
                   )}
                 </div>
               </div>
-            )
+            );
           })}
         </div>
 
@@ -279,10 +350,7 @@ export function WorkspaceAiConfigCard({ workspaceId, isAdmin }: WorkspaceAiConfi
                   {providersQuery.data.workspaceProviders.map((provider) => (
                     <div
                       key={provider.id}
-                      className={cn(
-                        'p-3 rounded-lg border',
-                        !provider.isActive && 'opacity-50'
-                      )}
+                      className={cn('p-3 rounded-lg border', !provider.isActive && 'opacity-50')}
                     >
                       <div className="flex items-center justify-between">
                         <div>
@@ -304,10 +372,9 @@ export function WorkspaceAiConfigCard({ workspaceId, isAdmin }: WorkspaceAiConfi
                               onClick={() => handleTestConnection(provider.id)}
                               disabled={testMutation.isPending}
                             >
-                              <ArrowPathIcon className={cn(
-                                'h-4 w-4',
-                                testMutation.isPending && 'animate-spin'
-                              )} />
+                              <ArrowPathIcon
+                                className={cn('h-4 w-4', testMutation.isPending && 'animate-spin')}
+                              />
                             </Button>
                           )}
                         </div>
@@ -342,10 +409,12 @@ export function WorkspaceAiConfigCard({ workspaceId, isAdmin }: WorkspaceAiConfi
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className={cn(
-                            'px-2 py-0.5 text-xs font-medium rounded',
-                            PROVIDER_CONFIG[provider.providerType as ProviderType]?.color
-                          )}>
+                          <span
+                            className={cn(
+                              'px-2 py-0.5 text-xs font-medium rounded',
+                              PROVIDER_CONFIG[provider.providerType as ProviderType]?.color
+                            )}
+                          >
                             {PROVIDER_CONFIG[provider.providerType as ProviderType]?.label}
                           </span>
                         </div>
@@ -358,21 +427,17 @@ export function WorkspaceAiConfigCard({ workspaceId, isAdmin }: WorkspaceAiConfi
 
             {/* Empty state */}
             {providersQuery.data.workspaceProviders.length === 0 &&
-             providersQuery.data.globalProviders.length === 0 && (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                No AI providers configured. Contact your administrator.
-              </p>
-            )}
+              providersQuery.data.globalProviders.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  No AI providers configured. Contact your administrator.
+                </p>
+              )}
           </div>
         )}
 
         {/* Toggle details */}
         <div className="flex justify-between items-center">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowDetails(!showDetails)}
-          >
+          <Button variant="ghost" size="sm" onClick={() => setShowDetails(!showDetails)}>
             {showDetails ? 'Hide Details' : 'Show Details'}
           </Button>
           {isAdmin && (
@@ -388,7 +453,7 @@ export function WorkspaceAiConfigCard({ workspaceId, isAdmin }: WorkspaceAiConfi
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
 
-export default WorkspaceAiConfigCard
+export default WorkspaceAiConfigCard;

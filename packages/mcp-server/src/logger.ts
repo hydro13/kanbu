@@ -14,9 +14,9 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import pino from 'pino'
+import pino from 'pino';
 
-const isDev = process.env.NODE_ENV !== 'production'
+const isDev = process.env.NODE_ENV !== 'production';
 
 export const logger = pino({
   level: process.env.LOG_LEVEL || (isDev ? 'debug' : 'info'),
@@ -30,7 +30,7 @@ export const logger = pino({
         },
       }
     : undefined,
-})
+});
 
 // Log startup info
-logger.debug(`Logger initialized (env: ${process.env.NODE_ENV || 'development'})`)
+logger.debug(`Logger initialized (env: ${process.env.NODE_ENV || 'development'})`);

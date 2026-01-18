@@ -27,7 +27,7 @@
  * ===================================================================
  */
 
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   X,
   Send,
@@ -45,52 +45,52 @@ import {
   Building2,
   FolderKanban,
   History,
-} from 'lucide-react'
-import { trpc } from '../../lib/trpc'
-import { cn } from '../../lib/utils'
+} from 'lucide-react';
+import { trpc } from '../../lib/trpc';
+import { cn } from '../../lib/utils';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface Source {
-  pageId: number
-  title: string
-  slug: string
-  relevance: 'high' | 'medium' | 'low'
+  pageId: number;
+  title: string;
+  slug: string;
+  relevance: 'high' | 'medium' | 'low';
 }
 
 interface Message {
-  id: string
-  role: 'user' | 'assistant'
-  content: string
-  sources?: Source[]
-  timestamp: Date
-  isError?: boolean
-  isStreaming?: boolean
-  feedback?: 'positive' | 'negative' | null
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  sources?: Source[];
+  timestamp: Date;
+  isError?: boolean;
+  isStreaming?: boolean;
+  feedback?: 'positive' | 'negative' | null;
 }
 
 interface Scope {
-  type: 'workspace' | 'project'
-  workspaceId: number
-  projectId?: number
-  label: string
+  type: 'workspace' | 'project';
+  workspaceId: number;
+  projectId?: number;
+  label: string;
 }
 
 interface AskWikiDialogProps {
-  isOpen: boolean
-  onClose: () => void
-  workspaceId: number
-  projectId?: number
-  wikiBaseUrl: string
-  workspaceName?: string
-  projectName?: string
-  availableProjects?: Array<{ id: number; name: string }>
+  isOpen: boolean;
+  onClose: () => void;
+  workspaceId: number;
+  projectId?: number;
+  wikiBaseUrl: string;
+  workspaceName?: string;
+  projectName?: string;
+  availableProjects?: Array<{ id: number; name: string }>;
   /** Callback when user clicks a source - navigates within app instead of new tab */
-  onNavigateToPage?: (pageId: number, slug: string) => void
+  onNavigateToPage?: (pageId: number, slug: string) => void;
   /** Initial query to pre-fill (e.g., from "Ask about this" buttons) */
-  initialQuery?: string
+  initialQuery?: string;
 }
 
 // =============================================================================
@@ -105,7 +105,7 @@ Ik kan vragen beantwoorden over:
 - Handleidingen en procedures
 - En meer...
 
-Waar kan ik je mee helpen?`
+Waar kan ik je mee helpen?`;
 
 // =============================================================================
 // Helper Components
@@ -116,23 +116,23 @@ function SourceChip({
   wikiBaseUrl,
   onClick,
 }: {
-  source: Source
-  wikiBaseUrl: string
-  onClick?: () => void
+  source: Source;
+  wikiBaseUrl: string;
+  onClick?: () => void;
 }) {
   const relevanceColors = {
     high: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300',
     medium: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300',
     low: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
-  }
+  };
 
   return (
     <a
       href={`${wikiBaseUrl}/${source.slug}`}
       onClick={(e) => {
         if (onClick) {
-          e.preventDefault()
-          onClick()
+          e.preventDefault();
+          onClick();
         }
       }}
       className={cn(
@@ -146,7 +146,7 @@ function SourceChip({
       <span className="max-w-[150px] truncate">{source.title}</span>
       <ExternalLink className="w-3 h-3 opacity-50" />
     </a>
-  )
+  );
 }
 
 function ChatMessage({
@@ -156,29 +156,24 @@ function ChatMessage({
   onFeedback,
   onCopy,
 }: {
-  message: Message
-  wikiBaseUrl: string
-  onSourceClick?: (source: Source) => void
-  onFeedback?: (messageId: string, type: 'positive' | 'negative') => void
-  onCopy?: (content: string) => void
+  message: Message;
+  wikiBaseUrl: string;
+  onSourceClick?: (source: Source) => void;
+  onFeedback?: (messageId: string, type: 'positive' | 'negative') => void;
+  onCopy?: (content: string) => void;
 }) {
-  const isUser = message.role === 'user'
-  const [copied, setCopied] = useState(false)
+  const isUser = message.role === 'user';
+  const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(message.content)
-    setCopied(true)
-    onCopy?.(message.content)
-    setTimeout(() => setCopied(false), 2000)
-  }
+    await navigator.clipboard.writeText(message.content);
+    setCopied(true);
+    onCopy?.(message.content);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
   return (
-    <div
-      className={cn(
-        'flex gap-3 p-4',
-        isUser ? 'bg-transparent' : 'bg-muted/30'
-      )}
-    >
+    <div className={cn('flex gap-3 p-4', isUser ? 'bg-transparent' : 'bg-muted/30')}>
       {/* Avatar */}
       <div
         className={cn(
@@ -199,9 +194,7 @@ function ChatMessage({
       <div className="flex-1 min-w-0">
         {/* Role label */}
         <div className="flex items-center gap-2 mb-1">
-          <span className="text-sm font-medium">
-            {isUser ? 'Jij' : 'Wiki Assistant'}
-          </span>
+          <span className="text-sm font-medium">{isUser ? 'Jij' : 'Wiki Assistant'}</span>
           <span className="text-xs text-muted-foreground">
             {message.timestamp.toLocaleTimeString('nl-NL', {
               hour: '2-digit',
@@ -258,11 +251,7 @@ function ChatMessage({
               )}
               title={copied ? 'Gekopieerd!' : 'Kopieer antwoord'}
             >
-              {copied ? (
-                <Check className="w-4 h-4" />
-              ) : (
-                <Copy className="w-4 h-4" />
-              )}
+              {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
             </button>
 
             {/* Feedback buttons */}
@@ -296,7 +285,7 @@ function ChatMessage({
         )}
       </div>
     </div>
-  )
+  );
 }
 
 function StreamingMessage({ content }: { content: string }) {
@@ -319,7 +308,7 @@ function StreamingMessage({ content }: { content: string }) {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 function TypingIndicator() {
@@ -329,12 +318,21 @@ function TypingIndicator() {
         <Sparkles className="w-4 h-4" />
       </div>
       <div className="flex items-center gap-1 pt-2">
-        <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-        <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-        <span className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+        <span
+          className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce"
+          style={{ animationDelay: '0ms' }}
+        />
+        <span
+          className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce"
+          style={{ animationDelay: '150ms' }}
+        />
+        <span
+          className="w-2 h-2 bg-muted-foreground/50 rounded-full animate-bounce"
+          style={{ animationDelay: '300ms' }}
+        />
       </div>
     </div>
-  )
+  );
 }
 
 function ScopeSelector({
@@ -342,11 +340,11 @@ function ScopeSelector({
   availableScopes,
   onScopeChange,
 }: {
-  currentScope: Scope
-  availableScopes: Scope[]
-  onScopeChange: (scope: Scope) => void
+  currentScope: Scope;
+  availableScopes: Scope[];
+  onScopeChange: (scope: Scope) => void;
 }) {
-  const [isOpen, setIsOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(false);
 
   return (
     <div className="relative">
@@ -365,21 +363,20 @@ function ScopeSelector({
 
       {isOpen && (
         <>
-          <div
-            className="fixed inset-0 z-10"
-            onClick={() => setIsOpen(false)}
-          />
+          <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
           <div className="absolute top-full left-0 mt-1 z-20 bg-popover border rounded-lg shadow-lg py-1 min-w-[200px]">
             {availableScopes.map((scope) => (
               <button
                 key={`${scope.type}-${scope.projectId ?? 'ws'}`}
                 onClick={() => {
-                  onScopeChange(scope)
-                  setIsOpen(false)
+                  onScopeChange(scope);
+                  setIsOpen(false);
                 }}
                 className={cn(
                   'w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors text-left',
-                  currentScope.type === scope.type && currentScope.projectId === scope.projectId && 'bg-muted'
+                  currentScope.type === scope.type &&
+                    currentScope.projectId === scope.projectId &&
+                    'bg-muted'
                 )}
               >
                 {scope.type === 'workspace' ? (
@@ -394,7 +391,7 @@ function ScopeSelector({
         </>
       )}
     </div>
-  )
+  );
 }
 
 function ConversationHistoryPanel({
@@ -403,24 +400,21 @@ function ConversationHistoryPanel({
   onSelectConversation,
   onClose,
 }: {
-  workspaceId: number
-  projectId?: number
-  onSelectConversation: (conversationId: string) => void
-  onClose: () => void
+  workspaceId: number;
+  projectId?: number;
+  onSelectConversation: (conversationId: string) => void;
+  onClose: () => void;
 }) {
   const { data: conversationsData } = trpc.wikiAi.listConversations.useQuery({
     workspaceId,
     projectId,
-  })
+  });
 
   return (
     <div className="absolute inset-0 bg-background z-30 flex flex-col">
       <div className="flex items-center justify-between px-4 py-3 border-b">
         <h3 className="font-semibold">Gesprekken</h3>
-        <button
-          onClick={onClose}
-          className="p-2 hover:bg-muted rounded-lg transition-colors"
-        >
+        <button onClick={onClose} className="p-2 hover:bg-muted rounded-lg transition-colors">
           <X className="w-4 h-4" />
         </button>
       </div>
@@ -451,16 +445,14 @@ function ConversationHistoryPanel({
                     {conv.messageCount} berichten
                   </span>
                 </div>
-                <p className="text-sm truncate">
-                  {conv.lastMessage || 'Nieuw gesprek'}
-                </p>
+                <p className="text-sm truncate">{conv.lastMessage || 'Nieuw gesprek'}</p>
               </button>
             ))}
           </div>
         )}
       </div>
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -480,13 +472,13 @@ export function AskWikiDialog({
   initialQuery,
 }: AskWikiDialogProps) {
   // State
-  const [messages, setMessages] = useState<Message[]>([])
-  const [inputValue, setInputValue] = useState('')
-  const [conversationId, setConversationId] = useState<string | null>(null)
-  const [isInitialized, setIsInitialized] = useState(false)
-  const [streamingContent, setStreamingContent] = useState<string | null>(null)
-  const [isStreaming, setIsStreaming] = useState(false)
-  const [showHistory, setShowHistory] = useState(false)
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputValue, setInputValue] = useState('');
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [streamingContent, setStreamingContent] = useState<string | null>(null);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   // Scope state
   const [currentScope, setCurrentScope] = useState<Scope>({
@@ -494,7 +486,7 @@ export function AskWikiDialog({
     workspaceId,
     projectId,
     label: projectName || workspaceName,
-  })
+  });
 
   // Build available scopes
   const availableScopes: Scope[] = [
@@ -509,38 +501,38 @@ export function AskWikiDialog({
       projectId: p.id,
       label: p.name,
     })),
-  ]
+  ];
 
   // Refs
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLTextAreaElement>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   // tRPC mutations
-  const askWikiMutation = trpc.wikiAi.askWiki.useMutation()
-  const createConversationMutation = trpc.wikiAi.createConversation.useMutation()
+  const askWikiMutation = trpc.wikiAi.askWiki.useMutation();
+  const createConversationMutation = trpc.wikiAi.createConversation.useMutation();
   const getConversationQuery = trpc.wikiAi.getConversation.useQuery(
     { conversationId: conversationId ?? '' },
     { enabled: false }
-  )
+  );
 
   // Scroll to bottom when messages change
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, streamingContent])
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, streamingContent]);
 
   // Focus input when dialog opens
   useEffect(() => {
     if (isOpen) {
-      setTimeout(() => inputRef.current?.focus(), 100)
+      setTimeout(() => inputRef.current?.focus(), 100);
     }
-  }, [isOpen])
+  }, [isOpen]);
 
   // Pre-fill input with initialQuery when provided
   useEffect(() => {
     if (isOpen && initialQuery) {
-      setInputValue(initialQuery)
+      setInputValue(initialQuery);
     }
-  }, [isOpen, initialQuery])
+  }, [isOpen, initialQuery]);
 
   // Reset state when dialog opens (fresh start each time)
   useEffect(() => {
@@ -554,23 +546,23 @@ export function AskWikiDialog({
             content: WELCOME_MESSAGE,
             timestamp: new Date(),
           },
-        ])
-        setConversationId(null)
-        setInputValue('')
-        setStreamingContent(null)
-        setIsStreaming(false)
-        setIsInitialized(true)
+        ]);
+        setConversationId(null);
+        setInputValue('');
+        setStreamingContent(null);
+        setIsStreaming(false);
+        setIsInitialized(true);
       }
     } else {
       // Reset initialized flag when dialog closes so next open is fresh
-      setIsInitialized(false)
+      setIsInitialized(false);
     }
-  }, [isOpen, isInitialized])
+  }, [isOpen, isInitialized]);
 
   // Handle sending a message
   const handleSend = useCallback(async () => {
-    const question = inputValue.trim()
-    if (!question || askWikiMutation.isPending || isStreaming) return
+    const question = inputValue.trim();
+    if (!question || askWikiMutation.isPending || isStreaming) return;
 
     // Add user message
     const userMessage: Message = {
@@ -578,22 +570,22 @@ export function AskWikiDialog({
       role: 'user',
       content: question,
       timestamp: new Date(),
-    }
-    setMessages((prev) => [...prev, userMessage])
-    setInputValue('')
-    setIsStreaming(true)
-    setStreamingContent('')
+    };
+    setMessages((prev) => [...prev, userMessage]);
+    setInputValue('');
+    setIsStreaming(true);
+    setStreamingContent('');
 
     try {
       // Create conversation if not exists
-      let currentConversationId = conversationId
+      let currentConversationId = conversationId;
       if (!currentConversationId) {
         const result = await createConversationMutation.mutateAsync({
           workspaceId: currentScope.workspaceId,
           projectId: currentScope.projectId,
-        })
-        currentConversationId = result.conversationId
-        setConversationId(currentConversationId)
+        });
+        currentConversationId = result.conversationId;
+        setConversationId(currentConversationId);
       }
 
       // Ask the wiki (non-streaming for now, streaming requires different client setup)
@@ -607,10 +599,10 @@ export function AskWikiDialog({
           minRelevanceScore: 0.5,
           temperature: 0.7,
         },
-      })
+      });
 
-      setStreamingContent(null)
-      setIsStreaming(false)
+      setStreamingContent(null);
+      setIsStreaming(false);
 
       // Add assistant message
       const assistantMessage: Message = {
@@ -619,11 +611,11 @@ export function AskWikiDialog({
         content: response.answer,
         sources: response.sources,
         timestamp: new Date(),
-      }
-      setMessages((prev) => [...prev, assistantMessage])
+      };
+      setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
-      setStreamingContent(null)
-      setIsStreaming(false)
+      setStreamingContent(null);
+      setIsStreaming(false);
 
       // Add error message
       const errorMessage: Message = {
@@ -635,8 +627,8 @@ export function AskWikiDialog({
             : 'Er ging iets mis bij het verwerken van je vraag. Probeer het opnieuw.',
         timestamp: new Date(),
         isError: true,
-      }
-      setMessages((prev) => [...prev, errorMessage])
+      };
+      setMessages((prev) => [...prev, errorMessage]);
     }
   }, [
     inputValue,
@@ -645,15 +637,15 @@ export function AskWikiDialog({
     conversationId,
     currentScope,
     isStreaming,
-  ])
+  ]);
 
   // Handle key press
   const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSend()
+      e.preventDefault();
+      handleSend();
     }
-  }
+  };
 
   // Handle new conversation
   const handleNewConversation = () => {
@@ -664,51 +656,49 @@ export function AskWikiDialog({
         content: WELCOME_MESSAGE,
         timestamp: new Date(),
       },
-    ])
-    setConversationId(null)
-    setInputValue('')
-    setStreamingContent(null)
-    setIsStreaming(false)
-  }
+    ]);
+    setConversationId(null);
+    setInputValue('');
+    setStreamingContent(null);
+    setIsStreaming(false);
+  };
 
   // Handle source click - navigate within app or open in new tab
   const handleSourceClick = (source: Source) => {
     if (onNavigateToPage) {
-      onNavigateToPage(source.pageId, source.slug)
-      onClose() // Close dialog after navigation
+      onNavigateToPage(source.pageId, source.slug);
+      onClose(); // Close dialog after navigation
     } else {
-      window.open(`${wikiBaseUrl}/${source.slug}`, '_blank')
+      window.open(`${wikiBaseUrl}/${source.slug}`, '_blank');
     }
-  }
+  };
 
   // Handle feedback
   const handleFeedback = (messageId: string, type: 'positive' | 'negative') => {
     setMessages((prev) =>
       prev.map((msg) =>
-        msg.id === messageId
-          ? { ...msg, feedback: msg.feedback === type ? null : type }
-          : msg
+        msg.id === messageId ? { ...msg, feedback: msg.feedback === type ? null : type } : msg
       )
-    )
+    );
     // TODO: Send feedback to backend for analytics
-  }
+  };
 
   // Handle scope change
   const handleScopeChange = (scope: Scope) => {
-    setCurrentScope(scope)
+    setCurrentScope(scope);
     // Start fresh conversation when scope changes
-    handleNewConversation()
-  }
+    handleNewConversation();
+  };
 
   // Handle select conversation from history
   const handleSelectConversation = async (convId: string) => {
-    setConversationId(convId)
-    setShowHistory(false)
+    setConversationId(convId);
+    setShowHistory(false);
 
     // Fetch conversation messages
-    const result = await getConversationQuery.refetch()
+    const result = await getConversationQuery.refetch();
     if (result.data?.conversation) {
-      const conv = result.data.conversation
+      const conv = result.data.conversation;
       setMessages(
         conv.messages.map((msg, index) => ({
           id: `${msg.role}-${index}`,
@@ -717,21 +707,18 @@ export function AskWikiDialog({
           sources: msg.sources,
           timestamp: new Date(msg.timestamp),
         }))
-      )
+      );
     }
-  }
+  };
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
-  const isPending = askWikiMutation.isPending || isStreaming
+  const isPending = askWikiMutation.isPending || isStreaming;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
       {/* Dialog */}
       <div className="relative w-full max-w-2xl h-[80vh] max-h-[700px] bg-background rounded-xl shadow-2xl flex flex-col overflow-hidden">
@@ -765,10 +752,7 @@ export function AskWikiDialog({
             >
               <RefreshCw className="w-4 h-4" />
             </button>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-muted rounded-lg transition-colors"
-            >
+            <button onClick={onClose} className="p-2 hover:bg-muted rounded-lg transition-colors">
               <X className="w-5 h-5" />
             </button>
           </div>
@@ -798,9 +782,7 @@ export function AskWikiDialog({
           {isStreaming && streamingContent !== null && streamingContent.length > 0 && (
             <StreamingMessage content={streamingContent} />
           )}
-          {isPending && (!streamingContent || streamingContent.length === 0) && (
-            <TypingIndicator />
-          )}
+          {isPending && (!streamingContent || streamingContent.length === 0) && <TypingIndicator />}
           <div ref={messagesEndRef} />
         </div>
 
@@ -848,7 +830,7 @@ export function AskWikiDialog({
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -856,7 +838,7 @@ export function AskWikiDialog({
 // =============================================================================
 
 interface AskWikiFabProps {
-  onClick: () => void
+  onClick: () => void;
 }
 
 export function AskWikiFab({ onClick }: AskWikiFabProps) {
@@ -875,7 +857,7 @@ export function AskWikiFab({ onClick }: AskWikiFabProps) {
     >
       <Sparkles className="w-6 h-6" />
     </button>
-  )
+  );
 }
 
-export default AskWikiDialog
+export default AskWikiDialog;

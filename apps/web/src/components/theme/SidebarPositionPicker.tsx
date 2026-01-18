@@ -11,40 +11,35 @@
  * ===================================================================
  */
 
-import { useTheme } from '@/contexts/ThemeContext'
-import { cn } from '@/lib/utils'
-import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
-import { PanelLeft, PanelRight } from 'lucide-react'
+import { useTheme } from '@/contexts/ThemeContext';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { PanelLeft, PanelRight } from 'lucide-react';
 
 // =============================================================================
 // Types
 // =============================================================================
 
-export type SidebarPosition = 'left' | 'right'
+export type SidebarPosition = 'left' | 'right';
 
 interface SidebarPositionPickerProps {
   /** Optional className */
-  className?: string
+  className?: string;
   /** Show label */
-  showLabel?: boolean
+  showLabel?: boolean;
 }
 
 // =============================================================================
 // Component
 // =============================================================================
 
-export function SidebarPositionPicker({
-  className,
-  showLabel = true,
-}: SidebarPositionPickerProps) {
-  const { sidebarPosition, setSidebarPosition, isSyncing } = useTheme()
+export function SidebarPositionPicker({ className, showLabel = true }: SidebarPositionPickerProps) {
+  const { sidebarPosition, setSidebarPosition, isSyncing } = useTheme();
 
   return (
     <div className={cn('space-y-2', className)}>
-      {showLabel && (
-        <Label className="text-sm font-medium">Sidebar Positie</Label>
-      )}
+      {showLabel && <Label className="text-sm font-medium">Sidebar Positie</Label>}
       <div className="flex gap-2">
         <Button
           type="button"
@@ -70,7 +65,7 @@ export function SidebarPositionPicker({
         </Button>
       </div>
     </div>
-  )
+  );
 }
 
-export default SidebarPositionPicker
+export default SidebarPositionPicker;

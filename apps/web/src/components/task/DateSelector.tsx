@@ -14,22 +14,22 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState, useRef, useEffect } from 'react'
-import { trpc } from '@/lib/trpc'
-import { Calendar, X, Loader2, Play } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react';
+import { trpc } from '@/lib/trpc';
+import { Calendar, X, Loader2, Play } from 'lucide-react';
 
 // =============================================================================
 // Types
 // =============================================================================
 
-export type DateType = 'due' | 'start'
+export type DateType = 'due' | 'start';
 
 export interface DateSelectorProps {
-  taskId: number
-  dateType: DateType
-  currentDate: string | null
-  onDateChange?: (date: string | null) => void
-  disabled?: boolean
+  taskId: number;
+  dateType: DateType;
+  currentDate: string | null;
+  onDateChange?: (date: string | null) => void;
+  disabled?: boolean;
 }
 
 // =============================================================================
@@ -37,25 +37,25 @@ export interface DateSelectorProps {
 // =============================================================================
 
 function formatDateForDisplay(dateString: string | null): string {
-  if (!dateString) return ''
-  const date = new Date(dateString)
+  if (!dateString) return '';
+  const date = new Date(dateString);
   return date.toLocaleDateString(undefined, {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
     year: 'numeric',
-  })
+  });
 }
 
 function formatDateForInput(dateString: string | null): string {
-  if (!dateString) return ''
-  const date = new Date(dateString)
-  return date.toISOString().split('T')[0] ?? ''
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toISOString().split('T')[0] ?? '';
 }
 
 function isOverdue(dateString: string | null): boolean {
-  if (!dateString) return false
-  return new Date(dateString) < new Date()
+  if (!dateString) return false;
+  return new Date(dateString) < new Date();
 }
 
 // =============================================================================
@@ -69,87 +69,85 @@ export function DateSelector({
   onDateChange,
   disabled = false,
 }: DateSelectorProps) {
-  const [isEditing, setIsEditing] = useState(false)
-  const [inputValue, setInputValue] = useState('')
-  const inputRef = useRef<HTMLInputElement>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
+  const [isEditing, setIsEditing] = useState(false);
+  const [inputValue, setInputValue] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const utils = trpc.useUtils()
+  const utils = trpc.useUtils();
 
   // Use task.update for both date types
   const updateMutation = trpc.task.update.useMutation({
     onSuccess: () => {
-      utils.task.get.invalidate({ taskId })
-      utils.task.list.invalidate() // Also invalidate list for Timeline/Calendar views
-      setIsEditing(false)
+      utils.task.get.invalidate({ taskId });
+      utils.task.list.invalidate(); // Also invalidate list for Timeline/Calendar views
+      setIsEditing(false);
     },
-  })
+  });
 
   // Set input value when entering edit mode
   useEffect(() => {
     if (isEditing) {
-      setInputValue(formatDateForInput(currentDate))
-      setTimeout(() => inputRef.current?.focus(), 0)
+      setInputValue(formatDateForInput(currentDate));
+      setTimeout(() => inputRef.current?.focus(), 0);
     }
-  }, [isEditing, currentDate])
+  }, [isEditing, currentDate]);
 
   // Close on click outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         if (isEditing) {
-          handleSave()
+          handleSave();
         }
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [isEditing, inputValue])
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isEditing, inputValue]);
 
   const handleSave = () => {
-    const newDate = inputValue.trim() || null
+    const newDate = inputValue.trim() || null;
 
     // Only save if different
     if (formatDateForInput(currentDate) !== (newDate || '')) {
-      const updateData = dateType === 'due'
-        ? { taskId, dateDue: newDate }
-        : { taskId, dateStarted: newDate }
+      const updateData =
+        dateType === 'due' ? { taskId, dateDue: newDate } : { taskId, dateStarted: newDate };
 
       updateMutation.mutate(updateData, {
         onSuccess: () => {
-          onDateChange?.(newDate)
+          onDateChange?.(newDate);
         },
-      })
+      });
     } else {
-      setIsEditing(false)
+      setIsEditing(false);
     }
-  }
+  };
 
   const handleClear = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    const updateData = dateType === 'due'
-      ? { taskId, dateDue: null }
-      : { taskId, dateStarted: null }
+    e.stopPropagation();
+    const updateData =
+      dateType === 'due' ? { taskId, dateDue: null } : { taskId, dateStarted: null };
 
     updateMutation.mutate(updateData, {
       onSuccess: () => {
-        onDateChange?.(null)
-        setIsEditing(false)
+        onDateChange?.(null);
+        setIsEditing(false);
       },
-    })
-  }
+    });
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      handleSave()
+      handleSave();
     } else if (e.key === 'Escape') {
-      setIsEditing(false)
+      setIsEditing(false);
     }
-  }
+  };
 
   // Only show overdue for due dates
-  const overdue = dateType === 'due' && isOverdue(currentDate)
+  const overdue = dateType === 'due' && isOverdue(currentDate);
 
   // Config based on date type
   const config = {
@@ -163,9 +161,9 @@ export function DateSelector({
       placeholder: 'Set start date',
       clearTitle: 'Clear start date',
     },
-  }[dateType]
+  }[dateType];
 
-  const Icon = config.icon
+  const Icon = config.icon;
 
   if (isEditing) {
     return (
@@ -179,11 +177,9 @@ export function DateSelector({
           disabled={updateMutation.isPending}
           className="flex-1 px-2 py-1 text-sm border border-input rounded bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
-        {updateMutation.isPending && (
-          <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
-        )}
+        {updateMutation.isPending && <Loader2 className="w-4 h-4 animate-spin text-gray-400" />}
       </div>
-    )
+    );
   }
 
   return (
@@ -192,7 +188,9 @@ export function DateSelector({
         onClick={() => !disabled && setIsEditing(true)}
         disabled={disabled || updateMutation.isPending}
         className={`flex items-center gap-2 w-full text-left py-0 transition-colors ${
-          disabled ? 'cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer rounded'
+          disabled
+            ? 'cursor-not-allowed'
+            : 'hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer rounded'
         }`}
       >
         {updateMutation.isPending ? (
@@ -224,7 +222,7 @@ export function DateSelector({
         )}
       </button>
     </div>
-  )
+  );
 }
 
-export default DateSelector
+export default DateSelector;

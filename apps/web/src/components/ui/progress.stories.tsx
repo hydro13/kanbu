@@ -10,11 +10,11 @@
  * ===================================================================
  */
 
-import type { Meta, StoryObj } from '@storybook/react-vite'
-import { Progress } from './progress'
-import { Label } from './label'
-import { Button } from './button'
-import { useState, useEffect } from 'react'
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import { Progress } from './progress';
+import { Label } from './label';
+import { Button } from './button';
+import { useState, useEffect } from 'react';
 
 const meta: Meta<typeof Progress> = {
   title: 'UI/Progress',
@@ -34,10 +34,10 @@ const meta: Meta<typeof Progress> = {
       },
     },
   },
-}
+};
 
-export default meta
-type Story = StoryObj<typeof Progress>
+export default meta;
+type Story = StoryObj<typeof Progress>;
 
 // =============================================================================
 // Basic Variants
@@ -47,7 +47,7 @@ export const Default: Story = {
   args: {
     value: 50,
   },
-}
+};
 
 export const Empty: Story = {
   args: {
@@ -60,25 +60,25 @@ export const Empty: Story = {
       },
     },
   },
-}
+};
 
 export const Quarter: Story = {
   args: {
     value: 25,
   },
-}
+};
 
 export const Half: Story = {
   args: {
     value: 50,
   },
-}
+};
 
 export const ThreeQuarters: Story = {
   args: {
     value: 75,
   },
-}
+};
 
 export const Complete: Story = {
   args: {
@@ -91,7 +91,7 @@ export const Complete: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // With Labels
@@ -114,19 +114,17 @@ export const WithLabel: Story = {
       },
     },
   },
-}
+};
 
 export const WithDescription: Story = {
   render: () => (
     <div className="w-[400px] space-y-2">
       <Label>Installation Progress</Label>
       <Progress value={33} />
-      <p className="text-sm text-muted-foreground">
-        Installing dependencies... (2 of 6 packages)
-      </p>
+      <p className="text-sm text-muted-foreground">Installing dependencies... (2 of 6 packages)</p>
     </div>
   ),
-}
+};
 
 // =============================================================================
 // Sizes
@@ -156,7 +154,7 @@ export const Sizes: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Animated/Interactive
@@ -164,17 +162,17 @@ export const Sizes: Story = {
 
 export const Animated: Story = {
   render: function AnimatedStory() {
-    const [progress, setProgress] = useState(0)
+    const [progress, setProgress] = useState(0);
 
     useEffect(() => {
       const timer = setInterval(() => {
         setProgress((prev) => {
-          if (prev >= 100) return 0
-          return prev + 1
-        })
-      }, 50)
-      return () => clearInterval(timer)
-    }, [])
+          if (prev >= 100) return 0;
+          return prev + 1;
+        });
+      }, 50);
+      return () => clearInterval(timer);
+    }, []);
 
     return (
       <div className="w-[400px] space-y-2">
@@ -184,7 +182,7 @@ export const Animated: Story = {
         </div>
         <Progress value={progress} />
       </div>
-    )
+    );
   },
   parameters: {
     docs: {
@@ -193,11 +191,11 @@ export const Animated: Story = {
       },
     },
   },
-}
+};
 
 export const Interactive: Story = {
   render: function InteractiveStory() {
-    const [progress, setProgress] = useState(0)
+    const [progress, setProgress] = useState(0);
 
     return (
       <div className="w-[400px] space-y-4">
@@ -228,7 +226,7 @@ export const Interactive: Story = {
           </Button>
         </div>
       </div>
-    )
+    );
   },
   parameters: {
     docs: {
@@ -237,7 +235,7 @@ export const Interactive: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Real-World Examples
@@ -245,24 +243,24 @@ export const Interactive: Story = {
 
 export const FileUpload: Story = {
   render: function FileUploadStory() {
-    const [uploading, setUploading] = useState(false)
-    const [progress, setProgress] = useState(0)
+    const [uploading, setUploading] = useState(false);
+    const [progress, setProgress] = useState(0);
 
     const startUpload = () => {
-      setUploading(true)
-      setProgress(0)
+      setUploading(true);
+      setProgress(0);
 
       const interval = setInterval(() => {
         setProgress((prev) => {
           if (prev >= 100) {
-            clearInterval(interval)
-            setUploading(false)
-            return 100
+            clearInterval(interval);
+            setUploading(false);
+            return 100;
           }
-          return prev + 2
-        })
-      }, 50)
-    }
+          return prev + 2;
+        });
+      }, 50);
+    };
 
     return (
       <div className="w-[400px] space-y-4">
@@ -282,7 +280,7 @@ export const FileUpload: Story = {
           {uploading ? 'Uploading...' : progress === 100 ? 'Upload Again' : 'Start Upload'}
         </Button>
       </div>
-    )
+    );
   },
   parameters: {
     docs: {
@@ -291,7 +289,7 @@ export const FileUpload: Story = {
       },
     },
   },
-}
+};
 
 export const MultipleProgress: Story = {
   render: () => (
@@ -336,34 +334,28 @@ export const MultipleProgress: Story = {
       },
     },
   },
-}
+};
 
 export const StepProgress: Story = {
   render: function StepProgressStory() {
-    const [step, setStep] = useState(1)
-    const progress = (step / 4) * 100
+    const [step, setStep] = useState(1);
+    const progress = (step / 4) * 100;
 
     return (
       <div className="w-[500px] space-y-4">
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
             <Label>Setup Progress</Label>
-            <span className="text-muted-foreground">
-              Step {step} of 4
-            </span>
+            <span className="text-muted-foreground">Step {step} of 4</span>
           </div>
           <Progress value={progress} />
         </div>
 
         <div className="rounded-lg border p-4">
           <h3 className="font-medium mb-2">
-            Step {step}: {
-              ['Choose Plan', 'Account Details', 'Payment', 'Confirmation'][step - 1]
-            }
+            Step {step}: {['Choose Plan', 'Account Details', 'Payment', 'Confirmation'][step - 1]}
           </h3>
-          <p className="text-sm text-muted-foreground">
-            Complete this step to continue.
-          </p>
+          <p className="text-sm text-muted-foreground">Complete this step to continue.</p>
         </div>
 
         <div className="flex gap-2">
@@ -383,7 +375,7 @@ export const StepProgress: Story = {
           </Button>
         </div>
       </div>
-    )
+    );
   },
   parameters: {
     docs: {
@@ -392,7 +384,7 @@ export const StepProgress: Story = {
       },
     },
   },
-}
+};
 
 export const TaskCompletion: Story = {
   render: () => (
@@ -421,4 +413,4 @@ export const TaskCompletion: Story = {
       },
     },
   },
-}
+};

@@ -32,10 +32,10 @@
  * =============================================================================
  */
 
-import { z } from 'zod'
-import { TRPCError } from '@trpc/server'
-import { router, protectedProcedure } from '../router'
-import { permissionService } from '../../services'
+import { z } from 'zod';
+import { TRPCError } from '@trpc/server';
+import { router, protectedProcedure } from '../router';
+import { permissionService } from '../../services';
 import {
   getWikiAiService,
   getWikiRagService,
@@ -43,10 +43,10 @@ import {
   getWikiEdgeEmbeddingService,
   WikiAiError,
   type WikiContext,
-} from '../../lib/ai/wiki'
-import { WikiBm25Service } from '../../lib/ai/wiki/WikiBm25Service'
-import { WikiHybridSearchService } from '../../lib/ai/wiki/WikiHybridSearchService'
-import { getGraphitiService } from '../../services/graphitiService'
+} from '../../lib/ai/wiki';
+import { WikiBm25Service } from '../../lib/ai/wiki/WikiBm25Service';
+import { WikiHybridSearchService } from '../../lib/ai/wiki/WikiHybridSearchService';
+import { getGraphitiService } from '../../services/graphitiService';
 
 // =============================================================================
 // Types
@@ -56,14 +56,14 @@ import { getGraphitiService } from '../../services/graphitiService'
  * Related fact found for an entity during context analysis
  */
 export interface RelatedFact {
-  entityName: string
-  entityType: string
-  fact: string
-  pageId: number
-  pageTitle: string
-  pageSlug?: string
-  validAt: string | null
-  invalidAt: string | null
+  entityName: string;
+  entityType: string;
+  fact: string;
+  pageId: number;
+  pageTitle: string;
+  pageSlug?: string;
+  validAt: string | null;
+  invalidAt: string | null;
 }
 
 // =============================================================================
@@ -73,19 +73,19 @@ export interface RelatedFact {
 const wikiContextSchema = z.object({
   workspaceId: z.number(),
   projectId: z.number().optional(),
-})
+});
 
 const embedSchema = z.object({
   workspaceId: z.number(),
   projectId: z.number().optional(),
   text: z.string().min(1).max(1000000),
-})
+});
 
 const embedBatchSchema = z.object({
   workspaceId: z.number(),
   projectId: z.number().optional(),
   texts: z.array(z.string().min(1).max(1000000)).min(1).max(100),
-})
+});
 
 const extractEntitiesSchema = z.object({
   workspaceId: z.number(),
@@ -95,14 +95,14 @@ const extractEntitiesSchema = z.object({
     .array(z.string())
     .optional()
     .default(['WikiPage', 'Task', 'User', 'Project', 'Concept']),
-})
+});
 
 const summarizeSchema = z.object({
   workspaceId: z.number(),
   projectId: z.number().optional(),
   text: z.string().min(1).max(1000000),
   maxLength: z.number().min(50).max(10000).optional(),
-})
+});
 
 const chatSchema = z.object({
   workspaceId: z.number(),
@@ -119,7 +119,7 @@ const chatSchema = z.object({
       maxTokens: z.number().min(1).max(128000).optional(),
     })
     .optional(),
-})
+});
 
 // Semantic Search schemas (Fase 15.2)
 const semanticSearchSchema = z.object({
@@ -129,13 +129,13 @@ const semanticSearchSchema = z.object({
   groupId: z.string().optional(),
   limit: z.number().min(1).max(50).optional().default(10),
   scoreThreshold: z.number().min(0).max(1).optional().default(0.5),
-})
+});
 
 const similarPagesSchema = z.object({
   workspaceId: z.number(),
   pageId: z.number(),
   limit: z.number().min(1).max(20).optional().default(5),
-})
+});
 
 // Ask the Wiki schemas (Fase 15.3)
 const askWikiSchema = z.object({
@@ -151,21 +151,21 @@ const askWikiSchema = z.object({
       temperature: z.number().min(0).max(2).optional(),
     })
     .optional(),
-})
+});
 
 const createConversationSchema = z.object({
   workspaceId: z.number(),
   projectId: z.number().optional(),
-})
+});
 
 const conversationIdSchema = z.object({
   conversationId: z.string(),
-})
+});
 
 const listConversationsSchema = z.object({
   workspaceId: z.number(),
   projectId: z.number().optional(),
-})
+});
 
 // Reindex embeddings schema (Fase 15.5)
 const reindexEmbeddingsSchema = z.object({
@@ -173,7 +173,7 @@ const reindexEmbeddingsSchema = z.object({
   projectId: z.number().optional(),
   groupId: z.string().optional(),
   forceReindex: z.boolean().optional().default(false),
-})
+});
 
 // Fact Check schema (Fase 17.5)
 const factCheckSchema = z.object({
@@ -183,7 +183,7 @@ const factCheckSchema = z.object({
   selectedText: z.string().min(1).max(5000),
   /** Current page ID (to exclude from results) */
   currentPageId: z.number().optional(),
-})
+});
 
 // Edge Semantic Search schema (Fase 19.4)
 const edgeSemanticSearchSchema = z.object({
@@ -196,7 +196,7 @@ const edgeSemanticSearchSchema = z.object({
   edgeType: z.string().optional(),
   limit: z.number().min(1).max(50).optional().default(10),
   scoreThreshold: z.number().min(0).max(1).optional().default(0.5),
-})
+});
 
 // Hybrid Semantic Search schema (Fase 19.4)
 const hybridSemanticSearchSchema = z.object({
@@ -212,7 +212,7 @@ const hybridSemanticSearchSchema = z.object({
   /** Max total results */
   limit: z.number().min(1).max(100).optional().default(20),
   scoreThreshold: z.number().min(0).max(1).optional().default(0.5),
-})
+});
 
 // Keyword Search schema (Fase 20.5 - BM25)
 const keywordSearchSchema = z.object({
@@ -221,7 +221,7 @@ const keywordSearchSchema = z.object({
   query: z.string().min(1).max(1000),
   limit: z.number().min(1).max(50).optional().default(20),
   language: z.enum(['english', 'dutch', 'german', 'simple']).optional().default('english'),
-})
+});
 
 // RRF Hybrid Search schema (Fase 20.5 - BM25 + Vector + Edge fusion)
 const rrfHybridSearchSchema = z.object({
@@ -243,7 +243,7 @@ const rrfHybridSearchSchema = z.object({
   vectorWeight: z.number().min(0).max(5).optional().default(1.0),
   /** Weight for edge results (default: 0.5) */
   edgeWeight: z.number().min(0).max(5).optional().default(0.5),
-})
+});
 
 // =============================================================================
 // Helper Functions
@@ -252,11 +252,8 @@ const rrfHybridSearchSchema = z.object({
 /**
  * Verify user has access to the workspace using the permission service
  */
-async function verifyWorkspaceAccess(
-  userId: number,
-  workspaceId: number
-): Promise<void> {
-  await permissionService.requireWorkspaceAccess(userId, workspaceId, 'VIEWER')
+async function verifyWorkspaceAccess(userId: number, workspaceId: number): Promise<void> {
+  await permissionService.requireWorkspaceAccess(userId, workspaceId, 'VIEWER');
 }
 
 /**
@@ -264,27 +261,30 @@ async function verifyWorkspaceAccess(
  */
 function handleWikiAiError(error: unknown): never {
   if (error instanceof WikiAiError) {
-    const codeMap: Record<WikiAiError['code'], 'NOT_FOUND' | 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR'> = {
+    const codeMap: Record<
+      WikiAiError['code'],
+      'NOT_FOUND' | 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR'
+    > = {
       NO_EMBEDDING_PROVIDER: 'NOT_FOUND',
       NO_REASONING_PROVIDER: 'NOT_FOUND',
       PROVIDER_ERROR: 'INTERNAL_SERVER_ERROR',
       INVALID_INPUT: 'BAD_REQUEST',
-    }
+    };
 
     throw new TRPCError({
       code: codeMap[error.code],
       message: error.message,
-    })
+    });
   }
 
   if (error instanceof TRPCError) {
-    throw error
+    throw error;
   }
 
   throw new TRPCError({
     code: 'INTERNAL_SERVER_ERROR',
     message: error instanceof Error ? error.message : 'Unknown error',
-  })
+  });
 }
 
 // =============================================================================
@@ -295,68 +295,64 @@ export const wikiAiRouter = router({
   /**
    * Get AI capabilities available for a workspace/project context
    */
-  getCapabilities: protectedProcedure
-    .input(wikiContextSchema)
-    .query(async ({ ctx, input }) => {
-      const userId = ctx.user!.id
+  getCapabilities: protectedProcedure.input(wikiContextSchema).query(async ({ ctx, input }) => {
+    const userId = ctx.user!.id;
 
-      // Verify access
-      await verifyWorkspaceAccess(userId, input.workspaceId)
+    // Verify access
+    await verifyWorkspaceAccess(userId, input.workspaceId);
 
-      const service = getWikiAiService(ctx.prisma)
-      const context: WikiContext = {
-        workspaceId: input.workspaceId,
-        projectId: input.projectId,
-      }
+    const service = getWikiAiService(ctx.prisma);
+    const context: WikiContext = {
+      workspaceId: input.workspaceId,
+      projectId: input.projectId,
+    };
 
-      try {
-        return await service.getCapabilities(context)
-      } catch (error) {
-        handleWikiAiError(error)
-      }
-    }),
+    try {
+      return await service.getCapabilities(context);
+    } catch (error) {
+      handleWikiAiError(error);
+    }
+  }),
 
   /**
    * Test connection to AI providers for a workspace/project context
    */
-  testConnection: protectedProcedure
-    .input(wikiContextSchema)
-    .mutation(async ({ ctx, input }) => {
-      const userId = ctx.user!.id
+  testConnection: protectedProcedure.input(wikiContextSchema).mutation(async ({ ctx, input }) => {
+    const userId = ctx.user!.id;
 
-      // Verify access
-      await verifyWorkspaceAccess(userId, input.workspaceId)
+    // Verify access
+    await verifyWorkspaceAccess(userId, input.workspaceId);
 
-      const service = getWikiAiService(ctx.prisma)
-      const context: WikiContext = {
-        workspaceId: input.workspaceId,
-        projectId: input.projectId,
-      }
+    const service = getWikiAiService(ctx.prisma);
+    const context: WikiContext = {
+      workspaceId: input.workspaceId,
+      projectId: input.projectId,
+    };
 
-      try {
-        return await service.testConnection(context)
-      } catch (error) {
-        handleWikiAiError(error)
-      }
-    }),
+    try {
+      return await service.testConnection(context);
+    } catch (error) {
+      handleWikiAiError(error);
+    }
+  }),
 
   /**
    * Get embedding for a single text
    */
   embed: protectedProcedure.input(embedSchema).mutation(async ({ ctx, input }) => {
-    const userId = ctx.user!.id
+    const userId = ctx.user!.id;
 
     // Verify access
-    await verifyWorkspaceAccess(userId, input.workspaceId)
+    await verifyWorkspaceAccess(userId, input.workspaceId);
 
-    const service = getWikiAiService(ctx.prisma)
+    const service = getWikiAiService(ctx.prisma);
     const context: WikiContext = {
       workspaceId: input.workspaceId,
       projectId: input.projectId,
-    }
+    };
 
     try {
-      const result = await service.embed(context, input.text)
+      const result = await service.embed(context, input.text);
       return {
         success: true,
         dimensions: result.dimensions,
@@ -365,42 +361,40 @@ export const wikiAiRouter = router({
         // Return first 10 values as sample to avoid huge response
         embeddingSample: result.embedding.slice(0, 10),
         embeddingLength: result.embedding.length,
-      }
+      };
     } catch (error) {
-      handleWikiAiError(error)
+      handleWikiAiError(error);
     }
   }),
 
   /**
    * Get embeddings for multiple texts (batched)
    */
-  embedBatch: protectedProcedure
-    .input(embedBatchSchema)
-    .mutation(async ({ ctx, input }) => {
-      const userId = ctx.user!.id
+  embedBatch: protectedProcedure.input(embedBatchSchema).mutation(async ({ ctx, input }) => {
+    const userId = ctx.user!.id;
 
-      // Verify access
-      await verifyWorkspaceAccess(userId, input.workspaceId)
+    // Verify access
+    await verifyWorkspaceAccess(userId, input.workspaceId);
 
-      const service = getWikiAiService(ctx.prisma)
-      const context: WikiContext = {
-        workspaceId: input.workspaceId,
-        projectId: input.projectId,
-      }
+    const service = getWikiAiService(ctx.prisma);
+    const context: WikiContext = {
+      workspaceId: input.workspaceId,
+      projectId: input.projectId,
+    };
 
-      try {
-        const results = await service.embedBatch(context, input.texts)
-        return {
-          success: true,
-          count: results.length,
-          dimensions: results[0]?.dimensions ?? 0,
-          model: results[0]?.model ?? 'unknown',
-          provider: results[0]?.provider ?? 'unknown',
-        }
-      } catch (error) {
-        handleWikiAiError(error)
-      }
-    }),
+    try {
+      const results = await service.embedBatch(context, input.texts);
+      return {
+        success: true,
+        count: results.length,
+        dimensions: results[0]?.dimensions ?? 0,
+        model: results[0]?.model ?? 'unknown',
+        provider: results[0]?.provider ?? 'unknown',
+      };
+    } catch (error) {
+      handleWikiAiError(error);
+    }
+  }),
 
   /**
    * Extract entities from text using AI
@@ -408,122 +402,110 @@ export const wikiAiRouter = router({
   extractEntities: protectedProcedure
     .input(extractEntitiesSchema)
     .mutation(async ({ ctx, input }) => {
-      const userId = ctx.user!.id
+      const userId = ctx.user!.id;
 
       // Verify access
-      await verifyWorkspaceAccess(userId, input.workspaceId)
+      await verifyWorkspaceAccess(userId, input.workspaceId);
 
-      const service = getWikiAiService(ctx.prisma)
+      const service = getWikiAiService(ctx.prisma);
       const context: WikiContext = {
         workspaceId: input.workspaceId,
         projectId: input.projectId,
-      }
+      };
 
       try {
-        const result = await service.extractEntities(
-          context,
-          input.text,
-          input.entityTypes
-        )
+        const result = await service.extractEntities(context, input.text, input.entityTypes);
         return {
           success: true,
           entities: result.entities,
           provider: result.provider,
           model: result.model,
           count: result.entities.length,
-        }
+        };
       } catch (error) {
-        handleWikiAiError(error)
+        handleWikiAiError(error);
       }
     }),
 
   /**
    * Summarize text using AI
    */
-  summarize: protectedProcedure
-    .input(summarizeSchema)
-    .mutation(async ({ ctx, input }) => {
-      const userId = ctx.user!.id
+  summarize: protectedProcedure.input(summarizeSchema).mutation(async ({ ctx, input }) => {
+    const userId = ctx.user!.id;
 
-      // Verify access
-      await verifyWorkspaceAccess(userId, input.workspaceId)
+    // Verify access
+    await verifyWorkspaceAccess(userId, input.workspaceId);
 
-      const service = getWikiAiService(ctx.prisma)
-      const context: WikiContext = {
-        workspaceId: input.workspaceId,
-        projectId: input.projectId,
-      }
+    const service = getWikiAiService(ctx.prisma);
+    const context: WikiContext = {
+      workspaceId: input.workspaceId,
+      projectId: input.projectId,
+    };
 
-      try {
-        const result = await service.summarize(
-          context,
-          input.text,
-          input.maxLength
-        )
-        return {
-          success: true,
-          summary: result.summary,
-          originalLength: result.originalLength,
-          summaryLength: result.summaryLength,
-          provider: result.provider,
-        }
-      } catch (error) {
-        handleWikiAiError(error)
-      }
-    }),
+    try {
+      const result = await service.summarize(context, input.text, input.maxLength);
+      return {
+        success: true,
+        summary: result.summary,
+        originalLength: result.originalLength,
+        summaryLength: result.summaryLength,
+        provider: result.provider,
+      };
+    } catch (error) {
+      handleWikiAiError(error);
+    }
+  }),
 
   /**
    * Chat with AI (non-streaming)
    * For simple Q&A or single-turn conversations
    */
   chat: protectedProcedure.input(chatSchema).mutation(async ({ ctx, input }) => {
-    const userId = ctx.user!.id
+    const userId = ctx.user!.id;
 
     // Verify access
-    await verifyWorkspaceAccess(userId, input.workspaceId)
+    await verifyWorkspaceAccess(userId, input.workspaceId);
 
-    const service = getWikiAiService(ctx.prisma)
+    const service = getWikiAiService(ctx.prisma);
     const context: WikiContext = {
       workspaceId: input.workspaceId,
       projectId: input.projectId,
-    }
+    };
 
     try {
-      const response = await service.chat(context, input.messages, input.options)
+      const response = await service.chat(context, input.messages, input.options);
       return {
         success: true,
         response,
         provider: (await service.getCapabilities(context)).reasoningProvider,
         model: (await service.getCapabilities(context)).reasoningModel,
-      }
+      };
     } catch (error) {
-      handleWikiAiError(error)
+      handleWikiAiError(error);
     }
   }),
 
   /**
    * Get embedding info for a context without generating embeddings
    */
-  getEmbeddingInfo: protectedProcedure
-    .input(wikiContextSchema)
-    .query(async ({ ctx, input }) => {
-      const userId = ctx.user!.id
+  getEmbeddingInfo: protectedProcedure.input(wikiContextSchema).query(async ({ ctx, input }) => {
+    const userId = ctx.user!.id;
 
-      // Verify access
-      await verifyWorkspaceAccess(userId, input.workspaceId)
+    // Verify access
+    await verifyWorkspaceAccess(userId, input.workspaceId);
 
-      const service = getWikiAiService(ctx.prisma)
-      const context: WikiContext = {
-        workspaceId: input.workspaceId,
-        projectId: input.projectId,
-      }
+    const service = getWikiAiService(ctx.prisma);
+    const context: WikiContext = {
+      workspaceId: input.workspaceId,
+      projectId: input.projectId,
+    };
 
-      try {
-        return await service.getEmbeddingInfo(context)
-      } catch (error) {
-        handleWikiAiError(error)
-      }
-    }),
+    try {
+      return await service.getEmbeddingInfo(context);
+    } catch (error) {
+      handleWikiAiError(error);
+    }
+  }),
 
   // ===========================================================================
   // Semantic Search (Fase 15.2)
@@ -536,95 +518,87 @@ export const wikiAiRouter = router({
   semanticSearch: protectedProcedure
     .input(semanticSearchSchema)
     .mutation(async ({ ctx, input }) => {
-      const userId = ctx.user!.id
+      const userId = ctx.user!.id;
 
       // Verify access
-      await verifyWorkspaceAccess(userId, input.workspaceId)
+      await verifyWorkspaceAccess(userId, input.workspaceId);
 
-      const graphitiService = getGraphitiService(ctx.prisma)
+      const graphitiService = getGraphitiService(ctx.prisma);
 
       try {
-        const results = await graphitiService.semanticSearch(
-          input.query,
-          input.workspaceId,
-          {
-            projectId: input.projectId,
-            groupId: input.groupId,
-            limit: input.limit,
-            scoreThreshold: input.scoreThreshold,
-          }
-        )
+        const results = await graphitiService.semanticSearch(input.query, input.workspaceId, {
+          projectId: input.projectId,
+          groupId: input.groupId,
+          limit: input.limit,
+          scoreThreshold: input.scoreThreshold,
+        });
 
         return {
           success: true,
           results,
           count: results.length,
           query: input.query,
-        }
+        };
       } catch (error) {
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: error instanceof Error ? error.message : 'Semantic search failed',
-        })
+        });
       }
     }),
 
   /**
    * Find wiki pages similar to a given page
    */
-  findSimilarPages: protectedProcedure
-    .input(similarPagesSchema)
-    .query(async ({ ctx, input }) => {
-      const userId = ctx.user!.id
+  findSimilarPages: protectedProcedure.input(similarPagesSchema).query(async ({ ctx, input }) => {
+    const userId = ctx.user!.id;
 
-      // Verify access
-      await verifyWorkspaceAccess(userId, input.workspaceId)
+    // Verify access
+    await verifyWorkspaceAccess(userId, input.workspaceId);
 
-      const graphitiService = getGraphitiService(ctx.prisma)
+    const graphitiService = getGraphitiService(ctx.prisma);
 
-      try {
-        const results = await graphitiService.findSimilarPages(
-          input.pageId,
-          input.workspaceId,
-          input.limit
-        )
+    try {
+      const results = await graphitiService.findSimilarPages(
+        input.pageId,
+        input.workspaceId,
+        input.limit
+      );
 
-        return {
-          success: true,
-          results,
-          count: results.length,
-          sourcePageId: input.pageId,
-        }
-      } catch (error) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: error instanceof Error ? error.message : 'Find similar pages failed',
-        })
-      }
-    }),
+      return {
+        success: true,
+        results,
+        count: results.length,
+        sourcePageId: input.pageId,
+      };
+    } catch (error) {
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: error instanceof Error ? error.message : 'Find similar pages failed',
+      });
+    }
+  }),
 
   /**
    * Get embedding statistics for the wiki
    */
-  getEmbeddingStats: protectedProcedure
-    .input(wikiContextSchema)
-    .query(async ({ ctx, input }) => {
-      const userId = ctx.user!.id
+  getEmbeddingStats: protectedProcedure.input(wikiContextSchema).query(async ({ ctx, input }) => {
+    const userId = ctx.user!.id;
 
-      // Verify access
-      await verifyWorkspaceAccess(userId, input.workspaceId)
+    // Verify access
+    await verifyWorkspaceAccess(userId, input.workspaceId);
 
-      const graphitiService = getGraphitiService(ctx.prisma)
+    const graphitiService = getGraphitiService(ctx.prisma);
 
-      try {
-        return await graphitiService.getEmbeddingStats()
-      } catch (error) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: error instanceof Error ? error.message : 'Get embedding stats failed',
-        })
-      }
-    }),
+    try {
+      return await graphitiService.getEmbeddingStats();
+    } catch (error) {
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: error instanceof Error ? error.message : 'Get embedding stats failed',
+      });
+    }
+  }),
 
   // ===========================================================================
   // Ask the Wiki - RAG Chat (Fase 15.3)
@@ -641,47 +615,42 @@ export const wikiAiRouter = router({
    *
    * Supports conversation history for follow-up questions.
    */
-  askWiki: protectedProcedure
-    .input(askWikiSchema)
-    .mutation(async ({ ctx, input }) => {
-      const userId = ctx.user!.id
+  askWiki: protectedProcedure.input(askWikiSchema).mutation(async ({ ctx, input }) => {
+    const userId = ctx.user!.id;
 
-      // Verify access
-      await verifyWorkspaceAccess(userId, input.workspaceId)
+    // Verify access
+    await verifyWorkspaceAccess(userId, input.workspaceId);
 
-      const ragService = getWikiRagService(ctx.prisma)
+    const ragService = getWikiRagService(ctx.prisma);
 
-      try {
-        const result = await ragService.askWiki(
-          input.question,
-          input.workspaceId,
-          {
-            projectId: input.projectId,
-            ...input.options,
-          }
-        )
+    try {
+      const result = await ragService.askWiki(input.question, input.workspaceId, {
+        projectId: input.projectId,
+        ...input.options,
+      });
 
-        return {
-          success: true,
-          answer: result.answer,
-          sources: result.sources,
-          contextCount: result.context.length,
-          model: result.model,
-          provider: result.provider,
-        }
-      } catch (error) {
-        if (error instanceof Error && error.message.includes('No reasoning provider')) {
-          throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: 'No AI provider configured for this workspace. Please configure an AI provider in settings.',
-          })
-        }
+      return {
+        success: true,
+        answer: result.answer,
+        sources: result.sources,
+        contextCount: result.context.length,
+        model: result.model,
+        provider: result.provider,
+      };
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('No reasoning provider')) {
         throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: error instanceof Error ? error.message : 'Ask Wiki failed',
-        })
+          code: 'NOT_FOUND',
+          message:
+            'No AI provider configured for this workspace. Please configure an AI provider in settings.',
+        });
       }
-    }),
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: error instanceof Error ? error.message : 'Ask Wiki failed',
+      });
+    }
+  }),
 
   /**
    * Create a new conversation for follow-up questions
@@ -689,56 +658,51 @@ export const wikiAiRouter = router({
   createConversation: protectedProcedure
     .input(createConversationSchema)
     .mutation(async ({ ctx, input }) => {
-      const userId = ctx.user!.id
+      const userId = ctx.user!.id;
 
       // Verify access
-      await verifyWorkspaceAccess(userId, input.workspaceId)
+      await verifyWorkspaceAccess(userId, input.workspaceId);
 
-      const ragService = getWikiRagService(ctx.prisma)
-      const conversation = ragService.createConversation(
-        input.workspaceId,
-        input.projectId
-      )
+      const ragService = getWikiRagService(ctx.prisma);
+      const conversation = ragService.createConversation(input.workspaceId, input.projectId);
 
       return {
         success: true,
         conversationId: conversation.id,
         createdAt: conversation.createdAt,
-      }
+      };
     }),
 
   /**
    * Get conversation history
    */
-  getConversation: protectedProcedure
-    .input(conversationIdSchema)
-    .query(async ({ ctx, input }) => {
-      const ragService = getWikiRagService(ctx.prisma)
-      const conversation = ragService.getConversation(input.conversationId)
+  getConversation: protectedProcedure.input(conversationIdSchema).query(async ({ ctx, input }) => {
+    const ragService = getWikiRagService(ctx.prisma);
+    const conversation = ragService.getConversation(input.conversationId);
 
-      if (!conversation) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Conversation not found',
-        })
-      }
+    if (!conversation) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Conversation not found',
+      });
+    }
 
-      // Verify user has access to the workspace
-      const userId = ctx.user!.id
-      await verifyWorkspaceAccess(userId, conversation.workspaceId)
+    // Verify user has access to the workspace
+    const userId = ctx.user!.id;
+    await verifyWorkspaceAccess(userId, conversation.workspaceId);
 
-      return {
-        success: true,
-        conversation: {
-          id: conversation.id,
-          workspaceId: conversation.workspaceId,
-          projectId: conversation.projectId,
-          messages: conversation.messages,
-          createdAt: conversation.createdAt,
-          updatedAt: conversation.updatedAt,
-        },
-      }
-    }),
+    return {
+      success: true,
+      conversation: {
+        id: conversation.id,
+        workspaceId: conversation.workspaceId,
+        projectId: conversation.projectId,
+        messages: conversation.messages,
+        createdAt: conversation.createdAt,
+        updatedAt: conversation.updatedAt,
+      },
+    };
+  }),
 
   /**
    * Clear/delete a conversation
@@ -746,26 +710,26 @@ export const wikiAiRouter = router({
   clearConversation: protectedProcedure
     .input(conversationIdSchema)
     .mutation(async ({ ctx, input }) => {
-      const ragService = getWikiRagService(ctx.prisma)
-      const conversation = ragService.getConversation(input.conversationId)
+      const ragService = getWikiRagService(ctx.prisma);
+      const conversation = ragService.getConversation(input.conversationId);
 
       if (!conversation) {
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: 'Conversation not found',
-        })
+        });
       }
 
       // Verify user has access to the workspace
-      const userId = ctx.user!.id
-      await verifyWorkspaceAccess(userId, conversation.workspaceId)
+      const userId = ctx.user!.id;
+      await verifyWorkspaceAccess(userId, conversation.workspaceId);
 
-      const deleted = ragService.clearConversation(input.conversationId)
+      const deleted = ragService.clearConversation(input.conversationId);
 
       return {
         success: deleted,
         conversationId: input.conversationId,
-      }
+      };
     }),
 
   /**
@@ -774,20 +738,17 @@ export const wikiAiRouter = router({
   listConversations: protectedProcedure
     .input(listConversationsSchema)
     .query(async ({ ctx, input }) => {
-      const userId = ctx.user!.id
+      const userId = ctx.user!.id;
 
       // Verify access
-      await verifyWorkspaceAccess(userId, input.workspaceId)
+      await verifyWorkspaceAccess(userId, input.workspaceId);
 
-      const ragService = getWikiRagService(ctx.prisma)
-      const conversations = ragService.listConversations(
-        input.workspaceId,
-        input.projectId
-      )
+      const ragService = getWikiRagService(ctx.prisma);
+      const conversations = ragService.listConversations(input.workspaceId, input.projectId);
 
       return {
         success: true,
-        conversations: conversations.map(c => ({
+        conversations: conversations.map((c) => ({
           id: c.id,
           workspaceId: c.workspaceId,
           projectId: c.projectId,
@@ -797,7 +758,7 @@ export const wikiAiRouter = router({
           lastMessage: c.messages[c.messages.length - 1]?.content.substring(0, 100),
         })),
         count: conversations.length,
-      }
+      };
     }),
 
   /**
@@ -808,40 +769,35 @@ export const wikiAiRouter = router({
    * - { type: 'sources', data: Source[] } with source citations
    * - { type: 'done', data: '' } when complete
    */
-  askWikiStream: protectedProcedure
-    .input(askWikiSchema)
-    .mutation(async function* ({ ctx, input }) {
-      const userId = ctx.user!.id
+  askWikiStream: protectedProcedure.input(askWikiSchema).mutation(async function* ({ ctx, input }) {
+    const userId = ctx.user!.id;
 
-      // Verify access
-      await verifyWorkspaceAccess(userId, input.workspaceId)
+    // Verify access
+    await verifyWorkspaceAccess(userId, input.workspaceId);
 
-      const ragService = getWikiRagService(ctx.prisma)
+    const ragService = getWikiRagService(ctx.prisma);
 
-      try {
-        for await (const chunk of ragService.askWikiStream(
-          input.question,
-          input.workspaceId,
-          {
-            projectId: input.projectId,
-            ...input.options,
-          }
-        )) {
-          yield chunk
-        }
-      } catch (error) {
-        if (error instanceof Error && error.message.includes('No reasoning provider')) {
-          throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: 'No AI provider configured for this workspace. Please configure an AI provider in settings.',
-          })
-        }
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: error instanceof Error ? error.message : 'Ask Wiki Stream failed',
-        })
+    try {
+      for await (const chunk of ragService.askWikiStream(input.question, input.workspaceId, {
+        projectId: input.projectId,
+        ...input.options,
+      })) {
+        yield chunk;
       }
-    }),
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('No reasoning provider')) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message:
+            'No AI provider configured for this workspace. Please configure an AI provider in settings.',
+        });
+      }
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: error instanceof Error ? error.message : 'Ask Wiki Stream failed',
+      });
+    }
+  }),
 
   // ===========================================================================
   // Background Indexing (Fase 15.5)
@@ -859,23 +815,23 @@ export const wikiAiRouter = router({
   reindexEmbeddings: protectedProcedure
     .input(reindexEmbeddingsSchema)
     .mutation(async ({ ctx, input }) => {
-      const userId = ctx.user!.id
+      const userId = ctx.user!.id;
 
       // Verify access
-      await verifyWorkspaceAccess(userId, input.workspaceId)
+      await verifyWorkspaceAccess(userId, input.workspaceId);
 
-      const embeddingService = getWikiEmbeddingService(ctx.prisma)
+      const embeddingService = getWikiEmbeddingService(ctx.prisma);
       const context: WikiContext = {
         workspaceId: input.workspaceId,
         projectId: input.projectId,
-      }
+      };
 
       const stats = {
         totalPages: 0,
         stored: 0,
         skipped: 0,
         errors: 0,
-      }
+      };
 
       try {
         // Fetch all wiki pages for the workspace/project
@@ -903,15 +859,15 @@ export const wikiAiRouter = router({
                 content: true,
                 graphitiGroupId: true,
               },
-            })
+            });
 
-        stats.totalPages = pages.length
+        stats.totalPages = pages.length;
 
         // Process each page
         for (const page of pages) {
           try {
             // Use workspace-based groupId if no graphiti groupId set
-            const groupId = page.graphitiGroupId ?? `workspace-${input.workspaceId}`
+            const groupId = page.graphitiGroupId ?? `workspace-${input.workspaceId}`;
 
             if (input.forceReindex) {
               // Force reindex - always store
@@ -921,11 +877,11 @@ export const wikiAiRouter = router({
                 page.title,
                 page.content,
                 groupId
-              )
+              );
               if (success) {
-                stats.stored++
+                stats.stored++;
               } else {
-                stats.errors++
+                stats.errors++;
               }
             } else {
               // Conditional reindex - only if content changed
@@ -935,44 +891,44 @@ export const wikiAiRouter = router({
                 page.title,
                 page.content,
                 groupId
-              )
+              );
 
               switch (result) {
                 case 'stored':
-                  stats.stored++
-                  break
+                  stats.stored++;
+                  break;
                 case 'skipped':
-                  stats.skipped++
-                  break
+                  stats.skipped++;
+                  break;
                 case 'error':
-                  stats.errors++
-                  break
+                  stats.errors++;
+                  break;
               }
             }
           } catch (pageError) {
             console.error(
               `[wikiAi.reindexEmbeddings] Error processing page ${page.id}:`,
               pageError instanceof Error ? pageError.message : pageError
-            )
-            stats.errors++
+            );
+            stats.errors++;
           }
         }
 
         console.log(
           `[wikiAi.reindexEmbeddings] Completed for workspace ${input.workspaceId}` +
-          (input.projectId ? ` project ${input.projectId}` : '') +
-          `: ${stats.stored} stored, ${stats.skipped} skipped, ${stats.errors} errors`
-        )
+            (input.projectId ? ` project ${input.projectId}` : '') +
+            `: ${stats.stored} stored, ${stats.skipped} skipped, ${stats.errors} errors`
+        );
 
         return {
           success: true,
           stats,
-        }
+        };
       } catch (error) {
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: error instanceof Error ? error.message : 'Reindex embeddings failed',
-        })
+        });
       }
     }),
 
@@ -991,101 +947,103 @@ export const wikiAiRouter = router({
    * 2. For each entity, search knowledge graph for existing facts
    * 3. Return all found facts with source page info
    */
-  factCheck: protectedProcedure
-    .input(factCheckSchema)
-    .mutation(async ({ ctx, input }) => {
-      const userId = ctx.user!.id
+  factCheck: protectedProcedure.input(factCheckSchema).mutation(async ({ ctx, input }) => {
+    const userId = ctx.user!.id;
 
-      // Verify access
-      await verifyWorkspaceAccess(userId, input.workspaceId)
+    // Verify access
+    await verifyWorkspaceAccess(userId, input.workspaceId);
 
-      const wikiAiService = getWikiAiService(ctx.prisma)
-      const graphitiService = getGraphitiService(ctx.prisma)
-      const context: WikiContext = {
-        workspaceId: input.workspaceId,
-        projectId: input.projectId,
-      }
+    const wikiAiService = getWikiAiService(ctx.prisma);
+    const graphitiService = getGraphitiService(ctx.prisma);
+    const context: WikiContext = {
+      workspaceId: input.workspaceId,
+      projectId: input.projectId,
+    };
 
-      try {
-        // Step 1: Extract entities from selected text
-        const extractionResult = await wikiAiService.extractEntities(
-          context,
-          input.selectedText,
-          ['WikiPage', 'Task', 'User', 'Project', 'Concept', 'Person']
-        )
+    try {
+      // Step 1: Extract entities from selected text
+      const extractionResult = await wikiAiService.extractEntities(context, input.selectedText, [
+        'WikiPage',
+        'Task',
+        'User',
+        'Project',
+        'Concept',
+        'Person',
+      ]);
 
-        if (extractionResult.entities.length === 0) {
-          return {
-            success: true,
-            selectedText: input.selectedText,
-            entities: [],
-            relatedFacts: [],
-            message: 'No entities found in selected text',
-          }
-        }
-
-        // Step 2: For each entity, search for existing facts from other pages
-        const relatedFacts: RelatedFact[] = []
-        const processedEntities = new Set<string>()
-
-        for (const entity of extractionResult.entities) {
-          // Skip duplicates
-          const entityKey = `${entity.type}:${entity.name.toLowerCase()}`
-          if (processedEntities.has(entityKey)) continue
-          processedEntities.add(entityKey)
-
-          // Map entity type to graph label
-          const graphType = entity.type === 'User' ? 'Person' : entity.type
-
-          try {
-            // Use the public getFactsForEntity method
-            const facts = await graphitiService.getFactsForEntity(
-              entity.name,
-              graphType,
-              input.currentPageId
-            )
-
-            for (const factData of facts) {
-              relatedFacts.push({
-                entityName: entity.name,
-                entityType: entity.type,
-                fact: factData.fact,
-                pageId: factData.pageId,
-                pageTitle: factData.pageTitle,
-                pageSlug: factData.pageSlug,
-                validAt: factData.validAt,
-                invalidAt: factData.invalidAt,
-              })
-            }
-          } catch (queryError) {
-            console.warn(
-              `[wikiAi.factCheck] Query failed for entity "${entity.name}":`,
-              queryError instanceof Error ? queryError.message : queryError
-            )
-          }
-        }
-
+      if (extractionResult.entities.length === 0) {
         return {
           success: true,
           selectedText: input.selectedText,
-          entities: extractionResult.entities.map(e => ({
-            name: e.name,
-            type: e.type,
-            confidence: e.confidence,
-          })),
-          relatedFacts,
-          message: relatedFacts.length > 0
+          entities: [],
+          relatedFacts: [],
+          message: 'No entities found in selected text',
+        };
+      }
+
+      // Step 2: For each entity, search for existing facts from other pages
+      const relatedFacts: RelatedFact[] = [];
+      const processedEntities = new Set<string>();
+
+      for (const entity of extractionResult.entities) {
+        // Skip duplicates
+        const entityKey = `${entity.type}:${entity.name.toLowerCase()}`;
+        if (processedEntities.has(entityKey)) continue;
+        processedEntities.add(entityKey);
+
+        // Map entity type to graph label
+        const graphType = entity.type === 'User' ? 'Person' : entity.type;
+
+        try {
+          // Use the public getFactsForEntity method
+          const facts = await graphitiService.getFactsForEntity(
+            entity.name,
+            graphType,
+            input.currentPageId
+          );
+
+          for (const factData of facts) {
+            relatedFacts.push({
+              entityName: entity.name,
+              entityType: entity.type,
+              fact: factData.fact,
+              pageId: factData.pageId,
+              pageTitle: factData.pageTitle,
+              pageSlug: factData.pageSlug,
+              validAt: factData.validAt,
+              invalidAt: factData.invalidAt,
+            });
+          }
+        } catch (queryError) {
+          console.warn(
+            `[wikiAi.factCheck] Query failed for entity "${entity.name}":`,
+            queryError instanceof Error ? queryError.message : queryError
+          );
+        }
+      }
+
+      return {
+        success: true,
+        selectedText: input.selectedText,
+        entities: extractionResult.entities.map((e) => ({
+          name: e.name,
+          type: e.type,
+          confidence: e.confidence,
+        })),
+        relatedFacts,
+        message:
+          relatedFacts.length > 0
             ? `Found ${relatedFacts.length} related fact(s) from other pages`
             : 'No related facts found in other wiki pages',
-        }
-      } catch (error) {
-        if (error instanceof TRPCError) throw error
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: error instanceof Error ? error.message : 'Fact check failed',
-        })
-      }
-    }),
+      };
+    } catch (error) {
+      if (error instanceof TRPCError) throw error;
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: error instanceof Error ? error.message : 'Fact check failed',
+      });
+    }
+  }),
 
   // ===========================================================================
   // Edge Semantic Search (Fase 19.4)
@@ -1101,40 +1059,36 @@ export const wikiAiRouter = router({
   edgeSemanticSearch: protectedProcedure
     .input(edgeSemanticSearchSchema)
     .mutation(async ({ ctx, input }) => {
-      const userId = ctx.user!.id
+      const userId = ctx.user!.id;
 
       // Verify access
-      await verifyWorkspaceAccess(userId, input.workspaceId)
+      await verifyWorkspaceAccess(userId, input.workspaceId);
 
-      const edgeEmbeddingService = getWikiEdgeEmbeddingService(ctx.prisma)
+      const edgeEmbeddingService = getWikiEdgeEmbeddingService(ctx.prisma);
       const context: WikiContext = {
         workspaceId: input.workspaceId,
         projectId: input.projectId,
-      }
+      };
 
       try {
-        const results = await edgeEmbeddingService.edgeSemanticSearch(
-          context,
-          input.query,
-          {
-            pageId: input.pageId,
-            edgeType: input.edgeType,
-            limit: input.limit,
-            scoreThreshold: input.scoreThreshold,
-          }
-        )
+        const results = await edgeEmbeddingService.edgeSemanticSearch(context, input.query, {
+          pageId: input.pageId,
+          edgeType: input.edgeType,
+          limit: input.limit,
+          scoreThreshold: input.scoreThreshold,
+        });
 
         return {
           success: true,
           results,
           count: results.length,
           query: input.query,
-        }
+        };
       } catch (error) {
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: error instanceof Error ? error.message : 'Edge semantic search failed',
-        })
+        });
       }
     }),
 
@@ -1151,33 +1105,29 @@ export const wikiAiRouter = router({
   hybridSemanticSearch: protectedProcedure
     .input(hybridSemanticSearchSchema)
     .mutation(async ({ ctx, input }) => {
-      const userId = ctx.user!.id
+      const userId = ctx.user!.id;
 
       // Verify access
-      await verifyWorkspaceAccess(userId, input.workspaceId)
+      await verifyWorkspaceAccess(userId, input.workspaceId);
 
-      const edgeEmbeddingService = getWikiEdgeEmbeddingService(ctx.prisma)
+      const edgeEmbeddingService = getWikiEdgeEmbeddingService(ctx.prisma);
       const context: WikiContext = {
         workspaceId: input.workspaceId,
         projectId: input.projectId,
-      }
+      };
 
       try {
-        const results = await edgeEmbeddingService.hybridSemanticSearch(
-          context,
-          input.query,
-          {
-            includePages: input.includePages,
-            includeEdges: input.includeEdges,
-            limitPerType: input.limitPerType,
-            limit: input.limit,
-            scoreThreshold: input.scoreThreshold,
-          }
-        )
+        const results = await edgeEmbeddingService.hybridSemanticSearch(context, input.query, {
+          includePages: input.includePages,
+          includeEdges: input.includeEdges,
+          limitPerType: input.limitPerType,
+          limit: input.limit,
+          scoreThreshold: input.scoreThreshold,
+        });
 
         // Separate counts for statistics
-        const pageCount = results.filter(r => r.type === 'page').length
-        const edgeCount = results.filter(r => r.type === 'edge').length
+        const pageCount = results.filter((r) => r.type === 'page').length;
+        const edgeCount = results.filter((r) => r.type === 'edge').length;
 
         return {
           success: true,
@@ -1186,12 +1136,12 @@ export const wikiAiRouter = router({
           pageCount,
           edgeCount,
           query: input.query,
-        }
+        };
       } catch (error) {
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: error instanceof Error ? error.message : 'Hybrid semantic search failed',
-        })
+        });
       }
     }),
 
@@ -1205,44 +1155,42 @@ export const wikiAiRouter = router({
    * Uses PostgreSQL full-text search with tsvector/tsquery.
    * Returns results ranked by BM25 relevance with highlighted headlines.
    */
-  keywordSearch: protectedProcedure
-    .input(keywordSearchSchema)
-    .mutation(async ({ ctx, input }) => {
-      const userId = ctx.user!.id
+  keywordSearch: protectedProcedure.input(keywordSearchSchema).mutation(async ({ ctx, input }) => {
+    const userId = ctx.user!.id;
 
-      // Verify access
-      await verifyWorkspaceAccess(userId, input.workspaceId)
+    // Verify access
+    await verifyWorkspaceAccess(userId, input.workspaceId);
 
-      const bm25Service = new WikiBm25Service(ctx.prisma)
+    const bm25Service = new WikiBm25Service(ctx.prisma);
 
-      try {
-        const results = await bm25Service.search(input.query, {
-          workspaceId: input.workspaceId,
-          projectId: input.projectId,
-          limit: input.limit,
-          language: input.language,
-        })
+    try {
+      const results = await bm25Service.search(input.query, {
+        workspaceId: input.workspaceId,
+        projectId: input.projectId,
+        limit: input.limit,
+        language: input.language,
+      });
 
-        return {
-          success: true,
-          results: results.map(r => ({
-            pageId: r.pageId,
-            title: r.title,
-            slug: r.slug,
-            rank: r.rank,
-            headline: r.headline,
-            source: r.source,
-          })),
-          count: results.length,
-          query: input.query,
-        }
-      } catch (error) {
-        throw new TRPCError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: error instanceof Error ? error.message : 'Keyword search failed',
-        })
-      }
-    }),
+      return {
+        success: true,
+        results: results.map((r) => ({
+          pageId: r.pageId,
+          title: r.title,
+          slug: r.slug,
+          rank: r.rank,
+          headline: r.headline,
+          source: r.source,
+        })),
+        count: results.length,
+        query: input.query,
+      };
+    } catch (error) {
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: error instanceof Error ? error.message : 'Keyword search failed',
+      });
+    }
+  }),
 
   // ===========================================================================
   // RRF Hybrid Search (Fase 20.5)
@@ -1261,19 +1209,15 @@ export const wikiAiRouter = router({
   rrfHybridSearch: protectedProcedure
     .input(rrfHybridSearchSchema)
     .mutation(async ({ ctx, input }) => {
-      const userId = ctx.user!.id
+      const userId = ctx.user!.id;
 
       // Verify access
-      await verifyWorkspaceAccess(userId, input.workspaceId)
+      await verifyWorkspaceAccess(userId, input.workspaceId);
 
-      const bm25Service = new WikiBm25Service(ctx.prisma)
-      const embeddingService = getWikiEmbeddingService(ctx.prisma)
-      const edgeService = getWikiEdgeEmbeddingService(ctx.prisma)
-      const hybridService = new WikiHybridSearchService(
-        bm25Service,
-        embeddingService,
-        edgeService
-      )
+      const bm25Service = new WikiBm25Service(ctx.prisma);
+      const embeddingService = getWikiEmbeddingService(ctx.prisma);
+      const edgeService = getWikiEdgeEmbeddingService(ctx.prisma);
+      const hybridService = new WikiHybridSearchService(bm25Service, embeddingService, edgeService);
 
       try {
         const results = await hybridService.search(input.query, {
@@ -1287,12 +1231,12 @@ export const wikiAiRouter = router({
           bm25Weight: input.bm25Weight,
           vectorWeight: input.vectorWeight,
           edgeWeight: input.edgeWeight,
-        })
+        });
 
         // Count results by source
-        const bm25Count = results.filter(r => r.sources.includes('bm25')).length
-        const vectorCount = results.filter(r => r.sources.includes('vector')).length
-        const edgeCount = results.filter(r => r.sources.includes('edge')).length
+        const bm25Count = results.filter((r) => r.sources.includes('bm25')).length;
+        const vectorCount = results.filter((r) => r.sources.includes('vector')).length;
+        const edgeCount = results.filter((r) => r.sources.includes('edge')).length;
 
         return {
           success: true,
@@ -1302,12 +1246,12 @@ export const wikiAiRouter = router({
           vectorCount,
           edgeCount,
           query: input.query,
-        }
+        };
       } catch (error) {
         throw new TRPCError({
           code: 'INTERNAL_SERVER_ERROR',
           message: error instanceof Error ? error.message : 'RRF hybrid search failed',
-        })
+        });
       }
     }),
-})
+});

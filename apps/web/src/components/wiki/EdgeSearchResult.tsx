@@ -14,31 +14,31 @@
  * ===================================================================
  */
 
-import { ArrowRight, Link2, Network } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
-import { cn } from '@/lib/utils'
+import { ArrowRight, Link2, Network } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface EdgeSearchResultData {
-  edgeId: string
-  score: number
-  fact: string
-  edgeType: string
-  sourceNodeId: string
-  targetNodeId: string
-  pageId: number
-  validAt?: string
-  invalidAt?: string
+  edgeId: string;
+  score: number;
+  fact: string;
+  edgeType: string;
+  sourceNodeId: string;
+  targetNodeId: string;
+  pageId: number;
+  validAt?: string;
+  invalidAt?: string;
 }
 
 interface EdgeSearchResultProps {
-  result: EdgeSearchResultData
-  isSelected: boolean
-  onClick: () => void
-  onShowInGraph?: () => void
+  result: EdgeSearchResultData;
+  isSelected: boolean;
+  onClick: () => void;
+  onShowInGraph?: () => void;
 }
 
 // =============================================================================
@@ -46,43 +46,46 @@ interface EdgeSearchResultProps {
 // =============================================================================
 
 function getEdgeTypeInfo(edgeType: string): {
-  label: string
-  icon: React.ReactNode
-  className: string
+  label: string;
+  icon: React.ReactNode;
+  className: string;
 } {
   switch (edgeType.toUpperCase()) {
     case 'MENTIONS':
       return {
         label: 'Mentions',
         icon: <Network className="h-3 w-3" />,
-        className: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800',
-      }
+        className:
+          'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950 dark:text-blue-300 dark:border-blue-800',
+      };
     case 'LINKS_TO':
       return {
         label: 'Links To',
         icon: <Link2 className="h-3 w-3" />,
-        className: 'bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-300 dark:border-green-800',
-      }
+        className:
+          'bg-green-50 text-green-700 border-green-200 dark:bg-green-950 dark:text-green-300 dark:border-green-800',
+      };
     default:
       return {
         label: edgeType,
         icon: <Network className="h-3 w-3" />,
-        className: 'bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-950 dark:text-gray-300 dark:border-gray-800',
-      }
+        className:
+          'bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-950 dark:text-gray-300 dark:border-gray-800',
+      };
   }
 }
 
 function formatDate(isoString?: string): string | null {
-  if (!isoString) return null
+  if (!isoString) return null;
   try {
-    const date = new Date(isoString)
+    const date = new Date(isoString);
     return date.toLocaleDateString('nl-NL', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
-    })
+    });
   } catch {
-    return null
+    return null;
   }
 }
 
@@ -96,17 +99,15 @@ export function EdgeSearchResult({
   onClick,
   onShowInGraph,
 }: EdgeSearchResultProps) {
-  const edgeTypeInfo = getEdgeTypeInfo(result.edgeType)
-  const validFrom = formatDate(result.validAt)
-  const validUntil = formatDate(result.invalidAt)
+  const edgeTypeInfo = getEdgeTypeInfo(result.edgeType);
+  const validFrom = formatDate(result.validAt);
+  const validUntil = formatDate(result.invalidAt);
 
   return (
     <div
       className={cn(
         'w-full flex items-start gap-3 px-3 py-2 rounded-md text-left transition-colors group',
-        isSelected
-          ? 'bg-accent text-accent-foreground'
-          : 'hover:bg-accent/50'
+        isSelected ? 'bg-accent text-accent-foreground' : 'hover:bg-accent/50'
       )}
     >
       <button onClick={onClick} className="flex items-start gap-3 flex-1 min-w-0">
@@ -156,8 +157,8 @@ export function EdgeSearchResult({
       {onShowInGraph && (
         <button
           onClick={(e) => {
-            e.stopPropagation()
-            onShowInGraph()
+            e.stopPropagation();
+            onShowInGraph();
           }}
           className="opacity-0 group-hover:opacity-100 p-1.5 rounded hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-opacity flex-shrink-0"
           title="Show in graph"
@@ -166,7 +167,7 @@ export function EdgeSearchResult({
         </button>
       )}
     </div>
-  )
+  );
 }
 
-export default EdgeSearchResult
+export default EdgeSearchResult;

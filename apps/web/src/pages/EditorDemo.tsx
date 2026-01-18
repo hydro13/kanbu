@@ -10,27 +10,23 @@
  * ===================================================================
  */
 
-import { useState } from 'react'
-import { RichTextEditor } from '@/components/editor'
-import type { EditorState, LexicalEditor } from 'lexical'
+import { useState } from 'react';
+import { RichTextEditor } from '@/components/editor';
+import type { EditorState, LexicalEditor } from 'lexical';
 
 export function EditorDemoPage() {
-  const [editorContent, setEditorContent] = useState<string>('')
-  const [jsonOutput, setJsonOutput] = useState<string>('')
+  const [editorContent, setEditorContent] = useState<string>('');
+  const [jsonOutput, setJsonOutput] = useState<string>('');
 
-  const handleChange = (
-    _editorState: EditorState,
-    _editor: LexicalEditor,
-    jsonString: string
-  ) => {
-    setEditorContent(jsonString)
+  const handleChange = (_editorState: EditorState, _editor: LexicalEditor, jsonString: string) => {
+    setEditorContent(jsonString);
     // Pretty print for display
     try {
-      setJsonOutput(JSON.stringify(JSON.parse(jsonString), null, 2))
+      setJsonOutput(JSON.stringify(JSON.parse(jsonString), null, 2));
     } catch {
-      setJsonOutput(jsonString)
+      setJsonOutput(jsonString);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-background p-8">
@@ -77,22 +73,22 @@ export function EditorDemoPage() {
             <div>
               <h3 className="font-medium">Image Upload</h3>
               <p className="text-muted-foreground">
-                Click the image icon in the toolbar to upload images.
-                Supports JPEG, PNG, GIF, WebP, and SVG formats.
+                Click the image icon in the toolbar to upload images. Supports JPEG, PNG, GIF, WebP,
+                and SVG formats.
               </p>
             </div>
             <div>
               <h3 className="font-medium">Video Upload</h3>
               <p className="text-muted-foreground">
-                Click the video icon to upload local video files.
-                Supports MP4, WebM, OGG, and QuickTime formats.
+                Click the video icon to upload local video files. Supports MP4, WebM, OGG, and
+                QuickTime formats.
               </p>
             </div>
             <div>
               <h3 className="font-medium">YouTube/Vimeo Embed</h3>
               <p className="text-muted-foreground">
-                Click the YouTube icon and paste a YouTube or Vimeo URL.
-                Videos will be embedded directly in the editor.
+                Click the YouTube icon and paste a YouTube or Vimeo URL. Videos will be embedded
+                directly in the editor.
               </p>
             </div>
           </div>
@@ -100,13 +96,15 @@ export function EditorDemoPage() {
 
         {/* Media Resizing & Alignment */}
         <div className="p-4 bg-purple-500/10 border border-purple-500/20 rounded-lg">
-          <h2 className="font-semibold mb-2 text-purple-700 dark:text-purple-400">Media Resizing & Alignment:</h2>
+          <h2 className="font-semibold mb-2 text-purple-700 dark:text-purple-400">
+            Media Resizing & Alignment:
+          </h2>
           <div className="space-y-3 text-sm">
             <div>
               <h3 className="font-medium">Resize Media</h3>
               <p className="text-muted-foreground">
-                Click on any image, video, or embed to select it. Drag the corner or edge
-                handles to resize. The aspect ratio is maintained automatically.
+                Click on any image, video, or embed to select it. Drag the corner or edge handles to
+                resize. The aspect ratio is maintained automatically.
               </p>
             </div>
             <div>
@@ -115,25 +113,33 @@ export function EditorDemoPage() {
                 When media is selected, a toolbar appears above it with alignment options:
               </p>
               <ul className="mt-2 space-y-1 text-muted-foreground pl-4">
-                <li><strong>Default:</strong> Full-width, centered block</li>
-                <li><strong>Float Left:</strong> Media floats left, text wraps around right</li>
-                <li><strong>Center:</strong> Centered with no text wrap</li>
-                <li><strong>Float Right:</strong> Media floats right, text wraps around left</li>
+                <li>
+                  <strong>Default:</strong> Full-width, centered block
+                </li>
+                <li>
+                  <strong>Float Left:</strong> Media floats left, text wraps around right
+                </li>
+                <li>
+                  <strong>Center:</strong> Centered with no text wrap
+                </li>
+                <li>
+                  <strong>Float Right:</strong> Media floats right, text wraps around left
+                </li>
               </ul>
             </div>
             <div>
               <h3 className="font-medium">Size Indicator</h3>
               <p className="text-muted-foreground">
-                While resizing, the current dimensions are displayed on the media
-                to help you achieve the exact size you want.
+                While resizing, the current dimensions are displayed on the media to help you
+                achieve the exact size you want.
               </p>
             </div>
             <div>
               <h3 className="font-medium">Drag & Drop</h3>
               <p className="text-muted-foreground">
-                Drag any media element to reposition it within your content.
-                Use the drag handle in the toolbar or simply drag the media directly.
-                A blue line indicates where the media will be placed.
+                Drag any media element to reposition it within your content. Use the drag handle in
+                the toolbar or simply drag the media directly. A blue line indicates where the media
+                will be placed.
               </p>
             </div>
           </div>
@@ -146,16 +152,16 @@ export function EditorDemoPage() {
             <div>
               <h3 className="font-medium">Markdown Paste</h3>
               <p className="text-muted-foreground">
-                Paste markdown text from external documents and it will automatically be converted to rich text.
-                Try copying markdown from GitHub, documentation, or any .md file.
+                Paste markdown text from external documents and it will automatically be converted
+                to rich text. Try copying markdown from GitHub, documentation, or any .md file.
               </p>
             </div>
             <div>
               <h3 className="font-medium">Voice-to-Text</h3>
               <p className="text-muted-foreground">
-                Click the microphone button in the toolbar to start voice input.
-                Speak and your words will be transcribed directly into the editor.
-                Works in Chrome, Edge, and Safari.
+                Click the microphone button in the toolbar to start voice input. Speak and your
+                words will be transcribed directly into the editor. Works in Chrome, Edge, and
+                Safari.
               </p>
             </div>
           </div>
@@ -216,16 +222,13 @@ export function EditorDemoPage() {
 
         {/* Back link */}
         <div className="pt-4 border-t">
-          <a
-            href="/dashboard"
-            className="text-primary hover:underline"
-          >
+          <a href="/dashboard" className="text-primary hover:underline">
             &larr; Back to Dashboard
           </a>
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default EditorDemoPage
+export default EditorDemoPage;

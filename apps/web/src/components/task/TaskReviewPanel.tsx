@@ -14,9 +14,9 @@
  * =============================================================================
  */
 
-import { useState } from 'react'
-import { trpc } from '@/lib/trpc'
-import { Button } from '@/components/ui/button'
+import { useState } from 'react';
+import { trpc } from '@/lib/trpc';
+import { Button } from '@/components/ui/button';
 import {
   CheckCircle2,
   XCircle,
@@ -28,40 +28,40 @@ import {
   Users,
   GitPullRequest,
   AlertCircle,
-} from 'lucide-react'
+} from 'lucide-react';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface TaskReviewPanelProps {
-  taskId: number
+  taskId: number;
 }
 
 interface ReviewSummary {
-  approved: number
-  changesRequested: number
-  commented: number
-  pending: number
-  prCount: number
-  latestState: string | null
+  approved: number;
+  changesRequested: number;
+  commented: number;
+  pending: number;
+  prCount: number;
+  latestState: string | null;
   reviewers: Array<{
-    login: string
-    state: string
-    submittedAt: string | null
-  }>
+    login: string;
+    state: string;
+    submittedAt: string | null;
+  }>;
 }
 
 interface Review {
-  id: number
-  pullRequestId: number
-  reviewId: string
-  authorLogin: string
-  state: string
-  body: string | null
-  htmlUrl: string | null
-  submittedAt: string | null
-  createdAt: string
+  id: number;
+  pullRequestId: number;
+  reviewId: string;
+  authorLogin: string;
+  state: string;
+  body: string | null;
+  htmlUrl: string | null;
+  submittedAt: string | null;
+  createdAt: string;
 }
 
 // =============================================================================
@@ -76,41 +76,41 @@ function ReviewStateBadge({ state }: { state: string }) {
           <CheckCircle2 className="w-3 h-3" />
           Approved
         </span>
-      )
+      );
     case 'CHANGES_REQUESTED':
       return (
         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
           <XCircle className="w-3 h-3" />
           Changes Requested
         </span>
-      )
+      );
     case 'COMMENTED':
       return (
         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
           <MessageSquare className="w-3 h-3" />
           Commented
         </span>
-      )
+      );
     case 'PENDING':
       return (
         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
           <Clock className="w-3 h-3" />
           Pending
         </span>
-      )
+      );
     case 'DISMISSED':
       return (
         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
           <AlertCircle className="w-3 h-3" />
           Dismissed
         </span>
-      )
+      );
     default:
       return (
         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300">
           {state}
         </span>
-      )
+      );
   }
 }
 
@@ -119,7 +119,7 @@ function ReviewStateBadge({ state }: { state: string }) {
 // =============================================================================
 
 function ReviewSummaryCard({ summary }: { summary: ReviewSummary }) {
-  const hasReviews = summary.reviewers.length > 0
+  const hasReviews = summary.reviewers.length > 0;
 
   return (
     <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4 mb-4">
@@ -168,19 +168,14 @@ function ReviewSummaryCard({ summary }: { summary: ReviewSummary }) {
           </h5>
           <div className="space-y-2">
             {summary.reviewers.map((reviewer) => (
-              <div
-                key={reviewer.login}
-                className="flex items-center justify-between text-sm"
-              >
+              <div key={reviewer.login} className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2">
                   <img
                     src={`https://github.com/${reviewer.login}.png?size=24`}
                     alt={reviewer.login}
                     className="w-5 h-5 rounded-full"
                   />
-                  <span className="text-gray-700 dark:text-gray-300">
-                    {reviewer.login}
-                  </span>
+                  <span className="text-gray-700 dark:text-gray-300">{reviewer.login}</span>
                 </div>
                 <ReviewStateBadge state={reviewer.state} />
               </div>
@@ -195,7 +190,7 @@ function ReviewSummaryCard({ summary }: { summary: ReviewSummary }) {
         </div>
       )}
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -210,7 +205,7 @@ function ReviewItem({ review }: { review: Review }) {
         hour: '2-digit',
         minute: '2-digit',
       })
-    : null
+    : null;
 
   return (
     <div className="bg-card rounded-card border border-border p-3">
@@ -222,13 +217,9 @@ function ReviewItem({ review }: { review: Review }) {
             className="w-6 h-6 rounded-full"
           />
           <div>
-            <span className="text-sm font-medium text-foreground">
-              {review.authorLogin}
-            </span>
+            <span className="text-sm font-medium text-foreground">{review.authorLogin}</span>
             {submittedDate && (
-              <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
-                {submittedDate}
-              </span>
+              <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">{submittedDate}</span>
             )}
           </div>
         </div>
@@ -253,7 +244,7 @@ function ReviewItem({ review }: { review: Review }) {
         </p>
       )}
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -264,14 +255,13 @@ function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
       <GitPullRequest className="w-12 h-12 text-gray-300 dark:text-gray-600 mb-4" />
-      <h3 className="text-lg font-medium text-foreground mb-2">
-        No reviews found
-      </h3>
+      <h3 className="text-lg font-medium text-foreground mb-2">No reviews found</h3>
       <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm">
-        Reviews will appear here when pull requests linked to this task receive code reviews on GitHub.
+        Reviews will appear here when pull requests linked to this task receive code reviews on
+        GitHub.
       </p>
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -283,7 +273,7 @@ function LoadingState() {
     <div className="flex items-center justify-center py-12">
       <Loader2 className="w-8 h-8 text-gray-400 animate-spin" />
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -294,16 +284,14 @@ function ErrorState({ message, onRetry }: { message: string; onRetry: () => void
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
       <AlertCircle className="w-12 h-12 text-red-400 mb-4" />
-      <h3 className="text-lg font-medium text-foreground mb-2">
-        Failed to load reviews
-      </h3>
+      <h3 className="text-lg font-medium text-foreground mb-2">Failed to load reviews</h3>
       <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{message}</p>
       <Button variant="outline" size="sm" onClick={onRetry}>
         <RefreshCw className="w-4 h-4 mr-2" />
         Retry
       </Button>
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -311,35 +299,26 @@ function ErrorState({ message, onRetry }: { message: string; onRetry: () => void
 // =============================================================================
 
 export function TaskReviewPanel({ taskId }: TaskReviewPanelProps) {
-  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Fetch review summary
-  const summaryQuery = trpc.github.getTaskReviewSummary.useQuery(
-    { taskId },
-    { enabled: !!taskId }
-  )
+  const summaryQuery = trpc.github.getTaskReviewSummary.useQuery({ taskId }, { enabled: !!taskId });
 
   // Fetch detailed reviews
-  const reviewsQuery = trpc.github.getTaskReviews.useQuery(
-    { taskId },
-    { enabled: !!taskId }
-  )
+  const reviewsQuery = trpc.github.getTaskReviews.useQuery({ taskId }, { enabled: !!taskId });
 
   const handleRefresh = async () => {
-    setIsRefreshing(true)
+    setIsRefreshing(true);
     try {
-      await Promise.all([
-        summaryQuery.refetch(),
-        reviewsQuery.refetch(),
-      ])
+      await Promise.all([summaryQuery.refetch(), reviewsQuery.refetch()]);
     } finally {
-      setIsRefreshing(false)
+      setIsRefreshing(false);
     }
-  }
+  };
 
   // Loading state
   if (summaryQuery.isLoading || reviewsQuery.isLoading) {
-    return <LoadingState />
+    return <LoadingState />;
   }
 
   // Error state
@@ -349,15 +328,15 @@ export function TaskReviewPanel({ taskId }: TaskReviewPanelProps) {
         message={summaryQuery.error?.message ?? 'Unknown error'}
         onRetry={handleRefresh}
       />
-    )
+    );
   }
 
-  const summary = summaryQuery.data as ReviewSummary | undefined
-  const reviews = (reviewsQuery.data ?? []) as Review[]
+  const summary = summaryQuery.data as ReviewSummary | undefined;
+  const reviews = (reviewsQuery.data ?? []) as Review[];
 
   // Empty state - no PRs linked
   if (!summary || summary.prCount === 0) {
-    return <EmptyState />
+    return <EmptyState />;
   }
 
   return (
@@ -367,12 +346,7 @@ export function TaskReviewPanel({ taskId }: TaskReviewPanelProps) {
         <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
           {summary.prCount} Pull Request{summary.prCount !== 1 ? 's' : ''} linked
         </h3>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleRefresh}
-          disabled={isRefreshing}
-        >
+        <Button variant="ghost" size="sm" onClick={handleRefresh} disabled={isRefreshing}>
           {isRefreshing ? (
             <Loader2 className="w-4 h-4 animate-spin" />
           ) : (
@@ -387,9 +361,7 @@ export function TaskReviewPanel({ taskId }: TaskReviewPanelProps) {
       {/* Reviews list */}
       {reviews.length > 0 && (
         <div className="space-y-3">
-          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            Recent Reviews
-          </h4>
+          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Recent Reviews</h4>
           {reviews.slice(0, 10).map((review) => (
             <ReviewItem key={review.id} review={review} />
           ))}
@@ -401,7 +373,7 @@ export function TaskReviewPanel({ taskId }: TaskReviewPanelProps) {
         </div>
       )}
     </div>
-  )
+  );
 }
 
-export default TaskReviewPanel
+export default TaskReviewPanel;

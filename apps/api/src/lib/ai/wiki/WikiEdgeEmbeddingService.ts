@@ -23,19 +23,19 @@
  * =============================================================================
  */
 
-import { QdrantClient } from '@qdrant/js-client-rest'
-import type { PrismaClient } from '@prisma/client'
-import { getWikiAiService, type WikiAiService, type WikiContext } from './WikiAiService'
-import { getWikiEmbeddingService, type SemanticSearchResult } from './WikiEmbeddingService'
+import { QdrantClient } from '@qdrant/js-client-rest';
+import type { PrismaClient } from '@prisma/client';
+import { getWikiAiService, type WikiAiService, type WikiContext } from './WikiAiService';
+import { getWikiEmbeddingService, type SemanticSearchResult } from './WikiEmbeddingService';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface WikiEdgeEmbeddingConfig {
-  qdrantHost: string
-  qdrantPort: number
-  collectionName: string
+  qdrantHost: string;
+  qdrantPort: number;
+  collectionName: string;
 }
 
 /**
@@ -44,11 +44,11 @@ export interface WikiEdgeEmbeddingConfig {
  */
 export interface EdgeEmbeddingPoint {
   /** Unique ID for this edge embedding (format: edge-{edgeId}) */
-  id: string
+  id: string;
   /** The embedding vector (1536 dimensions for OpenAI) */
-  vector: number[]
+  vector: number[];
   /** Metadata payload for filtering and display */
-  payload: EdgeEmbeddingPayload
+  payload: EdgeEmbeddingPayload;
 }
 
 /**
@@ -56,27 +56,27 @@ export interface EdgeEmbeddingPoint {
  */
 export interface EdgeEmbeddingPayload {
   /** Workspace ID for multi-tenant filtering */
-  workspaceId: number
+  workspaceId: number;
   /** Project ID (optional) for project-scoped filtering */
-  projectId: number | null
+  projectId: number | null;
   /** Source wiki page ID */
-  pageId: number
+  pageId: number;
   /** Source node ID in the graph */
-  sourceNodeId: string
+  sourceNodeId: string;
   /** Target node ID in the graph */
-  targetNodeId: string
+  targetNodeId: string;
   /** Edge type (MENTIONS, LINKS_TO, etc.) */
-  edgeType: string
+  edgeType: string;
   /** The human-readable fact description */
-  fact: string
+  fact: string;
   /** Hash of the fact for change detection */
-  factHash: string
+  factHash: string;
   /** When the fact became valid (ISO timestamp) */
-  validAt?: string
+  validAt?: string;
   /** When the fact stopped being valid (ISO timestamp) */
-  invalidAt?: string
+  invalidAt?: string;
   /** When the embedding was created (ISO timestamp) */
-  createdAt: string
+  createdAt: string;
 }
 
 /**
@@ -84,23 +84,23 @@ export interface EdgeEmbeddingPayload {
  */
 export interface EdgeSearchResult {
   /** The edge embedding ID */
-  edgeId: string
+  edgeId: string;
   /** Similarity score (0-1) */
-  score: number
+  score: number;
   /** The fact description */
-  fact: string
+  fact: string;
   /** Edge type */
-  edgeType: string
+  edgeType: string;
   /** Source node ID */
-  sourceNodeId: string
+  sourceNodeId: string;
   /** Target node ID */
-  targetNodeId: string
+  targetNodeId: string;
   /** Source wiki page ID */
-  pageId: number
+  pageId: number;
   /** Valid from timestamp */
-  validAt?: string
+  validAt?: string;
   /** Valid until timestamp */
-  invalidAt?: string
+  invalidAt?: string;
 }
 
 /**
@@ -108,19 +108,19 @@ export interface EdgeSearchResult {
  */
 export interface HybridSearchResult {
   /** Result type: page or edge */
-  type: 'page' | 'edge'
+  type: 'page' | 'edge';
   /** Similarity score (0-1) */
-  score: number
+  score: number;
   /** Page fields (when type === 'page') */
-  pageId?: number
-  title?: string
-  groupId?: string
+  pageId?: number;
+  title?: string;
+  groupId?: string;
   /** Edge fields (when type === 'edge') */
-  edgeId?: string
-  fact?: string
-  edgeType?: string
-  sourceNodeId?: string
-  targetNodeId?: string
+  edgeId?: string;
+  fact?: string;
+  edgeType?: string;
+  sourceNodeId?: string;
+  targetNodeId?: string;
 }
 
 /**
@@ -128,33 +128,33 @@ export interface HybridSearchResult {
  */
 export interface EdgeForEmbedding {
   /** Unique edge identifier */
-  id: string
+  id: string;
   /** The fact description to embed */
-  fact: string
+  fact: string;
   /** Edge type (MENTIONS, LINKS_TO, etc.) */
-  edgeType: string
+  edgeType: string;
   /** Source node name */
-  sourceNode: string
+  sourceNode: string;
   /** Target node name */
-  targetNode: string
+  targetNode: string;
   /** Valid from timestamp */
-  validAt?: string
+  validAt?: string;
   /** Valid until timestamp */
-  invalidAt?: string
+  invalidAt?: string;
   /** When edge was created */
-  createdAt?: string
+  createdAt?: string;
 }
 
 /**
  * Options for edge semantic search
  */
 export interface EdgeSearchOptions {
-  workspaceId: number
-  projectId?: number
-  pageId?: number
-  edgeType?: string
-  limit?: number
-  scoreThreshold?: number
+  workspaceId: number;
+  projectId?: number;
+  pageId?: number;
+  edgeType?: string;
+  limit?: number;
+  scoreThreshold?: number;
 }
 
 /**
@@ -162,29 +162,29 @@ export interface EdgeSearchOptions {
  */
 export interface BatchEmbeddingResult {
   /** Number of embeddings stored */
-  stored: number
+  stored: number;
   /** Number of embeddings skipped (unchanged) */
-  skipped: number
+  skipped: number;
   /** Number of errors */
-  errors: number
+  errors: number;
 }
 
 /**
  * Options for hybrid semantic search (pages + edges)
  */
 export interface HybridSearchOptions {
-  workspaceId: number
-  projectId?: number
+  workspaceId: number;
+  projectId?: number;
   /** Include page results (default: true) */
-  includePages?: boolean
+  includePages?: boolean;
   /** Include edge results (default: true) */
-  includeEdges?: boolean
+  includeEdges?: boolean;
   /** Max results per type (default: 10) */
-  limitPerType?: number
+  limitPerType?: number;
   /** Max total results (default: 20) */
-  limit?: number
+  limit?: number;
   /** Minimum score threshold (default: 0.5) */
-  scoreThreshold?: number
+  scoreThreshold?: number;
 }
 
 // =============================================================================
@@ -192,21 +192,21 @@ export interface HybridSearchOptions {
 // =============================================================================
 
 export class WikiEdgeEmbeddingService {
-  private client: QdrantClient
-  private collectionName: string
-  private wikiAiService: WikiAiService
-  private prisma: PrismaClient
-  private initialized: boolean = false
-  private embeddingDimensions: number | null = null
+  private client: QdrantClient;
+  private collectionName: string;
+  private wikiAiService: WikiAiService;
+  private prisma: PrismaClient;
+  private initialized: boolean = false;
+  private embeddingDimensions: number | null = null;
 
   constructor(prisma: PrismaClient, config?: Partial<WikiEdgeEmbeddingConfig>) {
-    const host = config?.qdrantHost ?? process.env.QDRANT_HOST ?? 'localhost'
-    const port = config?.qdrantPort ?? parseInt(process.env.QDRANT_PORT ?? '6333')
-    this.collectionName = config?.collectionName ?? 'kanbu_edge_embeddings'
+    const host = config?.qdrantHost ?? process.env.QDRANT_HOST ?? 'localhost';
+    const port = config?.qdrantPort ?? parseInt(process.env.QDRANT_PORT ?? '6333');
+    this.collectionName = config?.collectionName ?? 'kanbu_edge_embeddings';
 
-    this.prisma = prisma
-    this.client = new QdrantClient({ host, port })
-    this.wikiAiService = getWikiAiService(prisma)
+    this.prisma = prisma;
+    this.client = new QdrantClient({ host, port });
+    this.wikiAiService = getWikiAiService(prisma);
   }
 
   // ===========================================================================
@@ -218,20 +218,22 @@ export class WikiEdgeEmbeddingService {
    * Auto-detects embedding dimensions from the configured provider
    */
   async initialize(context: WikiContext): Promise<void> {
-    if (this.initialized) return
+    if (this.initialized) return;
 
     // Get embedding dimensions from provider
-    const embeddingInfo = await this.wikiAiService.getEmbeddingInfo(context)
+    const embeddingInfo = await this.wikiAiService.getEmbeddingInfo(context);
     if (!embeddingInfo.available || !embeddingInfo.dimensions) {
-      console.warn('[WikiEdgeEmbeddingService] No embedding provider available, skipping initialization')
-      return
+      console.warn(
+        '[WikiEdgeEmbeddingService] No embedding provider available, skipping initialization'
+      );
+      return;
     }
 
-    this.embeddingDimensions = embeddingInfo.dimensions
+    this.embeddingDimensions = embeddingInfo.dimensions;
 
     // Check if collection exists
-    const collections = await this.client.getCollections()
-    const exists = collections.collections.some(c => c.name === this.collectionName)
+    const collections = await this.client.getCollections();
+    const exists = collections.collections.some((c) => c.name === this.collectionName);
 
     if (!exists) {
       // Create collection with vector config
@@ -243,34 +245,34 @@ export class WikiEdgeEmbeddingService {
         optimizers_config: {
           indexing_threshold: 1000,
         },
-      })
+      });
 
       // Create payload indexes for filtering
       await this.client.createPayloadIndex(this.collectionName, {
         field_name: 'workspaceId',
         field_schema: 'integer',
-      })
+      });
       await this.client.createPayloadIndex(this.collectionName, {
         field_name: 'projectId',
         field_schema: 'integer',
-      })
+      });
       await this.client.createPayloadIndex(this.collectionName, {
         field_name: 'pageId',
         field_schema: 'integer',
-      })
+      });
       await this.client.createPayloadIndex(this.collectionName, {
         field_name: 'edgeType',
         field_schema: 'keyword',
-      })
+      });
 
       console.log(
         `[WikiEdgeEmbeddingService] Created collection "${this.collectionName}" with ${this.embeddingDimensions} dimensions`
-      )
+      );
     } else {
-      console.log(`[WikiEdgeEmbeddingService] Collection "${this.collectionName}" already exists`)
+      console.log(`[WikiEdgeEmbeddingService] Collection "${this.collectionName}" already exists`);
     }
 
-    this.initialized = true
+    this.initialized = true;
   }
 
   // ===========================================================================
@@ -282,19 +284,16 @@ export class WikiEdgeEmbeddingService {
    * Format: "[edgeType] sourceNode -> targetNode: fact"
    */
   private formatEdgeForEmbedding(edge: EdgeForEmbedding): string {
-    return `[${edge.edgeType}] ${edge.sourceNode} -> ${edge.targetNode}: ${edge.fact}`
+    return `[${edge.edgeType}] ${edge.sourceNode} -> ${edge.targetNode}: ${edge.fact}`;
   }
 
   /**
    * Generate embedding for a single edge fact
    */
-  async generateEdgeEmbedding(
-    context: WikiContext,
-    edge: EdgeForEmbedding
-  ): Promise<number[]> {
-    const embeddingText = this.formatEdgeForEmbedding(edge)
-    const result = await this.wikiAiService.embed(context, embeddingText)
-    return result.embedding
+  async generateEdgeEmbedding(context: WikiContext, edge: EdgeForEmbedding): Promise<number[]> {
+    const embeddingText = this.formatEdgeForEmbedding(edge);
+    const result = await this.wikiAiService.embed(context, embeddingText);
+    return result.embedding;
   }
 
   /**
@@ -306,18 +305,20 @@ export class WikiEdgeEmbeddingService {
     pageId: number
   ): Promise<boolean> {
     try {
-      await this.initialize(context)
+      await this.initialize(context);
 
       if (!this.initialized || !this.embeddingDimensions) {
-        console.warn(`[WikiEdgeEmbeddingService] Not initialized, skipping embedding for edge ${edge.id}`)
-        return false
+        console.warn(
+          `[WikiEdgeEmbeddingService] Not initialized, skipping embedding for edge ${edge.id}`
+        );
+        return false;
       }
 
       // Generate embedding
-      const embedding = await this.generateEdgeEmbedding(context, edge)
+      const embedding = await this.generateEdgeEmbedding(context, edge);
 
       // Generate numeric point ID from edge string ID
-      const pointId = this.generatePointId(edge.id)
+      const pointId = this.generatePointId(edge.id);
 
       // Store in Qdrant
       await this.client.upsert(this.collectionName, {
@@ -342,18 +343,18 @@ export class WikiEdgeEmbeddingService {
             },
           },
         ],
-      })
+      });
 
       console.log(
         `[WikiEdgeEmbeddingService] Stored embedding for edge ${edge.id}: "${edge.fact.substring(0, 50)}..."`
-      )
-      return true
+      );
+      return true;
     } catch (error) {
       console.error(
         `[WikiEdgeEmbeddingService] Failed to store embedding for edge ${edge.id}:`,
         error instanceof Error ? error.message : error
-      )
-      return false
+      );
+      return false;
     }
   }
 
@@ -366,57 +367,57 @@ export class WikiEdgeEmbeddingService {
     pageId: number,
     edges: EdgeForEmbedding[]
   ): Promise<BatchEmbeddingResult> {
-    const result: BatchEmbeddingResult = { stored: 0, skipped: 0, errors: 0 }
+    const result: BatchEmbeddingResult = { stored: 0, skipped: 0, errors: 0 };
 
     try {
-      await this.initialize(context)
+      await this.initialize(context);
 
       if (!this.initialized || !this.embeddingDimensions) {
-        console.warn(`[WikiEdgeEmbeddingService] Not initialized, skipping batch embedding`)
-        return result
+        console.warn(`[WikiEdgeEmbeddingService] Not initialized, skipping batch embedding`);
+        return result;
       }
 
       for (const edge of edges) {
         // Skip if fact is empty
         if (!edge.fact || edge.fact.trim().length === 0) {
-          result.skipped++
-          continue
+          result.skipped++;
+          continue;
         }
 
         try {
           // Check if embedding already exists and is unchanged
-          const status = await this.checkEdgeEmbeddingStatus(edge.id, edge.fact)
+          const status = await this.checkEdgeEmbeddingStatus(edge.id, edge.fact);
           if (status.exists && !status.needsUpdate) {
-            result.skipped++
-            continue
+            result.skipped++;
+            continue;
           }
 
           // Generate and store embedding
-          const success = await this.storeEdgeEmbedding(context, edge, pageId)
+          const success = await this.storeEdgeEmbedding(context, edge, pageId);
           if (success) {
-            result.stored++
+            result.stored++;
           } else {
-            result.errors++
+            result.errors++;
           }
         } catch (edgeError) {
           console.error(
             `[WikiEdgeEmbeddingService] Error processing edge ${edge.id}:`,
             edgeError instanceof Error ? edgeError.message : edgeError
-          )
-          result.errors++
+          );
+          result.errors++;
         }
       }
 
       console.log(
         `[WikiEdgeEmbeddingService] Batch complete: ${result.stored} stored, ${result.skipped} skipped, ${result.errors} errors`
-      )
-      return result
+      );
+      return result;
     } catch (error) {
       console.error(
         `[WikiEdgeEmbeddingService] Batch embedding failed:`,
         error instanceof Error ? error.message : error
-      )
-      return result
+      );
+      return result;
     }
   }
 
@@ -432,27 +433,27 @@ export class WikiEdgeEmbeddingService {
     currentFact: string
   ): Promise<{ exists: boolean; needsUpdate: boolean; currentHash?: string }> {
     try {
-      const pointId = this.generatePointId(edgeId)
+      const pointId = this.generatePointId(edgeId);
       const points = await this.client.retrieve(this.collectionName, {
         ids: [pointId],
         with_payload: true,
-      })
+      });
 
-      const point = points[0]
+      const point = points[0];
       if (!point) {
-        return { exists: false, needsUpdate: true }
+        return { exists: false, needsUpdate: true };
       }
 
-      const storedHash = point.payload?.factHash as string
-      const currentHash = this.hashFact(currentFact)
+      const storedHash = point.payload?.factHash as string;
+      const currentHash = this.hashFact(currentFact);
 
       return {
         exists: true,
         needsUpdate: storedHash !== currentHash,
         currentHash: storedHash,
-      }
+      };
     } catch {
-      return { exists: false, needsUpdate: true }
+      return { exists: false, needsUpdate: true };
     }
   }
 
@@ -460,13 +461,13 @@ export class WikiEdgeEmbeddingService {
    * Create simple hash of fact for change detection
    */
   private hashFact(fact: string): string {
-    let hash = 0
+    let hash = 0;
     for (let i = 0; i < fact.length; i++) {
-      const char = fact.charCodeAt(i)
-      hash = ((hash << 5) - hash) + char
-      hash = hash & hash // Convert to 32bit integer
+      const char = fact.charCodeAt(i);
+      hash = (hash << 5) - hash + char;
+      hash = hash & hash; // Convert to 32bit integer
     }
-    return hash.toString(16)
+    return hash.toString(16);
   }
 
   /**
@@ -474,14 +475,14 @@ export class WikiEdgeEmbeddingService {
    * Qdrant requires either unsigned integers or UUIDs for point IDs
    */
   private generatePointId(edgeId: string): number {
-    let hash = 0
+    let hash = 0;
     for (let i = 0; i < edgeId.length; i++) {
-      const char = edgeId.charCodeAt(i)
-      hash = ((hash << 5) - hash) + char
-      hash = hash >>> 0 // Convert to unsigned 32-bit integer
+      const char = edgeId.charCodeAt(i);
+      hash = (hash << 5) - hash + char;
+      hash = hash >>> 0; // Convert to unsigned 32-bit integer
     }
     // Ensure we have a positive non-zero number
-    return hash || 1
+    return hash || 1;
   }
 
   // ===========================================================================
@@ -496,22 +497,22 @@ export class WikiEdgeEmbeddingService {
     query: string,
     options: Partial<EdgeSearchOptions> = {}
   ): Promise<EdgeSearchResult[]> {
-    const limit = options.limit ?? 20
-    const scoreThreshold = options.scoreThreshold ?? 0.5
+    const limit = options.limit ?? 20;
+    const scoreThreshold = options.scoreThreshold ?? 0.5;
 
     try {
-      await this.initialize(context)
+      await this.initialize(context);
 
       if (!this.initialized || !this.embeddingDimensions) {
-        console.warn('[WikiEdgeEmbeddingService] Not initialized, returning empty results')
-        return []
+        console.warn('[WikiEdgeEmbeddingService] Not initialized, returning empty results');
+        return [];
       }
 
       // Generate query embedding
-      const queryResult = await this.wikiAiService.embed(context, query)
+      const queryResult = await this.wikiAiService.embed(context, query);
 
       // Build filter
-      const filter = this.buildSearchFilter(context, options)
+      const filter = this.buildSearchFilter(context, options);
 
       // Search in Qdrant
       const searchResult = await this.client.search(this.collectionName, {
@@ -520,10 +521,10 @@ export class WikiEdgeEmbeddingService {
         limit,
         score_threshold: scoreThreshold,
         with_payload: true,
-      })
+      });
 
       // Map results - use edgeId from payload (original string ID)
-      return searchResult.map(result => ({
+      return searchResult.map((result) => ({
         edgeId: (result.payload?.edgeId as string) || String(result.id),
         score: result.score,
         fact: result.payload?.fact as string,
@@ -533,13 +534,13 @@ export class WikiEdgeEmbeddingService {
         pageId: result.payload?.pageId as number,
         validAt: result.payload?.validAt as string | undefined,
         invalidAt: result.payload?.invalidAt as string | undefined,
-      }))
+      }));
     } catch (error) {
       console.error(
         '[WikiEdgeEmbeddingService] Edge semantic search failed:',
         error instanceof Error ? error.message : error
-      )
-      return []
+      );
+      return [];
     }
   }
 
@@ -550,23 +551,21 @@ export class WikiEdgeEmbeddingService {
     context: WikiContext,
     options: Partial<EdgeSearchOptions>
   ): Record<string, unknown> {
-    const must: unknown[] = [
-      { key: 'workspaceId', match: { value: context.workspaceId } },
-    ]
+    const must: unknown[] = [{ key: 'workspaceId', match: { value: context.workspaceId } }];
 
     if (context.projectId) {
-      must.push({ key: 'projectId', match: { value: context.projectId } })
+      must.push({ key: 'projectId', match: { value: context.projectId } });
     }
 
     if (options.pageId) {
-      must.push({ key: 'pageId', match: { value: options.pageId } })
+      must.push({ key: 'pageId', match: { value: options.pageId } });
     }
 
     if (options.edgeType) {
-      must.push({ key: 'edgeType', match: { value: options.edgeType } })
+      must.push({ key: 'edgeType', match: { value: options.edgeType } });
     }
 
-    return { must }
+    return { must };
   }
 
   // ===========================================================================
@@ -587,13 +586,13 @@ export class WikiEdgeEmbeddingService {
     query: string,
     options: Partial<HybridSearchOptions> = {}
   ): Promise<HybridSearchResult[]> {
-    const includePages = options.includePages !== false
-    const includeEdges = options.includeEdges !== false
-    const limitPerType = options.limitPerType ?? 10
-    const limit = options.limit ?? 20
-    const scoreThreshold = options.scoreThreshold ?? 0.5
+    const includePages = options.includePages !== false;
+    const includeEdges = options.includeEdges !== false;
+    const limitPerType = options.limitPerType ?? 10;
+    const limit = options.limit ?? 20;
+    const scoreThreshold = options.scoreThreshold ?? 0.5;
 
-    const results: HybridSearchResult[] = []
+    const results: HybridSearchResult[] = [];
 
     try {
       // Run page and edge searches in parallel
@@ -609,7 +608,7 @@ export class WikiEdgeEmbeddingService {
               scoreThreshold,
             })
           : Promise.resolve([]),
-      ])
+      ]);
 
       // Add page results
       for (const page of pageResults) {
@@ -619,7 +618,7 @@ export class WikiEdgeEmbeddingService {
           pageId: page.pageId,
           title: page.title,
           groupId: page.groupId,
-        })
+        });
       }
 
       // Add edge results
@@ -633,18 +632,18 @@ export class WikiEdgeEmbeddingService {
           edgeType: edge.edgeType,
           sourceNodeId: edge.sourceNodeId,
           targetNodeId: edge.targetNodeId,
-        })
+        });
       }
 
       // Sort by score (descending) and limit
-      results.sort((a, b) => b.score - a.score)
-      return results.slice(0, limit)
+      results.sort((a, b) => b.score - a.score);
+      return results.slice(0, limit);
     } catch (error) {
       console.error(
         '[WikiEdgeEmbeddingService] Hybrid semantic search failed:',
         error instanceof Error ? error.message : error
-      )
-      return []
+      );
+      return [];
     }
   }
 
@@ -659,17 +658,17 @@ export class WikiEdgeEmbeddingService {
     scoreThreshold: number
   ): Promise<SemanticSearchResult[]> {
     try {
-      const pageEmbeddingService = getWikiEmbeddingService(this.prisma)
+      const pageEmbeddingService = getWikiEmbeddingService(this.prisma);
       return await pageEmbeddingService.semanticSearch(context, query, {
         limit,
         scoreThreshold,
-      })
+      });
     } catch (error) {
       console.error(
         '[WikiEdgeEmbeddingService] Page search failed:',
         error instanceof Error ? error.message : error
-      )
-      return []
+      );
+      return [];
     }
   }
 
@@ -682,20 +681,20 @@ export class WikiEdgeEmbeddingService {
    */
   async deleteEdgeEmbedding(edgeId: string): Promise<boolean> {
     try {
-      const pointId = this.generatePointId(edgeId)
+      const pointId = this.generatePointId(edgeId);
       await this.client.delete(this.collectionName, {
         wait: true,
         points: [pointId],
-      })
+      });
 
-      console.log(`[WikiEdgeEmbeddingService] Deleted embedding for edge ${edgeId}`)
-      return true
+      console.log(`[WikiEdgeEmbeddingService] Deleted embedding for edge ${edgeId}`);
+      return true;
     } catch (error) {
       console.error(
         `[WikiEdgeEmbeddingService] Failed to delete embedding for edge ${edgeId}:`,
         error instanceof Error ? error.message : error
-      )
-      return false
+      );
+      return false;
     }
   }
 
@@ -709,16 +708,16 @@ export class WikiEdgeEmbeddingService {
         filter: {
           must: [{ key: 'pageId', match: { value: pageId } }],
         },
-      })
+      });
 
-      console.log(`[WikiEdgeEmbeddingService] Deleted embeddings for page ${pageId}`)
-      return typeof result === 'object' ? 1 : 0
+      console.log(`[WikiEdgeEmbeddingService] Deleted embeddings for page ${pageId}`);
+      return typeof result === 'object' ? 1 : 0;
     } catch (error) {
       console.error(
         `[WikiEdgeEmbeddingService] Failed to delete embeddings for page ${pageId}:`,
         error instanceof Error ? error.message : error
-      )
-      return 0
+      );
+      return 0;
     }
   }
 
@@ -726,24 +725,24 @@ export class WikiEdgeEmbeddingService {
    * Get statistics about stored edge embeddings
    */
   async getStats(): Promise<{
-    totalEdges: number
-    collectionExists: boolean
+    totalEdges: number;
+    collectionExists: boolean;
   }> {
     try {
-      const collections = await this.client.getCollections()
-      const exists = collections.collections.some(c => c.name === this.collectionName)
+      const collections = await this.client.getCollections();
+      const exists = collections.collections.some((c) => c.name === this.collectionName);
 
       if (!exists) {
-        return { totalEdges: 0, collectionExists: false }
+        return { totalEdges: 0, collectionExists: false };
       }
 
-      const info = await this.client.getCollection(this.collectionName)
+      const info = await this.client.getCollection(this.collectionName);
       return {
         totalEdges: info.points_count ?? 0,
         collectionExists: true,
-      }
+      };
     } catch {
-      return { totalEdges: 0, collectionExists: false }
+      return { totalEdges: 0, collectionExists: false };
     }
   }
 }
@@ -752,21 +751,21 @@ export class WikiEdgeEmbeddingService {
 // Singleton Instance
 // =============================================================================
 
-let edgeEmbeddingServiceInstance: WikiEdgeEmbeddingService | null = null
+let edgeEmbeddingServiceInstance: WikiEdgeEmbeddingService | null = null;
 
 /**
  * Get or create the singleton WikiEdgeEmbeddingService
  */
 export function getWikiEdgeEmbeddingService(prisma: PrismaClient): WikiEdgeEmbeddingService {
   if (!edgeEmbeddingServiceInstance) {
-    edgeEmbeddingServiceInstance = new WikiEdgeEmbeddingService(prisma)
+    edgeEmbeddingServiceInstance = new WikiEdgeEmbeddingService(prisma);
   }
-  return edgeEmbeddingServiceInstance
+  return edgeEmbeddingServiceInstance;
 }
 
 /**
  * Reset the singleton (useful for testing)
  */
 export function resetWikiEdgeEmbeddingService(): void {
-  edgeEmbeddingServiceInstance = null
+  edgeEmbeddingServiceInstance = null;
 }

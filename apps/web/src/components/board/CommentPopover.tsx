@@ -14,19 +14,19 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { trpc } from '@/lib/trpc'
-import { HoverPopover, PopoverHeader, PopoverContent } from '@/components/ui/HoverPopover'
+import { trpc } from '@/lib/trpc';
+import { HoverPopover, PopoverHeader, PopoverContent } from '@/components/ui/HoverPopover';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface CommentPopoverProps {
-  taskId: number
-  commentCount: number
-  children: React.ReactNode
+  taskId: number;
+  commentCount: number;
+  children: React.ReactNode;
   /** Callback when comment is clicked (opens task modal with comment focus) */
-  onCommentClick?: (taskId: number, commentId: number) => void
+  onCommentClick?: (taskId: number, commentId: number) => void;
 }
 
 // =============================================================================
@@ -34,17 +34,17 @@ interface CommentPopoverProps {
 // =============================================================================
 
 function formatTimeAgo(date: Date): string {
-  const now = new Date()
-  const diff = now.getTime() - date.getTime()
-  const minutes = Math.floor(diff / 60000)
-  const hours = Math.floor(diff / 3600000)
-  const days = Math.floor(diff / 86400000)
+  const now = new Date();
+  const diff = now.getTime() - date.getTime();
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
 
-  if (minutes < 1) return 'just now'
-  if (minutes < 60) return `${minutes}m ago`
-  if (hours < 24) return `${hours}h ago`
-  if (days < 7) return `${days}d ago`
-  return date.toLocaleDateString()
+  if (minutes < 1) return 'just now';
+  if (minutes < 60) return `${minutes}m ago`;
+  if (hours < 24) return `${hours}h ago`;
+  if (days < 7) return `${days}d ago`;
+  return date.toLocaleDateString();
 }
 
 // =============================================================================
@@ -52,20 +52,20 @@ function formatTimeAgo(date: Date): string {
 // =============================================================================
 
 interface CommentContentProps {
-  taskId: number
-  commentCount: number
-  onCommentClick?: (taskId: number, commentId: number) => void
+  taskId: number;
+  commentCount: number;
+  onCommentClick?: (taskId: number, commentId: number) => void;
 }
 
 function CommentContent({ taskId, commentCount, onCommentClick }: CommentContentProps) {
   // Lazy load comments (most recent 5)
-  const commentsQuery = trpc.comment.list.useQuery({ taskId, limit: 5 })
+  const commentsQuery = trpc.comment.list.useQuery({ taskId, limit: 5 });
 
   const handleCommentClick = (commentId: number) => {
     if (onCommentClick) {
-      onCommentClick(taskId, commentId)
+      onCommentClick(taskId, commentId);
     }
-  }
+  };
 
   return (
     <>
@@ -90,9 +90,7 @@ function CommentContent({ taskId, commentCount, onCommentClick }: CommentContent
             Loading...
           </div>
         ) : commentsQuery.error ? (
-          <div className="px-3 py-4 text-center text-sm text-red-500">
-            Failed to load comments
-          </div>
+          <div className="px-3 py-4 text-center text-sm text-red-500">Failed to load comments</div>
         ) : commentsQuery.data?.comments && commentsQuery.data.comments.length > 0 ? (
           <div className="divide-y divide-gray-100 dark:divide-gray-700">
             {commentsQuery.data.comments.map((comment) => (
@@ -146,16 +144,21 @@ function CommentContent({ taskId, commentCount, onCommentClick }: CommentContent
         </div>
       )}
     </>
-  )
+  );
 }
 
 // =============================================================================
 // CommentPopover Component
 // =============================================================================
 
-export function CommentPopover({ taskId, commentCount, children, onCommentClick }: CommentPopoverProps) {
+export function CommentPopover({
+  taskId,
+  commentCount,
+  children,
+  onCommentClick,
+}: CommentPopoverProps) {
   if (commentCount === 0) {
-    return <>{children}</>
+    return <>{children}</>;
   }
 
   return (
@@ -172,7 +175,7 @@ export function CommentPopover({ taskId, commentCount, children, onCommentClick 
     >
       {children}
     </HoverPopover>
-  )
+  );
 }
 
-export default CommentPopover
+export default CommentPopover;

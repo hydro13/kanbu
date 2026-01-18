@@ -13,51 +13,51 @@
  * =============================================================================
  */
 
-import { prisma } from '../../lib/prisma'
+import { prisma } from '../../lib/prisma';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface ReleaseData {
-  repositoryId: number
-  releaseId: bigint
-  tagName: string
-  name?: string | null
-  body?: string | null
-  draft?: boolean
-  prerelease?: boolean
-  authorLogin?: string | null
-  htmlUrl?: string | null
-  tarballUrl?: string | null
-  zipballUrl?: string | null
-  publishedAt?: Date | null
+  repositoryId: number;
+  releaseId: bigint;
+  tagName: string;
+  name?: string | null;
+  body?: string | null;
+  draft?: boolean;
+  prerelease?: boolean;
+  authorLogin?: string | null;
+  htmlUrl?: string | null;
+  tarballUrl?: string | null;
+  zipballUrl?: string | null;
+  publishedAt?: Date | null;
 }
 
 export interface ReleaseInfo {
-  id: number
-  repositoryId: number
-  releaseId: bigint
-  tagName: string
-  name: string | null
-  body: string | null
-  draft: boolean
-  prerelease: boolean
-  authorLogin: string | null
-  htmlUrl: string | null
-  tarballUrl: string | null
-  zipballUrl: string | null
-  publishedAt: Date | null
-  createdAt: Date
-  updatedAt: Date
+  id: number;
+  repositoryId: number;
+  releaseId: bigint;
+  tagName: string;
+  name: string | null;
+  body: string | null;
+  draft: boolean;
+  prerelease: boolean;
+  authorLogin: string | null;
+  htmlUrl: string | null;
+  tarballUrl: string | null;
+  zipballUrl: string | null;
+  publishedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface ReleaseStats {
-  total: number
-  published: number
-  drafts: number
-  prereleases: number
-  latestRelease: ReleaseInfo | null
+  total: number;
+  published: number;
+  drafts: number;
+  prereleases: number;
+  latestRelease: ReleaseInfo | null;
 }
 
 // =============================================================================
@@ -102,7 +102,7 @@ export async function upsertRelease(data: ReleaseData): Promise<{ id: number }> 
       publishedAt: data.publishedAt,
     },
     select: { id: true },
-  })
+  });
 }
 
 /**
@@ -111,20 +111,20 @@ export async function upsertRelease(data: ReleaseData): Promise<{ id: number }> 
 export async function getReleases(
   repositoryId: number,
   options?: {
-    includeDrafts?: boolean
-    includePrereleases?: boolean
-    limit?: number
-    offset?: number
+    includeDrafts?: boolean;
+    includePrereleases?: boolean;
+    limit?: number;
+    offset?: number;
   }
 ): Promise<ReleaseInfo[]> {
-  const where: Record<string, unknown> = { repositoryId }
+  const where: Record<string, unknown> = { repositoryId };
 
   if (!options?.includeDrafts) {
-    where.draft = false
+    where.draft = false;
   }
 
   if (!options?.includePrereleases) {
-    where.prerelease = false
+    where.prerelease = false;
   }
 
   return prisma.gitHubRelease.findMany({
@@ -132,7 +132,7 @@ export async function getReleases(
     orderBy: { publishedAt: 'desc' },
     take: options?.limit ?? 20,
     skip: options?.offset ?? 0,
-  })
+  });
 }
 
 /**
@@ -147,7 +147,7 @@ export async function getReleaseByTag(
       repositoryId,
       tagName,
     },
-  })
+  });
 }
 
 /**
@@ -156,24 +156,24 @@ export async function getReleaseByTag(
 export async function getLatestRelease(
   repositoryId: number,
   options?: {
-    includeDrafts?: boolean
-    includePrereleases?: boolean
+    includeDrafts?: boolean;
+    includePrereleases?: boolean;
   }
 ): Promise<ReleaseInfo | null> {
-  const where: Record<string, unknown> = { repositoryId }
+  const where: Record<string, unknown> = { repositoryId };
 
   if (!options?.includeDrafts) {
-    where.draft = false
+    where.draft = false;
   }
 
   if (!options?.includePrereleases) {
-    where.prerelease = false
+    where.prerelease = false;
   }
 
   return prisma.gitHubRelease.findFirst({
     where,
     orderBy: { publishedAt: 'desc' },
-  })
+  });
 }
 
 /**
@@ -182,19 +182,19 @@ export async function getLatestRelease(
 export async function getProjectReleases(
   projectId: number,
   options?: {
-    includeDrafts?: boolean
-    includePrereleases?: boolean
-    limit?: number
+    includeDrafts?: boolean;
+    includePrereleases?: boolean;
+    limit?: number;
   }
 ): Promise<ReleaseInfo[]> {
   const repo = await prisma.gitHubRepository.findFirst({
     where: { projectId },
     select: { id: true },
-  })
+  });
 
-  if (!repo) return []
+  if (!repo) return [];
 
-  return getReleases(repo.id, options)
+  return getReleases(repo.id, options);
 }
 
 /**
@@ -204,7 +204,7 @@ export async function getReleaseStats(projectId: number): Promise<ReleaseStats> 
   const repo = await prisma.gitHubRepository.findFirst({
     where: { projectId },
     select: { id: true },
-  })
+  });
 
   if (!repo) {
     return {
@@ -213,18 +213,20 @@ export async function getReleaseStats(projectId: number): Promise<ReleaseStats> 
       drafts: 0,
       prereleases: 0,
       latestRelease: null,
-    }
+    };
   }
 
   const [total, drafts, prereleases, latestRelease] = await Promise.all([
     prisma.gitHubRelease.count({ where: { repositoryId: repo.id } }),
     prisma.gitHubRelease.count({ where: { repositoryId: repo.id, draft: true } }),
-    prisma.gitHubRelease.count({ where: { repositoryId: repo.id, prerelease: true, draft: false } }),
+    prisma.gitHubRelease.count({
+      where: { repositoryId: repo.id, prerelease: true, draft: false },
+    }),
     prisma.gitHubRelease.findFirst({
       where: { repositoryId: repo.id, draft: false },
       orderBy: { publishedAt: 'desc' },
     }),
-  ])
+  ]);
 
   return {
     total,
@@ -232,16 +234,13 @@ export async function getReleaseStats(projectId: number): Promise<ReleaseStats> 
     drafts,
     prereleases,
     latestRelease,
-  }
+  };
 }
 
 /**
  * Delete a release
  */
-export async function deleteRelease(
-  repositoryId: number,
-  releaseId: bigint
-): Promise<void> {
+export async function deleteRelease(repositoryId: number, releaseId: bigint): Promise<void> {
   await prisma.gitHubRelease.delete({
     where: {
       repositoryId_releaseId: {
@@ -249,7 +248,7 @@ export async function deleteRelease(
         releaseId,
       },
     },
-  })
+  });
 }
 
 /**
@@ -259,22 +258,22 @@ export async function syncReleaseFromWebhook(
   repositoryId: number,
   action: string,
   releaseData: {
-    id: number
-    tag_name: string
-    name?: string | null
-    body?: string | null
-    draft: boolean
-    prerelease: boolean
-    author?: { login: string } | null
-    html_url: string
-    tarball_url?: string | null
-    zipball_url?: string | null
-    published_at?: string | null
+    id: number;
+    tag_name: string;
+    name?: string | null;
+    body?: string | null;
+    draft: boolean;
+    prerelease: boolean;
+    author?: { login: string } | null;
+    html_url: string;
+    tarball_url?: string | null;
+    zipball_url?: string | null;
+    published_at?: string | null;
   }
 ): Promise<{ id: number } | null> {
   if (action === 'deleted') {
-    await deleteRelease(repositoryId, BigInt(releaseData.id))
-    return null
+    await deleteRelease(repositoryId, BigInt(releaseData.id));
+    return null;
   }
 
   return upsertRelease({
@@ -290,7 +289,7 @@ export async function syncReleaseFromWebhook(
     tarballUrl: releaseData.tarball_url,
     zipballUrl: releaseData.zipball_url,
     publishedAt: releaseData.published_at ? new Date(releaseData.published_at) : null,
-  })
+  });
 }
 
 /**
@@ -300,22 +299,22 @@ export async function syncReleaseFromWebhook(
 export async function generateReleaseNotes(
   projectId: number,
   options?: {
-    fromDate?: Date
-    toDate?: Date
-    includeTaskLinks?: boolean
+    fromDate?: Date;
+    toDate?: Date;
+    includeTaskLinks?: boolean;
   }
 ): Promise<string> {
   const repo = await prisma.gitHubRepository.findFirst({
     where: { projectId },
     select: { id: true, fullName: true },
-  })
+  });
 
   if (!repo) {
-    return '# Release Notes\n\nNo repository linked.'
+    return '# Release Notes\n\nNo repository linked.';
   }
 
-  const fromDate = options?.fromDate ?? new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-  const toDate = options?.toDate ?? new Date()
+  const fromDate = options?.fromDate ?? new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const toDate = options?.toDate ?? new Date();
 
   // Get merged PRs with linked tasks in the date range
   const prsWithTasks = await prisma.gitHubPullRequest.findMany({
@@ -337,48 +336,58 @@ export async function generateReleaseNotes(
       },
     },
     orderBy: { mergedAt: 'desc' },
-  })
+  });
 
   // Group by task type (based on PR title or task reference prefix)
-  const features: string[] = []
-  const fixes: string[] = []
-  const others: string[] = []
+  const features: string[] = [];
+  const fixes: string[] = [];
+  const others: string[] = [];
 
   for (const pr of prsWithTasks) {
-    const title = pr.task?.title ?? pr.title
-    const taskRef = pr.task?.reference ?? `#${pr.prNumber}`
-    const prLink = options?.includeTaskLinks ? ` ([${taskRef}](https://github.com/${repo.fullName}/pull/${pr.prNumber}))` : ''
+    const title = pr.task?.title ?? pr.title;
+    const taskRef = pr.task?.reference ?? `#${pr.prNumber}`;
+    const prLink = options?.includeTaskLinks
+      ? ` ([${taskRef}](https://github.com/${repo.fullName}/pull/${pr.prNumber}))`
+      : '';
 
-    const titleLower = pr.title.toLowerCase()
-    if (titleLower.startsWith('feat') || titleLower.includes('feature') || titleLower.includes('add')) {
-      features.push(`- ${title}${prLink}`)
-    } else if (titleLower.startsWith('fix') || titleLower.includes('bug') || titleLower.includes('hotfix')) {
-      fixes.push(`- ${title}${prLink}`)
+    const titleLower = pr.title.toLowerCase();
+    if (
+      titleLower.startsWith('feat') ||
+      titleLower.includes('feature') ||
+      titleLower.includes('add')
+    ) {
+      features.push(`- ${title}${prLink}`);
+    } else if (
+      titleLower.startsWith('fix') ||
+      titleLower.includes('bug') ||
+      titleLower.includes('hotfix')
+    ) {
+      fixes.push(`- ${title}${prLink}`);
     } else {
-      others.push(`- ${title}${prLink}`)
+      others.push(`- ${title}${prLink}`);
     }
   }
 
   // Build release notes
-  const lines: string[] = ['# Release Notes', '']
+  const lines: string[] = ['# Release Notes', ''];
 
   if (features.length > 0) {
-    lines.push('## Features', '', ...features, '')
+    lines.push('## Features', '', ...features, '');
   }
 
   if (fixes.length > 0) {
-    lines.push('## Bug Fixes', '', ...fixes, '')
+    lines.push('## Bug Fixes', '', ...fixes, '');
   }
 
   if (others.length > 0) {
-    lines.push('## Other Changes', '', ...others, '')
+    lines.push('## Other Changes', '', ...others, '');
   }
 
   if (features.length === 0 && fixes.length === 0 && others.length === 0) {
-    lines.push('No changes found in the specified date range.')
+    lines.push('No changes found in the specified date range.');
   }
 
-  return lines.join('\n')
+  return lines.join('\n');
 }
 
 // =============================================================================
@@ -395,4 +404,4 @@ export const releaseService = {
   deleteRelease,
   syncReleaseFromWebhook,
   generateReleaseNotes,
-}
+};

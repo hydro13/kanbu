@@ -16,30 +16,30 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState, useEffect } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
-import { AdminLayout } from '@/components/admin'
-import { trpc } from '@/lib/trpc'
-import { cn } from '@/lib/utils'
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { AdminLayout } from '@/components/admin';
+import { trpc } from '@/lib/trpc';
+import { cn } from '@/lib/utils';
 
 // =============================================================================
 // Types
 // =============================================================================
 
-type Tab = 'profile' | 'groups' | 'security' | 'sessions'
+type Tab = 'profile' | 'groups' | 'security' | 'sessions';
 
 interface ProfileFormData {
-  email: string
-  username: string
-  name: string
-  isActive: boolean
-  timezone: string
-  language: string
+  email: string;
+  username: string;
+  name: string;
+  isActive: boolean;
+  timezone: string;
+  language: string;
 }
 
 interface PasswordFormData {
-  newPassword: string
-  confirmPassword: string
+  newPassword: string;
+  confirmPassword: string;
 }
 
 // =============================================================================
@@ -47,25 +47,26 @@ interface PasswordFormData {
 // =============================================================================
 
 export function UserEditPage() {
-  const { userId } = useParams<{ userId: string }>()
-  const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState<Tab>('profile')
-  const [profileData, setProfileData] = useState<ProfileFormData | null>(null)
+  const { userId } = useParams<{ userId: string }>();
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<Tab>('profile');
+  const [profileData, setProfileData] = useState<ProfileFormData | null>(null);
   const [passwordData, setPasswordData] = useState<PasswordFormData>({
     newPassword: '',
     confirmPassword: '',
-  })
-  const [profileError, setProfileError] = useState<string | null>(null)
-  const [passwordError, setPasswordError] = useState<string | null>(null)
-  const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  });
+  const [profileError, setProfileError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const utils = trpc.useUtils()
+  const utils = trpc.useUtils();
 
   // Fetch user data
-  const { data: user, isLoading, error } = trpc.admin.getUser.useQuery(
-    { userId: parseInt(userId || '0', 10) },
-    { enabled: !!userId }
-  )
+  const {
+    data: user,
+    isLoading,
+    error,
+  } = trpc.admin.getUser.useQuery({ userId: parseInt(userId || '0', 10) }, { enabled: !!userId });
 
   // Initialize profile form when user data is loaded
   useEffect(() => {
@@ -77,119 +78,119 @@ export function UserEditPage() {
         isActive: user.isActive,
         timezone: user.timezone,
         language: user.language,
-      })
+      });
     }
-  }, [user, profileData])
+  }, [user, profileData]);
 
   // Fetch user logins
   const { data: loginsData } = trpc.admin.getUserLogins.useQuery(
     { userId: parseInt(userId || '0', 10), limit: 10 },
     { enabled: !!userId && activeTab === 'sessions' }
-  )
+  );
 
   // Fetch user groups
   const { data: userGroups, isLoading: isGroupsLoading } = trpc.group.myGroups.useQuery(
     { userId: parseInt(userId || '0', 10) },
     { enabled: !!userId && activeTab === 'groups' }
-  )
+  );
 
   // Fetch all groups for adding user to groups
   const { data: allGroupsData } = trpc.group.list.useQuery(
     { limit: 100 },
     { enabled: !!userId && activeTab === 'groups' }
-  )
+  );
 
   // Mutations
   const updateUser = trpc.admin.updateUser.useMutation({
     onSuccess: () => {
-      setSuccessMessage('User updated successfully')
-      utils.admin.getUser.invalidate({ userId: parseInt(userId || '0', 10) })
-      utils.admin.listUsers.invalidate()
-      setTimeout(() => setSuccessMessage(null), 3000)
+      setSuccessMessage('User updated successfully');
+      utils.admin.getUser.invalidate({ userId: parseInt(userId || '0', 10) });
+      utils.admin.listUsers.invalidate();
+      setTimeout(() => setSuccessMessage(null), 3000);
     },
     onError: (error) => {
-      setProfileError(error.message)
+      setProfileError(error.message);
     },
-  })
+  });
 
   const resetPassword = trpc.admin.resetPassword.useMutation({
     onSuccess: () => {
-      setSuccessMessage('Password reset successfully')
-      setPasswordData({ newPassword: '', confirmPassword: '' })
-      setTimeout(() => setSuccessMessage(null), 3000)
+      setSuccessMessage('Password reset successfully');
+      setPasswordData({ newPassword: '', confirmPassword: '' });
+      setTimeout(() => setSuccessMessage(null), 3000);
     },
     onError: (error) => {
-      setPasswordError(error.message)
+      setPasswordError(error.message);
     },
-  })
+  });
 
   const unlockUser = trpc.admin.unlockUser.useMutation({
     onSuccess: () => {
-      setSuccessMessage('User unlocked successfully')
-      utils.admin.getUser.invalidate({ userId: parseInt(userId || '0', 10) })
-      setTimeout(() => setSuccessMessage(null), 3000)
+      setSuccessMessage('User unlocked successfully');
+      utils.admin.getUser.invalidate({ userId: parseInt(userId || '0', 10) });
+      setTimeout(() => setSuccessMessage(null), 3000);
     },
-  })
+  });
 
   const disable2FA = trpc.admin.disable2FA.useMutation({
     onSuccess: () => {
-      setSuccessMessage('2FA disabled successfully')
-      utils.admin.getUser.invalidate({ userId: parseInt(userId || '0', 10) })
-      setTimeout(() => setSuccessMessage(null), 3000)
+      setSuccessMessage('2FA disabled successfully');
+      utils.admin.getUser.invalidate({ userId: parseInt(userId || '0', 10) });
+      setTimeout(() => setSuccessMessage(null), 3000);
     },
-  })
+  });
 
   const revokeSessions = trpc.admin.revokeSessions.useMutation({
     onSuccess: (data) => {
-      setSuccessMessage(`Revoked ${data.count} session(s)`)
-      utils.admin.getUser.invalidate({ userId: parseInt(userId || '0', 10) })
-      setTimeout(() => setSuccessMessage(null), 3000)
+      setSuccessMessage(`Revoked ${data.count} session(s)`);
+      utils.admin.getUser.invalidate({ userId: parseInt(userId || '0', 10) });
+      setTimeout(() => setSuccessMessage(null), 3000);
     },
-  })
+  });
 
   const deleteUser = trpc.admin.deleteUser.useMutation({
     onSuccess: () => {
-      navigate('/admin/users')
+      navigate('/admin/users');
     },
-  })
+  });
 
   const reactivateUser = trpc.admin.reactivateUser.useMutation({
     onSuccess: () => {
-      setSuccessMessage('User reactivated successfully')
-      utils.admin.getUser.invalidate({ userId: parseInt(userId || '0', 10) })
-      utils.admin.listUsers.invalidate()
-      setTimeout(() => setSuccessMessage(null), 3000)
+      setSuccessMessage('User reactivated successfully');
+      utils.admin.getUser.invalidate({ userId: parseInt(userId || '0', 10) });
+      utils.admin.listUsers.invalidate();
+      setTimeout(() => setSuccessMessage(null), 3000);
     },
-  })
+  });
 
   // Group mutations
   const addToGroup = trpc.group.addMember.useMutation({
     onSuccess: () => {
-      setSuccessMessage('User added to group')
-      utils.group.myGroups.invalidate({ userId: parseInt(userId || '0', 10) })
-      setTimeout(() => setSuccessMessage(null), 3000)
+      setSuccessMessage('User added to group');
+      utils.group.myGroups.invalidate({ userId: parseInt(userId || '0', 10) });
+      setTimeout(() => setSuccessMessage(null), 3000);
     },
     onError: (error) => {
-      setProfileError(error.message)
+      setProfileError(error.message);
     },
-  })
+  });
 
   const removeFromGroup = trpc.group.removeMember.useMutation({
     onSuccess: () => {
-      setSuccessMessage('User removed from group')
-      utils.group.myGroups.invalidate({ userId: parseInt(userId || '0', 10) })
-      setTimeout(() => setSuccessMessage(null), 3000)
+      setSuccessMessage('User removed from group');
+      utils.group.myGroups.invalidate({ userId: parseInt(userId || '0', 10) });
+      setTimeout(() => setSuccessMessage(null), 3000);
     },
     onError: (error) => {
-      setProfileError(error.message)
+      setProfileError(error.message);
     },
-  })
+  });
 
   const handleProfileSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    setProfileError(null)
+    e.preventDefault();
+    setProfileError(null);
 
-    if (!profileData) return
+    if (!profileData) return;
 
     updateUser.mutate({
       userId: parseInt(userId || '0', 10),
@@ -199,52 +200,56 @@ export function UserEditPage() {
       isActive: profileData.isActive,
       timezone: profileData.timezone,
       language: profileData.language,
-    })
-  }
+    });
+  };
 
   const handlePasswordSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    setPasswordError(null)
+    e.preventDefault();
+    setPasswordError(null);
 
     if (passwordData.newPassword.length < 8) {
-      setPasswordError('Password must be at least 8 characters')
-      return
+      setPasswordError('Password must be at least 8 characters');
+      return;
     }
 
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setPasswordError('Passwords do not match')
-      return
+      setPasswordError('Passwords do not match');
+      return;
     }
 
     resetPassword.mutate({
       userId: parseInt(userId || '0', 10),
       newPassword: passwordData.newPassword,
-    })
-  }
+    });
+  };
 
   const handleDelete = () => {
-    if (confirm('Are you sure you want to deactivate this user? They will no longer be able to log in.')) {
-      deleteUser.mutate({ userId: parseInt(userId || '0', 10) })
+    if (
+      confirm(
+        'Are you sure you want to deactivate this user? They will no longer be able to log in.'
+      )
+    ) {
+      deleteUser.mutate({ userId: parseInt(userId || '0', 10) });
     }
-  }
+  };
 
   const formatDateTime = (date: string | Date | null) => {
-    if (!date) return 'Never'
+    if (!date) return 'Never';
     return new Date(date).toLocaleString('nl-NL', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-    })
-  }
+    });
+  };
 
   if (isLoading) {
     return (
       <AdminLayout title="Loading..." description="Please wait">
         <div className="text-center py-12 text-gray-500">Loading user...</div>
       </AdminLayout>
-    )
+    );
   }
 
   if (error || !user) {
@@ -257,14 +262,11 @@ export function UserEditPage() {
           Back to users
         </Link>
       </AdminLayout>
-    )
+    );
   }
 
   return (
-    <AdminLayout
-      title={`Edit: ${user.name}`}
-      description={`@${user.username} - ${user.email}`}
-    >
+    <AdminLayout title={`Edit: ${user.name}`} description={`@${user.username} - ${user.email}`}>
       {/* Success message */}
       {successMessage && (
         <div className="mb-6 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 px-4 py-3 rounded-lg">
@@ -304,7 +306,10 @@ export function UserEditPage() {
 
             {/* Email */}
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
                 Email address
               </label>
               <input
@@ -318,7 +323,10 @@ export function UserEditPage() {
 
             {/* Username */}
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label
+                htmlFor="username"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
                 Username
               </label>
               <input
@@ -332,7 +340,10 @@ export function UserEditPage() {
 
             {/* Name */}
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label
+                htmlFor="name"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
                 Full name
               </label>
               <input
@@ -346,7 +357,10 @@ export function UserEditPage() {
 
             {/* Timezone */}
             <div>
-              <label htmlFor="timezone" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label
+                htmlFor="timezone"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
                 Timezone
               </label>
               <input
@@ -361,7 +375,10 @@ export function UserEditPage() {
 
             {/* Language */}
             <div>
-              <label htmlFor="language" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label
+                htmlFor="language"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
                 Language
               </label>
               <input
@@ -451,17 +468,22 @@ export function UserEditPage() {
                   <div key={group.groupId} className="px-4 py-3 flex items-center justify-between">
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-medium text-foreground">
-                          {group.displayName}
-                        </span>
-                        <span className={cn(
-                          'px-2 py-0.5 text-xs rounded-full',
-                          group.groupType === 'SYSTEM' && 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
-                          group.groupType === 'WORKSPACE' && 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-                          group.groupType === 'WORKSPACE_ADMIN' && 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
-                          group.groupType === 'PROJECT' && 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-                          group.groupType === 'CUSTOM' && 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
-                        )}>
+                        <span className="font-medium text-foreground">{group.displayName}</span>
+                        <span
+                          className={cn(
+                            'px-2 py-0.5 text-xs rounded-full',
+                            group.groupType === 'SYSTEM' &&
+                              'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
+                            group.groupType === 'WORKSPACE' &&
+                              'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+                            group.groupType === 'WORKSPACE_ADMIN' &&
+                              'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+                            group.groupType === 'PROJECT' &&
+                              'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+                            group.groupType === 'CUSTOM' &&
+                              'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
+                          )}
+                        >
                           {group.groupType.replace('_', ' ')}
                         </span>
                       </div>
@@ -473,7 +495,7 @@ export function UserEditPage() {
                           removeFromGroup.mutate({
                             groupId: group.groupId,
                             userId: parseInt(userId || '0', 10),
-                          })
+                          });
                         }
                       }}
                       disabled={removeFromGroup.isPending}
@@ -501,19 +523,21 @@ export function UserEditPage() {
                   className="w-full px-4 py-2 border border-input rounded-lg bg-card text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   defaultValue=""
                   onChange={(e) => {
-                    const groupId = parseInt(e.target.value, 10)
+                    const groupId = parseInt(e.target.value, 10);
                     if (groupId && confirm('Add user to this group?')) {
                       addToGroup.mutate({
                         groupId,
                         userId: parseInt(userId || '0', 10),
-                      })
-                      e.target.value = ''
+                      });
+                      e.target.value = '';
                     }
                   }}
                 >
-                  <option value="" disabled>Select a group to add...</option>
+                  <option value="" disabled>
+                    Select a group to add...
+                  </option>
                   {allGroupsData.groups
-                    .filter(g => !userGroups?.some(ug => ug.groupId === g.id))
+                    .filter((g) => !userGroups?.some((ug) => ug.groupId === g.id))
                     .map((group) => (
                       <option key={group.id} value={group.id}>
                         {group.displayName} ({group.type.replace('_', ' ')})
@@ -531,22 +555,34 @@ export function UserEditPage() {
 
           {/* Group Legend */}
           <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
-            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Group Types</h4>
+            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+              Group Types
+            </h4>
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 text-xs rounded-full bg-purple-100 text-purple-700">SYSTEM</span>
-                <span className="text-gray-600 dark:text-gray-400">Domain Admins - Full access</span>
+                <span className="px-2 py-0.5 text-xs rounded-full bg-purple-100 text-purple-700">
+                  SYSTEM
+                </span>
+                <span className="text-gray-600 dark:text-gray-400">
+                  Domain Admins - Full access
+                </span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 text-xs rounded-full bg-orange-100 text-orange-700">WORKSPACE ADMIN</span>
+                <span className="px-2 py-0.5 text-xs rounded-full bg-orange-100 text-orange-700">
+                  WORKSPACE ADMIN
+                </span>
                 <span className="text-gray-600 dark:text-gray-400">Workspace administrator</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-700">WORKSPACE</span>
+                <span className="px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-700">
+                  WORKSPACE
+                </span>
                 <span className="text-gray-600 dark:text-gray-400">Workspace member</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-700">PROJECT</span>
+                <span className="px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-700">
+                  PROJECT
+                </span>
                 <span className="text-gray-600 dark:text-gray-400">Project member</span>
               </div>
             </div>
@@ -600,7 +636,7 @@ export function UserEditPage() {
                 <button
                   onClick={() => {
                     if (confirm('Are you sure you want to disable 2FA for this user?')) {
-                      disable2FA.mutate({ userId: parseInt(userId || '0', 10) })
+                      disable2FA.mutate({ userId: parseInt(userId || '0', 10) });
                     }
                   }}
                   disabled={disable2FA.isPending}
@@ -612,7 +648,7 @@ export function UserEditPage() {
               <button
                 onClick={() => {
                   if (confirm('Are you sure you want to revoke all sessions for this user?')) {
-                    revokeSessions.mutate({ userId: parseInt(userId || '0', 10) })
+                    revokeSessions.mutate({ userId: parseInt(userId || '0', 10) });
                   }
                 }}
                 disabled={revokeSessions.isPending}
@@ -633,27 +669,37 @@ export function UserEditPage() {
                 </div>
               )}
               <div>
-                <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label
+                  htmlFor="newPassword"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >
                   New password
                 </label>
                 <input
                   type="password"
                   id="newPassword"
                   value={passwordData.newPassword}
-                  onChange={(e) => setPasswordData({ ...passwordData, newPassword: e.target.value })}
+                  onChange={(e) =>
+                    setPasswordData({ ...passwordData, newPassword: e.target.value })
+                  }
                   className="w-full px-4 py-2 border border-input rounded-lg bg-card text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Minimum 8 characters"
                 />
               </div>
               <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label
+                  htmlFor="confirmPassword"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+                >
                   Confirm password
                 </label>
                 <input
                   type="password"
                   id="confirmPassword"
                   value={passwordData.confirmPassword}
-                  onChange={(e) => setPasswordData({ ...passwordData, confirmPassword: e.target.value })}
+                  onChange={(e) =>
+                    setPasswordData({ ...passwordData, confirmPassword: e.target.value })
+                  }
                   className="w-full px-4 py-2 border border-input rounded-lg bg-card text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Repeat password"
                 />
@@ -731,11 +777,17 @@ export function UserEditPage() {
                 </thead>
                 <tbody>
                   {loginsData.logins.map((login) => (
-                    <tr key={login.id} className="border-b border-gray-100 dark:border-gray-700 last:border-0">
+                    <tr
+                      key={login.id}
+                      className="border-b border-gray-100 dark:border-gray-700 last:border-0"
+                    >
                       <td className="px-4 py-2 text-sm">{formatDateTime(login.createdAt)}</td>
                       <td className="px-4 py-2 text-sm font-mono">{login.ip}</td>
                       <td className="px-4 py-2 text-sm">{login.authType}</td>
-                      <td className="px-4 py-2 text-sm text-gray-500 truncate max-w-xs" title={login.userAgent}>
+                      <td
+                        className="px-4 py-2 text-sm text-gray-500 truncate max-w-xs"
+                        title={login.userAgent}
+                      >
                         {login.userAgent}
                       </td>
                     </tr>
@@ -749,7 +801,7 @@ export function UserEditPage() {
         </div>
       )}
     </AdminLayout>
-  )
+  );
 }
 
-export default UserEditPage
+export default UserEditPage;

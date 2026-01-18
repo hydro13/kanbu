@@ -16,39 +16,39 @@
  * =============================================================================
  */
 
-import { prisma } from '../../lib/prisma'
-import { getInstallationOctokit } from './githubService'
-import type { GitHubSyncSettings } from '@kanbu/shared'
+import { prisma } from '../../lib/prisma';
+import { getInstallationOctokit } from './githubService';
+import type { GitHubSyncSettings } from '@kanbu/shared';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface BranchCreationResult {
-  success: boolean
-  branchName: string
-  branchUrl?: string
-  error?: string
+  success: boolean;
+  branchName: string;
+  branchUrl?: string;
+  error?: string;
 }
 
 export interface TaskStatusAutomationResult {
-  success: boolean
-  taskId: number
-  previousColumnId?: number
-  newColumnId?: number
-  action: 'moved' | 'closed' | 'no_change' | 'error'
-  error?: string
+  success: boolean;
+  taskId: number;
+  previousColumnId?: number;
+  newColumnId?: number;
+  action: 'moved' | 'closed' | 'no_change' | 'error';
+  error?: string;
 }
 
 export interface AutomationSettings {
-  enabled: boolean
-  moveToInProgressOnPROpen: boolean
-  moveToReviewOnPRReady: boolean
-  moveToDoneOnPRMerge: boolean
-  closeTaskOnIssueClosed: boolean
-  inProgressColumn: string
-  reviewColumn: string
-  doneColumn: string
+  enabled: boolean;
+  moveToInProgressOnPROpen: boolean;
+  moveToReviewOnPRReady: boolean;
+  moveToDoneOnPRMerge: boolean;
+  closeTaskOnIssueClosed: boolean;
+  inProgressColumn: string;
+  reviewColumn: string;
+  doneColumn: string;
 }
 
 // =============================================================================
@@ -64,9 +64,9 @@ const DEFAULT_AUTOMATION_SETTINGS: AutomationSettings = {
   inProgressColumn: 'In Progress',
   reviewColumn: 'Review',
   doneColumn: 'Done',
-}
+};
 
-const DEFAULT_BRANCH_PATTERN = 'feature/{reference}-{slug}'
+const DEFAULT_BRANCH_PATTERN = 'feature/{reference}-{slug}';
 
 // =============================================================================
 // Helper Functions
@@ -77,10 +77,10 @@ const DEFAULT_BRANCH_PATTERN = 'feature/{reference}-{slug}'
  */
 export function getAutomationSettings(syncSettings: GitHubSyncSettings | null): AutomationSettings {
   if (!syncSettings?.automation?.enabled) {
-    return { ...DEFAULT_AUTOMATION_SETTINGS, enabled: false }
+    return { ...DEFAULT_AUTOMATION_SETTINGS, enabled: false };
   }
 
-  const automation = syncSettings.automation
+  const automation = syncSettings.automation;
   return {
     enabled: true,
     moveToInProgressOnPROpen: automation.moveToInProgressOnPROpen ?? true,
@@ -90,7 +90,7 @@ export function getAutomationSettings(syncSettings: GitHubSyncSettings | null): 
     inProgressColumn: automation.inProgressColumn || 'In Progress',
     reviewColumn: automation.reviewColumn || 'Review',
     doneColumn: automation.doneColumn || 'Done',
-  }
+  };
 }
 
 /**
@@ -104,11 +104,11 @@ export async function findColumnByName(
     where: { projectId },
     select: { id: true, title: true },
     orderBy: { position: 'asc' },
-  })
+  });
 
-  const lowerName = columnName.toLowerCase()
-  const found = columns.find(c => c.title.toLowerCase() === lowerName)
-  return found ? { id: found.id, name: found.title } : null
+  const lowerName = columnName.toLowerCase();
+  const found = columns.find((c) => c.title.toLowerCase() === lowerName);
+  return found ? { id: found.id, name: found.title } : null;
 }
 
 /**
@@ -119,48 +119,50 @@ export async function findColumnByNameFuzzy(
   targetName: string
 ): Promise<{ id: number; name: string } | null> {
   // First try exact match
-  const exactMatch = await findColumnByName(projectId, targetName)
-  if (exactMatch) return exactMatch
+  const exactMatch = await findColumnByName(projectId, targetName);
+  if (exactMatch) return exactMatch;
 
   // Define common aliases
   const aliases: Record<string, string[]> = {
     'in progress': ['doing', 'working', 'active', 'in-progress', 'wip'],
-    'review': ['code review', 'pr review', 'reviewing', 'to review'],
-    'done': ['completed', 'finished', 'closed', 'complete'],
-  }
+    review: ['code review', 'pr review', 'reviewing', 'to review'],
+    done: ['completed', 'finished', 'closed', 'complete'],
+  };
 
   const columns = await prisma.column.findMany({
     where: { projectId },
     select: { id: true, title: true },
     orderBy: { position: 'asc' },
-  })
+  });
 
-  const lowerTarget = targetName.toLowerCase()
-  const targetAliases = aliases[lowerTarget] || []
+  const lowerTarget = targetName.toLowerCase();
+  const targetAliases = aliases[lowerTarget] || [];
 
   // Try to find by alias
   for (const column of columns) {
-    const columnLower = column.title.toLowerCase()
+    const columnLower = column.title.toLowerCase();
     if (targetAliases.includes(columnLower)) {
-      return { id: column.id, name: column.title }
+      return { id: column.id, name: column.title };
     }
     // Also check if target is an alias of the column name
     for (const [canonical, aliasList] of Object.entries(aliases)) {
       if (aliasList.includes(lowerTarget) && columnLower === canonical) {
-        return { id: column.id, name: column.title }
+        return { id: column.id, name: column.title };
       }
     }
   }
 
   // Try partial match
   for (const column of columns) {
-    if (column.title.toLowerCase().includes(lowerTarget) ||
-        lowerTarget.includes(column.title.toLowerCase())) {
-      return { id: column.id, name: column.title }
+    if (
+      column.title.toLowerCase().includes(lowerTarget) ||
+      lowerTarget.includes(column.title.toLowerCase())
+    ) {
+      return { id: column.id, name: column.title };
     }
   }
 
-  return null
+  return null;
 }
 
 /**
@@ -169,11 +171,11 @@ export async function findColumnByNameFuzzy(
 export function slugify(text: string): string {
   return text
     .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '')  // Remove special chars
-    .replace(/\s+/g, '-')           // Replace spaces with hyphens
-    .replace(/-+/g, '-')            // Replace multiple hyphens
-    .substring(0, 50)               // Limit length
-    .replace(/^-|-$/g, '')          // Trim hyphens
+    .replace(/[^a-z0-9\s-]/g, '') // Remove special chars
+    .replace(/\s+/g, '-') // Replace spaces with hyphens
+    .replace(/-+/g, '-') // Replace multiple hyphens
+    .substring(0, 50) // Limit length
+    .replace(/^-|-$/g, ''); // Trim hyphens
 }
 
 /**
@@ -184,14 +186,14 @@ export function generateBranchName(
   title: string,
   pattern: string = DEFAULT_BRANCH_PATTERN
 ): string {
-  const slug = slugify(title)
-  const refLower = reference.toLowerCase()
+  const slug = slugify(title);
+  const refLower = reference.toLowerCase();
 
   return pattern
     .replace('{reference}', refLower)
     .replace('{REFERENCE}', reference)
     .replace('{slug}', slug)
-    .replace('{title}', slug)
+    .replace('{title}', slug);
 }
 
 // =============================================================================
@@ -219,25 +221,25 @@ export async function createBranchForTask(
         },
       },
     },
-  })
+  });
 
   if (!task) {
     return {
       success: false,
       branchName: '',
       error: `Task ${taskId} not found`,
-    }
+    };
   }
 
   // Find the primary repo or first available
-  const repository = task.project.githubRepositories.find(r => r.isPrimary)
-    ?? task.project.githubRepositories[0]
+  const repository =
+    task.project.githubRepositories.find((r) => r.isPrimary) ?? task.project.githubRepositories[0];
   if (!repository) {
     return {
       success: false,
       branchName: '',
       error: 'Project has no linked GitHub repository',
-    }
+    };
   }
 
   if (!repository.syncEnabled) {
@@ -245,27 +247,27 @@ export async function createBranchForTask(
       success: false,
       branchName: '',
       error: 'GitHub sync is disabled for this repository',
-    }
+    };
   }
 
   // Get branch name
-  const syncSettings = repository.syncSettings as GitHubSyncSettings | null
-  const branchPattern = syncSettings?.branches?.pattern || DEFAULT_BRANCH_PATTERN
-  const taskRef = task.reference ?? `task-${task.id}`
-  const branchName = customBranchName || generateBranchName(taskRef, task.title, branchPattern)
+  const syncSettings = repository.syncSettings as GitHubSyncSettings | null;
+  const branchPattern = syncSettings?.branches?.pattern || DEFAULT_BRANCH_PATTERN;
+  const taskRef = task.reference ?? `task-${task.id}`;
+  const branchName = customBranchName || generateBranchName(taskRef, task.title, branchPattern);
 
   try {
     // Get Octokit for the installation
-    const octokit = await getInstallationOctokit(repository.installation.installationId)
+    const octokit = await getInstallationOctokit(repository.installation.installationId);
 
     // Get the default branch SHA
     const { data: refData } = await octokit.rest.git.getRef({
       owner: repository.owner,
       repo: repository.name,
       ref: `heads/${repository.defaultBranch}`,
-    })
+    });
 
-    const baseSha = refData.object.sha
+    const baseSha = refData.object.sha;
 
     // Create the new branch
     await octokit.rest.git.createRef({
@@ -273,13 +275,13 @@ export async function createBranchForTask(
       repo: repository.name,
       ref: `refs/heads/${branchName}`,
       sha: baseSha,
-    })
+    });
 
     // Update task with branch name
     await prisma.task.update({
       where: { id: taskId },
       data: { githubBranch: branchName },
-    })
+    });
 
     // Log the action
     await prisma.gitHubSyncLog.create({
@@ -297,17 +299,17 @@ export async function createBranchForTask(
         },
         status: 'success',
       },
-    })
+    });
 
-    const branchUrl = `https://github.com/${repository.fullName}/tree/${branchName}`
+    const branchUrl = `https://github.com/${repository.fullName}/tree/${branchName}`;
 
     return {
       success: true,
       branchName,
       branchUrl,
-    }
+    };
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
     // Log the error
     await prisma.gitHubSyncLog.create({
@@ -324,46 +326,43 @@ export async function createBranchForTask(
         status: 'failed',
         errorMessage,
       },
-    })
+    });
 
     return {
       success: false,
       branchName,
       error: errorMessage,
-    }
+    };
   }
 }
 
 /**
  * Check if a branch exists on GitHub
  */
-export async function branchExists(
-  repositoryId: number,
-  branchName: string
-): Promise<boolean> {
+export async function branchExists(repositoryId: number, branchName: string): Promise<boolean> {
   const repository = await prisma.gitHubRepository.findFirst({
     where: { id: repositoryId },
     include: { installation: true },
-  })
+  });
 
   if (!repository) {
-    throw new Error(`Repository ${repositoryId} not found`)
+    throw new Error(`Repository ${repositoryId} not found`);
   }
 
   try {
-    const octokit = await getInstallationOctokit(repository.installation.installationId)
+    const octokit = await getInstallationOctokit(repository.installation.installationId);
     await octokit.rest.git.getRef({
       owner: repository.owner,
       repo: repository.name,
       ref: `heads/${branchName}`,
-    })
-    return true
+    });
+    return true;
   } catch (error) {
     // 404 means branch doesn't exist
     if ((error as { status?: number })?.status === 404) {
-      return false
+      return false;
     }
-    throw error
+    throw error;
   }
 }
 
@@ -381,7 +380,7 @@ export async function moveTaskToColumn(
   const task = await prisma.task.findUnique({
     where: { id: taskId },
     select: { id: true, projectId: true, columnId: true },
-  })
+  });
 
   if (!task) {
     return {
@@ -389,18 +388,18 @@ export async function moveTaskToColumn(
       taskId,
       action: 'error',
       error: `Task ${taskId} not found`,
-    }
+    };
   }
 
   // Find the target column
-  const targetColumn = await findColumnByNameFuzzy(task.projectId, columnName)
+  const targetColumn = await findColumnByNameFuzzy(task.projectId, columnName);
   if (!targetColumn) {
     return {
       success: false,
       taskId,
       action: 'error',
       error: `Column "${columnName}" not found in project`,
-    }
+    };
   }
 
   // Check if already in target column
@@ -411,15 +410,15 @@ export async function moveTaskToColumn(
       previousColumnId: task.columnId,
       newColumnId: targetColumn.id,
       action: 'no_change',
-    }
+    };
   }
 
   // Get the highest position in the target column
   const maxPosition = await prisma.task.aggregate({
     where: { columnId: targetColumn.id },
     _max: { position: true },
-  })
-  const newPosition = (maxPosition._max.position ?? 0) + 1
+  });
+  const newPosition = (maxPosition._max.position ?? 0) + 1;
 
   // Move the task
   await prisma.task.update({
@@ -428,7 +427,7 @@ export async function moveTaskToColumn(
       columnId: targetColumn.id,
       position: newPosition,
     },
-  })
+  });
 
   return {
     success: true,
@@ -436,7 +435,7 @@ export async function moveTaskToColumn(
     previousColumnId: task.columnId,
     newColumnId: targetColumn.id,
     action: 'moved',
-  }
+  };
 }
 
 /**
@@ -446,7 +445,7 @@ export async function closeTask(taskId: number): Promise<TaskStatusAutomationRes
   const task = await prisma.task.findUnique({
     where: { id: taskId },
     select: { id: true, isActive: true },
-  })
+  });
 
   if (!task) {
     return {
@@ -454,7 +453,7 @@ export async function closeTask(taskId: number): Promise<TaskStatusAutomationRes
       taskId,
       action: 'error',
       error: `Task ${taskId} not found`,
-    }
+    };
   }
 
   if (!task.isActive) {
@@ -462,19 +461,19 @@ export async function closeTask(taskId: number): Promise<TaskStatusAutomationRes
       success: true,
       taskId,
       action: 'no_change',
-    }
+    };
   }
 
   await prisma.task.update({
     where: { id: taskId },
     data: { isActive: false },
-  })
+  });
 
   return {
     success: true,
     taskId,
     action: 'closed',
-  }
+  };
 }
 
 /**
@@ -487,7 +486,7 @@ export async function onPROpened(
   const repository = await prisma.gitHubRepository.findFirst({
     where: { id: repositoryId },
     select: { syncSettings: true },
-  })
+  });
 
   if (!repository) {
     return {
@@ -495,19 +494,19 @@ export async function onPROpened(
       taskId,
       action: 'error',
       error: `Repository ${repositoryId} not found`,
-    }
+    };
   }
 
-  const settings = getAutomationSettings(repository.syncSettings as GitHubSyncSettings | null)
+  const settings = getAutomationSettings(repository.syncSettings as GitHubSyncSettings | null);
   if (!settings.enabled || !settings.moveToInProgressOnPROpen) {
     return {
       success: true,
       taskId,
       action: 'no_change',
-    }
+    };
   }
 
-  return moveTaskToColumn(taskId, settings.inProgressColumn)
+  return moveTaskToColumn(taskId, settings.inProgressColumn);
 }
 
 /**
@@ -520,7 +519,7 @@ export async function onPRReadyForReview(
   const repository = await prisma.gitHubRepository.findFirst({
     where: { id: repositoryId },
     select: { syncSettings: true },
-  })
+  });
 
   if (!repository) {
     return {
@@ -528,19 +527,19 @@ export async function onPRReadyForReview(
       taskId,
       action: 'error',
       error: `Repository ${repositoryId} not found`,
-    }
+    };
   }
 
-  const settings = getAutomationSettings(repository.syncSettings as GitHubSyncSettings | null)
+  const settings = getAutomationSettings(repository.syncSettings as GitHubSyncSettings | null);
   if (!settings.enabled || !settings.moveToReviewOnPRReady) {
     return {
       success: true,
       taskId,
       action: 'no_change',
-    }
+    };
   }
 
-  return moveTaskToColumn(taskId, settings.reviewColumn)
+  return moveTaskToColumn(taskId, settings.reviewColumn);
 }
 
 /**
@@ -553,7 +552,7 @@ export async function onPRMerged(
   const repository = await prisma.gitHubRepository.findFirst({
     where: { id: repositoryId },
     select: { syncSettings: true },
-  })
+  });
 
   if (!repository) {
     return {
@@ -561,19 +560,19 @@ export async function onPRMerged(
       taskId,
       action: 'error',
       error: `Repository ${repositoryId} not found`,
-    }
+    };
   }
 
-  const settings = getAutomationSettings(repository.syncSettings as GitHubSyncSettings | null)
+  const settings = getAutomationSettings(repository.syncSettings as GitHubSyncSettings | null);
   if (!settings.enabled || !settings.moveToDoneOnPRMerge) {
     return {
       success: true,
       taskId,
       action: 'no_change',
-    }
+    };
   }
 
-  return moveTaskToColumn(taskId, settings.doneColumn)
+  return moveTaskToColumn(taskId, settings.doneColumn);
 }
 
 /**
@@ -586,7 +585,7 @@ export async function onIssueClosed(
   const repository = await prisma.gitHubRepository.findFirst({
     where: { id: repositoryId },
     select: { syncSettings: true },
-  })
+  });
 
   if (!repository) {
     return {
@@ -594,19 +593,19 @@ export async function onIssueClosed(
       taskId,
       action: 'error',
       error: `Repository ${repositoryId} not found`,
-    }
+    };
   }
 
-  const settings = getAutomationSettings(repository.syncSettings as GitHubSyncSettings | null)
+  const settings = getAutomationSettings(repository.syncSettings as GitHubSyncSettings | null);
   if (!settings.enabled || !settings.closeTaskOnIssueClosed) {
     return {
       success: true,
       taskId,
       action: 'no_change',
-    }
+    };
   }
 
-  return closeTask(taskId)
+  return closeTask(taskId);
 }
 
 // =============================================================================
@@ -632,4 +631,4 @@ export const automationService = {
   onPRReadyForReview,
   onPRMerged,
   onIssueClosed,
-}
+};

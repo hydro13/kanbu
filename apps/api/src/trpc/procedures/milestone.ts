@@ -13,12 +13,15 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { z } from 'zod'
-import { TRPCError } from '@trpc/server'
-import { router, protectedProcedure } from '../router'
-import { permissionService } from '../../services'
-import { syncKanbuToGitHub, deleteGitHubMilestone } from '../../services/github/milestoneSyncService'
-import { syncTaskToGitHub } from '../../services/github/issueSyncService'
+import { z } from 'zod';
+import { TRPCError } from '@trpc/server';
+import { router, protectedProcedure } from '../router';
+import { permissionService } from '../../services';
+import {
+  syncKanbuToGitHub,
+  deleteGitHubMilestone,
+} from '../../services/github/milestoneSyncService';
+import { syncTaskToGitHub } from '../../services/github/issueSyncService';
 
 // =============================================================================
 // Input Schemas
@@ -26,24 +29,24 @@ import { syncTaskToGitHub } from '../../services/github/issueSyncService'
 
 const milestoneIdSchema = z.object({
   milestoneId: z.number(),
-})
+});
 
 const listMilestonesSchema = z.object({
   projectId: z.number(),
   includeCompleted: z.boolean().default(false),
-})
+});
 
 const getMilestoneSchema = z.object({
   milestoneId: z.number(),
   includeTasks: z.boolean().default(false),
-})
+});
 
 const createMilestoneSchema = z.object({
   projectId: z.number(),
   name: z.string().min(1).max(255),
   description: z.string().max(5000).optional(),
   dateDue: z.string().optional(), // ISO date string
-})
+});
 
 const updateMilestoneSchema = z.object({
   milestoneId: z.number(),
@@ -51,12 +54,12 @@ const updateMilestoneSchema = z.object({
   description: z.string().max(5000).optional(),
   dateDue: z.string().nullable().optional(),
   isCompleted: z.boolean().optional(),
-})
+});
 
 const setMilestoneForTaskSchema = z.object({
   taskId: z.number(),
   milestoneId: z.number().nullable(), // null to remove
-})
+});
 
 // =============================================================================
 // Router
@@ -67,7 +70,7 @@ export const milestoneRouter = router({
    * List milestones for a project with progress stats
    */
   list: protectedProcedure.input(listMilestonesSchema).query(async ({ ctx, input }) => {
-    await permissionService.requireProjectAccess(ctx.user.id, input.projectId, 'VIEWER')
+    await permissionService.requireProjectAccess(ctx.user.id, input.projectId, 'VIEWER');
 
     const milestones = await ctx.prisma.milestone.findMany({
       where: {
@@ -84,7 +87,7 @@ export const milestoneRouter = router({
         { dateDue: 'asc' }, // Earliest due date first
         { createdAt: 'desc' },
       ],
-    })
+    });
 
     // Add progress stats for each milestone
     const milestonesWithStats = await Promise.all(
@@ -93,25 +96,27 @@ export const milestoneRouter = router({
           by: ['isActive'],
           where: { milestoneId: milestone.id },
           _count: true,
-        })
+        });
 
-        const totalTasks = milestone._count.tasks
-        const completedTasks = taskStats.find((s) => !s.isActive)?._count ?? 0
-        const openTasks = taskStats.find((s) => s.isActive)?._count ?? 0
+        const totalTasks = milestone._count.tasks;
+        const completedTasks = taskStats.find((s) => !s.isActive)?._count ?? 0;
+        const openTasks = taskStats.find((s) => s.isActive)?._count ?? 0;
 
         // Calculate due date status
-        let dueStatus: 'overdue' | 'due_soon' | 'on_track' | 'no_date' = 'no_date'
+        let dueStatus: 'overdue' | 'due_soon' | 'on_track' | 'no_date' = 'no_date';
         if (milestone.dateDue && !milestone.isCompleted) {
-          const now = new Date()
-          const dueDate = new Date(milestone.dateDue)
-          const daysUntilDue = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+          const now = new Date();
+          const dueDate = new Date(milestone.dateDue);
+          const daysUntilDue = Math.ceil(
+            (dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+          );
 
           if (daysUntilDue < 0) {
-            dueStatus = 'overdue'
+            dueStatus = 'overdue';
           } else if (daysUntilDue <= 7) {
-            dueStatus = 'due_soon'
+            dueStatus = 'due_soon';
           } else {
-            dueStatus = 'on_track'
+            dueStatus = 'on_track';
           }
         }
 
@@ -122,11 +127,11 @@ export const milestoneRouter = router({
           openTasks,
           progress: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0,
           dueStatus,
-        }
+        };
       })
-    )
+    );
 
-    return milestonesWithStats
+    return milestonesWithStats;
   }),
 
   /**
@@ -160,41 +165,41 @@ export const milestoneRouter = router({
           select: { tasks: true },
         },
       },
-    })
+    });
 
     if (!milestone) {
       throw new TRPCError({
         code: 'NOT_FOUND',
         message: 'Milestone not found',
-      })
+      });
     }
 
-    await permissionService.requireProjectAccess(ctx.user.id, milestone.projectId, 'VIEWER')
+    await permissionService.requireProjectAccess(ctx.user.id, milestone.projectId, 'VIEWER');
 
     // Calculate stats
     const taskStats = await ctx.prisma.task.groupBy({
       by: ['isActive'],
       where: { milestoneId: milestone.id },
       _count: true,
-    })
+    });
 
-    const totalTasks = milestone._count.tasks
-    const completedTasks = taskStats.find((s) => !s.isActive)?._count ?? 0
-    const openTasks = taskStats.find((s) => s.isActive)?._count ?? 0
+    const totalTasks = milestone._count.tasks;
+    const completedTasks = taskStats.find((s) => !s.isActive)?._count ?? 0;
+    const openTasks = taskStats.find((s) => s.isActive)?._count ?? 0;
 
     // Calculate due date status
-    let dueStatus: 'overdue' | 'due_soon' | 'on_track' | 'no_date' = 'no_date'
+    let dueStatus: 'overdue' | 'due_soon' | 'on_track' | 'no_date' = 'no_date';
     if (milestone.dateDue && !milestone.isCompleted) {
-      const now = new Date()
-      const dueDate = new Date(milestone.dateDue)
-      const daysUntilDue = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+      const now = new Date();
+      const dueDate = new Date(milestone.dateDue);
+      const daysUntilDue = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
       if (daysUntilDue < 0) {
-        dueStatus = 'overdue'
+        dueStatus = 'overdue';
       } else if (daysUntilDue <= 7) {
-        dueStatus = 'due_soon'
+        dueStatus = 'due_soon';
       } else {
-        dueStatus = 'on_track'
+        dueStatus = 'on_track';
       }
     }
 
@@ -205,7 +210,7 @@ export const milestoneRouter = router({
       openTasks,
       progress: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0,
       dueStatus,
-    }
+    };
   }),
 
   /**
@@ -213,7 +218,7 @@ export const milestoneRouter = router({
    * For GitHub-linked projects, also creates a GitHub milestone
    */
   create: protectedProcedure.input(createMilestoneSchema).mutation(async ({ ctx, input }) => {
-    await permissionService.requireProjectAccess(ctx.user.id, input.projectId, 'MEMBER')
+    await permissionService.requireProjectAccess(ctx.user.id, input.projectId, 'MEMBER');
 
     const milestone = await ctx.prisma.milestone.create({
       data: {
@@ -222,17 +227,17 @@ export const milestoneRouter = router({
         description: input.description,
         dateDue: input.dateDue ? new Date(input.dateDue) : null,
       },
-    })
+    });
 
     // Sync to GitHub if project has a linked repository
     try {
-      await syncKanbuToGitHub(milestone.id)
+      await syncKanbuToGitHub(milestone.id);
     } catch (error) {
       // Log but don't fail - the Kanbu milestone was created successfully
-      console.error('[MilestoneRouter] Failed to sync milestone to GitHub:', error)
+      console.error('[MilestoneRouter] Failed to sync milestone to GitHub:', error);
     }
 
-    return milestone
+    return milestone;
   }),
 
   /**
@@ -240,20 +245,20 @@ export const milestoneRouter = router({
    * For GitHub-linked projects, also updates the GitHub milestone
    */
   update: protectedProcedure.input(updateMilestoneSchema).mutation(async ({ ctx, input }) => {
-    const { milestoneId, ...updates } = input
+    const { milestoneId, ...updates } = input;
 
     const milestone = await ctx.prisma.milestone.findUnique({
       where: { id: milestoneId },
-    })
+    });
 
     if (!milestone) {
       throw new TRPCError({
         code: 'NOT_FOUND',
         message: 'Milestone not found',
-      })
+      });
     }
 
-    await permissionService.requireProjectAccess(ctx.user.id, milestone.projectId, 'MEMBER')
+    await permissionService.requireProjectAccess(ctx.user.id, milestone.projectId, 'MEMBER');
 
     const updated = await ctx.prisma.milestone.update({
       where: { id: milestoneId },
@@ -265,17 +270,17 @@ export const milestoneRouter = router({
         }),
         ...(updates.isCompleted !== undefined && { isCompleted: updates.isCompleted }),
       },
-    })
+    });
 
     // Sync to GitHub if project has a linked repository
     try {
-      await syncKanbuToGitHub(updated.id)
+      await syncKanbuToGitHub(updated.id);
     } catch (error) {
       // Log but don't fail - the Kanbu milestone was updated successfully
-      console.error('[MilestoneRouter] Failed to sync milestone to GitHub:', error)
+      console.error('[MilestoneRouter] Failed to sync milestone to GitHub:', error);
     }
 
-    return updated
+    return updated;
   }),
 
   /**
@@ -285,91 +290,93 @@ export const milestoneRouter = router({
   delete: protectedProcedure.input(milestoneIdSchema).mutation(async ({ ctx, input }) => {
     const milestone = await ctx.prisma.milestone.findUnique({
       where: { id: input.milestoneId },
-    })
+    });
 
     if (!milestone) {
       throw new TRPCError({
         code: 'NOT_FOUND',
         message: 'Milestone not found',
-      })
+      });
     }
 
-    await permissionService.requireProjectAccess(ctx.user.id, milestone.projectId, 'MEMBER')
+    await permissionService.requireProjectAccess(ctx.user.id, milestone.projectId, 'MEMBER');
 
     // Delete linked GitHub milestone first (before Kanbu milestone is deleted)
     try {
-      await deleteGitHubMilestone(input.milestoneId)
+      await deleteGitHubMilestone(input.milestoneId);
     } catch (error) {
       // Log but don't fail - continue with Kanbu milestone deletion
-      console.error('[MilestoneRouter] Failed to delete GitHub milestone:', error)
+      console.error('[MilestoneRouter] Failed to delete GitHub milestone:', error);
     }
 
     // Remove milestone assignment from all tasks first
     await ctx.prisma.task.updateMany({
       where: { milestoneId: input.milestoneId },
       data: { milestoneId: null },
-    })
+    });
 
     await ctx.prisma.milestone.delete({
       where: { id: input.milestoneId },
-    })
+    });
 
-    return { success: true }
+    return { success: true };
   }),
 
   /**
    * Set milestone for a task (or remove by setting null)
    */
-  setForTask: protectedProcedure.input(setMilestoneForTaskSchema).mutation(async ({ ctx, input }) => {
-    const task = await ctx.prisma.task.findUnique({
-      where: { id: input.taskId },
-    })
+  setForTask: protectedProcedure
+    .input(setMilestoneForTaskSchema)
+    .mutation(async ({ ctx, input }) => {
+      const task = await ctx.prisma.task.findUnique({
+        where: { id: input.taskId },
+      });
 
-    if (!task) {
-      throw new TRPCError({
-        code: 'NOT_FOUND',
-        message: 'Task not found',
-      })
-    }
-
-    await permissionService.requireProjectAccess(ctx.user.id, task.projectId, 'MEMBER')
-
-    // If setting a milestone, verify it exists and is in the same project
-    if (input.milestoneId !== null) {
-      const milestone = await ctx.prisma.milestone.findUnique({
-        where: { id: input.milestoneId },
-      })
-
-      if (!milestone) {
+      if (!task) {
         throw new TRPCError({
           code: 'NOT_FOUND',
-          message: 'Milestone not found',
-        })
+          message: 'Task not found',
+        });
       }
 
-      if (milestone.projectId !== task.projectId) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Task and milestone must be in the same project',
-        })
+      await permissionService.requireProjectAccess(ctx.user.id, task.projectId, 'MEMBER');
+
+      // If setting a milestone, verify it exists and is in the same project
+      if (input.milestoneId !== null) {
+        const milestone = await ctx.prisma.milestone.findUnique({
+          where: { id: input.milestoneId },
+        });
+
+        if (!milestone) {
+          throw new TRPCError({
+            code: 'NOT_FOUND',
+            message: 'Milestone not found',
+          });
+        }
+
+        if (milestone.projectId !== task.projectId) {
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: 'Task and milestone must be in the same project',
+          });
+        }
       }
-    }
 
-    const updated = await ctx.prisma.task.update({
-      where: { id: input.taskId },
-      data: { milestoneId: input.milestoneId },
-    })
+      const updated = await ctx.prisma.task.update({
+        where: { id: input.taskId },
+        data: { milestoneId: input.milestoneId },
+      });
 
-    // Sync milestone assignment to GitHub if task is linked to a GitHub issue
-    try {
-      await syncTaskToGitHub(input.taskId)
-    } catch (error) {
-      // Log but don't fail - the Kanbu task was updated successfully
-      console.error('[MilestoneRouter] Failed to sync task milestone to GitHub:', error)
-    }
+      // Sync milestone assignment to GitHub if task is linked to a GitHub issue
+      try {
+        await syncTaskToGitHub(input.taskId);
+      } catch (error) {
+        // Log but don't fail - the Kanbu task was updated successfully
+        console.error('[MilestoneRouter] Failed to sync task milestone to GitHub:', error);
+      }
 
-    return updated
-  }),
+      return updated;
+    }),
 
   /**
    * Get progress stats for a milestone
@@ -388,43 +395,47 @@ export const milestoneRouter = router({
           },
         },
       },
-    })
+    });
 
     if (!milestone) {
       throw new TRPCError({
         code: 'NOT_FOUND',
         message: 'Milestone not found',
-      })
+      });
     }
 
-    await permissionService.requireProjectAccess(ctx.user.id, milestone.projectId, 'VIEWER')
+    await permissionService.requireProjectAccess(ctx.user.id, milestone.projectId, 'VIEWER');
 
-    const totalTasks = milestone.tasks.length
-    const completedTasks = milestone.tasks.filter((t) => !t.isActive).length
-    const openTasks = milestone.tasks.filter((t) => t.isActive).length
-    const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
+    const totalTasks = milestone.tasks.length;
+    const completedTasks = milestone.tasks.filter((t) => !t.isActive).length;
+    const openTasks = milestone.tasks.filter((t) => t.isActive).length;
+    const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
     // Calculate average task progress for open tasks
-    const openTasksWithProgress = milestone.tasks.filter((t) => t.isActive && t.progress > 0)
-    const avgTaskProgress = openTasksWithProgress.length > 0
-      ? Math.round(openTasksWithProgress.reduce((sum, t) => sum + t.progress, 0) / openTasksWithProgress.length)
-      : 0
+    const openTasksWithProgress = milestone.tasks.filter((t) => t.isActive && t.progress > 0);
+    const avgTaskProgress =
+      openTasksWithProgress.length > 0
+        ? Math.round(
+            openTasksWithProgress.reduce((sum, t) => sum + t.progress, 0) /
+              openTasksWithProgress.length
+          )
+        : 0;
 
     // Calculate due date status
-    let dueStatus: 'overdue' | 'due_soon' | 'on_track' | 'no_date' = 'no_date'
-    let daysUntilDue: number | null = null
+    let dueStatus: 'overdue' | 'due_soon' | 'on_track' | 'no_date' = 'no_date';
+    let daysUntilDue: number | null = null;
     if (milestone.dateDue) {
-      const now = new Date()
-      const dueDate = new Date(milestone.dateDue)
-      daysUntilDue = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+      const now = new Date();
+      const dueDate = new Date(milestone.dateDue);
+      daysUntilDue = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
       if (!milestone.isCompleted) {
         if (daysUntilDue < 0) {
-          dueStatus = 'overdue'
+          dueStatus = 'overdue';
         } else if (daysUntilDue <= 7) {
-          dueStatus = 'due_soon'
+          dueStatus = 'due_soon';
         } else {
-          dueStatus = 'on_track'
+          dueStatus = 'on_track';
         }
       }
     }
@@ -435,7 +446,7 @@ export const milestoneRouter = router({
       high: milestone.tasks.filter((t) => t.priority === 2).length,
       medium: milestone.tasks.filter((t) => t.priority === 1).length,
       low: milestone.tasks.filter((t) => t.priority === 0).length,
-    }
+    };
 
     return {
       milestoneId: milestone.id,
@@ -457,6 +468,6 @@ export const milestoneRouter = router({
         priority: t.priority,
         progress: t.progress,
       })),
-    }
+    };
   }),
-})
+});

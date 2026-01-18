@@ -1,7 +1,9 @@
 # GitHub Module Roadmap
 
 ## Version: 1.0.0
+
 ## Date: 2026-01-10
+
 ## Status: Active
 
 ---
@@ -35,14 +37,14 @@ This roadmap describes the phases to achieve 100% Feature Parity with GitHub Pro
 
 ### Deliverables
 
-| Item | Status | Description |
-|------|--------|-------------|
-| GitHubRepository.workspaceId | 🔲 Todo | Direct link to workspace |
-| Database migration | 🔲 Todo | Adjust schema for workspaceId |
-| Extend Workspace API | 🔲 Todo | Endpoint for GitHub projects |
-| Split Workspace UI | 🔲 Todo | Two sections: Internal + GitHub |
-| GitHub project cards | 🔲 Todo | Card design for repos |
-| Navigate to GitHub project | 🔲 Todo | Set up routes |
+| Item                         | Status  | Description                     |
+| ---------------------------- | ------- | ------------------------------- |
+| GitHubRepository.workspaceId | 🔲 Todo | Direct link to workspace        |
+| Database migration           | 🔲 Todo | Adjust schema for workspaceId   |
+| Extend Workspace API         | 🔲 Todo | Endpoint for GitHub projects    |
+| Split Workspace UI           | 🔲 Todo | Two sections: Internal + GitHub |
+| GitHub project cards         | 🔲 Todo | Card design for repos           |
+| Navigate to GitHub project   | 🔲 Todo | Set up routes                   |
 
 ### Technical Details
 
@@ -56,6 +58,7 @@ Workspace "My Company"
 ```
 
 **Database change:**
+
 ```prisma
 model GitHubRepository {
   // Existing fields...
@@ -81,18 +84,19 @@ model GitHubRepository {
 
 ### Deliverables
 
-| Item | Status | Description |
-|------|--------|-------------|
-| Route structure | 🔲 Todo | `/workspace/:slug/github/:repoId` |
-| GitHubProjectPage | 🔲 Todo | Container component |
-| Board layout | 🔲 Todo | Columns with issues |
-| Issue cards | 🔲 Todo | Compact issue display |
-| Column configuration | 🔲 Todo | Via labels/status |
-| Basic drag & drop | 🔲 Todo | Move issues |
+| Item                 | Status  | Description                       |
+| -------------------- | ------- | --------------------------------- |
+| Route structure      | 🔲 Todo | `/workspace/:slug/github/:repoId` |
+| GitHubProjectPage    | 🔲 Todo | Container component               |
+| Board layout         | 🔲 Todo | Columns with issues               |
+| Issue cards          | 🔲 Todo | Compact issue display             |
+| Column configuration | 🔲 Todo | Via labels/status                 |
+| Basic drag & drop    | 🔲 Todo | Move issues                       |
 
 ### Column Strategies
 
 **Option A: Label-based (recommended)**
+
 ```
 [Backlog]     [Todo]        [In Progress]  [Done]
 status:       status:       status:        status:
@@ -100,11 +104,13 @@ backlog       todo          in-progress    done
 ```
 
 **Option B: Milestone-based**
+
 ```
 [No Milestone]  [v1.0]       [v1.1]        [v2.0]
 ```
 
 **Option C: Assignee-based**
+
 ```
 [Unassigned]   [Robin]      [Jan]         [Piet]
 ```
@@ -127,39 +133,39 @@ backlog       todo          in-progress    done
 
 ### Deliverables
 
-| Item | Status | Description |
-|------|--------|-------------|
-| List View | 🔲 Todo | Issues as list |
-| Table View | 🔲 Todo | Spreadsheet-like display |
-| Filters | 🔲 Todo | Label, assignee, milestone filters |
-| Search | 🔲 Todo | Search in issues |
+| Item               | Status  | Description                        |
+| ------------------ | ------- | ---------------------------------- |
+| List View          | 🔲 Todo | Issues as list                     |
+| Table View         | 🔲 Todo | Spreadsheet-like display           |
+| Filters            | 🔲 Todo | Label, assignee, milestone filters |
+| Search             | 🔲 Todo | Search in issues                   |
 | Keyboard shortcuts | 🔲 Todo | `j/k` navigation, `c` create, etc. |
-| Bulk actions | 🔲 Todo | Select/modify multiple issues |
-| Issue detail panel | 🔲 Todo | Side panel with full issue |
-| Comment thread | 🔲 Todo | Read/write comments |
-| Milestones view | 🔲 Todo | Milestone overview |
-| PR tab | 🔲 Todo | Pull requests overview |
+| Bulk actions       | 🔲 Todo | Select/modify multiple issues      |
+| Issue detail panel | 🔲 Todo | Side panel with full issue         |
+| Comment thread     | 🔲 Todo | Read/write comments                |
+| Milestones view    | 🔲 Todo | Milestone overview                 |
+| PR tab             | 🔲 Todo | Pull requests overview             |
 
 ### Keyboard Shortcuts (GitHub Parity)
 
-| Shortcut | Action |
-|----------|--------|
-| `j` / `k` | Next / previous issue |
-| `o` / `Enter` | Open issue detail |
-| `c` | Create new issue |
-| `x` | Select issue |
-| `e` | Edit issue |
-| `/` | Focus search |
-| `?` | Show shortcuts |
+| Shortcut      | Action                |
+| ------------- | --------------------- |
+| `j` / `k`     | Next / previous issue |
+| `o` / `Enter` | Open issue detail     |
+| `c`           | Create new issue      |
+| `x`           | Select issue          |
+| `e`           | Edit issue            |
+| `/`           | Focus search          |
+| `?`           | Show shortcuts        |
 
 ### Views Comparison
 
-| Feature | GitHub | Kanbu Status |
-|---------|--------|--------------|
-| Board view | ✅ | 🔲 Phase 2 |
-| List view | ✅ | 🔲 Phase 3 |
-| Table view | ✅ | 🔲 Phase 3 |
-| Roadmap view | ✅ | 🔲 Future |
+| Feature      | GitHub | Kanbu Status |
+| ------------ | ------ | ------------ |
+| Board view   | ✅     | 🔲 Phase 2   |
+| List view    | ✅     | 🔲 Phase 3   |
+| Table view   | ✅     | 🔲 Phase 3   |
+| Roadmap view | ✅     | 🔲 Future    |
 
 ### Acceptance Criteria
 
@@ -179,16 +185,16 @@ backlog       todo          in-progress    done
 
 ### Deliverables
 
-| Item | Status | Description |
-|------|--------|-------------|
-| Issue create → GitHub | 🔲 Todo | Create new issues |
-| Issue update → GitHub | 🔲 Todo | Change title, body, state |
-| Issue move → GitHub | 🔲 Todo | Update labels on drag |
-| Comment create → GitHub | 🔲 Todo | Post comments |
-| Milestone update → GitHub | 🔲 Todo | Milestone changes |
-| Conflict detection | 🔲 Todo | Timestamp comparison |
-| Retry mechanism | 🔲 Todo | On temporary failures |
-| Sync status UI | 🔲 Todo | Pending/synced/error indicators |
+| Item                      | Status  | Description                     |
+| ------------------------- | ------- | ------------------------------- |
+| Issue create → GitHub     | 🔲 Todo | Create new issues               |
+| Issue update → GitHub     | 🔲 Todo | Change title, body, state       |
+| Issue move → GitHub       | 🔲 Todo | Update labels on drag           |
+| Comment create → GitHub   | 🔲 Todo | Post comments                   |
+| Milestone update → GitHub | 🔲 Todo | Milestone changes               |
+| Conflict detection        | 🔲 Todo | Timestamp comparison            |
+| Retry mechanism           | 🔲 Todo | On temporary failures           |
+| Sync status UI            | 🔲 Todo | Pending/synced/error indicators |
 
 ### Sync Flow
 
@@ -222,14 +228,14 @@ backlog       todo          in-progress    done
 
 ### Deliverables
 
-| Item | Status | Description |
-|------|--------|-------------|
-| Project Groups | 🔲 Todo | Combine internal + GitHub projects |
-| Cross-project dependencies | 🔲 Todo | Link issues between projects |
-| Combined statistics | 🔲 Todo | Velocity across multiple repos |
-| Custom fields | 🔲 Todo | Extra fields (Kanbu-only) |
-| Time tracking | 🔲 Todo | Register hours (Kanbu-only) |
-| Portfolio view | 🔲 Todo | Overview all projects |
+| Item                       | Status  | Description                        |
+| -------------------------- | ------- | ---------------------------------- |
+| Project Groups             | 🔲 Todo | Combine internal + GitHub projects |
+| Cross-project dependencies | 🔲 Todo | Link issues between projects       |
+| Combined statistics        | 🔲 Todo | Velocity across multiple repos     |
+| Custom fields              | 🔲 Todo | Extra fields (Kanbu-only)          |
+| Time tracking              | 🔲 Todo | Register hours (Kanbu-only)        |
+| Portfolio view             | 🔲 Todo | Overview all projects              |
 
 ### Project Groups
 
@@ -256,20 +262,24 @@ Group "Frontend Team"
 ## Priorities
 
 ### Must Have (Phase 1-2)
+
 - GitHub repos in workspace
 - Basic board view
 - Issue cards with drag & drop
 
 ### Should Have (Phase 3)
+
 - All views (Board, List, Table)
 - Filters and search
 - Keyboard shortcuts
 
 ### Could Have (Phase 4)
+
 - Bi-directional sync
 - Conflict detection
 
 ### Won't Have (Now)
+
 - GitLab/Bitbucket support
 - GitHub Actions integration
 
@@ -277,12 +287,12 @@ Group "Frontend Team"
 
 ## Risks and Mitigations
 
-| Risk | Impact | Mitigation |
-|------|--------|------------|
-| GitHub API rate limits | Medium | Caching, batch requests |
-| Sync conflicts | High | Timestamp-based resolution, UI warnings |
-| Webhook reliability | Medium | Periodic full sync as fallback |
-| Performance with many issues | Medium | Pagination, virtual scrolling |
+| Risk                         | Impact | Mitigation                              |
+| ---------------------------- | ------ | --------------------------------------- |
+| GitHub API rate limits       | Medium | Caching, batch requests                 |
+| Sync conflicts               | High   | Timestamp-based resolution, UI warnings |
+| Webhook reliability          | Medium | Periodic full sync as fallback          |
+| Performance with many issues | Medium | Pagination, virtual scrolling           |
 
 ---
 

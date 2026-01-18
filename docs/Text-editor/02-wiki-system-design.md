@@ -35,13 +35,13 @@ Kanbu Instance
 
 ### Link Types
 
-| Type | Syntax | Example | Description |
-|------|--------|-----------|--------------|
-| Wiki Link | `[[Page Name]]` | `[[API Documentation]]` | Link to page in same wiki |
-| Cross-Wiki | `[[Workspace Wiki/Page]]` | `[[Workspace Wiki/Architecture]]` | Link to parent wiki |
-| Task Link | `#TASK-123` | `#TASK-456` | Link to a task |
-| User Mention | `@username` | `@robin` | Mention a user |
-| Tag | `#tag-name` | `#frontend` | Categorization tag |
+| Type         | Syntax                    | Example                           | Description               |
+| ------------ | ------------------------- | --------------------------------- | ------------------------- |
+| Wiki Link    | `[[Page Name]]`           | `[[API Documentation]]`           | Link to page in same wiki |
+| Cross-Wiki   | `[[Workspace Wiki/Page]]` | `[[Workspace Wiki/Architecture]]` | Link to parent wiki       |
+| Task Link    | `#TASK-123`               | `#TASK-456`                       | Link to a task            |
+| User Mention | `@username`               | `@robin`                          | Mention a user            |
+| Tag          | `#tag-name`               | `#frontend`                       | Categorization tag        |
 
 ## Wiki Page Model
 
@@ -51,28 +51,28 @@ Kanbu Instance
 interface WikiPage {
   // Identity
   id: number;
-  slug: string;                    // URL-friendly: "api-documentation"
-  title: string;                   // Display: "API Documentation"
+  slug: string; // URL-friendly: "api-documentation"
+  title: string; // Display: "API Documentation"
 
   // Content
-  content: LexicalEditorState;     // Rich text JSON
-  plainText: string;               // For full-text search
-  excerpt: string;                 // First 200 chars for previews
+  content: LexicalEditorState; // Rich text JSON
+  plainText: string; // For full-text search
+  excerpt: string; // First 200 chars for previews
 
   // Hierarchy
-  workspaceId?: number;            // If workspace wiki page
-  projectId?: number;              // If project wiki page
-  parentPageId?: number;           // For nested pages
+  workspaceId?: number; // If workspace wiki page
+  projectId?: number; // If project wiki page
+  parentPageId?: number; // For nested pages
 
   // Metadata
   tags: string[];
-  icon?: string;                   // Emoji or icon
-  coverImage?: string;             // Header image URL
+  icon?: string; // Emoji or icon
+  coverImage?: string; // Header image URL
 
   // Timestamps
   createdAt: Date;
   updatedAt: Date;
-  publishedAt?: Date;              // null = draft
+  publishedAt?: Date; // null = draft
 
   // Ownership
   createdById: number;
@@ -94,8 +94,8 @@ interface WikiPageWithRelations extends WikiPage {
   childPages: WikiPage[];
 
   // Links
-  outgoingLinks: WikiLink[];       // Pages this page links to
-  incomingLinks: WikiLink[];       // Pages that link to this page (backlinks)
+  outgoingLinks: WikiLink[]; // Pages this page links to
+  incomingLinks: WikiLink[]; // Pages that link to this page (backlinks)
 
   // Activity
   versions: WikiPageVersion[];
@@ -147,12 +147,12 @@ function resolveWikiLink(
 
 ```typescript
 type LinkStatus =
-  | 'valid'           // Page exists
-  | 'broken'          // Page doesn't exist
-  | 'no-access'       // Page exists but user has no access
-  | 'draft'           // Page exists but is unpublished
-  | 'external'        // External URL
-  | 'create'          // Page doesn't exist, can be created
+  | 'valid' // Page exists
+  | 'broken' // Page doesn't exist
+  | 'no-access' // Page exists but user has no access
+  | 'draft' // Page exists but is unpublished
+  | 'external' // External URL
+  | 'create'; // Page doesn't exist, can be created
 ```
 
 ## Backlinks
@@ -227,14 +227,14 @@ Tags are first-class citizens in the system:
 ```typescript
 interface Tag {
   id: number;
-  name: string;                    // "frontend"
-  slug: string;                    // "frontend"
-  color?: string;                  // "#3B82F6"
+  name: string; // "frontend"
+  slug: string; // "frontend"
+  color?: string; // "#3B82F6"
   description?: string;
 
   // Scope
-  workspaceId?: number;            // Workspace-scoped tag
-  isGlobal: boolean;               // Instance-wide tag
+  workspaceId?: number; // Workspace-scoped tag
+  isGlobal: boolean; // Instance-wide tag
 
   // Stats
   pageCount: number;
@@ -249,9 +249,9 @@ For each tag, a virtual index page is generated:
 ```typescript
 interface TagIndexPage {
   tag: Tag;
-  pages: WikiPage[];               // Pages with this tag
-  tasks: Task[];                   // Tasks with this tag
-  relatedTags: Tag[];              // Tags that often appear together
+  pages: WikiPage[]; // Pages with this tag
+  tasks: Task[]; // Tasks with this tag
+  relatedTags: Tag[]; // Tags that often appear together
 }
 ```
 
@@ -268,6 +268,7 @@ Tags can be hierarchical via `/` separator:
 ```
 
 Query capabilities:
+
 - `#engineering` → All items with engineering or sub-tags
 - `#engineering/frontend` → Only frontend items
 - `#engineering/*` → Direct children of engineering
@@ -292,7 +293,7 @@ interface WikiPageVersion {
 
   // Diff info
   changeType: 'create' | 'edit' | 'restore' | 'merge';
-  changeSummary?: string;          // Optional commit message
+  changeSummary?: string; // Optional commit message
 }
 ```
 
@@ -305,9 +306,9 @@ interface VersionDiff {
   newTitle?: string;
 
   contentChanges: {
-    added: number;                 // Characters added
-    removed: number;               // Characters removed
-    hunks: DiffHunk[];            // Actual diff hunks
+    added: number; // Characters added
+    removed: number; // Characters removed
+    hunks: DiffHunk[]; // Actual diff hunks
   };
 
   tagsAdded: string[];
@@ -339,13 +340,14 @@ For advanced search we use vector embeddings:
 ```typescript
 interface WikiPageEmbedding {
   pageId: number;
-  embedding: number[];             // 1536-dim vector (OpenAI)
-  chunkIndex: number;              // For long pages
-  chunkText: string;               // The text of this chunk
+  embedding: number[]; // 1536-dim vector (OpenAI)
+  chunkIndex: number; // For long pages
+  chunkText: string; // The text of this chunk
 }
 ```
 
 Search flow:
+
 1. Query → Embedding
 2. Vector similarity search in Qdrant
 3. Re-rank results
@@ -357,21 +359,18 @@ Search flow:
 
 ```typescript
 type WikiPermission =
-  | 'view'           // Can read
-  | 'comment'        // Can add comments
-  | 'edit'           // Can edit content
-  | 'manage'         // Can delete, change permissions
+  | 'view' // Can read
+  | 'comment' // Can add comments
+  | 'edit' // Can edit content
+  | 'manage'; // Can delete, change permissions
 ```
 
 ### Permission Resolution
 
 ```typescript
-function getWikiPermission(
-  user: User,
-  page: WikiPage
-): WikiPermission | null {
+function getWikiPermission(user: User, page: WikiPage): WikiPermission | null {
   // 1. Page-level override
-  const pagePermission = page.permissions.find(p => p.userId === user.id);
+  const pagePermission = page.permissions.find((p) => p.userId === user.id);
   if (pagePermission) return pagePermission.level;
 
   // 2. Project-level (if project wiki)
@@ -501,55 +500,47 @@ POST   /api/wiki/pages/:id/restore/:vid   // Restore to version
 ```typescript
 export const wikiRouter = router({
   // Pages
-  createPage: protectedProcedure
-    .input(createPageSchema)
-    .mutation(/* ... */),
+  createPage: protectedProcedure.input(createPageSchema).mutation(/* ... */),
 
-  getPage: protectedProcedure
-    .input(z.object({ id: z.number() }))
-    .query(/* ... */),
+  getPage: protectedProcedure.input(z.object({ id: z.number() })).query(/* ... */),
 
-  updatePage: protectedProcedure
-    .input(updatePageSchema)
-    .mutation(/* ... */),
+  updatePage: protectedProcedure.input(updatePageSchema).mutation(/* ... */),
 
-  deletePage: protectedProcedure
-    .input(z.object({ id: z.number() }))
-    .mutation(/* ... */),
+  deletePage: protectedProcedure.input(z.object({ id: z.number() })).mutation(/* ... */),
 
   // Navigation
   listWorkspacePages: protectedProcedure
     .input(z.object({ workspaceId: z.number() }))
     .query(/* ... */),
 
-  listProjectPages: protectedProcedure
-    .input(z.object({ projectId: z.number() }))
-    .query(/* ... */),
+  listProjectPages: protectedProcedure.input(z.object({ projectId: z.number() })).query(/* ... */),
 
   // Links
-  getBacklinks: protectedProcedure
-    .input(z.object({ pageId: z.number() }))
-    .query(/* ... */),
+  getBacklinks: protectedProcedure.input(z.object({ pageId: z.number() })).query(/* ... */),
 
   resolveLink: protectedProcedure
-    .input(z.object({
-      linkText: z.string(),
-      context: z.object({
-        workspaceId: z.number().optional(),
-        projectId: z.number().optional(),
-      }),
-    }))
+    .input(
+      z.object({
+        linkText: z.string(),
+        context: z.object({
+          workspaceId: z.number().optional(),
+          projectId: z.number().optional(),
+        }),
+      })
+    )
     .query(/* ... */),
 
   // Search
   search: protectedProcedure
-    .input(z.object({
-      query: z.string(),
-      workspaceId: z.number().optional(),
-      projectId: z.number().optional(),
-      tags: z.array(z.string()).optional(),
-      limit: z.number().default(20),
-    }))
+    .input(
+      z.object({
+        query: z.string(),
+        workspaceId: z.number().optional(),
+        projectId: z.number().optional(),
+        tags: z.array(z.string()).optional(),
+        limit: z.number().default(20),
+      })
+    )
     .query(/* ... */),
 });
 ```

@@ -12,8 +12,8 @@
  * Based on Python Graphiti: dedup_helpers.py, dedupe_nodes.py
  */
 
-import type { WikiContext, WikiAiService } from './WikiAiService'
-import type { WikiNodeEmbeddingService } from './WikiNodeEmbeddingService'
+import type { WikiContext, WikiAiService } from './WikiAiService';
+import type { WikiNodeEmbeddingService } from './WikiNodeEmbeddingService';
 import type {
   EntityNodeInfo,
   DuplicateCandidate,
@@ -22,14 +22,14 @@ import type {
   DeduplicationOptions,
   DeduplicationResult,
   DuplicateMatchType,
-} from './types'
-import { DEDUP_CONSTANTS } from './types'
+} from './types';
+import { DEDUP_CONSTANTS } from './types';
 
 /**
  * Default confidence score for LLM-based matches.
  * LLM doesn't provide a numeric confidence, so we use a fixed value.
  */
-const LLM_MATCH_CONFIDENCE = 0.85
+const LLM_MATCH_CONFIDENCE = 0.85;
 
 // ===========================================================================
 // Constants (from Python Graphiti)
@@ -43,25 +43,22 @@ const {
   MINHASH_PERMUTATIONS,
   MINHASH_BAND_SIZE,
   EMBEDDING_THRESHOLD,
-} = DEDUP_CONSTANTS
+} = DEDUP_CONSTANTS;
 
 // ===========================================================================
 // Service Class
 // ===========================================================================
 
 export class WikiDeduplicationService {
-  private nodeEmbeddingService: WikiNodeEmbeddingService | null = null
-  private wikiAiService: WikiAiService | null = null
+  private nodeEmbeddingService: WikiNodeEmbeddingService | null = null;
+  private wikiAiService: WikiAiService | null = null;
 
-  constructor(
-    nodeEmbeddingService?: WikiNodeEmbeddingService,
-    wikiAiService?: WikiAiService
-  ) {
+  constructor(nodeEmbeddingService?: WikiNodeEmbeddingService, wikiAiService?: WikiAiService) {
     if (nodeEmbeddingService) {
-      this.nodeEmbeddingService = nodeEmbeddingService
+      this.nodeEmbeddingService = nodeEmbeddingService;
     }
     if (wikiAiService) {
-      this.wikiAiService = wikiAiService
+      this.wikiAiService = wikiAiService;
     }
   }
 
@@ -69,7 +66,7 @@ export class WikiDeduplicationService {
    * Set the node embedding service (for lazy initialization)
    */
   setNodeEmbeddingService(service: WikiNodeEmbeddingService): void {
-    this.nodeEmbeddingService = service
+    this.nodeEmbeddingService = service;
   }
 
   /**
@@ -77,7 +74,7 @@ export class WikiDeduplicationService {
    * Required for LLM-based deduplication (useLlm: true)
    */
   setWikiAiService(service: WikiAiService): void {
-    this.wikiAiService = service
+    this.wikiAiService = service;
   }
 
   // ===========================================================================
@@ -89,7 +86,7 @@ export class WikiDeduplicationService {
    * Lowercase and collapse whitespace
    */
   normalizeStringExact(name: string): string {
-    return name.toLowerCase().replace(/\s+/g, ' ').trim()
+    return name.toLowerCase().replace(/\s+/g, ' ').trim();
   }
 
   /**
@@ -97,11 +94,11 @@ export class WikiDeduplicationService {
    * Keep alphanumerics and apostrophes only
    */
   normalizeNameForFuzzy(name: string): string {
-    const exact = this.normalizeStringExact(name)
+    const exact = this.normalizeStringExact(name);
     return exact
       .replace(/[^a-z0-9' ]/g, ' ')
       .replace(/\s+/g, ' ')
-      .trim()
+      .trim();
   }
 
   // ===========================================================================
@@ -113,26 +110,26 @@ export class WikiDeduplicationService {
    * Higher entropy = more "information" = more reliable for matching
    */
   calculateNameEntropy(normalizedName: string): number {
-    if (!normalizedName) return 0
+    if (!normalizedName) return 0;
 
-    const chars = normalizedName.replace(/\s/g, '')
-    if (chars.length === 0) return 0
+    const chars = normalizedName.replace(/\s/g, '');
+    if (chars.length === 0) return 0;
 
-    const counts = new Map<string, number>()
+    const counts = new Map<string, number>();
     for (const char of chars) {
-      counts.set(char, (counts.get(char) || 0) + 1)
+      counts.set(char, (counts.get(char) || 0) + 1);
     }
 
-    const total = chars.length
-    let entropy = 0
+    const total = chars.length;
+    let entropy = 0;
 
-    const countValues = Array.from(counts.values())
+    const countValues = Array.from(counts.values());
     for (const count of countValues) {
-      const probability = count / total
-      entropy -= probability * Math.log2(probability)
+      const probability = count / total;
+      entropy -= probability * Math.log2(probability);
     }
 
-    return entropy
+    return entropy;
   }
 
   /**
@@ -140,11 +137,11 @@ export class WikiDeduplicationService {
    * Short or repetitive names are unreliable
    */
   hasHighEntropy(normalizedName: string): boolean {
-    const tokenCount = normalizedName.split(' ').filter(t => t.length > 0).length
+    const tokenCount = normalizedName.split(' ').filter((t) => t.length > 0).length;
     if (normalizedName.length < MIN_NAME_LENGTH && tokenCount < MIN_TOKEN_COUNT) {
-      return false
+      return false;
     }
-    return this.calculateNameEntropy(normalizedName) >= NAME_ENTROPY_THRESHOLD
+    return this.calculateNameEntropy(normalizedName) >= NAME_ENTROPY_THRESHOLD;
   }
 
   // ===========================================================================
@@ -155,81 +152,81 @@ export class WikiDeduplicationService {
    * Create 3-gram shingles from normalized name
    */
   createShingles(normalizedName: string): Set<string> {
-    const cleaned = normalizedName.replace(/\s/g, '')
+    const cleaned = normalizedName.replace(/\s/g, '');
     if (cleaned.length < 3) {
-      return cleaned ? new Set([cleaned]) : new Set()
+      return cleaned ? new Set([cleaned]) : new Set();
     }
 
-    const shingles = new Set<string>()
+    const shingles = new Set<string>();
     for (let i = 0; i <= cleaned.length - 3; i++) {
-      shingles.add(cleaned.slice(i, i + 3))
+      shingles.add(cleaned.slice(i, i + 3));
     }
-    return shingles
+    return shingles;
   }
 
   /**
    * Simple hash function for shingles (FNV-1a-like)
    */
   private hashShingle(shingle: string, seed: number): number {
-    const str = `${seed}:${shingle}`
-    let hash = 2166136261
+    const str = `${seed}:${shingle}`;
+    let hash = 2166136261;
     for (let i = 0; i < str.length; i++) {
-      hash ^= str.charCodeAt(i)
-      hash = (hash * 16777619) >>> 0 // Keep as 32-bit unsigned
+      hash ^= str.charCodeAt(i);
+      hash = (hash * 16777619) >>> 0; // Keep as 32-bit unsigned
     }
-    return hash
+    return hash;
   }
 
   /**
    * Compute MinHash signature for shingle set
    */
   computeMinHashSignature(shingles: Set<string>): number[] {
-    if (shingles.size === 0) return []
+    if (shingles.size === 0) return [];
 
-    const signature: number[] = []
-    const shingleArray = Array.from(shingles)
+    const signature: number[] = [];
+    const shingleArray = Array.from(shingles);
 
     for (let seed = 0; seed < MINHASH_PERMUTATIONS; seed++) {
-      let minHash = Infinity
+      let minHash = Infinity;
       for (const shingle of shingleArray) {
-        const hash = this.hashShingle(shingle, seed)
-        if (hash < minHash) minHash = hash
+        const hash = this.hashShingle(shingle, seed);
+        if (hash < minHash) minHash = hash;
       }
-      signature.push(minHash)
+      signature.push(minHash);
     }
 
-    return signature
+    return signature;
   }
 
   /**
    * Split MinHash signature into LSH bands
    */
   getLshBands(signature: number[]): number[][] {
-    const bands: number[][] = []
+    const bands: number[][] = [];
     for (let start = 0; start < signature.length; start += MINHASH_BAND_SIZE) {
-      const band = signature.slice(start, start + MINHASH_BAND_SIZE)
+      const band = signature.slice(start, start + MINHASH_BAND_SIZE);
       if (band.length === MINHASH_BAND_SIZE) {
-        bands.push(band)
+        bands.push(band);
       }
     }
-    return bands
+    return bands;
   }
 
   /**
    * Calculate Jaccard similarity between two shingle sets
    */
   jaccardSimilarity(a: Set<string>, b: Set<string>): number {
-    if (a.size === 0 && b.size === 0) return 1
-    if (a.size === 0 || b.size === 0) return 0
+    if (a.size === 0 && b.size === 0) return 1;
+    if (a.size === 0 || b.size === 0) return 0;
 
-    let intersection = 0
-    const aItems = Array.from(a)
+    let intersection = 0;
+    const aItems = Array.from(a);
     for (const item of aItems) {
-      if (b.has(item)) intersection++
+      if (b.has(item)) intersection++;
     }
 
-    const union = a.size + b.size - intersection
-    return union > 0 ? intersection / union : 0
+    const union = a.size + b.size - intersection;
+    return union > 0 ? intersection / union : 0;
   }
 
   // ===========================================================================
@@ -241,35 +238,35 @@ export class WikiDeduplicationService {
    * Equivalent to Python's _build_candidate_indexes()
    */
   buildCandidateIndexes(existingNodes: EntityNodeInfo[]): DedupCandidateIndexes {
-    const normalizedExisting = new Map<string, EntityNodeInfo[]>()
-    const nodesByUuid = new Map<string, EntityNodeInfo>()
-    const shinglesByNode = new Map<string, Set<string>>()
-    const lshBuckets = new Map<string, string[]>()
+    const normalizedExisting = new Map<string, EntityNodeInfo[]>();
+    const nodesByUuid = new Map<string, EntityNodeInfo>();
+    const shinglesByNode = new Map<string, Set<string>>();
+    const lshBuckets = new Map<string, string[]>();
 
     for (const node of existingNodes) {
       // Exact match index
-      const normalized = this.normalizeStringExact(node.name)
-      const existing = normalizedExisting.get(normalized) || []
-      existing.push(node)
-      normalizedExisting.set(normalized, existing)
+      const normalized = this.normalizeStringExact(node.name);
+      const existing = normalizedExisting.get(normalized) || [];
+      existing.push(node);
+      normalizedExisting.set(normalized, existing);
 
       // UUID lookup
-      nodesByUuid.set(node.uuid, node)
+      nodesByUuid.set(node.uuid, node);
 
       // Shingles for fuzzy matching
-      const shingles = this.createShingles(this.normalizeNameForFuzzy(node.name))
-      shinglesByNode.set(node.uuid, shingles)
+      const shingles = this.createShingles(this.normalizeNameForFuzzy(node.name));
+      shinglesByNode.set(node.uuid, shingles);
 
       // LSH bands for fast candidate retrieval
-      const signature = this.computeMinHashSignature(shingles)
-      const bands = this.getLshBands(signature)
+      const signature = this.computeMinHashSignature(shingles);
+      const bands = this.getLshBands(signature);
       for (let bandIndex = 0; bandIndex < bands.length; bandIndex++) {
-        const band = bands[bandIndex]
-        if (!band) continue
-        const bandKey = `${bandIndex}:${band.join(',')}`
-        const bucket = lshBuckets.get(bandKey) || []
-        bucket.push(node.uuid)
-        lshBuckets.set(bandKey, bucket)
+        const band = bands[bandIndex];
+        if (!band) continue;
+        const bandKey = `${bandIndex}:${band.join(',')}`;
+        const bucket = lshBuckets.get(bandKey) || [];
+        bucket.push(node.uuid);
+        lshBuckets.set(bandKey, bucket);
       }
     }
 
@@ -279,7 +276,7 @@ export class WikiDeduplicationService {
       normalizedExisting,
       shinglesByNode,
       lshBuckets,
-    }
+    };
   }
 
   // ===========================================================================
@@ -296,18 +293,18 @@ export class WikiDeduplicationService {
     state: DedupResolutionState
   ): void {
     for (let idx = 0; idx < extractedNodes.length; idx++) {
-      const node = extractedNodes[idx]
-      if (!node) continue
-      const normalizedExact = this.normalizeStringExact(node.name)
-      const normalizedFuzzy = this.normalizeNameForFuzzy(node.name)
+      const node = extractedNodes[idx];
+      if (!node) continue;
+      const normalizedExact = this.normalizeStringExact(node.name);
+      const normalizedFuzzy = this.normalizeNameForFuzzy(node.name);
 
       // Try exact match first (works for all unicode characters)
-      const exactMatches = indexes.normalizedExisting.get(normalizedExact) || []
+      const exactMatches = indexes.normalizedExisting.get(normalizedExact) || [];
       if (exactMatches.length === 1) {
-        const match = exactMatches[0]
+        const match = exactMatches[0];
         if (match) {
-          state.resolvedNodes[idx] = match
-          state.uuidMap.set(node.uuid, match.uuid)
+          state.resolvedNodes[idx] = match;
+          state.uuidMap.set(node.uuid, match.uuid);
           if (match.uuid !== node.uuid) {
             state.duplicatePairs.push({
               sourceNode: {
@@ -325,60 +322,60 @@ export class WikiDeduplicationService {
               matchType: 'exact',
               confidence: 1.0,
               metrics: { normalizedEditDistance: 0 },
-            })
+            });
           }
-          continue
+          continue;
         }
       }
 
       // Multiple exact matches - defer to embedding/LLM
       if (exactMatches.length > 1) {
-        state.unresolvedIndices.push(idx)
-        continue
+        state.unresolvedIndices.push(idx);
+        continue;
       }
 
       // No exact match - check entropy for fuzzy matching
       // Skip low-entropy names - defer to LLM or embedding
       if (!this.hasHighEntropy(normalizedFuzzy)) {
-        state.unresolvedIndices.push(idx)
-        continue
+        state.unresolvedIndices.push(idx);
+        continue;
       }
 
       // Try fuzzy match via LSH
-      const shingles = this.createShingles(normalizedFuzzy)
-      const signature = this.computeMinHashSignature(shingles)
-      const bands = this.getLshBands(signature)
+      const shingles = this.createShingles(normalizedFuzzy);
+      const signature = this.computeMinHashSignature(shingles);
+      const bands = this.getLshBands(signature);
 
-      const candidateIds = new Set<string>()
+      const candidateIds = new Set<string>();
       for (let bandIndex = 0; bandIndex < bands.length; bandIndex++) {
-        const band = bands[bandIndex]
-        if (!band) continue
-        const bandKey = `${bandIndex}:${band.join(',')}`
-        const bucket = indexes.lshBuckets.get(bandKey) || []
+        const band = bands[bandIndex];
+        if (!band) continue;
+        const bandKey = `${bandIndex}:${band.join(',')}`;
+        const bucket = indexes.lshBuckets.get(bandKey) || [];
         for (const uuid of bucket) {
-          candidateIds.add(uuid)
+          candidateIds.add(uuid);
         }
       }
 
       // Find best fuzzy match
-      let bestCandidate: EntityNodeInfo | null = null
-      let bestScore = 0
+      let bestCandidate: EntityNodeInfo | null = null;
+      let bestScore = 0;
 
-      const candidateIdArray = Array.from(candidateIds)
+      const candidateIdArray = Array.from(candidateIds);
       for (const candidateId of candidateIdArray) {
-        const candidateShingles = indexes.shinglesByNode.get(candidateId)
-        if (!candidateShingles) continue
+        const candidateShingles = indexes.shinglesByNode.get(candidateId);
+        if (!candidateShingles) continue;
 
-        const score = this.jaccardSimilarity(shingles, candidateShingles)
+        const score = this.jaccardSimilarity(shingles, candidateShingles);
         if (score > bestScore) {
-          bestScore = score
-          bestCandidate = indexes.nodesByUuid.get(candidateId) || null
+          bestScore = score;
+          bestCandidate = indexes.nodesByUuid.get(candidateId) || null;
         }
       }
 
       if (bestCandidate && bestScore >= FUZZY_JACCARD_THRESHOLD) {
-        state.resolvedNodes[idx] = bestCandidate
-        state.uuidMap.set(node.uuid, bestCandidate.uuid)
+        state.resolvedNodes[idx] = bestCandidate;
+        state.uuidMap.set(node.uuid, bestCandidate.uuid);
         if (bestCandidate.uuid !== node.uuid) {
           state.duplicatePairs.push({
             sourceNode: {
@@ -396,13 +393,13 @@ export class WikiDeduplicationService {
             matchType: 'fuzzy',
             confidence: bestScore,
             metrics: { jaccardSimilarity: bestScore },
-          })
+          });
         }
-        continue
+        continue;
       }
 
       // No match found - defer to embedding/LLM
-      state.unresolvedIndices.push(idx)
+      state.unresolvedIndices.push(idx);
     }
   }
 
@@ -421,20 +418,22 @@ export class WikiDeduplicationService {
     threshold: number = EMBEDDING_THRESHOLD
   ): Promise<void> {
     if (!this.nodeEmbeddingService) {
-      console.warn('[WikiDeduplicationService] No embedding service, skipping embedding resolution')
-      return
+      console.warn(
+        '[WikiDeduplicationService] No embedding service, skipping embedding resolution'
+      );
+      return;
     }
 
     // Process only unresolved nodes
-    const stillUnresolved: number[] = []
+    const stillUnresolved: number[] = [];
 
     for (const idx of state.unresolvedIndices) {
-      if (state.resolvedNodes[idx] !== null) continue
+      if (state.resolvedNodes[idx] !== null) continue;
 
-      const node = extractedNodes[idx]
+      const node = extractedNodes[idx];
       if (!node) {
-        stillUnresolved.push(idx)
-        continue
+        stillUnresolved.push(idx);
+        continue;
       }
 
       try {
@@ -443,19 +442,19 @@ export class WikiDeduplicationService {
           nodeType: node.type as 'Concept' | 'Person' | 'Task' | 'Project',
           limit: 5,
           threshold,
-        })
+        });
 
-        const bestMatch = similar[0]
+        const bestMatch = similar[0];
         if (bestMatch && bestMatch.score >= threshold) {
           const matchNode: EntityNodeInfo = {
             uuid: bestMatch.nodeId,
             name: bestMatch.name,
             type: bestMatch.nodeType,
             groupId: bestMatch.groupId,
-          }
+          };
 
-          state.resolvedNodes[idx] = matchNode
-          state.uuidMap.set(node.uuid, bestMatch.nodeId)
+          state.resolvedNodes[idx] = matchNode;
+          state.uuidMap.set(node.uuid, bestMatch.nodeId);
           state.duplicatePairs.push({
             sourceNode: {
               uuid: node.uuid,
@@ -472,22 +471,22 @@ export class WikiDeduplicationService {
             matchType: 'embedding',
             confidence: bestMatch.score,
             metrics: { cosineSimilarity: bestMatch.score },
-          })
+          });
         } else {
-          stillUnresolved.push(idx)
+          stillUnresolved.push(idx);
         }
       } catch (error) {
         console.error(
           '[WikiDeduplicationService] Embedding search failed for node:',
           node.name,
           error
-        )
-        stillUnresolved.push(idx)
+        );
+        stillUnresolved.push(idx);
       }
     }
 
     // Update unresolved indices
-    state.unresolvedIndices = stillUnresolved
+    state.unresolvedIndices = stillUnresolved;
   }
 
   // ===========================================================================
@@ -516,24 +515,24 @@ export class WikiDeduplicationService {
     previousEpisodes?: string[]
   ): Promise<void> {
     if (!this.wikiAiService) {
-      console.warn('[WikiDeduplicationService] No WikiAiService, skipping LLM resolution')
-      return
+      console.warn('[WikiDeduplicationService] No WikiAiService, skipping LLM resolution');
+      return;
     }
 
     if (state.unresolvedIndices.length === 0) {
-      console.log('[WikiDeduplicationService] No unresolved nodes for LLM')
-      return
+      console.log('[WikiDeduplicationService] No unresolved nodes for LLM');
+      return;
     }
 
     // Build extracted nodes context for LLM
     const llmExtractedNodes = state.unresolvedIndices.map((idx, i) => {
-      const node = extractedNodes[idx]
+      const node = extractedNodes[idx];
       return {
         id: i, // Relative ID within unresolved batch
         name: node?.name || '',
         entity_type: [node?.type || 'Entity'],
-      }
-    })
+      };
+    });
 
     // Build existing nodes context for LLM
     const llmExistingNodes = indexes.existingNodes.map((node, idx) => ({
@@ -541,11 +540,11 @@ export class WikiDeduplicationService {
       name: node.name,
       entity_types: [node.type],
       summary: node.summary,
-    }))
+    }));
 
     console.log(
       `[WikiDeduplicationService] Calling LLM for ${llmExtractedNodes.length} unresolved nodes against ${llmExistingNodes.length} existing`
-    )
+    );
 
     try {
       // Call LLM for deduplication
@@ -555,39 +554,39 @@ export class WikiDeduplicationService {
         llmExistingNodes,
         episodeContent || '',
         previousEpisodes
-      )
+      );
 
       // Process LLM response
       const validRange = new Set(
         Array.from({ length: state.unresolvedIndices.length }, (_, i) => i)
-      )
+      );
 
-      const stillUnresolved: number[] = []
+      const stillUnresolved: number[] = [];
 
       for (const resolution of response.entityResolutions) {
-        const relativeId = resolution.id
-        const duplicateIdx = resolution.duplicateIdx
+        const relativeId = resolution.id;
+        const duplicateIdx = resolution.duplicateIdx;
 
         if (!validRange.has(relativeId)) {
-          console.warn(`[WikiDeduplicationService] Invalid LLM dedupe id ${relativeId}, skipping`)
-          continue
+          console.warn(`[WikiDeduplicationService] Invalid LLM dedupe id ${relativeId}, skipping`);
+          continue;
         }
 
-        const originalIndex = state.unresolvedIndices[relativeId]
-        if (originalIndex === undefined) continue
+        const originalIndex = state.unresolvedIndices[relativeId];
+        if (originalIndex === undefined) continue;
 
-        const extractedNode = extractedNodes[originalIndex]
-        if (!extractedNode) continue
+        const extractedNode = extractedNodes[originalIndex];
+        if (!extractedNode) continue;
 
         if (duplicateIdx === -1) {
           // No duplicate found by LLM - mark as still unresolved (will become new node)
-          stillUnresolved.push(originalIndex)
+          stillUnresolved.push(originalIndex);
         } else if (duplicateIdx >= 0 && duplicateIdx < indexes.existingNodes.length) {
           // Found duplicate by LLM
-          const resolvedNode = indexes.existingNodes[duplicateIdx]
+          const resolvedNode = indexes.existingNodes[duplicateIdx];
           if (resolvedNode) {
-            state.resolvedNodes[originalIndex] = resolvedNode
-            state.uuidMap.set(extractedNode.uuid, resolvedNode.uuid)
+            state.resolvedNodes[originalIndex] = resolvedNode;
+            state.uuidMap.set(extractedNode.uuid, resolvedNode.uuid);
 
             // Only add to duplicatePairs if they're actually different nodes
             if (resolvedNode.uuid !== extractedNode.uuid) {
@@ -607,40 +606,40 @@ export class WikiDeduplicationService {
                 matchType: 'llm',
                 confidence: LLM_MATCH_CONFIDENCE,
                 metrics: {},
-              })
+              });
             }
           } else {
-            stillUnresolved.push(originalIndex)
+            stillUnresolved.push(originalIndex);
           }
         } else {
           console.warn(
             `[WikiDeduplicationService] Invalid duplicate_idx ${duplicateIdx}, treating as no duplicate`
-          )
-          stillUnresolved.push(originalIndex)
+          );
+          stillUnresolved.push(originalIndex);
         }
       }
 
       // Handle any unresolved indices that weren't in the LLM response
       for (let i = 0; i < state.unresolvedIndices.length; i++) {
-        const originalIndex = state.unresolvedIndices[i]
-        if (originalIndex === undefined) continue
-        const wasProcessed = response.entityResolutions.some((r) => r.id === i)
+        const originalIndex = state.unresolvedIndices[i];
+        if (originalIndex === undefined) continue;
+        const wasProcessed = response.entityResolutions.some((r) => r.id === i);
         if (!wasProcessed && state.resolvedNodes[originalIndex] === null) {
-          stillUnresolved.push(originalIndex)
+          stillUnresolved.push(originalIndex);
         }
       }
 
       // Update unresolved indices
-      state.unresolvedIndices = stillUnresolved
+      state.unresolvedIndices = stillUnresolved;
 
       console.log(
         `[WikiDeduplicationService] After LLM: ${stillUnresolved.length} still unresolved`
-      )
+      );
     } catch (error) {
       console.error(
         '[WikiDeduplicationService] LLM deduplication failed:',
         error instanceof Error ? error.message : error
-      )
+      );
       // Keep all as unresolved on error
     }
   }
@@ -678,16 +677,16 @@ export class WikiDeduplicationService {
       useEmbeddings = true,
       useLlm = true,
       embeddingThreshold = EMBEDDING_THRESHOLD,
-    } = options
+    } = options;
 
     // Build context for embedding service
     const context: WikiContext = {
       workspaceId,
       projectId,
-    }
+    };
 
     // Build indexes
-    const indexes = this.buildCandidateIndexes(existingNodes)
+    const indexes = this.buildCandidateIndexes(existingNodes);
 
     // Initialize state
     const state: DedupResolutionState = {
@@ -695,7 +694,7 @@ export class WikiDeduplicationService {
       uuidMap: new Map(),
       unresolvedIndices: [],
       duplicatePairs: [],
-    }
+    };
 
     // Track stats
     const stats = {
@@ -705,37 +704,37 @@ export class WikiDeduplicationService {
       embeddingMatches: 0,
       llmMatches: 0,
       newNodes: 0,
-    }
+    };
 
     // Step 1: Deterministic resolution (exact + fuzzy)
     console.log(
       `[WikiDeduplicationService] Starting dedup for ${extractedNodes.length} nodes against ${existingNodes.length} existing`
-    )
-    this.resolveWithSimilarity(extractedNodes, indexes, state)
+    );
+    this.resolveWithSimilarity(extractedNodes, indexes, state);
 
     // Count exact and fuzzy matches
     for (const pair of state.duplicatePairs) {
-      if (pair.matchType === 'exact') stats.exactMatches++
-      if (pair.matchType === 'fuzzy') stats.fuzzyMatches++
+      if (pair.matchType === 'exact') stats.exactMatches++;
+      if (pair.matchType === 'fuzzy') stats.fuzzyMatches++;
     }
 
     console.log(
       `[WikiDeduplicationService] After deterministic: ${state.unresolvedIndices.length} unresolved`
-    )
+    );
 
     // Step 2: Embedding-based resolution
     if (useEmbeddings && state.unresolvedIndices.length > 0 && this.nodeEmbeddingService) {
-      const beforeEmbedding = state.duplicatePairs.length
-      await this.resolveWithEmbeddings(extractedNodes, state, context, embeddingThreshold)
-      stats.embeddingMatches = state.duplicatePairs.length - beforeEmbedding
+      const beforeEmbedding = state.duplicatePairs.length;
+      await this.resolveWithEmbeddings(extractedNodes, state, context, embeddingThreshold);
+      stats.embeddingMatches = state.duplicatePairs.length - beforeEmbedding;
       console.log(
         `[WikiDeduplicationService] After embeddings: ${state.unresolvedIndices.length} unresolved`
-      )
+      );
     }
 
     // Step 3: LLM-based resolution for remaining nodes
     if (useLlm && state.unresolvedIndices.length > 0 && this.wikiAiService) {
-      const beforeLlm = state.duplicatePairs.length
+      const beforeLlm = state.duplicatePairs.length;
       await this.resolveWithLlm(
         extractedNodes,
         indexes,
@@ -743,21 +742,21 @@ export class WikiDeduplicationService {
         context,
         episodeContent,
         previousEpisodes
-      )
-      stats.llmMatches = state.duplicatePairs.length - beforeLlm
+      );
+      stats.llmMatches = state.duplicatePairs.length - beforeLlm;
       console.log(
         `[WikiDeduplicationService] After LLM: ${state.unresolvedIndices.length} unresolved`
-      )
+      );
     }
 
     // Step 4: Fill in any remaining unresolved nodes as "new"
     for (let idx = 0; idx < extractedNodes.length; idx++) {
       if (state.resolvedNodes[idx] === null) {
-        const node = extractedNodes[idx]
+        const node = extractedNodes[idx];
         if (node) {
-          state.resolvedNodes[idx] = node
-          state.uuidMap.set(node.uuid, node.uuid)
-          stats.newNodes++
+          state.resolvedNodes[idx] = node;
+          state.uuidMap.set(node.uuid, node.uuid);
+          stats.newNodes++;
         }
       }
     }
@@ -767,7 +766,7 @@ export class WikiDeduplicationService {
       uuidMap: state.uuidMap,
       duplicatePairs: state.duplicatePairs,
       stats,
-    }
+    };
   }
 
   // ===========================================================================
@@ -781,37 +780,37 @@ export class WikiDeduplicationService {
   async findDuplicatesInWorkspace(
     nodes: EntityNodeInfo[],
     options: {
-      threshold?: number
-      limit?: number
+      threshold?: number;
+      limit?: number;
     } = {}
   ): Promise<DuplicateCandidate[]> {
-    const { threshold = FUZZY_JACCARD_THRESHOLD, limit = 100 } = options
-    const duplicates: DuplicateCandidate[] = []
+    const { threshold = FUZZY_JACCARD_THRESHOLD, limit = 100 } = options;
+    const duplicates: DuplicateCandidate[] = [];
 
     // Build indexes
-    const indexes = this.buildCandidateIndexes(nodes)
+    const indexes = this.buildCandidateIndexes(nodes);
 
     // Compare each node against all others
     for (let i = 0; i < nodes.length && duplicates.length < limit; i++) {
-      const node = nodes[i]
-      if (!node) continue
+      const node = nodes[i];
+      if (!node) continue;
 
-      const normalizedFuzzy = this.normalizeNameForFuzzy(node.name)
+      const normalizedFuzzy = this.normalizeNameForFuzzy(node.name);
 
       // Skip low-entropy names
-      if (!this.hasHighEntropy(normalizedFuzzy)) continue
+      if (!this.hasHighEntropy(normalizedFuzzy)) continue;
 
-      const shingles = this.createShingles(normalizedFuzzy)
+      const shingles = this.createShingles(normalizedFuzzy);
 
       // Check against all subsequent nodes to avoid duplicates
-      const normalizedExact = this.normalizeStringExact(node.name)
+      const normalizedExact = this.normalizeStringExact(node.name);
 
       for (let j = i + 1; j < nodes.length && duplicates.length < limit; j++) {
-        const other = nodes[j]
-        if (!other) continue
+        const other = nodes[j];
+        if (!other) continue;
 
         // First check for exact match (case-insensitive, whitespace normalized)
-        const otherNormalizedExact = this.normalizeStringExact(other.name)
+        const otherNormalizedExact = this.normalizeStringExact(other.name);
         if (normalizedExact === otherNormalizedExact) {
           duplicates.push({
             sourceNode: {
@@ -829,15 +828,15 @@ export class WikiDeduplicationService {
             matchType: 'exact' as DuplicateMatchType,
             confidence: 1.0,
             metrics: {},
-          })
-          continue
+          });
+          continue;
         }
 
         // Fall back to fuzzy matching
-        const otherShingles = indexes.shinglesByNode.get(other.uuid)
-        if (!otherShingles) continue
+        const otherShingles = indexes.shinglesByNode.get(other.uuid);
+        if (!otherShingles) continue;
 
-        const score = this.jaccardSimilarity(shingles, otherShingles)
+        const score = this.jaccardSimilarity(shingles, otherShingles);
         if (score >= threshold) {
           duplicates.push({
             sourceNode: {
@@ -855,12 +854,12 @@ export class WikiDeduplicationService {
             matchType: 'fuzzy' as DuplicateMatchType,
             confidence: score,
             metrics: { jaccardSimilarity: score },
-          })
+          });
         }
       }
     }
 
-    return duplicates
+    return duplicates;
   }
 }
 
@@ -868,7 +867,7 @@ export class WikiDeduplicationService {
 // Singleton Instance
 // ===========================================================================
 
-let serviceInstance: WikiDeduplicationService | null = null
+let serviceInstance: WikiDeduplicationService | null = null;
 
 /**
  * Get the singleton WikiDeduplicationService instance
@@ -881,19 +880,19 @@ export function getWikiDeduplicationService(
   wikiAiService?: WikiAiService
 ): WikiDeduplicationService {
   if (!serviceInstance) {
-    serviceInstance = new WikiDeduplicationService(nodeEmbeddingService, wikiAiService)
+    serviceInstance = new WikiDeduplicationService(nodeEmbeddingService, wikiAiService);
   } else {
     // Inject services if not already set
     if (nodeEmbeddingService && !serviceInstance['nodeEmbeddingService']) {
-      serviceInstance.setNodeEmbeddingService(nodeEmbeddingService)
+      serviceInstance.setNodeEmbeddingService(nodeEmbeddingService);
     }
     if (wikiAiService && !serviceInstance['wikiAiService']) {
-      serviceInstance.setWikiAiService(wikiAiService)
+      serviceInstance.setWikiAiService(wikiAiService);
     }
   }
-  return serviceInstance
+  return serviceInstance;
 }
 
 export function resetWikiDeduplicationService(): void {
-  serviceInstance = null
+  serviceInstance = null;
 }

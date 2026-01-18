@@ -15,32 +15,32 @@
 // Core Types
 // =============================================================================
 
-export type AiProviderType = 'OPENAI' | 'OLLAMA' | 'LM_STUDIO'
-export type AiCapability = 'EMBEDDING' | 'REASONING' | 'VISION'
+export type AiProviderType = 'OPENAI' | 'OLLAMA' | 'LM_STUDIO';
+export type AiCapability = 'EMBEDDING' | 'REASONING' | 'VISION';
 
 export interface ProviderConfig {
-  type: AiProviderType
-  baseUrl: string
-  apiKey?: string | null
-  organizationId?: string | null
-  embeddingModel?: string | null
-  reasoningModel?: string | null
-  visionModel?: string | null
-  maxRequestsPerMinute?: number | null
-  maxTokensPerMinute?: number | null
+  type: AiProviderType;
+  baseUrl: string;
+  apiKey?: string | null;
+  organizationId?: string | null;
+  embeddingModel?: string | null;
+  reasoningModel?: string | null;
+  visionModel?: string | null;
+  maxRequestsPerMinute?: number | null;
+  maxTokensPerMinute?: number | null;
 }
 
 export interface ConnectionTestResult {
-  success: boolean
-  latencyMs: number | null
-  error?: string
-  models?: string[]
+  success: boolean;
+  latencyMs: number | null;
+  error?: string;
+  models?: string[];
 }
 
 export interface ModelInfo {
-  id: string
-  type: 'embedding' | 'reasoning' | 'vision' | 'unknown'
-  ownedBy?: string
+  id: string;
+  type: 'embedding' | 'reasoning' | 'vision' | 'unknown';
+  ownedBy?: string;
 }
 
 // =============================================================================
@@ -48,25 +48,25 @@ export interface ModelInfo {
 // =============================================================================
 
 export interface ChatMessage {
-  role: 'system' | 'user' | 'assistant'
-  content: string | ChatMessageContent[]
+  role: 'system' | 'user' | 'assistant';
+  content: string | ChatMessageContent[];
 }
 
 export interface ChatMessageContent {
-  type: 'text' | 'image_url'
-  text?: string
+  type: 'text' | 'image_url';
+  text?: string;
   image_url?: {
-    url: string
-    detail?: 'auto' | 'low' | 'high'
-  }
+    url: string;
+    detail?: 'auto' | 'low' | 'high';
+  };
 }
 
 export interface ReasoningOptions {
-  model?: string
-  temperature?: number
-  maxTokens?: number
-  topP?: number
-  stop?: string[]
+  model?: string;
+  temperature?: number;
+  maxTokens?: number;
+  topP?: number;
+  stop?: string[];
 }
 
 // =============================================================================
@@ -74,12 +74,12 @@ export interface ReasoningOptions {
 // =============================================================================
 
 export interface ExtractedEntity {
-  name: string
-  type: string
-  confidence: number
-  startIndex?: number
-  endIndex?: number
-  metadata?: Record<string, unknown>
+  name: string;
+  type: string;
+  confidence: number;
+  startIndex?: number;
+  endIndex?: number;
+  metadata?: Record<string, unknown>;
 }
 
 // =============================================================================
@@ -90,24 +90,24 @@ export interface ExtractedEntity {
  * Base interface for all AI providers
  */
 export interface AiProvider {
-  readonly type: AiProviderType
-  readonly capabilities: AiCapability[]
-  readonly baseUrl: string
+  readonly type: AiProviderType;
+  readonly capabilities: AiCapability[];
+  readonly baseUrl: string;
 
   /**
    * Test connection to the provider
    */
-  testConnection(): Promise<ConnectionTestResult>
+  testConnection(): Promise<ConnectionTestResult>;
 
   /**
    * List available models, optionally filtered by capability
    */
-  listModels(capability?: AiCapability): Promise<ModelInfo[]>
+  listModels(capability?: AiCapability): Promise<ModelInfo[]>;
 
   /**
    * Check if provider supports a specific capability
    */
-  hasCapability(capability: AiCapability): boolean
+  hasCapability(capability: AiCapability): boolean;
 }
 
 /**
@@ -117,22 +117,22 @@ export interface EmbeddingProvider extends AiProvider {
   /**
    * Generate embedding for a single text
    */
-  embed(text: string): Promise<number[]>
+  embed(text: string): Promise<number[]>;
 
   /**
    * Generate embeddings for multiple texts (batch)
    */
-  embedBatch(texts: string[]): Promise<number[][]>
+  embedBatch(texts: string[]): Promise<number[][]>;
 
   /**
    * Get the dimension of the embedding vectors
    */
-  getDimensions(): number
+  getDimensions(): number;
 
   /**
    * Get the model name used for embeddings
    */
-  getModelName(): string
+  getModelName(): string;
 }
 
 /**
@@ -142,27 +142,27 @@ export interface ReasoningProvider extends AiProvider {
   /**
    * Extract entities from text using LLM
    */
-  extractEntities(text: string, entityTypes: string[]): Promise<ExtractedEntity[]>
+  extractEntities(text: string, entityTypes: string[]): Promise<ExtractedEntity[]>;
 
   /**
    * Summarize text
    */
-  summarize(text: string, maxLength?: number): Promise<string>
+  summarize(text: string, maxLength?: number): Promise<string>;
 
   /**
    * Chat completion (non-streaming)
    */
-  chat(messages: ChatMessage[], options?: ReasoningOptions): Promise<string>
+  chat(messages: ChatMessage[], options?: ReasoningOptions): Promise<string>;
 
   /**
    * Chat completion (streaming)
    */
-  stream(messages: ChatMessage[], options?: ReasoningOptions): AsyncIterable<string>
+  stream(messages: ChatMessage[], options?: ReasoningOptions): AsyncIterable<string>;
 
   /**
    * Get the model name used for reasoning
    */
-  getReasoningModel(): string
+  getReasoningModel(): string;
 }
 
 /**
@@ -174,18 +174,18 @@ export interface VisionProvider extends AiProvider {
    * @param image - Base64 encoded image or URL
    * @param prompt - Optional prompt for description
    */
-  describeImage(image: string, prompt?: string): Promise<string>
+  describeImage(image: string, prompt?: string): Promise<string>;
 
   /**
    * Extract text from an image (OCR)
    * @param image - Base64 encoded image or URL
    */
-  extractTextFromImage(image: string): Promise<string>
+  extractTextFromImage(image: string): Promise<string>;
 
   /**
    * Get the model name used for vision
    */
-  getVisionModel(): string
+  getVisionModel(): string;
 }
 
 // =============================================================================
@@ -208,8 +208,8 @@ export class ProviderError extends Error {
     public readonly code: ProviderErrorCode,
     public readonly cause?: Error
   ) {
-    super(message)
-    this.name = 'ProviderError'
+    super(message);
+    this.name = 'ProviderError';
   }
 }
 
@@ -220,7 +220,7 @@ export type ProviderErrorCode =
   | 'MODEL_NOT_FOUND'
   | 'INVALID_REQUEST'
   | 'TIMEOUT'
-  | 'UNKNOWN'
+  | 'UNKNOWN';
 
 // =============================================================================
 // Default Model Constants
@@ -242,13 +242,13 @@ export const DEFAULT_MODELS = {
     reasoning: 'llama3.2:8b',
     vision: 'llava:7b',
   },
-} as const
+} as const;
 
 export const DEFAULT_URLS = {
   OPENAI: 'https://api.openai.com/v1',
   OLLAMA: 'http://localhost:11434/v1',
   LM_STUDIO: 'http://localhost:1234/v1',
-} as const
+} as const;
 
 export const EMBEDDING_DIMENSIONS = {
   'text-embedding-3-small': 1536,
@@ -258,4 +258,4 @@ export const EMBEDDING_DIMENSIONS = {
   'bge-small-en': 384,
   'bge-base-en': 768,
   'bge-large-en': 1024,
-} as const
+} as const;

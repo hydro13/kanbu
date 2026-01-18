@@ -37,65 +37,79 @@
  * =============================================================================
  */
 
-import { TRPCError } from '@trpc/server'
-import { prisma } from '../lib/prisma'
+import { TRPCError } from '@trpc/server';
+import { prisma } from '../lib/prisma';
 
 // =============================================================================
 // Permission Constants
 // =============================================================================
 
 export const ACL_PERMISSIONS = {
-  READ: 1,      // 0b00001
-  WRITE: 2,     // 0b00010
-  EXECUTE: 4,   // 0b00100
-  DELETE: 8,    // 0b01000
+  READ: 1, // 0b00001
+  WRITE: 2, // 0b00010
+  EXECUTE: 4, // 0b00100
+  DELETE: 8, // 0b01000
   PERMISSIONS: 16, // 0b10000
-} as const
+} as const;
 
 // Common permission combinations
 export const ACL_PRESETS = {
   NONE: 0,
-  READ_ONLY: ACL_PERMISSIONS.READ,                                             // 1
+  READ_ONLY: ACL_PERMISSIONS.READ, // 1
   CONTRIBUTOR: ACL_PERMISSIONS.READ | ACL_PERMISSIONS.WRITE | ACL_PERMISSIONS.EXECUTE, // 7
-  EDITOR: ACL_PERMISSIONS.READ | ACL_PERMISSIONS.WRITE | ACL_PERMISSIONS.EXECUTE | ACL_PERMISSIONS.DELETE, // 15
-  FULL_CONTROL: ACL_PERMISSIONS.READ | ACL_PERMISSIONS.WRITE | ACL_PERMISSIONS.EXECUTE | ACL_PERMISSIONS.DELETE | ACL_PERMISSIONS.PERMISSIONS, // 31
-} as const
+  EDITOR:
+    ACL_PERMISSIONS.READ | ACL_PERMISSIONS.WRITE | ACL_PERMISSIONS.EXECUTE | ACL_PERMISSIONS.DELETE, // 15
+  FULL_CONTROL:
+    ACL_PERMISSIONS.READ |
+    ACL_PERMISSIONS.WRITE |
+    ACL_PERMISSIONS.EXECUTE |
+    ACL_PERMISSIONS.DELETE |
+    ACL_PERMISSIONS.PERMISSIONS, // 31
+} as const;
 
 // Resource types - Extended hierarchy (Fase 4C, 8B)
 // root → system/dashboard/workspaces → workspace:{id} → project:{id} → feature:{id}
-export type AclResourceType = 'root' | 'system' | 'dashboard' | 'workspace' | 'project' | 'feature' | 'admin' | 'profile'
+export type AclResourceType =
+  | 'root'
+  | 'system'
+  | 'dashboard'
+  | 'workspace'
+  | 'project'
+  | 'feature'
+  | 'admin'
+  | 'profile';
 
 // Principal types
-export type AclPrincipalType = 'user' | 'group'
+export type AclPrincipalType = 'user' | 'group';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface AclCheckResult {
-  allowed: boolean
-  effectivePermissions: number
-  deniedPermissions: number
+  allowed: boolean;
+  effectivePermissions: number;
+  deniedPermissions: number;
   matchedEntries: {
-    id: number
-    source: 'user' | 'group'
-    groupName?: string
-    permissions: number
-    deny: boolean
-    inherited: boolean
-  }[]
+    id: number;
+    source: 'user' | 'group';
+    groupName?: string;
+    permissions: number;
+    deny: boolean;
+    inherited: boolean;
+  }[];
 }
 
 export interface AclEntry {
-  id: number
-  resourceType: string
-  resourceId: number | null
-  principalType: string
-  principalId: number
-  permissions: number
-  deny: boolean
-  inherited: boolean
-  inheritToChildren: boolean
+  id: number;
+  resourceType: string;
+  resourceId: number | null;
+  principalType: string;
+  principalId: number;
+  permissions: number;
+  deny: boolean;
+  inherited: boolean;
+  inheritToChildren: boolean;
 }
 
 // =============================================================================
@@ -123,15 +137,15 @@ export class AclService {
     resourceId: number | null,
     requiredPermission: number
   ): Promise<boolean> {
-    const result = await this.checkPermission(userId, resourceType, resourceId)
+    const result = await this.checkPermission(userId, resourceType, resourceId);
 
     // Check if any required permission is denied
     if ((result.deniedPermissions & requiredPermission) !== 0) {
-      return false
+      return false;
     }
 
     // Check if all required permissions are allowed
-    return (result.effectivePermissions & requiredPermission) === requiredPermission
+    return (result.effectivePermissions & requiredPermission) === requiredPermission;
   }
 
   /**
@@ -148,20 +162,20 @@ export class AclService {
       where: { userId },
       select: {
         groupId: true,
-        group: { select: { name: true } }
-      }
-    })
-    const groupIds = userGroups.map(g => g.groupId)
-    const groupNameMap = new Map(userGroups.map(g => [g.groupId, g.group.name]))
+        group: { select: { name: true } },
+      },
+    });
+    const groupIds = userGroups.map((g) => g.groupId);
+    const groupNameMap = new Map(userGroups.map((g) => [g.groupId, g.group.name]));
 
     // 2. Build resource hierarchy for inheritance
     // For now: workspace -> project (project inherits from workspace)
-    const resourceHierarchy = await this.buildResourceHierarchy(resourceType, resourceId)
+    const resourceHierarchy = await this.buildResourceHierarchy(resourceType, resourceId);
 
     // 3. Fetch all relevant ACL entries
     const aclEntries = await prisma.aclEntry.findMany({
       where: {
-        OR: resourceHierarchy.map(res => ({
+        OR: resourceHierarchy.map((res) => ({
           resourceType: res.type,
           resourceId: res.id,
         })),
@@ -170,52 +184,55 @@ export class AclService {
             // Direct user entries
             { principalType: 'user', principalId: userId },
             // Group entries (if user is in any groups)
-            ...(groupIds.length > 0 ? [{ principalType: 'group', principalId: { in: groupIds } }] : []),
-          ]
-        }
+            ...(groupIds.length > 0
+              ? [{ principalType: 'group', principalId: { in: groupIds } }]
+              : []),
+          ],
+        },
       },
       orderBy: [
         // Order: most specific first (child before parent)
         { inherited: 'asc' },
         // Deny entries should be processed (they always win regardless of order)
         { deny: 'desc' },
-      ]
-    })
+      ],
+    });
 
     // 4. Calculate effective permissions using deny-first logic
-    let allowedPermissions = 0
-    let deniedPermissions = 0
-    const matchedEntries: AclCheckResult['matchedEntries'] = []
+    let allowedPermissions = 0;
+    let deniedPermissions = 0;
+    const matchedEntries: AclCheckResult['matchedEntries'] = [];
 
     for (const entry of aclEntries) {
       const entryInfo = {
         id: entry.id,
         source: entry.principalType as 'user' | 'group',
-        groupName: entry.principalType === 'group' ? groupNameMap.get(entry.principalId) : undefined,
+        groupName:
+          entry.principalType === 'group' ? groupNameMap.get(entry.principalId) : undefined,
         permissions: entry.permissions,
         deny: entry.deny,
         inherited: entry.inherited,
-      }
-      matchedEntries.push(entryInfo)
+      };
+      matchedEntries.push(entryInfo);
 
       if (entry.deny) {
         // Deny ALWAYS wins - add to denied permissions
-        deniedPermissions |= entry.permissions
+        deniedPermissions |= entry.permissions;
       } else {
         // Allow - add to allowed permissions (but may be overridden by deny)
-        allowedPermissions |= entry.permissions
+        allowedPermissions |= entry.permissions;
       }
     }
 
     // Effective = allowed minus denied
-    const effectivePermissions = allowedPermissions & ~deniedPermissions
+    const effectivePermissions = allowedPermissions & ~deniedPermissions;
 
     return {
       allowed: effectivePermissions > 0,
       effectivePermissions,
       deniedPermissions,
       matchedEntries,
-    }
+    };
   }
 
   /**
@@ -237,14 +254,14 @@ export class AclService {
     resourceType: AclResourceType,
     resourceId: number | null
   ): Promise<{ type: AclResourceType; id: number | null }[]> {
-    const hierarchy: { type: AclResourceType; id: number | null }[] = []
+    const hierarchy: { type: AclResourceType; id: number | null }[] = [];
 
     // Add the specific resource
-    hierarchy.push({ type: resourceType, id: resourceId })
+    hierarchy.push({ type: resourceType, id: resourceId });
 
     // Add root level of this type (for inherited permissions)
     if (resourceId !== null) {
-      hierarchy.push({ type: resourceType, id: null })
+      hierarchy.push({ type: resourceType, id: null });
     }
 
     // Handle cross-resource inheritance based on type
@@ -254,74 +271,74 @@ export class AclService {
         if (resourceId !== null) {
           const feature = await prisma.feature.findUnique({
             where: { id: resourceId },
-            select: { projectId: true }
-          })
+            select: { projectId: true },
+          });
           if (feature?.projectId) {
             // Add the project
-            hierarchy.push({ type: 'project', id: feature.projectId })
-            hierarchy.push({ type: 'project', id: null }) // All projects level
+            hierarchy.push({ type: 'project', id: feature.projectId });
+            hierarchy.push({ type: 'project', id: null }); // All projects level
             // Add workspace
             const project = await prisma.project.findUnique({
               where: { id: feature.projectId },
-              select: { workspaceId: true }
-            })
+              select: { workspaceId: true },
+            });
             if (project) {
-              hierarchy.push({ type: 'workspace', id: project.workspaceId })
-              hierarchy.push({ type: 'workspace', id: null })
+              hierarchy.push({ type: 'workspace', id: project.workspaceId });
+              hierarchy.push({ type: 'workspace', id: null });
             }
           }
         }
-        hierarchy.push({ type: 'root', id: null })
-        break
+        hierarchy.push({ type: 'root', id: null });
+        break;
 
       case 'project':
         // Projects inherit from their workspace
         if (resourceId !== null) {
           const project = await prisma.project.findUnique({
             where: { id: resourceId },
-            select: { workspaceId: true }
-          })
+            select: { workspaceId: true },
+          });
           if (project) {
-            hierarchy.push({ type: 'workspace', id: project.workspaceId })
-            hierarchy.push({ type: 'workspace', id: null }) // All workspaces level
+            hierarchy.push({ type: 'workspace', id: project.workspaceId });
+            hierarchy.push({ type: 'workspace', id: null }); // All workspaces level
           }
         }
         // Workspaces inherit from root
-        hierarchy.push({ type: 'root', id: null })
-        break
+        hierarchy.push({ type: 'root', id: null });
+        break;
 
       case 'workspace':
         // Workspaces inherit from root
-        hierarchy.push({ type: 'root', id: null })
-        break
+        hierarchy.push({ type: 'root', id: null });
+        break;
 
       case 'admin':
         // Admin inherits from system, which inherits from root
-        hierarchy.push({ type: 'system', id: null })
-        hierarchy.push({ type: 'root', id: null })
-        break
+        hierarchy.push({ type: 'system', id: null });
+        hierarchy.push({ type: 'root', id: null });
+        break;
 
       case 'system':
         // System inherits from root
-        hierarchy.push({ type: 'root', id: null })
-        break
+        hierarchy.push({ type: 'root', id: null });
+        break;
 
       case 'dashboard':
         // Dashboard inherits from root
-        hierarchy.push({ type: 'root', id: null })
-        break
+        hierarchy.push({ type: 'root', id: null });
+        break;
 
       case 'profile':
         // Profile inherits from root
-        hierarchy.push({ type: 'root', id: null })
-        break
+        hierarchy.push({ type: 'root', id: null });
+        break;
 
       case 'root':
         // Root is the top level, no further inheritance
-        break
+        break;
     }
 
-    return hierarchy
+    return hierarchy;
   }
 
   // ===========================================================================
@@ -338,48 +355,98 @@ export class AclService {
     requiredPermission: number,
     errorMessage?: string
   ): Promise<void> {
-    const hasPerms = await this.hasPermission(userId, resourceType, resourceId, requiredPermission)
+    const hasPerms = await this.hasPermission(userId, resourceType, resourceId, requiredPermission);
     if (!hasPerms) {
       throw new TRPCError({
         code: 'FORBIDDEN',
         message: errorMessage || `Geen toegang: ontbrekende permissies voor ${resourceType}`,
-      })
+      });
     }
   }
 
   /**
    * Require READ permission.
    */
-  async requireRead(userId: number, resourceType: AclResourceType, resourceId: number | null): Promise<void> {
-    await this.requirePermission(userId, resourceType, resourceId, ACL_PERMISSIONS.READ, 'Geen leesrechten')
+  async requireRead(
+    userId: number,
+    resourceType: AclResourceType,
+    resourceId: number | null
+  ): Promise<void> {
+    await this.requirePermission(
+      userId,
+      resourceType,
+      resourceId,
+      ACL_PERMISSIONS.READ,
+      'Geen leesrechten'
+    );
   }
 
   /**
    * Require WRITE permission.
    */
-  async requireWrite(userId: number, resourceType: AclResourceType, resourceId: number | null): Promise<void> {
-    await this.requirePermission(userId, resourceType, resourceId, ACL_PERMISSIONS.WRITE, 'Geen schrijfrechten')
+  async requireWrite(
+    userId: number,
+    resourceType: AclResourceType,
+    resourceId: number | null
+  ): Promise<void> {
+    await this.requirePermission(
+      userId,
+      resourceType,
+      resourceId,
+      ACL_PERMISSIONS.WRITE,
+      'Geen schrijfrechten'
+    );
   }
 
   /**
    * Require EXECUTE permission (for creating items, triggering actions).
    */
-  async requireExecute(userId: number, resourceType: AclResourceType, resourceId: number | null): Promise<void> {
-    await this.requirePermission(userId, resourceType, resourceId, ACL_PERMISSIONS.EXECUTE, 'Geen uitvoerrechten')
+  async requireExecute(
+    userId: number,
+    resourceType: AclResourceType,
+    resourceId: number | null
+  ): Promise<void> {
+    await this.requirePermission(
+      userId,
+      resourceType,
+      resourceId,
+      ACL_PERMISSIONS.EXECUTE,
+      'Geen uitvoerrechten'
+    );
   }
 
   /**
    * Require DELETE permission.
    */
-  async requireDelete(userId: number, resourceType: AclResourceType, resourceId: number | null): Promise<void> {
-    await this.requirePermission(userId, resourceType, resourceId, ACL_PERMISSIONS.DELETE, 'Geen verwijderrechten')
+  async requireDelete(
+    userId: number,
+    resourceType: AclResourceType,
+    resourceId: number | null
+  ): Promise<void> {
+    await this.requirePermission(
+      userId,
+      resourceType,
+      resourceId,
+      ACL_PERMISSIONS.DELETE,
+      'Geen verwijderrechten'
+    );
   }
 
   /**
    * Require PERMISSIONS permission (to manage ACLs).
    */
-  async requirePermissionsManagement(userId: number, resourceType: AclResourceType, resourceId: number | null): Promise<void> {
-    await this.requirePermission(userId, resourceType, resourceId, ACL_PERMISSIONS.PERMISSIONS, 'Geen rechten om permissies te beheren')
+  async requirePermissionsManagement(
+    userId: number,
+    resourceType: AclResourceType,
+    resourceId: number | null
+  ): Promise<void> {
+    await this.requirePermission(
+      userId,
+      resourceType,
+      resourceId,
+      ACL_PERMISSIONS.PERMISSIONS,
+      'Geen rechten om permissies te beheren'
+    );
   }
 
   // ===========================================================================
@@ -390,16 +457,24 @@ export class AclService {
    * Check if user has permission on a project.
    * Convenience method for project permission checks.
    */
-  async hasProjectPermission(userId: number, projectId: number, permission: number): Promise<boolean> {
-    return this.hasPermission(userId, 'project', projectId, permission)
+  async hasProjectPermission(
+    userId: number,
+    projectId: number,
+    permission: number
+  ): Promise<boolean> {
+    return this.hasPermission(userId, 'project', projectId, permission);
   }
 
   /**
    * Check if user has permission on a workspace.
    * Convenience method for workspace permission checks.
    */
-  async hasWorkspacePermission(userId: number, workspaceId: number, permission: number): Promise<boolean> {
-    return this.hasPermission(userId, 'workspace', workspaceId, permission)
+  async hasWorkspacePermission(
+    userId: number,
+    workspaceId: number,
+    permission: number
+  ): Promise<boolean> {
+    return this.hasPermission(userId, 'workspace', workspaceId, permission);
   }
 
   // ===========================================================================
@@ -410,15 +485,23 @@ export class AclService {
    * Grant permissions to a user or group on a resource.
    */
   async grantPermission(params: {
-    resourceType: AclResourceType
-    resourceId: number | null
-    principalType: AclPrincipalType
-    principalId: number
-    permissions: number
-    inheritToChildren?: boolean
-    createdById?: number
+    resourceType: AclResourceType;
+    resourceId: number | null;
+    principalType: AclPrincipalType;
+    principalId: number;
+    permissions: number;
+    inheritToChildren?: boolean;
+    createdById?: number;
   }): Promise<{ id: number }> {
-    const { resourceType, resourceId, principalType, principalId, permissions, inheritToChildren = true, createdById } = params
+    const {
+      resourceType,
+      resourceId,
+      principalType,
+      principalId,
+      permissions,
+      inheritToChildren = true,
+      createdById,
+    } = params;
 
     // Find existing entry (handle null resourceId separately since Prisma unique constraints with nulls are tricky)
     const existing = await prisma.aclEntry.findFirst({
@@ -428,8 +511,8 @@ export class AclService {
         principalType,
         principalId,
         deny: false,
-      }
-    })
+      },
+    });
 
     if (existing) {
       const updated = await prisma.aclEntry.update({
@@ -437,9 +520,9 @@ export class AclService {
         data: {
           permissions,
           inheritToChildren,
-        }
-      })
-      return { id: updated.id }
+        },
+      });
+      return { id: updated.id };
     } else {
       const created = await prisma.aclEntry.create({
         data: {
@@ -452,9 +535,9 @@ export class AclService {
           inherited: false,
           inheritToChildren,
           createdById,
-        }
-      })
-      return { id: created.id }
+        },
+      });
+      return { id: created.id };
     }
   }
 
@@ -463,15 +546,23 @@ export class AclService {
    * Deny ALWAYS overrides allow.
    */
   async denyPermission(params: {
-    resourceType: AclResourceType
-    resourceId: number | null
-    principalType: AclPrincipalType
-    principalId: number
-    permissions: number
-    inheritToChildren?: boolean
-    createdById?: number
+    resourceType: AclResourceType;
+    resourceId: number | null;
+    principalType: AclPrincipalType;
+    principalId: number;
+    permissions: number;
+    inheritToChildren?: boolean;
+    createdById?: number;
   }): Promise<{ id: number }> {
-    const { resourceType, resourceId, principalType, principalId, permissions, inheritToChildren = true, createdById } = params
+    const {
+      resourceType,
+      resourceId,
+      principalType,
+      principalId,
+      permissions,
+      inheritToChildren = true,
+      createdById,
+    } = params;
 
     // Find existing entry (handle null resourceId separately since Prisma unique constraints with nulls are tricky)
     const existing = await prisma.aclEntry.findFirst({
@@ -481,8 +572,8 @@ export class AclService {
         principalType,
         principalId,
         deny: true,
-      }
-    })
+      },
+    });
 
     if (existing) {
       const updated = await prisma.aclEntry.update({
@@ -490,9 +581,9 @@ export class AclService {
         data: {
           permissions,
           inheritToChildren,
-        }
-      })
-      return { id: updated.id }
+        },
+      });
+      return { id: updated.id };
     } else {
       const created = await prisma.aclEntry.create({
         data: {
@@ -505,9 +596,9 @@ export class AclService {
           inherited: false,
           inheritToChildren,
           createdById,
-        }
-      })
-      return { id: created.id }
+        },
+      });
+      return { id: created.id };
     }
   }
 
@@ -515,12 +606,12 @@ export class AclService {
    * Revoke all permissions for a principal on a resource.
    */
   async revokePermission(params: {
-    resourceType: AclResourceType
-    resourceId: number | null
-    principalType: AclPrincipalType
-    principalId: number
+    resourceType: AclResourceType;
+    resourceId: number | null;
+    principalType: AclPrincipalType;
+    principalId: number;
   }): Promise<void> {
-    const { resourceType, resourceId, principalType, principalId } = params
+    const { resourceType, resourceId, principalType, principalId } = params;
 
     await prisma.aclEntry.deleteMany({
       where: {
@@ -528,8 +619,8 @@ export class AclService {
         resourceId,
         principalType,
         principalId,
-      }
-    })
+      },
+    });
   }
 
   // ===========================================================================
@@ -541,27 +632,34 @@ export class AclService {
    * Uses Prisma transaction for atomicity.
    */
   async bulkGrantPermission(params: {
-    resourceType: AclResourceType
-    resourceId: number | null
-    principals: Array<{ type: AclPrincipalType; id: number }>
-    permissions: number
-    inheritToChildren?: boolean
-    createdById: number
+    resourceType: AclResourceType;
+    resourceId: number | null;
+    principals: Array<{ type: AclPrincipalType; id: number }>;
+    permissions: number;
+    inheritToChildren?: boolean;
+    createdById: number;
   }): Promise<{ success: number; failed: number; errors: string[] }> {
-    const { resourceType, resourceId, principals, permissions, inheritToChildren = true, createdById } = params
+    const {
+      resourceType,
+      resourceId,
+      principals,
+      permissions,
+      inheritToChildren = true,
+      createdById,
+    } = params;
 
     // Limit to prevent abuse
     if (principals.length > 100) {
       throw new TRPCError({
         code: 'BAD_REQUEST',
         message: 'Maximum 100 principals per bulk operation',
-      })
+      });
     }
 
     return await prisma.$transaction(async (tx) => {
-      let success = 0
-      let failed = 0
-      const errors: string[] = []
+      let success = 0;
+      let failed = 0;
+      const errors: string[] = [];
 
       for (const principal of principals) {
         try {
@@ -573,8 +671,8 @@ export class AclService {
               principalType: principal.type,
               principalId: principal.id,
               deny: false,
-            }
-          })
+            },
+          });
 
           if (existing) {
             await tx.aclEntry.update({
@@ -582,8 +680,8 @@ export class AclService {
               data: {
                 permissions,
                 inheritToChildren,
-              }
-            })
+              },
+            });
           } else {
             await tx.aclEntry.create({
               data: {
@@ -596,19 +694,19 @@ export class AclService {
                 inherited: false,
                 inheritToChildren,
                 createdById,
-              }
-            })
+              },
+            });
           }
-          success++
+          success++;
         } catch (error) {
-          failed++
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-          errors.push(`${principal.type}:${principal.id}: ${errorMessage}`)
+          failed++;
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          errors.push(`${principal.type}:${principal.id}: ${errorMessage}`);
         }
       }
 
-      return { success, failed, errors }
-    })
+      return { success, failed, errors };
+    });
   }
 
   /**
@@ -616,24 +714,24 @@ export class AclService {
    * Uses Prisma transaction for atomicity.
    */
   async bulkRevokePermission(params: {
-    resourceType: AclResourceType
-    resourceId: number | null
-    principals: Array<{ type: AclPrincipalType; id: number }>
+    resourceType: AclResourceType;
+    resourceId: number | null;
+    principals: Array<{ type: AclPrincipalType; id: number }>;
   }): Promise<{ success: number; failed: number; errors: string[] }> {
-    const { resourceType, resourceId, principals } = params
+    const { resourceType, resourceId, principals } = params;
 
     // Limit to prevent abuse
     if (principals.length > 100) {
       throw new TRPCError({
         code: 'BAD_REQUEST',
         message: 'Maximum 100 principals per bulk operation',
-      })
+      });
     }
 
     return await prisma.$transaction(async (tx) => {
-      let success = 0
-      let failed = 0
-      const errors: string[] = []
+      let success = 0;
+      let failed = 0;
+      const errors: string[] = [];
 
       for (const principal of principals) {
         try {
@@ -643,23 +741,23 @@ export class AclService {
               resourceId,
               principalType: principal.type,
               principalId: principal.id,
-            }
-          })
+            },
+          });
           if (result.count > 0) {
-            success++
+            success++;
           } else {
             // No entries found is not a failure, just nothing to delete
-            success++
+            success++;
           }
         } catch (error) {
-          failed++
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-          errors.push(`${principal.type}:${principal.id}: ${errorMessage}`)
+          failed++;
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          errors.push(`${principal.type}:${principal.id}: ${errorMessage}`);
         }
       }
 
-      return { success, failed, errors }
-    })
+      return { success, failed, errors };
+    });
   }
 
   /**
@@ -670,20 +768,21 @@ export class AclService {
    *                   If false, merge (skip existing principal entries).
    */
   async copyAclEntries(params: {
-    sourceResourceType: AclResourceType
-    sourceResourceId: number | null
-    targetResources: Array<{ type: AclResourceType; id: number | null }>
-    overwrite: boolean
-    createdById: number
+    sourceResourceType: AclResourceType;
+    sourceResourceId: number | null;
+    targetResources: Array<{ type: AclResourceType; id: number | null }>;
+    overwrite: boolean;
+    createdById: number;
   }): Promise<{ copiedCount: number; skippedCount: number }> {
-    const { sourceResourceType, sourceResourceId, targetResources, overwrite, createdById } = params
+    const { sourceResourceType, sourceResourceId, targetResources, overwrite, createdById } =
+      params;
 
     // Limit to prevent abuse
     if (targetResources.length > 50) {
       throw new TRPCError({
         code: 'BAD_REQUEST',
         message: 'Maximum 50 target resources per copy operation',
-      })
+      });
     }
 
     // Get source ACL entries
@@ -692,22 +791,22 @@ export class AclService {
         resourceType: sourceResourceType,
         resourceId: sourceResourceId,
         inherited: false, // Only copy direct entries, not inherited
-      }
-    })
+      },
+    });
 
     if (sourceEntries.length === 0) {
-      return { copiedCount: 0, skippedCount: 0 }
+      return { copiedCount: 0, skippedCount: 0 };
     }
 
     return await prisma.$transaction(async (tx) => {
-      let copiedCount = 0
-      let skippedCount = 0
+      let copiedCount = 0;
+      let skippedCount = 0;
 
       for (const target of targetResources) {
         // Skip if source equals target
         if (target.type === sourceResourceType && target.id === sourceResourceId) {
-          skippedCount += sourceEntries.length
-          continue
+          skippedCount += sourceEntries.length;
+          continue;
         }
 
         if (overwrite) {
@@ -717,8 +816,8 @@ export class AclService {
               resourceType: target.type,
               resourceId: target.id,
               inherited: false,
-            }
-          })
+            },
+          });
         }
 
         for (const entry of sourceEntries) {
@@ -732,11 +831,11 @@ export class AclService {
                   principalType: entry.principalType,
                   principalId: entry.principalId,
                   deny: entry.deny,
-                }
-              })
+                },
+              });
               if (existing) {
-                skippedCount++
-                continue
+                skippedCount++;
+                continue;
               }
             }
 
@@ -751,18 +850,18 @@ export class AclService {
                 inherited: false,
                 inheritToChildren: entry.inheritToChildren,
                 createdById,
-              }
-            })
-            copiedCount++
+              },
+            });
+            copiedCount++;
           } catch {
             // Entry might already exist (unique constraint), skip it
-            skippedCount++
+            skippedCount++;
           }
         }
       }
 
-      return { copiedCount, skippedCount }
-    })
+      return { copiedCount, skippedCount };
+    });
   }
 
   /**
@@ -770,17 +869,24 @@ export class AclService {
    * This is essentially a bulk grant with predefined permission levels.
    */
   async applyTemplate(params: {
-    templateName: 'read_only' | 'contributor' | 'editor' | 'full_control'
-    resourceType: AclResourceType
-    resourceId: number | null
-    principals: Array<{ type: AclPrincipalType; id: number }>
-    inheritToChildren?: boolean
-    createdById: number
+    templateName: 'read_only' | 'contributor' | 'editor' | 'full_control';
+    resourceType: AclResourceType;
+    resourceId: number | null;
+    principals: Array<{ type: AclPrincipalType; id: number }>;
+    inheritToChildren?: boolean;
+    createdById: number;
   }): Promise<{ success: number; failed: number }> {
-    const { templateName, resourceType, resourceId, principals, inheritToChildren = true, createdById } = params
+    const {
+      templateName,
+      resourceType,
+      resourceId,
+      principals,
+      inheritToChildren = true,
+      createdById,
+    } = params;
 
     // Map template name to permission bitmask
-    const permissions = this.templateToPermissions(templateName)
+    const permissions = this.templateToPermissions(templateName);
 
     const result = await this.bulkGrantPermission({
       resourceType,
@@ -789,38 +895,43 @@ export class AclService {
       permissions,
       inheritToChildren,
       createdById,
-    })
+    });
 
-    return { success: result.success, failed: result.failed }
+    return { success: result.success, failed: result.failed };
   }
 
   /**
    * Convert template name to permission bitmask.
    */
-  private templateToPermissions(templateName: 'read_only' | 'contributor' | 'editor' | 'full_control'): number {
+  private templateToPermissions(
+    templateName: 'read_only' | 'contributor' | 'editor' | 'full_control'
+  ): number {
     switch (templateName) {
-      case 'read_only': return ACL_PRESETS.READ_ONLY
-      case 'contributor': return ACL_PRESETS.CONTRIBUTOR
-      case 'editor': return ACL_PRESETS.EDITOR
-      case 'full_control': return ACL_PRESETS.FULL_CONTROL
+      case 'read_only':
+        return ACL_PRESETS.READ_ONLY;
+      case 'contributor':
+        return ACL_PRESETS.CONTRIBUTOR;
+      case 'editor':
+        return ACL_PRESETS.EDITOR;
+      case 'full_control':
+        return ACL_PRESETS.FULL_CONTROL;
     }
   }
 
   /**
    * Get all ACL entries for a resource.
    */
-  async getAclEntries(resourceType: AclResourceType, resourceId: number | null): Promise<AclEntry[]> {
+  async getAclEntries(
+    resourceType: AclResourceType,
+    resourceId: number | null
+  ): Promise<AclEntry[]> {
     return prisma.aclEntry.findMany({
       where: {
         resourceType,
         resourceId,
       },
-      orderBy: [
-        { principalType: 'asc' },
-        { deny: 'desc' },
-        { principalId: 'asc' },
-      ]
-    })
+      orderBy: [{ principalType: 'asc' }, { deny: 'desc' }, { principalId: 'asc' }],
+    });
   }
 
   /**
@@ -830,23 +941,21 @@ export class AclService {
     // Get user's groups
     const userGroups = await prisma.groupMember.findMany({
       where: { userId },
-      select: { groupId: true }
-    })
-    const groupIds = userGroups.map(g => g.groupId)
+      select: { groupId: true },
+    });
+    const groupIds = userGroups.map((g) => g.groupId);
 
     return prisma.aclEntry.findMany({
       where: {
         OR: [
           { principalType: 'user', principalId: userId },
-          ...(groupIds.length > 0 ? [{ principalType: 'group', principalId: { in: groupIds } }] : []),
-        ]
+          ...(groupIds.length > 0
+            ? [{ principalType: 'group', principalId: { in: groupIds } }]
+            : []),
+        ],
       },
-      orderBy: [
-        { resourceType: 'asc' },
-        { resourceId: 'asc' },
-        { deny: 'desc' },
-      ]
-    })
+      orderBy: [{ resourceType: 'asc' }, { resourceId: 'asc' }, { deny: 'desc' }],
+    });
   }
 
   // ===========================================================================
@@ -857,30 +966,45 @@ export class AclService {
    * Convert permission bitmask to human-readable array.
    */
   permissionToArray(permissions: number): string[] {
-    const result: string[] = []
-    if (permissions & ACL_PERMISSIONS.READ) result.push('Read')
-    if (permissions & ACL_PERMISSIONS.WRITE) result.push('Write')
-    if (permissions & ACL_PERMISSIONS.EXECUTE) result.push('Execute')
-    if (permissions & ACL_PERMISSIONS.DELETE) result.push('Delete')
-    if (permissions & ACL_PERMISSIONS.PERMISSIONS) result.push('Permissions')
-    return result
+    const result: string[] = [];
+    if (permissions & ACL_PERMISSIONS.READ) result.push('Read');
+    if (permissions & ACL_PERMISSIONS.WRITE) result.push('Write');
+    if (permissions & ACL_PERMISSIONS.EXECUTE) result.push('Execute');
+    if (permissions & ACL_PERMISSIONS.DELETE) result.push('Delete');
+    if (permissions & ACL_PERMISSIONS.PERMISSIONS) result.push('Permissions');
+    return result;
   }
 
   /**
    * Convert array of permission names to bitmask.
    */
   arrayToPermission(perms: string[]): number {
-    let result = 0
+    let result = 0;
     for (const p of perms) {
       switch (p.toLowerCase()) {
-        case 'read': case 'r': result |= ACL_PERMISSIONS.READ; break
-        case 'write': case 'w': result |= ACL_PERMISSIONS.WRITE; break
-        case 'execute': case 'x': result |= ACL_PERMISSIONS.EXECUTE; break
-        case 'delete': case 'd': result |= ACL_PERMISSIONS.DELETE; break
-        case 'permissions': case 'p': result |= ACL_PERMISSIONS.PERMISSIONS; break
+        case 'read':
+        case 'r':
+          result |= ACL_PERMISSIONS.READ;
+          break;
+        case 'write':
+        case 'w':
+          result |= ACL_PERMISSIONS.WRITE;
+          break;
+        case 'execute':
+        case 'x':
+          result |= ACL_PERMISSIONS.EXECUTE;
+          break;
+        case 'delete':
+        case 'd':
+          result |= ACL_PERMISSIONS.DELETE;
+          break;
+        case 'permissions':
+        case 'p':
+          result |= ACL_PERMISSIONS.PERMISSIONS;
+          break;
       }
     }
-    return result
+    return result;
   }
 
   /**
@@ -888,12 +1012,18 @@ export class AclService {
    */
   getPresetName(permissions: number): string | null {
     switch (permissions) {
-      case ACL_PRESETS.NONE: return 'None'
-      case ACL_PRESETS.READ_ONLY: return 'Read Only'
-      case ACL_PRESETS.CONTRIBUTOR: return 'Contributor'
-      case ACL_PRESETS.EDITOR: return 'Editor'
-      case ACL_PRESETS.FULL_CONTROL: return 'Full Control'
-      default: return null
+      case ACL_PRESETS.NONE:
+        return 'None';
+      case ACL_PRESETS.READ_ONLY:
+        return 'Read Only';
+      case ACL_PRESETS.CONTRIBUTOR:
+        return 'Contributor';
+      case ACL_PRESETS.EDITOR:
+        return 'Editor';
+      case ACL_PRESETS.FULL_CONTROL:
+        return 'Full Control';
+      default:
+        return null;
     }
   }
 
@@ -907,9 +1037,9 @@ export class AclService {
    */
   async hasAclEntries(resourceType: AclResourceType, resourceId: number | null): Promise<boolean> {
     const count = await prisma.aclEntry.count({
-      where: { resourceType, resourceId }
-    })
-    return count > 0
+      where: { resourceType, resourceId },
+    });
+    return count > 0;
   }
 
   /**
@@ -919,15 +1049,15 @@ export class AclService {
   async isAclEnabled(resourceType: AclResourceType, resourceId: number | null): Promise<boolean> {
     // Check if there are any ACL entries for this specific resource
     // or for the root level of this resource type
-    const hasSpecific = await this.hasAclEntries(resourceType, resourceId)
-    if (hasSpecific) return true
+    const hasSpecific = await this.hasAclEntries(resourceType, resourceId);
+    if (hasSpecific) return true;
 
     if (resourceId !== null) {
-      const hasRoot = await this.hasAclEntries(resourceType, null)
-      if (hasRoot) return true
+      const hasRoot = await this.hasAclEntries(resourceType, null);
+      if (hasRoot) return true;
     }
 
-    return false
+    return false;
   }
 
   /**
@@ -935,7 +1065,7 @@ export class AclService {
    * Used to check if migration has been run.
    */
   async getTotalAclCount(): Promise<number> {
-    return prisma.aclEntry.count()
+    return prisma.aclEntry.count();
   }
 }
 
@@ -943,4 +1073,4 @@ export class AclService {
 // Singleton Export
 // =============================================================================
 
-export const aclService = new AclService()
+export const aclService = new AclService();

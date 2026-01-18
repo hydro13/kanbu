@@ -27,29 +27,29 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { ColumnHeader } from './ColumnHeader'
-import { TaskList } from './TaskList'
-import { cn } from '@/lib/utils'
-import type { BoardColumn, BoardSwimlane, BoardTask } from './Board'
+import { ColumnHeader } from './ColumnHeader';
+import { TaskList } from './TaskList';
+import { cn } from '@/lib/utils';
+import type { BoardColumn, BoardSwimlane, BoardTask } from './Board';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface ColumnProps {
-  column: BoardColumn
-  swimlanes: BoardSwimlane[]
-  tasks: Record<string, BoardTask[]>
-  projectId: number
-  width: number
+  column: BoardColumn;
+  swimlanes: BoardSwimlane[];
+  tasks: Record<string, BoardTask[]>;
+  projectId: number;
+  width: number;
   /** Whether this column is in compact mode (narrow width for empty columns) */
-  isCompact?: boolean
-  isOverLimit: boolean
-  taskCount: number
-  onTaskClick?: (taskId: number) => void
-  onTaskContextMenu?: (taskId: number, event: React.MouseEvent) => void
+  isCompact?: boolean;
+  isOverLimit: boolean;
+  taskCount: number;
+  onTaskClick?: (taskId: number) => void;
+  onTaskContextMenu?: (taskId: number, event: React.MouseEvent) => void;
   /** Create a new task and immediately open the detail modal */
-  onCreateAndEditTask?: (columnId: number, swimlaneId?: number | null) => void
+  onCreateAndEditTask?: (columnId: number, swimlaneId?: number | null) => void;
 }
 
 // =============================================================================
@@ -69,20 +69,20 @@ export function Column({
   onTaskContextMenu,
   onCreateAndEditTask,
 }: ColumnProps) {
-  const hasMultipleSwimlanes = swimlanes.length > 1
+  const hasMultipleSwimlanes = swimlanes.length > 1;
 
   // Archive columns don't allow task creation
-  const isArchive = column.isArchive ?? false
+  const isArchive = column.isArchive ?? false;
 
   // Default swimlane ID for task creation (first swimlane or null)
-  const defaultSwimlaneId = hasMultipleSwimlanes ? swimlanes[0]?.id ?? null : null
+  const defaultSwimlaneId = hasMultipleSwimlanes ? (swimlanes[0]?.id ?? null) : null;
 
   // Handler for add task button - creates task and opens modal
   const handleAddTask = () => {
     if (onCreateAndEditTask && !isArchive) {
-      onCreateAndEditTask(column.id, defaultSwimlaneId)
+      onCreateAndEditTask(column.id, defaultSwimlaneId);
     }
-  }
+  };
 
   return (
     <div
@@ -100,21 +100,23 @@ export function Column({
       />
 
       {/* Column Content - always visible for drag-drop support */}
-      <div className={cn(
-        'flex-1 overflow-y-auto',
-        isCompact && taskCount === 0 ? 'p-1 min-h-[120px]' : 'p-2 min-h-0'
-      )}>
+      <div
+        className={cn(
+          'flex-1 overflow-y-auto',
+          isCompact && taskCount === 0 ? 'p-1 min-h-[120px]' : 'p-2 min-h-0'
+        )}
+      >
         {hasMultipleSwimlanes ? (
           // Render tasks grouped by swimlane
           <div className="space-y-4">
             {swimlanes.map((swimlane) => {
-              const key = `${column.id}-${swimlane.id}`
+              const key = `${column.id}-${swimlane.id}`;
               // Also include tasks with null swimlaneId in first swimlane
-              const isFirstSwimlane = swimlane.id === swimlanes[0]?.id
+              const isFirstSwimlane = swimlane.id === swimlanes[0]?.id;
               const swimlaneTasks = [
                 ...(tasks[key] ?? []),
                 ...(isFirstSwimlane ? (tasks[`${column.id}-default`] ?? []) : []),
-              ]
+              ];
 
               return (
                 <div key={swimlane.id} className="space-y-2">
@@ -138,7 +140,7 @@ export function Column({
                     onTaskContextMenu={onTaskContextMenu}
                   />
                 </div>
-              )
+              );
             })}
           </div>
         ) : (
@@ -157,13 +159,9 @@ export function Column({
       </div>
 
       {/* Drop Zone Indicator (for drag & drop prep) */}
-      <div
-        className="h-2 transition-colors"
-        data-column-id={column.id}
-        data-drop-zone="true"
-      />
+      <div className="h-2 transition-colors" data-column-id={column.id} data-drop-zone="true" />
     </div>
-  )
+  );
 }
 
-export default Column
+export default Column;

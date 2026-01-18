@@ -16,11 +16,11 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState, useCallback } from 'react'
-import { Play, Square, Plus, Clock } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { useTimer } from '@/hooks/useTimer'
-import { formatTime } from './TimeDisplay'
+import { useState, useCallback } from 'react';
+import { Play, Square, Plus, Clock } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { useTimer } from '@/hooks/useTimer';
+import { formatTime } from './TimeDisplay';
 
 // =============================================================================
 // Types
@@ -28,21 +28,21 @@ import { formatTime } from './TimeDisplay'
 
 export interface TimeTrackerProps {
   /** Subtask ID */
-  subtaskId: number
+  subtaskId: number;
   /** Current status */
-  status: 'TODO' | 'IN_PROGRESS' | 'DONE'
+  status: 'TODO' | 'IN_PROGRESS' | 'DONE';
   /** Current time spent in hours */
-  timeSpent: number
+  timeSpent: number;
   /** Timer started at (when status changed to IN_PROGRESS) */
-  timerStartedAt?: Date | string | null
+  timerStartedAt?: Date | string | null;
   /** Callback when timer starts */
-  onStart: () => Promise<unknown>
+  onStart: () => Promise<unknown>;
   /** Callback when timer stops (receives time to add in hours) */
-  onStop: (addTimeSpent: number) => Promise<unknown>
+  onStop: (addTimeSpent: number) => Promise<unknown>;
   /** Callback when time is logged manually */
-  onLogTime: (hours: number) => Promise<unknown>
+  onLogTime: (hours: number) => Promise<unknown>;
   /** Is any mutation pending */
-  isPending?: boolean
+  isPending?: boolean;
 }
 
 // =============================================================================
@@ -53,74 +53,74 @@ function ManualTimeInput({
   onSubmit,
   isPending,
 }: {
-  onSubmit: (hours: number) => void
-  isPending: boolean
+  onSubmit: (hours: number) => void;
+  isPending: boolean;
 }) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [value, setValue] = useState('')
-  const [error, setError] = useState<string | null>(null)
+  const [isOpen, setIsOpen] = useState(false);
+  const [value, setValue] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = useCallback(() => {
     // Parse time input (supports "1h 30m", "1.5", "90m", "1:30")
-    const trimmed = value.trim().toLowerCase()
+    const trimmed = value.trim().toLowerCase();
     if (!trimmed) {
-      setError('Enter a time value')
-      return
+      setError('Enter a time value');
+      return;
     }
 
-    let hours: number | null = null
+    let hours: number | null = null;
 
     // Try "Xh Ym" format
-    const hmMatch = trimmed.match(/^(?:(\d+(?:\.\d+)?)\s*h)?\s*(?:(\d+)\s*m)?$/)
+    const hmMatch = trimmed.match(/^(?:(\d+(?:\.\d+)?)\s*h)?\s*(?:(\d+)\s*m)?$/);
     if (hmMatch && (hmMatch[1] || hmMatch[2])) {
-      const h = parseFloat(hmMatch[1] || '0')
-      const m = parseInt(hmMatch[2] || '0', 10)
-      hours = h + m / 60
+      const h = parseFloat(hmMatch[1] || '0');
+      const m = parseInt(hmMatch[2] || '0', 10);
+      hours = h + m / 60;
     }
 
     // Try "X:Y" format
     if (hours === null) {
-      const colonMatch = trimmed.match(/^(\d+):(\d{1,2})$/)
+      const colonMatch = trimmed.match(/^(\d+):(\d{1,2})$/);
       if (colonMatch && colonMatch[1] && colonMatch[2]) {
-        const h = parseInt(colonMatch[1], 10)
-        const m = parseInt(colonMatch[2], 10)
+        const h = parseInt(colonMatch[1], 10);
+        const m = parseInt(colonMatch[2], 10);
         if (m < 60) {
-          hours = h + m / 60
+          hours = h + m / 60;
         }
       }
     }
 
     // Try plain number (assumes hours)
     if (hours === null) {
-      const numMatch = trimmed.match(/^(\d+(?:\.\d+)?)$/)
+      const numMatch = trimmed.match(/^(\d+(?:\.\d+)?)$/);
       if (numMatch && numMatch[1]) {
-        hours = parseFloat(numMatch[1])
+        hours = parseFloat(numMatch[1]);
       }
     }
 
     if (hours === null || hours <= 0) {
-      setError('Invalid time format')
-      return
+      setError('Invalid time format');
+      return;
     }
 
-    onSubmit(hours)
-    setValue('')
-    setError(null)
-    setIsOpen(false)
-  }, [value, onSubmit])
+    onSubmit(hours);
+    setValue('');
+    setError(null);
+    setIsOpen(false);
+  }, [value, onSubmit]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === 'Enter') {
-        handleSubmit()
+        handleSubmit();
       } else if (e.key === 'Escape') {
-        setValue('')
-        setError(null)
-        setIsOpen(false)
+        setValue('');
+        setError(null);
+        setIsOpen(false);
       }
     },
     [handleSubmit]
-  )
+  );
 
   if (!isOpen) {
     return (
@@ -131,7 +131,7 @@ function ManualTimeInput({
         <Plus className="w-3 h-3" />
         Log time
       </button>
-    )
+    );
   }
 
   return (
@@ -141,24 +141,18 @@ function ManualTimeInput({
           type="text"
           value={value}
           onChange={(e) => {
-            setValue(e.target.value)
-            setError(null)
+            setValue(e.target.value);
+            setError(null);
           }}
           onKeyDown={handleKeyDown}
           placeholder="1h 30m"
           className={`w-20 px-2 py-1 text-xs border rounded ${
-            error
-              ? 'border-red-500 focus:border-red-500'
-              : 'border-input focus:border-blue-500'
+            error ? 'border-red-500 focus:border-red-500' : 'border-input focus:border-blue-500'
           } bg-card focus:outline-none`}
           autoFocus
           disabled={isPending}
         />
-        {error && (
-          <div className="absolute top-full left-0 mt-1 text-xs text-red-500">
-            {error}
-          </div>
-        )}
+        {error && <div className="absolute top-full left-0 mt-1 text-xs text-red-500">{error}</div>}
       </div>
       <Button
         size="sm"
@@ -171,16 +165,16 @@ function ManualTimeInput({
       </Button>
       <button
         onClick={() => {
-          setValue('')
-          setError(null)
-          setIsOpen(false)
+          setValue('');
+          setError(null);
+          setIsOpen(false);
         }}
         className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
       >
         &times;
       </button>
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -197,53 +191,53 @@ export function TimeTracker({
   onLogTime,
   isPending = false,
 }: TimeTrackerProps) {
-  const isRunning = status === 'IN_PROGRESS'
-  const isDone = status === 'DONE'
+  const isRunning = status === 'IN_PROGRESS';
+  const isDone = status === 'DONE';
 
   // Parse timerStartedAt
   const startedAt = timerStartedAt
     ? typeof timerStartedAt === 'string'
       ? new Date(timerStartedAt)
       : timerStartedAt
-    : null
+    : null;
 
   // Use timer hook for live updates
   const { elapsedHours, formattedElapsed } = useTimer({
     isRunning,
     startedAt,
-  })
+  });
 
   // Calculate total time (existing + elapsed)
-  const totalHours = timeSpent + (isRunning ? elapsedHours : 0)
+  const totalHours = timeSpent + (isRunning ? elapsedHours : 0);
 
   const handleStart = useCallback(async () => {
-    await onStart()
-  }, [onStart])
+    await onStart();
+  }, [onStart]);
 
   const handleStop = useCallback(async () => {
     // Pass elapsed time to onStop
-    await onStop(elapsedHours)
-  }, [onStop, elapsedHours])
+    await onStop(elapsedHours);
+  }, [onStop, elapsedHours]);
 
   const handleLogTime = useCallback(
     async (hours: number) => {
-      await onLogTime(hours)
+      await onLogTime(hours);
     },
     [onLogTime]
-  )
+  );
 
   return (
     <div className="flex items-center gap-3">
       {/* Timer display */}
       <div className="flex items-center gap-1.5">
         <Clock className={`w-4 h-4 ${isRunning ? 'text-green-500' : 'text-gray-400'}`} />
-        <span className={`text-sm font-mono ${isRunning ? 'text-green-600 dark:text-green-400' : ''}`}>
+        <span
+          className={`text-sm font-mono ${isRunning ? 'text-green-600 dark:text-green-400' : ''}`}
+        >
           {isRunning ? formattedElapsed : formatTime(timeSpent)}
         </span>
         {isRunning && timeSpent > 0 && (
-          <span className="text-xs text-gray-400">
-            (+{formatTime(timeSpent)})
-          </span>
+          <span className="text-xs text-gray-400">(+{formatTime(timeSpent)})</span>
         )}
       </div>
 
@@ -271,18 +265,12 @@ export function TimeTracker({
       )}
 
       {/* Manual time entry (only when not running) */}
-      {!isRunning && !isDone && (
-        <ManualTimeInput onSubmit={handleLogTime} isPending={isPending} />
-      )}
+      {!isRunning && !isDone && <ManualTimeInput onSubmit={handleLogTime} isPending={isPending} />}
 
       {/* Total when running */}
-      {isRunning && (
-        <span className="text-xs text-gray-500">
-          Total: {formatTime(totalHours)}
-        </span>
-      )}
+      {isRunning && <span className="text-xs text-gray-500">Total: {formatTime(totalHours)}</span>}
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -290,13 +278,13 @@ export function TimeTracker({
 // =============================================================================
 
 export interface SubtaskTimeTrackerProps {
-  subtaskId: number
-  status: 'TODO' | 'IN_PROGRESS' | 'DONE'
-  timeSpent: number
-  timeEstimated: number
-  timerStartedAt?: Date | string | null
-  onStatusChange: (status: 'TODO' | 'IN_PROGRESS' | 'DONE') => Promise<unknown>
-  isPending?: boolean
+  subtaskId: number;
+  status: 'TODO' | 'IN_PROGRESS' | 'DONE';
+  timeSpent: number;
+  timeEstimated: number;
+  timerStartedAt?: Date | string | null;
+  onStatusChange: (status: 'TODO' | 'IN_PROGRESS' | 'DONE') => Promise<unknown>;
+  isPending?: boolean;
 }
 
 export function SubtaskTimeTracker({
@@ -307,26 +295,26 @@ export function SubtaskTimeTracker({
   onStatusChange,
   isPending = false,
 }: SubtaskTimeTrackerProps) {
-  const isRunning = status === 'IN_PROGRESS'
+  const isRunning = status === 'IN_PROGRESS';
 
   const startedAt = timerStartedAt
     ? typeof timerStartedAt === 'string'
       ? new Date(timerStartedAt)
       : timerStartedAt
-    : null
+    : null;
 
   const { formattedElapsed } = useTimer({
     isRunning,
     startedAt,
-  })
+  });
 
   const handleToggle = useCallback(async () => {
     if (isRunning) {
-      await onStatusChange('DONE')
+      await onStatusChange('DONE');
     } else {
-      await onStatusChange('IN_PROGRESS')
+      await onStatusChange('IN_PROGRESS');
     }
-  }, [isRunning, onStatusChange])
+  }, [isRunning, onStatusChange]);
 
   return (
     <div className="flex items-center gap-2">
@@ -358,7 +346,7 @@ export function SubtaskTimeTracker({
         {isRunning ? <Square className="w-3 h-3" /> : <Play className="w-3 h-3" />}
       </button>
     </div>
-  )
+  );
 }
 
-export default TimeTracker
+export default TimeTracker;

@@ -14,20 +14,20 @@
  * ===================================================================
  */
 
-import { useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import { WorkspaceLayout } from '@/components/layout/WorkspaceLayout'
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { WorkspaceLayout } from '@/components/layout/WorkspaceLayout';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog'
-import { trpc } from '@/lib/trpc'
+} from '@/components/ui/dialog';
+import { trpc } from '@/lib/trpc';
 import {
   FolderKanban,
   Plus,
@@ -38,8 +38,8 @@ import {
   MoreVertical,
   Trash2,
   GripVertical,
-} from 'lucide-react'
-import { cn } from '@/lib/utils'
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
 import {
   DndContext,
   closestCenter,
@@ -48,38 +48,38 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
-} from '@dnd-kit/core'
+} from '@dnd-kit/core';
 import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
-} from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface ProjectInfo {
-  id: number
-  name: string
-  identifier: string | null
-  description: string | null
-  position: number
+  id: number;
+  name: string;
+  identifier: string | null;
+  description: string | null;
+  position: number;
 }
 
 interface ProjectGroup {
-  id: number
-  name: string
-  description: string | null
-  color: string
-  status: string
-  createdAt: string
-  updatedAt: string
-  projectCount: number
-  projects: ProjectInfo[]
+  id: number;
+  name: string;
+  description: string | null;
+  color: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  projectCount: number;
+  projects: ProjectInfo[];
 }
 
 // Color map for groups
@@ -92,51 +92,48 @@ const colorClasses: Record<string, string> = {
   orange: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400',
   pink: 'bg-pink-100 text-pink-800 dark:bg-pink-900/30 dark:text-pink-400',
   cyan: 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400',
-}
+};
 
 // =============================================================================
 // Component
 // =============================================================================
 
 export function WorkspaceGroupsPage() {
-  const { slug } = useParams<{ slug: string }>()
-  const [showCreateModal, setShowCreateModal] = useState(false)
-  const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set())
+  const { slug } = useParams<{ slug: string }>();
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState<Set<number>>(new Set());
 
   // Fetch workspace
-  const workspaceQuery = trpc.workspace.getBySlug.useQuery(
-    { slug: slug! },
-    { enabled: !!slug }
-  )
-  const workspace = workspaceQuery.data
+  const workspaceQuery = trpc.workspace.getBySlug.useQuery({ slug: slug! }, { enabled: !!slug });
+  const workspace = workspaceQuery.data;
 
   // Fetch groups
   const groupsQuery = trpc.projectGroup.list.useQuery(
     { workspaceId: workspace?.id ?? 0 },
     { enabled: !!workspace?.id }
-  )
-  const groups = (groupsQuery.data ?? []) as ProjectGroup[]
+  );
+  const groups = (groupsQuery.data ?? []) as ProjectGroup[];
 
   // Fetch ungrouped projects
   const ungroupedQuery = trpc.projectGroup.getUngrouped.useQuery(
     { workspaceId: workspace?.id ?? 0 },
     { enabled: !!workspace?.id }
-  )
-  const ungroupedProjects = ungroupedQuery.data ?? []
+  );
+  const ungroupedProjects = ungroupedQuery.data ?? [];
 
   const toggleGroup = (groupId: number) => {
     setExpandedGroups((prev) => {
-      const next = new Set(prev)
+      const next = new Set(prev);
       if (next.has(groupId)) {
-        next.delete(groupId)
+        next.delete(groupId);
       } else {
-        next.add(groupId)
+        next.add(groupId);
       }
-      return next
-    })
-  }
+      return next;
+    });
+  };
 
-  const isLoading = workspaceQuery.isLoading || groupsQuery.isLoading
+  const isLoading = workspaceQuery.isLoading || groupsQuery.isLoading;
 
   // Loading state
   if (isLoading) {
@@ -158,7 +155,7 @@ export function WorkspaceGroupsPage() {
           </div>
         </div>
       </WorkspaceLayout>
-    )
+    );
   }
 
   // Workspace not found
@@ -173,7 +170,7 @@ export function WorkspaceGroupsPage() {
           </Link>
         </div>
       </WorkspaceLayout>
-    )
+    );
   }
 
   return (
@@ -186,9 +183,7 @@ export function WorkspaceGroupsPage() {
               <Layers className="h-8 w-8" />
               Groups
             </h1>
-            <p className="text-muted-foreground">
-              Organize projects in {workspace.name}
-            </p>
+            <p className="text-muted-foreground">Organize projects in {workspace.name}</p>
           </div>
           <Button onClick={() => setShowCreateModal(true)}>
             <Plus className="h-4 w-4 mr-2" />
@@ -269,14 +264,14 @@ export function WorkspaceGroupsPage() {
             workspaceId={workspace.id}
             onClose={() => setShowCreateModal(false)}
             onCreated={() => {
-              setShowCreateModal(false)
-              groupsQuery.refetch()
+              setShowCreateModal(false);
+              groupsQuery.refetch();
             }}
           />
         )}
       </div>
     </WorkspaceLayout>
-  )
+  );
 }
 
 // =============================================================================
@@ -284,25 +279,20 @@ export function WorkspaceGroupsPage() {
 // =============================================================================
 
 interface SortableProjectItemProps {
-  project: ProjectInfo
-  workspaceSlug: string
+  project: ProjectInfo;
+  workspaceSlug: string;
 }
 
 function SortableProjectItem({ project, workspaceSlug }: SortableProjectItemProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: project.id })
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: project.id,
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
-  }
+  };
 
   return (
     <div ref={setNodeRef} style={style}>
@@ -322,13 +312,11 @@ function SortableProjectItem({ project, workspaceSlug }: SortableProjectItemProp
         >
           <FolderKanban className="h-4 w-4 text-muted-foreground" />
           <span className="font-medium">{project.name}</span>
-          <span className="text-xs text-muted-foreground">
-            ({project.identifier})
-          </span>
+          <span className="text-xs text-muted-foreground">({project.identifier})</span>
         </Link>
       </div>
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -336,48 +324,48 @@ function SortableProjectItem({ project, workspaceSlug }: SortableProjectItemProp
 // =============================================================================
 
 interface GroupCardProps {
-  group: ProjectGroup
-  workspaceSlug: string
-  expanded: boolean
-  onToggle: () => void
-  onRefresh: () => void
+  group: ProjectGroup;
+  workspaceSlug: string;
+  expanded: boolean;
+  onToggle: () => void;
+  onRefresh: () => void;
 }
 
 function GroupCard({ group, workspaceSlug, expanded, onToggle, onRefresh }: GroupCardProps) {
-  const [showMenu, setShowMenu] = useState(false)
-  const [localProjects, setLocalProjects] = useState(group.projects)
-  const [isReordering, setIsReordering] = useState(false)
+  const [showMenu, setShowMenu] = useState(false);
+  const [localProjects, setLocalProjects] = useState(group.projects);
+  const [isReordering, setIsReordering] = useState(false);
 
   // Keep local state in sync with server data (only when not actively reordering)
   if (!isReordering && JSON.stringify(group.projects) !== JSON.stringify(localProjects)) {
-    setLocalProjects(group.projects)
+    setLocalProjects(group.projects);
   }
 
   const deleteMutation = trpc.projectGroup.delete.useMutation({
     onSuccess: () => onRefresh(),
-  })
+  });
 
   // Reorder mutation with optimistic updates
   const reorderMutation = trpc.projectGroup.reorderProjects.useMutation({
     onMutate: async ({ projectOrders }) => {
-      setIsReordering(true)
+      setIsReordering(true);
       // Optimistically update local state
       const reordered = projectOrders
         .sort((a, b) => a.position - b.position)
         .map((po) => localProjects.find((p) => p.id === po.projectId))
-        .filter(Boolean) as typeof localProjects
-      setLocalProjects(reordered)
+        .filter(Boolean) as typeof localProjects;
+      setLocalProjects(reordered);
     },
     onError: () => {
       // Rollback on error
-      setLocalProjects(group.projects)
-      setIsReordering(false)
+      setLocalProjects(group.projects);
+      setIsReordering(false);
     },
     onSettled: () => {
-      setIsReordering(false)
-      onRefresh()
+      setIsReordering(false);
+      onRefresh();
     },
-  })
+  });
 
   // DnD sensors
   const sensors = useSensors(
@@ -389,49 +377,51 @@ function GroupCard({ group, workspaceSlug, expanded, onToggle, onRefresh }: Grou
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
-  )
+  );
 
   // Handle drag end
   const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event
+    const { active, over } = event;
     if (over && active.id !== over.id) {
-      const oldIndex = localProjects.findIndex((p) => p.id === active.id)
-      const newIndex = localProjects.findIndex((p) => p.id === over.id)
-      const newOrder = arrayMove(localProjects, oldIndex, newIndex)
+      const oldIndex = localProjects.findIndex((p) => p.id === active.id);
+      const newIndex = localProjects.findIndex((p) => p.id === over.id);
+      const newOrder = arrayMove(localProjects, oldIndex, newIndex);
 
       // Create projectOrders array for the API
       const projectOrders = newOrder.map((p, index) => ({
         projectId: p.id,
         position: index,
-      }))
+      }));
 
-      reorderMutation.mutate({ groupId: group.id, projectOrders })
+      reorderMutation.mutate({ groupId: group.id, projectOrders });
     }
-  }
+  };
 
   const handleDelete = () => {
     if (confirm(`Delete group "${group.name}"? Projects will not be deleted.`)) {
-      deleteMutation.mutate({ id: group.id })
+      deleteMutation.mutate({ id: group.id });
     }
-    setShowMenu(false)
-  }
+    setShowMenu(false);
+  };
 
   return (
     <Card>
       <CardContent className="py-3 px-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <button
-              onClick={onToggle}
-              className="p-1 hover:bg-accent rounded"
-            >
+            <button onClick={onToggle} className="p-1 hover:bg-accent rounded">
               {expanded ? (
                 <ChevronDown className="h-4 w-4" />
               ) : (
                 <ChevronRight className="h-4 w-4" />
               )}
             </button>
-            <span className={cn('px-2 py-0.5 rounded text-xs font-medium', colorClasses[group.color] || colorClasses.blue)}>
+            <span
+              className={cn(
+                'px-2 py-0.5 rounded text-xs font-medium',
+                colorClasses[group.color] || colorClasses.blue
+              )}
+            >
               {group.name}
             </span>
             <span className="text-sm text-muted-foreground">
@@ -444,19 +434,12 @@ function GroupCard({ group, workspaceSlug, expanded, onToggle, onRefresh }: Grou
             )}
           </div>
           <div className="relative">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowMenu(!showMenu)}
-            >
+            <Button variant="ghost" size="sm" onClick={() => setShowMenu(!showMenu)}>
               <MoreVertical className="h-4 w-4" />
             </Button>
             {showMenu && (
               <>
-                <div
-                  className="fixed inset-0 z-10"
-                  onClick={() => setShowMenu(false)}
-                />
+                <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)} />
                 <div className="absolute right-0 top-full mt-1 bg-popover border rounded-md shadow-lg z-20 py-1 min-w-[120px]">
                   <button
                     onClick={handleDelete}
@@ -501,7 +484,7 @@ function GroupCard({ group, workspaceSlug, expanded, onToggle, onRefresh }: Grou
         )}
       </CardContent>
     </Card>
-  )
+  );
 }
 
 // =============================================================================
@@ -509,35 +492,35 @@ function GroupCard({ group, workspaceSlug, expanded, onToggle, onRefresh }: Grou
 // =============================================================================
 
 interface CreateGroupModalProps {
-  workspaceId: number
-  onClose: () => void
-  onCreated: () => void
+  workspaceId: number;
+  onClose: () => void;
+  onCreated: () => void;
 }
 
 function CreateGroupModal({ workspaceId, onClose, onCreated }: CreateGroupModalProps) {
-  const [name, setName] = useState('')
-  const [description, setDescription] = useState('')
-  const [color, setColor] = useState<string>('blue')
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [color, setColor] = useState<string>('blue');
 
   const createMutation = trpc.projectGroup.create.useMutation({
     onSuccess: () => {
-      onCreated()
+      onCreated();
     },
-  })
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!name.trim()) return
+    e.preventDefault();
+    if (!name.trim()) return;
 
     createMutation.mutate({
       workspaceId,
       name: name.trim(),
       description: description.trim() || undefined,
       color: color as any,
-    })
-  }
+    });
+  };
 
-  const colors = ['blue', 'green', 'red', 'yellow', 'purple', 'orange', 'pink', 'cyan']
+  const colors = ['blue', 'green', 'red', 'yellow', 'purple', 'orange', 'pink', 'cyan'];
 
   return (
     <Dialog open onOpenChange={onClose}>
@@ -591,7 +574,7 @@ function CreateGroupModal({ workspaceId, onClose, onCreated }: CreateGroupModalP
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
 
-export default WorkspaceGroupsPage
+export default WorkspaceGroupsPage;

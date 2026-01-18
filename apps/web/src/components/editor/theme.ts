@@ -10,7 +10,7 @@
  * ===================================================================
  */
 
-import type { EditorThemeClasses } from 'lexical'
+import type { EditorThemeClasses } from 'lexical';
 
 export const editorTheme: EditorThemeClasses = {
   // Root container
@@ -117,6 +117,6 @@ export const editorTheme: EditorThemeClasses = {
 
   // Signatures
   signature: 'signature',
-}
+};
 
-export default editorTheme
+export default editorTheme;

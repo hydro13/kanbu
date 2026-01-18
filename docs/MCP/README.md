@@ -10,10 +10,11 @@
 The Kanbu MCP Server is specifically designed for **Claude Code** integration. It provides a secure, resilient bridge between your AI agent and the Kanbu project management system.
 
 **Recent Hardening Updates:**
-*   **Resilience**: Automatic retry for transient network failures.
-*   **Safety**: `dryRun` simulation for destructive ACL actions.
-*   **Semantics**: Enhanced tool descriptions for better AI context.
-*   **Reliability**: Comprehensive test suite ensuring stability.
+
+- **Resilience**: Automatic retry for transient network failures.
+- **Safety**: `dryRun` simulation for destructive ACL actions.
+- **Semantics**: Enhanced tool descriptions for better AI context.
+- **Reliability**: Comprehensive test suite ensuring stability.
 
 ## Pairing Flow
 
@@ -99,13 +100,13 @@ The Kanbu MCP Server is specifically designed for **Claude Code** integration. I
 
 ### Security Model
 
-| Aspect | Setup Code | Permanent Token |
-|--------|------------|-----------------|
-| **Visible to user** | Yes (in UI) | No (only locally) |
-| **Lifetime** | 5 minutes | Permanent (until revoke) |
-| **Usage** | One-time | Unlimited |
-| **Format** | `KNB-XXXX-XXXX` | `ast_xxxxxx...` (256-bit) |
-| **Storage** | Database | Local file |
+| Aspect              | Setup Code      | Permanent Token           |
+| ------------------- | --------------- | ------------------------- |
+| **Visible to user** | Yes (in UI)     | No (only locally)         |
+| **Lifetime**        | 5 minutes       | Permanent (until revoke)  |
+| **Usage**           | One-time        | Unlimited                 |
+| **Format**          | `KNB-XXXX-XXXX` | `ast_xxxxxx...` (256-bit) |
+| **Storage**         | Database        | Local file                |
 
 ## User Interface
 
@@ -219,13 +220,13 @@ You have 4 open tasks:
 
 Claude automatically inherits your ACL permissions:
 
-| Your Role | Claude Can |
-|----------|------------|
-| Domain Admin | Everything: manage workspaces, projects, users |
-| Workspace Admin | Manage projects in that workspace |
-| Project Manager | Manage tasks in that project |
-| Project Member | Read/edit tasks you have access to |
-| Viewer | Only read |
+| Your Role       | Claude Can                                     |
+| --------------- | ---------------------------------------------- |
+| Domain Admin    | Everything: manage workspaces, projects, users |
+| Workspace Admin | Manage projects in that workspace              |
+| Project Manager | Manage tasks in that project                   |
+| Project Member  | Read/edit tasks you have access to             |
+| Viewer          | Only read                                      |
 
 When your permissions change, Claude's automatically change as well.
 
@@ -233,136 +234,135 @@ When your permissions change, Claude's automatically change as well.
 
 ### Phase 1 - Pairing Tools (✅ Implemented)
 
-| Tool | Description | Status |
-|------|--------------|--------|
-| `kanbu_connect` | Connect with setup code | ✅ Working |
-| `kanbu_whoami` | Show connected user and permissions | ✅ Working |
-| `kanbu_disconnect` | Disconnect | ✅ Working |
+| Tool               | Description                         | Status     |
+| ------------------ | ----------------------------------- | ---------- |
+| `kanbu_connect`    | Connect with setup code             | ✅ Working |
+| `kanbu_whoami`     | Show connected user and permissions | ✅ Working |
+| `kanbu_disconnect` | Disconnect                          | ✅ Working |
 
 ### Phase 2 - Core Tools (✅ Implemented)
 
-| Tool | Description | Required Permission | Status |
-|------|--------------|-------------------|--------|
-| `kanbu_list_workspaces` | List accessible workspaces | R on workspace | ✅ Working |
-| `kanbu_get_workspace` | Workspace details with projects | R on workspace | ✅ Working |
-| `kanbu_list_projects` | List projects in workspace | R on project | ✅ Working |
-| `kanbu_get_project` | Project details with columns | R on project | ✅ Working |
-| `kanbu_create_project` | Create new project | W on workspace | ✅ Working |
-| `kanbu_list_tasks` | Tasks in project with filters | R on project | ✅ Working |
-| `kanbu_get_task` | Task details with subtasks/comments | R on task | ✅ Working |
-| `kanbu_create_task` | Create new task | W on project | ✅ Working |
-| `kanbu_update_task` | Edit task | W on task | ✅ Working |
-| `kanbu_move_task` | Change status/column | W on task | ✅ Working |
-| `kanbu_my_tasks` | Your assigned tasks | - (own tasks) | ✅ Working |
+| Tool                    | Description                         | Required Permission | Status     |
+| ----------------------- | ----------------------------------- | ------------------- | ---------- |
+| `kanbu_list_workspaces` | List accessible workspaces          | R on workspace      | ✅ Working |
+| `kanbu_get_workspace`   | Workspace details with projects     | R on workspace      | ✅ Working |
+| `kanbu_list_projects`   | List projects in workspace          | R on project        | ✅ Working |
+| `kanbu_get_project`     | Project details with columns        | R on project        | ✅ Working |
+| `kanbu_create_project`  | Create new project                  | W on workspace      | ✅ Working |
+| `kanbu_list_tasks`      | Tasks in project with filters       | R on project        | ✅ Working |
+| `kanbu_get_task`        | Task details with subtasks/comments | R on task           | ✅ Working |
+| `kanbu_create_task`     | Create new task                     | W on project        | ✅ Working |
+| `kanbu_update_task`     | Edit task                           | W on task           | ✅ Working |
+| `kanbu_move_task`       | Change status/column                | W on task           | ✅ Working |
+| `kanbu_my_tasks`        | Your assigned tasks                 | - (own tasks)       | ✅ Working |
 
 ### Phase 3 - Subtask & Comment Tools (✅ Implemented)
 
-| Tool | Description | Required Permission | Status |
-|------|--------------|-------------------|--------|
-| `kanbu_list_subtasks` | List subtasks for a task | R on project | ✅ Working |
-| `kanbu_create_subtask` | Create new subtask | W on project | ✅ Working |
-| `kanbu_update_subtask` | Edit subtask properties | W on project | ✅ Working |
-| `kanbu_toggle_subtask` | Toggle TODO/DONE status | W on project | ✅ Working |
-| `kanbu_delete_subtask` | Delete subtask | W on project | ✅ Working |
-| `kanbu_list_comments` | Comments on a task | R on project | ✅ Working |
-| `kanbu_add_comment` | Add comment | W on project | ✅ Working |
-| `kanbu_update_comment` | Edit own comment | W on project | ✅ Working |
-| `kanbu_delete_comment` | Delete comment | W on project | ✅ Working |
+| Tool                   | Description              | Required Permission | Status     |
+| ---------------------- | ------------------------ | ------------------- | ---------- |
+| `kanbu_list_subtasks`  | List subtasks for a task | R on project        | ✅ Working |
+| `kanbu_create_subtask` | Create new subtask       | W on project        | ✅ Working |
+| `kanbu_update_subtask` | Edit subtask properties  | W on project        | ✅ Working |
+| `kanbu_toggle_subtask` | Toggle TODO/DONE status  | W on project        | ✅ Working |
+| `kanbu_delete_subtask` | Delete subtask           | W on project        | ✅ Working |
+| `kanbu_list_comments`  | Comments on a task       | R on project        | ✅ Working |
+| `kanbu_add_comment`    | Add comment              | W on project        | ✅ Working |
+| `kanbu_update_comment` | Edit own comment         | W on project        | ✅ Working |
+| `kanbu_delete_comment` | Delete comment           | W on project        | ✅ Working |
 
 ### Phase 4 - Search & Activity Tools (✅ Implemented)
 
-| Tool | Description | Required Permission | Status |
-|------|--------------|-------------------|--------|
-| `kanbu_search_tasks` | Full-text search in tasks | R on project | ✅ Working |
-| `kanbu_search_global` | Search in tasks, comments, wiki | R on project | ✅ Working |
-| `kanbu_recent_activity` | Recent project activity | R on project | ✅ Working |
-| `kanbu_task_activity` | Activity history for a task | R on project | ✅ Working |
-| `kanbu_activity_stats` | Activity statistics (30 days) | R on project | ✅ Working |
+| Tool                    | Description                     | Required Permission | Status     |
+| ----------------------- | ------------------------------- | ------------------- | ---------- |
+| `kanbu_search_tasks`    | Full-text search in tasks       | R on project        | ✅ Working |
+| `kanbu_search_global`   | Search in tasks, comments, wiki | R on project        | ✅ Working |
+| `kanbu_recent_activity` | Recent project activity         | R on project        | ✅ Working |
+| `kanbu_task_activity`   | Activity history for a task     | R on project        | ✅ Working |
+| `kanbu_activity_stats`  | Activity statistics (30 days)   | R on project        | ✅ Working |
 
 ### Phase 5 - Analytics & Insights Tools (✅ Implemented)
 
-| Tool | Description | Required Permission | Status |
-|------|--------------|-------------------|--------|
-| `kanbu_project_stats` | Project statistics, completion rate, trends | R on project | ✅ Working |
-| `kanbu_velocity` | Team velocity per week, rolling average | R on project | ✅ Working |
-| `kanbu_cycle_time` | Cycle time per column, bottleneck detection | R on project | ✅ Working |
-| `kanbu_team_workload` | Workload per team member, overdue counts | R on project | ✅ Working |
+| Tool                  | Description                                 | Required Permission | Status     |
+| --------------------- | ------------------------------------------- | ------------------- | ---------- |
+| `kanbu_project_stats` | Project statistics, completion rate, trends | R on project        | ✅ Working |
+| `kanbu_velocity`      | Team velocity per week, rolling average     | R on project        | ✅ Working |
+| `kanbu_cycle_time`    | Cycle time per column, bottleneck detection | R on project        | ✅ Working |
+| `kanbu_team_workload` | Workload per team member, overdue counts    | R on project        | ✅ Working |
 
 ### Phase 6 - User Management (✅ Implemented)
 
-| Tool | Description | Status |
-|------|--------------|--------|
-| `kanbu_list_users` | List all users | ✅ Working |
-| `kanbu_get_user` | Get user details | ✅ Working |
-| `kanbu_create_user` | Create new user | ✅ Working |
-| `kanbu_update_user` | Update user data | ✅ Working |
-| `kanbu_delete_user` | Deactivate user | ✅ Working |
-| `kanbu_reactivate_user` | Reactivate user | ✅ Working |
-| `kanbu_reset_password` | Reset password | ✅ Working |
-| `kanbu_unlock_user` | Unlock blocked user | ✅ Working |
-| `kanbu_disable_2fa` | Disable 2FA for user | ✅ Working |
-| `kanbu_revoke_sessions` | Kill user sessions | ✅ Working |
+| Tool                    | Description          | Status     |
+| ----------------------- | -------------------- | ---------- |
+| `kanbu_list_users`      | List all users       | ✅ Working |
+| `kanbu_get_user`        | Get user details     | ✅ Working |
+| `kanbu_create_user`     | Create new user      | ✅ Working |
+| `kanbu_update_user`     | Update user data     | ✅ Working |
+| `kanbu_delete_user`     | Deactivate user      | ✅ Working |
+| `kanbu_reactivate_user` | Reactivate user      | ✅ Working |
+| `kanbu_reset_password`  | Reset password       | ✅ Working |
+| `kanbu_unlock_user`     | Unlock blocked user  | ✅ Working |
+| `kanbu_disable_2fa`     | Disable 2FA for user | ✅ Working |
+| `kanbu_revoke_sessions` | Kill user sessions   | ✅ Working |
 
 ### Phase 7 - Groups (✅ Implemented)
 
-| Tool | Description | Status |
-|------|--------------|--------|
-| `kanbu_list_groups` | List groups | ✅ Working |
-| `kanbu_get_group` | Group details | ✅ Working |
-| `kanbu_create_group` | Create group | ✅ Working |
-| `kanbu_update_group` | Update group | ✅ Working |
-| `kanbu_delete_group` | Delete group | ✅ Working |
-| `kanbu_add_group_member` | Add member | ✅ Working |
+| Tool                        | Description   | Status     |
+| --------------------------- | ------------- | ---------- |
+| `kanbu_list_groups`         | List groups   | ✅ Working |
+| `kanbu_get_group`           | Group details | ✅ Working |
+| `kanbu_create_group`        | Create group  | ✅ Working |
+| `kanbu_update_group`        | Update group  | ✅ Working |
+| `kanbu_delete_group`        | Delete group  | ✅ Working |
+| `kanbu_add_group_member`    | Add member    | ✅ Working |
 | `kanbu_remove_group_member` | Remove member | ✅ Working |
 
 ### Phase 8 - ACL Management (✅ Implemented)
 
-| Tool | Description | Status |
-|------|--------------|--------|
-| `kanbu_list_acl` | List permissions | ✅ Working |
-| `kanbu_check_permission` | Check access | ✅ Working |
-| `kanbu_grant_permission` | Grant access | ✅ Working |
-| `kanbu_revoke_permission` | Revoke access | ✅ Working |
-| `kanbu_delete_acl` | Delete entry | ✅ Working |
-| `kanbu_bulk_grant` | Bulk grant | ✅ Working |
-| `kanbu_bulk_revoke` | Bulk revoke | ✅ Working |
-| `kanbu_copy_permissions` | Copy ACLs | ✅ Working |
-| `kanbu_simulate_change` | Dry run check | ✅ Working |
+| Tool                      | Description      | Status     |
+| ------------------------- | ---------------- | ---------- |
+| `kanbu_list_acl`          | List permissions | ✅ Working |
+| `kanbu_check_permission`  | Check access     | ✅ Working |
+| `kanbu_grant_permission`  | Grant access     | ✅ Working |
+| `kanbu_revoke_permission` | Revoke access    | ✅ Working |
+| `kanbu_delete_acl`        | Delete entry     | ✅ Working |
+| `kanbu_bulk_grant`        | Bulk grant       | ✅ Working |
+| `kanbu_bulk_revoke`       | Bulk revoke      | ✅ Working |
+| `kanbu_copy_permissions`  | Copy ACLs        | ✅ Working |
+| `kanbu_simulate_change`   | Dry run check    | ✅ Working |
 
 ### Phase 9 - Invites (✅ Implemented)
 
-| Tool | Description | Status |
-|------|--------------|--------|
-| `kanbu_list_invites` | List invites | ✅ Working |
-| `kanbu_send_invite` | Send invite | ✅ Working |
+| Tool                  | Description   | Status     |
+| --------------------- | ------------- | ---------- |
+| `kanbu_list_invites`  | List invites  | ✅ Working |
+| `kanbu_send_invite`   | Send invite   | ✅ Working |
 | `kanbu_cancel_invite` | Cancel invite | ✅ Working |
 
 ### Phase 10 - Audit Logs (✅ Implemented)
 
-| Tool | Description | Status |
-|------|--------------|--------|
-| `kanbu_list_audit_logs` | Query logs | ✅ Working |
-| `kanbu_get_audit_log` | Log details | ✅ Working |
-| `kanbu_audit_stats` | Statistics | ✅ Working |
+| Tool                    | Description | Status     |
+| ----------------------- | ----------- | ---------- |
+| `kanbu_list_audit_logs` | Query logs  | ✅ Working |
+| `kanbu_get_audit_log`   | Log details | ✅ Working |
+| `kanbu_audit_stats`     | Statistics  | ✅ Working |
 
 ### Phase 11 - System & Backup (✅ Implemented)
 
-| Tool | Description | Status |
-|------|--------------|--------|
-| `kanbu_get_settings` | System settings | ✅ Working |
-| `kanbu_set_setting` | Update setting | ✅ Working |
-| `kanbu_create_db_backup` | Backup DB | ✅ Working |
-| `kanbu_create_source_backup` | Backup Code | ✅ Working |
+| Tool                         | Description     | Status     |
+| ---------------------------- | --------------- | ---------- |
+| `kanbu_get_settings`         | System settings | ✅ Working |
+| `kanbu_set_setting`          | Update setting  | ✅ Working |
+| `kanbu_create_db_backup`     | Backup DB       | ✅ Working |
+| `kanbu_create_source_backup` | Backup Code     | ✅ Working |
 
 ### Phase 12 - Profile (✅ Implemented)
 
-| Tool | Description | Status |
-|------|--------------|--------|
-| `kanbu_get_profile` | My profile | ✅ Working |
-| `kanbu_update_profile` | Update profile | ✅ Working |
-| `kanbu_get_time_tracking` | My time logs | ✅ Working |
-| `kanbu_change_password` | Change password | ✅ Working |
-
+| Tool                      | Description     | Status     |
+| ------------------------- | --------------- | ---------- |
+| `kanbu_get_profile`       | My profile      | ✅ Working |
+| `kanbu_update_profile`    | Update profile  | ✅ Working |
+| `kanbu_get_time_tracking` | My time logs    | ✅ Working |
+| `kanbu_change_password`   | Change password | ✅ Working |
 
 ## Audit Logging
 

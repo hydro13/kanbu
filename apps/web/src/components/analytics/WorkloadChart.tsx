@@ -13,35 +13,35 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { Loader2, Info, AlertCircle, User } from 'lucide-react'
-import { getMediaUrl } from '@/lib/trpc'
+import { Loader2, Info, AlertCircle, User } from 'lucide-react';
+import { getMediaUrl } from '@/lib/trpc';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface TeamMember {
-  userId: number
-  username: string
-  name: string
-  avatarUrl: string | null
-  totalTasks: number
-  overdueCount: number
-  byPriority: Array<{ priority: number; count: number }>
-  timeEstimated: number
-  timeSpent: number
+  userId: number;
+  username: string;
+  name: string;
+  avatarUrl: string | null;
+  totalTasks: number;
+  overdueCount: number;
+  byPriority: Array<{ priority: number; count: number }>;
+  timeEstimated: number;
+  timeSpent: number;
 }
 
 interface WorkloadData {
-  teamMembers: TeamMember[]
-  unassignedTasks: number
-  avgTasksPerPerson: number
-  totalTeamMembers: number
+  teamMembers: TeamMember[];
+  unassignedTasks: number;
+  avgTasksPerPerson: number;
+  totalTeamMembers: number;
 }
 
 export interface WorkloadChartProps {
-  data: WorkloadData | undefined
-  isLoading: boolean
+  data: WorkloadData | undefined;
+  isLoading: boolean;
 }
 
 // =============================================================================
@@ -53,12 +53,12 @@ const priorityColors: Record<number, string> = {
   1: 'bg-blue-500',
   2: 'bg-orange-500',
   3: 'bg-red-500',
-}
+};
 
 function formatHours(hours: number): string {
-  if (hours < 1) return `${Math.round(hours * 60)}m`
-  if (hours < 24) return `${Math.round(hours * 10) / 10}h`
-  return `${Math.round(hours / 24)}d`
+  if (hours < 1) return `${Math.round(hours * 60)}m`;
+  if (hours < 24) return `${Math.round(hours * 10) / 10}h`;
+  return `${Math.round(hours / 24)}d`;
 }
 
 // =============================================================================
@@ -71,7 +71,7 @@ export function WorkloadChart({ data, isLoading }: WorkloadChartProps) {
       <div className="flex items-center justify-center h-48">
         <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
       </div>
-    )
+    );
   }
 
   if (!data || data.teamMembers.length === 0) {
@@ -80,10 +80,10 @@ export function WorkloadChart({ data, isLoading }: WorkloadChartProps) {
         <Info className="w-5 h-5 mr-2" />
         No team members with assigned tasks
       </div>
-    )
+    );
   }
 
-  const maxTasks = Math.max(...data.teamMembers.map((m) => m.totalTasks), 1)
+  const maxTasks = Math.max(...data.teamMembers.map((m) => m.totalTasks), 1);
 
   return (
     <div>
@@ -111,9 +111,9 @@ export function WorkloadChart({ data, isLoading }: WorkloadChartProps) {
       {/* Team Members Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {data.teamMembers.map((member) => {
-          const workloadPercent = (member.totalTasks / maxTasks) * 100
-          const isOverloaded = member.totalTasks > data.avgTasksPerPerson * 1.5
-          const hasOverdue = member.overdueCount > 0
+          const workloadPercent = (member.totalTasks / maxTasks) * 100;
+          const isOverloaded = member.totalTasks > data.avgTasksPerPerson * 1.5;
+          const hasOverdue = member.overdueCount > 0;
 
           return (
             <div
@@ -138,32 +138,24 @@ export function WorkloadChart({ data, isLoading }: WorkloadChartProps) {
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-foreground truncate">
-                    {member.name}
-                  </p>
+                  <p className="font-medium text-foreground truncate">{member.name}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                     @{member.username}
                   </p>
                 </div>
-                {isOverloaded && (
-                  <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
-                )}
+                {isOverloaded && <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />}
               </div>
 
               {/* Task Count */}
               <div className="flex items-center justify-between mb-2">
-                <span className="text-2xl font-bold text-foreground">
-                  {member.totalTasks}
-                </span>
+                <span className="text-2xl font-bold text-foreground">{member.totalTasks}</span>
                 <span className="text-xs text-gray-500 dark:text-gray-400">tasks</span>
               </div>
 
               {/* Workload Bar */}
               <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden mb-3">
                 <div
-                  className={`h-full rounded-full ${
-                    isOverloaded ? 'bg-red-500' : 'bg-blue-500'
-                  }`}
+                  className={`h-full rounded-full ${isOverloaded ? 'bg-red-500' : 'bg-blue-500'}`}
                   style={{ width: `${workloadPercent}%` }}
                 />
               </div>
@@ -171,8 +163,8 @@ export function WorkloadChart({ data, isLoading }: WorkloadChartProps) {
               {/* Priority Breakdown */}
               <div className="flex items-center gap-1 mb-2">
                 {[3, 2, 1, 0].map((priority) => {
-                  const count = member.byPriority.find((p) => p.priority === priority)?.count ?? 0
-                  if (count === 0) return null
+                  const count = member.byPriority.find((p) => p.priority === priority)?.count ?? 0;
+                  if (count === 0) return null;
                   return (
                     <div
                       key={priority}
@@ -180,26 +172,20 @@ export function WorkloadChart({ data, isLoading }: WorkloadChartProps) {
                     >
                       {count}
                     </div>
-                  )
+                  );
                 })}
               </div>
 
               {/* Footer Stats */}
               <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
-                <span>
-                  Est: {formatHours(member.timeEstimated)}
-                </span>
-                <span>
-                  Spent: {formatHours(member.timeSpent)}
-                </span>
+                <span>Est: {formatHours(member.timeEstimated)}</span>
+                <span>Spent: {formatHours(member.timeSpent)}</span>
                 {hasOverdue && (
-                  <span className="text-red-500 font-medium">
-                    {member.overdueCount} overdue
-                  </span>
+                  <span className="text-red-500 font-medium">{member.overdueCount} overdue</span>
                 )}
               </div>
             </div>
-          )
+          );
         })}
 
         {/* Unassigned Card */}
@@ -210,12 +196,8 @@ export function WorkloadChart({ data, isLoading }: WorkloadChartProps) {
                 <AlertCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
               </div>
               <div>
-                <p className="font-medium text-foreground">
-                  Unassigned
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
-                  No assignee
-                </p>
+                <p className="font-medium text-foreground">Unassigned</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">No assignee</p>
               </div>
             </div>
             <div className="flex items-center justify-between">
@@ -228,7 +210,7 @@ export function WorkloadChart({ data, isLoading }: WorkloadChartProps) {
         )}
       </div>
     </div>
-  )
+  );
 }
 
-export default WorkloadChart
+export default WorkloadChart;

@@ -18,15 +18,15 @@
  * ===================================================================
  */
 
-import { Link } from 'react-router-dom'
-import { DashboardLayout, ProductivityWidget } from '@/components/dashboard'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
-import { StickyNoteList } from '@/components/sticky'
-import { useAppSelector } from '@/store'
-import { selectUser } from '@/store/authSlice'
-import { trpc, getMediaUrl } from '@/lib/trpc'
-import { Star, Clock, AlertTriangle, CheckCircle2 } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { Link } from 'react-router-dom';
+import { DashboardLayout, ProductivityWidget } from '@/components/dashboard';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { StickyNoteList } from '@/components/sticky';
+import { useAppSelector } from '@/store';
+import { selectUser } from '@/store/authSlice';
+import { trpc, getMediaUrl } from '@/lib/trpc';
+import { Star, Clock, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 // =============================================================================
 // Icons
@@ -34,18 +34,40 @@ import { cn } from '@/lib/utils'
 
 function TaskIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+      />
     </svg>
-  )
+  );
 }
 
 function SubtaskIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 14l2 2 4-4m-6-4h.01M9 14h.01" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2M9 14l2 2 4-4m-6-4h.01M9 14h.01"
+      />
     </svg>
-  )
+  );
 }
 
 // =============================================================================
@@ -54,18 +76,29 @@ function SubtaskIcon({ className }: { className?: string }) {
 
 function WorkspaceIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+      />
     </svg>
-  )
+  );
 }
 
 // Get greeting based on time of day
 function getGreeting(): string {
-  const hour = new Date().getHours()
-  if (hour < 12) return 'Good morning'
-  if (hour < 18) return 'Good afternoon'
-  return 'Good evening'
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Good morning';
+  if (hour < 18) return 'Good afternoon';
+  return 'Good evening';
 }
 
 // Get today's date formatted
@@ -74,57 +107,60 @@ function getTodayFormatted(): string {
     weekday: 'long',
     month: 'long',
     day: 'numeric',
-    year: 'numeric'
-  })
+    year: 'numeric',
+  });
 }
 
 export function DashboardOverview() {
-  const user = useAppSelector(selectUser)
+  const user = useAppSelector(selectUser);
 
   // Fetch all workspaces the user has access to
-  const workspacesQuery = trpc.workspace.list.useQuery()
-  const workspaces = workspacesQuery.data ?? []
+  const workspacesQuery = trpc.workspace.list.useQuery();
+  const workspaces = workspacesQuery.data ?? [];
 
   // Fetch user's tasks and subtasks for quick stats
-  const myTasksQuery = trpc.user.getMyTasks.useQuery()
-  const mySubtasksQuery = trpc.user.getMySubtasks.useQuery()
+  const myTasksQuery = trpc.user.getMyTasks.useQuery();
+  const mySubtasksQuery = trpc.user.getMySubtasks.useQuery();
 
   // Fetch favorites
-  const favoritesQuery = trpc.favorite.list.useQuery()
-  const favorites = favoritesQuery.data ?? []
+  const favoritesQuery = trpc.favorite.list.useQuery();
+  const favorites = favoritesQuery.data ?? [];
 
   // Calculate quick stats
-  const activeTasks = myTasksQuery.data?.filter((t) => t.isActive).length ?? 0
-  const activeSubtasks = mySubtasksQuery.data?.filter((s) => s.status !== 'DONE').length ?? 0
-  const completedSubtasks = mySubtasksQuery.data?.filter((s) => s.status === 'DONE').length ?? 0
+  const activeTasks = myTasksQuery.data?.filter((t) => t.isActive).length ?? 0;
+  const activeSubtasks = mySubtasksQuery.data?.filter((s) => s.status !== 'DONE').length ?? 0;
+  const completedSubtasks = mySubtasksQuery.data?.filter((s) => s.status === 'DONE').length ?? 0;
 
   // Date calculations
-  const now = new Date()
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  const tomorrow = new Date(today)
-  tomorrow.setDate(tomorrow.getDate() + 1)
-  const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
   // Tasks due today
-  const tasksDueToday = myTasksQuery.data?.filter((t) => {
-    if (!t.dateDue || !t.isActive) return false
-    const dueDate = new Date(t.dateDue)
-    return dueDate >= today && dueDate < tomorrow
-  }) ?? []
+  const tasksDueToday =
+    myTasksQuery.data?.filter((t) => {
+      if (!t.dateDue || !t.isActive) return false;
+      const dueDate = new Date(t.dateDue);
+      return dueDate >= today && dueDate < tomorrow;
+    }) ?? [];
 
   // Overdue tasks
-  const overdueTasks = myTasksQuery.data?.filter((t) => {
-    if (!t.dateDue || !t.isActive) return false
-    const dueDate = new Date(t.dateDue)
-    return dueDate < today
-  }) ?? []
+  const overdueTasks =
+    myTasksQuery.data?.filter((t) => {
+      if (!t.dateDue || !t.isActive) return false;
+      const dueDate = new Date(t.dateDue);
+      return dueDate < today;
+    }) ?? [];
 
   // Tasks due within 7 days (excluding today and overdue)
-  const tasksDueSoon = myTasksQuery.data?.filter((t) => {
-    if (!t.dateDue || !t.isActive) return false
-    const dueDate = new Date(t.dateDue)
-    return dueDate >= tomorrow && dueDate <= weekFromNow
-  }).length ?? 0
+  const tasksDueSoon =
+    myTasksQuery.data?.filter((t) => {
+      if (!t.dateDue || !t.isActive) return false;
+      const dueDate = new Date(t.dateDue);
+      return dueDate >= tomorrow && dueDate <= weekFromNow;
+    }).length ?? 0;
 
   return (
     <DashboardLayout>
@@ -193,24 +229,26 @@ export function DashboardOverview() {
           <Card className={cn(overdueTasks.length > 0 && 'border-destructive/50')}>
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
-                <div className={cn(
-                  'h-10 w-10 rounded-md flex items-center justify-center',
-                  overdueTasks.length > 0
-                    ? 'bg-destructive/10'
-                    : 'bg-gray-100 dark:bg-gray-800'
-                )}>
-                  <AlertTriangle className={cn(
-                    'h-5 w-5',
-                    overdueTasks.length > 0
-                      ? 'text-destructive'
-                      : 'text-gray-500'
-                  )} />
+                <div
+                  className={cn(
+                    'h-10 w-10 rounded-md flex items-center justify-center',
+                    overdueTasks.length > 0 ? 'bg-destructive/10' : 'bg-gray-100 dark:bg-gray-800'
+                  )}
+                >
+                  <AlertTriangle
+                    className={cn(
+                      'h-5 w-5',
+                      overdueTasks.length > 0 ? 'text-destructive' : 'text-gray-500'
+                    )}
+                  />
                 </div>
                 <div>
-                  <p className={cn(
-                    'text-2xl font-bold',
-                    overdueTasks.length > 0 && 'text-destructive'
-                  )}>
+                  <p
+                    className={cn(
+                      'text-2xl font-bold',
+                      overdueTasks.length > 0 && 'text-destructive'
+                    )}
+                  >
                     {overdueTasks.length}
                   </p>
                   <p className="text-sm text-muted-foreground">Overdue</p>
@@ -260,9 +298,7 @@ export function DashboardOverview() {
             </CardHeader>
             <CardContent>
               {tasksDueToday.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  No tasks due today
-                </p>
+                <p className="text-sm text-muted-foreground text-center py-4">No tasks due today</p>
               ) : (
                 <ul className="space-y-2">
                   {tasksDueToday.slice(0, 5).map((task) => (
@@ -271,14 +307,16 @@ export function DashboardOverview() {
                         to={`/workspace/${task.project.workspace.slug}/project/${task.project.identifier}/board?task=${task.id}`}
                         className="flex items-center gap-3 p-2 rounded hover:bg-accent/50 transition-colors"
                       >
-                        <span className={cn(
-                          'w-2 h-2 rounded-full',
-                          task.priority >= 2
-                            ? 'bg-red-500'
-                            : task.priority === 1
-                            ? 'bg-yellow-500'
-                            : 'bg-green-500'
-                        )} />
+                        <span
+                          className={cn(
+                            'w-2 h-2 rounded-full',
+                            task.priority >= 2
+                              ? 'bg-red-500'
+                              : task.priority === 1
+                                ? 'bg-yellow-500'
+                                : 'bg-green-500'
+                          )}
+                        />
                         <span className="flex-1 truncate text-sm">{task.title}</span>
                         <span className="text-xs text-muted-foreground">{task.project.name}</span>
                       </Link>
@@ -286,10 +324,7 @@ export function DashboardOverview() {
                   ))}
                   {tasksDueToday.length > 5 && (
                     <li className="text-center">
-                      <Link
-                        to="/dashboard/tasks"
-                        className="text-sm text-primary hover:underline"
-                      >
+                      <Link to="/dashboard/tasks" className="text-sm text-primary hover:underline">
                         +{tasksDueToday.length - 5} more tasks
                       </Link>
                     </li>
@@ -321,7 +356,9 @@ export function DashboardOverview() {
                         className="flex items-center gap-3 p-2 rounded hover:bg-accent/50 transition-colors"
                       >
                         <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
-                        <span className="flex-1 truncate text-sm font-medium">{fav.projectName}</span>
+                        <span className="flex-1 truncate text-sm font-medium">
+                          {fav.projectName}
+                        </span>
                         <span className="text-xs text-muted-foreground">{fav.workspaceName}</span>
                       </Link>
                     </li>
@@ -372,7 +409,9 @@ export function DashboardOverview() {
                 <div className="text-center py-8 text-muted-foreground">
                   <WorkspaceIcon className="h-12 w-12 mx-auto mb-3 opacity-50" />
                   <p>No workspaces yet</p>
-                  <p className="text-sm mt-2">Contact an administrator to get access to a workspace</p>
+                  <p className="text-sm mt-2">
+                    Contact an administrator to get access to a workspace
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -409,7 +448,9 @@ export function DashboardOverview() {
                           <p className="text-xs text-muted-foreground">Members</p>
                         </div>
                         <div className="space-y-1">
-                          <p className="text-lg font-bold capitalize">{workspace.role.toLowerCase()}</p>
+                          <p className="text-lg font-bold capitalize">
+                            {workspace.role.toLowerCase()}
+                          </p>
                           <p className="text-xs text-muted-foreground">Your Role</p>
                         </div>
                       </div>
@@ -425,7 +466,7 @@ export function DashboardOverview() {
         <StickyNoteList />
       </div>
     </DashboardLayout>
-  )
+  );
 }
 
-export default DashboardOverview
+export default DashboardOverview;

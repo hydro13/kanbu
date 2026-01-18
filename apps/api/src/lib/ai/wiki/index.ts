@@ -43,7 +43,7 @@ export {
   type CategoryHandlingConfig,
   // Fase 25 - Text Chunking
   type ChunkedExtractionOptions,
-} from './WikiAiService'
+} from './WikiAiService';
 
 // Fase 16.2 - Date Extraction Prompts
 export {
@@ -53,7 +53,7 @@ export {
   calculateRelativeDate,
   type ExtractEdgeDatesContext,
   type ExtractedEdgeDates,
-} from './prompts'
+} from './prompts';
 
 // Fase 16.3 - Contradiction Detection Prompts
 export {
@@ -63,7 +63,7 @@ export {
   type ExistingFact,
   type DetectContradictionsContext,
   type ContradictionResult,
-} from './prompts'
+} from './prompts';
 
 // Fase 17.2 - Enhanced Contradiction Detection Prompts
 export {
@@ -72,7 +72,7 @@ export {
   parseEnhancedDetectContradictionsResponse,
   toBasicContradictionResult,
   type EnhancedContradictionResult,
-} from './prompts'
+} from './prompts';
 
 // Fase 17.2 - Batch Contradiction Detection Prompts
 export {
@@ -82,7 +82,7 @@ export {
   parseBatchDetectContradictionsResponse,
   type BatchFactResult,
   type BatchContradictionResult,
-} from './prompts'
+} from './prompts';
 
 // Fase 17.2 - Category-Specific Handling
 export {
@@ -90,7 +90,7 @@ export {
   getResolutionAction,
   filterContradictionsByCategory,
   getContradictionNotification,
-} from './prompts'
+} from './prompts';
 
 // Fase 23.3 - Reflexion Extraction Prompts
 export {
@@ -105,7 +105,7 @@ export {
   type ExtractedFact,
   type ReflexionEdgesContext,
   type ReflexionEdgesResponse,
-} from './prompts'
+} from './prompts';
 
 export {
   WikiEmbeddingService,
@@ -115,7 +115,7 @@ export {
   type WikiPageEmbedding,
   type SemanticSearchResult,
   type SemanticSearchOptions,
-} from './WikiEmbeddingService'
+} from './WikiEmbeddingService';
 
 export {
   WikiRagService,
@@ -127,7 +127,7 @@ export {
   type ConversationMessage,
   type Conversation,
   type AskWikiOptions,
-} from './WikiRagService'
+} from './WikiRagService';
 
 // Fase 17.3 - Conflict Resolution & Audit Trail
 export {
@@ -141,7 +141,7 @@ export {
   type ContradictionAuditEntry,
   type LogContradictionInput,
   type RevertResult,
-} from './contradictionAudit'
+} from './contradictionAudit';
 
 // Fase 19.2 - Edge Embeddings
 // Fase 19.4 - Search Integration (hybridSemanticSearch)
@@ -158,7 +158,7 @@ export {
   type EdgeSearchOptions,
   type HybridSearchOptions,
   type BatchEmbeddingResult,
-} from './WikiEdgeEmbeddingService'
+} from './WikiEdgeEmbeddingService';
 
 // Fase 21.3 - Node Embeddings (Entity Resolution)
 export {
@@ -172,7 +172,7 @@ export {
   type SimilarNodeResult,
   type SimilarNodeSearchOptions,
   type BatchNodeEmbeddingResult,
-} from './WikiNodeEmbeddingService'
+} from './WikiNodeEmbeddingService';
 
 // Fase 22 - Entity Deduplication Types
 export {
@@ -197,7 +197,7 @@ export {
   type BatchDeduplicationResult,
   // Constants
   DEDUP_CONSTANTS,
-} from './types'
+} from './types';
 
 // Fase 23 - Reflexion Extraction Types
 export {
@@ -208,14 +208,14 @@ export {
   type ReflexionConfig,
   type ReflexionSyncResult,
   DEFAULT_REFLEXION_CONFIG,
-} from './types'
+} from './types';
 
 // Fase 22.3 - Entity Deduplication Service
 export {
   WikiDeduplicationService,
   getWikiDeduplicationService,
   resetWikiDeduplicationService,
-} from './WikiDeduplicationService'
+} from './WikiDeduplicationService';
 
 // Fase 24.2 - Community Detection Types
 export {
@@ -253,7 +253,7 @@ export {
   type CommunityDisplayData,
   type CommunityDetectionStatus,
   type CommunityDetectionProgress,
-} from './types'
+} from './types';
 
 // Fase 24.3 - Label Propagation Algorithm
 export {
@@ -261,7 +261,7 @@ export {
   buildProjectionFromEdges,
   getClusterStats,
   mergeSmallClusters,
-} from './algorithms'
+} from './algorithms';
 
 // Fase 24.4 - Community Summarization Prompts
 export {
@@ -271,14 +271,14 @@ export {
   getGenerateCommunityNameSystemPrompt,
   getGenerateCommunityNameUserPrompt,
   parseGenerateCommunityNameResponse,
-} from './prompts'
+} from './prompts';
 
 // Fase 24.5 - WikiClusterService
 export {
   WikiClusterService,
   getWikiClusterService,
   resetWikiClusterService,
-} from './WikiClusterService'
+} from './WikiClusterService';
 
 // Fase 25.1 - Text Chunking Service
 export {
@@ -290,4 +290,4 @@ export {
   type ContentChunk,
   type ChunkContext,
   type ChunkingResult,
-} from './ChunkingService'
+} from './ChunkingService';

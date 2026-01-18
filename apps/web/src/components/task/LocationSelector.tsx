@@ -13,31 +13,31 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState, useRef, useEffect } from 'react'
-import { trpc } from '@/lib/trpc'
-import { ChevronDown, Loader2 } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react';
+import { trpc } from '@/lib/trpc';
+import { ChevronDown, Loader2 } from 'lucide-react';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface Column {
-  id: number
-  title: string
+  id: number;
+  title: string;
 }
 
 interface Swimlane {
-  id: number
-  name: string
+  id: number;
+  name: string;
 }
 
 export interface LocationSelectorProps {
-  taskId: number
-  projectId: number
-  currentColumn: Column
-  currentSwimlane: Swimlane | null
-  onLocationChange?: (columnId: number, swimlaneId: number | null) => void
-  disabled?: boolean
+  taskId: number;
+  projectId: number;
+  currentColumn: Column;
+  currentSwimlane: Swimlane | null;
+  onLocationChange?: (columnId: number, swimlaneId: number | null) => void;
+  disabled?: boolean;
 }
 
 // =============================================================================
@@ -45,16 +45,16 @@ export interface LocationSelectorProps {
 // =============================================================================
 
 interface DropdownSelectorProps<T> {
-  label: string
-  value: string
-  options: T[]
-  getOptionId: (option: T) => number
-  getOptionLabel: (option: T) => string
-  selectedId: number | null
-  onSelect: (option: T) => void
-  disabled?: boolean
-  isLoading?: boolean
-  emptyMessage?: string
+  label: string;
+  value: string;
+  options: T[];
+  getOptionId: (option: T) => number;
+  getOptionLabel: (option: T) => string;
+  selectedId: number | null;
+  onSelect: (option: T) => void;
+  disabled?: boolean;
+  isLoading?: boolean;
+  emptyMessage?: string;
 }
 
 function DropdownSelector<T>({
@@ -69,19 +69,19 @@ function DropdownSelector<T>({
   isLoading = false,
   emptyMessage = 'No options available',
 }: DropdownSelectorProps<T>) {
-  const [isOpen, setIsOpen] = useState(false)
-  const containerRef = useRef<HTMLDivElement>(null)
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false)
+        setIsOpen(false);
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   return (
     <div ref={containerRef} className="relative">
@@ -89,13 +89,17 @@ function DropdownSelector<T>({
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
         className={`flex items-center justify-between w-full text-sm py-0.5 transition-colors ${
-          disabled ? 'cursor-not-allowed text-gray-400' : 'hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer rounded'
+          disabled
+            ? 'cursor-not-allowed text-gray-400'
+            : 'hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer rounded'
         }`}
       >
         <span className="text-gray-600 dark:text-gray-400">{label}:</span>
         <span className="flex items-center gap-1 text-foreground">
           {value}
-          {!disabled && <ChevronDown className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />}
+          {!disabled && (
+            <ChevronDown className={`w-3 h-3 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+          )}
         </span>
       </button>
 
@@ -108,14 +112,14 @@ function DropdownSelector<T>({
           ) : options.length > 0 ? (
             <div className="p-1">
               {options.map((option) => {
-                const id = getOptionId(option)
-                const isSelected = id === selectedId
+                const id = getOptionId(option);
+                const isSelected = id === selectedId;
                 return (
                   <button
                     key={id}
                     onClick={() => {
-                      onSelect(option)
-                      setIsOpen(false)
+                      onSelect(option);
+                      setIsOpen(false);
                     }}
                     className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-left text-sm transition-colors ${
                       isSelected
@@ -125,7 +129,7 @@ function DropdownSelector<T>({
                   >
                     {getOptionLabel(option)}
                   </button>
-                )
+                );
               })}
             </div>
           ) : (
@@ -136,7 +140,7 @@ function DropdownSelector<T>({
         </div>
       )}
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -151,28 +155,28 @@ export function LocationSelector({
   onLocationChange,
   disabled = false,
 }: LocationSelectorProps) {
-  const utils = trpc.useUtils()
+  const utils = trpc.useUtils();
 
   // Fetch project to get columns and swimlanes
   const { data: project, isLoading } = trpc.project.get.useQuery(
     { projectId },
     { enabled: projectId > 0 }
-  )
+  );
 
   // Move task mutation
   const moveMutation = trpc.task.move.useMutation({
     onSuccess: () => {
-      utils.task.get.invalidate({ taskId })
-      utils.task.list.invalidate()
+      utils.task.get.invalidate({ taskId });
+      utils.task.list.invalidate();
     },
-  })
+  });
 
-  const columns = project?.columns ?? []
-  const swimlanes = project?.swimlanes ?? []
-  const hasMultipleSwimlanes = swimlanes.length > 1
+  const columns = project?.columns ?? [];
+  const swimlanes = project?.swimlanes ?? [];
+  const hasMultipleSwimlanes = swimlanes.length > 1;
 
   const handleColumnChange = (column: Column) => {
-    if (column.id === currentColumn.id) return
+    if (column.id === currentColumn.id) return;
 
     moveMutation.mutate(
       {
@@ -182,14 +186,14 @@ export function LocationSelector({
       },
       {
         onSuccess: () => {
-          onLocationChange?.(column.id, currentSwimlane?.id ?? null)
+          onLocationChange?.(column.id, currentSwimlane?.id ?? null);
         },
       }
-    )
-  }
+    );
+  };
 
   const handleSwimlaneChange = (swimlane: Swimlane) => {
-    if (swimlane.id === currentSwimlane?.id) return
+    if (swimlane.id === currentSwimlane?.id) return;
 
     moveMutation.mutate(
       {
@@ -199,13 +203,13 @@ export function LocationSelector({
       },
       {
         onSuccess: () => {
-          onLocationChange?.(currentColumn.id, swimlane.id)
+          onLocationChange?.(currentColumn.id, swimlane.id);
         },
       }
-    )
-  }
+    );
+  };
 
-  const isDisabled = disabled || moveMutation.isPending
+  const isDisabled = disabled || moveMutation.isPending;
 
   return (
     <div className="space-y-1">
@@ -242,7 +246,7 @@ export function LocationSelector({
         />
       )}
     </div>
-  )
+  );
 }
 
-export default LocationSelector
+export default LocationSelector;

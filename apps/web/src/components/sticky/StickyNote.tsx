@@ -17,39 +17,44 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState } from 'react'
-import { trpc } from '@/lib/trpc'
-import { RichTextEditor, getDisplayContent, isLexicalContent, lexicalToPlainText } from '@/components/editor'
+import { useState } from 'react';
+import { trpc } from '@/lib/trpc';
+import {
+  RichTextEditor,
+  getDisplayContent,
+  isLexicalContent,
+  lexicalToPlainText,
+} from '@/components/editor';
 
 // =============================================================================
 // Types
 // =============================================================================
 
-export type StickyNoteColor = 'YELLOW' | 'PINK' | 'BLUE' | 'GREEN' | 'PURPLE' | 'ORANGE'
-export type StickyVisibility = 'PRIVATE' | 'PUBLIC'
+export type StickyNoteColor = 'YELLOW' | 'PINK' | 'BLUE' | 'GREEN' | 'PURPLE' | 'ORANGE';
+export type StickyVisibility = 'PRIVATE' | 'PUBLIC';
 
 export interface StickyNoteData {
-  id: number
-  userId: number
-  title: string | null
-  content: string
-  color: StickyNoteColor
-  isPinned: boolean
-  visibility: StickyVisibility
-  createdAt: string
-  updatedAt: string
+  id: number;
+  userId: number;
+  title: string | null;
+  content: string;
+  color: StickyNoteColor;
+  isPinned: boolean;
+  visibility: StickyVisibility;
+  createdAt: string;
+  updatedAt: string;
   links?: Array<{
-    id: number
-    entityType: string
-    entityId: number
-  }>
+    id: number;
+    entityType: string;
+    entityId: number;
+  }>;
 }
 
 interface StickyNoteProps {
-  note: StickyNoteData
-  currentUserId: number
-  onEdit?: (note: StickyNoteData) => void
-  onDelete?: (noteId: number) => void
+  note: StickyNoteData;
+  currentUserId: number;
+  onEdit?: (note: StickyNoteData) => void;
+  onDelete?: (noteId: number) => void;
 }
 
 // =============================================================================
@@ -87,7 +92,7 @@ const colorConfig: Record<StickyNoteColor, { bg: string; border: string; text: s
     border: 'border-orange-300 dark:border-orange-700',
     text: 'text-orange-900 dark:text-orange-100',
   },
-}
+};
 
 // =============================================================================
 // Icons
@@ -96,48 +101,108 @@ const colorConfig: Record<StickyNoteColor, { bg: string; border: string; text: s
 function PinIcon({ className, filled }: { className?: string; filled?: boolean }) {
   if (filled) {
     return (
-      <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+      <svg
+        className={className}
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+      >
         <path d="M16 4v8h2.09c1.13 0 1.77 1.33 1.06 2.21L12 22l-7.15-7.79c-.71-.88-.07-2.21 1.06-2.21H8V4c0-1.1.9-2 2-2h4c1.1 0 2 .9 2 2z" />
       </svg>
-    )
+    );
   }
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+      />
     </svg>
-  )
+  );
 }
 
 function EditIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+      />
     </svg>
-  )
+  );
 }
 
 function TrashIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+      />
     </svg>
-  )
+  );
 }
 
 function LockIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+      />
     </svg>
-  )
+  );
 }
 
 function GlobeIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
     </svg>
-  )
+  );
 }
 
 // =============================================================================
@@ -145,40 +210,40 @@ function GlobeIcon({ className }: { className?: string }) {
 // =============================================================================
 
 export function StickyNote({ note, currentUserId, onEdit, onDelete }: StickyNoteProps) {
-  const [isHovered, setIsHovered] = useState(false)
-  const [isExpanded, setIsExpanded] = useState(false)
-  const utils = trpc.useUtils()
+  const [isHovered, setIsHovered] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const utils = trpc.useUtils();
 
   const togglePinMutation = trpc.stickyNote.togglePin.useMutation({
     onSuccess: () => {
-      utils.stickyNote.list.invalidate()
+      utils.stickyNote.list.invalidate();
     },
-  })
+  });
 
   const deleteMutation = trpc.stickyNote.delete.useMutation({
     onSuccess: () => {
-      utils.stickyNote.list.invalidate()
-      onDelete?.(note.id)
+      utils.stickyNote.list.invalidate();
+      onDelete?.(note.id);
     },
-  })
+  });
 
-  const isOwner = note.userId === currentUserId
-  const colors = colorConfig[note.color]
-  const hasRichContent = isLexicalContent(note.content)
+  const isOwner = note.userId === currentUserId;
+  const colors = colorConfig[note.color];
+  const hasRichContent = isLexicalContent(note.content);
 
   const handleTogglePin = () => {
-    togglePinMutation.mutate({ id: note.id })
-  }
+    togglePinMutation.mutate({ id: note.id });
+  };
 
   const handleDelete = () => {
     if (confirm('Are you sure you want to delete this note?')) {
-      deleteMutation.mutate({ id: note.id })
+      deleteMutation.mutate({ id: note.id });
     }
-  }
+  };
 
   // For plain text preview (truncated)
-  const plainTextPreview = lexicalToPlainText(note.content).slice(0, 300)
-  const isLongContent = lexicalToPlainText(note.content).length > 300
+  const plainTextPreview = lexicalToPlainText(note.content).slice(0, 300);
+  const isLongContent = lexicalToPlainText(note.content).length > 300;
 
   return (
     <div
@@ -189,9 +254,7 @@ export function StickyNote({ note, currentUserId, onEdit, onDelete }: StickyNote
       {/* Header */}
       <div className="flex items-start justify-between mb-2">
         <div className="flex items-center gap-2">
-          {note.isPinned && (
-            <PinIcon className="h-4 w-4 opacity-70" filled />
-          )}
+          {note.isPinned && <PinIcon className="h-4 w-4 opacity-70" filled />}
           {note.visibility === 'PRIVATE' ? (
             <LockIcon className="h-3 w-3 opacity-50" />
           ) : (
@@ -229,9 +292,7 @@ export function StickyNote({ note, currentUserId, onEdit, onDelete }: StickyNote
       </div>
 
       {/* Title */}
-      {note.title && (
-        <h4 className="font-semibold mb-2 line-clamp-1">{note.title}</h4>
-      )}
+      {note.title && <h4 className="font-semibold mb-2 line-clamp-1">{note.title}</h4>}
 
       {/* Content */}
       {isExpanded && hasRichContent ? (
@@ -278,7 +339,7 @@ export function StickyNote({ note, currentUserId, onEdit, onDelete }: StickyNote
         })}
       </div>
     </div>
-  )
+  );
 }
 
-export default StickyNote
+export default StickyNote;

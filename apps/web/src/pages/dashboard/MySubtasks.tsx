@@ -14,22 +14,22 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { DashboardLayout } from '@/components/dashboard'
-import { trpc } from '@/lib/trpc'
+import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { DashboardLayout } from '@/components/dashboard';
+import { trpc } from '@/lib/trpc';
 
 // =============================================================================
 // Types
 // =============================================================================
 
-type SortField = 'title' | 'status' | 'task' | 'project' | 'timeEstimated' | 'timeSpent'
-type SortDirection = 'asc' | 'desc'
-type StatusFilter = 'all' | 'todo' | 'in_progress' | 'done'
+type SortField = 'title' | 'status' | 'task' | 'project' | 'timeEstimated' | 'timeSpent';
+type SortDirection = 'asc' | 'desc';
+type StatusFilter = 'all' | 'todo' | 'in_progress' | 'done';
 
 interface SortConfig {
-  field: SortField
-  direction: SortDirection
+  field: SortField;
+  direction: SortDirection;
 }
 
 // =============================================================================
@@ -51,19 +51,36 @@ function LoadingSpinner() {
         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
       />
     </svg>
-  )
+  );
 }
 
 function SortIcon({ direction }: { direction: SortDirection | null }) {
   if (!direction) {
     return (
-      <svg className="h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+      <svg
+        className="h-4 w-4 text-gray-400"
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+        />
       </svg>
-    )
+    );
   }
   return (
-    <svg className="h-4 w-4 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg
+      className="h-4 w-4 text-blue-500"
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
       <path
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -71,7 +88,7 @@ function SortIcon({ direction }: { direction: SortDirection | null }) {
         d={direction === 'asc' ? 'M5 15l7-7 7 7' : 'M19 9l-7 7-7-7'}
       />
     </svg>
-  )
+  );
 }
 
 // =============================================================================
@@ -86,7 +103,7 @@ function SubtasksLoading() {
         <p className="mt-4 text-gray-500 dark:text-gray-400">Loading your subtasks...</p>
       </div>
     </div>
-  )
+  );
 }
 
 function SubtasksError({ message, onRetry }: { message: string; onRetry: () => void }) {
@@ -103,7 +120,7 @@ function SubtasksError({ message, onRetry }: { message: string; onRetry: () => v
         </button>
       </div>
     </div>
-  )
+  );
 }
 
 function SubtasksEmpty() {
@@ -111,10 +128,12 @@ function SubtasksEmpty() {
     <div className="flex items-center justify-center h-96">
       <div className="text-center">
         <h3 className="text-lg font-medium text-foreground">No subtasks assigned</h3>
-        <p className="mt-2 text-gray-500 dark:text-gray-400">You don't have any subtasks assigned to you yet.</p>
+        <p className="mt-2 text-gray-500 dark:text-gray-400">
+          You don't have any subtasks assigned to you yet.
+        </p>
       </div>
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -122,20 +141,34 @@ function SubtasksEmpty() {
 // =============================================================================
 
 function StatusBadge({ status }: { status: string }) {
-  const defaultConfig = { bg: 'bg-gray-100 dark:bg-gray-700', text: 'text-gray-800 dark:text-gray-200', label: 'To Do' }
+  const defaultConfig = {
+    bg: 'bg-gray-100 dark:bg-gray-700',
+    text: 'text-gray-800 dark:text-gray-200',
+    label: 'To Do',
+  };
   const statusConfig: Record<string, { bg: string; text: string; label: string }> = {
     TODO: defaultConfig,
-    IN_PROGRESS: { bg: 'bg-blue-100 dark:bg-blue-900/30', text: 'text-blue-800 dark:text-blue-300', label: 'In Progress' },
-    DONE: { bg: 'bg-green-100 dark:bg-green-900/30', text: 'text-green-800 dark:text-green-300', label: 'Done' },
-  }
+    IN_PROGRESS: {
+      bg: 'bg-blue-100 dark:bg-blue-900/30',
+      text: 'text-blue-800 dark:text-blue-300',
+      label: 'In Progress',
+    },
+    DONE: {
+      bg: 'bg-green-100 dark:bg-green-900/30',
+      text: 'text-green-800 dark:text-green-300',
+      label: 'Done',
+    },
+  };
 
-  const config = statusConfig[status] ?? defaultConfig
+  const config = statusConfig[status] ?? defaultConfig;
 
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${config.bg} ${config.text}`}>
+    <span
+      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${config.bg} ${config.text}`}
+    >
       {config.label}
     </span>
-  )
+  );
 }
 
 // =============================================================================
@@ -143,9 +176,9 @@ function StatusBadge({ status }: { status: string }) {
 // =============================================================================
 
 interface PageHeaderProps {
-  totalSubtasks: number
-  statusFilter: StatusFilter
-  onStatusFilterChange: (filter: StatusFilter) => void
+  totalSubtasks: number;
+  statusFilter: StatusFilter;
+  onStatusFilterChange: (filter: StatusFilter) => void;
 }
 
 function PageHeader({ totalSubtasks, statusFilter, onStatusFilterChange }: PageHeaderProps) {
@@ -170,7 +203,7 @@ function PageHeader({ totalSubtasks, statusFilter, onStatusFilterChange }: PageH
         </select>
       </div>
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -178,8 +211,8 @@ function PageHeader({ totalSubtasks, statusFilter, onStatusFilterChange }: PageH
 // =============================================================================
 
 interface TableHeaderProps {
-  sortConfig: SortConfig
-  onSort: (field: SortField) => void
+  sortConfig: SortConfig;
+  onSort: (field: SortField) => void;
 }
 
 function TableHeader({ sortConfig, onSort }: TableHeaderProps) {
@@ -190,7 +223,7 @@ function TableHeader({ sortConfig, onSort }: TableHeaderProps) {
     { field: 'status', label: 'Status', width: 'w-28' },
     { field: 'timeEstimated', label: 'Estimated', width: 'w-24' },
     { field: 'timeSpent', label: 'Spent', width: 'w-24' },
-  ]
+  ];
 
   return (
     <thead className="bg-gray-50 dark:bg-gray-800 sticky top-0 z-10">
@@ -209,7 +242,7 @@ function TableHeader({ sortConfig, onSort }: TableHeaderProps) {
         ))}
       </tr>
     </thead>
-  )
+  );
 }
 
 // =============================================================================
@@ -218,29 +251,29 @@ function TableHeader({ sortConfig, onSort }: TableHeaderProps) {
 
 interface SubtaskRowProps {
   subtask: {
-    id: number
-    title: string
-    status: string
-    timeEstimated: number | null
-    timeSpent: number | null
+    id: number;
+    title: string;
+    status: string;
+    timeEstimated: number | null;
+    timeSpent: number | null;
     task: {
-      id: number
-      title: string
+      id: number;
+      title: string;
       project: {
-        id: number
-        name: string
-        identifier: string | null
-        workspace: { id: number; slug: string }
-      }
-    }
-  }
-  onTaskClick: (workspaceSlug: string, projectIdentifier: string, taskId: number) => void
+        id: number;
+        name: string;
+        identifier: string | null;
+        workspace: { id: number; slug: string };
+      };
+    };
+  };
+  onTaskClick: (workspaceSlug: string, projectIdentifier: string, taskId: number) => void;
 }
 
 function formatHours(hours: number | null): string {
-  if (hours === null || hours === 0) return '-'
-  if (hours < 1) return `${Math.round(hours * 60)}m`
-  return `${hours.toFixed(1)}h`
+  if (hours === null || hours === 0) return '-';
+  if (hours < 1) return `${Math.round(hours * 60)}m`;
+  return `${hours.toFixed(1)}h`;
 }
 
 function SubtaskRow({ subtask, onTaskClick }: SubtaskRowProps) {
@@ -249,14 +282,18 @@ function SubtaskRow({ subtask, onTaskClick }: SubtaskRowProps) {
       className={`border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer ${
         subtask.status === 'DONE' ? 'opacity-50' : ''
       }`}
-      onClick={() => onTaskClick(
-        subtask.task.project.workspace.slug,
-        subtask.task.project.identifier ?? String(subtask.task.project.id),
-        subtask.task.id
-      )}
+      onClick={() =>
+        onTaskClick(
+          subtask.task.project.workspace.slug,
+          subtask.task.project.identifier ?? String(subtask.task.project.id),
+          subtask.task.id
+        )
+      }
     >
       <td className="px-4 py-3">
-        <span className={`text-sm font-medium ${subtask.status === 'DONE' ? 'line-through text-gray-500' : 'text-foreground'}`}>
+        <span
+          className={`text-sm font-medium ${subtask.status === 'DONE' ? 'line-through text-gray-500' : 'text-foreground'}`}
+        >
           {subtask.title}
         </span>
       </td>
@@ -278,7 +315,7 @@ function SubtaskRow({ subtask, onTaskClick }: SubtaskRowProps) {
         {formatHours(subtask.timeSpent)}
       </td>
     </tr>
-  )
+  );
 }
 
 // =============================================================================
@@ -286,18 +323,18 @@ function SubtaskRow({ subtask, onTaskClick }: SubtaskRowProps) {
 // =============================================================================
 
 export function MySubtasks() {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   // State
-  const [sortConfig, setSortConfig] = useState<SortConfig>({ field: 'status', direction: 'asc' })
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
+  const [sortConfig, setSortConfig] = useState<SortConfig>({ field: 'status', direction: 'asc' });
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
 
   // Query
-  const subtasksQuery = trpc.user.getMySubtasks.useQuery()
+  const subtasksQuery = trpc.user.getMySubtasks.useQuery();
 
   // Filter and sort subtasks
   const sortedSubtasks = useMemo(() => {
-    let subtasks = subtasksQuery.data ?? []
+    let subtasks = subtasksQuery.data ?? [];
 
     // Filter by status
     if (statusFilter !== 'all') {
@@ -305,46 +342,50 @@ export function MySubtasks() {
         todo: 'TODO',
         in_progress: 'IN_PROGRESS',
         done: 'DONE',
-      }
-      subtasks = subtasks.filter((s) => s.status === statusMap[statusFilter])
+      };
+      subtasks = subtasks.filter((s) => s.status === statusMap[statusFilter]);
     }
 
     // Sort
     return [...subtasks].sort((a, b) => {
-      const dir = sortConfig.direction === 'asc' ? 1 : -1
+      const dir = sortConfig.direction === 'asc' ? 1 : -1;
       switch (sortConfig.field) {
         case 'title':
-          return dir * a.title.localeCompare(b.title)
+          return dir * a.title.localeCompare(b.title);
         case 'status': {
-          const statusOrder = { TODO: 0, IN_PROGRESS: 1, DONE: 2 }
-          return dir * ((statusOrder[a.status as keyof typeof statusOrder] ?? 0) - (statusOrder[b.status as keyof typeof statusOrder] ?? 0))
+          const statusOrder = { TODO: 0, IN_PROGRESS: 1, DONE: 2 };
+          return (
+            dir *
+            ((statusOrder[a.status as keyof typeof statusOrder] ?? 0) -
+              (statusOrder[b.status as keyof typeof statusOrder] ?? 0))
+          );
         }
         case 'task':
-          return dir * a.task.title.localeCompare(b.task.title)
+          return dir * a.task.title.localeCompare(b.task.title);
         case 'project':
-          return dir * a.task.project.name.localeCompare(b.task.project.name)
+          return dir * a.task.project.name.localeCompare(b.task.project.name);
         case 'timeEstimated':
-          return dir * ((a.timeEstimated ?? 0) - (b.timeEstimated ?? 0))
+          return dir * ((a.timeEstimated ?? 0) - (b.timeEstimated ?? 0));
         case 'timeSpent':
-          return dir * ((a.timeSpent ?? 0) - (b.timeSpent ?? 0))
+          return dir * ((a.timeSpent ?? 0) - (b.timeSpent ?? 0));
         default:
-          return 0
+          return 0;
       }
-    })
-  }, [subtasksQuery.data, sortConfig, statusFilter])
+    });
+  }, [subtasksQuery.data, sortConfig, statusFilter]);
 
   // Sorting handler
   const handleSort = (field: SortField) => {
     setSortConfig((prev) => ({
       field,
       direction: prev.field === field && prev.direction === 'asc' ? 'desc' : 'asc',
-    }))
-  }
+    }));
+  };
 
   // Task click handler
   const handleTaskClick = (workspaceSlug: string, projectIdentifier: string, taskId: number) => {
-    navigate(`/workspace/${workspaceSlug}/project/${projectIdentifier}/board?task=${taskId}`)
-  }
+    navigate(`/workspace/${workspaceSlug}/project/${projectIdentifier}/board?task=${taskId}`);
+  };
 
   // Loading state
   if (subtasksQuery.isLoading) {
@@ -352,16 +393,19 @@ export function MySubtasks() {
       <DashboardLayout>
         <SubtasksLoading />
       </DashboardLayout>
-    )
+    );
   }
 
   // Error state
   if (subtasksQuery.error) {
     return (
       <DashboardLayout>
-        <SubtasksError message={subtasksQuery.error.message} onRetry={() => subtasksQuery.refetch()} />
+        <SubtasksError
+          message={subtasksQuery.error.message}
+          onRetry={() => subtasksQuery.refetch()}
+        />
       </DashboardLayout>
-    )
+    );
   }
 
   return (
@@ -388,7 +432,7 @@ export function MySubtasks() {
         </div>
       </div>
     </DashboardLayout>
-  )
+  );
 }
 
-export default MySubtasks
+export default MySubtasks;

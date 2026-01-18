@@ -20,9 +20,9 @@ import type {
   NodeKey,
   SerializedElementNode,
   Spread,
-} from 'lexical'
-import { $applyNodeReplacement, ElementNode, $createTextNode } from 'lexical'
-import { addClassNamesToElement } from '@lexical/utils'
+} from 'lexical';
+import { $applyNodeReplacement, ElementNode, $createTextNode } from 'lexical';
+import { addClassNamesToElement } from '@lexical/utils';
 
 // =============================================================================
 // Types
@@ -30,39 +30,39 @@ import { addClassNamesToElement } from '@lexical/utils'
 
 export interface TaskRefPayload {
   /** Task ID */
-  taskId: number
+  taskId: number;
   /** Task reference (e.g., KANBU-123) */
-  reference: string
+  reference: string;
   /** Task title */
-  title: string
+  title: string;
   /** Whether the task exists */
-  exists?: boolean
+  exists?: boolean;
   /** Optional key for the node */
-  key?: NodeKey
+  key?: NodeKey;
 }
 
 export type SerializedTaskRefNode = Spread<
   {
-    taskId: number
-    reference: string
-    title: string
-    exists: boolean
+    taskId: number;
+    reference: string;
+    title: string;
+    exists: boolean;
   },
   SerializedElementNode
->
+>;
 
 // =============================================================================
 // Task Reference Node
 // =============================================================================
 
 export class TaskRefNode extends ElementNode {
-  __taskId: number
-  __reference: string
-  __title: string
-  __exists: boolean
+  __taskId: number;
+  __reference: string;
+  __title: string;
+  __exists: boolean;
 
   static getType(): string {
-    return 'task-ref'
+    return 'task-ref';
   }
 
   static clone(node: TaskRefNode): TaskRefNode {
@@ -72,7 +72,7 @@ export class TaskRefNode extends ElementNode {
       node.__title,
       node.__exists,
       node.__key
-    )
+    );
   }
 
   constructor(
@@ -82,142 +82,139 @@ export class TaskRefNode extends ElementNode {
     exists: boolean = true,
     key?: NodeKey
   ) {
-    super(key)
-    this.__taskId = taskId
-    this.__reference = reference
-    this.__title = title
-    this.__exists = exists
+    super(key);
+    this.__taskId = taskId;
+    this.__reference = reference;
+    this.__title = title;
+    this.__exists = exists;
   }
 
   // Getters
   getTaskId(): number {
-    return this.__taskId
+    return this.__taskId;
   }
 
   getReference(): string {
-    return this.__reference
+    return this.__reference;
   }
 
   getTitle(): string {
-    return this.__title
+    return this.__title;
   }
 
   getExists(): boolean {
-    return this.__exists
+    return this.__exists;
   }
 
   // Setters (create new version for immutability)
   setTaskId(taskId: number): void {
-    const writable = this.getWritable()
-    writable.__taskId = taskId
+    const writable = this.getWritable();
+    writable.__taskId = taskId;
   }
 
   setReference(reference: string): void {
-    const writable = this.getWritable()
-    writable.__reference = reference
+    const writable = this.getWritable();
+    writable.__reference = reference;
   }
 
   setTitle(title: string): void {
-    const writable = this.getWritable()
-    writable.__title = title
+    const writable = this.getWritable();
+    writable.__title = title;
   }
 
   setExists(exists: boolean): void {
-    const writable = this.getWritable()
-    writable.__exists = exists
+    const writable = this.getWritable();
+    writable.__exists = exists;
   }
 
   // Inline element that cannot contain other elements
   isInline(): boolean {
-    return true
+    return true;
   }
 
   canInsertTextBefore(): boolean {
-    return false
+    return false;
   }
 
   canInsertTextAfter(): boolean {
-    return false
+    return false;
   }
 
   // DOM Creation
   createDOM(config: EditorConfig): HTMLElement {
-    const element = document.createElement('span')
-    addClassNamesToElement(
-      element,
-      config.theme.taskRef ?? 'task-ref'
-    )
+    const element = document.createElement('span');
+    addClassNamesToElement(element, config.theme.taskRef ?? 'task-ref');
 
     // Add data attributes for styling and identification
-    element.setAttribute('data-task-ref', this.__reference)
-    element.setAttribute('data-task-id', String(this.__taskId))
-    element.setAttribute('data-exists', String(this.__exists))
-    element.setAttribute('title', this.__title)
+    element.setAttribute('data-task-ref', this.__reference);
+    element.setAttribute('data-task-id', String(this.__taskId));
+    element.setAttribute('data-exists', String(this.__exists));
+    element.setAttribute('title', this.__title);
 
     // Style based on existence
     if (!this.__exists) {
-      element.classList.add('task-ref--missing')
+      element.classList.add('task-ref--missing');
     }
 
-    return element
+    return element;
   }
 
   updateDOM(prevNode: TaskRefNode, dom: HTMLElement): boolean {
     // Update if properties changed
     if (prevNode.__reference !== this.__reference) {
-      dom.setAttribute('data-task-ref', this.__reference)
+      dom.setAttribute('data-task-ref', this.__reference);
     }
     if (prevNode.__taskId !== this.__taskId) {
-      dom.setAttribute('data-task-id', String(this.__taskId))
+      dom.setAttribute('data-task-id', String(this.__taskId));
     }
     if (prevNode.__title !== this.__title) {
-      dom.setAttribute('title', this.__title)
+      dom.setAttribute('title', this.__title);
     }
     if (prevNode.__exists !== this.__exists) {
-      dom.setAttribute('data-exists', String(this.__exists))
+      dom.setAttribute('data-exists', String(this.__exists));
       if (this.__exists) {
-        dom.classList.remove('task-ref--missing')
+        dom.classList.remove('task-ref--missing');
       } else {
-        dom.classList.add('task-ref--missing')
+        dom.classList.add('task-ref--missing');
       }
     }
-    return false
+    return false;
   }
 
   // HTML Export
   exportDOM(): DOMExportOutput {
-    const element = document.createElement('a')
-    element.setAttribute('href', `#task:${this.__reference}`)
-    element.setAttribute('data-task-ref', this.__reference)
-    element.setAttribute('data-task-id', String(this.__taskId))
-    element.textContent = `#${this.__reference}`
-    element.className = this.__exists ? 'task-ref' : 'task-ref task-ref--missing'
-    return { element }
+    const element = document.createElement('a');
+    element.setAttribute('href', `#task:${this.__reference}`);
+    element.setAttribute('data-task-ref', this.__reference);
+    element.setAttribute('data-task-id', String(this.__taskId));
+    element.textContent = `#${this.__reference}`;
+    element.className = this.__exists ? 'task-ref' : 'task-ref task-ref--missing';
+    return { element };
   }
 
   // HTML Import
   static importDOM(): DOMConversionMap | null {
     return {
       a: (domNode: HTMLElement) => {
-        const href = domNode.getAttribute('href')
+        const href = domNode.getAttribute('href');
         if (href?.startsWith('#task:')) {
           return {
             conversion: convertTaskRefElement,
             priority: 1,
-          }
+          };
         }
-        return null
+        return null;
       },
       span: (domNode: HTMLElement) => {
         if (domNode.hasAttribute('data-task-ref')) {
           return {
             conversion: convertTaskRefElement,
             priority: 1,
-          }
+          };
         }
-        return null
+        return null;
       },
-    }
+    };
   }
 
   // JSON Serialization
@@ -229,8 +226,8 @@ export class TaskRefNode extends ElementNode {
       serializedNode.reference,
       serializedNode.title,
       serializedNode.exists
-    )
-    return node
+    );
+    return node;
   }
 
   exportJSON(): SerializedTaskRefNode {
@@ -242,12 +239,12 @@ export class TaskRefNode extends ElementNode {
       title: this.__title,
       exists: this.__exists,
       version: 1,
-    }
+    };
   }
 
   // Text content for copy/paste
   getTextContent(): string {
-    return `#${this.__reference}`
+    return `#${this.__reference}`;
   }
 }
 
@@ -256,26 +253,26 @@ export class TaskRefNode extends ElementNode {
 // =============================================================================
 
 function convertTaskRefElement(domNode: HTMLElement): DOMConversionOutput {
-  let reference = ''
-  let taskId = 0
+  let reference = '';
+  let taskId = 0;
 
   // Try to get from data attribute
-  reference = domNode.getAttribute('data-task-ref') ?? ''
-  const taskIdAttr = domNode.getAttribute('data-task-id')
+  reference = domNode.getAttribute('data-task-ref') ?? '';
+  const taskIdAttr = domNode.getAttribute('data-task-id');
   if (taskIdAttr) {
-    taskId = parseInt(taskIdAttr, 10)
+    taskId = parseInt(taskIdAttr, 10);
   }
 
   // Try to get from href
   if (!reference) {
-    const href = domNode.getAttribute('href')
+    const href = domNode.getAttribute('href');
     if (href?.startsWith('#task:')) {
-      reference = href.substring(6)
+      reference = href.substring(6);
     }
   }
 
   // Get title from title attribute or text content
-  const title = domNode.getAttribute('title') ?? domNode.textContent ?? reference
+  const title = domNode.getAttribute('title') ?? domNode.textContent ?? reference;
 
   if (reference) {
     // $createTaskRefNode already adds the text child, so don't add it again
@@ -284,11 +281,11 @@ function convertTaskRefElement(domNode: HTMLElement): DOMConversionOutput {
       reference,
       title,
       exists: !domNode.classList.contains('task-ref--missing'),
-    })
-    return { node }
+    });
+    return { node };
   }
 
-  return { node: null }
+  return { node: null };
 }
 
 // =============================================================================
@@ -302,14 +299,12 @@ export function $createTaskRefNode(payload: TaskRefPayload): TaskRefNode {
     payload.title,
     payload.exists ?? true,
     payload.key
-  )
+  );
   // Add the reference text as a child
-  node.append($createTextNode(`#${payload.reference}`))
-  return $applyNodeReplacement(node)
+  node.append($createTextNode(`#${payload.reference}`));
+  return $applyNodeReplacement(node);
 }
 
-export function $isTaskRefNode(
-  node: LexicalNode | null | undefined
-): node is TaskRefNode {
-  return node instanceof TaskRefNode
+export function $isTaskRefNode(node: LexicalNode | null | undefined): node is TaskRefNode {
+  return node instanceof TaskRefNode;
 }

@@ -20,22 +20,22 @@
  * =============================================================================
  */
 
-import { useState, useRef } from 'react'
-import { trpc } from '@/lib/trpc'
-import { cn } from '@/lib/utils'
+import { useState, useRef } from 'react';
+import { trpc } from '@/lib/trpc';
+import { cn } from '@/lib/utils';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface AclImportDialogProps {
-  isOpen: boolean
-  onClose: () => void
-  onImported?: () => void
+  isOpen: boolean;
+  onClose: () => void;
+  onImported?: () => void;
 }
 
-type ImportFormat = 'json' | 'csv'
-type ImportMode = 'skip' | 'overwrite' | 'merge'
+type ImportFormat = 'json' | 'csv';
+type ImportMode = 'skip' | 'overwrite' | 'merge';
 
 // =============================================================================
 // Icons
@@ -46,23 +46,33 @@ function XIcon({ className }: { className?: string }) {
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
     </svg>
-  )
+  );
 }
 
 function UploadIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"
+      />
     </svg>
-  )
+  );
 }
 
 function DocumentTextIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+      />
     </svg>
-  )
+  );
 }
 
 function CheckIcon({ className }: { className?: string }) {
@@ -70,64 +80,60 @@ function CheckIcon({ className }: { className?: string }) {
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
     </svg>
-  )
+  );
 }
 
 // =============================================================================
 // Component
 // =============================================================================
 
-export function AclImportDialog({
-  isOpen,
-  onClose,
-  onImported,
-}: AclImportDialogProps) {
+export function AclImportDialog({ isOpen, onClose, onImported }: AclImportDialogProps) {
   // Form state
-  const [data, setData] = useState<string>('')
-  const [format, setFormat] = useState<ImportFormat>('json')
-  const [mode, setMode] = useState<ImportMode>('skip')
-  const [fileName, setFileName] = useState<string | null>(null)
+  const [data, setData] = useState<string>('');
+  const [format, setFormat] = useState<ImportFormat>('json');
+  const [mode, setMode] = useState<ImportMode>('skip');
+  const [fileName, setFileName] = useState<string | null>(null);
 
   // UI state
-  const [step, setStep] = useState<'upload' | 'preview' | 'done'>('upload')
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [step, setStep] = useState<'upload' | 'preview' | 'done'>('upload');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const utils = trpc.useUtils()
+  const utils = trpc.useUtils();
 
   // Preview mutation
-  const previewMutation = trpc.acl.importPreview.useMutation()
+  const previewMutation = trpc.acl.importPreview.useMutation();
 
   // Execute mutation
   const executeMutation = trpc.acl.importExecute.useMutation({
     onSuccess: () => {
-      utils.acl.list.invalidate()
-      setStep('done')
-      onImported?.()
+      utils.acl.list.invalidate();
+      setStep('done');
+      onImported?.();
     },
-  })
+  });
 
   // Handle file upload
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) return
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-    setFileName(file.name)
+    setFileName(file.name);
 
     // Auto-detect format
     if (file.name.endsWith('.json')) {
-      setFormat('json')
+      setFormat('json');
     } else if (file.name.endsWith('.csv')) {
-      setFormat('csv')
+      setFormat('csv');
     }
 
     // Read file content
-    const reader = new FileReader()
+    const reader = new FileReader();
     reader.onload = (e) => {
-      const content = e.target?.result as string
-      setData(content)
-    }
-    reader.readAsText(file)
-  }
+      const content = e.target?.result as string;
+      setData(content);
+    };
+    reader.readAsText(file);
+  };
 
   // Run preview
   const handlePreview = async () => {
@@ -136,12 +142,12 @@ export function AclImportDialog({
         data,
         format,
         mode,
-      })
-      setStep('preview')
+      });
+      setStep('preview');
     } catch {
       // Error handled by mutation
     }
-  }
+  };
 
   // Execute import
   const handleExecute = async () => {
@@ -150,26 +156,29 @@ export function AclImportDialog({
         data,
         format,
         mode,
-      })
+      });
     } catch {
       // Error handled by mutation
     }
-  }
+  };
 
   // Reset dialog
   const handleClose = () => {
-    setData('')
-    setFileName(null)
-    setStep('upload')
-    previewMutation.reset()
-    executeMutation.reset()
-    onClose()
-  }
+    setData('');
+    setFileName(null);
+    setStep('upload');
+    previewMutation.reset();
+    executeMutation.reset();
+    onClose();
+  };
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={handleClose}>
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+      onClick={handleClose}
+    >
       <div
         className="bg-card rounded-lg shadow-xl w-full max-w-xl mx-4 max-h-[90vh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
@@ -187,10 +196,7 @@ export function AclImportDialog({
               </p>
             </div>
           </div>
-          <button
-            onClick={handleClose}
-            className="p-1 hover:bg-accent rounded"
-          >
+          <button onClick={handleClose} className="p-1 hover:bg-accent rounded">
             <XIcon className="w-4 h-4 text-gray-500" />
           </button>
         </div>
@@ -237,7 +243,9 @@ export function AclImportDialog({
 
               {/* Format Selection */}
               <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Format</label>
+                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                  Format
+                </label>
                 <div className="flex gap-2">
                   <button
                     onClick={() => setFormat('json')}
@@ -321,19 +329,30 @@ export function AclImportDialog({
                   </div>
                   <div className="max-h-48 overflow-y-auto divide-y divide-gray-200 dark:divide-gray-700">
                     {previewMutation.data.entries.slice(0, 20).map((entry, idx) => (
-                      <div key={idx} className="px-3 py-2 flex items-center justify-between text-xs">
+                      <div
+                        key={idx}
+                        className="px-3 py-2 flex items-center justify-between text-xs"
+                      >
                         <div>
-                          <span className="text-gray-600 dark:text-gray-400">{entry.resourceType}</span>
-                          {entry.resourceId && <span className="text-gray-400 ml-1">#{entry.resourceId}</span>}
+                          <span className="text-gray-600 dark:text-gray-400">
+                            {entry.resourceType}
+                          </span>
+                          {entry.resourceId && (
+                            <span className="text-gray-400 ml-1">#{entry.resourceId}</span>
+                          )}
                           <span className="mx-2 text-gray-300">→</span>
                           <span className="text-foreground">{entry.principalName}</span>
                         </div>
-                        <span className={cn(
-                          'px-1.5 py-0.5 rounded text-[10px] font-medium uppercase',
-                          entry.action === 'create' && 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
-                          entry.action === 'update' && 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
-                          entry.action === 'skip' && 'bg-gray-100 dark:bg-gray-700 text-gray-500',
-                        )}>
+                        <span
+                          className={cn(
+                            'px-1.5 py-0.5 rounded text-[10px] font-medium uppercase',
+                            entry.action === 'create' &&
+                              'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
+                            entry.action === 'update' &&
+                              'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
+                            entry.action === 'skip' && 'bg-gray-100 dark:bg-gray-700 text-gray-500'
+                          )}
+                        >
                           {entry.action}
                         </span>
                       </div>
@@ -356,9 +375,18 @@ export function AclImportDialog({
               </div>
               <h4 className="text-lg font-semibold text-foreground mb-2">Import Complete</h4>
               <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                <p><span className="font-medium text-green-600">{executeMutation.data.created}</span> entries created</p>
-                <p><span className="font-medium text-blue-600">{executeMutation.data.updated}</span> entries updated</p>
-                <p><span className="text-gray-500">{executeMutation.data.skipped}</span> entries skipped</p>
+                <p>
+                  <span className="font-medium text-green-600">{executeMutation.data.created}</span>{' '}
+                  entries created
+                </p>
+                <p>
+                  <span className="font-medium text-blue-600">{executeMutation.data.updated}</span>{' '}
+                  entries updated
+                </p>
+                <p>
+                  <span className="text-gray-500">{executeMutation.data.skipped}</span> entries
+                  skipped
+                </p>
               </div>
             </div>
           )}
@@ -366,12 +394,16 @@ export function AclImportDialog({
           {/* Mutation Errors */}
           {previewMutation.error && (
             <div className="mt-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
-              <p className="text-sm text-red-600 dark:text-red-400">{previewMutation.error.message}</p>
+              <p className="text-sm text-red-600 dark:text-red-400">
+                {previewMutation.error.message}
+              </p>
             </div>
           )}
           {executeMutation.error && (
             <div className="mt-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
-              <p className="text-sm text-red-600 dark:text-red-400">{executeMutation.error.message}</p>
+              <p className="text-sm text-red-600 dark:text-red-400">
+                {executeMutation.error.message}
+              </p>
             </div>
           )}
         </div>
@@ -424,7 +456,7 @@ export function AclImportDialog({
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default AclImportDialog
+export default AclImportDialog;

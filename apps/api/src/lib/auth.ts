@@ -82,11 +82,16 @@ function parseDuration(duration: string): number {
   const unit = match[2];
   const num = parseInt(value, 10);
   switch (unit) {
-    case 'h': return num * 60 * 60 * 1000;
-    case 'd': return num * 24 * 60 * 60 * 1000;
-    case 'w': return num * 7 * 24 * 60 * 60 * 1000;
-    case 'm': return num * 30 * 24 * 60 * 60 * 1000;
-    default: return 7 * 24 * 60 * 60 * 1000;
+    case 'h':
+      return num * 60 * 60 * 1000;
+    case 'd':
+      return num * 24 * 60 * 60 * 1000;
+    case 'w':
+      return num * 7 * 24 * 60 * 60 * 1000;
+    case 'm':
+      return num * 30 * 24 * 60 * 60 * 1000;
+    default:
+      return 7 * 24 * 60 * 60 * 1000;
   }
 }
 

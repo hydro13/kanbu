@@ -10,7 +10,7 @@
  * ===================================================================
  */
 
-import type { Meta, StoryObj } from '@storybook/react-vite'
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import {
   Select,
   SelectContent,
@@ -20,9 +20,9 @@ import {
   SelectTrigger,
   SelectValue,
   SelectSeparator,
-} from './select'
-import { Label } from './label'
-import { Button } from './button'
+} from './select';
+import { Label } from './label';
+import { Button } from './button';
 
 const meta: Meta<typeof Select> = {
   title: 'UI/Select',
@@ -36,10 +36,10 @@ const meta: Meta<typeof Select> = {
       },
     },
   },
-}
+};
 
-export default meta
-type Story = StoryObj<typeof Select>
+export default meta;
+type Story = StoryObj<typeof Select>;
 
 // =============================================================================
 // Basic Variants
@@ -59,7 +59,7 @@ export const Default: Story = {
       </SelectContent>
     </Select>
   ),
-}
+};
 
 export const WithLabel: Story = {
   render: () => (
@@ -78,7 +78,7 @@ export const WithLabel: Story = {
       </Select>
     </div>
   ),
-}
+};
 
 export const WithDescription: Story = {
   render: () => (
@@ -95,12 +95,10 @@ export const WithDescription: Story = {
           <SelectItem value="cet">Central European Time</SelectItem>
         </SelectContent>
       </Select>
-      <p className="text-sm text-muted-foreground">
-        Select your preferred timezone
-      </p>
+      <p className="text-sm text-muted-foreground">Select your preferred timezone</p>
     </div>
   ),
-}
+};
 
 // =============================================================================
 // With Groups and Labels
@@ -148,7 +146,7 @@ export const WithGroups: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // States
@@ -166,7 +164,7 @@ export const Disabled: Story = {
       </SelectContent>
     </Select>
   ),
-}
+};
 
 export const WithDisabledOptions: Story = {
   render: () => (
@@ -193,7 +191,7 @@ export const WithDisabledOptions: Story = {
       },
     },
   },
-}
+};
 
 export const WithDefaultValue: Story = {
   render: () => (
@@ -220,7 +218,7 @@ export const WithDefaultValue: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Long Lists
@@ -264,7 +262,7 @@ export const LongList: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Form Examples
@@ -325,7 +323,7 @@ export const InForm: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Width Variations
@@ -346,7 +344,7 @@ export const SmallWidth: Story = {
       </SelectContent>
     </Select>
   ),
-}
+};
 
 export const FullWidth: Story = {
   render: () => (
@@ -363,7 +361,7 @@ export const FullWidth: Story = {
       </Select>
     </div>
   ),
-}
+};
 
 // =============================================================================
 // Real-World Examples
@@ -393,7 +391,7 @@ export const PrioritySelector: Story = {
       },
     },
   },
-}
+};
 
 export const StatusSelector: Story = {
   render: () => (
@@ -434,7 +432,7 @@ export const StatusSelector: Story = {
       },
     },
   },
-}
+};
 
 export const ThemeSelector: Story = {
   render: () => (
@@ -450,12 +448,10 @@ export const ThemeSelector: Story = {
           <SelectItem value="system">💻 System</SelectItem>
         </SelectContent>
       </Select>
-      <p className="text-sm text-muted-foreground">
-        Choose your preferred theme
-      </p>
+      <p className="text-sm text-muted-foreground">Choose your preferred theme</p>
     </div>
   ),
-}
+};
 
 export const MultipleSelects: Story = {
   render: () => (
@@ -526,4 +522,4 @@ export const MultipleSelects: Story = {
       },
     },
   },
-}
+};

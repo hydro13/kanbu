@@ -19,47 +19,45 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useSortable } from '@dnd-kit/sortable'
-import { CSS } from '@dnd-kit/utilities'
-import { TaskCard } from './TaskCard'
-import type { BoardTask } from './Board'
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { TaskCard } from './TaskCard';
+import type { BoardTask } from './Board';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface DraggableTaskProps {
-  task: BoardTask
-  projectId: number
-  onTaskClick?: (taskId: number) => void
-  onTaskContextMenu?: (taskId: number, event: React.MouseEvent) => void
+  task: BoardTask;
+  projectId: number;
+  onTaskClick?: (taskId: number) => void;
+  onTaskContextMenu?: (taskId: number, event: React.MouseEvent) => void;
 }
 
 // =============================================================================
 // Component
 // =============================================================================
 
-export function DraggableTask({ task, projectId, onTaskClick, onTaskContextMenu }: DraggableTaskProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
+export function DraggableTask({
+  task,
+  projectId,
+  onTaskClick,
+  onTaskContextMenu,
+}: DraggableTaskProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: task.id,
     data: {
       type: 'task',
       task,
     },
-  })
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
-  }
+  };
 
   return (
     <div
@@ -69,9 +67,14 @@ export function DraggableTask({ task, projectId, onTaskClick, onTaskContextMenu 
       {...attributes}
       {...listeners}
     >
-      <TaskCard task={task} projectId={projectId} onTaskClick={onTaskClick} onContextMenu={onTaskContextMenu} />
+      <TaskCard
+        task={task}
+        projectId={projectId}
+        onTaskClick={onTaskClick}
+        onContextMenu={onTaskContextMenu}
+      />
     </div>
-  )
+  );
 }
 
-export default DraggableTask
+export default DraggableTask;

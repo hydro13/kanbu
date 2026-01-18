@@ -7,6 +7,7 @@ This document describes how existing permissions are migrated from the legacy sy
 ## Migration Script
 
 The migration script is located in:
+
 ```
 packages/shared/prisma/migrations/acl-migration-helper.ts
 ```
@@ -15,25 +16,26 @@ packages/shared/prisma/migrations/acl-migration-helper.ts
 
 ### Workspace Roles
 
-| Legacy Role | ACL Permissions | Preset        |
-|-------------|-----------------|---------------|
-| VIEWER      | R (1)           | Read Only     |
-| MEMBER      | RWX (7)         | Contributor   |
-| ADMIN       | RWXD (15)       | Editor        |
-| OWNER       | RWXDP (31)      | Full Control  |
+| Legacy Role | ACL Permissions | Preset       |
+| ----------- | --------------- | ------------ |
+| VIEWER      | R (1)           | Read Only    |
+| MEMBER      | RWX (7)         | Contributor  |
+| ADMIN       | RWXD (15)       | Editor       |
+| OWNER       | RWXDP (31)      | Full Control |
 
 ### Project Roles
 
-| Legacy Role | ACL Permissions | Preset        |
-|-------------|-----------------|---------------|
-| VIEWER      | R (1)           | Read Only     |
-| MEMBER      | RWX (7)         | Contributor   |
-| MANAGER     | RWXD (15)       | Editor        |
-| OWNER       | RWXDP (31)      | Full Control  |
+| Legacy Role | ACL Permissions | Preset       |
+| ----------- | --------------- | ------------ |
+| VIEWER      | R (1)           | Read Only    |
+| MEMBER      | RWX (7)         | Contributor  |
+| MANAGER     | RWXD (15)       | Editor       |
+| OWNER       | RWXDP (31)      | Full Control |
 
 ## Pre-Migration Checklist
 
 ### 1. Backup Database
+
 ```bash
 # Via Docker
 sudo docker exec kanbu-postgres pg_dump -U kanbu kanbu > backup_pre_acl_migration.sql
@@ -43,6 +45,7 @@ PGPASSWORD=kanbu_2025 pg_dump -h localhost -U kanbu kanbu > backup_pre_acl_migra
 ```
 
 ### 2. Audit Current Data
+
 ```sql
 -- Count WorkspaceUser entries
 SELECT COUNT(*) as workspace_users FROM workspace_users;
@@ -58,6 +61,7 @@ SELECT COUNT(*) as acl_entries FROM acl_entries;
 ```
 
 ### 3. Record Current Access
+
 ```sql
 -- Workspace access per user
 SELECT u.username, w.name as workspace, wu.role
@@ -136,6 +140,7 @@ are still intact. You can remove them after verifying the ACL system works.
 ## Post-Migration Verification
 
 ### 1. Check ACL Entries
+
 ```sql
 -- View all new ACL entries
 SELECT
@@ -159,6 +164,7 @@ ORDER BY ae.resource_type, ae.resource_id;
 ### 2. Compare Access
 
 Test with each user:
+
 1. Log in as user
 2. Check workspace listing
 3. Check project access
@@ -178,6 +184,7 @@ pnpm vitest run src/services/__tests__/aclService.test.ts
 If something goes wrong:
 
 ### 1. Remove ACL Entries
+
 ```sql
 -- Remove all migrated ACL entries (preserve manually created ones)
 DELETE FROM acl_entries
@@ -186,6 +193,7 @@ WHERE created_at > '2026-01-08 00:00:00'  -- Adjust date
 ```
 
 ### 2. Restore Database (if necessary)
+
 ```bash
 # Restore full backup
 PGPASSWORD=kanbu_2025 psql -h localhost -U kanbu kanbu < backup_pre_acl_migration.sql
@@ -194,9 +202,11 @@ PGPASSWORD=kanbu_2025 psql -h localhost -U kanbu kanbu < backup_pre_acl_migratio
 ## Troubleshooting
 
 ### "ACL entry already exists"
+
 This is normal - the script skips duplicates. Entries that already exist will not be overwritten.
 
 ### User has no access anymore
+
 1. Check if ACL entry was created:
    ```sql
    SELECT * FROM acl_entries
@@ -207,7 +217,9 @@ This is normal - the script skips duplicates. Entries that already exist will no
 3. Manually create an ACL entry via the ACL Manager UI
 
 ### Performance issues
+
 After large migrations, run:
+
 ```sql
 VACUUM ANALYZE acl_entries;
 ```

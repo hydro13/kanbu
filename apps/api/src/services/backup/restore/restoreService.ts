@@ -10,52 +10,48 @@
  * - Post-restore verification
  */
 
-import { exec } from 'child_process'
-import { promisify } from 'util'
-import { backupService } from '../backupService'
-import { getBackupStorage } from '../storage'
-import { findPostgresContainer } from '../container/dockerDiscovery'
-import { backupNotificationService } from '../notifications'
-import {
-  isEncryptedFile,
-  decryptFile,
-  isEncryptionEnabled,
-} from '../crypto'
-import { verifyChecksum } from '../crypto/checksum'
-import fs from 'fs/promises'
-import path from 'path'
-import os from 'os'
-import { prisma } from '../../../lib/prisma'
+import { exec } from 'child_process';
+import { promisify } from 'util';
+import { backupService } from '../backupService';
+import { getBackupStorage } from '../storage';
+import { findPostgresContainer } from '../container/dockerDiscovery';
+import { backupNotificationService } from '../notifications';
+import { isEncryptedFile, decryptFile, isEncryptionEnabled } from '../crypto';
+import { verifyChecksum } from '../crypto/checksum';
+import fs from 'fs/promises';
+import path from 'path';
+import os from 'os';
+import { prisma } from '../../../lib/prisma';
 
-const execAsync = promisify(exec)
+const execAsync = promisify(exec);
 
 export interface RestoreOptions {
   /** Create a backup before restoring (recommended) */
-  createPreRestoreBackup?: boolean
+  createPreRestoreBackup?: boolean;
   /** Skip verification after restore */
-  skipVerification?: boolean
+  skipVerification?: boolean;
   /** User ID performing the restore (for audit) */
-  performedById?: number
+  performedById?: number;
 }
 
 export interface RestoreResult {
-  success: boolean
-  message: string
-  preRestoreBackup?: string
-  restoredFrom: string
-  durationMs: number
-  tablesRestored?: number
+  success: boolean;
+  message: string;
+  preRestoreBackup?: string;
+  restoredFrom: string;
+  durationMs: number;
+  tablesRestored?: number;
 }
 
 export interface RestoreValidation {
-  isValid: boolean
-  filename: string
-  fileSize: number
-  backupType: 'database' | 'source'
-  isEncrypted: boolean
-  hasStoredChecksum: boolean
-  errors: string[]
-  warnings: string[]
+  isValid: boolean;
+  filename: string;
+  fileSize: number;
+  backupType: 'database' | 'source';
+  isEncrypted: boolean;
+  hasStoredChecksum: boolean;
+  errors: string[];
+  warnings: string[];
 }
 
 export class RestoreService {
@@ -70,20 +66,20 @@ export class RestoreService {
    * - Stored checksum availability
    */
   async validateBackup(filename: string): Promise<RestoreValidation> {
-    const errors: string[] = []
-    const warnings: string[] = []
+    const errors: string[] = [];
+    const warnings: string[] = [];
 
     // Check filename format - support all variations
     // Database: kanbu_backup_*.sql, kanbu_backup_*.sql.gz, kanbu_backup_*.sql.gz.enc
     // Source: kanbu_source_*.tar.gz, kanbu_source_*.tar.gz.enc
-    const databasePattern = /^kanbu_backup_.*\.sql(\.gz)?(\.enc)?$/
-    const sourcePattern = /^kanbu_source_.*\.tar\.gz(\.enc)?$/
+    const databasePattern = /^kanbu_backup_.*\.sql(\.gz)?(\.enc)?$/;
+    const sourcePattern = /^kanbu_source_.*\.tar\.gz(\.enc)?$/;
 
-    const isDatabaseBackup = databasePattern.test(filename)
-    const isSourceBackup = sourcePattern.test(filename)
+    const isDatabaseBackup = databasePattern.test(filename);
+    const isSourceBackup = sourcePattern.test(filename);
 
     if (!isDatabaseBackup && !isSourceBackup) {
-      errors.push('Invalid backup filename format')
+      errors.push('Invalid backup filename format');
       return {
         isValid: false,
         filename,
@@ -93,15 +89,15 @@ export class RestoreService {
         hasStoredChecksum: false,
         errors,
         warnings,
-      }
+      };
     }
 
-    const backupType = isDatabaseBackup ? 'database' : 'source'
-    const isEncrypted = isEncryptedFile(filename)
+    const backupType = isDatabaseBackup ? 'database' : 'source';
+    const isEncrypted = isEncryptedFile(filename);
 
     // Only database backups can be restored via this service
     if (isSourceBackup) {
-      errors.push('Source backups cannot be restored automatically. Manual extraction required.')
+      errors.push('Source backups cannot be restored automatically. Manual extraction required.');
       return {
         isValid: false,
         filename,
@@ -111,27 +107,27 @@ export class RestoreService {
         hasStoredChecksum: false,
         errors,
         warnings,
-      }
+      };
     }
 
     // Check encryption key availability
     if (isEncrypted && !isEncryptionEnabled()) {
       errors.push(
         'Backup is encrypted but BACKUP_ENCRYPTION_KEY is not set. ' +
-        'Set the encryption key in environment variables to restore this backup.'
-      )
+          'Set the encryption key in environment variables to restore this backup.'
+      );
     }
 
     // Check if file exists in storage
-    const storage = getBackupStorage()
-    let hasStoredChecksum = false
+    const storage = getBackupStorage();
+    let hasStoredChecksum = false;
 
     try {
-      const backups = await storage.list('database')
-      const backup = backups.find(b => b.filename === filename)
+      const backups = await storage.list('database');
+      const backup = backups.find((b) => b.filename === filename);
 
       if (!backup) {
-        errors.push('Backup file not found in storage')
+        errors.push('Backup file not found in storage');
         return {
           isValid: false,
           filename,
@@ -141,12 +137,12 @@ export class RestoreService {
           hasStoredChecksum: false,
           errors,
           warnings,
-        }
+        };
       }
 
       // Check file size
       if (backup.size < 100) {
-        errors.push('Backup file appears to be empty or corrupted (< 100 bytes)')
+        errors.push('Backup file appears to be empty or corrupted (< 100 bytes)');
       }
 
       // Check if we have a stored checksum in the database
@@ -154,19 +150,19 @@ export class RestoreService {
         const execution = await prisma.backupExecution.findFirst({
           where: { filename },
           select: { checksum: true },
-        })
-        hasStoredChecksum = !!execution?.checksum
+        });
+        hasStoredChecksum = !!execution?.checksum;
         if (!hasStoredChecksum) {
-          warnings.push('No stored checksum found - integrity verification will be skipped')
+          warnings.push('No stored checksum found - integrity verification will be skipped');
         }
       } catch {
-        warnings.push('Could not check for stored checksum - verification may be skipped')
+        warnings.push('Could not check for stored checksum - verification may be skipped');
       }
 
       // Check age warning
-      const ageInDays = (Date.now() - backup.createdAt.getTime()) / (1000 * 60 * 60 * 24)
+      const ageInDays = (Date.now() - backup.createdAt.getTime()) / (1000 * 60 * 60 * 24);
       if (ageInDays > 30) {
-        warnings.push(`Backup is ${Math.floor(ageInDays)} days old`)
+        warnings.push(`Backup is ${Math.floor(ageInDays)} days old`);
       }
 
       return {
@@ -178,9 +174,11 @@ export class RestoreService {
         hasStoredChecksum,
         errors,
         warnings,
-      }
+      };
     } catch (error) {
-      errors.push(`Failed to access storage: ${error instanceof Error ? error.message : String(error)}`)
+      errors.push(
+        `Failed to access storage: ${error instanceof Error ? error.message : String(error)}`
+      );
       return {
         isValid: false,
         filename,
@@ -190,7 +188,7 @@ export class RestoreService {
         hasStoredChecksum: false,
         errors,
         warnings,
-      }
+      };
     }
   }
 
@@ -209,157 +207,156 @@ export class RestoreService {
    *
    * WARNING: This will overwrite the current database!
    */
-  async restoreDatabase(
-    filename: string,
-    options: RestoreOptions = {}
-  ): Promise<RestoreResult> {
-    const startTime = Date.now()
-    const { createPreRestoreBackup = true, skipVerification = false } = options
-    const tempFiles: string[] = []
+  async restoreDatabase(filename: string, options: RestoreOptions = {}): Promise<RestoreResult> {
+    const startTime = Date.now();
+    const { createPreRestoreBackup = true, skipVerification = false } = options;
+    const tempFiles: string[] = [];
 
-    let preRestoreBackupName: string | undefined
+    let preRestoreBackupName: string | undefined;
 
     try {
       // Step 1: Validate the backup
-      console.log(`[Restore] Validating backup: ${filename}`)
-      const validation = await this.validateBackup(filename)
+      console.log(`[Restore] Validating backup: ${filename}`);
+      const validation = await this.validateBackup(filename);
 
       if (!validation.isValid) {
-        throw new Error(`Backup validation failed: ${validation.errors.join(', ')}`)
+        throw new Error(`Backup validation failed: ${validation.errors.join(', ')}`);
       }
 
       // Step 2: Create pre-restore backup if requested
       if (createPreRestoreBackup) {
-        console.log('[Restore] Creating pre-restore backup...')
+        console.log('[Restore] Creating pre-restore backup...');
         try {
-          const preRestoreResult = await backupService.createDatabaseBackup()
-          preRestoreBackupName = preRestoreResult.fileName
-          console.log(`[Restore] Pre-restore backup created: ${preRestoreBackupName}`)
+          const preRestoreResult = await backupService.createDatabaseBackup();
+          preRestoreBackupName = preRestoreResult.fileName;
+          console.log(`[Restore] Pre-restore backup created: ${preRestoreBackupName}`);
         } catch (error) {
-          console.error('[Restore] Failed to create pre-restore backup:', error)
-          throw new Error(`Failed to create pre-restore backup: ${error instanceof Error ? error.message : String(error)}`)
+          console.error('[Restore] Failed to create pre-restore backup:', error);
+          throw new Error(
+            `Failed to create pre-restore backup: ${error instanceof Error ? error.message : String(error)}`
+          );
         }
       }
 
       // Step 3: Download backup file to temp location
-      console.log('[Restore] Downloading backup file...')
-      const storage = getBackupStorage()
-      const backupData = await storage.download(filename)
+      console.log('[Restore] Downloading backup file...');
+      const storage = getBackupStorage();
+      const backupData = await storage.download(filename);
 
-      const tempDir = os.tmpdir()
-      let currentPath = path.join(tempDir, filename)
-      await fs.writeFile(currentPath, backupData)
-      tempFiles.push(currentPath)
+      const tempDir = os.tmpdir();
+      let currentPath = path.join(tempDir, filename);
+      await fs.writeFile(currentPath, backupData);
+      tempFiles.push(currentPath);
 
       // Step 4: Decrypt if encrypted
       if (validation.isEncrypted) {
-        console.log('[Restore] Decrypting backup...')
-        const decryptedPath = currentPath.replace('.enc', '')
-        const decryptResult = await decryptFile(currentPath, decryptedPath)
-        currentPath = decryptResult.decryptedPath
-        tempFiles.push(currentPath)
+        console.log('[Restore] Decrypting backup...');
+        const decryptedPath = currentPath.replace('.enc', '');
+        const decryptResult = await decryptFile(currentPath, decryptedPath);
+        currentPath = decryptResult.decryptedPath;
+        tempFiles.push(currentPath);
       }
 
       // Step 5: Verify checksum if available
       if (validation.hasStoredChecksum) {
-        console.log('[Restore] Verifying checksum...')
+        console.log('[Restore] Verifying checksum...');
         const execution = await prisma.backupExecution.findFirst({
           where: { filename },
           select: { checksum: true },
-        })
+        });
 
         if (execution?.checksum) {
-          const isValid = await verifyChecksum(currentPath, execution.checksum)
+          const isValid = await verifyChecksum(currentPath, execution.checksum);
           if (!isValid) {
             throw new Error(
               'Checksum verification failed! The backup file may be corrupted or tampered with. ' +
-              'Restore aborted for safety.'
-            )
+                'Restore aborted for safety.'
+            );
           }
-          console.log('[Restore] Checksum verified successfully')
+          console.log('[Restore] Checksum verified successfully');
         }
       } else {
-        console.log('[Restore] Skipping checksum verification (no stored checksum)')
+        console.log('[Restore] Skipping checksum verification (no stored checksum)');
       }
 
       // Step 6: Decompress the backup (handle both .sql.gz and legacy .sql)
-      let sqlPath: string
+      let sqlPath: string;
       if (currentPath.endsWith('.gz')) {
-        console.log('[Restore] Decompressing backup...')
-        sqlPath = currentPath.replace('.gz', '')
-        await execAsync(`gunzip -c "${currentPath}" > "${sqlPath}"`)
-        tempFiles.push(sqlPath)
+        console.log('[Restore] Decompressing backup...');
+        sqlPath = currentPath.replace('.gz', '');
+        await execAsync(`gunzip -c "${currentPath}" > "${sqlPath}"`);
+        tempFiles.push(sqlPath);
       } else if (currentPath.endsWith('.sql')) {
         // Legacy uncompressed backup
-        sqlPath = currentPath
+        sqlPath = currentPath;
       } else {
-        throw new Error(`Unexpected file format: ${currentPath}`)
+        throw new Error(`Unexpected file format: ${currentPath}`);
       }
 
       // Step 7: Find postgres container
-      const container = await findPostgresContainer()
+      const container = await findPostgresContainer();
       if (!container) {
-        throw new Error('PostgreSQL container not found')
+        throw new Error('PostgreSQL container not found');
       }
 
       // Get database credentials from environment
-      const dbName = process.env.POSTGRES_DB || 'kanbu'
-      const dbUser = process.env.POSTGRES_USER || 'kanbu'
+      const dbName = process.env.POSTGRES_DB || 'kanbu';
+      const dbUser = process.env.POSTGRES_USER || 'kanbu';
 
       // Step 8: Copy SQL file to container
-      console.log(`[Restore] Copying SQL file to container ${container}...`)
-      await execAsync(`docker cp "${sqlPath}" ${container}:/tmp/restore.sql`)
+      console.log(`[Restore] Copying SQL file to container ${container}...`);
+      await execAsync(`docker cp "${sqlPath}" ${container}:/tmp/restore.sql`);
 
       // Step 9: Execute restore
-      console.log('[Restore] Executing database restore...')
+      console.log('[Restore] Executing database restore...');
 
       // Terminate existing connections (except our own)
-      const terminateCmd = `docker exec ${container} psql -U ${dbUser} -d postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '${dbName}' AND pid <> pg_backend_pid();"`
+      const terminateCmd = `docker exec ${container} psql -U ${dbUser} -d postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '${dbName}' AND pid <> pg_backend_pid();"`;
       try {
-        await execAsync(terminateCmd)
+        await execAsync(terminateCmd);
       } catch {
         // Ignore errors if no connections to terminate
       }
 
       // Drop and recreate database
-      console.log('[Restore] Dropping and recreating database...')
-      const dropCmd = `docker exec ${container} psql -U ${dbUser} -d postgres -c "DROP DATABASE IF EXISTS ${dbName};"`
-      await execAsync(dropCmd)
+      console.log('[Restore] Dropping and recreating database...');
+      const dropCmd = `docker exec ${container} psql -U ${dbUser} -d postgres -c "DROP DATABASE IF EXISTS ${dbName};"`;
+      await execAsync(dropCmd);
 
-      const createCmd = `docker exec ${container} psql -U ${dbUser} -d postgres -c "CREATE DATABASE ${dbName} OWNER ${dbUser};"`
-      await execAsync(createCmd)
+      const createCmd = `docker exec ${container} psql -U ${dbUser} -d postgres -c "CREATE DATABASE ${dbName} OWNER ${dbUser};"`;
+      await execAsync(createCmd);
 
       // Restore from SQL file
-      console.log('[Restore] Importing SQL dump...')
-      const restoreCmd = `docker exec ${container} psql -U ${dbUser} -d ${dbName} -f /tmp/restore.sql`
-      const { stderr } = await execAsync(restoreCmd)
+      console.log('[Restore] Importing SQL dump...');
+      const restoreCmd = `docker exec ${container} psql -U ${dbUser} -d ${dbName} -f /tmp/restore.sql`;
+      const { stderr } = await execAsync(restoreCmd);
 
       if (stderr && !stderr.includes('NOTICE')) {
-        console.warn('[Restore] Restore warnings:', stderr)
+        console.warn('[Restore] Restore warnings:', stderr);
       }
 
       // Step 10: Cleanup temp files
-      console.log('[Restore] Cleaning up temporary files...')
-      await execAsync(`docker exec ${container} rm -f /tmp/restore.sql`)
+      console.log('[Restore] Cleaning up temporary files...');
+      await execAsync(`docker exec ${container} rm -f /tmp/restore.sql`);
       for (const file of tempFiles) {
-        await fs.unlink(file).catch(() => {})
+        await fs.unlink(file).catch(() => {});
       }
 
       // Step 11: Verify restore if requested
-      let tablesRestored: number | undefined
+      let tablesRestored: number | undefined;
       if (!skipVerification) {
-        console.log('[Restore] Verifying restore...')
-        const verifyCmd = `docker exec ${container} psql -U ${dbUser} -d ${dbName} -t -c "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public';"`
-        const { stdout } = await execAsync(verifyCmd)
-        tablesRestored = parseInt(stdout.trim(), 10)
+        console.log('[Restore] Verifying restore...');
+        const verifyCmd = `docker exec ${container} psql -U ${dbUser} -d ${dbName} -t -c "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public';"`;
+        const { stdout } = await execAsync(verifyCmd);
+        tablesRestored = parseInt(stdout.trim(), 10);
 
         if (tablesRestored === 0) {
-          throw new Error('Restore verification failed: No tables found in database')
+          throw new Error('Restore verification failed: No tables found in database');
         }
-        console.log(`[Restore] Verified: ${tablesRestored} tables restored`)
+        console.log(`[Restore] Verified: ${tablesRestored} tables restored`);
       }
 
-      const durationMs = Date.now() - startTime
+      const durationMs = Date.now() - startTime;
 
       // Send success notification
       await backupNotificationService.notifyRestoreResult({
@@ -368,7 +365,7 @@ export class RestoreService {
         message: `Database restored successfully from ${filename}`,
         durationMs,
         preRestoreBackup: preRestoreBackupName,
-      })
+      });
 
       return {
         success: true,
@@ -377,16 +374,16 @@ export class RestoreService {
         restoredFrom: filename,
         durationMs,
         tablesRestored,
-      }
+      };
     } catch (error) {
-      const durationMs = Date.now() - startTime
-      const errorMessage = error instanceof Error ? error.message : String(error)
+      const durationMs = Date.now() - startTime;
+      const errorMessage = error instanceof Error ? error.message : String(error);
 
-      console.error('[Restore] Restore failed:', error)
+      console.error('[Restore] Restore failed:', error);
 
       // Cleanup temp files on error
       for (const file of tempFiles) {
-        await fs.unlink(file).catch(() => {})
+        await fs.unlink(file).catch(() => {});
       }
 
       // Send failure notification
@@ -397,7 +394,7 @@ export class RestoreService {
         durationMs,
         preRestoreBackup: preRestoreBackupName,
         error: errorMessage,
-      })
+      });
 
       return {
         success: false,
@@ -405,32 +402,34 @@ export class RestoreService {
         preRestoreBackup: preRestoreBackupName,
         restoredFrom: filename,
         durationMs,
-      }
+      };
     }
   }
 
   /**
    * Get list of available backups for restore
    */
-  async getRestorableBackups(): Promise<Array<{
-    filename: string
-    size: number
-    createdAt: Date
-    ageInDays: number
-    isEncrypted: boolean
-  }>> {
-    const storage = getBackupStorage()
-    const backups = await storage.list('database')
+  async getRestorableBackups(): Promise<
+    Array<{
+      filename: string;
+      size: number;
+      createdAt: Date;
+      ageInDays: number;
+      isEncrypted: boolean;
+    }>
+  > {
+    const storage = getBackupStorage();
+    const backups = await storage.list('database');
 
-    return backups.map(backup => ({
+    return backups.map((backup) => ({
       filename: backup.filename,
       size: backup.size,
       createdAt: backup.createdAt,
       ageInDays: Math.floor((Date.now() - backup.createdAt.getTime()) / (1000 * 60 * 60 * 24)),
       isEncrypted: backup.isEncrypted,
-    }))
+    }));
   }
 }
 
 // Singleton export
-export const restoreService = new RestoreService()
+export const restoreService = new RestoreService();

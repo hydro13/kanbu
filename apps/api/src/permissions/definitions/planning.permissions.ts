@@ -6,7 +6,7 @@
  * - Milestones
  */
 
-import { definePermissions } from '../registry'
+import { definePermissions } from '../registry';
 
 export const planningPermissions = definePermissions('planning', {
   sprints: {
@@ -83,4 +83,4 @@ export const planningPermissions = definePermissions('planning', {
       },
     },
   },
-})
+});

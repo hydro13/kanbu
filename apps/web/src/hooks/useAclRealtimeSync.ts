@@ -65,11 +65,7 @@ function matchesQueryKey(
  * // In AclPage component
  * useAclRealtimeSync({ currentUserId: user.id });
  */
-export function useAclRealtimeSync({
-  currentUserId,
-}: {
-  currentUserId: number;
-}) {
+export function useAclRealtimeSync({ currentUserId }: { currentUserId: number }) {
   const { socket, isConnected } = useSocketContext();
   const queryClient = useQueryClient();
 
@@ -133,17 +129,21 @@ export function useAclRealtimeSync({
   );
 
   // Invalidate group member queries
-  const invalidateGroupMemberQueries = useCallback((groupId: number) => {
-    // Invalidate group members query for this specific group
-    void queryClient.invalidateQueries({
-      predicate: (query) => matchesQueryKey(query, 'group', 'getMembers', (input) => input?.groupId === groupId),
-    });
+  const invalidateGroupMemberQueries = useCallback(
+    (groupId: number) => {
+      // Invalidate group members query for this specific group
+      void queryClient.invalidateQueries({
+        predicate: (query) =>
+          matchesQueryKey(query, 'group', 'getMembers', (input) => input?.groupId === groupId),
+      });
 
-    // Also invalidate the principals list (used in ACL dropdowns)
-    void queryClient.invalidateQueries({
-      predicate: (query) => matchesQueryKey(query, 'acl', 'getPrincipals'),
-    });
-  }, [queryClient]);
+      // Also invalidate the principals list (used in ACL dropdowns)
+      void queryClient.invalidateQueries({
+        predicate: (query) => matchesQueryKey(query, 'acl', 'getPrincipals'),
+      });
+    },
+    [queryClient]
+  );
 
   // Handle group member added
   const handleGroupMemberAdded = useCallback(

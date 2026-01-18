@@ -18,52 +18,52 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState, useCallback } from 'react'
-import { Plus, Trash2, Clock, Pencil } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { getMediaUrl } from '@/lib/trpc'
+import { useState, useCallback } from 'react';
+import { Plus, Trash2, Clock, Pencil } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { getMediaUrl } from '@/lib/trpc';
 
 // =============================================================================
 // Types
 // =============================================================================
 
-type SubtaskStatus = 'TODO' | 'IN_PROGRESS' | 'DONE'
+type SubtaskStatus = 'TODO' | 'IN_PROGRESS' | 'DONE';
 
 interface Assignee {
-  id: number
-  username: string
-  name: string | null
-  avatarUrl?: string | null
+  id: number;
+  username: string;
+  name: string | null;
+  avatarUrl?: string | null;
 }
 
 export interface Subtask {
-  id: number
-  title: string
-  description?: string | null
-  status: SubtaskStatus
-  position: number
-  timeEstimated: number
-  timeSpent: number
-  assignee?: Assignee | null
+  id: number;
+  title: string;
+  description?: string | null;
+  status: SubtaskStatus;
+  position: number;
+  timeEstimated: number;
+  timeSpent: number;
+  assignee?: Assignee | null;
 }
 
 export interface SubtaskListProps {
-  taskId: number
-  subtasks: Subtask[]
-  isLoading: boolean
-  onCreate: (data: { taskId: number; title: string }) => Promise<unknown>
+  taskId: number;
+  subtasks: Subtask[];
+  isLoading: boolean;
+  onCreate: (data: { taskId: number; title: string }) => Promise<unknown>;
   onUpdate: (data: {
-    subtaskId: number
-    status?: SubtaskStatus
-    title?: string
-    description?: string | null
-    assigneeId?: number | null
-    timeEstimated?: number
-    timeSpent?: number
-  }) => Promise<unknown>
-  onDelete: (data: { subtaskId: number }) => Promise<unknown>
-  isCreating: boolean
-  onEditSubtask?: (subtask: Subtask) => void
+    subtaskId: number;
+    status?: SubtaskStatus;
+    title?: string;
+    description?: string | null;
+    assigneeId?: number | null;
+    timeEstimated?: number;
+    timeSpent?: number;
+  }) => Promise<unknown>;
+  onDelete: (data: { subtaskId: number }) => Promise<unknown>;
+  isCreating: boolean;
+  onEditSubtask?: (subtask: Subtask) => void;
 }
 
 // =============================================================================
@@ -74,7 +74,7 @@ const STATUS_CYCLE: Record<SubtaskStatus, SubtaskStatus> = {
   TODO: 'IN_PROGRESS',
   IN_PROGRESS: 'DONE',
   DONE: 'TODO',
-}
+};
 
 const STATUS_COLORS: Record<SubtaskStatus, { bg: string; border: string; text: string }> = {
   TODO: {
@@ -92,21 +92,21 @@ const STATUS_COLORS: Record<SubtaskStatus, { bg: string; border: string; text: s
     border: 'border-green-500',
     text: 'text-green-600 dark:text-green-400',
   },
-}
+};
 
 // =============================================================================
 // Helper Functions
 // =============================================================================
 
 function formatTime(hours: number): string {
-  if (hours === 0) return ''
+  if (hours === 0) return '';
   if (hours < 1) {
-    const mins = Math.round(hours * 60)
-    return `${mins}m`
+    const mins = Math.round(hours * 60);
+    return `${mins}m`;
   }
-  const h = Math.floor(hours)
-  const m = Math.round((hours - h) * 60)
-  return m > 0 ? `${h}h ${m}m` : `${h}h`
+  const h = Math.floor(hours);
+  const m = Math.round((hours - h) * 60);
+  return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
 
 function getInitials(name: string): string {
@@ -115,7 +115,7 @@ function getInitials(name: string): string {
     .map((n) => n[0])
     .join('')
     .toUpperCase()
-    .slice(0, 2)
+    .slice(0, 2);
 }
 
 // =============================================================================
@@ -128,26 +128,26 @@ function SubtaskItem({
   onDelete,
   onEdit,
 }: {
-  subtask: Subtask
-  onUpdate: SubtaskListProps['onUpdate']
-  onDelete: (data: { subtaskId: number }) => Promise<unknown>
-  onEdit?: (subtask: Subtask) => void
+  subtask: Subtask;
+  onUpdate: SubtaskListProps['onUpdate'];
+  onDelete: (data: { subtaskId: number }) => Promise<unknown>;
+  onEdit?: (subtask: Subtask) => void;
 }) {
   const handleStatusToggle = useCallback(async () => {
-    const nextStatus = STATUS_CYCLE[subtask.status]
-    await onUpdate({ subtaskId: subtask.id, status: nextStatus })
-  }, [subtask.id, subtask.status, onUpdate])
+    const nextStatus = STATUS_CYCLE[subtask.status];
+    await onUpdate({ subtaskId: subtask.id, status: nextStatus });
+  }, [subtask.id, subtask.status, onUpdate]);
 
   const handleDelete = useCallback(async () => {
     if (confirm('Delete this subtask?')) {
-      await onDelete({ subtaskId: subtask.id })
+      await onDelete({ subtaskId: subtask.id });
     }
-  }, [subtask.id, onDelete])
+  }, [subtask.id, onDelete]);
 
-  const isDone = subtask.status === 'DONE'
-  const isInProgress = subtask.status === 'IN_PROGRESS'
-  const colors = STATUS_COLORS[subtask.status]
-  const hasTime = subtask.timeEstimated > 0 || subtask.timeSpent > 0
+  const isDone = subtask.status === 'DONE';
+  const isInProgress = subtask.status === 'IN_PROGRESS';
+  const colors = STATUS_COLORS[subtask.status];
+  const hasTime = subtask.timeEstimated > 0 || subtask.timeSpent > 0;
 
   return (
     <div className="group flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">
@@ -168,18 +168,12 @@ function SubtaskItem({
             />
           </svg>
         )}
-        {isInProgress && (
-          <div className="w-2 h-2 rounded-full bg-blue-500" />
-        )}
+        {isInProgress && <div className="w-2 h-2 rounded-full bg-blue-500" />}
       </button>
 
       {/* Title & Description */}
       <div className="flex-1 min-w-0">
-        <span
-          className={`text-sm ${
-            isDone ? 'text-gray-400 line-through' : 'text-foreground'
-          }`}
-        >
+        <span className={`text-sm ${isDone ? 'text-gray-400 line-through' : 'text-foreground'}`}>
           {subtask.title}
         </span>
         {subtask.description && (
@@ -201,7 +195,13 @@ function SubtaskItem({
         <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">
           <Clock className="w-3 h-3" />
           {subtask.timeSpent > 0 && (
-            <span className={subtask.timeSpent > subtask.timeEstimated && subtask.timeEstimated > 0 ? 'text-red-500' : ''}>
+            <span
+              className={
+                subtask.timeSpent > subtask.timeEstimated && subtask.timeEstimated > 0
+                  ? 'text-red-500'
+                  : ''
+              }
+            >
               {formatTime(subtask.timeSpent)}
             </span>
           )}
@@ -252,7 +252,7 @@ function SubtaskItem({
         </button>
       </div>
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -264,31 +264,31 @@ function AddSubtaskForm({
   onCreate,
   isCreating,
 }: {
-  taskId: number
-  onCreate: (data: { taskId: number; title: string }) => Promise<unknown>
-  isCreating: boolean
+  taskId: number;
+  onCreate: (data: { taskId: number; title: string }) => Promise<unknown>;
+  isCreating: boolean;
 }) {
-  const [title, setTitle] = useState('')
-  const [isAdding, setIsAdding] = useState(false)
+  const [title, setTitle] = useState('');
+  const [isAdding, setIsAdding] = useState(false);
 
   const handleSubmit = useCallback(async () => {
     if (title.trim()) {
-      await onCreate({ taskId, title: title.trim() })
-      setTitle('')
+      await onCreate({ taskId, title: title.trim() });
+      setTitle('');
     }
-  }, [taskId, title, onCreate])
+  }, [taskId, title, onCreate]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === 'Enter') {
-        handleSubmit()
+        handleSubmit();
       } else if (e.key === 'Escape') {
-        setTitle('')
-        setIsAdding(false)
+        setTitle('');
+        setIsAdding(false);
       }
     },
     [handleSubmit]
-  )
+  );
 
   if (!isAdding) {
     return (
@@ -299,7 +299,7 @@ function AddSubtaskForm({
         <Plus className="w-4 h-4" />
         Add subtask
       </button>
-    )
+    );
   }
 
   return (
@@ -310,7 +310,7 @@ function AddSubtaskForm({
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         onBlur={() => {
-          if (!title.trim()) setIsAdding(false)
+          if (!title.trim()) setIsAdding(false);
         }}
         onKeyDown={handleKeyDown}
         placeholder="Subtask title..."
@@ -318,15 +318,11 @@ function AddSubtaskForm({
         autoFocus
         disabled={isCreating}
       />
-      <Button
-        size="sm"
-        onClick={handleSubmit}
-        disabled={isCreating || !title.trim()}
-      >
+      <Button size="sm" onClick={handleSubmit} disabled={isCreating || !title.trim()}>
         Add
       </Button>
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -344,14 +340,13 @@ export function SubtaskList({
   onEditSubtask,
 }: SubtaskListProps) {
   // Calculate progress
-  const completedCount = subtasks.filter((s) => s.status === 'DONE').length
-  const progressPercent = subtasks.length > 0
-    ? Math.round((completedCount / subtasks.length) * 100)
-    : 0
+  const completedCount = subtasks.filter((s) => s.status === 'DONE').length;
+  const progressPercent =
+    subtasks.length > 0 ? Math.round((completedCount / subtasks.length) * 100) : 0;
 
   // Calculate total time
-  const totalEstimated = subtasks.reduce((sum, s) => sum + s.timeEstimated, 0)
-  const totalSpent = subtasks.reduce((sum, s) => sum + s.timeSpent, 0)
+  const totalEstimated = subtasks.reduce((sum, s) => sum + s.timeEstimated, 0);
+  const totalSpent = subtasks.reduce((sum, s) => sum + s.timeSpent, 0);
 
   if (isLoading) {
     return (
@@ -360,7 +355,7 @@ export function SubtaskList({
           <div key={i} className="h-10 bg-gray-200 dark:bg-gray-700 rounded" />
         ))}
       </div>
-    )
+    );
   }
 
   return (
@@ -374,7 +369,8 @@ export function SubtaskList({
               {(totalEstimated > 0 || totalSpent > 0) && (
                 <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
                   <Clock className="w-3 h-3" />
-                  {formatTime(totalSpent)}{totalEstimated > 0 && ` / ${formatTime(totalEstimated)}`}
+                  {formatTime(totalSpent)}
+                  {totalEstimated > 0 && ` / ${formatTime(totalEstimated)}`}
                 </span>
               )}
               <span className="font-medium">
@@ -407,13 +403,9 @@ export function SubtaskList({
       </div>
 
       {/* Add Form */}
-      <AddSubtaskForm
-        taskId={taskId}
-        onCreate={onCreate}
-        isCreating={isCreating}
-      />
+      <AddSubtaskForm taskId={taskId} onCreate={onCreate} isCreating={isCreating} />
     </div>
-  )
+  );
 }
 
-export default SubtaskList
+export default SubtaskList;

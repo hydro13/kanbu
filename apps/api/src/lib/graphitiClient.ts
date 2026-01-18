@@ -17,127 +17,127 @@
 // =============================================================================
 
 export interface AddEpisodeRequest {
-  name: string
-  episode_body: string
-  source?: 'text' | 'json' | 'message'
-  source_description?: string
-  group_id: string
-  reference_time?: string // ISO datetime
-  use_kanbu_entities?: boolean // Use Kanbu-specific entity types (default: true)
-  custom_instructions?: string // Additional LLM extraction instructions
+  name: string;
+  episode_body: string;
+  source?: 'text' | 'json' | 'message';
+  source_description?: string;
+  group_id: string;
+  reference_time?: string; // ISO datetime
+  use_kanbu_entities?: boolean; // Use Kanbu-specific entity types (default: true)
+  custom_instructions?: string; // Additional LLM extraction instructions
 }
 
 export interface ExtractedEntityInfo {
-  entity_name: string
-  entity_type: string
-  is_new: boolean
+  entity_name: string;
+  entity_type: string;
+  is_new: boolean;
 }
 
 export interface AddEpisodeResponse {
-  episode_uuid: string
-  entities_extracted: number
-  relations_created: number
-  entity_details?: ExtractedEntityInfo[]
+  episode_uuid: string;
+  entities_extracted: number;
+  relations_created: number;
+  entity_details?: ExtractedEntityInfo[];
 }
 
 export interface EntityTypeInfo {
-  type_name: string
-  description: string
-  fields: string[]
+  type_name: string;
+  description: string;
+  fields: string[];
 }
 
 export interface EntityTypesResponse {
-  entity_types: EntityTypeInfo[]
-  kanbu_entities_enabled: boolean
-  custom_instructions_preview?: string
+  entity_types: EntityTypeInfo[];
+  kanbu_entities_enabled: boolean;
+  custom_instructions_preview?: string;
 }
 
 export interface SearchRequest {
-  query: string
-  group_id?: string
-  limit?: number
+  query: string;
+  group_id?: string;
+  limit?: number;
 }
 
 export interface SearchResult {
-  uuid: string
-  name: string
-  content: string
-  score: number
-  result_type: string
-  metadata: Record<string, unknown>
+  uuid: string;
+  name: string;
+  content: string;
+  score: number;
+  result_type: string;
+  metadata: Record<string, unknown>;
 }
 
 export interface SearchResponse {
-  results: SearchResult[]
-  total: number
-  query: string
+  results: SearchResult[];
+  total: number;
+  query: string;
 }
 
 export interface TemporalQueryRequest {
-  query: string
-  group_id: string
-  as_of: string // ISO datetime
-  limit?: number
+  query: string;
+  group_id: string;
+  as_of: string; // ISO datetime
+  limit?: number;
 }
 
 export interface TemporalQueryResponse {
-  results: SearchResult[]
-  as_of: string
+  results: SearchResult[];
+  as_of: string;
 }
 
 export interface GraphNode {
-  id: string
-  label: string
-  type: string
-  properties: Record<string, unknown>
+  id: string;
+  label: string;
+  type: string;
+  properties: Record<string, unknown>;
 }
 
 export interface GraphEdge {
-  source: string
-  target: string
-  type: string
-  fact?: string
-  valid_at?: string
-  invalid_at?: string
+  source: string;
+  target: string;
+  type: string;
+  fact?: string;
+  valid_at?: string;
+  invalid_at?: string;
 }
 
 export interface GetGraphRequest {
-  group_id: string
+  group_id: string;
 }
 
 export interface GetGraphResponse {
-  nodes: GraphNode[]
-  edges: GraphEdge[]
+  nodes: GraphNode[];
+  edges: GraphEdge[];
 }
 
 export interface EpisodeInfo {
-  uuid: string
-  name: string
-  content: string
-  source: string
-  source_description?: string
-  created_at: string
-  valid_at?: string
+  uuid: string;
+  name: string;
+  content: string;
+  source: string;
+  source_description?: string;
+  created_at: string;
+  valid_at?: string;
 }
 
 export interface GetEpisodesRequest {
-  group_id: string
-  limit?: number
+  group_id: string;
+  limit?: number;
 }
 
 export interface GetEpisodesResponse {
-  episodes: EpisodeInfo[]
+  episodes: EpisodeInfo[];
 }
 
 export interface HealthResponse {
-  status: 'healthy' | 'unhealthy'
-  database_connected: boolean
-  llm_configured: boolean
-  embedder_configured: boolean
-  version: string
-  entity_types_available?: string[]
-  embedding_model?: string | null
-  embedding_dim?: number | null
+  status: 'healthy' | 'unhealthy';
+  database_connected: boolean;
+  llm_configured: boolean;
+  embedder_configured: boolean;
+  version: string;
+  entity_types_available?: string[];
+  embedding_model?: string | null;
+  embedding_dim?: number | null;
 }
 
 // =============================================================================
@@ -145,44 +145,44 @@ export interface HealthResponse {
 // =============================================================================
 
 export interface HybridSearchRequest {
-  query: string
-  group_id?: string
-  limit?: number
+  query: string;
+  group_id?: string;
+  limit?: number;
 
   // Search methods to use
-  use_bm25?: boolean // BM25 fulltext search (default: true)
-  use_vector?: boolean // Vector similarity search (default: true)
-  use_bfs?: boolean // Graph traversal (default: false)
+  use_bm25?: boolean; // BM25 fulltext search (default: true)
+  use_vector?: boolean; // Vector similarity search (default: true)
+  use_bfs?: boolean; // Graph traversal (default: false)
 
   // What to search
-  search_edges?: boolean // Search facts/relations (default: true)
-  search_nodes?: boolean // Search entities (default: true)
-  search_episodes?: boolean // Search raw episodes (default: false)
-  search_communities?: boolean // Search community summaries (default: false)
+  search_edges?: boolean; // Search facts/relations (default: true)
+  search_nodes?: boolean; // Search entities (default: true)
+  search_episodes?: boolean; // Search raw episodes (default: false)
+  search_communities?: boolean; // Search community summaries (default: false)
 
   // Reranking
-  reranker?: 'rrf' | 'mmr' | 'cross_encoder' | 'none'
-  mmr_lambda?: number // 0 = diverse, 1 = relevant (default: 0.5)
+  reranker?: 'rrf' | 'mmr' | 'cross_encoder' | 'none';
+  mmr_lambda?: number; // 0 = diverse, 1 = relevant (default: 0.5)
 }
 
 export interface HybridSearchResponse {
-  edges: SearchResult[] // Matched facts/relations
-  nodes: SearchResult[] // Matched entities
-  episodes: SearchResult[] // Matched episodes
-  communities: SearchResult[] // Matched communities
+  edges: SearchResult[]; // Matched facts/relations
+  nodes: SearchResult[]; // Matched entities
+  episodes: SearchResult[]; // Matched episodes
+  communities: SearchResult[]; // Matched communities
 
-  query: string
-  search_methods_used: string[]
-  reranker_used?: string
-  total_results: number
+  query: string;
+  search_methods_used: string[];
+  reranker_used?: string;
+  total_results: number;
 }
 
 export interface StatsResponse {
-  total_nodes: number
-  total_edges: number
-  total_episodes: number
-  nodes_by_type: Record<string, number>
-  edges_by_type: Record<string, number>
+  total_nodes: number;
+  total_edges: number;
+  total_episodes: number;
+  nodes_by_type: Record<string, number>;
+  edges_by_type: Record<string, number>;
 }
 
 // =============================================================================
@@ -190,12 +190,12 @@ export interface StatsResponse {
 // =============================================================================
 
 export class GraphitiClient {
-  private baseUrl: string
-  private timeout: number
+  private baseUrl: string;
+  private timeout: number;
 
   constructor(options?: { baseUrl?: string; timeout?: number }) {
-    this.baseUrl = options?.baseUrl ?? process.env.GRAPHITI_SERVICE_URL ?? 'http://localhost:8000'
-    this.timeout = options?.timeout ?? 30000 // 30 seconds default
+    this.baseUrl = options?.baseUrl ?? process.env.GRAPHITI_SERVICE_URL ?? 'http://localhost:8000';
+    this.timeout = options?.timeout ?? 30000; // 30 seconds default
   }
 
   // ===========================================================================
@@ -207,9 +207,9 @@ export class GraphitiClient {
     path: string,
     body?: unknown
   ): Promise<T> {
-    const url = `${this.baseUrl}${path}`
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), this.timeout)
+    const url = `${this.baseUrl}${path}`;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
     try {
       const response = await fetch(url, {
@@ -220,36 +220,36 @@ export class GraphitiClient {
         },
         body: body ? JSON.stringify(body) : undefined,
         signal: controller.signal,
-      })
+      });
 
-      clearTimeout(timeoutId)
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
-        const errorText = await response.text().catch(() => 'Unknown error')
+        const errorText = await response.text().catch(() => 'Unknown error');
         throw new GraphitiClientError(
           `Graphiti API error: ${response.status} ${response.statusText}`,
           response.status,
           errorText
-        )
+        );
       }
 
-      return (await response.json()) as T
+      return (await response.json()) as T;
     } catch (error) {
-      clearTimeout(timeoutId)
+      clearTimeout(timeoutId);
 
       if (error instanceof GraphitiClientError) {
-        throw error
+        throw error;
       }
 
       if (error instanceof Error) {
         if (error.name === 'AbortError') {
-          throw new GraphitiClientError('Request timeout', 408)
+          throw new GraphitiClientError('Request timeout', 408);
         }
         // Connection refused, network error, etc.
-        throw new GraphitiClientError(`Connection failed: ${error.message}`, 0)
+        throw new GraphitiClientError(`Connection failed: ${error.message}`, 0);
       }
 
-      throw new GraphitiClientError('Unknown error', 0)
+      throw new GraphitiClientError('Unknown error', 0);
     }
   }
 
@@ -258,24 +258,24 @@ export class GraphitiClient {
   // ===========================================================================
 
   async health(): Promise<HealthResponse> {
-    return this.request<HealthResponse>('GET', '/health')
+    return this.request<HealthResponse>('GET', '/health');
   }
 
   async stats(groupId?: string): Promise<StatsResponse> {
-    const query = groupId ? `?group_id=${encodeURIComponent(groupId)}` : ''
-    return this.request<StatsResponse>('GET', `/stats${query}`)
+    const query = groupId ? `?group_id=${encodeURIComponent(groupId)}` : '';
+    return this.request<StatsResponse>('GET', `/stats${query}`);
   }
 
   async entityTypes(): Promise<EntityTypesResponse> {
-    return this.request<EntityTypesResponse>('GET', '/entity-types')
+    return this.request<EntityTypesResponse>('GET', '/entity-types');
   }
 
   async isAvailable(): Promise<boolean> {
     try {
-      const health = await this.health()
-      return health.status === 'healthy'
+      const health = await this.health();
+      return health.status === 'healthy';
     } catch {
-      return false
+      return false;
     }
   }
 
@@ -284,15 +284,15 @@ export class GraphitiClient {
   // ===========================================================================
 
   async addEpisode(request: AddEpisodeRequest): Promise<AddEpisodeResponse> {
-    return this.request<AddEpisodeResponse>('POST', '/episodes', request)
+    return this.request<AddEpisodeResponse>('POST', '/episodes', request);
   }
 
   async getEpisodes(request: GetEpisodesRequest): Promise<GetEpisodesResponse> {
-    return this.request<GetEpisodesResponse>('POST', '/episodes/list', request)
+    return this.request<GetEpisodesResponse>('POST', '/episodes/list', request);
   }
 
   async deleteEpisode(episodeUuid: string): Promise<{ success: boolean; uuid: string }> {
-    return this.request('DELETE', `/episodes/${encodeURIComponent(episodeUuid)}`)
+    return this.request('DELETE', `/episodes/${encodeURIComponent(episodeUuid)}`);
   }
 
   // ===========================================================================
@@ -300,11 +300,11 @@ export class GraphitiClient {
   // ===========================================================================
 
   async search(request: SearchRequest): Promise<SearchResponse> {
-    return this.request<SearchResponse>('POST', '/search', request)
+    return this.request<SearchResponse>('POST', '/search', request);
   }
 
   async temporalSearch(request: TemporalQueryRequest): Promise<TemporalQueryResponse> {
-    return this.request<TemporalQueryResponse>('POST', '/search/temporal', request)
+    return this.request<TemporalQueryResponse>('POST', '/search/temporal', request);
   }
 
   /**
@@ -327,7 +327,7 @@ export class GraphitiClient {
    * })
    */
   async hybridSearch(request: HybridSearchRequest): Promise<HybridSearchResponse> {
-    return this.request<HybridSearchResponse>('POST', '/search/hybrid', request)
+    return this.request<HybridSearchResponse>('POST', '/search/hybrid', request);
   }
 
   // ===========================================================================
@@ -335,7 +335,7 @@ export class GraphitiClient {
   // ===========================================================================
 
   async getGraph(request: GetGraphRequest): Promise<GetGraphResponse> {
-    return this.request<GetGraphResponse>('POST', '/graph', request)
+    return this.request<GetGraphResponse>('POST', '/graph', request);
   }
 }
 
@@ -349,20 +349,20 @@ export class GraphitiClientError extends Error {
     public statusCode: number,
     public responseBody?: string
   ) {
-    super(message)
-    this.name = 'GraphitiClientError'
+    super(message);
+    this.name = 'GraphitiClientError';
   }
 
   isConnectionError(): boolean {
-    return this.statusCode === 0
+    return this.statusCode === 0;
   }
 
   isTimeout(): boolean {
-    return this.statusCode === 408
+    return this.statusCode === 408;
   }
 
   isServerError(): boolean {
-    return this.statusCode >= 500
+    return this.statusCode >= 500;
   }
 }
 
@@ -370,13 +370,13 @@ export class GraphitiClientError extends Error {
 // Singleton Instance
 // =============================================================================
 
-let clientInstance: GraphitiClient | null = null
+let clientInstance: GraphitiClient | null = null;
 
 export function getGraphitiClient(): GraphitiClient {
   if (!clientInstance) {
-    clientInstance = new GraphitiClient()
+    clientInstance = new GraphitiClient();
   }
-  return clientInstance
+  return clientInstance;
 }
 
-export default GraphitiClient
+export default GraphitiClient;

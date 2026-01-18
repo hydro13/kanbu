@@ -19,49 +19,54 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { RichTextEditor, getDisplayContent, isLexicalContent, lexicalToPlainText } from '@/components/editor'
-import type { EditorState, LexicalEditor } from 'lexical'
-import type { Subtask } from './SubtaskList'
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  RichTextEditor,
+  getDisplayContent,
+  isLexicalContent,
+  lexicalToPlainText,
+} from '@/components/editor';
+import type { EditorState, LexicalEditor } from 'lexical';
+import type { Subtask } from './SubtaskList';
 
 // =============================================================================
 // Types
 // =============================================================================
 
-type SubtaskStatus = 'TODO' | 'IN_PROGRESS' | 'DONE'
+type SubtaskStatus = 'TODO' | 'IN_PROGRESS' | 'DONE';
 
 interface ProjectMember {
-  id: number
-  username: string
-  name: string | null
-  avatarUrl?: string | null
+  id: number;
+  username: string;
+  name: string | null;
+  avatarUrl?: string | null;
 }
 
 export interface SubtaskEditModalProps {
-  subtask: Subtask | null
-  isOpen: boolean
-  onClose: () => void
+  subtask: Subtask | null;
+  isOpen: boolean;
+  onClose: () => void;
   onSave: (data: {
-    subtaskId: number
-    title?: string
-    description?: string | null
-    status?: SubtaskStatus
-    assigneeId?: number | null
-    timeEstimated?: number
-    timeSpent?: number
-  }) => Promise<unknown>
-  projectMembers?: ProjectMember[]
-  isSaving?: boolean
+    subtaskId: number;
+    title?: string;
+    description?: string | null;
+    status?: SubtaskStatus;
+    assigneeId?: number | null;
+    timeEstimated?: number;
+    timeSpent?: number;
+  }) => Promise<unknown>;
+  projectMembers?: ProjectMember[];
+  isSaving?: boolean;
 }
 
 // =============================================================================
@@ -77,45 +82,45 @@ export function SubtaskEditModal({
   isSaving = false,
 }: SubtaskEditModalProps) {
   // Form state
-  const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
-  const [status, setStatus] = useState<SubtaskStatus>('TODO')
-  const [assigneeId, setAssigneeId] = useState<string>('none')
-  const [timeEstimated, setTimeEstimated] = useState('')
-  const [timeSpent, setTimeSpent] = useState('')
-  const [editorKey, setEditorKey] = useState(0)
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [status, setStatus] = useState<SubtaskStatus>('TODO');
+  const [assigneeId, setAssigneeId] = useState<string>('none');
+  const [timeEstimated, setTimeEstimated] = useState('');
+  const [timeSpent, setTimeSpent] = useState('');
+  const [editorKey, setEditorKey] = useState(0);
 
   // Reset form when subtask changes
   useEffect(() => {
     if (subtask) {
-      setTitle(subtask.title)
-      setDescription(getDisplayContent(subtask.description ?? ''))
-      setStatus(subtask.status)
-      setAssigneeId(subtask.assignee?.id.toString() ?? 'none')
-      setTimeEstimated(subtask.timeEstimated > 0 ? subtask.timeEstimated.toString() : '')
-      setTimeSpent(subtask.timeSpent > 0 ? subtask.timeSpent.toString() : '')
-      setEditorKey((k) => k + 1)
+      setTitle(subtask.title);
+      setDescription(getDisplayContent(subtask.description ?? ''));
+      setStatus(subtask.status);
+      setAssigneeId(subtask.assignee?.id.toString() ?? 'none');
+      setTimeEstimated(subtask.timeEstimated > 0 ? subtask.timeEstimated.toString() : '');
+      setTimeSpent(subtask.timeSpent > 0 ? subtask.timeSpent.toString() : '');
+      setEditorKey((k) => k + 1);
     }
-  }, [subtask])
+  }, [subtask]);
 
   // Handle editor content changes
   const handleEditorChange = useCallback(
     (_editorState: EditorState, _editor: LexicalEditor, jsonString: string) => {
-      setDescription(jsonString)
+      setDescription(jsonString);
     },
     []
-  )
+  );
 
   // Check if description content is empty
   const isDescriptionEmpty = useCallback((content: string) => {
-    if (!content) return true
-    if (!isLexicalContent(content)) return !content.trim()
-    const plainText = lexicalToPlainText(content)
-    return !plainText.trim()
-  }, [])
+    if (!content) return true;
+    if (!isLexicalContent(content)) return !content.trim();
+    const plainText = lexicalToPlainText(content);
+    return !plainText.trim();
+  }, []);
 
   const handleSave = async () => {
-    if (!subtask || !title.trim()) return
+    if (!subtask || !title.trim()) return;
 
     await onSave({
       subtaskId: subtask.id,
@@ -125,18 +130,19 @@ export function SubtaskEditModal({
       assigneeId: assigneeId === 'none' ? null : parseInt(assigneeId),
       timeEstimated: parseFloat(timeEstimated) || 0,
       timeSpent: parseFloat(timeSpent) || 0,
-    })
+    });
 
-    onClose()
-  }
+    onClose();
+  };
 
   const handleCancel = () => {
-    onClose()
-  }
+    onClose();
+  };
 
-  if (!subtask) return null
+  if (!subtask) return null;
 
-  const selectClassName = 'h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring'
+  const selectClassName =
+    'h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm focus:outline-none focus:ring-1 focus:ring-ring';
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -179,7 +185,9 @@ export function SubtaskEditModal({
             <select
               id="status"
               value={status}
-              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setStatus(e.target.value as SubtaskStatus)}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                setStatus(e.target.value as SubtaskStatus)
+              }
               className={selectClassName}
             >
               <option value="TODO">To Do</option>
@@ -216,7 +224,9 @@ export function SubtaskEditModal({
                 min="0"
                 step="0.25"
                 value={timeEstimated}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTimeEstimated(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setTimeEstimated(e.target.value)
+                }
                 placeholder="0"
               />
             </div>
@@ -245,7 +255,7 @@ export function SubtaskEditModal({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
 
-export default SubtaskEditModal
+export default SubtaskEditModal;

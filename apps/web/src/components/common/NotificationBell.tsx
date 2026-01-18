@@ -13,18 +13,18 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState, useRef, useEffect } from 'react'
-import { Bell, Check, Settings, Loader2 } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
-import { trpc } from '../../lib/trpc'
-import { NotificationItem, type NotificationItemData } from './NotificationItem'
+import { useState, useRef, useEffect } from 'react';
+import { Bell, Check, Settings, Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { trpc } from '../../lib/trpc';
+import { NotificationItem, type NotificationItemData } from './NotificationItem';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface NotificationBellProps {
-  className?: string
+  className?: string;
 }
 
 // =============================================================================
@@ -32,18 +32,15 @@ export interface NotificationBellProps {
 // =============================================================================
 
 export function NotificationBell({ className = '' }: NotificationBellProps) {
-  const [isOpen, setIsOpen] = useState(false)
-  const containerRef = useRef<HTMLDivElement>(null)
-  const navigate = useNavigate()
-  const utils = trpc.useUtils()
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  const utils = trpc.useUtils();
 
   // Queries
-  const { data: countData } = trpc.notification.getUnreadCount.useQuery(
-    undefined,
-    {
-      refetchInterval: 30000, // Refetch every 30 seconds
-    }
-  )
+  const { data: countData } = trpc.notification.getUnreadCount.useQuery(undefined, {
+    refetchInterval: 30000, // Refetch every 30 seconds
+  });
 
   const {
     data: notifications,
@@ -54,59 +51,56 @@ export function NotificationBell({ className = '' }: NotificationBellProps) {
     {
       enabled: isOpen, // Only fetch when dropdown is open
     }
-  )
+  );
 
   // Mutations
   const markReadMutation = trpc.notification.markRead.useMutation({
     onSuccess: () => {
-      utils.notification.getUnreadCount.invalidate()
-      utils.notification.list.invalidate()
+      utils.notification.getUnreadCount.invalidate();
+      utils.notification.list.invalidate();
     },
-  })
+  });
 
   const markAllReadMutation = trpc.notification.markAllRead.useMutation({
     onSuccess: () => {
-      utils.notification.getUnreadCount.invalidate()
-      utils.notification.list.invalidate()
+      utils.notification.getUnreadCount.invalidate();
+      utils.notification.list.invalidate();
     },
-  })
+  });
 
   // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
-      ) {
-        setIsOpen(false)
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Refetch when opening
   useEffect(() => {
     if (isOpen) {
-      refetch()
+      refetch();
     }
-  }, [isOpen, refetch])
+  }, [isOpen, refetch]);
 
   const handleMarkRead = (id: number) => {
-    markReadMutation.mutate({ notificationIds: [id] })
-  }
+    markReadMutation.mutate({ notificationIds: [id] });
+  };
 
   const handleMarkAllRead = () => {
-    markAllReadMutation.mutate()
-  }
+    markAllReadMutation.mutate();
+  };
 
   const handleNotificationClick = (_notification: NotificationItemData) => {
-    setIsOpen(false)
+    setIsOpen(false);
     // Navigation is handled by NotificationItem
-  }
+  };
 
-  const unreadCount = countData?.count ?? 0
+  const unreadCount = countData?.count ?? 0;
 
   return (
     <div ref={containerRef} className={`relative ${className}`}>
@@ -131,9 +125,7 @@ export function NotificationBell({ className = '' }: NotificationBellProps) {
         <div className="absolute right-0 mt-2 w-80 bg-card border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl z-50">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-            <h3 className="font-semibold text-foreground">
-              Notifications
-            </h3>
+            <h3 className="font-semibold text-foreground">Notifications</h3>
             <div className="flex items-center gap-1">
               {unreadCount > 0 && (
                 <button
@@ -151,8 +143,8 @@ export function NotificationBell({ className = '' }: NotificationBellProps) {
               )}
               <button
                 onClick={() => {
-                  setIsOpen(false)
-                  navigate('/settings/notifications')
+                  setIsOpen(false);
+                  navigate('/settings/notifications');
                 }}
                 className="p-1.5 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-accent rounded transition-colors"
                 title="Notification settings"
@@ -182,9 +174,7 @@ export function NotificationBell({ className = '' }: NotificationBellProps) {
             ) : (
               <div className="py-8 text-center">
                 <Bell className="w-8 h-8 mx-auto text-gray-300 dark:text-gray-600 mb-2" />
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  No notifications yet
-                </p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">No notifications yet</p>
               </div>
             )}
           </div>
@@ -194,8 +184,8 @@ export function NotificationBell({ className = '' }: NotificationBellProps) {
             <div className="border-t border-gray-200 dark:border-gray-700">
               <button
                 onClick={() => {
-                  setIsOpen(false)
-                  navigate('/notifications')
+                  setIsOpen(false);
+                  navigate('/notifications');
                 }}
                 className="w-full px-4 py-2.5 text-sm text-center text-blue-600 dark:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
@@ -206,7 +196,7 @@ export function NotificationBell({ className = '' }: NotificationBellProps) {
         </div>
       )}
     </div>
-  )
+  );
 }
 
-export default NotificationBell
+export default NotificationBell;

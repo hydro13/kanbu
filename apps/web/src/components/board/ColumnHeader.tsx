@@ -18,40 +18,40 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState, useRef, useEffect } from 'react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { cn } from '@/lib/utils'
+import { useState, useRef, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface Column {
-  id: number
-  title: string
-  description?: string | null
-  position: number
-  taskLimit: number
-  isCollapsed: boolean
-  showClosed: boolean
-  isArchive?: boolean
+  id: number;
+  title: string;
+  description?: string | null;
+  position: number;
+  taskLimit: number;
+  isCollapsed: boolean;
+  showClosed: boolean;
+  isArchive?: boolean;
 }
 
 interface ColumnHeaderProps {
-  column: Column
-  taskCount: number
-  isOverLimit: boolean
-  projectId: number
-  onTitleChange?: (columnId: number, newTitle: string) => void
-  onAddTask?: (columnId: number) => void
-  onEditColumn?: (columnId: number) => void
-  onDeleteColumn?: (columnId: number) => void
-  onToggleCollapse?: (columnId: number) => void
-  isEditable?: boolean
+  column: Column;
+  taskCount: number;
+  isOverLimit: boolean;
+  projectId: number;
+  onTitleChange?: (columnId: number, newTitle: string) => void;
+  onAddTask?: (columnId: number) => void;
+  onEditColumn?: (columnId: number) => void;
+  onDeleteColumn?: (columnId: number) => void;
+  onToggleCollapse?: (columnId: number) => void;
+  isEditable?: boolean;
   /** Compact mode for narrow/empty columns */
-  isCompact?: boolean
-  className?: string
+  isCompact?: boolean;
+  className?: string;
 }
 
 // =============================================================================
@@ -72,49 +72,49 @@ export function ColumnHeader({
   isCompact = false,
   className,
 }: ColumnHeaderProps) {
-  const [isEditing, setIsEditing] = useState(false)
-  const [editValue, setEditValue] = useState(column.title)
-  const [showMenu, setShowMenu] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
-  const menuRef = useRef<HTMLDivElement>(null)
+  const [isEditing, setIsEditing] = useState(false);
+  const [editValue, setEditValue] = useState(column.title);
+  const [showMenu, setShowMenu] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   // Focus input when editing starts
   useEffect(() => {
     if (isEditing && inputRef.current) {
-      inputRef.current.focus()
-      inputRef.current.select()
+      inputRef.current.focus();
+      inputRef.current.select();
     }
-  }, [isEditing])
+  }, [isEditing]);
 
   // Close menu on click outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setShowMenu(false)
+        setShowMenu(false);
       }
     }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleTitleSubmit = () => {
-    const trimmedValue = editValue.trim()
+    const trimmedValue = editValue.trim();
     if (trimmedValue && trimmedValue !== column.title && onTitleChange) {
-      onTitleChange(column.id, trimmedValue)
+      onTitleChange(column.id, trimmedValue);
     } else {
-      setEditValue(column.title)
+      setEditValue(column.title);
     }
-    setIsEditing(false)
-  }
+    setIsEditing(false);
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      handleTitleSubmit()
+      handleTitleSubmit();
     } else if (e.key === 'Escape') {
-      setEditValue(column.title)
-      setIsEditing(false)
+      setEditValue(column.title);
+      setIsEditing(false);
     }
-  }
+  };
 
   // Compact mode for empty columns - vertical layout with title and add button
   if (isCompact && taskCount === 0) {
@@ -141,7 +141,7 @@ export function ColumnHeader({
           </button>
         )}
       </div>
-    )
+    );
   }
 
   return (
@@ -162,10 +162,7 @@ export function ColumnHeader({
             title={column.isCollapsed ? 'Expand column' : 'Collapse column'}
           >
             <ChevronIcon
-              className={cn(
-                'h-4 w-4 transition-transform',
-                column.isCollapsed && '-rotate-90'
-              )}
+              className={cn('h-4 w-4 transition-transform', column.isCollapsed && '-rotate-90')}
             />
           </button>
         )}
@@ -235,8 +232,8 @@ export function ColumnHeader({
                   <button
                     className="w-full px-3 py-2 text-sm text-left hover:bg-muted flex items-center gap-2"
                     onClick={() => {
-                      setShowMenu(false)
-                      onEditColumn(column.id)
+                      setShowMenu(false);
+                      onEditColumn(column.id);
                     }}
                   >
                     <EditIcon className="h-4 w-4" />
@@ -247,8 +244,8 @@ export function ColumnHeader({
                   <button
                     className="w-full px-3 py-2 text-sm text-left hover:bg-muted text-destructive flex items-center gap-2"
                     onClick={() => {
-                      setShowMenu(false)
-                      onDeleteColumn(column.id)
+                      setShowMenu(false);
+                      onDeleteColumn(column.id);
                     }}
                   >
                     <TrashIcon className="h-4 w-4" />
@@ -261,7 +258,7 @@ export function ColumnHeader({
         )}
       </div>
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -269,20 +266,22 @@ export function ColumnHeader({
 // =============================================================================
 
 interface WIPIndicatorProps {
-  taskCount: number
-  taskLimit: number
-  isOverLimit: boolean
+  taskCount: number;
+  taskLimit: number;
+  isOverLimit: boolean;
 }
 
 function WIPIndicator({ taskCount, taskLimit, isOverLimit }: WIPIndicatorProps) {
-  const hasLimit = taskLimit > 0
+  const hasLimit = taskLimit > 0;
 
   return (
     <span
       className={cn(
         'px-2 py-0.5 text-xs rounded-full font-medium',
         !hasLimit && 'bg-muted text-muted-foreground',
-        hasLimit && !isOverLimit && 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+        hasLimit &&
+          !isOverLimit &&
+          'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
         hasLimit && isOverLimit && 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
       )}
       title={hasLimit ? `${taskCount} of ${taskLimit} (WIP limit)` : `${taskCount} tasks`}
@@ -290,7 +289,7 @@ function WIPIndicator({ taskCount, taskLimit, isOverLimit }: WIPIndicatorProps) 
       {taskCount}
       {hasLimit && ` / ${taskLimit}`}
     </span>
-  )
+  );
 }
 
 // =============================================================================
@@ -311,7 +310,7 @@ function ChevronIcon({ className }: { className?: string }) {
     >
       <path d="m6 9 6 6 6-6" />
     </svg>
-  )
+  );
 }
 
 function PlusIcon({ className }: { className?: string }) {
@@ -329,7 +328,7 @@ function PlusIcon({ className }: { className?: string }) {
       <path d="M5 12h14" />
       <path d="M12 5v14" />
     </svg>
-  )
+  );
 }
 
 function MoreIcon({ className }: { className?: string }) {
@@ -348,7 +347,7 @@ function MoreIcon({ className }: { className?: string }) {
       <circle cx="19" cy="12" r="1" />
       <circle cx="5" cy="12" r="1" />
     </svg>
-  )
+  );
 }
 
 function EditIcon({ className }: { className?: string }) {
@@ -366,7 +365,7 @@ function EditIcon({ className }: { className?: string }) {
       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
       <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
     </svg>
-  )
+  );
 }
 
 function TrashIcon({ className }: { className?: string }) {
@@ -385,11 +384,11 @@ function TrashIcon({ className }: { className?: string }) {
       <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
       <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
     </svg>
-  )
+  );
 }
 
 // =============================================================================
 // Exports
 // =============================================================================
 
-export default ColumnHeader
+export default ColumnHeader;

@@ -11,12 +11,12 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-export { TaskCountWidget } from './TaskCountWidget'
-export { VelocityChart } from './VelocityChart'
-export { CycleTimeChart } from './CycleTimeChart'
-export { WorkloadChart } from './WorkloadChart'
+export { TaskCountWidget } from './TaskCountWidget';
+export { VelocityChart } from './VelocityChart';
+export { CycleTimeChart } from './CycleTimeChart';
+export { WorkloadChart } from './WorkloadChart';
 
-export type { TaskCountWidgetProps } from './TaskCountWidget'
-export type { VelocityChartProps } from './VelocityChart'
-export type { CycleTimeChartProps } from './CycleTimeChart'
-export type { WorkloadChartProps } from './WorkloadChart'
+export type { TaskCountWidgetProps } from './TaskCountWidget';
+export type { VelocityChartProps } from './VelocityChart';
+export type { CycleTimeChartProps } from './CycleTimeChart';
+export type { WorkloadChartProps } from './WorkloadChart';

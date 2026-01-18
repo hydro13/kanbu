@@ -13,8 +13,8 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useMemo } from 'react'
-import { Loader2, Info } from 'lucide-react'
+import { useMemo } from 'react';
+import { Loader2, Info } from 'lucide-react';
 
 // =============================================================================
 // Types
@@ -22,19 +22,19 @@ import { Loader2, Info } from 'lucide-react'
 
 interface VelocityData {
   dataPoints: Array<{
-    weekStart: string
-    periodStart?: string
-    tasksCompleted: number
-    pointsCompleted: number
-  }>
-  avgVelocity: number
-  totalCompleted: number
-  granularity?: 'day' | 'week'
+    weekStart: string;
+    periodStart?: string;
+    tasksCompleted: number;
+    pointsCompleted: number;
+  }>;
+  avgVelocity: number;
+  totalCompleted: number;
+  granularity?: 'day' | 'week';
 }
 
 export interface VelocityChartProps {
-  data: VelocityData | undefined
-  isLoading: boolean
+  data: VelocityData | undefined;
+  isLoading: boolean;
 }
 
 // =============================================================================
@@ -42,11 +42,11 @@ export interface VelocityChartProps {
 // =============================================================================
 
 function formatPeriodLabel(dateStr: string, granularity: 'day' | 'week'): string {
-  const date = new Date(dateStr)
+  const date = new Date(dateStr);
   if (granularity === 'day') {
-    return date.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' })
+    return date.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric' });
   }
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
 // =============================================================================
@@ -55,10 +55,10 @@ function formatPeriodLabel(dateStr: string, granularity: 'day' | 'week'): string
 
 export function VelocityChart({ data, isLoading }: VelocityChartProps) {
   const chartData = useMemo(() => {
-    if (!data?.dataPoints || data.dataPoints.length === 0) return null
+    if (!data?.dataPoints || data.dataPoints.length === 0) return null;
 
-    const maxValue = Math.max(...data.dataPoints.map((d) => d.tasksCompleted), 1)
-    const granularity = data.granularity ?? 'week'
+    const maxValue = Math.max(...data.dataPoints.map((d) => d.tasksCompleted), 1);
+    const granularity = data.granularity ?? 'week';
 
     return {
       points: data.dataPoints,
@@ -67,15 +67,15 @@ export function VelocityChart({ data, isLoading }: VelocityChartProps) {
       totalCompleted: data.totalCompleted,
       granularity,
       periodLabel: granularity === 'day' ? 'day' : 'week',
-    }
-  }, [data])
+    };
+  }, [data]);
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-48">
         <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
       </div>
-    )
+    );
   }
 
   if (!chartData) {
@@ -84,7 +84,7 @@ export function VelocityChart({ data, isLoading }: VelocityChartProps) {
         <Info className="w-5 h-5 mr-2" />
         No velocity data available
       </div>
-    )
+    );
   }
 
   return (
@@ -132,17 +132,17 @@ export function VelocityChart({ data, isLoading }: VelocityChartProps) {
               strokeLinejoin="round"
               points={chartData.points
                 .map((point, index) => {
-                  const x = (index / (chartData.points.length - 1 || 1)) * 100
-                  const y = 100 - (point.tasksCompleted / chartData.maxValue) * 100
-                  return `${x},${y}`
+                  const x = (index / (chartData.points.length - 1 || 1)) * 100;
+                  const y = 100 - (point.tasksCompleted / chartData.maxValue) * 100;
+                  return `${x},${y}`;
                 })
                 .join(' ')}
             />
             {/* Data points */}
             {chartData.points.map((point, index) => {
-              const x = (index / (chartData.points.length - 1 || 1)) * 100
-              const y = 100 - (point.tasksCompleted / chartData.maxValue) * 100
-              const isAboveAvg = point.tasksCompleted >= chartData.avgVelocity
+              const x = (index / (chartData.points.length - 1 || 1)) * 100;
+              const y = 100 - (point.tasksCompleted / chartData.maxValue) * 100;
+              const isAboveAvg = point.tasksCompleted >= chartData.avgVelocity;
               return (
                 <circle
                   key={point.weekStart}
@@ -156,10 +156,11 @@ export function VelocityChart({ data, isLoading }: VelocityChartProps) {
                   className="cursor-pointer"
                 >
                   <title>
-                    {formatPeriodLabel(point.periodStart ?? point.weekStart, chartData.granularity)}: {point.tasksCompleted} tasks
+                    {formatPeriodLabel(point.periodStart ?? point.weekStart, chartData.granularity)}
+                    : {point.tasksCompleted} tasks
                   </title>
                 </circle>
-              )
+              );
             })}
             {/* Average line */}
             {chartData.avgVelocity > 0 && (
@@ -180,9 +181,10 @@ export function VelocityChart({ data, isLoading }: VelocityChartProps) {
         {/* X-axis labels */}
         <div className="absolute bottom-0 left-8 right-0 flex justify-between">
           {chartData.points.map((point, index) => {
-            const totalPoints = chartData.points.length
-            const labelInterval = totalPoints > 14 ? Math.ceil(totalPoints / 6) : totalPoints > 7 ? 2 : 1
-            if (index % labelInterval !== 0 && index !== totalPoints - 1) return null
+            const totalPoints = chartData.points.length;
+            const labelInterval =
+              totalPoints > 14 ? Math.ceil(totalPoints / 6) : totalPoints > 7 ? 2 : 1;
+            if (index % labelInterval !== 0 && index !== totalPoints - 1) return null;
             return (
               <span
                 key={point.weekStart}
@@ -190,12 +192,12 @@ export function VelocityChart({ data, isLoading }: VelocityChartProps) {
                 style={{
                   position: 'absolute',
                   left: `${(index / (totalPoints - 1 || 1)) * 100}%`,
-                  transform: 'translateX(-50%)'
+                  transform: 'translateX(-50%)',
                 }}
               >
                 {formatPeriodLabel(point.periodStart ?? point.weekStart, chartData.granularity)}
               </span>
-            )
+            );
           })}
         </div>
       </div>
@@ -216,7 +218,7 @@ export function VelocityChart({ data, isLoading }: VelocityChartProps) {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default VelocityChart
+export default VelocityChart;

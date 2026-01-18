@@ -7,10 +7,10 @@
  * Phase 4.1 + 4.4: Supports optional AES-256-GCM encryption and SHA-256 checksums.
  */
 
-import * as fs from 'fs/promises'
-import * as path from 'path'
-import { exec } from 'child_process'
-import { promisify } from 'util'
+import * as fs from 'fs/promises';
+import * as path from 'path';
+import { exec } from 'child_process';
+import { promisify } from 'util';
 import {
   getBackupStorage,
   getBackupStorageType,
@@ -18,22 +18,18 @@ import {
   type BackupResult,
   type BackupFile,
   getBackupConfig,
-} from './storage'
-import { execPgDump, getPostgresBackupInfo } from './container/dockerDiscovery'
-import {
-  isEncryptionEnabled,
-  encryptFile,
-  getEncryptionAlgorithm,
-} from './crypto'
-import { generateChecksum, getChecksumAlgorithm } from './crypto/checksum'
+} from './storage';
+import { execPgDump, getPostgresBackupInfo } from './container/dockerDiscovery';
+import { isEncryptionEnabled, encryptFile, getEncryptionAlgorithm } from './crypto';
+import { generateChecksum, getChecksumAlgorithm } from './crypto/checksum';
 
-const execAsync = promisify(exec)
+const execAsync = promisify(exec);
 
 export class BackupService {
-  private storage: BackupStorage
+  private storage: BackupStorage;
 
   constructor() {
-    this.storage = getBackupStorage()
+    this.storage = getBackupStorage();
   }
 
   /**
@@ -47,73 +43,73 @@ export class BackupService {
    * 5. Store via configured backend
    */
   async createDatabaseBackup(): Promise<BackupResult> {
-    const timestamp = this.generateTimestamp()
-    const baseFilename = `kanbu_backup_${timestamp}`
-    const tempSqlFile = path.join('/tmp', `${baseFilename}.sql`)
-    const tempGzFile = path.join('/tmp', `${baseFilename}.sql.gz`)
-    const tempEncFile = path.join('/tmp', `${baseFilename}.sql.gz.enc`)
-    const tempFiles: string[] = []
+    const timestamp = this.generateTimestamp();
+    const baseFilename = `kanbu_backup_${timestamp}`;
+    const tempSqlFile = path.join('/tmp', `${baseFilename}.sql`);
+    const tempGzFile = path.join('/tmp', `${baseFilename}.sql.gz`);
+    const tempEncFile = path.join('/tmp', `${baseFilename}.sql.gz.enc`);
+    const tempFiles: string[] = [];
 
     try {
       // Check storage accessibility
-      const storageOk = await this.storage.isAccessible()
+      const storageOk = await this.storage.isAccessible();
       if (!storageOk) {
         throw new Error(
           `Backup storage not accessible at ${this.storage.getPath()}. ` +
-          `Storage type: ${getBackupStorageType()}`
-        )
+            `Storage type: ${getBackupStorageType()}`
+        );
       }
 
       // Step 1: Execute pg_dump
-      const { success, stderr } = await execPgDump(tempSqlFile)
+      const { success, stderr } = await execPgDump(tempSqlFile);
       if (!success) {
-        throw new Error(`pg_dump failed: ${stderr}`)
+        throw new Error(`pg_dump failed: ${stderr}`);
       }
-      tempFiles.push(tempSqlFile)
+      tempFiles.push(tempSqlFile);
 
       // Step 2: Compress with gzip
-      await execAsync(`gzip -c "${tempSqlFile}" > "${tempGzFile}"`)
-      tempFiles.push(tempGzFile)
+      await execAsync(`gzip -c "${tempSqlFile}" > "${tempGzFile}"`);
+      tempFiles.push(tempGzFile);
 
       // Step 3: Generate SHA-256 checksum of compressed file (BEFORE encryption)
-      const checksum = await generateChecksum(tempGzFile)
-      const checksumAlg = getChecksumAlgorithm()
+      const checksum = await generateChecksum(tempGzFile);
+      const checksumAlg = getChecksumAlgorithm();
 
       // Get compressed file stats
-      const gzStats = await fs.stat(tempGzFile)
-      const fileSizeKB = Math.round(gzStats.size / 1024)
+      const gzStats = await fs.stat(tempGzFile);
+      const fileSizeKB = Math.round(gzStats.size / 1024);
 
       // Step 4: Optional encryption
-      let finalFilename: string
-      let finalTempFile: string
-      let isEncrypted = false
-      let encryptionAlg: string | undefined
+      let finalFilename: string;
+      let finalTempFile: string;
+      let isEncrypted = false;
+      let encryptionAlg: string | undefined;
 
       if (isEncryptionEnabled()) {
         // Encrypt the compressed file
-        const encResult = await encryptFile(tempGzFile, tempEncFile)
-        tempFiles.push(encResult.encryptedPath)
-        finalTempFile = encResult.encryptedPath
-        finalFilename = `${baseFilename}.sql.gz.enc`
-        isEncrypted = true
-        encryptionAlg = getEncryptionAlgorithm()
+        const encResult = await encryptFile(tempGzFile, tempEncFile);
+        tempFiles.push(encResult.encryptedPath);
+        finalTempFile = encResult.encryptedPath;
+        finalFilename = `${baseFilename}.sql.gz.enc`;
+        isEncrypted = true;
+        encryptionAlg = getEncryptionAlgorithm();
       } else {
         // No encryption, use compressed file directly
-        finalTempFile = tempGzFile
-        finalFilename = `${baseFilename}.sql.gz`
+        finalTempFile = tempGzFile;
+        finalFilename = `${baseFilename}.sql.gz`;
       }
 
       // Step 5: Save to storage backend
-      await this.storage.saveFromFile(finalTempFile, finalFilename)
+      await this.storage.saveFromFile(finalTempFile, finalFilename);
 
       // Clean up temp files
       for (const file of tempFiles) {
-        await fs.unlink(file).catch(() => {})
+        await fs.unlink(file).catch(() => {});
       }
 
       // Count existing backups
-      const backups = await this.storage.list('database')
-      const totalBackups = backups.length
+      const backups = await this.storage.list('database');
+      const totalBackups = backups.length;
 
       return {
         success: true,
@@ -127,13 +123,13 @@ export class BackupService {
         encryptionAlg,
         checksum,
         checksumAlg,
-      }
+      };
     } catch (error) {
       // Clean up temp files on error
       for (const file of tempFiles) {
-        await fs.unlink(file).catch(() => {})
+        await fs.unlink(file).catch(() => {});
       }
-      throw error
+      throw error;
     }
   }
 
@@ -149,31 +145,31 @@ export class BackupService {
    * Only available when KANBU_SOURCE_PATH is set and accessible.
    */
   async createSourceBackup(): Promise<BackupResult> {
-    const config = getBackupConfig()
-    const timestamp = this.generateTimestamp()
-    const baseFilename = `kanbu_source_${timestamp}`
-    const tempTarGzFile = path.join('/tmp', `${baseFilename}.tar.gz`)
-    const tempEncFile = path.join('/tmp', `${baseFilename}.tar.gz.enc`)
-    const tempFiles: string[] = []
+    const config = getBackupConfig();
+    const timestamp = this.generateTimestamp();
+    const baseFilename = `kanbu_source_${timestamp}`;
+    const tempTarGzFile = path.join('/tmp', `${baseFilename}.tar.gz`);
+    const tempEncFile = path.join('/tmp', `${baseFilename}.tar.gz.enc`);
+    const tempFiles: string[] = [];
 
     try {
       // Check if source path exists
       try {
-        await fs.access(config.sourcePath)
+        await fs.access(config.sourcePath);
       } catch {
         throw new Error(
           `Source path not accessible: ${config.sourcePath}. ` +
-          'Set KANBU_SOURCE_PATH to the correct location.'
-        )
+            'Set KANBU_SOURCE_PATH to the correct location.'
+        );
       }
 
       // Check storage accessibility
-      const storageOk = await this.storage.isAccessible()
+      const storageOk = await this.storage.isAccessible();
       if (!storageOk) {
         throw new Error(
           `Backup storage not accessible at ${this.storage.getPath()}. ` +
-          `Storage type: ${getBackupStorageType()}`
-        )
+            `Storage type: ${getBackupStorageType()}`
+        );
       }
 
       // Step 1: Create tar.gz archive
@@ -188,66 +184,66 @@ export class BackupService {
         '.DS_Store',
         'coverage',
         '.nyc_output',
-      ].map(p => `--exclude='${p}'`).join(' ')
+      ]
+        .map((p) => `--exclude='${p}'`)
+        .join(' ');
 
-      const parentDir = path.dirname(config.sourcePath)
-      const baseName = path.basename(config.sourcePath)
+      const parentDir = path.dirname(config.sourcePath);
+      const baseName = path.basename(config.sourcePath);
 
       const { stderr: tarErr } = await execAsync(
         `cd "${parentDir}" && tar ${excludePatterns} -czf "${tempTarGzFile}" "${baseName}"`,
         { shell: '/bin/bash', maxBuffer: 50 * 1024 * 1024 }
-      )
+      );
 
       // tar warnings about "Removing leading" are not errors
       if (tarErr && !tarErr.includes('Removing leading')) {
-        console.warn('tar warning:', tarErr)
+        console.warn('tar warning:', tarErr);
       }
-      tempFiles.push(tempTarGzFile)
+      tempFiles.push(tempTarGzFile);
 
       // Step 2: Generate SHA-256 checksum (BEFORE encryption)
-      const checksum = await generateChecksum(tempTarGzFile)
-      const checksumAlg = getChecksumAlgorithm()
+      const checksum = await generateChecksum(tempTarGzFile);
+      const checksumAlg = getChecksumAlgorithm();
 
       // Get archive stats
-      const stats = await fs.stat(tempTarGzFile)
-      const fileSizeMB = Math.round(stats.size / (1024 * 1024) * 10) / 10
+      const stats = await fs.stat(tempTarGzFile);
+      const fileSizeMB = Math.round((stats.size / (1024 * 1024)) * 10) / 10;
 
       // Step 3: Optional encryption
-      let finalFilename: string
-      let finalTempFile: string
-      let isEncrypted = false
-      let encryptionAlg: string | undefined
+      let finalFilename: string;
+      let finalTempFile: string;
+      let isEncrypted = false;
+      let encryptionAlg: string | undefined;
 
       if (isEncryptionEnabled()) {
         // Encrypt the archive
-        const encResult = await encryptFile(tempTarGzFile, tempEncFile)
-        tempFiles.push(encResult.encryptedPath)
-        finalTempFile = encResult.encryptedPath
-        finalFilename = `${baseFilename}.tar.gz.enc`
-        isEncrypted = true
-        encryptionAlg = getEncryptionAlgorithm()
+        const encResult = await encryptFile(tempTarGzFile, tempEncFile);
+        tempFiles.push(encResult.encryptedPath);
+        finalTempFile = encResult.encryptedPath;
+        finalFilename = `${baseFilename}.tar.gz.enc`;
+        isEncrypted = true;
+        encryptionAlg = getEncryptionAlgorithm();
       } else {
         // No encryption, use archive directly
-        finalTempFile = tempTarGzFile
-        finalFilename = `${baseFilename}.tar.gz`
+        finalTempFile = tempTarGzFile;
+        finalFilename = `${baseFilename}.tar.gz`;
       }
 
       // Step 4: Save to storage backend
-      await this.storage.saveFromFile(finalTempFile, finalFilename)
+      await this.storage.saveFromFile(finalTempFile, finalFilename);
 
       // Clean up temp files
       for (const file of tempFiles) {
-        await fs.unlink(file).catch(() => {})
+        await fs.unlink(file).catch(() => {});
       }
 
       // Count existing backups
-      const backups = await this.storage.list('source')
-      const totalBackups = backups.length
+      const backups = await this.storage.list('source');
+      const totalBackups = backups.length;
 
       // Instructions vary based on encryption
-      const extractFilename = isEncrypted
-        ? `${baseFilename}.tar.gz`
-        : finalFilename
+      const extractFilename = isEncrypted ? `${baseFilename}.tar.gz` : finalFilename;
       const instructions = isEncrypted
         ? [
             '1. Download the archive from backup storage',
@@ -263,7 +259,7 @@ export class BackupService {
             '3. cd kanbu && pnpm install',
             '4. Copy .env files and configure for your environment',
             '5. pnpm db:push && pnpm build && pnpm start',
-          ]
+          ];
 
       return {
         success: true,
@@ -278,13 +274,13 @@ export class BackupService {
         encryptionAlg,
         checksum,
         checksumAlg,
-      }
+      };
     } catch (error) {
       // Clean up temp files on error
       for (const file of tempFiles) {
-        await fs.unlink(file).catch(() => {})
+        await fs.unlink(file).catch(() => {});
       }
-      throw error
+      throw error;
     }
   }
 
@@ -295,59 +291,59 @@ export class BackupService {
     const [database, source] = await Promise.all([
       this.storage.list('database'),
       this.storage.list('source'),
-    ])
-    return { database, source }
+    ]);
+    return { database, source };
   }
 
   /**
    * Delete a backup file
    */
   async deleteBackup(filename: string): Promise<void> {
-    await this.storage.delete(filename)
+    await this.storage.delete(filename);
   }
 
   /**
    * Download a backup file
    */
   async downloadBackup(filename: string): Promise<Buffer> {
-    return this.storage.download(filename)
+    return this.storage.download(filename);
   }
 
   /**
    * Get backup system status
    */
   async getStatus(): Promise<{
-    storageType: string
-    storagePath: string
-    storageAccessible: boolean
+    storageType: string;
+    storagePath: string;
+    storageAccessible: boolean;
     postgres: {
-      available: boolean
-      mode: 'direct' | 'docker' | 'none'
+      available: boolean;
+      mode: 'direct' | 'docker' | 'none';
       details: {
-        pgDumpAvailable: boolean
-        databaseUrlSet: boolean
-        dockerAvailable: boolean
-        containerFound: boolean
-        containerName: string | null
-      }
-    }
+        pgDumpAvailable: boolean;
+        databaseUrlSet: boolean;
+        dockerAvailable: boolean;
+        containerFound: boolean;
+        containerName: string | null;
+      };
+    };
     backupCounts: {
-      database: number
-      source: number
-    }
+      database: number;
+      source: number;
+    };
     encryption: {
-      enabled: boolean
-      algorithm: string
-    }
+      enabled: boolean;
+      algorithm: string;
+    };
     checksum: {
-      algorithm: string
-    }
+      algorithm: string;
+    };
   }> {
     const [storageAccessible, backupInfo, backups] = await Promise.all([
       this.storage.isAccessible(),
       getPostgresBackupInfo(),
       this.listBackups(),
-    ])
+    ]);
 
     return {
       storageType: getBackupStorageType(),
@@ -369,16 +365,16 @@ export class BackupService {
       checksum: {
         algorithm: getChecksumAlgorithm(),
       },
-    }
+    };
   }
 
   /**
    * Generate ISO timestamp for filenames
    */
   private generateTimestamp(): string {
-    return new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
+    return new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
   }
 }
 
 // Singleton export
-export const backupService = new BackupService()
+export const backupService = new BackupService();

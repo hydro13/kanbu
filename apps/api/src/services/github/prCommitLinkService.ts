@@ -14,38 +14,38 @@
  * =============================================================================
  */
 
-import { prisma } from '../../lib/prisma'
-import type { GitHubSyncSettings } from '@kanbu/shared'
+import { prisma } from '../../lib/prisma';
+import type { GitHubSyncSettings } from '@kanbu/shared';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface TaskReference {
-  prefix: string       // e.g., "PROJ" or ""
-  number: number       // e.g., 123
-  fullReference: string // e.g., "PROJ-123" or "#123"
+  prefix: string; // e.g., "PROJ" or ""
+  number: number; // e.g., 123
+  fullReference: string; // e.g., "PROJ-123" or "#123"
 }
 
 export interface PRLinkResult {
-  prId: number
-  taskId: number | null
-  linked: boolean
-  method: 'branch' | 'title' | 'body' | 'manual' | 'none'
+  prId: number;
+  taskId: number | null;
+  linked: boolean;
+  method: 'branch' | 'title' | 'body' | 'manual' | 'none';
 }
 
 export interface CommitLinkResult {
-  commitId: number
-  taskId: number | null
-  linked: boolean
-  method: 'message' | 'manual' | 'none'
+  commitId: number;
+  taskId: number | null;
+  linked: boolean;
+  method: 'message' | 'manual' | 'none';
 }
 
 export interface LinkingOptions {
-  repositoryId: number
-  projectId: number
-  taskReferencePattern?: string
-  branchPattern?: string
+  repositoryId: number;
+  projectId: number;
+  taskReferencePattern?: string;
+  branchPattern?: string;
 }
 
 // =============================================================================
@@ -58,7 +58,7 @@ export interface LinkingOptions {
  * - #123: GitHub-style issue reference
  * - [PREFIX-123]: Bracketed format often used in commit messages
  */
-const DEFAULT_TASK_PATTERN = /(?:\[)?([A-Z]{2,10})-(\d+)(?:\])?|#(\d+)/gi
+const DEFAULT_TASK_PATTERN = /(?:\[)?([A-Z]{2,10})-(\d+)(?:\])?|#(\d+)/gi;
 
 /**
  * Default branch pattern for task extraction:
@@ -67,7 +67,8 @@ const DEFAULT_TASK_PATTERN = /(?:\[)?([A-Z]{2,10})-(\d+)(?:\])?|#(\d+)/gi
  * - bugfix/123-description
  * - PREFIX-123/description
  */
-const DEFAULT_BRANCH_PATTERN = /(?:feature|fix|bugfix|hotfix|task)\/(?:([A-Z]{2,10})-)?(\d+)(?:-|\/|$)|^([A-Z]{2,10})-(\d+)(?:-|\/)/i
+const DEFAULT_BRANCH_PATTERN =
+  /(?:feature|fix|bugfix|hotfix|task)\/(?:([A-Z]{2,10})-)?(\d+)(?:-|\/|$)|^([A-Z]{2,10})-(\d+)(?:-|\/)/i;
 
 // =============================================================================
 // Reference Extraction Functions
@@ -76,60 +77,55 @@ const DEFAULT_BRANCH_PATTERN = /(?:feature|fix|bugfix|hotfix|task)\/(?:([A-Z]{2,
 /**
  * Extract task references from text using a pattern
  */
-export function extractTaskReferences(
-  text: string,
-  customPattern?: string
-): TaskReference[] {
-  const references: TaskReference[] = []
-  const seenReferences = new Set<string>()
+export function extractTaskReferences(text: string, customPattern?: string): TaskReference[] {
+  const references: TaskReference[] = [];
+  const seenReferences = new Set<string>();
 
   // Use custom pattern if provided, otherwise use default
-  const pattern = customPattern
-    ? new RegExp(customPattern, 'gi')
-    : DEFAULT_TASK_PATTERN
+  const pattern = customPattern ? new RegExp(customPattern, 'gi') : DEFAULT_TASK_PATTERN;
 
-  let match
+  let match;
   while ((match = pattern.exec(text)) !== null) {
-    let prefix = ''
-    let number = 0
+    let prefix = '';
+    let number = 0;
 
     if (customPattern) {
       // For custom patterns, assume first capture group is prefix, second is number
       // or just one group for number
       if (match[1] && match[2]) {
-        prefix = match[1].toUpperCase()
-        number = parseInt(match[2], 10)
+        prefix = match[1].toUpperCase();
+        number = parseInt(match[2], 10);
       } else if (match[1]) {
-        number = parseInt(match[1], 10)
+        number = parseInt(match[1], 10);
       }
     } else {
       // Default pattern handling
       if (match[1] && match[2]) {
         // PREFIX-123 format
-        prefix = match[1].toUpperCase()
-        number = parseInt(match[2], 10)
+        prefix = match[1].toUpperCase();
+        number = parseInt(match[2], 10);
       } else if (match[3]) {
         // #123 format
-        number = parseInt(match[3], 10)
+        number = parseInt(match[3], 10);
       }
     }
 
     if (number > 0) {
-      const fullReference = prefix ? `${prefix}-${number}` : `#${number}`
+      const fullReference = prefix ? `${prefix}-${number}` : `#${number}`;
 
       // Avoid duplicates
       if (!seenReferences.has(fullReference)) {
-        seenReferences.add(fullReference)
+        seenReferences.add(fullReference);
         references.push({
           prefix,
           number,
           fullReference,
-        })
+        });
       }
     }
   }
 
-  return references
+  return references;
 }
 
 /**
@@ -139,51 +135,49 @@ export function extractTaskFromBranch(
   branchName: string,
   customPattern?: string
 ): TaskReference | null {
-  const pattern = customPattern
-    ? new RegExp(customPattern, 'i')
-    : DEFAULT_BRANCH_PATTERN
+  const pattern = customPattern ? new RegExp(customPattern, 'i') : DEFAULT_BRANCH_PATTERN;
 
-  const match = pattern.exec(branchName)
+  const match = pattern.exec(branchName);
   if (!match) {
-    return null
+    return null;
   }
 
-  let prefix = ''
-  let number = 0
+  let prefix = '';
+  let number = 0;
 
   // Handle different match group positions based on pattern
   if (customPattern) {
     if (match[1] && match[2]) {
-      prefix = match[1].toUpperCase()
-      number = parseInt(match[2], 10)
+      prefix = match[1].toUpperCase();
+      number = parseInt(match[2], 10);
     } else if (match[1]) {
-      number = parseInt(match[1], 10)
+      number = parseInt(match[1], 10);
     }
   } else {
     // Default pattern has multiple possible positions
     if (match[1] && match[2]) {
       // feature/PREFIX-123 format
-      prefix = match[1].toUpperCase()
-      number = parseInt(match[2], 10)
+      prefix = match[1].toUpperCase();
+      number = parseInt(match[2], 10);
     } else if (match[2]) {
       // feature/123 format (no prefix)
-      number = parseInt(match[2], 10)
+      number = parseInt(match[2], 10);
     } else if (match[3] && match[4]) {
       // PREFIX-123/ format
-      prefix = match[3].toUpperCase()
-      number = parseInt(match[4], 10)
+      prefix = match[3].toUpperCase();
+      number = parseInt(match[4], 10);
     }
   }
 
   if (number <= 0) {
-    return null
+    return null;
   }
 
   return {
     prefix,
     number,
     fullReference: prefix ? `${prefix}-${number}` : `#${number}`,
-  }
+  };
 }
 
 // =============================================================================
@@ -203,17 +197,17 @@ export async function findTaskByReference(
   const project = await prisma.project.findUnique({
     where: { id: projectId },
     select: { id: true, identifier: true },
-  })
+  });
 
   if (!project) {
-    return null
+    return null;
   }
 
   // If reference has a prefix, it should match the project identifier
   if (reference.prefix) {
     if (project.identifier?.toUpperCase() !== reference.prefix) {
       // Prefix doesn't match this project
-      return null
+      return null;
     }
 
     // Find task by reference number within project
@@ -223,10 +217,10 @@ export async function findTaskByReference(
         reference: `${reference.prefix}-${reference.number}`,
       },
       select: { id: true, reference: true },
-    })
+    });
 
     if (task?.reference) {
-      return { taskId: task.id, reference: task.reference }
+      return { taskId: task.id, reference: task.reference };
     }
   } else {
     // No prefix - try to find by number (less reliable)
@@ -238,10 +232,10 @@ export async function findTaskByReference(
           reference: `${project.identifier}-${reference.number}`,
         },
         select: { id: true, reference: true },
-      })
+      });
 
       if (task?.reference) {
-        return { taskId: task.id, reference: task.reference }
+        return { taskId: task.id, reference: task.reference };
       }
     }
 
@@ -256,15 +250,15 @@ export async function findTaskByReference(
       },
       select: { id: true, reference: true },
       take: 1,
-    })
+    });
 
-    const firstTask = tasks[0]
+    const firstTask = tasks[0];
     if (firstTask?.reference) {
-      return { taskId: firstTask.id, reference: firstTask.reference }
+      return { taskId: firstTask.id, reference: firstTask.reference };
     }
   }
 
-  return null
+  return null;
 }
 
 /**
@@ -275,12 +269,12 @@ export async function findTaskFromReferences(
   references: TaskReference[]
 ): Promise<{ taskId: number; reference: string; matchedRef: TaskReference } | null> {
   for (const ref of references) {
-    const result = await findTaskByReference(projectId, ref)
+    const result = await findTaskByReference(projectId, ref);
     if (result) {
-      return { ...result, matchedRef: ref }
+      return { ...result, matchedRef: ref };
     }
   }
-  return null
+  return null;
 }
 
 // =============================================================================
@@ -302,46 +296,46 @@ export async function autoLinkPRToTask(
       headBranch: true,
       taskId: true,
     },
-  })
+  });
 
   if (!pr) {
-    return { prId, taskId: null, linked: false, method: 'none' }
+    return { prId, taskId: null, linked: false, method: 'none' };
   }
 
   // Already linked
   if (pr.taskId) {
-    return { prId, taskId: pr.taskId, linked: true, method: 'manual' }
+    return { prId, taskId: pr.taskId, linked: true, method: 'manual' };
   }
 
-  const { projectId, taskReferencePattern, branchPattern } = options
+  const { projectId, taskReferencePattern, branchPattern } = options;
 
   // Try linking by branch name first
-  const branchRef = extractTaskFromBranch(pr.headBranch, branchPattern)
+  const branchRef = extractTaskFromBranch(pr.headBranch, branchPattern);
   if (branchRef) {
-    const task = await findTaskByReference(projectId, branchRef)
+    const task = await findTaskByReference(projectId, branchRef);
     if (task) {
       await prisma.gitHubPullRequest.update({
         where: { id: prId },
         data: { taskId: task.taskId },
-      })
-      return { prId, taskId: task.taskId, linked: true, method: 'branch' }
+      });
+      return { prId, taskId: task.taskId, linked: true, method: 'branch' };
     }
   }
 
   // Try linking by title
-  const titleRefs = extractTaskReferences(pr.title, taskReferencePattern)
+  const titleRefs = extractTaskReferences(pr.title, taskReferencePattern);
   if (titleRefs.length > 0) {
-    const task = await findTaskFromReferences(projectId, titleRefs)
+    const task = await findTaskFromReferences(projectId, titleRefs);
     if (task) {
       await prisma.gitHubPullRequest.update({
         where: { id: prId },
         data: { taskId: task.taskId },
-      })
-      return { prId, taskId: task.taskId, linked: true, method: 'title' }
+      });
+      return { prId, taskId: task.taskId, linked: true, method: 'title' };
     }
   }
 
-  return { prId, taskId: null, linked: false, method: 'none' }
+  return { prId, taskId: null, linked: false, method: 'none' };
 }
 
 /**
@@ -353,51 +347,48 @@ export async function autoLinkPRToTaskWithBody(
   options: LinkingOptions
 ): Promise<PRLinkResult> {
   // First try without body
-  const result = await autoLinkPRToTask(prId, options)
+  const result = await autoLinkPRToTask(prId, options);
   if (result.linked) {
-    return result
+    return result;
   }
 
   // Try body if available
   if (prBody) {
-    const { projectId, taskReferencePattern } = options
-    const bodyRefs = extractTaskReferences(prBody, taskReferencePattern)
+    const { projectId, taskReferencePattern } = options;
+    const bodyRefs = extractTaskReferences(prBody, taskReferencePattern);
     if (bodyRefs.length > 0) {
-      const task = await findTaskFromReferences(projectId, bodyRefs)
+      const task = await findTaskFromReferences(projectId, bodyRefs);
       if (task) {
         await prisma.gitHubPullRequest.update({
           where: { id: prId },
           data: { taskId: task.taskId },
-        })
-        return { prId, taskId: task.taskId, linked: true, method: 'body' }
+        });
+        return { prId, taskId: task.taskId, linked: true, method: 'body' };
       }
     }
   }
 
-  return { prId, taskId: null, linked: false, method: 'none' }
+  return { prId, taskId: null, linked: false, method: 'none' };
 }
 
 /**
  * Manually link a PR to a task
  */
-export async function linkPRToTask(
-  prId: number,
-  taskId: number
-): Promise<PRLinkResult> {
+export async function linkPRToTask(prId: number, taskId: number): Promise<PRLinkResult> {
   const pr = await prisma.gitHubPullRequest.findUnique({
     where: { id: prId },
-  })
+  });
 
   if (!pr) {
-    return { prId, taskId: null, linked: false, method: 'none' }
+    return { prId, taskId: null, linked: false, method: 'none' };
   }
 
   await prisma.gitHubPullRequest.update({
     where: { id: prId },
     data: { taskId },
-  })
+  });
 
-  return { prId, taskId, linked: true, method: 'manual' }
+  return { prId, taskId, linked: true, method: 'manual' };
 }
 
 /**
@@ -406,18 +397,18 @@ export async function linkPRToTask(
 export async function unlinkPRFromTask(prId: number): Promise<boolean> {
   const pr = await prisma.gitHubPullRequest.findUnique({
     where: { id: prId },
-  })
+  });
 
   if (!pr || !pr.taskId) {
-    return false
+    return false;
   }
 
   await prisma.gitHubPullRequest.update({
     where: { id: prId },
     data: { taskId: null },
-  })
+  });
 
-  return true
+  return true;
 }
 
 // =============================================================================
@@ -438,33 +429,33 @@ export async function autoLinkCommitToTask(
       message: true,
       taskId: true,
     },
-  })
+  });
 
   if (!commit) {
-    return { commitId, taskId: null, linked: false, method: 'none' }
+    return { commitId, taskId: null, linked: false, method: 'none' };
   }
 
   // Already linked
   if (commit.taskId) {
-    return { commitId, taskId: commit.taskId, linked: true, method: 'manual' }
+    return { commitId, taskId: commit.taskId, linked: true, method: 'manual' };
   }
 
-  const { projectId, taskReferencePattern } = options
+  const { projectId, taskReferencePattern } = options;
 
   // Extract references from commit message
-  const messageRefs = extractTaskReferences(commit.message, taskReferencePattern)
+  const messageRefs = extractTaskReferences(commit.message, taskReferencePattern);
   if (messageRefs.length > 0) {
-    const task = await findTaskFromReferences(projectId, messageRefs)
+    const task = await findTaskFromReferences(projectId, messageRefs);
     if (task) {
       await prisma.gitHubCommit.update({
         where: { id: commitId },
         data: { taskId: task.taskId },
-      })
-      return { commitId, taskId: task.taskId, linked: true, method: 'message' }
+      });
+      return { commitId, taskId: task.taskId, linked: true, method: 'message' };
     }
   }
 
-  return { commitId, taskId: null, linked: false, method: 'none' }
+  return { commitId, taskId: null, linked: false, method: 'none' };
 }
 
 /**
@@ -476,18 +467,18 @@ export async function linkCommitToTask(
 ): Promise<CommitLinkResult> {
   const commit = await prisma.gitHubCommit.findUnique({
     where: { id: commitId },
-  })
+  });
 
   if (!commit) {
-    return { commitId, taskId: null, linked: false, method: 'none' }
+    return { commitId, taskId: null, linked: false, method: 'none' };
   }
 
   await prisma.gitHubCommit.update({
     where: { id: commitId },
     data: { taskId },
-  })
+  });
 
-  return { commitId, taskId, linked: true, method: 'manual' }
+  return { commitId, taskId, linked: true, method: 'manual' };
 }
 
 /**
@@ -496,18 +487,18 @@ export async function linkCommitToTask(
 export async function unlinkCommitFromTask(commitId: number): Promise<boolean> {
   const commit = await prisma.gitHubCommit.findUnique({
     where: { id: commitId },
-  })
+  });
 
   if (!commit || !commit.taskId) {
-    return false
+    return false;
   }
 
   await prisma.gitHubCommit.update({
     where: { id: commitId },
     data: { taskId: null },
-  })
+  });
 
-  return true
+  return true;
 }
 
 // =============================================================================
@@ -525,22 +516,22 @@ export function getLinkingOptionsFromSettings(
   const options: LinkingOptions = {
     repositoryId,
     projectId,
-  }
+  };
 
   if (syncSettings?.pullRequests?.autoLink !== false) {
     // Auto-link is enabled by default
     if (syncSettings?.branches?.pattern) {
-      options.branchPattern = syncSettings.branches.pattern
+      options.branchPattern = syncSettings.branches.pattern;
     }
   }
 
   if (syncSettings?.commits?.autoLink !== false) {
     if (syncSettings?.commits?.pattern) {
-      options.taskReferencePattern = syncSettings.commits.pattern
+      options.taskReferencePattern = syncSettings.commits.pattern;
     }
   }
 
-  return options
+  return options;
 }
 
 /**
@@ -549,16 +540,16 @@ export function getLinkingOptionsFromSettings(
 export async function processNewPR(
   repositoryId: number,
   prData: {
-    prNumber: number
-    prId: bigint
-    title: string
-    body: string | null
-    state: 'open' | 'closed' | 'merged'
-    headBranch: string
-    baseBranch: string
-    authorLogin: string
-    mergedAt?: Date | null
-    closedAt?: Date | null
+    prNumber: number;
+    prId: bigint;
+    title: string;
+    body: string | null;
+    state: 'open' | 'closed' | 'merged';
+    headBranch: string;
+    baseBranch: string;
+    authorLogin: string;
+    mergedAt?: Date | null;
+    closedAt?: Date | null;
   }
 ): Promise<PRLinkResult & { prRecordId: number }> {
   // Get repository with project info
@@ -569,10 +560,10 @@ export async function processNewPR(
       projectId: true,
       syncSettings: true,
     },
-  })
+  });
 
   if (!repo) {
-    throw new Error(`Repository ${repositoryId} not found`)
+    throw new Error(`Repository ${repositoryId} not found`);
   }
 
   // Create or update PR record
@@ -583,9 +574,9 @@ export async function processNewPR(
         prNumber: prData.prNumber,
       },
     },
-  })
+  });
 
-  let prRecord
+  let prRecord;
   if (existingPR) {
     prRecord = await prisma.gitHubPullRequest.update({
       where: { id: existingPR.id },
@@ -597,7 +588,7 @@ export async function processNewPR(
         mergedAt: prData.mergedAt,
         closedAt: prData.closedAt,
       },
-    })
+    });
   } else {
     prRecord = await prisma.gitHubPullRequest.create({
       data: {
@@ -612,11 +603,11 @@ export async function processNewPR(
         mergedAt: prData.mergedAt,
         closedAt: prData.closedAt,
       },
-    })
+    });
   }
 
   // Check if auto-linking is enabled
-  const syncSettings = repo.syncSettings as GitHubSyncSettings | null
+  const syncSettings = repo.syncSettings as GitHubSyncSettings | null;
   if (syncSettings?.pullRequests?.autoLink === false) {
     return {
       prRecordId: prRecord.id,
@@ -624,17 +615,17 @@ export async function processNewPR(
       taskId: prRecord.taskId,
       linked: false,
       method: 'none',
-    }
+    };
   }
 
   // Auto-link to task
-  const options = getLinkingOptionsFromSettings(repositoryId, repo.projectId, syncSettings)
-  const linkResult = await autoLinkPRToTaskWithBody(prRecord.id, prData.body, options)
+  const options = getLinkingOptionsFromSettings(repositoryId, repo.projectId, syncSettings);
+  const linkResult = await autoLinkPRToTaskWithBody(prRecord.id, prData.body, options);
 
   return {
     prRecordId: prRecord.id,
     ...linkResult,
-  }
+  };
 }
 
 /**
@@ -643,12 +634,12 @@ export async function processNewPR(
 export async function processNewCommits(
   repositoryId: number,
   commits: Array<{
-    sha: string
-    message: string
-    authorName: string
-    authorEmail: string
-    authorLogin?: string | null
-    committedAt: Date
+    sha: string;
+    message: string;
+    authorName: string;
+    authorEmail: string;
+    authorLogin?: string | null;
+    committedAt: Date;
   }>
 ): Promise<Array<CommitLinkResult & { commitRecordId: number }>> {
   // Get repository with project info
@@ -659,17 +650,17 @@ export async function processNewCommits(
       projectId: true,
       syncSettings: true,
     },
-  })
+  });
 
   if (!repo) {
-    throw new Error(`Repository ${repositoryId} not found`)
+    throw new Error(`Repository ${repositoryId} not found`);
   }
 
-  const syncSettings = repo.syncSettings as GitHubSyncSettings | null
-  const autoLinkEnabled = syncSettings?.commits?.autoLink !== false
-  const options = getLinkingOptionsFromSettings(repositoryId, repo.projectId, syncSettings)
+  const syncSettings = repo.syncSettings as GitHubSyncSettings | null;
+  const autoLinkEnabled = syncSettings?.commits?.autoLink !== false;
+  const options = getLinkingOptionsFromSettings(repositoryId, repo.projectId, syncSettings);
 
-  const results: Array<CommitLinkResult & { commitRecordId: number }> = []
+  const results: Array<CommitLinkResult & { commitRecordId: number }> = [];
 
   for (const commitData of commits) {
     // Check if commit already exists
@@ -680,11 +671,11 @@ export async function processNewCommits(
           sha: commitData.sha,
         },
       },
-    })
+    });
 
-    let commitRecord
+    let commitRecord;
     if (existingCommit) {
-      commitRecord = existingCommit
+      commitRecord = existingCommit;
     } else {
       commitRecord = await prisma.gitHubCommit.create({
         data: {
@@ -696,7 +687,7 @@ export async function processNewCommits(
           authorLogin: commitData.authorLogin || null,
           committedAt: commitData.committedAt,
         },
-      })
+      });
     }
 
     // Auto-link if enabled and not already linked
@@ -705,19 +696,19 @@ export async function processNewCommits(
       taskId: commitRecord.taskId,
       linked: commitRecord.taskId !== null,
       method: commitRecord.taskId ? 'manual' : 'none',
-    }
+    };
 
     if (autoLinkEnabled && !commitRecord.taskId) {
-      linkResult = await autoLinkCommitToTask(commitRecord.id, options)
+      linkResult = await autoLinkCommitToTask(commitRecord.id, options);
     }
 
     results.push({
       commitRecordId: commitRecord.id,
       ...linkResult,
-    })
+    });
   }
 
-  return results
+  return results;
 }
 
 // =============================================================================
@@ -740,7 +731,7 @@ export async function getTaskPRs(taskId: number) {
         },
       },
     },
-  })
+  });
 }
 
 /**
@@ -759,7 +750,7 @@ export async function getTaskCommits(taskId: number) {
         },
       },
     },
-  })
+  });
 }
 
 /**
@@ -773,7 +764,7 @@ export async function getPRByNumber(repositoryId: number, prNumber: number) {
         prNumber,
       },
     },
-  })
+  });
 }
 
 /**
@@ -787,7 +778,7 @@ export async function getCommitBySha(repositoryId: number, sha: string) {
         sha,
       },
     },
-  })
+  });
 }
 
 // =============================================================================
@@ -822,4 +813,4 @@ export const prCommitLinkService = {
   getTaskCommits,
   getPRByNumber,
   getCommitBySha,
-}
+};

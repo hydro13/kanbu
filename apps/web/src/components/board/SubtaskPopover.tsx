@@ -14,20 +14,20 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { trpc } from '@/lib/trpc'
-import { HoverPopover, PopoverContent } from '@/components/ui/HoverPopover'
+import { trpc } from '@/lib/trpc';
+import { HoverPopover, PopoverContent } from '@/components/ui/HoverPopover';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface SubtaskPopoverProps {
-  taskId: number
-  subtaskCount: number
-  progress: number
-  children: React.ReactNode
+  taskId: number;
+  subtaskCount: number;
+  progress: number;
+  children: React.ReactNode;
   /** Callback when subtask is clicked (opens task modal with subtask focus) */
-  onSubtaskClick?: (taskId: number, subtaskId: number) => void
+  onSubtaskClick?: (taskId: number, subtaskId: number) => void;
 }
 
 // =============================================================================
@@ -44,21 +44,41 @@ function StatusIcon({ status }: { status: string }) {
           clipRule="evenodd"
         />
       </svg>
-    )
+    );
   }
   if (status === 'IN_PROGRESS') {
     return (
-      <svg className="h-4 w-4 text-blue-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+      <svg
+        className="h-4 w-4 text-blue-500 flex-shrink-0"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
       </svg>
-    )
+    );
   }
   // TODO
   return (
-    <svg className="h-4 w-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+    <svg
+      className="h-4 w-4 text-gray-400 flex-shrink-0"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+      />
     </svg>
-  )
+  );
 }
 
 // =============================================================================
@@ -66,13 +86,13 @@ function StatusIcon({ status }: { status: string }) {
 // =============================================================================
 
 function formatTime(hours: number): string {
-  if (hours === 0) return '0m'
-  const totalMinutes = Math.round(hours * 60)
-  const h = Math.floor(totalMinutes / 60)
-  const m = totalMinutes % 60
-  if (h === 0) return `${m}m`
-  if (m === 0) return `${h}h`
-  return `${h}h ${m}m`
+  if (hours === 0) return '0m';
+  const totalMinutes = Math.round(hours * 60);
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  if (h === 0) return `${m}m`;
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}m`;
 }
 
 // =============================================================================
@@ -80,32 +100,30 @@ function formatTime(hours: number): string {
 // =============================================================================
 
 interface SubtaskContentProps {
-  taskId: number
-  subtaskCount: number
-  progress: number
-  onSubtaskClick?: (taskId: number, subtaskId: number) => void
+  taskId: number;
+  subtaskCount: number;
+  progress: number;
+  onSubtaskClick?: (taskId: number, subtaskId: number) => void;
 }
 
 function SubtaskContent({ taskId, subtaskCount, progress, onSubtaskClick }: SubtaskContentProps) {
   // Lazy load subtasks
-  const subtasksQuery = trpc.subtask.list.useQuery({ taskId })
+  const subtasksQuery = trpc.subtask.list.useQuery({ taskId });
 
-  const completedCount = subtasksQuery.data?.filter(s => s.status === 'DONE').length ?? 0
+  const completedCount = subtasksQuery.data?.filter((s) => s.status === 'DONE').length ?? 0;
 
   const handleSubtaskClick = (subtaskId: number) => {
     if (onSubtaskClick) {
-      onSubtaskClick(taskId, subtaskId)
+      onSubtaskClick(taskId, subtaskId);
     }
-  }
+  };
 
   return (
     <>
       {/* Header */}
       <div className="px-3 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750 rounded-t-lg">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            Subtasks
-          </span>
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Subtasks</span>
           <span className="text-sm text-gray-500 dark:text-gray-400">
             {completedCount}/{subtaskCount} ({progress}%)
           </span>
@@ -126,9 +144,7 @@ function SubtaskContent({ taskId, subtaskCount, progress, onSubtaskClick }: Subt
             Loading...
           </div>
         ) : subtasksQuery.error ? (
-          <div className="px-3 py-4 text-center text-sm text-red-500">
-            Failed to load subtasks
-          </div>
+          <div className="px-3 py-4 text-center text-sm text-red-500">Failed to load subtasks</div>
         ) : subtasksQuery.data && subtasksQuery.data.length > 0 ? (
           <table className="w-full text-sm">
             <thead>
@@ -198,22 +214,26 @@ function SubtaskContent({ taskId, subtaskCount, progress, onSubtaskClick }: Subt
       {/* Footer hint */}
       {subtasksQuery.data && subtasksQuery.data.length > 0 && (
         <div className="px-3 py-1.5 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-750 rounded-b-lg">
-          <span className="text-xs text-gray-400 dark:text-gray-500">
-            Click subtask to edit
-          </span>
+          <span className="text-xs text-gray-400 dark:text-gray-500">Click subtask to edit</span>
         </div>
       )}
     </>
-  )
+  );
 }
 
 // =============================================================================
 // SubtaskPopover Component
 // =============================================================================
 
-export function SubtaskPopover({ taskId, subtaskCount, progress, children, onSubtaskClick }: SubtaskPopoverProps) {
+export function SubtaskPopover({
+  taskId,
+  subtaskCount,
+  progress,
+  children,
+  onSubtaskClick,
+}: SubtaskPopoverProps) {
   if (subtaskCount === 0) {
-    return <>{children}</>
+    return <>{children}</>;
   }
 
   return (
@@ -231,7 +251,7 @@ export function SubtaskPopover({ taskId, subtaskCount, progress, children, onSub
     >
       {children}
     </HoverPopover>
-  )
+  );
 }
 
-export default SubtaskPopover
+export default SubtaskPopover;

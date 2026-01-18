@@ -13,20 +13,20 @@
  * =============================================================================
  */
 
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { trpc } from '@/lib/trpc'
-import { cn } from '@/lib/utils'
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { trpc } from '@/lib/trpc';
+import { cn } from '@/lib/utils';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface GroupMembersPanelProps {
-  groupId: number
-  groupName: string
-  groupPath?: string
-  onGroupDeleted?: () => void
+  groupId: number;
+  groupName: string;
+  groupPath?: string;
+  onGroupDeleted?: () => void;
 }
 
 // =============================================================================
@@ -35,49 +35,79 @@ interface GroupMembersPanelProps {
 
 function UserIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+    >
       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
       <circle cx="12" cy="7" r="4" />
     </svg>
-  )
+  );
 }
 
 function PlusIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+    >
       <line x1="12" y1="5" x2="12" y2="19" />
       <line x1="5" y1="12" x2="19" y2="12" />
     </svg>
-  )
+  );
 }
 
 function TrashIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+    >
       <polyline points="3 6 5 6 21 6" />
       <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
     </svg>
-  )
+  );
 }
 
 function SearchIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+    >
       <circle cx="11" cy="11" r="8" />
       <line x1="21" y1="21" x2="16.65" y2="16.65" />
     </svg>
-  )
+  );
 }
 
 function UsersIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+    >
       <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
       <circle cx="9" cy="7" r="4" />
       <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
       <path d="M16 3.13a4 4 0 0 1 0 7.75" />
     </svg>
-  )
+  );
 }
 
 // =============================================================================
@@ -85,38 +115,38 @@ function UsersIcon({ className }: { className?: string }) {
 // =============================================================================
 
 interface AddMemberDialogProps {
-  groupId: number
-  groupName: string
-  onClose: () => void
-  onSuccess: () => void
+  groupId: number;
+  groupName: string;
+  onClose: () => void;
+  onSuccess: () => void;
 }
 
 function AddMemberDialog({ groupId, groupName, onClose, onSuccess }: AddMemberDialogProps) {
-  const [search, setSearch] = useState('')
-  const [selectedUserId, setSelectedUserId] = useState<number | null>(null)
+  const [search, setSearch] = useState('');
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
 
-  const utils = trpc.useUtils()
+  const utils = trpc.useUtils();
 
   // Search for users using acl.getPrincipals
   const { data: principals, isLoading: searchLoading } = trpc.acl.getPrincipals.useQuery({
     search: search || undefined,
-  })
+  });
 
   // Add member mutation
   const addMemberMutation = trpc.group.addMember.useMutation({
     onSuccess: () => {
-      utils.group.listMembers.invalidate({ groupId })
-      utils.group.get.invalidate({ groupId })
-      onSuccess()
-      onClose()
+      utils.group.listMembers.invalidate({ groupId });
+      utils.group.get.invalidate({ groupId });
+      onSuccess();
+      onClose();
     },
-  })
+  });
 
   const handleAdd = () => {
     if (selectedUserId) {
-      addMemberMutation.mutate({ groupId, userId: selectedUserId })
+      addMemberMutation.mutate({ groupId, userId: selectedUserId });
     }
-  }
+  };
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -156,23 +186,28 @@ function AddMemberDialog({ groupId, groupName, onClose, onSuccess }: AddMemberDi
                   onClick={() => setSelectedUserId(user.id)}
                   className={cn(
                     'w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors',
-                    selectedUserId === user.id && 'bg-indigo-50 dark:bg-indigo-900/30 border-l-2 border-indigo-500'
+                    selectedUserId === user.id &&
+                      'bg-indigo-50 dark:bg-indigo-900/30 border-l-2 border-indigo-500'
                   )}
                 >
                   <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center">
                     <UserIcon className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium text-foreground truncate">
-                      {user.displayName}
-                    </div>
+                    <div className="font-medium text-foreground truncate">{user.displayName}</div>
                     <div className="text-sm text-gray-500 truncate">
                       {user.name} {user.email && `- ${user.email}`}
                     </div>
                   </div>
                   {selectedUserId === user.id && (
                     <div className="w-5 h-5 rounded-full bg-indigo-500 flex items-center justify-center">
-                      <svg className="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3}>
+                      <svg
+                        className="w-3 h-3 text-white"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={3}
+                      >
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
                     </div>
@@ -214,68 +249,71 @@ function AddMemberDialog({ groupId, groupName, onClose, onSuccess }: AddMemberDi
         )}
       </div>
     </div>
-  )
+  );
 }
 
 // =============================================================================
 // Main Component
 // =============================================================================
 
-export function GroupMembersPanel({ groupId, groupName, groupPath, onGroupDeleted }: GroupMembersPanelProps) {
-  const [showAddDialog, setShowAddDialog] = useState(false)
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+export function GroupMembersPanel({
+  groupId,
+  groupName,
+  groupPath,
+  onGroupDeleted,
+}: GroupMembersPanelProps) {
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  const utils = trpc.useUtils()
+  const utils = trpc.useUtils();
 
   // Get group details
   const { data: group, isLoading: groupLoading } = trpc.group.get.useQuery(
     { groupId },
     { retry: false }
-  )
+  );
 
   // Get members
   const { data: membersData, isLoading: membersLoading } = trpc.group.listMembers.useQuery(
     { groupId, limit: 100 },
     { retry: false }
-  )
+  );
 
   // Remove member mutation
   const removeMemberMutation = trpc.group.removeMember.useMutation({
     onSuccess: () => {
-      utils.group.listMembers.invalidate({ groupId })
-      utils.group.get.invalidate({ groupId })
+      utils.group.listMembers.invalidate({ groupId });
+      utils.group.get.invalidate({ groupId });
     },
-  })
+  });
 
   // Delete group mutation
   const deleteGroupMutation = trpc.group.delete.useMutation({
     onSuccess: () => {
-      utils.acl.getPrincipals.invalidate()
-      utils.group.list.invalidate()
-      setShowDeleteConfirm(false)
-      onGroupDeleted?.()
+      utils.acl.getPrincipals.invalidate();
+      utils.group.list.invalidate();
+      setShowDeleteConfirm(false);
+      onGroupDeleted?.();
     },
-  })
+  });
 
   const handleRemoveMember = (userId: number, userName: string) => {
     if (confirm(`Remove "${userName}" from ${groupName}?`)) {
-      removeMemberMutation.mutate({ groupId, userId })
+      removeMemberMutation.mutate({ groupId, userId });
     }
-  }
+  };
 
-  const isLoading = groupLoading || membersLoading
-  const canManage = group?.canManage ?? false
+  const isLoading = groupLoading || membersLoading;
+  const canManage = group?.canManage ?? false;
   // Can delete if user can manage AND group is not a system group
-  const canDelete = canManage && group && !group.isSystem
+  const canDelete = canManage && group && !group.isSystem;
 
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
       <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-muted/50 flex items-center justify-between">
         <div>
-          <h2 className="font-medium text-foreground">
-            {groupPath ?? groupName}
-          </h2>
+          <h2 className="font-medium text-foreground">{groupPath ?? groupName}</h2>
           {group && (
             <p className="text-xs text-gray-500 mt-0.5">
               {group.memberCount} {group.memberCount === 1 ? 'member' : 'members'}
@@ -324,9 +362,7 @@ export function GroupMembersPanel({ groupId, groupName, groupPath, onGroupDelete
                   <UsersIcon className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-foreground">
-                    {group.displayName}
-                  </h3>
+                  <h3 className="font-semibold text-foreground">{group.displayName}</h3>
                   <p className="text-sm text-gray-500 font-mono">{group.name}</p>
                   {group.description && (
                     <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
@@ -365,7 +401,13 @@ export function GroupMembersPanel({ groupId, groupName, groupPath, onGroupDelete
                     {/* Auto-membership badge for users group */}
                     {group.name === 'users' && (
                       <span className="px-2 py-0.5 text-xs rounded bg-green-200 dark:bg-green-900 text-green-700 dark:text-green-300 flex items-center gap-1">
-                        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                        <svg
+                          className="w-3 h-3"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
                           <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
                           <polyline points="22 4 12 14.01 9 11.01" />
                         </svg>
@@ -381,14 +423,21 @@ export function GroupMembersPanel({ groupId, groupName, groupPath, onGroupDelete
             {group.name === 'users' && (
               <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
                 <div className="flex items-start gap-2">
-                  <svg className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                  <svg
+                    className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
                     <circle cx="12" cy="12" r="10" />
                     <line x1="12" y1="16" x2="12" y2="12" />
                     <line x1="12" y1="8" x2="12.01" y2="8" />
                   </svg>
                   <div className="text-sm text-green-700 dark:text-green-300">
-                    <strong>Auto-membership:</strong> Alle nieuwe gebruikers worden automatisch toegevoegd aan deze group.
-                    Dit is de standaard group voor basis-rechten in het systeem.
+                    <strong>Auto-membership:</strong> Alle nieuwe gebruikers worden automatisch
+                    toegevoegd aan deze group. Dit is de standaard group voor basis-rechten in het
+                    systeem.
                   </div>
                 </div>
               </div>
@@ -397,7 +446,11 @@ export function GroupMembersPanel({ groupId, groupName, groupPath, onGroupDelete
             {group.name === 'domain-admins' && (
               <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
                 <div className="flex items-start gap-2">
-                  <svg className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="currentColor">
+                  <svg
+                    className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
                     <path d="M12 2L3 7V12C3 16.97 6.84 21.5 12 23C17.16 21.5 21 16.97 21 12V7L12 2Z" />
                   </svg>
                   <div className="text-sm text-amber-700 dark:text-amber-300">
@@ -452,7 +505,10 @@ export function GroupMembersPanel({ groupId, groupName, groupPath, onGroupDelete
 
                       <div className="flex items-center gap-2">
                         {member.addedBy && (
-                          <span className="text-xs text-gray-400" title={`Added by ${member.addedBy.name}`}>
+                          <span
+                            className="text-xs text-gray-400"
+                            title={`Added by ${member.addedBy.name}`}
+                          >
                             Added by {member.addedBy.name}
                           </span>
                         )}
@@ -518,8 +574,8 @@ export function GroupMembersPanel({ groupId, groupName, groupPath, onGroupDelete
                 Are you sure you want to delete <strong>{group.displayName}</strong>?
               </p>
               <p className="text-sm text-gray-500 mt-2">
-                This will also remove all ACL entries associated with this group.
-                This action cannot be undone.
+                This will also remove all ACL entries associated with this group. This action cannot
+                be undone.
               </p>
 
               {deleteGroupMutation.isError && (
@@ -549,7 +605,7 @@ export function GroupMembersPanel({ groupId, groupName, groupPath, onGroupDelete
         </div>
       )}
     </div>
-  )
+  );
 }
 
-export default GroupMembersPanel
+export default GroupMembersPanel;

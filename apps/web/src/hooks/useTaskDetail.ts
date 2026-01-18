@@ -19,17 +19,17 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState, useCallback } from 'react'
-import { trpc } from '@/lib/trpc'
-import { TRPCClientError } from '@trpc/client'
+import { useState, useCallback } from 'react';
+import { trpc } from '@/lib/trpc';
+import { TRPCClientError } from '@trpc/client';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface UseTaskDetailOptions {
-  taskId: number
-  enabled?: boolean
+  taskId: number;
+  enabled?: boolean;
 }
 
 // =============================================================================
@@ -37,8 +37,8 @@ export interface UseTaskDetailOptions {
 // =============================================================================
 
 interface ConflictErrorData {
-  isConflict: boolean
-  message?: string
+  isConflict: boolean;
+  message?: string;
 }
 
 function extractConflictError(error: unknown): ConflictErrorData {
@@ -47,10 +47,10 @@ function extractConflictError(error: unknown): ConflictErrorData {
       return {
         isConflict: true,
         message: error.message,
-      }
+      };
     }
   }
-  return { isConflict: false }
+  return { isConflict: false };
 }
 
 // =============================================================================
@@ -58,28 +58,19 @@ function extractConflictError(error: unknown): ConflictErrorData {
 // =============================================================================
 
 export function useTaskDetail({ taskId, enabled = true }: UseTaskDetailOptions) {
-  const utils = trpc.useUtils()
+  const utils = trpc.useUtils();
 
   // Conflict state management
-  const [hasConflict, setHasConflict] = useState(false)
+  const [hasConflict, setHasConflict] = useState(false);
 
   // Fetch task details
-  const taskQuery = trpc.task.get.useQuery(
-    { taskId },
-    { enabled: enabled && taskId > 0 }
-  )
+  const taskQuery = trpc.task.get.useQuery({ taskId }, { enabled: enabled && taskId > 0 });
 
   // Fetch subtasks
-  const subtasksQuery = trpc.subtask.list.useQuery(
-    { taskId },
-    { enabled: enabled && taskId > 0 }
-  )
+  const subtasksQuery = trpc.subtask.list.useQuery({ taskId }, { enabled: enabled && taskId > 0 });
 
   // Fetch comments
-  const commentsQuery = trpc.comment.list.useQuery(
-    { taskId },
-    { enabled: enabled && taskId > 0 }
-  )
+  const commentsQuery = trpc.comment.list.useQuery({ taskId }, { enabled: enabled && taskId > 0 });
 
   // ==========================================================================
   // Task Mutations
@@ -87,61 +78,62 @@ export function useTaskDetail({ taskId, enabled = true }: UseTaskDetailOptions) 
 
   const updateTaskMutation = trpc.task.update.useMutation({
     onSuccess: () => {
-      setHasConflict(false)
-      utils.task.get.invalidate({ taskId })
-      utils.task.list.invalidate()
+      setHasConflict(false);
+      utils.task.get.invalidate({ taskId });
+      utils.task.list.invalidate();
     },
     onError: (error) => {
-      const conflictData = extractConflictError(error)
+      const conflictData = extractConflictError(error);
       if (conflictData.isConflict) {
         // Conflict detected - task was modified by another user
-        setHasConflict(true)
+        setHasConflict(true);
         // Refresh the task data to show the latest version
-        utils.task.get.invalidate({ taskId })
-        utils.task.list.invalidate()
+        utils.task.get.invalidate({ taskId });
+        utils.task.list.invalidate();
       }
       // Errors are re-thrown to be handled by the caller
     },
-  })
+  });
 
   // Update task with optimistic locking support
   const updateTaskWithLocking = useCallback(
     async (data: Parameters<typeof updateTaskMutation.mutateAsync>[0]) => {
       // Include expectedUpdatedAt from the current task data for optimistic locking
-      const updatedAt = taskQuery.data?.updatedAt
-      let expectedUpdatedAt: string | undefined
+      const updatedAt = taskQuery.data?.updatedAt;
+      let expectedUpdatedAt: string | undefined;
       if (updatedAt) {
         // Handle both Date objects and ISO strings
-        expectedUpdatedAt = typeof updatedAt === 'object' && 'toISOString' in updatedAt
-          ? (updatedAt as Date).toISOString()
-          : String(updatedAt)
+        expectedUpdatedAt =
+          typeof updatedAt === 'object' && 'toISOString' in updatedAt
+            ? (updatedAt as Date).toISOString()
+            : String(updatedAt);
       }
       return updateTaskMutation.mutateAsync({
         ...data,
         expectedUpdatedAt,
-      })
+      });
     },
     [updateTaskMutation, taskQuery.data?.updatedAt]
-  )
+  );
 
   // Clear conflict state
   const clearConflict = useCallback(() => {
-    setHasConflict(false)
-  }, [])
+    setHasConflict(false);
+  }, []);
 
   const closeTaskMutation = trpc.task.close.useMutation({
     onSuccess: () => {
-      utils.task.get.invalidate({ taskId })
-      utils.task.list.invalidate()
+      utils.task.get.invalidate({ taskId });
+      utils.task.list.invalidate();
     },
-  })
+  });
 
   const reopenTaskMutation = trpc.task.reopen.useMutation({
     onSuccess: () => {
-      utils.task.get.invalidate({ taskId })
-      utils.task.list.invalidate()
+      utils.task.get.invalidate({ taskId });
+      utils.task.list.invalidate();
     },
-  })
+  });
 
   // ==========================================================================
   // Subtask Mutations
@@ -149,24 +141,24 @@ export function useTaskDetail({ taskId, enabled = true }: UseTaskDetailOptions) 
 
   const createSubtaskMutation = trpc.subtask.create.useMutation({
     onSuccess: () => {
-      utils.subtask.list.invalidate({ taskId })
-      utils.task.get.invalidate({ taskId })
+      utils.subtask.list.invalidate({ taskId });
+      utils.task.get.invalidate({ taskId });
     },
-  })
+  });
 
   const updateSubtaskMutation = trpc.subtask.update.useMutation({
     onSuccess: () => {
-      utils.subtask.list.invalidate({ taskId })
-      utils.task.get.invalidate({ taskId })
+      utils.subtask.list.invalidate({ taskId });
+      utils.task.get.invalidate({ taskId });
     },
-  })
+  });
 
   const deleteSubtaskMutation = trpc.subtask.delete.useMutation({
     onSuccess: () => {
-      utils.subtask.list.invalidate({ taskId })
-      utils.task.get.invalidate({ taskId })
+      utils.subtask.list.invalidate({ taskId });
+      utils.task.get.invalidate({ taskId });
     },
-  })
+  });
 
   // ==========================================================================
   // Comment Mutations
@@ -174,23 +166,23 @@ export function useTaskDetail({ taskId, enabled = true }: UseTaskDetailOptions) 
 
   const createCommentMutation = trpc.comment.create.useMutation({
     onSuccess: () => {
-      utils.comment.list.invalidate({ taskId })
-      utils.task.get.invalidate({ taskId })
+      utils.comment.list.invalidate({ taskId });
+      utils.task.get.invalidate({ taskId });
     },
-  })
+  });
 
   const updateCommentMutation = trpc.comment.update.useMutation({
     onSuccess: () => {
-      utils.comment.list.invalidate({ taskId })
+      utils.comment.list.invalidate({ taskId });
     },
-  })
+  });
 
   const deleteCommentMutation = trpc.comment.delete.useMutation({
     onSuccess: () => {
-      utils.comment.list.invalidate({ taskId })
-      utils.task.get.invalidate({ taskId })
+      utils.comment.list.invalidate({ taskId });
+      utils.task.get.invalidate({ taskId });
     },
-  })
+  });
 
   // ==========================================================================
   // Return
@@ -233,11 +225,11 @@ export function useTaskDetail({ taskId, enabled = true }: UseTaskDetailOptions) 
 
     // Refetch
     refetch: () => {
-      taskQuery.refetch()
-      subtasksQuery.refetch()
-      commentsQuery.refetch()
+      taskQuery.refetch();
+      subtasksQuery.refetch();
+      commentsQuery.refetch();
     },
-  }
+  };
 }
 
-export default useTaskDetail
+export default useTaskDetail;

@@ -21,55 +21,55 @@
  * =============================================================================
  */
 
-import { useState, useMemo } from 'react'
-import { AdminLayout } from '@/components/admin'
-import { trpc } from '@/lib/trpc'
-import { cn } from '@/lib/utils'
+import { useState, useMemo } from 'react';
+import { AdminLayout } from '@/components/admin';
+import { trpc } from '@/lib/trpc';
+import { cn } from '@/lib/utils';
 
 // =============================================================================
 // Types
 // =============================================================================
 
-type ResourceTypeFilter = 'all' | 'workspace' | 'project' | 'admin' | 'system'
-type PrincipalTypeFilter = 'all' | 'user' | 'group'
+type ResourceTypeFilter = 'all' | 'workspace' | 'project' | 'admin' | 'system';
+type PrincipalTypeFilter = 'all' | 'user' | 'group';
 
 // Types matching backend response
 interface MatrixPrincipal {
-  type: 'user' | 'group'
-  id: number
-  name: string
-  displayName: string
+  type: 'user' | 'group';
+  id: number;
+  name: string;
+  displayName: string;
 }
 
 interface MatrixResource {
-  type: string
-  id: number | null
-  name: string
-  path: string
+  type: string;
+  id: number | null;
+  name: string;
+  path: string;
 }
 
 interface MatrixCell {
-  principalType: string
-  principalId: number
-  resourceType: string
-  resourceId: number | null
-  effectivePermissions: number
-  isDirect: boolean
-  isDenied: boolean
-  inheritedFrom?: string
+  principalType: string;
+  principalId: number;
+  resourceType: string;
+  resourceId: number | null;
+  effectivePermissions: number;
+  isDirect: boolean;
+  isDenied: boolean;
+  inheritedFrom?: string;
 }
 
 interface CellDetailPopup {
-  principalType: 'user' | 'group'
-  principalId: number
-  principalName: string
-  resourceType: string
-  resourceId: number | null
-  resourceName: string
-  effectivePermissions: number
-  isDirect: boolean
-  isDenied: boolean
-  inheritedFrom?: string | null
+  principalType: 'user' | 'group';
+  principalId: number;
+  principalName: string;
+  resourceType: string;
+  resourceId: number | null;
+  resourceName: string;
+  effectivePermissions: number;
+  isDirect: boolean;
+  isDenied: boolean;
+  inheritedFrom?: string | null;
 }
 
 // =============================================================================
@@ -82,7 +82,7 @@ const PERMISSION_BITS = {
   EXECUTE: 4,
   DELETE: 8,
   PERMISSIONS: 16,
-} as const
+} as const;
 
 const PRESETS: Record<number, string> = {
   0: 'None',
@@ -90,20 +90,20 @@ const PRESETS: Record<number, string> = {
   7: 'Contributor',
   15: 'Editor',
   31: 'Full Control',
-}
+};
 
 function getPresetName(permissions: number): string {
-  return PRESETS[permissions] || `Custom (${permissions})`
+  return PRESETS[permissions] || `Custom (${permissions})`;
 }
 
 function formatPermissionBits(permissions: number): string {
-  const bits = []
-  if (permissions & PERMISSION_BITS.READ) bits.push('R')
-  if (permissions & PERMISSION_BITS.WRITE) bits.push('W')
-  if (permissions & PERMISSION_BITS.EXECUTE) bits.push('X')
-  if (permissions & PERMISSION_BITS.DELETE) bits.push('D')
-  if (permissions & PERMISSION_BITS.PERMISSIONS) bits.push('P')
-  return bits.length > 0 ? bits.join('') : '-----'
+  const bits = [];
+  if (permissions & PERMISSION_BITS.READ) bits.push('R');
+  if (permissions & PERMISSION_BITS.WRITE) bits.push('W');
+  if (permissions & PERMISSION_BITS.EXECUTE) bits.push('X');
+  if (permissions & PERMISSION_BITS.DELETE) bits.push('D');
+  if (permissions & PERMISSION_BITS.PERMISSIONS) bits.push('P');
+  return bits.length > 0 ? bits.join('') : '-----';
 }
 
 // =============================================================================
@@ -113,25 +113,40 @@ function formatPermissionBits(permissions: number): string {
 function UserIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+      />
     </svg>
-  )
+  );
 }
 
 function UsersIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+      />
     </svg>
-  )
+  );
 }
 
 function DownloadIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+      />
     </svg>
-  )
+  );
 }
 
 function XIcon({ className }: { className?: string }) {
@@ -139,15 +154,20 @@ function XIcon({ className }: { className?: string }) {
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
     </svg>
-  )
+  );
 }
 
 function FilterIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+      />
     </svg>
-  )
+  );
 }
 
 // =============================================================================
@@ -156,64 +176,71 @@ function FilterIcon({ className }: { className?: string }) {
 
 export function PermissionMatrixPage() {
   // Filters
-  const [resourceTypeFilter, setResourceTypeFilter] = useState<ResourceTypeFilter>('all')
-  const [principalTypeFilter, setPrincipalTypeFilter] = useState<PrincipalTypeFilter>('all')
-  const [workspaceFilter, setWorkspaceFilter] = useState<number | null>(null)
-  const [includeInherited, setIncludeInherited] = useState(true)
+  const [resourceTypeFilter, setResourceTypeFilter] = useState<ResourceTypeFilter>('all');
+  const [principalTypeFilter, setPrincipalTypeFilter] = useState<PrincipalTypeFilter>('all');
+  const [workspaceFilter, setWorkspaceFilter] = useState<number | null>(null);
+  const [includeInherited, setIncludeInherited] = useState(true);
 
   // Cell detail popup
-  const [selectedCell, setSelectedCell] = useState<CellDetailPopup | null>(null)
+  const [selectedCell, setSelectedCell] = useState<CellDetailPopup | null>(null);
 
   // Fetch workspaces for filter dropdown
   const { data: workspacesData } = trpc.admin.listAllWorkspaces.useQuery({
     limit: 100,
     isActive: true,
-  })
+  });
 
   // Build query input
-  const queryInput = useMemo(() => ({
-    resourceTypes: resourceTypeFilter === 'all' ? undefined : [resourceTypeFilter],
-    workspaceId: workspaceFilter ?? undefined,
-    includeInherited,
-    principalTypes: principalTypeFilter === 'all' ? undefined : [principalTypeFilter as 'user' | 'group'],
-    limit: 50,
-    offset: 0,
-  }), [resourceTypeFilter, workspaceFilter, includeInherited, principalTypeFilter])
+  const queryInput = useMemo(
+    () => ({
+      resourceTypes: resourceTypeFilter === 'all' ? undefined : [resourceTypeFilter],
+      workspaceId: workspaceFilter ?? undefined,
+      includeInherited,
+      principalTypes:
+        principalTypeFilter === 'all' ? undefined : [principalTypeFilter as 'user' | 'group'],
+      limit: 50,
+      offset: 0,
+    }),
+    [resourceTypeFilter, workspaceFilter, includeInherited, principalTypeFilter]
+  );
 
   // Fetch matrix data
-  const { data: matrixData, isLoading, error } = trpc.acl.getPermissionMatrix.useQuery(queryInput)
+  const { data: matrixData, isLoading, error } = trpc.acl.getPermissionMatrix.useQuery(queryInput);
 
   // Get cell data by principal and resource
-  const getCellData = (principalType: string, principalId: number, resourceType: string, resourceId: number | null): MatrixCell | undefined => {
+  const getCellData = (
+    principalType: string,
+    principalId: number,
+    resourceType: string,
+    resourceId: number | null
+  ): MatrixCell | undefined => {
     const cell = matrixData?.cells.find(
-      c => c.principalType === principalType &&
-           c.principalId === principalId &&
-           c.resourceType === resourceType &&
-           c.resourceId === resourceId
-    )
-    return cell as MatrixCell | undefined
-  }
+      (c) =>
+        c.principalType === principalType &&
+        c.principalId === principalId &&
+        c.resourceType === resourceType &&
+        c.resourceId === resourceId
+    );
+    return cell as MatrixCell | undefined;
+  };
 
   // Get cell color based on permissions
   const getCellColor = (cell: MatrixCell | undefined) => {
     if (!cell || cell.effectivePermissions === 0) {
-      return 'bg-muted text-gray-400'
+      return 'bg-muted text-gray-400';
     }
     if (cell.isDenied) {
-      return 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'
+      return 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400';
     }
     if (!cell.isDirect) {
-      return 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400'
+      return 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400';
     }
-    return 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
-  }
+    return 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400';
+  };
 
   // Handle cell click
-  const handleCellClick = (
-    principal: MatrixPrincipal,
-    resource: MatrixResource
-  ) => {
-    const cell = getCellData(principal.type, principal.id, resource.type, resource.id)
+  const handleCellClick = (principal: MatrixPrincipal, resource: MatrixResource) => {
+    const cell = getCellData(principal.type, principal.id, resource.type, resource.id);
     setSelectedCell({
       principalType: principal.type,
       principalId: principal.id,
@@ -225,31 +252,35 @@ export function PermissionMatrixPage() {
       isDirect: cell?.isDirect ?? false,
       isDenied: cell?.isDenied ?? false,
       inheritedFrom: cell?.inheritedFrom,
-    })
-  }
+    });
+  };
 
   // Export CSV
   const handleExportCsv = () => {
-    if (!matrixData) return
+    if (!matrixData) return;
 
-    const headers = ['Principal Type', 'Principal Name', ...matrixData.resources.map(r => r.name)]
-    const rows = matrixData.principals.map(principal => {
-      const cells = matrixData.resources.map(resource => {
-        const cell = getCellData(principal.type, principal.id, resource.type, resource.id)
-        return cell ? formatPermissionBits(cell.effectivePermissions) : '-----'
-      })
-      return [principal.type, principal.displayName, ...cells]
-    })
+    const headers = [
+      'Principal Type',
+      'Principal Name',
+      ...matrixData.resources.map((r) => r.name),
+    ];
+    const rows = matrixData.principals.map((principal) => {
+      const cells = matrixData.resources.map((resource) => {
+        const cell = getCellData(principal.type, principal.id, resource.type, resource.id);
+        return cell ? formatPermissionBits(cell.effectivePermissions) : '-----';
+      });
+      return [principal.type, principal.displayName, ...cells];
+    });
 
-    const csv = [headers, ...rows].map(row => row.join(',')).join('\n')
-    const blob = new Blob([csv], { type: 'text/csv' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `permission-matrix-${new Date().toISOString().split('T')[0]}.csv`
-    a.click()
-    URL.revokeObjectURL(url)
-  }
+    const csv = [headers, ...rows].map((row) => row.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `permission-matrix-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <AdminLayout
@@ -281,8 +312,10 @@ export function PermissionMatrixPage() {
             className="px-2 py-1.5 text-sm border border-input rounded bg-background text-foreground"
           >
             <option value="">All Workspaces</option>
-            {workspacesData?.workspaces.map(ws => (
-              <option key={ws.id} value={ws.id}>{ws.name}</option>
+            {workspacesData?.workspaces.map((ws) => (
+              <option key={ws.id} value={ws.id}>
+                {ws.name}
+              </option>
             ))}
           </select>
 
@@ -345,8 +378,12 @@ export function PermissionMatrixPage() {
         {isLoading ? (
           <div className="text-center py-12 text-gray-500">Loading permission matrix...</div>
         ) : error ? (
-          <div className="text-center py-12 text-red-500">Error loading matrix: {error.message}</div>
-        ) : !matrixData || matrixData.principals.length === 0 || matrixData.resources.length === 0 ? (
+          <div className="text-center py-12 text-red-500">
+            Error loading matrix: {error.message}
+          </div>
+        ) : !matrixData ||
+          matrixData.principals.length === 0 ||
+          matrixData.resources.length === 0 ? (
           <div className="text-center py-12 text-gray-500">
             No data to display. Try adjusting the filters.
           </div>
@@ -378,7 +415,10 @@ export function PermissionMatrixPage() {
                 {/* Body */}
                 <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                   {matrixData.principals.map((principal) => (
-                    <tr key={`${principal.type}-${principal.id}`} className="hover:bg-gray-50 dark:hover:bg-gray-750">
+                    <tr
+                      key={`${principal.type}-${principal.id}`}
+                      className="hover:bg-gray-50 dark:hover:bg-gray-750"
+                    >
                       {/* Principal Name */}
                       <td className="sticky left-0 z-10 bg-card px-4 py-2 text-sm border-r border-gray-200 dark:border-gray-700">
                         <div className="flex items-center gap-2">
@@ -387,7 +427,10 @@ export function PermissionMatrixPage() {
                           ) : (
                             <UsersIcon className="w-4 h-4 text-indigo-400" />
                           )}
-                          <span className="font-medium text-foreground truncate max-w-[150px]" title={principal.displayName}>
+                          <span
+                            className="font-medium text-foreground truncate max-w-[150px]"
+                            title={principal.displayName}
+                          >
                             {principal.displayName}
                           </span>
                           <span className="text-xs text-gray-400">{principal.name}</span>
@@ -396,8 +439,13 @@ export function PermissionMatrixPage() {
 
                       {/* Permission Cells */}
                       {matrixData.resources.map((resource) => {
-                        const cell = getCellData(principal.type, principal.id, resource.type, resource.id)
-                        const colorClass = getCellColor(cell)
+                        const cell = getCellData(
+                          principal.type,
+                          principal.id,
+                          resource.type,
+                          resource.id
+                        );
+                        const colorClass = getCellColor(cell);
 
                         return (
                           <td
@@ -408,13 +456,17 @@ export function PermissionMatrixPage() {
                               'hover:ring-2 hover:ring-blue-500 hover:ring-inset'
                             )}
                             onClick={() => handleCellClick(principal, resource)}
-                            title={cell ? `${getPresetName(cell.effectivePermissions)} - Click for details` : 'No access'}
+                            title={
+                              cell
+                                ? `${getPresetName(cell.effectivePermissions)} - Click for details`
+                                : 'No access'
+                            }
                           >
                             <span className="font-mono">
                               {cell ? formatPermissionBits(cell.effectivePermissions) : '-----'}
                             </span>
                           </td>
-                        )
+                        );
                       })}
                     </tr>
                   ))}
@@ -436,22 +488,19 @@ export function PermissionMatrixPage() {
         )}
       </div>
     </AdminLayout>
-  )
+  );
 }
 
 // =============================================================================
 // Cell Detail Dialog
 // =============================================================================
 
-function CellDetailDialog({
-  cell,
-  onClose,
-}: {
-  cell: CellDetailPopup
-  onClose: () => void
-}) {
+function CellDetailDialog({ cell, onClose }: { cell: CellDetailPopup; onClose: () => void }) {
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+      onClick={onClose}
+    >
       <div
         className="bg-card rounded-lg shadow-xl w-full max-w-md mx-4"
         onClick={(e) => e.stopPropagation()}
@@ -462,10 +511,7 @@ function CellDetailDialog({
             <h3 className="text-sm font-semibold text-foreground">Permission Details</h3>
             <p className="text-xs text-gray-500 mt-0.5">{cell.principalName}</p>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1 hover:bg-accent rounded"
-          >
+          <button onClick={onClose} className="p-1 hover:bg-accent rounded">
             <XIcon className="w-4 h-4 text-gray-500" />
           </button>
         </div>
@@ -482,7 +528,9 @@ function CellDetailDialog({
 
           {/* Effective Permissions */}
           <div>
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Effective Permissions</label>
+            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">
+              Effective Permissions
+            </label>
             <div className="flex items-center gap-2 mt-1">
               <span className="font-mono text-lg font-bold text-foreground">
                 {formatPermissionBits(cell.effectivePermissions)}
@@ -495,10 +543,12 @@ function CellDetailDialog({
 
           {/* Permission Breakdown */}
           <div>
-            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Breakdown</label>
+            <label className="text-xs font-medium text-gray-500 dark:text-gray-400">
+              Breakdown
+            </label>
             <div className="grid grid-cols-5 gap-2 mt-2">
               {Object.entries(PERMISSION_BITS).map(([name, bit]) => {
-                const hasPermission = (cell.effectivePermissions & bit) !== 0
+                const hasPermission = (cell.effectivePermissions & bit) !== 0;
                 return (
                   <div
                     key={name}
@@ -512,7 +562,7 @@ function CellDetailDialog({
                     {name.charAt(0)}
                     <div className="text-[10px] font-normal">{name.toLowerCase()}</div>
                   </div>
-                )
+                );
               })}
             </div>
           </div>
@@ -522,13 +572,21 @@ function CellDetailDialog({
             <div>
               <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Source</label>
               <p className="text-sm text-foreground">
-                {cell.isDirect ? 'Direct entry' : cell.inheritedFrom ? `Inherited from ${cell.inheritedFrom}` : 'Inherited'}
+                {cell.isDirect
+                  ? 'Direct entry'
+                  : cell.inheritedFrom
+                    ? `Inherited from ${cell.inheritedFrom}`
+                    : 'Inherited'}
               </p>
             </div>
             {cell.isDenied && (
               <div>
-                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Status</label>
-                <p className="text-sm text-red-600 dark:text-red-400 font-medium">Has deny entries</p>
+                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                  Status
+                </label>
+                <p className="text-sm text-red-600 dark:text-red-400 font-medium">
+                  Has deny entries
+                </p>
               </div>
             )}
           </div>
@@ -545,7 +603,7 @@ function CellDetailDialog({
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default PermissionMatrixPage
+export default PermissionMatrixPage;

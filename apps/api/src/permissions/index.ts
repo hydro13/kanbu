@@ -19,54 +19,54 @@
  * =============================================================================
  */
 
-import { permissionRegistry, definePermissions } from './registry'
+import { permissionRegistry, definePermissions } from './registry';
 
 // Import all permission definitions
-import { systemPermissions } from './definitions/system.permissions'
-import { workspacePermissions } from './definitions/workspace.permissions'
-import { projectPermissions } from './definitions/project.permissions'
-import { taskPermissions } from './definitions/task.permissions'
-import { boardPermissions } from './definitions/board.permissions'
-import { viewsPermissions } from './definitions/views.permissions'
-import { planningPermissions } from './definitions/planning.permissions'
-import { integrationsPermissions, apiPermissions } from './definitions/integrations.permissions'
-import { wikiPermissions } from './definitions/wiki.permissions'
+import { systemPermissions } from './definitions/system.permissions';
+import { workspacePermissions } from './definitions/workspace.permissions';
+import { projectPermissions } from './definitions/project.permissions';
+import { taskPermissions } from './definitions/task.permissions';
+import { boardPermissions } from './definitions/board.permissions';
+import { viewsPermissions } from './definitions/views.permissions';
+import { planningPermissions } from './definitions/planning.permissions';
+import { integrationsPermissions, apiPermissions } from './definitions/integrations.permissions';
+import { wikiPermissions } from './definitions/wiki.permissions';
 
 // =============================================================================
 // Register All Permissions
 // =============================================================================
 
 // System-level permissions
-permissionRegistry.register('system', systemPermissions)
+permissionRegistry.register('system', systemPermissions);
 
 // Workspace-level permissions
-permissionRegistry.register('workspace', workspacePermissions)
+permissionRegistry.register('workspace', workspacePermissions);
 
 // Project-level permissions
-permissionRegistry.register('project', projectPermissions)
-permissionRegistry.register('task', taskPermissions)
-permissionRegistry.register('board', boardPermissions)
-permissionRegistry.register('views', viewsPermissions)
-permissionRegistry.register('planning', planningPermissions)
-permissionRegistry.register('wiki', wikiPermissions)
+permissionRegistry.register('project', projectPermissions);
+permissionRegistry.register('task', taskPermissions);
+permissionRegistry.register('board', boardPermissions);
+permissionRegistry.register('views', viewsPermissions);
+permissionRegistry.register('planning', planningPermissions);
+permissionRegistry.register('wiki', wikiPermissions);
 
 // Integration permissions
-permissionRegistry.register('integrations', integrationsPermissions)
-permissionRegistry.register('api', apiPermissions)
+permissionRegistry.register('integrations', integrationsPermissions);
+permissionRegistry.register('api', apiPermissions);
 
 // =============================================================================
 // Exports
 // =============================================================================
 
-export { permissionRegistry, definePermissions }
-export * from './types'
+export { permissionRegistry, definePermissions };
+export * from './types';
 
 // Export utility for checking permissions
-export { requirePermission, createPermissionMiddleware } from './middleware'
+export { requirePermission, createPermissionMiddleware } from './middleware';
 
 // Log registration stats in development
 if (process.env.NODE_ENV === 'development') {
-  const stats = permissionRegistry.getStats()
-  console.log(`[PermissionRegistry] Registered ${stats.total} permissions`)
-  console.log(`[PermissionRegistry] Modules:`, stats.byModule)
+  const stats = permissionRegistry.getStats();
+  console.log(`[PermissionRegistry] Registered ${stats.total} permissions`);
+  console.log(`[PermissionRegistry] Modules:`, stats.byModule);
 }

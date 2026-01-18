@@ -13,8 +13,8 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { createHmac, randomBytes } from 'crypto'
-import type { PrismaClient, Webhook, Prisma } from '@prisma/client'
+import { createHmac, randomBytes } from 'crypto';
+import type { PrismaClient, Webhook, Prisma } from '@prisma/client';
 
 // =============================================================================
 // Types
@@ -38,31 +38,31 @@ export type WebhookEventType =
   | 'column.updated'
   | 'sprint.started'
   | 'sprint.completed'
-  | 'milestone.completed'
+  | 'milestone.completed';
 
 export interface WebhookPayload {
-  event: WebhookEventType
-  timestamp: string
-  projectId: number
-  data: Record<string, unknown>
+  event: WebhookEventType;
+  timestamp: string;
+  projectId: number;
+  data: Record<string, unknown>;
 }
 
 export interface DeliveryResult {
-  success: boolean
-  statusCode?: number
-  response?: string
-  duration?: number
-  error?: string
+  success: boolean;
+  statusCode?: number;
+  response?: string;
+  duration?: number;
+  error?: string;
 }
 
 // =============================================================================
 // Configuration
 // =============================================================================
 
-const MAX_RETRIES = 3
-const RETRY_DELAYS = [1000, 5000, 30000] // 1s, 5s, 30s
-const REQUEST_TIMEOUT = 10000 // 10 seconds
-const MAX_RESPONSE_SIZE = 10000 // 10KB max response to store
+const MAX_RETRIES = 3;
+const RETRY_DELAYS = [1000, 5000, 30000]; // 1s, 5s, 30s
+const REQUEST_TIMEOUT = 10000; // 10 seconds
+const MAX_RESPONSE_SIZE = 10000; // 10KB max response to store
 
 // =============================================================================
 // Signature Generation
@@ -72,32 +72,28 @@ const MAX_RESPONSE_SIZE = 10000 // 10KB max response to store
  * Generate a random webhook secret
  */
 export function generateWebhookSecret(): string {
-  return randomBytes(32).toString('hex')
+  return randomBytes(32).toString('hex');
 }
 
 /**
  * Generate HMAC-SHA256 signature for webhook payload
  */
 export function generateSignature(payload: string, secret: string): string {
-  return createHmac('sha256', secret).update(payload).digest('hex')
+  return createHmac('sha256', secret).update(payload).digest('hex');
 }
 
 /**
  * Verify webhook signature
  */
-export function verifySignature(
-  payload: string,
-  signature: string,
-  secret: string
-): boolean {
-  const expected = generateSignature(payload, secret)
+export function verifySignature(payload: string, signature: string, secret: string): boolean {
+  const expected = generateSignature(payload, secret);
   // Timing-safe comparison
-  if (signature.length !== expected.length) return false
-  let result = 0
+  if (signature.length !== expected.length) return false;
+  let result = 0;
   for (let i = 0; i < signature.length; i++) {
-    result |= signature.charCodeAt(i) ^ expected.charCodeAt(i)
+    result |= signature.charCodeAt(i) ^ expected.charCodeAt(i);
   }
-  return result === 0
+  return result === 0;
 }
 
 // =============================================================================
@@ -111,13 +107,13 @@ async function deliverToEndpoint(
   webhook: Webhook,
   payload: WebhookPayload
 ): Promise<DeliveryResult> {
-  const payloadString = JSON.stringify(payload)
-  const signature = generateSignature(payloadString, webhook.secret)
-  const startTime = Date.now()
+  const payloadString = JSON.stringify(payload);
+  const signature = generateSignature(payloadString, webhook.secret);
+  const startTime = Date.now();
 
   try {
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
 
     const response = await fetch(webhook.url, {
       method: 'POST',
@@ -130,20 +126,20 @@ async function deliverToEndpoint(
       },
       body: payloadString,
       signal: controller.signal,
-    })
+    });
 
-    clearTimeout(timeoutId)
-    const duration = Date.now() - startTime
+    clearTimeout(timeoutId);
+    const duration = Date.now() - startTime;
 
     // Read response body (limited size)
-    let responseText = ''
+    let responseText = '';
     try {
-      responseText = await response.text()
+      responseText = await response.text();
       if (responseText.length > MAX_RESPONSE_SIZE) {
-        responseText = responseText.substring(0, MAX_RESPONSE_SIZE) + '...[truncated]'
+        responseText = responseText.substring(0, MAX_RESPONSE_SIZE) + '...[truncated]';
       }
     } catch {
-      responseText = '[Unable to read response]'
+      responseText = '[Unable to read response]';
     }
 
     return {
@@ -151,17 +147,16 @@ async function deliverToEndpoint(
       statusCode: response.status,
       response: responseText,
       duration,
-    }
+    };
   } catch (error) {
-    const duration = Date.now() - startTime
-    const errorMessage =
-      error instanceof Error ? error.message : 'Unknown error'
+    const duration = Date.now() - startTime;
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
     return {
       success: false,
       duration,
       error: errorMessage,
-    }
+    };
   }
 }
 
@@ -173,12 +168,12 @@ async function deliverWithRetry(
   payload: WebhookPayload,
   prisma: PrismaClient
 ): Promise<void> {
-  let lastResult: DeliveryResult | null = null
-  let attempts = 0
+  let lastResult: DeliveryResult | null = null;
+  let attempts = 0;
 
   for (let i = 0; i <= MAX_RETRIES; i++) {
-    attempts = i + 1
-    lastResult = await deliverToEndpoint(webhook, payload)
+    attempts = i + 1;
+    lastResult = await deliverToEndpoint(webhook, payload);
 
     if (lastResult.success) {
       // Success - log delivery and update webhook
@@ -202,14 +197,14 @@ async function deliverWithRetry(
             failureCount: 0,
           },
         }),
-      ])
-      return
+      ]);
+      return;
     }
 
     // Wait before retry (except on last attempt)
     if (i < MAX_RETRIES) {
-      const delay = RETRY_DELAYS[i] ?? RETRY_DELAYS[RETRY_DELAYS.length - 1]
-      await new Promise((resolve) => setTimeout(resolve, delay))
+      const delay = RETRY_DELAYS[i] ?? RETRY_DELAYS[RETRY_DELAYS.length - 1];
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
 
@@ -234,7 +229,7 @@ async function deliverWithRetry(
         failureCount: { increment: 1 },
       },
     }),
-  ])
+  ]);
 }
 
 // =============================================================================
@@ -258,16 +253,16 @@ export async function dispatchWebhooks(
       projectId,
       isActive: true,
     },
-  })
+  });
 
   // Filter webhooks that subscribe to this event
   const matchingWebhooks = webhooks.filter((webhook) => {
-    const events = webhook.events as string[]
-    return events.includes(event) || events.includes('*')
-  })
+    const events = webhook.events as string[];
+    return events.includes(event) || events.includes('*');
+  });
 
   if (matchingWebhooks.length === 0) {
-    return
+    return;
   }
 
   const payload: WebhookPayload = {
@@ -275,17 +270,17 @@ export async function dispatchWebhooks(
     timestamp: new Date().toISOString(),
     projectId,
     data,
-  }
+  };
 
   // Dispatch to all matching webhooks in parallel (fire and forget)
   // We don't await here to not block the main request
   Promise.all(
     matchingWebhooks.map((webhook) =>
       deliverWithRetry(webhook, payload, prisma).catch((error) => {
-        console.error(`Webhook delivery failed for ${webhook.id}:`, error)
+        console.error(`Webhook delivery failed for ${webhook.id}:`, error);
       })
     )
-  )
+  );
 }
 
 /**
@@ -297,10 +292,10 @@ export async function testWebhook(
 ): Promise<DeliveryResult> {
   const webhook = await prisma.webhook.findUnique({
     where: { id: webhookId },
-  })
+  });
 
   if (!webhook) {
-    return { success: false, error: 'Webhook not found' }
+    return { success: false, error: 'Webhook not found' };
   }
 
   const testPayload: WebhookPayload = {
@@ -311,9 +306,9 @@ export async function testWebhook(
       test: true,
       message: 'This is a test webhook delivery from Kanbu',
     },
-  }
+  };
 
-  const result = await deliverToEndpoint(webhook, testPayload)
+  const result = await deliverToEndpoint(webhook, testPayload);
 
   // Log the test delivery
   await prisma.webhookDelivery.create({
@@ -327,24 +322,20 @@ export async function testWebhook(
       success: result.success,
       attempts: 1,
     },
-  })
+  });
 
-  return result
+  return result;
 }
 
 /**
  * Get recent deliveries for a webhook
  */
-export async function getRecentDeliveries(
-  prisma: PrismaClient,
-  webhookId: number,
-  limit = 20
-) {
+export async function getRecentDeliveries(prisma: PrismaClient, webhookId: number, limit = 20) {
   return prisma.webhookDelivery.findMany({
     where: { webhookId },
     orderBy: { deliveredAt: 'desc' },
     take: limit,
-  })
+  });
 }
 
 /**
@@ -369,4 +360,4 @@ export const WEBHOOK_EVENTS: WebhookEventType[] = [
   'sprint.started',
   'sprint.completed',
   'milestone.completed',
-]
+];

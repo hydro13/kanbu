@@ -11,11 +11,11 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import { ProjectLayout } from '@/components/layout/ProjectLayout'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { useState, useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { ProjectLayout } from '@/components/layout/ProjectLayout';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Card,
   CardHeader,
@@ -23,8 +23,8 @@ import {
   CardDescription,
   CardContent,
   CardFooter,
-} from '@/components/ui/card'
-import { trpc } from '@/lib/trpc'
+} from '@/components/ui/card';
+import { trpc } from '@/lib/trpc';
 
 // =============================================================================
 // Component
@@ -32,49 +32,49 @@ import { trpc } from '@/lib/trpc'
 
 export function ProjectDetailsPage() {
   const { projectIdentifier, workspaceSlug } = useParams<{
-    projectIdentifier: string
-    workspaceSlug: string
-  }>()
-  const utils = trpc.useUtils()
+    projectIdentifier: string;
+    workspaceSlug: string;
+  }>();
+  const utils = trpc.useUtils();
 
   // Form states
-  const [projectName, setProjectName] = useState('')
-  const [projectDescription, setProjectDescription] = useState('')
+  const [projectName, setProjectName] = useState('');
+  const [projectDescription, setProjectDescription] = useState('');
 
   // Fetch project by identifier (SEO-friendly URL)
   const projectQuery = trpc.project.getByIdentifier.useQuery(
     { identifier: projectIdentifier! },
     { enabled: !!projectIdentifier }
-  )
+  );
 
   // Sync project data to form
   useEffect(() => {
     if (projectQuery.data) {
-      setProjectName(projectQuery.data.name)
-      setProjectDescription(projectQuery.data.description ?? '')
+      setProjectName(projectQuery.data.name);
+      setProjectDescription(projectQuery.data.description ?? '');
     }
-  }, [projectQuery.data])
+  }, [projectQuery.data]);
 
   // Get project ID from fetched data
-  const projectId = projectQuery.data?.id ?? 0
+  const projectId = projectQuery.data?.id ?? 0;
 
   // Project update mutation
   const updateProjectMutation = trpc.project.update.useMutation({
     onSuccess: () => {
-      utils.project.getByIdentifier.invalidate({ identifier: projectIdentifier! })
-      utils.project.list.invalidate()
+      utils.project.getByIdentifier.invalidate({ identifier: projectIdentifier! });
+      utils.project.list.invalidate();
     },
-  })
+  });
 
   // Update handler
   const handleUpdateProject = () => {
-    if (!projectName.trim()) return
+    if (!projectName.trim()) return;
     updateProjectMutation.mutate({
       projectId,
       name: projectName,
       description: projectDescription || undefined,
-    })
-  }
+    });
+  };
 
   // Loading state
   if (projectQuery.isLoading) {
@@ -84,7 +84,7 @@ export function ProjectDetailsPage() {
           <p className="text-muted-foreground">Loading...</p>
         </div>
       </ProjectLayout>
-    )
+    );
   }
 
   // Error state
@@ -98,10 +98,10 @@ export function ProjectDetailsPage() {
           </Link>
         </div>
       </ProjectLayout>
-    )
+    );
   }
 
-  const project = projectQuery.data
+  const project = projectQuery.data;
 
   return (
     <ProjectLayout>
@@ -109,25 +109,24 @@ export function ProjectDetailsPage() {
         {/* Header */}
         <div className="mb-6">
           <nav className="text-sm text-muted-foreground mb-2">
-            <Link to={`/workspace/${workspaceSlug}/project/${projectIdentifier}/board`} className="hover:text-primary">
+            <Link
+              to={`/workspace/${workspaceSlug}/project/${projectIdentifier}/board`}
+              className="hover:text-primary"
+            >
               {project?.name}
             </Link>
             {' / '}
             <span>Details</span>
           </nav>
           <h1 className="text-page-title text-foreground">Project Details</h1>
-          <p className="text-muted-foreground mt-1">
-            Edit project name and description
-          </p>
+          <p className="text-muted-foreground mt-1">Edit project name and description</p>
         </div>
 
         {/* Project Details Card */}
         <Card>
           <CardHeader>
             <CardTitle>General Information</CardTitle>
-            <CardDescription>
-              Update the basic information for this project
-            </CardDescription>
+            <CardDescription>Update the basic information for this project</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -140,11 +139,7 @@ export function ProjectDetailsPage() {
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Identifier</label>
-              <Input
-                value={project?.identifier ?? ''}
-                disabled
-                className="bg-muted"
-              />
+              <Input value={project?.identifier ?? ''} disabled className="bg-muted" />
               <p className="text-xs text-muted-foreground">
                 Used for task references (e.g., {project?.identifier}-123). Cannot be changed.
               </p>
@@ -171,11 +166,11 @@ export function ProjectDetailsPage() {
         </Card>
       </div>
     </ProjectLayout>
-  )
+  );
 }
 
 // =============================================================================
 // Exports
 // =============================================================================
 
-export default ProjectDetailsPage
+export default ProjectDetailsPage;

@@ -19,54 +19,54 @@
  * =============================================================================
  */
 
-import { TRPCError } from '@trpc/server'
-import { GroupType, ProjectRole, WorkspaceRole, AccessType } from '@prisma/client'
-import { prisma } from '../lib/prisma'
-import * as roleAssignmentService from './roleAssignmentService'
+import { TRPCError } from '@trpc/server';
+import { GroupType, ProjectRole, WorkspaceRole, AccessType } from '@prisma/client';
+import { prisma } from '../lib/prisma';
+import * as roleAssignmentService from './roleAssignmentService';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface GroupMembership {
-  groupId: number
-  groupName: string
-  groupType: GroupType
-  displayName: string
-  workspaceId: number | null
-  projectId: number | null
+  groupId: number;
+  groupName: string;
+  groupType: GroupType;
+  displayName: string;
+  workspaceId: number | null;
+  projectId: number | null;
 }
 
 export interface GroupWorkspaceAccess {
-  workspaceId: number
-  userId: number
-  isAdmin: boolean
-  isMember: boolean
-  effectiveRole: WorkspaceRole
+  workspaceId: number;
+  userId: number;
+  isAdmin: boolean;
+  isMember: boolean;
+  effectiveRole: WorkspaceRole;
 }
 
 export interface GroupProjectAccess {
-  projectId: number
-  userId: number
-  workspaceId: number
-  isAdmin: boolean
-  isMember: boolean
-  effectiveRole: ProjectRole
+  projectId: number;
+  userId: number;
+  workspaceId: number;
+  isAdmin: boolean;
+  isMember: boolean;
+  effectiveRole: ProjectRole;
 }
 
 export interface PermissionCheck {
-  permissionName: string
-  accessType: AccessType
-  groupId: number
-  groupName: string
-  inherited: boolean
+  permissionName: string;
+  accessType: AccessType;
+  groupId: number;
+  groupName: string;
+  inherited: boolean;
 }
 
 export interface EffectivePermission {
-  permissionName: string
-  allowed: boolean
-  reason: 'ALLOW' | 'DENY' | 'NOT_GRANTED'
-  grantedBy?: string
+  permissionName: string;
+  allowed: boolean;
+  reason: 'ALLOW' | 'DENY' | 'NOT_GRANTED';
+  grantedBy?: string;
 }
 
 // =============================================================================
@@ -99,7 +99,7 @@ export class GroupPermissionService {
           },
         },
       },
-    })
+    });
 
     return memberships.map((m) => ({
       groupId: m.group.id,
@@ -108,7 +108,7 @@ export class GroupPermissionService {
       displayName: m.group.displayName,
       workspaceId: m.group.workspaceId,
       projectId: m.group.projectId,
-    }))
+    }));
   }
 
   /**
@@ -123,9 +123,9 @@ export class GroupPermissionService {
           isActive: true,
         },
       },
-    })
+    });
 
-    return membership !== null
+    return membership !== null;
   }
 
   /**
@@ -140,9 +140,9 @@ export class GroupPermissionService {
           isActive: true,
         },
       },
-    })
+    });
 
-    return membership !== null
+    return membership !== null;
   }
 
   // ===========================================================================
@@ -154,7 +154,7 @@ export class GroupPermissionService {
    * Domain Admins have full access to all workspaces and projects.
    */
   async isDomainAdmin(userId: number): Promise<boolean> {
-    return this.isMemberOfGroup(userId, 'domain-admins')
+    return this.isMemberOfGroup(userId, 'domain-admins');
   }
 
   /**
@@ -164,7 +164,7 @@ export class GroupPermissionService {
    */
   async getDomainAdminUserIds(userIds: number[]): Promise<Set<number>> {
     if (userIds.length === 0) {
-      return new Set()
+      return new Set();
     }
 
     const memberships = await prisma.groupMember.findMany({
@@ -176,9 +176,9 @@ export class GroupPermissionService {
         },
       },
       select: { userId: true },
-    })
+    });
 
-    return new Set(memberships.map((m) => m.userId))
+    return new Set(memberships.map((m) => m.userId));
   }
 
   /**
@@ -186,12 +186,12 @@ export class GroupPermissionService {
    * Throws FORBIDDEN if user is not a Domain Admin.
    */
   async requireDomainAdmin(userId: number): Promise<void> {
-    const isAdmin = await this.isDomainAdmin(userId)
+    const isAdmin = await this.isDomainAdmin(userId);
     if (!isAdmin) {
       throw new TRPCError({
         code: 'FORBIDDEN',
         message: 'This action requires Domain Admin privileges',
-      })
+      });
     }
   }
 
@@ -203,14 +203,14 @@ export class GroupPermissionService {
    * Get workspace group name from workspace slug.
    */
   getWorkspaceGroupName(workspaceSlug: string): string {
-    return `workspace-${workspaceSlug}`
+    return `workspace-${workspaceSlug}`;
   }
 
   /**
    * Get workspace admin group name from workspace slug.
    */
   getWorkspaceAdminGroupName(workspaceSlug: string): string {
-    return `workspace-${workspaceSlug}-admins`
+    return `workspace-${workspaceSlug}-admins`;
   }
 
   /**
@@ -224,7 +224,7 @@ export class GroupPermissionService {
   async canAccessWorkspace(userId: number, workspaceId: number): Promise<boolean> {
     // Domain Admins can access all workspaces
     if (await this.isDomainAdmin(userId)) {
-      return true
+      return true;
     }
 
     // Check workspace membership groups
@@ -237,15 +237,18 @@ export class GroupPermissionService {
           isActive: true,
         },
       },
-    })
+    });
 
     if (membership) {
-      return true
+      return true;
     }
 
     // Check role assignments via security groups
-    const roleViaGroups = await roleAssignmentService.getUserWorkspaceRoleViaGroups(userId, workspaceId)
-    return roleViaGroups.role !== null
+    const roleViaGroups = await roleAssignmentService.getUserWorkspaceRoleViaGroups(
+      userId,
+      workspaceId
+    );
+    return roleViaGroups.role !== null;
   }
 
   /**
@@ -258,7 +261,7 @@ export class GroupPermissionService {
   async isWorkspaceAdmin(userId: number, workspaceId: number): Promise<boolean> {
     // Domain Admins are admins of all workspaces
     if (await this.isDomainAdmin(userId)) {
-      return true
+      return true;
     }
 
     // Check workspace admin group membership
@@ -271,15 +274,18 @@ export class GroupPermissionService {
           isActive: true,
         },
       },
-    })
+    });
 
     if (membership) {
-      return true
+      return true;
     }
 
     // Check role assignments via security groups
-    const roleViaGroups = await roleAssignmentService.getUserWorkspaceRoleViaGroups(userId, workspaceId)
-    return roleAssignmentService.roleIsAtLeast(roleViaGroups.role, 'ADMIN')
+    const roleViaGroups = await roleAssignmentService.getUserWorkspaceRoleViaGroups(
+      userId,
+      workspaceId
+    );
+    return roleAssignmentService.roleIsAtLeast(roleViaGroups.role, 'ADMIN');
   }
 
   /**
@@ -291,7 +297,7 @@ export class GroupPermissionService {
     workspaceId: number
   ): Promise<GroupWorkspaceAccess | null> {
     // Check Domain Admin first
-    const isDomainAdmin = await this.isDomainAdmin(userId)
+    const isDomainAdmin = await this.isDomainAdmin(userId);
     if (isDomainAdmin) {
       return {
         workspaceId,
@@ -299,7 +305,7 @@ export class GroupPermissionService {
         isAdmin: true,
         isMember: true,
         effectiveRole: 'OWNER',
-      }
+      };
     }
 
     // Get workspace groups the user is a member of (auto-groups)
@@ -315,32 +321,38 @@ export class GroupPermissionService {
       include: {
         group: { select: { type: true } },
       },
-    })
+    });
 
-    const isAdminViaAutoGroup = memberships.some((m) => m.group.type === 'WORKSPACE_ADMIN')
-    const isMemberViaAutoGroup = memberships.some((m) => m.group.type === 'WORKSPACE')
+    const isAdminViaAutoGroup = memberships.some((m) => m.group.type === 'WORKSPACE_ADMIN');
+    const isMemberViaAutoGroup = memberships.some((m) => m.group.type === 'WORKSPACE');
 
     // Check role assignments via security groups
-    const roleViaGroups = await roleAssignmentService.getUserWorkspaceRoleViaGroups(userId, workspaceId)
-    const isAdminViaRoleAssignment = roleAssignmentService.roleIsAtLeast(roleViaGroups.role, 'ADMIN')
-    const isMemberViaRoleAssignment = roleViaGroups.role !== null
+    const roleViaGroups = await roleAssignmentService.getUserWorkspaceRoleViaGroups(
+      userId,
+      workspaceId
+    );
+    const isAdminViaRoleAssignment = roleAssignmentService.roleIsAtLeast(
+      roleViaGroups.role,
+      'ADMIN'
+    );
+    const isMemberViaRoleAssignment = roleViaGroups.role !== null;
 
     // No access at all
     if (!isMemberViaAutoGroup && !isAdminViaAutoGroup && !isMemberViaRoleAssignment) {
-      return null
+      return null;
     }
 
-    const isAdmin = isAdminViaAutoGroup || isAdminViaRoleAssignment
-    const isMember = isMemberViaAutoGroup || isMemberViaRoleAssignment
+    const isAdmin = isAdminViaAutoGroup || isAdminViaRoleAssignment;
+    const isMember = isMemberViaAutoGroup || isMemberViaRoleAssignment;
 
     // Determine effective role (highest wins)
-    let effectiveRole: WorkspaceRole = 'MEMBER'
+    let effectiveRole: WorkspaceRole = 'MEMBER';
     if (isAdmin) {
-      effectiveRole = 'ADMIN'
+      effectiveRole = 'ADMIN';
     }
     // If role assignment gives OWNER, use that
     if (roleViaGroups.role === 'OWNER') {
-      effectiveRole = 'OWNER'
+      effectiveRole = 'OWNER';
     }
 
     return {
@@ -349,7 +361,7 @@ export class GroupPermissionService {
       isAdmin,
       isMember: isMember || isAdmin, // Admins are implicitly members
       effectiveRole,
-    }
+    };
   }
 
   /**
@@ -361,23 +373,23 @@ export class GroupPermissionService {
     workspaceId: number,
     requireAdmin: boolean = false
   ): Promise<GroupWorkspaceAccess> {
-    const access = await this.getWorkspaceAccess(userId, workspaceId)
+    const access = await this.getWorkspaceAccess(userId, workspaceId);
 
     if (!access) {
       throw new TRPCError({
         code: 'FORBIDDEN',
         message: 'You do not have access to this workspace',
-      })
+      });
     }
 
     if (requireAdmin && !access.isAdmin) {
       throw new TRPCError({
         code: 'FORBIDDEN',
         message: 'This action requires workspace administrator privileges',
-      })
+      });
     }
 
-    return access
+    return access;
   }
 
   /**
@@ -386,28 +398,28 @@ export class GroupPermissionService {
    */
   async getUserWorkspaces(userId: number): Promise<
     Array<{
-      id: number
-      name: string
-      slug: string
-      isAdmin: boolean
+      id: number;
+      name: string;
+      slug: string;
+      isAdmin: boolean;
     }>
   > {
     // Check if Domain Admin (sees all workspaces)
-    const isDomainAdmin = await this.isDomainAdmin(userId)
+    const isDomainAdmin = await this.isDomainAdmin(userId);
     if (isDomainAdmin) {
       const workspaces = await prisma.workspace.findMany({
         where: { isActive: true },
         select: { id: true, name: true, slug: true },
         orderBy: { name: 'asc' },
-      })
-      return workspaces.map((ws) => ({ ...ws, isAdmin: true }))
+      });
+      return workspaces.map((ws) => ({ ...ws, isAdmin: true }));
     }
 
     // Aggregate by workspace
     const workspaceMap = new Map<
       number,
       { id: number; name: string; slug: string; isAdmin: boolean }
-    >()
+    >();
 
     // Get all workspace groups the user is a member of (auto-groups)
     const memberships = await prisma.groupMember.findMany({
@@ -429,29 +441,30 @@ export class GroupPermissionService {
           },
         },
       },
-    })
+    });
 
     for (const m of memberships) {
-      if (!m.group.workspace) continue
+      if (!m.group.workspace) continue;
 
-      const ws = m.group.workspace
-      const existing = workspaceMap.get(ws.id)
+      const ws = m.group.workspace;
+      const existing = workspaceMap.get(ws.id);
 
       if (!existing) {
         workspaceMap.set(ws.id, {
           ...ws,
           isAdmin: m.group.type === 'WORKSPACE_ADMIN',
-        })
+        });
       } else if (m.group.type === 'WORKSPACE_ADMIN') {
-        existing.isAdmin = true
+        existing.isAdmin = true;
       }
     }
 
     // Also get workspaces via security group role assignments
-    const workspacesViaRoleAssignments = await roleAssignmentService.getUserWorkspacesViaGroups(userId)
+    const workspacesViaRoleAssignments =
+      await roleAssignmentService.getUserWorkspacesViaGroups(userId);
     for (const ws of workspacesViaRoleAssignments) {
-      const existing = workspaceMap.get(ws.id)
-      const isAdmin = roleAssignmentService.roleIsAtLeast(ws.roleViaGroup, 'ADMIN')
+      const existing = workspaceMap.get(ws.id);
+      const isAdmin = roleAssignmentService.roleIsAtLeast(ws.roleViaGroup, 'ADMIN');
 
       if (!existing) {
         workspaceMap.set(ws.id, {
@@ -459,15 +472,13 @@ export class GroupPermissionService {
           name: ws.name,
           slug: ws.slug,
           isAdmin,
-        })
+        });
       } else if (isAdmin && !existing.isAdmin) {
-        existing.isAdmin = true
+        existing.isAdmin = true;
       }
     }
 
-    return Array.from(workspaceMap.values()).sort((a, b) =>
-      a.name.localeCompare(b.name)
-    )
+    return Array.from(workspaceMap.values()).sort((a, b) => a.name.localeCompare(b.name));
   }
 
   // ===========================================================================
@@ -478,7 +489,7 @@ export class GroupPermissionService {
    * Get project group name from project identifier.
    */
   getProjectGroupName(projectIdentifier: string): string {
-    return `project-${projectIdentifier.toLowerCase()}`
+    return `project-${projectIdentifier.toLowerCase()}`;
   }
 
   /**
@@ -499,25 +510,25 @@ export class GroupPermissionService {
         isActive: true,
         isPublic: true,
       },
-    })
+    });
 
     if (!project || !project.isActive) {
-      return false
+      return false;
     }
 
     // Public projects are accessible to all
     if (project.isPublic) {
-      return true
+      return true;
     }
 
     // Domain Admins can access all projects
     if (await this.isDomainAdmin(userId)) {
-      return true
+      return true;
     }
 
     // Workspace admins can access all projects in their workspace
     if (await this.isWorkspaceAdmin(userId, project.workspaceId)) {
-      return true
+      return true;
     }
 
     // Check project group membership (auto-groups)
@@ -530,25 +541,25 @@ export class GroupPermissionService {
           isActive: true,
         },
       },
-    })
+    });
 
     if (membership) {
-      return true
+      return true;
     }
 
     // Check role assignments via security groups (direct or inherited from workspace)
-    const roleViaGroups = await roleAssignmentService.getUserProjectRoleViaGroups(userId, projectId)
-    return roleViaGroups.role !== null
+    const roleViaGroups = await roleAssignmentService.getUserProjectRoleViaGroups(
+      userId,
+      projectId
+    );
+    return roleViaGroups.role !== null;
   }
 
   /**
    * Get project access details through groups.
    * Includes both auto-groups and security group role assignments.
    */
-  async getProjectAccess(
-    userId: number,
-    projectId: number
-  ): Promise<GroupProjectAccess | null> {
+  async getProjectAccess(userId: number, projectId: number): Promise<GroupProjectAccess | null> {
     // Get project with workspace info
     const project = await prisma.project.findUnique({
       where: { id: projectId },
@@ -556,14 +567,14 @@ export class GroupPermissionService {
         workspaceId: true,
         isActive: true,
       },
-    })
+    });
 
     if (!project || !project.isActive) {
-      return null
+      return null;
     }
 
     // Check Domain Admin first
-    const isDomainAdmin = await this.isDomainAdmin(userId)
+    const isDomainAdmin = await this.isDomainAdmin(userId);
     if (isDomainAdmin) {
       return {
         projectId,
@@ -572,11 +583,11 @@ export class GroupPermissionService {
         isAdmin: true,
         isMember: true,
         effectiveRole: 'OWNER',
-      }
+      };
     }
 
     // Check workspace admin access
-    const isWsAdmin = await this.isWorkspaceAdmin(userId, project.workspaceId)
+    const isWsAdmin = await this.isWorkspaceAdmin(userId, project.workspaceId);
     if (isWsAdmin) {
       return {
         projectId,
@@ -585,7 +596,7 @@ export class GroupPermissionService {
         isAdmin: true,
         isMember: true,
         effectiveRole: 'MANAGER',
-      }
+      };
     }
 
     // Check project group membership (auto-groups)
@@ -598,27 +609,33 @@ export class GroupPermissionService {
           isActive: true,
         },
       },
-    })
+    });
 
-    const isMemberViaAutoGroup = membership !== null
+    const isMemberViaAutoGroup = membership !== null;
 
     // Check role assignments via security groups
-    const roleViaGroups = await roleAssignmentService.getUserProjectRoleViaGroups(userId, projectId)
-    const isMemberViaRoleAssignment = roleViaGroups.role !== null
-    const isAdminViaRoleAssignment = roleAssignmentService.roleIsAtLeast(roleViaGroups.role, 'ADMIN')
+    const roleViaGroups = await roleAssignmentService.getUserProjectRoleViaGroups(
+      userId,
+      projectId
+    );
+    const isMemberViaRoleAssignment = roleViaGroups.role !== null;
+    const isAdminViaRoleAssignment = roleAssignmentService.roleIsAtLeast(
+      roleViaGroups.role,
+      'ADMIN'
+    );
 
     // No access at all
     if (!isMemberViaAutoGroup && !isMemberViaRoleAssignment) {
-      return null
+      return null;
     }
 
     // Determine effective role
-    let effectiveRole: ProjectRole = 'MEMBER'
+    let effectiveRole: ProjectRole = 'MEMBER';
     if (isAdminViaRoleAssignment) {
-      effectiveRole = 'MANAGER'
+      effectiveRole = 'MANAGER';
     }
     if (roleViaGroups.role === 'OWNER') {
-      effectiveRole = 'OWNER'
+      effectiveRole = 'OWNER';
     }
 
     return {
@@ -628,7 +645,7 @@ export class GroupPermissionService {
       isAdmin: isAdminViaRoleAssignment,
       isMember: true,
       effectiveRole,
-    }
+    };
   }
 
   /**
@@ -640,23 +657,23 @@ export class GroupPermissionService {
     projectId: number,
     requireAdmin: boolean = false
   ): Promise<GroupProjectAccess> {
-    const access = await this.getProjectAccess(userId, projectId)
+    const access = await this.getProjectAccess(userId, projectId);
 
     if (!access) {
       throw new TRPCError({
         code: 'FORBIDDEN',
         message: 'You do not have access to this project',
-      })
+      });
     }
 
     if (requireAdmin && !access.isAdmin) {
       throw new TRPCError({
         code: 'FORBIDDEN',
         message: 'This action requires project administrator privileges',
-      })
+      });
     }
 
-    return access
+    return access;
   }
 
   /**
@@ -667,16 +684,15 @@ export class GroupPermissionService {
     workspaceId: number
   ): Promise<
     Array<{
-      id: number
-      name: string
-      identifier: string | null
-      isAdmin: boolean
+      id: number;
+      name: string;
+      identifier: string | null;
+      isAdmin: boolean;
     }>
   > {
     // Check if workspace admin (sees all projects)
     const isWsAdmin =
-      (await this.isDomainAdmin(userId)) ||
-      (await this.isWorkspaceAdmin(userId, workspaceId))
+      (await this.isDomainAdmin(userId)) || (await this.isWorkspaceAdmin(userId, workspaceId));
 
     if (isWsAdmin) {
       const projects = await prisma.project.findMany({
@@ -686,8 +702,8 @@ export class GroupPermissionService {
         },
         select: { id: true, name: true, identifier: true },
         orderBy: { name: 'asc' },
-      })
-      return projects.map((p) => ({ ...p, isAdmin: true }))
+      });
+      return projects.map((p) => ({ ...p, isAdmin: true }));
     }
 
     // Get all project groups the user is a member of in this workspace
@@ -710,7 +726,7 @@ export class GroupPermissionService {
           },
         },
       },
-    })
+    });
 
     return memberships
       .filter((m) => m.group.project !== null)
@@ -720,7 +736,7 @@ export class GroupPermissionService {
         identifier: m.group.project!.identifier,
         isAdmin: false,
       }))
-      .sort((a, b) => a.name.localeCompare(b.name))
+      .sort((a, b) => a.name.localeCompare(b.name));
   }
 
   // ===========================================================================
@@ -759,12 +775,12 @@ export class GroupPermissionService {
           isActive: true,
         },
       }),
-    ])
+    ]);
 
     return {
       memberGroupId: memberGroup.id,
       adminGroupId: adminGroup.id,
-    }
+    };
   }
 
   /**
@@ -787,19 +803,15 @@ export class GroupPermissionService {
         isSystem: false,
         isActive: true,
       },
-    })
+    });
 
-    return group.id
+    return group.id;
   }
 
   /**
    * Add a user to a group.
    */
-  async addUserToGroup(
-    userId: number,
-    groupId: number,
-    addedById?: number
-  ): Promise<void> {
+  async addUserToGroup(userId: number, groupId: number, addedById?: number): Promise<void> {
     await prisma.groupMember.upsert({
       where: {
         groupId_userId: { groupId, userId },
@@ -811,7 +823,7 @@ export class GroupPermissionService {
         addedById,
         externalSync: false,
       },
-    })
+    });
   }
 
   /**
@@ -820,7 +832,7 @@ export class GroupPermissionService {
   async removeUserFromGroup(userId: number, groupId: number): Promise<void> {
     await prisma.groupMember.deleteMany({
       where: { groupId, userId },
-    })
+    });
   }
 
   /**
@@ -841,30 +853,26 @@ export class GroupPermissionService {
         isActive: true,
       },
       select: { id: true, type: true },
-    })
+    });
 
-    const memberGroup = groups.find((g) => g.type === 'WORKSPACE')
-    const adminGroup = groups.find((g) => g.type === 'WORKSPACE_ADMIN')
+    const memberGroup = groups.find((g) => g.type === 'WORKSPACE');
+    const adminGroup = groups.find((g) => g.type === 'WORKSPACE_ADMIN');
 
     // Add to member group
     if (memberGroup) {
-      await this.addUserToGroup(userId, memberGroup.id, addedById)
+      await this.addUserToGroup(userId, memberGroup.id, addedById);
     }
 
     // Add to admin group if isAdmin
     if (isAdmin && adminGroup) {
-      await this.addUserToGroup(userId, adminGroup.id, addedById)
+      await this.addUserToGroup(userId, adminGroup.id, addedById);
     }
   }
 
   /**
    * Add a user to a project group.
    */
-  async addUserToProject(
-    userId: number,
-    projectId: number,
-    addedById?: number
-  ): Promise<void> {
+  async addUserToProject(userId: number, projectId: number, addedById?: number): Promise<void> {
     const group = await prisma.group.findFirst({
       where: {
         projectId,
@@ -872,20 +880,17 @@ export class GroupPermissionService {
         isActive: true,
       },
       select: { id: true },
-    })
+    });
 
     if (group) {
-      await this.addUserToGroup(userId, group.id, addedById)
+      await this.addUserToGroup(userId, group.id, addedById);
     }
   }
 
   /**
    * Remove a user from workspace groups (both member and admin).
    */
-  async removeUserFromWorkspace(
-    userId: number,
-    workspaceId: number
-  ): Promise<void> {
+  async removeUserFromWorkspace(userId: number, workspaceId: number): Promise<void> {
     const groups = await prisma.group.findMany({
       where: {
         workspaceId,
@@ -893,20 +898,17 @@ export class GroupPermissionService {
         isActive: true,
       },
       select: { id: true },
-    })
+    });
 
     for (const group of groups) {
-      await this.removeUserFromGroup(userId, group.id)
+      await this.removeUserFromGroup(userId, group.id);
     }
   }
 
   /**
    * Remove a user from a project group.
    */
-  async removeUserFromProject(
-    userId: number,
-    projectId: number
-  ): Promise<void> {
+  async removeUserFromProject(userId: number, projectId: number): Promise<void> {
     const group = await prisma.group.findFirst({
       where: {
         projectId,
@@ -914,10 +916,10 @@ export class GroupPermissionService {
         isActive: true,
       },
       select: { id: true },
-    })
+    });
 
     if (group) {
-      await this.removeUserFromGroup(userId, group.id)
+      await this.removeUserFromGroup(userId, group.id);
     }
   }
 
@@ -939,18 +941,15 @@ export class GroupPermissionService {
       where: {
         userId,
         group: { isActive: true },
-        OR: [
-          { expiresAt: null },
-          { expiresAt: { gt: new Date() } },
-        ],
+        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
       },
       select: { groupId: true },
-    })
+    });
 
-    const groupIds = memberships.map((m) => m.groupId)
+    const groupIds = memberships.map((m) => m.groupId);
 
     if (groupIds.length === 0) {
-      return []
+      return [];
     }
 
     // Get all permissions from these groups
@@ -971,7 +970,7 @@ export class GroupPermissionService {
         permission: { select: { name: true } },
         group: { select: { name: true } },
       },
-    })
+    });
 
     return permissions.map((p) => ({
       permissionName: p.permission.name,
@@ -979,7 +978,7 @@ export class GroupPermissionService {
       groupId: p.groupId,
       groupName: p.group.name,
       inherited: p.inherited,
-    }))
+    }));
   }
 
   /**
@@ -997,8 +996,8 @@ export class GroupPermissionService {
       permissionName,
       workspaceId,
       projectId
-    )
-    return effective.allowed
+    );
+    return effective.allowed;
   }
 
   /**
@@ -1011,50 +1010,49 @@ export class GroupPermissionService {
     workspaceId?: number,
     projectId?: number
   ): Promise<EffectivePermission> {
-    const grants = await this.getUserPermissionGrants(userId, workspaceId, projectId)
+    const grants = await this.getUserPermissionGrants(userId, workspaceId, projectId);
 
     // Filter to this permission (including parent permissions for inheritance)
     const relevantGrants = grants.filter(
       (g) =>
-        g.permissionName === permissionName ||
-        permissionName.startsWith(g.permissionName + '.')
-    )
+        g.permissionName === permissionName || permissionName.startsWith(g.permissionName + '.')
+    );
 
     if (relevantGrants.length === 0) {
       return {
         permissionName,
         allowed: false,
         reason: 'NOT_GRANTED',
-      }
+      };
     }
 
     // Check for DENY first (DENY always wins)
-    const denyGrant = relevantGrants.find((g) => g.accessType === 'DENY')
+    const denyGrant = relevantGrants.find((g) => g.accessType === 'DENY');
     if (denyGrant) {
       return {
         permissionName,
         allowed: false,
         reason: 'DENY',
         grantedBy: denyGrant.groupName,
-      }
+      };
     }
 
     // Check for ALLOW
-    const allowGrant = relevantGrants.find((g) => g.accessType === 'ALLOW')
+    const allowGrant = relevantGrants.find((g) => g.accessType === 'ALLOW');
     if (allowGrant) {
       return {
         permissionName,
         allowed: true,
         reason: 'ALLOW',
         grantedBy: allowGrant.groupName,
-      }
+      };
     }
 
     return {
       permissionName,
       allowed: false,
       reason: 'NOT_GRANTED',
-    }
+    };
   }
 
   /**
@@ -1069,54 +1067,52 @@ export class GroupPermissionService {
     const allPermissions = await prisma.permission.findMany({
       select: { name: true },
       orderBy: { sortOrder: 'asc' },
-    })
+    });
 
     // Get grants for this user
-    const grants = await this.getUserPermissionGrants(userId, workspaceId, projectId)
+    const grants = await this.getUserPermissionGrants(userId, workspaceId, projectId);
 
     return allPermissions.map((perm) => {
       // Filter grants relevant to this permission
       const relevantGrants = grants.filter(
-        (g) =>
-          g.permissionName === perm.name ||
-          perm.name.startsWith(g.permissionName + '.')
-      )
+        (g) => g.permissionName === perm.name || perm.name.startsWith(g.permissionName + '.')
+      );
 
       if (relevantGrants.length === 0) {
         return {
           permissionName: perm.name,
           allowed: false,
           reason: 'NOT_GRANTED' as const,
-        }
+        };
       }
 
       // DENY always wins
-      const denyGrant = relevantGrants.find((g) => g.accessType === 'DENY')
+      const denyGrant = relevantGrants.find((g) => g.accessType === 'DENY');
       if (denyGrant) {
         return {
           permissionName: perm.name,
           allowed: false,
           reason: 'DENY' as const,
           grantedBy: denyGrant.groupName,
-        }
+        };
       }
 
-      const allowGrant = relevantGrants.find((g) => g.accessType === 'ALLOW')
+      const allowGrant = relevantGrants.find((g) => g.accessType === 'ALLOW');
       if (allowGrant) {
         return {
           permissionName: perm.name,
           allowed: true,
           reason: 'ALLOW' as const,
           grantedBy: allowGrant.groupName,
-        }
+        };
       }
 
       return {
         permissionName: perm.name,
         allowed: false,
         reason: 'NOT_GRANTED' as const,
-      }
-    })
+      };
+    });
   }
 
   /**
@@ -1134,18 +1130,18 @@ export class GroupPermissionService {
       permissionName,
       workspaceId,
       projectId
-    )
+    );
 
     if (!effective.allowed) {
       const message =
         effective.reason === 'DENY'
           ? `Permission '${permissionName}' is explicitly denied`
-          : `Permission '${permissionName}' is not granted`
+          : `Permission '${permissionName}' is not granted`;
 
       throw new TRPCError({
         code: 'FORBIDDEN',
         message,
-      })
+      });
     }
   }
 
@@ -1160,10 +1156,10 @@ export class GroupPermissionService {
     projectId?: number
   ): Promise<boolean> {
     for (const permName of permissionNames) {
-      const has = await this.hasPermission(userId, permName, workspaceId, projectId)
-      if (!has) return false
+      const has = await this.hasPermission(userId, permName, workspaceId, projectId);
+      if (!has) return false;
     }
-    return true
+    return true;
   }
 
   /**
@@ -1177,10 +1173,10 @@ export class GroupPermissionService {
     projectId?: number
   ): Promise<boolean> {
     for (const permName of permissionNames) {
-      const has = await this.hasPermission(userId, permName, workspaceId, projectId)
-      if (has) return true
+      const has = await this.hasPermission(userId, permName, workspaceId, projectId);
+      if (has) return true;
     }
-    return false
+    return false;
   }
 
   // ===========================================================================
@@ -1200,13 +1196,13 @@ export class GroupPermissionService {
   ): Promise<void> {
     const permission = await prisma.permission.findUnique({
       where: { name: permissionName },
-    })
+    });
 
     if (!permission) {
       throw new TRPCError({
         code: 'NOT_FOUND',
         message: `Permission '${permissionName}' not found`,
-      })
+      });
     }
 
     // Check if already exists
@@ -1217,7 +1213,7 @@ export class GroupPermissionService {
         workspaceId: workspaceId ?? null,
         projectId: projectId ?? null,
       },
-    })
+    });
 
     if (existing) {
       // Update access type if different
@@ -1225,7 +1221,7 @@ export class GroupPermissionService {
         await prisma.groupPermission.update({
           where: { id: existing.id },
           data: { accessType },
-        })
+        });
       }
     } else {
       await prisma.groupPermission.create({
@@ -1238,7 +1234,7 @@ export class GroupPermissionService {
           createdById,
           inherited: false,
         },
-      })
+      });
     }
   }
 
@@ -1253,10 +1249,10 @@ export class GroupPermissionService {
   ): Promise<void> {
     const permission = await prisma.permission.findUnique({
       where: { name: permissionName },
-    })
+    });
 
     if (!permission) {
-      return // Permission doesn't exist, nothing to revoke
+      return; // Permission doesn't exist, nothing to revoke
     }
 
     await prisma.groupPermission.deleteMany({
@@ -1266,7 +1262,7 @@ export class GroupPermissionService {
         workspaceId: workspaceId ?? null,
         projectId: projectId ?? null,
       },
-    })
+    });
   }
 
   /**
@@ -1280,12 +1276,12 @@ export class GroupPermissionService {
       include: {
         permission: { select: { name: true } },
       },
-    })
+    });
 
     return permissions.map((p) => ({
       permission: p.permission.name,
       accessType: p.accessType,
-    }))
+    }));
   }
 
   /**
@@ -1301,9 +1297,9 @@ export class GroupPermissionService {
     // Get permission IDs
     const permissionRecords = await prisma.permission.findMany({
       where: { name: { in: permissions.map((p) => p.name) } },
-    })
+    });
 
-    const permissionMap = new Map(permissionRecords.map((p) => [p.name, p.id]))
+    const permissionMap = new Map(permissionRecords.map((p) => [p.name, p.id]));
 
     // Delete existing permissions for this scope
     await prisma.groupPermission.deleteMany({
@@ -1312,7 +1308,7 @@ export class GroupPermissionService {
         workspaceId: workspaceId ?? null,
         projectId: projectId ?? null,
       },
-    })
+    });
 
     // Create new permissions
     const data = permissions
@@ -1325,10 +1321,10 @@ export class GroupPermissionService {
         projectId,
         createdById,
         inherited: false,
-      }))
+      }));
 
     if (data.length > 0) {
-      await prisma.groupPermission.createMany({ data })
+      await prisma.groupPermission.createMany({ data });
     }
   }
 }
@@ -1341,4 +1337,4 @@ export class GroupPermissionService {
  * Singleton instance of GroupPermissionService.
  * Use this for all group-based permission checks across the application.
  */
-export const groupPermissionService = new GroupPermissionService()
+export const groupPermissionService = new GroupPermissionService();

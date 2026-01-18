@@ -18,41 +18,46 @@
  * ===================================================================
  */
 
-import { useState, useCallback } from 'react'
-import { Send, Pencil, Trash2, MoreVertical } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { getMediaUrl } from '@/lib/trpc'
-import { RichTextEditor, getDisplayContent, isLexicalContent, lexicalToPlainText } from '@/components/editor'
-import { useTypingIndicator } from '@/hooks/useTypingIndicator'
-import { useAppSelector } from '@/store'
-import { selectUser } from '@/store/authSlice'
-import type { EditorState, LexicalEditor } from 'lexical'
+import { useState, useCallback } from 'react';
+import { Send, Pencil, Trash2, MoreVertical } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { getMediaUrl } from '@/lib/trpc';
+import {
+  RichTextEditor,
+  getDisplayContent,
+  isLexicalContent,
+  lexicalToPlainText,
+} from '@/components/editor';
+import { useTypingIndicator } from '@/hooks/useTypingIndicator';
+import { useAppSelector } from '@/store';
+import { selectUser } from '@/store/authSlice';
+import type { EditorState, LexicalEditor } from 'lexical';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface Comment {
-  id: number
-  content: string
-  createdAt: string
-  updatedAt: string
+  id: number;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
   user: {
-    id: number
-    username: string
-    name: string | null
-    avatarUrl: string | null
-  }
+    id: number;
+    username: string;
+    name: string | null;
+    avatarUrl: string | null;
+  };
 }
 
 export interface CommentSectionProps {
-  taskId: number
-  comments: Comment[]
-  isLoading: boolean
-  onCreate: (data: { taskId: number; content: string }) => Promise<unknown>
-  onUpdate: (data: { commentId: number; content: string }) => Promise<unknown>
-  onDelete: (data: { commentId: number }) => Promise<unknown>
-  isCreating: boolean
+  taskId: number;
+  comments: Comment[];
+  isLoading: boolean;
+  onCreate: (data: { taskId: number; content: string }) => Promise<unknown>;
+  onUpdate: (data: { commentId: number; content: string }) => Promise<unknown>;
+  onDelete: (data: { commentId: number }) => Promise<unknown>;
+  isCreating: boolean;
 }
 
 // =============================================================================
@@ -60,31 +65,31 @@ export interface CommentSectionProps {
 // =============================================================================
 
 function formatTimestamp(dateString: string): string {
-  const date = new Date(dateString)
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffMins = Math.floor(diffMs / 60000)
-  const diffHours = Math.floor(diffMs / 3600000)
-  const diffDays = Math.floor(diffMs / 86400000)
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
 
-  if (diffMins < 1) return 'just now'
-  if (diffMins < 60) return `${diffMins}m ago`
-  if (diffHours < 24) return `${diffHours}h ago`
-  if (diffDays < 7) return `${diffDays}d ago`
+  if (diffMins < 1) return 'just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
 
   return date.toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',
     year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
-  })
+  });
 }
 
 /** Check if content is empty (works for both plain text and Lexical JSON) */
 function isContentEmpty(content: string): boolean {
-  if (!content) return true
-  if (!isLexicalContent(content)) return !content.trim()
-  const plainText = lexicalToPlainText(content)
-  return !plainText.trim()
+  if (!content) return true;
+  if (!isLexicalContent(content)) return !content.trim();
+  const plainText = lexicalToPlainText(content);
+  return !plainText.trim();
 }
 
 // =============================================================================
@@ -96,56 +101,56 @@ function CommentItem({
   onUpdate,
   onDelete,
 }: {
-  comment: Comment
-  onUpdate: (data: { commentId: number; content: string }) => Promise<unknown>
-  onDelete: (data: { commentId: number }) => Promise<unknown>
+  comment: Comment;
+  onUpdate: (data: { commentId: number; content: string }) => Promise<unknown>;
+  onDelete: (data: { commentId: number }) => Promise<unknown>;
 }) {
-  const [isEditing, setIsEditing] = useState(false)
-  const [editedContent, setEditedContent] = useState('')
-  const [showMenu, setShowMenu] = useState(false)
-  const [editorKey, setEditorKey] = useState(0)
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedContent, setEditedContent] = useState('');
+  const [showMenu, setShowMenu] = useState(false);
+  const [editorKey, setEditorKey] = useState(0);
 
   const handleStartEdit = useCallback(() => {
-    setEditedContent(getDisplayContent(comment.content))
-    setEditorKey((k) => k + 1)
-    setIsEditing(true)
-    setShowMenu(false)
-  }, [comment.content])
+    setEditedContent(getDisplayContent(comment.content));
+    setEditorKey((k) => k + 1);
+    setIsEditing(true);
+    setShowMenu(false);
+  }, [comment.content]);
 
   const handleEditorChange = useCallback(
     (_editorState: EditorState, _editor: LexicalEditor, jsonString: string) => {
-      setEditedContent(jsonString)
+      setEditedContent(jsonString);
     },
     []
-  )
+  );
 
   const handleSave = useCallback(async () => {
     if (!isContentEmpty(editedContent) && editedContent !== comment.content) {
-      await onUpdate({ commentId: comment.id, content: editedContent })
+      await onUpdate({ commentId: comment.id, content: editedContent });
     }
-    setIsEditing(false)
-  }, [comment.id, comment.content, editedContent, onUpdate])
+    setIsEditing(false);
+  }, [comment.id, comment.content, editedContent, onUpdate]);
 
   const handleCancel = useCallback(() => {
-    setEditedContent(getDisplayContent(comment.content))
-    setIsEditing(false)
-  }, [comment.content])
+    setEditedContent(getDisplayContent(comment.content));
+    setIsEditing(false);
+  }, [comment.content]);
 
   const handleDelete = useCallback(async () => {
     if (confirm('Delete this comment?')) {
-      await onDelete({ commentId: comment.id })
+      await onDelete({ commentId: comment.id });
     }
-    setShowMenu(false)
-  }, [comment.id, onDelete])
+    setShowMenu(false);
+  }, [comment.id, onDelete]);
 
   const initials = (comment.user.name ?? comment.user.username)
     .split(' ')
     .map((n) => n[0])
     .join('')
     .slice(0, 2)
-    .toUpperCase()
+    .toUpperCase();
 
-  const isEdited = comment.createdAt !== comment.updatedAt
+  const isEdited = comment.createdAt !== comment.updatedAt;
 
   return (
     <div className="flex gap-3">
@@ -172,9 +177,7 @@ function CommentItem({
           <span className="text-xs text-gray-500 dark:text-gray-400">
             {formatTimestamp(comment.createdAt)}
           </span>
-          {isEdited && (
-            <span className="text-xs text-gray-400 dark:text-gray-500">(edited)</span>
-          )}
+          {isEdited && <span className="text-xs text-gray-400 dark:text-gray-500">(edited)</span>}
 
           {/* Menu */}
           <div className="relative ml-auto">
@@ -242,7 +245,7 @@ function CommentItem({
         )}
       </div>
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -256,40 +259,40 @@ function AddCommentForm({
   onTyping,
   onStopTyping,
 }: {
-  taskId: number
-  onCreate: (data: { taskId: number; content: string }) => Promise<unknown>
-  isCreating: boolean
-  onTyping: () => void
-  onStopTyping: () => void
+  taskId: number;
+  onCreate: (data: { taskId: number; content: string }) => Promise<unknown>;
+  isCreating: boolean;
+  onTyping: () => void;
+  onStopTyping: () => void;
 }) {
-  const [content, setContent] = useState('')
-  const [editorKey, setEditorKey] = useState(0)
-  const [hasContent, setHasContent] = useState(false)
+  const [content, setContent] = useState('');
+  const [editorKey, setEditorKey] = useState(0);
+  const [hasContent, setHasContent] = useState(false);
 
   const handleEditorChange = useCallback(
     (_editorState: EditorState, _editor: LexicalEditor, jsonString: string) => {
-      setContent(jsonString)
-      const isEmpty = isContentEmpty(jsonString)
-      setHasContent(!isEmpty)
+      setContent(jsonString);
+      const isEmpty = isContentEmpty(jsonString);
+      setHasContent(!isEmpty);
 
       if (!isEmpty) {
-        onTyping()
+        onTyping();
       } else {
-        onStopTyping()
+        onStopTyping();
       }
     },
     [onTyping, onStopTyping]
-  )
+  );
 
   const handleSubmit = useCallback(async () => {
     if (!isContentEmpty(content)) {
-      onStopTyping()
-      await onCreate({ taskId, content })
-      setContent('')
-      setHasContent(false)
-      setEditorKey((k) => k + 1) // Reset editor
+      onStopTyping();
+      await onCreate({ taskId, content });
+      setContent('');
+      setHasContent(false);
+      setEditorKey((k) => k + 1); // Reset editor
     }
-  }, [taskId, content, onCreate, onStopTyping])
+  }, [taskId, content, onCreate, onStopTyping]);
 
   return (
     <div className="flex gap-3">
@@ -310,18 +313,14 @@ function AddCommentForm({
           <span className="text-xs text-gray-500 dark:text-gray-400">
             Rich text formatting supported
           </span>
-          <Button
-            size="sm"
-            onClick={handleSubmit}
-            disabled={isCreating || !hasContent}
-          >
+          <Button size="sm" onClick={handleSubmit} disabled={isCreating || !hasContent}>
             <Send className="w-4 h-4 mr-1" />
             Send
           </Button>
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -329,25 +328,34 @@ function AddCommentForm({
 // =============================================================================
 
 function TypingIndicatorDisplay({ usernames }: { usernames: string[] }) {
-  if (usernames.length === 0) return null
+  if (usernames.length === 0) return null;
 
   const text =
     usernames.length === 1
       ? `${usernames[0]} is typing...`
       : usernames.length === 2
         ? `${usernames[0]} and ${usernames[1]} are typing...`
-        : `${usernames[0]} and ${usernames.length - 1} others are typing...`
+        : `${usernames[0]} and ${usernames.length - 1} others are typing...`;
 
   return (
     <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 animate-pulse">
       <div className="flex gap-1">
-        <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-        <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-        <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+        <span
+          className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"
+          style={{ animationDelay: '0ms' }}
+        />
+        <span
+          className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"
+          style={{ animationDelay: '150ms' }}
+        />
+        <span
+          className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"
+          style={{ animationDelay: '300ms' }}
+        />
       </div>
       <span>{text}</span>
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -363,12 +371,12 @@ export function CommentSection({
   onDelete,
   isCreating,
 }: CommentSectionProps) {
-  const currentUser = useAppSelector(selectUser)
+  const currentUser = useAppSelector(selectUser);
   const { typingUsers, startTyping, stopTyping } = useTypingIndicator({
     taskId,
     currentUserId: currentUser?.id ?? 0,
     enabled: Boolean(currentUser),
-  })
+  });
 
   if (isLoading) {
     return (
@@ -383,7 +391,7 @@ export function CommentSection({
           </div>
         ))}
       </div>
-    )
+    );
   }
 
   return (
@@ -423,7 +431,7 @@ export function CommentSection({
         onStopTyping={stopTyping}
       />
     </div>
-  )
+  );
 }
 
-export default CommentSection
+export default CommentSection;

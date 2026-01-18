@@ -22,11 +22,11 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { ProjectLayout } from '@/components/layout/ProjectLayout'
-import { MilestoneCard } from '@/components/milestone/MilestoneCard'
-import { trpc } from '@/lib/trpc'
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { ProjectLayout } from '@/components/layout/ProjectLayout';
+import { MilestoneCard } from '@/components/milestone/MilestoneCard';
+import { trpc } from '@/lib/trpc';
 
 // =============================================================================
 // Icons
@@ -40,21 +40,14 @@ function LoadingSpinner() {
       fill="none"
       viewBox="0 0 24 24"
     >
-      <circle
-        className="opacity-25"
-        cx="12"
-        cy="12"
-        r="10"
-        stroke="currentColor"
-        strokeWidth="4"
-      />
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
       <path
         className="opacity-75"
         fill="currentColor"
         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
       />
     </svg>
-  )
+  );
 }
 
 function AlertIcon() {
@@ -73,7 +66,7 @@ function AlertIcon() {
         d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
       />
     </svg>
-  )
+  );
 }
 
 function PlusIcon({ className = 'h-5 w-5' }: { className?: string }) {
@@ -81,23 +74,33 @@ function PlusIcon({ className = 'h-5 w-5' }: { className?: string }) {
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
     </svg>
-  )
+  );
 }
 
 function ArrowLeftIcon({ className = 'h-5 w-5' }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M10 19l-7-7m0 0l7-7m-7 7h18"
+      />
     </svg>
-  )
+  );
 }
 
 function FlagIcon({ className = 'h-5 w-5' }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"
+      />
     </svg>
-  )
+  );
 }
 
 function XIcon({ className = 'h-5 w-5' }: { className?: string }) {
@@ -105,7 +108,7 @@ function XIcon({ className = 'h-5 w-5' }: { className?: string }) {
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
     </svg>
-  )
+  );
 }
 
 // =============================================================================
@@ -113,63 +116,64 @@ function XIcon({ className = 'h-5 w-5' }: { className?: string }) {
 // =============================================================================
 
 interface MilestoneModalProps {
-  isOpen: boolean
-  onClose: () => void
-  projectId: number
+  isOpen: boolean;
+  onClose: () => void;
+  projectId: number;
   milestone?: {
-    id: number
-    name: string
-    description: string | null
-    dateDue: Date | string | null
-  } | null
+    id: number;
+    name: string;
+    description: string | null;
+    dateDue: Date | string | null;
+  } | null;
 }
 
 function MilestoneModal({ isOpen, onClose, projectId, milestone }: MilestoneModalProps) {
-  const [name, setName] = useState('')
-  const [description, setDescription] = useState('')
-  const [dateDue, setDateDue] = useState('')
-  const [error, setError] = useState('')
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [dateDue, setDateDue] = useState('');
+  const [error, setError] = useState('');
 
   // Reset form state when milestone prop changes (for edit mode)
   useEffect(() => {
     if (isOpen) {
-      setName(milestone?.name ?? '')
-      setDescription(milestone?.description ?? '')
+      setName(milestone?.name ?? '');
+      setDescription(milestone?.description ?? '');
       if (milestone?.dateDue) {
-        const d = typeof milestone.dateDue === 'string' ? new Date(milestone.dateDue) : milestone.dateDue
-        setDateDue(d.toISOString().split('T')[0] ?? '')
+        const d =
+          typeof milestone.dateDue === 'string' ? new Date(milestone.dateDue) : milestone.dateDue;
+        setDateDue(d.toISOString().split('T')[0] ?? '');
       } else {
-        setDateDue('')
+        setDateDue('');
       }
-      setError('')
+      setError('');
     }
-  }, [milestone, isOpen])
+  }, [milestone, isOpen]);
 
-  const utils = trpc.useUtils()
+  const utils = trpc.useUtils();
 
   const createMutation = trpc.milestone.create.useMutation({
     onSuccess: () => {
-      utils.milestone.list.invalidate()
-      onClose()
+      utils.milestone.list.invalidate();
+      onClose();
     },
     onError: (err) => setError(err.message),
-  })
+  });
 
   const updateMutation = trpc.milestone.update.useMutation({
     onSuccess: () => {
-      utils.milestone.list.invalidate()
-      onClose()
+      utils.milestone.list.invalidate();
+      onClose();
     },
     onError: (err) => setError(err.message),
-  })
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
+    e.preventDefault();
+    setError('');
 
     if (!name.trim()) {
-      setError('Name is required')
-      return
+      setError('Name is required');
+      return;
     }
 
     if (milestone) {
@@ -178,18 +182,18 @@ function MilestoneModal({ isOpen, onClose, projectId, milestone }: MilestoneModa
         name: name.trim(),
         description: description.trim() || undefined,
         dateDue: dateDue || null,
-      })
+      });
     } else {
       createMutation.mutate({
         projectId,
         name: name.trim(),
         description: description.trim() || undefined,
         dateDue: dateDue || undefined,
-      })
+      });
     }
-  }
+  };
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
@@ -204,14 +208,10 @@ function MilestoneModal({ isOpen, onClose, projectId, milestone }: MilestoneModa
         </div>
 
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
-          {error && (
-            <div className="p-3 bg-red-50 text-red-600 rounded text-sm">{error}</div>
-          )}
+          {error && <div className="p-3 bg-red-50 text-red-600 rounded text-sm">{error}</div>}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Name *
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
             <input
               type="text"
               value={name}
@@ -223,9 +223,7 @@ function MilestoneModal({ isOpen, onClose, projectId, milestone }: MilestoneModa
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Description
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -236,9 +234,7 @@ function MilestoneModal({ isOpen, onClose, projectId, milestone }: MilestoneModa
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Due Date
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Due Date</label>
             <input
               type="date"
               value={dateDue}
@@ -266,7 +262,7 @@ function MilestoneModal({ isOpen, onClose, projectId, milestone }: MilestoneModa
         </form>
       </div>
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -274,22 +270,23 @@ function MilestoneModal({ isOpen, onClose, projectId, milestone }: MilestoneModa
 // =============================================================================
 
 interface DeleteModalProps {
-  isOpen: boolean
-  onClose: () => void
-  onConfirm: () => void
-  milestoneName: string
-  isDeleting: boolean
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  milestoneName: string;
+  isDeleting: boolean;
 }
 
 function DeleteModal({ isOpen, onClose, onConfirm, milestoneName, isDeleting }: DeleteModalProps) {
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-2">Delete Milestone</h2>
         <p className="text-gray-600 mb-4">
-          Are you sure you want to delete <strong>{milestoneName}</strong>? Tasks linked to this milestone will be unlinked but not deleted.
+          Are you sure you want to delete <strong>{milestoneName}</strong>? Tasks linked to this
+          milestone will be unlinked but not deleted.
         </p>
         <div className="flex justify-end gap-3">
           <button
@@ -308,7 +305,7 @@ function DeleteModal({ isOpen, onClose, onConfirm, milestoneName, isDeleting }: 
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -316,75 +313,79 @@ function DeleteModal({ isOpen, onClose, onConfirm, milestoneName, isDeleting }: 
 // =============================================================================
 
 export function MilestoneViewPage() {
-  const { projectIdentifier } = useParams<{ projectIdentifier: string }>()
-  const navigate = useNavigate()
+  const { projectIdentifier } = useParams<{ projectIdentifier: string }>();
+  const navigate = useNavigate();
 
-  const [showCompleted, setShowCompleted] = useState(false)
-  const [modalOpen, setModalOpen] = useState(false)
+  const [showCompleted, setShowCompleted] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
   const [editingMilestone, setEditingMilestone] = useState<{
-    id: number
-    name: string
-    description: string | null
-    dateDue: Date | string | null
-  } | null>(null)
+    id: number;
+    name: string;
+    description: string | null;
+    dateDue: Date | string | null;
+  } | null>(null);
   const [deletingMilestone, setDeletingMilestone] = useState<{
-    id: number
-    name: string
-  } | null>(null)
+    id: number;
+    name: string;
+  } | null>(null);
 
-  const utils = trpc.useUtils()
+  const utils = trpc.useUtils();
 
   // Fetch project by identifier (SEO-friendly URL)
-  const { data: project, isLoading: projectLoading, error: projectError } = trpc.project.getByIdentifier.useQuery(
+  const {
+    data: project,
+    isLoading: projectLoading,
+    error: projectError,
+  } = trpc.project.getByIdentifier.useQuery(
     { identifier: projectIdentifier! },
     { enabled: !!projectIdentifier }
-  )
+  );
 
   // Get project ID from fetched data
-  const projectIdNum = project?.id ?? 0
+  const projectIdNum = project?.id ?? 0;
 
   // Fetch milestones
   const { data: milestones, isLoading: milestonesLoading } = trpc.milestone.list.useQuery(
     { projectId: projectIdNum, includeCompleted: showCompleted },
     { enabled: projectIdNum > 0 }
-  )
+  );
 
   // Delete mutation
   const deleteMutation = trpc.milestone.delete.useMutation({
     onSuccess: () => {
-      utils.milestone.list.invalidate()
-      setDeletingMilestone(null)
+      utils.milestone.list.invalidate();
+      setDeletingMilestone(null);
     },
-  })
+  });
 
   // Handle edit
   const handleEdit = (milestoneId: number) => {
-    const milestone = milestones?.find((m) => m.id === milestoneId)
+    const milestone = milestones?.find((m) => m.id === milestoneId);
     if (milestone) {
       setEditingMilestone({
         id: milestone.id,
         name: milestone.name,
         description: milestone.description,
         dateDue: milestone.dateDue,
-      })
-      setModalOpen(true)
+      });
+      setModalOpen(true);
     }
-  }
+  };
 
   // Handle delete
   const handleDelete = (milestoneId: number) => {
-    const milestone = milestones?.find((m) => m.id === milestoneId)
+    const milestone = milestones?.find((m) => m.id === milestoneId);
     if (milestone) {
-      setDeletingMilestone({ id: milestone.id, name: milestone.name })
+      setDeletingMilestone({ id: milestone.id, name: milestone.name });
     }
-  }
+  };
 
   // Handle click (view details)
   const handleMilestoneClick = (milestoneId: number) => {
     // Could navigate to milestone detail page in the future
     // For now, open edit modal
-    handleEdit(milestoneId)
-  }
+    handleEdit(milestoneId);
+  };
 
   // Loading state
   if (projectLoading || milestonesLoading) {
@@ -394,7 +395,7 @@ export function MilestoneViewPage() {
           <LoadingSpinner />
         </div>
       </ProjectLayout>
-    )
+    );
   }
 
   // Error state
@@ -404,21 +405,18 @@ export function MilestoneViewPage() {
         <div className="flex flex-col items-center justify-center h-96 gap-4">
           <AlertIcon />
           <p className="text-gray-600">Failed to load project</p>
-          <button
-            onClick={() => navigate('/workspaces')}
-            className="text-blue-500 hover:underline"
-          >
+          <button onClick={() => navigate('/workspaces')} className="text-blue-500 hover:underline">
             Back to projects
           </button>
         </div>
       </ProjectLayout>
-    )
+    );
   }
 
   // Calculate stats
-  const activeMilestones = milestones?.filter((m) => !m.isCompleted) ?? []
-  const completedMilestones = milestones?.filter((m) => m.isCompleted) ?? []
-  const overdueMilestones = activeMilestones.filter((m) => m.dueStatus === 'overdue')
+  const activeMilestones = milestones?.filter((m) => !m.isCompleted) ?? [];
+  const completedMilestones = milestones?.filter((m) => m.isCompleted) ?? [];
+  const overdueMilestones = activeMilestones.filter((m) => m.dueStatus === 'overdue');
 
   return (
     <ProjectLayout>
@@ -444,8 +442,8 @@ export function MilestoneViewPage() {
 
           <button
             onClick={() => {
-              setEditingMilestone(null)
-              setModalOpen(true)
+              setEditingMilestone(null);
+              setModalOpen(true);
             }}
             className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
           >
@@ -471,8 +469,12 @@ export function MilestoneViewPage() {
           <div className="bg-white rounded-lg border p-4">
             <div className="text-2xl font-bold text-blue-600">
               {activeMilestones.length > 0
-                ? Math.round(activeMilestones.reduce((sum, m) => sum + m.progress, 0) / activeMilestones.length)
-                : 0}%
+                ? Math.round(
+                    activeMilestones.reduce((sum, m) => sum + m.progress, 0) /
+                      activeMilestones.length
+                  )
+                : 0}
+              %
             </div>
             <div className="text-sm text-gray-500">Avg Progress</div>
           </div>
@@ -513,8 +515,8 @@ export function MilestoneViewPage() {
             </p>
             <button
               onClick={() => {
-                setEditingMilestone(null)
-                setModalOpen(true)
+                setEditingMilestone(null);
+                setModalOpen(true);
               }}
               className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
             >
@@ -529,8 +531,8 @@ export function MilestoneViewPage() {
       <MilestoneModal
         isOpen={modalOpen}
         onClose={() => {
-          setModalOpen(false)
-          setEditingMilestone(null)
+          setModalOpen(false);
+          setEditingMilestone(null);
         }}
         projectId={projectIdNum}
         milestone={editingMilestone}
@@ -541,14 +543,14 @@ export function MilestoneViewPage() {
         onClose={() => setDeletingMilestone(null)}
         onConfirm={() => {
           if (deletingMilestone) {
-            deleteMutation.mutate({ milestoneId: deletingMilestone.id })
+            deleteMutation.mutate({ milestoneId: deletingMilestone.id });
           }
         }}
         milestoneName={deletingMilestone?.name ?? ''}
         isDeleting={deleteMutation.isPending}
       />
     </ProjectLayout>
-  )
+  );
 }
 
-export default MilestoneViewPage
+export default MilestoneViewPage;

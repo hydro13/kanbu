@@ -92,24 +92,12 @@ function UserAvatar({
 // Tooltip Component
 // =============================================================================
 
-function Tooltip({
-  users,
-  isConnected,
-}: {
-  users: PresenceUser[];
-  isConnected: boolean;
-}) {
+function Tooltip({ users, isConnected }: { users: PresenceUser[]; isConnected: boolean }) {
   return (
     <div className="absolute top-full right-0 mt-2 py-2 px-3 bg-white border border-gray-200 text-gray-900 text-sm rounded-lg shadow-lg z-50 min-w-[150px]">
       <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-200">
-        <span
-          className={`w-2 h-2 rounded-full ${
-            isConnected ? 'bg-green-500' : 'bg-red-500'
-          }`}
-        />
-        <span className="text-gray-600">
-          {isConnected ? 'Live' : 'Offline'}
-        </span>
+        <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
+        <span className="text-gray-600">{isConnected ? 'Live' : 'Offline'}</span>
       </div>
       {users.length === 0 ? (
         <div className="text-gray-500 text-xs">No other users online</div>
@@ -156,16 +144,8 @@ export function PresenceIndicator({
     >
       {/* Connection status dot */}
       <div className="mr-2 flex items-center gap-1">
-        <span
-          className={`w-2 h-2 rounded-full ${
-            isConnected ? 'bg-green-400' : 'bg-gray-400'
-          }`}
-        />
-        {!isConnected && (
-          <span className="text-xs text-gray-500 dark:text-gray-400">
-            Offline
-          </span>
-        )}
+        <span className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-400' : 'bg-gray-400'}`} />
+        {!isConnected && <span className="text-xs text-gray-500 dark:text-gray-400">Offline</span>}
       </div>
 
       {/* Avatar stack */}

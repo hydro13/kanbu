@@ -15,6 +15,7 @@ NEVER use hardcoded colors!
 ```
 
 **WRONG:**
+
 ```tsx
 <div className="bg-gray-100 text-gray-900 border-gray-200">
 <span className="text-blue-500">
@@ -22,6 +23,7 @@ NEVER use hardcoded colors!
 ```
 
 **RIGHT:**
+
 ```tsx
 <div className="bg-surface-1 text-foreground border-border">
 <span className="text-primary">
@@ -41,53 +43,53 @@ NEVER use hardcoded colors!
 
 ### Background Colors
 
-| Token | Usage | Light Mode | Dark Mode |
-|-------|-------|------------|-----------|
-| `bg-background` | Page background | white | dark gray |
-| `bg-surface-1` | Cards, first layer | light gray | dark gray |
-| `bg-surface-2` | Nested elements | slightly darker | slightly lighter |
-| `bg-surface-3` | Deepest nesting | even darker | even lighter |
-| `bg-muted` | Subtle background | gray | dark gray |
-| `bg-primary` | Primary action buttons | accent color | accent color |
-| `bg-secondary` | Secondary elements | light gray | dark gray |
-| `bg-destructive` | Danger/delete actions | red | red |
+| Token            | Usage                  | Light Mode      | Dark Mode        |
+| ---------------- | ---------------------- | --------------- | ---------------- |
+| `bg-background`  | Page background        | white           | dark gray        |
+| `bg-surface-1`   | Cards, first layer     | light gray      | dark gray        |
+| `bg-surface-2`   | Nested elements        | slightly darker | slightly lighter |
+| `bg-surface-3`   | Deepest nesting        | even darker     | even lighter     |
+| `bg-muted`       | Subtle background      | gray            | dark gray        |
+| `bg-primary`     | Primary action buttons | accent color    | accent color     |
+| `bg-secondary`   | Secondary elements     | light gray      | dark gray        |
+| `bg-destructive` | Danger/delete actions  | red             | red              |
 
 ### Text Colors
 
-| Token | Usage |
-|-------|-------|
-| `text-foreground` | Primary text |
-| `text-muted-foreground` | Secondary/subtle text |
-| `text-primary` | Accent colored text |
+| Token                     | Usage                      |
+| ------------------------- | -------------------------- |
+| `text-foreground`         | Primary text               |
+| `text-muted-foreground`   | Secondary/subtle text      |
+| `text-primary`            | Accent colored text        |
 | `text-primary-foreground` | Text on primary background |
-| `text-destructive` | Error/danger text |
+| `text-destructive`        | Error/danger text          |
 
 ### Border Colors
 
-| Token | Usage |
-|-------|-------|
-| `border-border` | Standard borders |
-| `border-input` | Form input borders |
-| `border-primary` | Accent borders |
-| `border-destructive` | Error borders |
+| Token                | Usage              |
+| -------------------- | ------------------ |
+| `border-border`      | Standard borders   |
+| `border-input`       | Form input borders |
+| `border-primary`     | Accent borders     |
+| `border-destructive` | Error borders      |
 
 ### State Colors
 
-| Token | Usage |
-|-------|-------|
+| Token                        | Usage              |
+| ---------------------------- | ------------------ |
 | `bg-success`, `text-success` | Success, completed |
-| `bg-warning`, `text-warning` | Warning |
-| `bg-error`, `text-error` | Errors |
-| `bg-info`, `text-info` | Information |
+| `bg-warning`, `text-warning` | Warning            |
+| `bg-error`, `text-error`     | Errors             |
+| `bg-info`, `text-info`       | Information        |
 
 ### Priority Colors (Tasks)
 
-| Token | Priority |
-|-------|----------|
-| `bg-priority-low`, `text-priority-low` | LOW |
-| `bg-priority-medium`, `text-priority-medium` | MEDIUM |
-| `bg-priority-high`, `text-priority-high` | HIGH |
-| `bg-priority-urgent`, `text-priority-urgent` | URGENT |
+| Token                                        | Priority |
+| -------------------------------------------- | -------- |
+| `bg-priority-low`, `text-priority-low`       | LOW      |
+| `bg-priority-medium`, `text-priority-medium` | MEDIUM   |
+| `bg-priority-high`, `text-priority-high`     | HIGH     |
+| `bg-priority-urgent`, `text-priority-urgent` | URGENT   |
 
 ---
 
@@ -175,9 +177,7 @@ NEVER use hardcoded colors!
   <DialogContent className="bg-surface-1 border-border">
     <DialogHeader>
       <DialogTitle className="text-foreground">Title</DialogTitle>
-      <DialogDescription className="text-muted-foreground">
-        Description
-      </DialogDescription>
+      <DialogDescription className="text-muted-foreground">Description</DialogDescription>
     </DialogHeader>
     {/* content */}
     <DialogFooter>
@@ -191,12 +191,14 @@ NEVER use hardcoded colors!
 ### Sidebar Item
 
 ```tsx
-<button className={cn(
-  "flex items-center gap-3 px-3 py-2 rounded-md w-full",
-  "text-muted-foreground hover:text-foreground",
-  "hover:bg-accent transition-colors",
-  isActive && "bg-accent text-foreground font-medium"
-)}>
+<button
+  className={cn(
+    'flex items-center gap-3 px-3 py-2 rounded-md w-full',
+    'text-muted-foreground hover:text-foreground',
+    'hover:bg-accent transition-colors',
+    isActive && 'bg-accent text-foreground font-medium'
+  )}
+>
   <Icon className="h-4 w-4" />
   <span>Menu Item</span>
 </button>
@@ -210,69 +212,69 @@ NEVER use hardcoded colors!
 
 ```tsx
 // GOOD - semantic meaning
-className="bg-surface-1 text-foreground border-border"
-className="bg-destructive text-destructive-foreground"
-className="text-muted-foreground"
+className = 'bg-surface-1 text-foreground border-border';
+className = 'bg-destructive text-destructive-foreground';
+className = 'text-muted-foreground';
 ```
 
 ### DON'T: Hardcoded Colors
 
 ```tsx
 // WRONG - hardcoded colors
-className="bg-gray-100 text-gray-900 border-gray-200"
-className="bg-red-500 text-white"
-className="text-gray-500"
+className = 'bg-gray-100 text-gray-900 border-gray-200';
+className = 'bg-red-500 text-white';
+className = 'text-gray-500';
 ```
 
 ### DO: Use State Tokens
 
 ```tsx
 // GOOD - state tokens
-className="bg-success text-success-foreground"  // completed
-className="bg-warning text-warning-foreground"  // pending
-className="bg-error text-error-foreground"      // failed
+className = 'bg-success text-success-foreground'; // completed
+className = 'bg-warning text-warning-foreground'; // pending
+className = 'bg-error text-error-foreground'; // failed
 ```
 
 ### DON'T: Hardcoded State Colors
 
 ```tsx
 // WRONG - hardcoded state colors
-className="bg-green-500"   // completed
-className="bg-yellow-500"  // pending
-className="bg-red-500"     // failed
+className = 'bg-green-500'; // completed
+className = 'bg-yellow-500'; // pending
+className = 'bg-red-500'; // failed
 ```
 
 ### DO: Hover/Focus States
 
 ```tsx
 // GOOD - consistent interaction states
-className="hover:bg-accent focus:ring-2 focus:ring-ring"
-className="hover:bg-primary/90 active:bg-primary/80"
+className = 'hover:bg-accent focus:ring-2 focus:ring-ring';
+className = 'hover:bg-primary/90 active:bg-primary/80';
 ```
 
 ### DON'T: Hardcoded Hover States
 
 ```tsx
 // WRONG - hardcoded hover
-className="hover:bg-gray-200"
-className="hover:bg-blue-600"
+className = 'hover:bg-gray-200';
+className = 'hover:bg-blue-600';
 ```
 
 ### DO: Opacity for Variations
 
 ```tsx
 // GOOD - use opacity for lighter variants
-className="bg-primary/10 text-primary"      // light background
-className="bg-destructive/10 text-destructive"
-className="border-primary/50"               // subtle border
+className = 'bg-primary/10 text-primary'; // light background
+className = 'bg-destructive/10 text-destructive';
+className = 'border-primary/50'; // subtle border
 ```
 
 ### DON'T: Separate Color Shades
 
 ```tsx
 // WRONG - hardcoded shades
-className="bg-blue-100 text-blue-700"
-className="bg-red-50 text-red-600"
+className = 'bg-blue-100 text-blue-700';
+className = 'bg-red-50 text-red-600';
 ```
 
 ---
@@ -310,12 +312,12 @@ If there are matches: **REPLACE** them with the correct tokens from the cheat sh
 
 ## Design Token Locations
 
-| File | Contents |
-|------|----------|
-| `styles/globals.css` | All CSS custom properties (design tokens) |
-| `styles/accents.css` | Accent color overrides |
-| `lib/design-tokens.ts` | TypeScript token definitions |
-| `tailwind.config.js` | Tailwind integration with tokens |
+| File                   | Contents                                  |
+| ---------------------- | ----------------------------------------- |
+| `styles/globals.css`   | All CSS custom properties (design tokens) |
+| `styles/accents.css`   | Accent color overrides                    |
+| `lib/design-tokens.ts` | TypeScript token definitions              |
+| `tailwind.config.js`   | Tailwind integration with tokens          |
 
 ### Token Structure (globals.css)
 
@@ -362,6 +364,7 @@ grep -rn "ComponentName" apps/web/src/components/
 ### Step 2: Use shadcn/ui as base
 
 Kanbu uses shadcn/ui. Check if the component is available there first:
+
 - https://ui.shadcn.com/docs/components
 
 ### Step 3: Token-first approach
@@ -370,22 +373,23 @@ ALWAYS start with tokens:
 
 ```tsx
 // Step 1: Define the base with tokens
-const baseStyles = "bg-surface-1 text-foreground border-border rounded-lg";
+const baseStyles = 'bg-surface-1 text-foreground border-border rounded-lg';
 
 // Step 2: Add interaction states
-const interactiveStyles = "hover:bg-accent focus:ring-2 focus:ring-ring";
+const interactiveStyles = 'hover:bg-accent focus:ring-2 focus:ring-ring';
 
 // Step 3: Combine with variants
 const variants = {
-  default: "bg-surface-1",
-  primary: "bg-primary text-primary-foreground",
-  destructive: "bg-destructive text-destructive-foreground",
+  default: 'bg-surface-1',
+  primary: 'bg-primary text-primary-foreground',
+  destructive: 'bg-destructive text-destructive-foreground',
 };
 ```
 
 ### Step 4: Test both themes
 
 **ALWAYS** test in:
+
 1. Light mode
 2. Dark mode
 3. All 6 accent colors (if relevant)
@@ -492,5 +496,5 @@ hover:text-foreground transition-colors
 
 ---
 
-*Document version: 2.0.0*
-*Last updated: 2026-01-16*
+_Document version: 2.0.0_
+_Last updated: 2026-01-16_

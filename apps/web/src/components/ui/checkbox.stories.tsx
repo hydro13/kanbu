@@ -10,10 +10,10 @@
  * ===================================================================
  */
 
-import type { Meta, StoryObj } from '@storybook/react-vite'
-import { Checkbox } from './checkbox'
-import { Label } from './label'
-import { Button } from './button'
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import { Checkbox } from './checkbox';
+import { Label } from './label';
+import { Button } from './button';
 
 const meta: Meta<typeof Checkbox> = {
   title: 'UI/Checkbox',
@@ -37,10 +37,10 @@ const meta: Meta<typeof Checkbox> = {
       },
     },
   },
-}
+};
 
-export default meta
-type Story = StoryObj<typeof Checkbox>
+export default meta;
+type Story = StoryObj<typeof Checkbox>;
 
 // =============================================================================
 // Basic Variants
@@ -48,19 +48,19 @@ type Story = StoryObj<typeof Checkbox>
 
 export const Default: Story = {
   args: {},
-}
+};
 
 export const Checked: Story = {
   args: {
     defaultChecked: true,
   },
-}
+};
 
 export const Disabled: Story = {
   args: {
     disabled: true,
   },
-}
+};
 
 export const DisabledChecked: Story = {
   args: {
@@ -74,7 +74,7 @@ export const DisabledChecked: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // With Label
@@ -92,12 +92,11 @@ export const WithLabel: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          'Checkbox with label. The label has cursor-pointer for better UX.',
+        story: 'Checkbox with label. The label has cursor-pointer for better UX.',
       },
     },
   },
-}
+};
 
 export const WithDescription: Story = {
   render: () => (
@@ -113,7 +112,7 @@ export const WithDescription: Story = {
       </p>
     </div>
   ),
-}
+};
 
 // =============================================================================
 // Required/Validation
@@ -128,20 +127,17 @@ export const Required: Story = {
           I agree to the terms <span className="text-destructive">*</span>
         </Label>
       </div>
-      <p className="text-sm text-muted-foreground ml-6">
-        This field is required
-      </p>
+      <p className="text-sm text-muted-foreground ml-6">This field is required</p>
     </div>
   ),
   parameters: {
     docs: {
       description: {
-        story:
-          'Required checkbox with visual indicator and aria attribute for accessibility.',
+        story: 'Required checkbox with visual indicator and aria attribute for accessibility.',
       },
     },
   },
-}
+};
 
 export const WithError: Story = {
   render: () => (
@@ -170,7 +166,7 @@ export const WithError: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Checkbox Groups
@@ -220,7 +216,7 @@ export const CheckboxGroup: Story = {
       },
     },
   },
-}
+};
 
 export const NestedCheckboxes: Story = {
   render: () => (
@@ -260,7 +256,7 @@ export const NestedCheckboxes: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Form Example
@@ -314,8 +310,7 @@ export const FormExample: Story = {
             <div className="flex items-center space-x-2">
               <Checkbox id="form-terms" required />
               <Label htmlFor="form-terms" className="cursor-pointer">
-                I agree to the terms and conditions{' '}
-                <span className="text-destructive">*</span>
+                I agree to the terms and conditions <span className="text-destructive">*</span>
               </Label>
             </div>
           </div>
@@ -337,7 +332,7 @@ export const FormExample: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // States Showcase
@@ -375,4 +370,4 @@ export const AllStates: Story = {
       },
     },
   },
-}
+};

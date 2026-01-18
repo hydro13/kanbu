@@ -15,29 +15,29 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { AdminLayout } from '@/components/admin'
-import { trpc } from '@/lib/trpc'
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { AdminLayout } from '@/components/admin';
+import { trpc } from '@/lib/trpc';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface FormData {
-  email: string
-  username: string
-  name: string
-  password: string
-  confirmPassword: string
+  email: string;
+  username: string;
+  name: string;
+  password: string;
+  confirmPassword: string;
 }
 
 interface FormErrors {
-  email?: string
-  username?: string
-  name?: string
-  password?: string
-  confirmPassword?: string
+  email?: string;
+  username?: string;
+  name?: string;
+  password?: string;
+  confirmPassword?: string;
 }
 
 // =============================================================================
@@ -45,72 +45,72 @@ interface FormErrors {
 // =============================================================================
 
 export function UserCreatePage() {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   const [formData, setFormData] = useState<FormData>({
     email: '',
     username: '',
     name: '',
     password: '',
     confirmPassword: '',
-  })
-  const [errors, setErrors] = useState<FormErrors>({})
-  const [serverError, setServerError] = useState<string | null>(null)
+  });
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [serverError, setServerError] = useState<string | null>(null);
 
   const createUser = trpc.admin.createUser.useMutation({
     onSuccess: () => {
-      navigate('/admin/users')
+      navigate('/admin/users');
     },
     onError: (error) => {
-      setServerError(error.message)
+      setServerError(error.message);
     },
-  })
+  });
 
   const validate = (): boolean => {
-    const newErrors: FormErrors = {}
+    const newErrors: FormErrors = {};
 
     // Email validation
     if (!formData.email) {
-      newErrors.email = 'Email is required'
+      newErrors.email = 'Email is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Invalid email address'
+      newErrors.email = 'Invalid email address';
     }
 
     // Username validation
     if (!formData.username) {
-      newErrors.username = 'Username is required'
+      newErrors.username = 'Username is required';
     } else if (formData.username.length < 3) {
-      newErrors.username = 'Username must be at least 3 characters'
+      newErrors.username = 'Username must be at least 3 characters';
     } else if (!/^[a-zA-Z0-9_-]+$/.test(formData.username)) {
-      newErrors.username = 'Username can only contain letters, numbers, underscores and hyphens'
+      newErrors.username = 'Username can only contain letters, numbers, underscores and hyphens';
     }
 
     // Name validation
     if (!formData.name) {
-      newErrors.name = 'Name is required'
+      newErrors.name = 'Name is required';
     }
 
     // Password validation
     if (!formData.password) {
-      newErrors.password = 'Password is required'
+      newErrors.password = 'Password is required';
     } else if (formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters'
+      newErrors.password = 'Password must be at least 8 characters';
     }
 
     // Confirm password
     if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match'
+      newErrors.confirmPassword = 'Passwords do not match';
     }
 
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    setServerError(null)
+    e.preventDefault();
+    setServerError(null);
 
     if (!validate()) {
-      return
+      return;
     }
 
     createUser.mutate({
@@ -118,24 +118,20 @@ export function UserCreatePage() {
       username: formData.username,
       name: formData.name,
       password: formData.password,
-    })
-  }
+    });
+  };
 
-  const handleChange = (field: keyof FormData) => (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    setFormData({ ...formData, [field]: e.target.value })
-    // Clear error for this field
-    if (errors[field as keyof FormErrors]) {
-      setErrors({ ...errors, [field]: undefined })
-    }
-  }
+  const handleChange =
+    (field: keyof FormData) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+      setFormData({ ...formData, [field]: e.target.value });
+      // Clear error for this field
+      if (errors[field as keyof FormErrors]) {
+        setErrors({ ...errors, [field]: undefined });
+      }
+    };
 
   return (
-    <AdminLayout
-      title="Create User"
-      description="Add a new user to the system"
-    >
+    <AdminLayout title="Create User" description="Add a new user to the system">
       <div className="max-w-2xl">
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Server error */}
@@ -147,7 +143,10 @@ export function UserCreatePage() {
 
           {/* Email */}
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >
               Email address
             </label>
             <input
@@ -167,7 +166,10 @@ export function UserCreatePage() {
 
           {/* Username */}
           <div>
-            <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label
+              htmlFor="username"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >
               Username
             </label>
             <input
@@ -187,7 +189,10 @@ export function UserCreatePage() {
 
           {/* Name */}
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label
+              htmlFor="name"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >
               Full name
             </label>
             <input
@@ -207,7 +212,10 @@ export function UserCreatePage() {
 
           {/* Password */}
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >
               Password
             </label>
             <input
@@ -227,7 +235,10 @@ export function UserCreatePage() {
 
           {/* Confirm Password */}
           <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label
+              htmlFor="confirmPassword"
+              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            >
               Confirm password
             </label>
             <input
@@ -241,7 +252,9 @@ export function UserCreatePage() {
               placeholder="Repeat password"
             />
             {errors.confirmPassword && (
-              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.confirmPassword}</p>
+              <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                {errors.confirmPassword}
+              </p>
             )}
           </div>
 
@@ -265,7 +278,7 @@ export function UserCreatePage() {
         </form>
       </div>
     </AdminLayout>
-  )
+  );
 }
 
-export default UserCreatePage
+export default UserCreatePage;

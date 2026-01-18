@@ -12,17 +12,17 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useEffect, useCallback, useMemo } from 'react'
-import { SHORTCUT_GROUPS, formatShortcut, isMac } from '@/lib/shortcuts'
-import { cn } from '@/lib/utils'
+import { useEffect, useCallback, useMemo } from 'react';
+import { SHORTCUT_GROUPS, formatShortcut, isMac } from '@/lib/shortcuts';
+import { cn } from '@/lib/utils';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface ShortcutsModalProps {
-  isOpen: boolean
-  onClose: () => void
+  isOpen: boolean;
+  onClose: () => void;
 }
 
 // =============================================================================
@@ -38,14 +38,9 @@ function CloseIcon() {
       viewBox="0 0 24 24"
       stroke="currentColor"
     >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M6 18L18 6M6 6l12 12"
-      />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
     </svg>
-  )
+  );
 }
 
 function KeyboardIcon() {
@@ -64,7 +59,7 @@ function KeyboardIcon() {
         d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
       />
     </svg>
-  )
+  );
 }
 
 // =============================================================================
@@ -74,36 +69,33 @@ function KeyboardIcon() {
 export function ShortcutsModal({ isOpen, onClose }: ShortcutsModalProps) {
   // Filter out empty groups
   const activeGroups = useMemo(() => {
-    return SHORTCUT_GROUPS.filter(group => group.shortcuts.length > 0)
-  }, [])
+    return SHORTCUT_GROUPS.filter((group) => group.shortcuts.length > 0);
+  }, []);
 
   // Close on Escape
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        e.preventDefault()
-        onClose()
+        e.preventDefault();
+        onClose();
       }
     },
     [onClose]
-  )
+  );
 
   useEffect(() => {
     if (isOpen) {
-      document.addEventListener('keydown', handleKeyDown)
-      return () => document.removeEventListener('keydown', handleKeyDown)
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
     }
-  }, [isOpen, handleKeyDown])
+  }, [isOpen, handleKeyDown]);
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
 
       {/* Modal */}
       <div className="relative w-full max-w-2xl max-h-[80vh] bg-card rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
@@ -114,9 +106,7 @@ export function ShortcutsModal({ isOpen, onClose }: ShortcutsModalProps) {
               <KeyboardIcon />
             </span>
             <div>
-              <h2 className="text-lg font-semibold text-foreground">
-                Keyboard Shortcuts
-              </h2>
+              <h2 className="text-lg font-semibold text-foreground">Keyboard Shortcuts</h2>
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 {isMac() ? 'macOS' : 'Windows/Linux'} keyboard shortcuts
               </p>
@@ -172,12 +162,14 @@ export function ShortcutsModal({ isOpen, onClose }: ShortcutsModalProps) {
         {/* Footer */}
         <div className="px-6 py-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50">
           <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-            Press <kbd className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-xs">?</kbd> anytime to show this help
+            Press{' '}
+            <kbd className="px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 rounded text-xs">?</kbd>{' '}
+            anytime to show this help
           </p>
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default ShortcutsModal
+export default ShortcutsModal;

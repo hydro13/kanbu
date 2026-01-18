@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Planned Features
+
 - Multi-instance deployment with Redis support
 - Discord integration for notifications
 - Advanced reporting and analytics dashboard
@@ -18,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Team workload analytics
 
 ### In Progress
+
 - Knowledge graph wiki improvements
 - Advanced permissioning edge cases
 - Performance optimization for large datasets
@@ -27,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0-beta.3] - 2026-01-17
 
 ### Highlights
+
 - 🚀 **Production-Ready Docker Deployment** - Fully working self-hosted deployment
 - 🔐 **Bootstrap Admin** - First user automatically becomes Domain Admin
 - 🛡️ **Registration Control** - Disable self-registration via system settings
@@ -34,53 +37,64 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 #### Bootstrap Admin Setup
+
 First-time installation now works out of the box:
+
 - First registered user automatically gets `ADMIN` role
 - `domain-admins` group created with full system access (ACL 31)
 - First user added to `domain-admins` group
 - No manual database setup required
 
 #### Registration Control
+
 - `security.registration_enabled` setting now enforced by API
 - When disabled: "Self-registration is disabled. Please contact an administrator for an invite."
 - First user registration always allowed (bootstrap)
 
 #### Project Wiki Pages UI
+
 - New UI for project-level wiki pages
 
 ### Changed
 
 #### Docker Deployment (Complete Overhaul)
+
 Production deployment now fully functional:
 
 **API Container:**
+
 - esbuild for optimized production builds
 - Automatic database migrations on startup (`api-entrypoint.sh`)
 - Proper pnpm workspace structure preservation
 - Correct Prisma client version (6.x)
 
 **Web Container:**
+
 - nginx reverse proxy for `/trpc`, `/socket.io`, `/health`
 - SPA routing with fallback to `index.html`
 - Gzip compression and security headers
 
 **Coolify PaaS Support:**
+
 - Internal networking (expose vs ports)
 - Named volumes for data persistence
 - Health checks for all services
 
 ### Fixed
+
 - TypeScript build errors resolved
 - Removed non-existent dependencies from lockfile
 - Unix line endings for shell scripts (Alpine compatibility)
 - Prisma version mismatch in production containers
 
 ### Technical
+
 - 20 commits since beta.2
 - Docker deployment tested and verified working
 - Self-hosted deployment: ~1GB RAM, supports ~15 concurrent users
 
 ### Upgrade Notes
+
 No breaking changes. Existing databases will continue to work.
 New installations will automatically set up the admin user on first registration.
 
@@ -91,9 +105,11 @@ New installations will automatically set up the admin user on first registration
 ### Added
 
 #### Wiki MCP Tools (Phase 17)
+
 Complete wiki management via Claude Code MCP integration - 18 new tools.
 
 **Project Wiki Tools (9):**
+
 - `kanbu_list_project_wiki_pages` - List wiki pages in project
 - `kanbu_get_project_wiki_page` - Get page details
 - `kanbu_get_project_wiki_page_by_slug` - Get page by slug/permalink
@@ -105,9 +121,11 @@ Complete wiki management via Claude Code MCP integration - 18 new tools.
 - `kanbu_restore_project_wiki_version` - Restore old version
 
 **Workspace Wiki Tools (9):**
+
 - Same 9 tools for workspace-level wikis
 
 **Wiki Features:**
+
 - Version control: Up to 20 versions per page
 - Hierarchical structure: Parent/child page relationships
 - Status management: Draft, Published, Archived
@@ -116,6 +134,7 @@ Complete wiki management via Claude Code MCP integration - 18 new tools.
 - Cross-references: `[[wiki links]]`, `@mentions`, `#task-refs`, `#tags`
 
 #### RichTextEditor Improvements
+
 - `initialMarkdown` prop for wiki page markdown support
 
 ### Changed
@@ -123,21 +142,25 @@ Complete wiki management via Claude Code MCP integration - 18 new tools.
 #### Editor CSS Improvements
 
 **Tables:**
+
 - Padding: 12px/16px → 4px/8px (more compact)
 - Borders: Better visibility with `foreground/0.2`
 - Headers: Thicker bottom border (2px) for visual separation
 - Min-width: 100-120px → 60px
 
 **Code Blocks:**
+
 - Padding: 16px → 8px/12px (50% reduction)
 - Line-height: 1.6 → 1.5
 - Border-radius: 0.5rem → 0.375rem
 
 ### Fixed
+
 - **BacklinksPanel.tsx**: Fixed duplicate React key warning in related pages list
 - **WikiPageView.tsx**: Integrated markdown initialization
 
 ### Technical
+
 - New files: `wiki.ts`, `wiki.test.ts`
 - Lines added: ~2000
 - Unit tests: 71 new tests for wiki tools
@@ -148,6 +171,7 @@ Complete wiki management via Claude Code MCP integration - 18 new tools.
 ## [0.1.0-beta.1] - 2026-01-16
 
 ### Added
+
 - **Kanban Board**: Drag-and-drop task management with columns and swimlanes
 - **Multiple Views**: Board, List, Calendar, Timeline views for tasks
 - **Sprints & Milestones**: Sprint planning with burndown charts
@@ -186,6 +210,7 @@ Complete wiki management via Claude Code MCP integration - 18 new tools.
   - CODE_OF_CONDUCT for community standards
 
 ### Technical Stack
+
 - **Frontend**: React 18, TypeScript, Vite, Tailwind CSS, Shadcn/ui
 - **Backend**: Node.js 22, Fastify, tRPC v10, Socket.io
 - **Database**: PostgreSQL 15, Prisma ORM
@@ -193,12 +218,14 @@ Complete wiki management via Claude Code MCP integration - 18 new tools.
 - **Deployment**: Docker & Docker Compose
 
 ### Known Limitations
+
 - Single-instance deployment only (multi-instance coming in v0.2.0)
 - Some edge cases in permission calculations (will be fixed)
 - Discord integration not yet available
 - Advanced reporting in progress
 
 ### Breaking Changes
+
 None - Initial beta release
 
 ---
@@ -206,6 +233,7 @@ None - Initial beta release
 ## Roadmap
 
 ### Version 0.2.0 (Q2 2026)
+
 - [ ] Multi-instance Redis support
 - [ ] Performance optimization
 - [ ] Advanced permission edge cases fixed
@@ -213,6 +241,7 @@ None - Initial beta release
 - [ ] Email notifications
 
 ### Version 0.3.0 (Q3 2026)
+
 - [ ] Discord integration
 - [ ] Slack integration
 - [ ] Advanced reporting dashboard
@@ -220,6 +249,7 @@ None - Initial beta release
 - [ ] Template system
 
 ### Version 1.0.0 (Q4 2026)
+
 - [ ] API v2 with GraphQL
 - [ ] Enterprise features
 - [ ] Advanced analytics

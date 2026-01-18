@@ -8,6 +8,6 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-export { DashboardLayout } from './DashboardLayout'
-export { DashboardSidebar } from './DashboardSidebar'
-export { ProductivityWidget } from './ProductivityWidget'
+export { DashboardLayout } from './DashboardLayout';
+export { DashboardSidebar } from './DashboardSidebar';
+export { ProductivityWidget } from './ProductivityWidget';

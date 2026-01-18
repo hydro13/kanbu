@@ -12,7 +12,7 @@
  * ===================================================================
  */
 
-import { Link, NavLink, useParams } from 'react-router-dom'
+import { Link, NavLink, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
   FolderKanban,
@@ -21,25 +21,25 @@ import {
   Users,
   BarChart3,
   Settings,
-} from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { trpc } from '@/lib/trpc'
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { trpc } from '@/lib/trpc';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface NavItem {
-  label: string
-  path: string
-  icon: React.ComponentType<{ className?: string }>
-  exact?: boolean
-  slug: string
+  label: string;
+  path: string;
+  icon: React.ComponentType<{ className?: string }>;
+  exact?: boolean;
+  slug: string;
 }
 
 export interface WorkspaceSidebarProps {
-  collapsed?: boolean
-  onCollapse?: (collapsed: boolean) => void
+  collapsed?: boolean;
+  onCollapse?: (collapsed: boolean) => void;
 }
 
 // =============================================================================
@@ -53,23 +53,23 @@ const workspaceModules: NavItem[] = [
   { label: 'Members', path: '/members', icon: Users, slug: 'members' },
   { label: 'Statistics', path: '/stats', icon: BarChart3, slug: 'statistics' },
   { label: 'Settings', path: '/settings', icon: Settings, slug: 'settings' },
-]
+];
 
 // =============================================================================
 // Component
 // =============================================================================
 
 export function WorkspaceSidebar({ collapsed = false }: WorkspaceSidebarProps) {
-  const params = useParams<{ slug?: string; workspaceSlug?: string }>()
-  const workspaceSlug = params.slug || params.workspaceSlug
+  const params = useParams<{ slug?: string; workspaceSlug?: string }>();
+  const workspaceSlug = params.slug || params.workspaceSlug;
 
   // Fetch workspace data for name display
   const { data: workspace } = trpc.workspace.getBySlug.useQuery(
     { slug: workspaceSlug! },
     { enabled: !!workspaceSlug }
-  )
+  );
 
-  const basePath = `/workspace/${workspaceSlug}`
+  const basePath = `/workspace/${workspaceSlug}`;
 
   return (
     <aside className="flex flex-col h-full">
@@ -95,9 +95,7 @@ export function WorkspaceSidebar({ collapsed = false }: WorkspaceSidebarProps) {
         {/* Workspace Header */}
         {!collapsed && workspace && (
           <div className="px-4 py-2 mb-2">
-            <h2 className="text-sm font-semibold text-foreground truncate">
-              {workspace.name}
-            </h2>
+            <h2 className="text-sm font-semibold text-foreground truncate">{workspace.name}</h2>
             {workspace.description && (
               <p className="text-xs text-muted-foreground truncate mt-0.5">
                 {workspace.description}
@@ -115,8 +113,8 @@ export function WorkspaceSidebar({ collapsed = false }: WorkspaceSidebarProps) {
           )}
           <ul className="space-y-0.5 px-2">
             {workspaceModules.map((item) => {
-              const Icon = item.icon
-              const fullPath = `${basePath}${item.path}`
+              const Icon = item.icon;
+              const fullPath = `${basePath}${item.path}`;
 
               return (
                 <li key={item.slug}>
@@ -137,13 +135,13 @@ export function WorkspaceSidebar({ collapsed = false }: WorkspaceSidebarProps) {
                     {!collapsed && <span>{item.label}</span>}
                   </NavLink>
                 </li>
-              )
+              );
             })}
           </ul>
         </div>
       </nav>
     </aside>
-  )
+  );
 }
 
-export default WorkspaceSidebar
+export default WorkspaceSidebar;

@@ -19,39 +19,39 @@
  * =============================================================================
  */
 
-import { QdrantClient } from '@qdrant/js-client-rest'
-import type { PrismaClient } from '@prisma/client'
-import { getWikiAiService, type WikiAiService, type WikiContext } from './WikiAiService'
+import { QdrantClient } from '@qdrant/js-client-rest';
+import type { PrismaClient } from '@prisma/client';
+import { getWikiAiService, type WikiAiService, type WikiContext } from './WikiAiService';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface WikiNodeEmbeddingConfig {
-  qdrantHost: string
-  qdrantPort: number
-  collectionName: string
+  qdrantHost: string;
+  qdrantPort: number;
+  collectionName: string;
 }
 
 /**
  * Node types supported for embedding
  */
-export type EmbeddableNodeType = 'Concept' | 'Person' | 'Task' | 'Project'
+export type EmbeddableNodeType = 'Concept' | 'Person' | 'Task' | 'Project';
 
 /**
  * Node data for embedding generation
  */
 export interface NodeForEmbedding {
   /** Unique node identifier (UUID from FalkorDB) */
-  id: string
+  id: string;
   /** Node name to embed */
-  name: string
+  name: string;
   /** Node type */
-  type: EmbeddableNodeType
+  type: EmbeddableNodeType;
   /** Wiki group ID */
-  groupId: string
+  groupId: string;
   /** Optional summary for context */
-  summary?: string
+  summary?: string;
 }
 
 /**
@@ -59,23 +59,23 @@ export interface NodeForEmbedding {
  */
 export interface NodeEmbeddingPayload {
   /** Original node UUID */
-  nodeId: string
+  nodeId: string;
   /** Workspace ID for multi-tenant filtering */
-  workspaceId: number
+  workspaceId: number;
   /** Project ID (optional) for project-scoped filtering */
-  projectId: number | null
+  projectId: number | null;
   /** Wiki group ID */
-  groupId: string
+  groupId: string;
   /** Node type (Concept, Person, Task, Project) */
-  nodeType: EmbeddableNodeType
+  nodeType: EmbeddableNodeType;
   /** Original node name */
-  name: string
+  name: string;
   /** Normalized name for exact matching */
-  normalizedName: string
+  normalizedName: string;
   /** Hash of the name for change detection */
-  nameHash: string
+  nameHash: string;
   /** When the embedding was created (ISO timestamp) */
-  createdAt: string
+  createdAt: string;
 }
 
 /**
@@ -83,31 +83,31 @@ export interface NodeEmbeddingPayload {
  */
 export interface SimilarNodeResult {
   /** Node UUID */
-  nodeId: string
+  nodeId: string;
   /** Node name */
-  name: string
+  name: string;
   /** Node type */
-  nodeType: EmbeddableNodeType
+  nodeType: EmbeddableNodeType;
   /** Similarity score (0-1) */
-  score: number
+  score: number;
   /** Wiki group ID */
-  groupId: string
+  groupId: string;
 }
 
 /**
  * Options for similar entity search
  */
 export interface SimilarNodeSearchOptions {
-  workspaceId: number
-  projectId?: number
-  groupId?: string
-  nodeType?: EmbeddableNodeType
+  workspaceId: number;
+  projectId?: number;
+  groupId?: string;
+  nodeType?: EmbeddableNodeType;
   /** Maximum results (default: 10) */
-  limit?: number
+  limit?: number;
   /** Minimum similarity threshold (default: 0.85) */
-  threshold?: number
+  threshold?: number;
   /** Exclude this node ID from results */
-  excludeNodeId?: string
+  excludeNodeId?: string;
 }
 
 /**
@@ -115,11 +115,11 @@ export interface SimilarNodeSearchOptions {
  */
 export interface BatchNodeEmbeddingResult {
   /** Number of embeddings stored */
-  stored: number
+  stored: number;
   /** Number of embeddings skipped (unchanged) */
-  skipped: number
+  skipped: number;
   /** Number of errors */
-  errors: number
+  errors: number;
 }
 
 // =============================================================================
@@ -127,19 +127,19 @@ export interface BatchNodeEmbeddingResult {
 // =============================================================================
 
 export class WikiNodeEmbeddingService {
-  private client: QdrantClient
-  private collectionName: string
-  private wikiAiService: WikiAiService
-  private initialized: boolean = false
-  private embeddingDimensions: number | null = null
+  private client: QdrantClient;
+  private collectionName: string;
+  private wikiAiService: WikiAiService;
+  private initialized: boolean = false;
+  private embeddingDimensions: number | null = null;
 
   constructor(prisma: PrismaClient, config?: Partial<WikiNodeEmbeddingConfig>) {
-    const host = config?.qdrantHost ?? process.env.QDRANT_HOST ?? 'localhost'
-    const port = config?.qdrantPort ?? parseInt(process.env.QDRANT_PORT ?? '6333')
-    this.collectionName = config?.collectionName ?? 'kanbu_node_embeddings'
+    const host = config?.qdrantHost ?? process.env.QDRANT_HOST ?? 'localhost';
+    const port = config?.qdrantPort ?? parseInt(process.env.QDRANT_PORT ?? '6333');
+    this.collectionName = config?.collectionName ?? 'kanbu_node_embeddings';
 
-    this.client = new QdrantClient({ host, port })
-    this.wikiAiService = getWikiAiService(prisma)
+    this.client = new QdrantClient({ host, port });
+    this.wikiAiService = getWikiAiService(prisma);
   }
 
   // ===========================================================================
@@ -151,21 +151,23 @@ export class WikiNodeEmbeddingService {
    * Collection should already exist from 21.2, this just verifies
    */
   async ensureCollection(context: WikiContext): Promise<boolean> {
-    if (this.initialized) return true
+    if (this.initialized) return true;
 
     try {
       // Get embedding dimensions from provider
-      const embeddingInfo = await this.wikiAiService.getEmbeddingInfo(context)
+      const embeddingInfo = await this.wikiAiService.getEmbeddingInfo(context);
       if (!embeddingInfo.available || !embeddingInfo.dimensions) {
-        console.warn('[WikiNodeEmbeddingService] No embedding provider available, skipping initialization')
-        return false
+        console.warn(
+          '[WikiNodeEmbeddingService] No embedding provider available, skipping initialization'
+        );
+        return false;
       }
 
-      this.embeddingDimensions = embeddingInfo.dimensions
+      this.embeddingDimensions = embeddingInfo.dimensions;
 
       // Check if collection exists
-      const collections = await this.client.getCollections()
-      const exists = collections.collections.some(c => c.name === this.collectionName)
+      const collections = await this.client.getCollections();
+      const exists = collections.collections.some((c) => c.name === this.collectionName);
 
       if (!exists) {
         // Collection should be created in 21.2, but create if missing
@@ -177,41 +179,41 @@ export class WikiNodeEmbeddingService {
           optimizers_config: {
             indexing_threshold: 1000,
           },
-        })
+        });
 
         // Create payload indexes
         await this.client.createPayloadIndex(this.collectionName, {
           field_name: 'workspaceId',
           field_schema: 'integer',
-        })
+        });
         await this.client.createPayloadIndex(this.collectionName, {
           field_name: 'nodeType',
           field_schema: 'keyword',
-        })
+        });
         await this.client.createPayloadIndex(this.collectionName, {
           field_name: 'groupId',
           field_schema: 'keyword',
-        })
+        });
         await this.client.createPayloadIndex(this.collectionName, {
           field_name: 'normalizedName',
           field_schema: 'keyword',
-        })
+        });
 
         console.log(
           `[WikiNodeEmbeddingService] Created collection "${this.collectionName}" with ${this.embeddingDimensions} dimensions`
-        )
+        );
       } else {
-        console.log(`[WikiNodeEmbeddingService] Collection "${this.collectionName}" verified`)
+        console.log(`[WikiNodeEmbeddingService] Collection "${this.collectionName}" verified`);
       }
 
-      this.initialized = true
-      return true
+      this.initialized = true;
+      return true;
     } catch (error) {
       console.error(
         '[WikiNodeEmbeddingService] Failed to ensure collection:',
         error instanceof Error ? error.message : error
-      )
-      return false
+      );
+      return false;
     }
   }
 
@@ -224,7 +226,7 @@ export class WikiNodeEmbeddingService {
    * Format: "[Type] Name"
    */
   formatNodeForEmbedding(node: NodeForEmbedding): string {
-    return `[${node.type}] ${node.name}`
+    return `[${node.type}] ${node.name}`;
   }
 
   /**
@@ -232,10 +234,7 @@ export class WikiNodeEmbeddingService {
    * Lowercase, trim, collapse whitespace
    */
   normalizeName(name: string): string {
-    return name
-      .toLowerCase()
-      .trim()
-      .replace(/\s+/g, ' ')
+    return name.toLowerCase().trim().replace(/\s+/g, ' ');
   }
 
   /**
@@ -243,40 +242,37 @@ export class WikiNodeEmbeddingService {
    * Qdrant requires either unsigned integers or UUIDs for point IDs
    */
   private generatePointId(nodeId: string): number {
-    let hash = 0
+    let hash = 0;
     for (let i = 0; i < nodeId.length; i++) {
-      const char = nodeId.charCodeAt(i)
-      hash = ((hash << 5) - hash) + char
-      hash = hash >>> 0 // Convert to unsigned 32-bit integer
+      const char = nodeId.charCodeAt(i);
+      hash = (hash << 5) - hash + char;
+      hash = hash >>> 0; // Convert to unsigned 32-bit integer
     }
     // Ensure we have a positive non-zero number
-    return hash || 1
+    return hash || 1;
   }
 
   /**
    * Create simple hash of name for change detection
    */
   private hashName(name: string): string {
-    const normalized = this.normalizeName(name)
-    let hash = 0
+    const normalized = this.normalizeName(name);
+    let hash = 0;
     for (let i = 0; i < normalized.length; i++) {
-      const char = normalized.charCodeAt(i)
-      hash = ((hash << 5) - hash) + char
-      hash = hash & hash // Convert to 32bit integer
+      const char = normalized.charCodeAt(i);
+      hash = (hash << 5) - hash + char;
+      hash = hash & hash; // Convert to 32bit integer
     }
-    return hash.toString(16)
+    return hash.toString(16);
   }
 
   /**
    * Generate embedding for a node
    */
-  async generateNodeEmbedding(
-    context: WikiContext,
-    node: NodeForEmbedding
-  ): Promise<number[]> {
-    const embeddingText = this.formatNodeForEmbedding(node)
-    const result = await this.wikiAiService.embed(context, embeddingText)
-    return result.embedding
+  async generateNodeEmbedding(context: WikiContext, node: NodeForEmbedding): Promise<number[]> {
+    const embeddingText = this.formatNodeForEmbedding(node);
+    const result = await this.wikiAiService.embed(context, embeddingText);
+    return result.embedding;
   }
 
   // ===========================================================================
@@ -292,13 +288,15 @@ export class WikiNodeEmbeddingService {
     embedding: number[]
   ): Promise<boolean> {
     try {
-      const ready = await this.ensureCollection(context)
+      const ready = await this.ensureCollection(context);
       if (!ready) {
-        console.warn(`[WikiNodeEmbeddingService] Not initialized, skipping embedding for node ${node.id}`)
-        return false
+        console.warn(
+          `[WikiNodeEmbeddingService] Not initialized, skipping embedding for node ${node.id}`
+        );
+        return false;
       }
 
-      const pointId = this.generatePointId(node.id)
+      const pointId = this.generatePointId(node.id);
 
       await this.client.upsert(this.collectionName, {
         wait: true,
@@ -319,18 +317,18 @@ export class WikiNodeEmbeddingService {
             },
           },
         ],
-      })
+      });
 
       console.log(
         `[WikiNodeEmbeddingService] Stored embedding for node ${node.id}: [${node.type}] ${node.name}`
-      )
-      return true
+      );
+      return true;
     } catch (error) {
       console.error(
         `[WikiNodeEmbeddingService] Failed to store embedding for node ${node.id}:`,
         error instanceof Error ? error.message : error
-      )
-      return false
+      );
+      return false;
     }
   }
 
@@ -343,23 +341,23 @@ export class WikiNodeEmbeddingService {
   ): Promise<boolean> {
     try {
       // Check if embedding exists and is unchanged
-      const status = await this.checkNodeEmbeddingStatus(node.id, node.name)
+      const status = await this.checkNodeEmbeddingStatus(node.id, node.name);
       if (status.exists && !status.needsUpdate) {
-        console.log(`[WikiNodeEmbeddingService] Skipping unchanged node ${node.id}`)
-        return true
+        console.log(`[WikiNodeEmbeddingService] Skipping unchanged node ${node.id}`);
+        return true;
       }
 
       // Generate embedding
-      const embedding = await this.generateNodeEmbedding(context, node)
+      const embedding = await this.generateNodeEmbedding(context, node);
 
       // Store embedding
-      return await this.storeNodeEmbedding(context, node, embedding)
+      return await this.storeNodeEmbedding(context, node, embedding);
     } catch (error) {
       console.error(
         `[WikiNodeEmbeddingService] Failed to generate and store embedding for node ${node.id}:`,
         error instanceof Error ? error.message : error
-      )
-      return false
+      );
+      return false;
     }
   }
 
@@ -371,56 +369,56 @@ export class WikiNodeEmbeddingService {
     context: WikiContext,
     nodes: NodeForEmbedding[]
   ): Promise<BatchNodeEmbeddingResult> {
-    const result: BatchNodeEmbeddingResult = { stored: 0, skipped: 0, errors: 0 }
+    const result: BatchNodeEmbeddingResult = { stored: 0, skipped: 0, errors: 0 };
 
     try {
-      const ready = await this.ensureCollection(context)
+      const ready = await this.ensureCollection(context);
       if (!ready) {
-        console.warn('[WikiNodeEmbeddingService] Not initialized, skipping batch embedding')
-        return result
+        console.warn('[WikiNodeEmbeddingService] Not initialized, skipping batch embedding');
+        return result;
       }
 
       for (const node of nodes) {
         // Skip if name is empty
         if (!node.name || node.name.trim().length === 0) {
-          result.skipped++
-          continue
+          result.skipped++;
+          continue;
         }
 
         try {
           // Check if embedding already exists and is unchanged
-          const status = await this.checkNodeEmbeddingStatus(node.id, node.name)
+          const status = await this.checkNodeEmbeddingStatus(node.id, node.name);
           if (status.exists && !status.needsUpdate) {
-            result.skipped++
-            continue
+            result.skipped++;
+            continue;
           }
 
           // Generate and store embedding
-          const success = await this.generateAndStoreNodeEmbedding(context, node)
+          const success = await this.generateAndStoreNodeEmbedding(context, node);
           if (success) {
-            result.stored++
+            result.stored++;
           } else {
-            result.errors++
+            result.errors++;
           }
         } catch (nodeError) {
           console.error(
             `[WikiNodeEmbeddingService] Error processing node ${node.id}:`,
             nodeError instanceof Error ? nodeError.message : nodeError
-          )
-          result.errors++
+          );
+          result.errors++;
         }
       }
 
       console.log(
         `[WikiNodeEmbeddingService] Batch complete: ${result.stored} stored, ${result.skipped} skipped, ${result.errors} errors`
-      )
-      return result
+      );
+      return result;
     } catch (error) {
       console.error(
         '[WikiNodeEmbeddingService] Batch embedding failed:',
         error instanceof Error ? error.message : error
-      )
-      return result
+      );
+      return result;
     }
   }
 
@@ -436,27 +434,27 @@ export class WikiNodeEmbeddingService {
     currentName: string
   ): Promise<{ exists: boolean; needsUpdate: boolean; currentHash?: string }> {
     try {
-      const pointId = this.generatePointId(nodeId)
+      const pointId = this.generatePointId(nodeId);
       const points = await this.client.retrieve(this.collectionName, {
         ids: [pointId],
         with_payload: true,
-      })
+      });
 
-      const point = points[0]
+      const point = points[0];
       if (!point) {
-        return { exists: false, needsUpdate: true }
+        return { exists: false, needsUpdate: true };
       }
 
-      const storedHash = point.payload?.nameHash as string
-      const currentHash = this.hashName(currentName)
+      const storedHash = point.payload?.nameHash as string;
+      const currentHash = this.hashName(currentName);
 
       return {
         exists: true,
         needsUpdate: storedHash !== currentHash,
         currentHash: storedHash,
-      }
+      };
     } catch {
-      return { exists: false, needsUpdate: true }
+      return { exists: false, needsUpdate: true };
     }
   }
 
@@ -473,14 +471,14 @@ export class WikiNodeEmbeddingService {
     name: string,
     options: Partial<SimilarNodeSearchOptions> = {}
   ): Promise<SimilarNodeResult[]> {
-    const limit = options.limit ?? 10
-    const threshold = options.threshold ?? 0.85
+    const limit = options.limit ?? 10;
+    const threshold = options.threshold ?? 0.85;
 
     try {
-      const ready = await this.ensureCollection(context)
+      const ready = await this.ensureCollection(context);
       if (!ready) {
-        console.warn('[WikiNodeEmbeddingService] Not initialized, returning empty results')
-        return []
+        console.warn('[WikiNodeEmbeddingService] Not initialized, returning empty results');
+        return [];
       }
 
       // Generate embedding for the search name
@@ -490,11 +488,11 @@ export class WikiNodeEmbeddingService {
         name,
         type: options.nodeType ?? 'Concept',
         groupId: options.groupId ?? '',
-      }
-      const queryEmbedding = await this.generateNodeEmbedding(context, searchNode)
+      };
+      const queryEmbedding = await this.generateNodeEmbedding(context, searchNode);
 
       // Build filter
-      const filter = this.buildSearchFilter(context, options)
+      const filter = this.buildSearchFilter(context, options);
 
       // Search in Qdrant
       const searchResult = await this.client.search(this.collectionName, {
@@ -503,16 +501,16 @@ export class WikiNodeEmbeddingService {
         limit: limit + 1, // Get extra in case we need to exclude
         score_threshold: threshold,
         with_payload: true,
-      })
+      });
 
       // Map results and filter out excluded node
-      const results: SimilarNodeResult[] = []
+      const results: SimilarNodeResult[] = [];
       for (const result of searchResult) {
-        const nodeId = result.payload?.nodeId as string
+        const nodeId = result.payload?.nodeId as string;
         if (options.excludeNodeId && nodeId === options.excludeNodeId) {
-          continue
+          continue;
         }
-        if (results.length >= limit) break
+        if (results.length >= limit) break;
 
         results.push({
           nodeId,
@@ -520,16 +518,16 @@ export class WikiNodeEmbeddingService {
           nodeType: result.payload?.nodeType as EmbeddableNodeType,
           score: result.score,
           groupId: result.payload?.groupId as string,
-        })
+        });
       }
 
-      return results
+      return results;
     } catch (error) {
       console.error(
         '[WikiNodeEmbeddingService] Find similar entities failed:',
         error instanceof Error ? error.message : error
-      )
-      return []
+      );
+      return [];
     }
   }
 
@@ -543,49 +541,49 @@ export class WikiNodeEmbeddingService {
     options: Partial<SimilarNodeSearchOptions> = {}
   ): Promise<SimilarNodeResult[]> {
     try {
-      const ready = await this.ensureCollection(context)
+      const ready = await this.ensureCollection(context);
       if (!ready) {
-        return []
+        return [];
       }
 
-      const normalizedName = this.normalizeName(name)
-      const limit = options.limit ?? 10
+      const normalizedName = this.normalizeName(name);
+      const limit = options.limit ?? 10;
 
       // Build filter with normalized name match
       const must: unknown[] = [
         { key: 'workspaceId', match: { value: context.workspaceId } },
         { key: 'normalizedName', match: { value: normalizedName } },
-      ]
+      ];
 
       if (context.projectId) {
-        must.push({ key: 'projectId', match: { value: context.projectId } })
+        must.push({ key: 'projectId', match: { value: context.projectId } });
       }
       if (options.groupId) {
-        must.push({ key: 'groupId', match: { value: options.groupId } })
+        must.push({ key: 'groupId', match: { value: options.groupId } });
       }
       if (options.nodeType) {
-        must.push({ key: 'nodeType', match: { value: options.nodeType } })
+        must.push({ key: 'nodeType', match: { value: options.nodeType } });
       }
 
       const scrollResult = await this.client.scroll(this.collectionName, {
         filter: { must },
         limit,
         with_payload: true,
-      })
+      });
 
-      return scrollResult.points.map(point => ({
+      return scrollResult.points.map((point) => ({
         nodeId: point.payload?.nodeId as string,
         name: point.payload?.name as string,
         nodeType: point.payload?.nodeType as EmbeddableNodeType,
         score: 1.0, // Exact match
         groupId: point.payload?.groupId as string,
-      }))
+      }));
     } catch (error) {
       console.error(
         '[WikiNodeEmbeddingService] Find by normalized name failed:',
         error instanceof Error ? error.message : error
-      )
-      return []
+      );
+      return [];
     }
   }
 
@@ -596,23 +594,21 @@ export class WikiNodeEmbeddingService {
     context: WikiContext,
     options: Partial<SimilarNodeSearchOptions>
   ): Record<string, unknown> {
-    const must: unknown[] = [
-      { key: 'workspaceId', match: { value: context.workspaceId } },
-    ]
+    const must: unknown[] = [{ key: 'workspaceId', match: { value: context.workspaceId } }];
 
     if (context.projectId) {
-      must.push({ key: 'projectId', match: { value: context.projectId } })
+      must.push({ key: 'projectId', match: { value: context.projectId } });
     }
 
     if (options.groupId) {
-      must.push({ key: 'groupId', match: { value: options.groupId } })
+      must.push({ key: 'groupId', match: { value: options.groupId } });
     }
 
     if (options.nodeType) {
-      must.push({ key: 'nodeType', match: { value: options.nodeType } })
+      must.push({ key: 'nodeType', match: { value: options.nodeType } });
     }
 
-    return { must }
+    return { must };
   }
 
   // ===========================================================================
@@ -624,20 +620,20 @@ export class WikiNodeEmbeddingService {
    */
   async deleteNodeEmbedding(nodeId: string): Promise<boolean> {
     try {
-      const pointId = this.generatePointId(nodeId)
+      const pointId = this.generatePointId(nodeId);
       await this.client.delete(this.collectionName, {
         wait: true,
         points: [pointId],
-      })
+      });
 
-      console.log(`[WikiNodeEmbeddingService] Deleted embedding for node ${nodeId}`)
-      return true
+      console.log(`[WikiNodeEmbeddingService] Deleted embedding for node ${nodeId}`);
+      return true;
     } catch (error) {
       console.error(
         `[WikiNodeEmbeddingService] Failed to delete embedding for node ${nodeId}:`,
         error instanceof Error ? error.message : error
-      )
-      return false
+      );
+      return false;
     }
   }
 
@@ -651,16 +647,16 @@ export class WikiNodeEmbeddingService {
         filter: {
           must: [{ key: 'workspaceId', match: { value: workspaceId } }],
         },
-      })
+      });
 
-      console.log(`[WikiNodeEmbeddingService] Deleted embeddings for workspace ${workspaceId}`)
-      return typeof result === 'object' ? 1 : 0
+      console.log(`[WikiNodeEmbeddingService] Deleted embeddings for workspace ${workspaceId}`);
+      return typeof result === 'object' ? 1 : 0;
     } catch (error) {
       console.error(
         `[WikiNodeEmbeddingService] Failed to delete embeddings for workspace ${workspaceId}:`,
         error instanceof Error ? error.message : error
-      )
-      return 0
+      );
+      return 0;
     }
   }
 
@@ -674,16 +670,16 @@ export class WikiNodeEmbeddingService {
         filter: {
           must: [{ key: 'groupId', match: { value: groupId } }],
         },
-      })
+      });
 
-      console.log(`[WikiNodeEmbeddingService] Deleted embeddings for group ${groupId}`)
-      return typeof result === 'object' ? 1 : 0
+      console.log(`[WikiNodeEmbeddingService] Deleted embeddings for group ${groupId}`);
+      return typeof result === 'object' ? 1 : 0;
     } catch (error) {
       console.error(
         `[WikiNodeEmbeddingService] Failed to delete embeddings for group ${groupId}:`,
         error instanceof Error ? error.message : error
-      )
-      return 0
+      );
+      return 0;
     }
   }
 
@@ -695,24 +691,24 @@ export class WikiNodeEmbeddingService {
    * Get statistics about stored node embeddings
    */
   async getStats(): Promise<{
-    totalNodes: number
-    collectionExists: boolean
+    totalNodes: number;
+    collectionExists: boolean;
   }> {
     try {
-      const collections = await this.client.getCollections()
-      const exists = collections.collections.some(c => c.name === this.collectionName)
+      const collections = await this.client.getCollections();
+      const exists = collections.collections.some((c) => c.name === this.collectionName);
 
       if (!exists) {
-        return { totalNodes: 0, collectionExists: false }
+        return { totalNodes: 0, collectionExists: false };
       }
 
-      const info = await this.client.getCollection(this.collectionName)
+      const info = await this.client.getCollection(this.collectionName);
       return {
         totalNodes: info.points_count ?? 0,
         collectionExists: true,
-      }
+      };
     } catch {
-      return { totalNodes: 0, collectionExists: false }
+      return { totalNodes: 0, collectionExists: false };
     }
   }
 }
@@ -721,21 +717,21 @@ export class WikiNodeEmbeddingService {
 // Singleton Instance
 // =============================================================================
 
-let nodeEmbeddingServiceInstance: WikiNodeEmbeddingService | null = null
+let nodeEmbeddingServiceInstance: WikiNodeEmbeddingService | null = null;
 
 /**
  * Get or create the singleton WikiNodeEmbeddingService
  */
 export function getWikiNodeEmbeddingService(prisma: PrismaClient): WikiNodeEmbeddingService {
   if (!nodeEmbeddingServiceInstance) {
-    nodeEmbeddingServiceInstance = new WikiNodeEmbeddingService(prisma)
+    nodeEmbeddingServiceInstance = new WikiNodeEmbeddingService(prisma);
   }
-  return nodeEmbeddingServiceInstance
+  return nodeEmbeddingServiceInstance;
 }
 
 /**
  * Reset the singleton (useful for testing)
  */
 export function resetWikiNodeEmbeddingService(): void {
-  nodeEmbeddingServiceInstance = null
+  nodeEmbeddingServiceInstance = null;
 }

@@ -13,8 +13,8 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Key,
   Plus,
@@ -28,18 +28,18 @@ import {
   Eye,
   EyeOff,
   Shield,
-} from 'lucide-react'
-import { trpc } from '../lib/trpc'
+} from 'lucide-react';
+import { trpc } from '../lib/trpc';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface NewKeyData {
-  name: string
-  permissions: string[]
-  expiresIn: number | null
-  rateLimit: number
+  name: string;
+  permissions: string[];
+  expiresIn: number | null;
+  rateLimit: number;
 }
 
 // =============================================================================
@@ -51,7 +51,7 @@ const EXPIRY_OPTIONS = [
   { value: 30, label: '30 days' },
   { value: 90, label: '90 days' },
   { value: 365, label: '1 year' },
-]
+];
 
 const PERMISSION_GROUPS = [
   {
@@ -72,7 +72,11 @@ const PERMISSION_GROUPS = [
     name: 'Comments',
     permissions: [
       { id: 'comments:read', label: 'Read comments', description: 'View task comments' },
-      { id: 'comments:write', label: 'Write comments', description: 'Create, update, delete comments' },
+      {
+        id: 'comments:write',
+        label: 'Write comments',
+        description: 'Create, update, delete comments',
+      },
     ],
   },
   {
@@ -82,47 +86,47 @@ const PERMISSION_GROUPS = [
       { id: 'webhooks:write', label: 'Write webhooks', description: 'Manage webhook settings' },
     ],
   },
-]
+];
 
 // =============================================================================
 // Component
 // =============================================================================
 
 export function ApiSettings() {
-  const navigate = useNavigate()
-  const [showCreateModal, setShowCreateModal] = useState(false)
+  const navigate = useNavigate();
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [newKey, setNewKey] = useState<NewKeyData>({
     name: '',
     permissions: ['tasks:read', 'projects:read'],
     expiresIn: null,
     rateLimit: 100,
-  })
-  const [createdKey, setCreatedKey] = useState<string | null>(null)
-  const [copiedId, setCopiedId] = useState<string | null>(null)
-  const [showPermissions, setShowPermissions] = useState<number | null>(null)
+  });
+  const [createdKey, setCreatedKey] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [showPermissions, setShowPermissions] = useState<number | null>(null);
 
   // Queries
-  const { data: keys, isLoading, refetch } = trpc.apiKey.list.useQuery()
+  const { data: keys, isLoading, refetch } = trpc.apiKey.list.useQuery();
 
   // Mutations
   const createMutation = trpc.apiKey.create.useMutation({
     onSuccess: (data) => {
-      setCreatedKey(data.key)
-      refetch()
+      setCreatedKey(data.key);
+      refetch();
     },
-  })
+  });
 
   const revokeMutation = trpc.apiKey.revoke.useMutation({
     onSuccess: () => refetch(),
-  })
+  });
 
   const handleCreate = async () => {
     // Calculate expiry date from days if set
-    let expiresAt: string | undefined
+    let expiresAt: string | undefined;
     if (newKey.expiresIn) {
-      const date = new Date()
-      date.setDate(date.getDate() + newKey.expiresIn)
-      expiresAt = date.toISOString()
+      const date = new Date();
+      date.setDate(date.getDate() + newKey.expiresIn);
+      expiresAt = date.toISOString();
     }
 
     await createMutation.mutateAsync({
@@ -139,25 +143,25 @@ export function ApiSettings() {
       )[],
       expiresAt,
       rateLimit: newKey.rateLimit,
-    })
-  }
+    });
+  };
 
   const handleCopy = async (text: string, id: string) => {
-    await navigator.clipboard.writeText(text)
-    setCopiedId(id)
-    setTimeout(() => setCopiedId(null), 2000)
-  }
+    await navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
 
   const handleCloseModal = () => {
-    setShowCreateModal(false)
-    setCreatedKey(null)
+    setShowCreateModal(false);
+    setCreatedKey(null);
     setNewKey({
       name: '',
       permissions: ['tasks:read', 'projects:read'],
       expiresIn: null,
       rateLimit: 100,
-    })
-  }
+    });
+  };
 
   const togglePermission = (permId: string) => {
     setNewKey((prev) => ({
@@ -165,17 +169,17 @@ export function ApiSettings() {
       permissions: prev.permissions.includes(permId)
         ? prev.permissions.filter((p) => p !== permId)
         : [...prev.permissions, permId],
-    }))
-  }
+    }));
+  };
 
   const formatDate = (date: string | null) => {
-    if (!date) return 'Never'
+    if (!date) return 'Never';
     return new Date(date).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
-    })
-  }
+    });
+  };
 
   return (
     <div className="min-h-screen bg-muted">
@@ -192,9 +196,7 @@ export function ApiSettings() {
               </button>
               <div className="flex items-center gap-3">
                 <Key className="w-6 h-6 text-muted-foreground" />
-                <h1 className="text-section-title text-foreground">
-                  API Keys
-                </h1>
+                <h1 className="text-section-title text-foreground">API Keys</h1>
               </div>
             </div>
             <button
@@ -215,12 +217,10 @@ export function ApiSettings() {
           <div className="flex gap-3">
             <Shield className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" />
             <div>
-              <h3 className="font-medium text-blue-900 dark:text-blue-100">
-                API Access
-              </h3>
+              <h3 className="font-medium text-blue-900 dark:text-blue-100">API Access</h3>
               <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                API keys allow external applications to access Kanbu on your behalf.
-                Keep your keys secret and only grant necessary permissions.
+                API keys allow external applications to access Kanbu on your behalf. Keep your keys
+                secret and only grant necessary permissions.
               </p>
               <a
                 href="https://docs.kanbu.be/api"
@@ -238,9 +238,7 @@ export function ApiSettings() {
         {/* API Keys List */}
         <div className="bg-card rounded-card border border-border overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-lg font-semibold text-foreground">
-              Your API Keys
-            </h2>
+            <h2 className="text-lg font-semibold text-foreground">Your API Keys</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               Manage your personal API keys
             </p>
@@ -253,9 +251,7 @@ export function ApiSettings() {
           ) : !keys || keys.length === 0 ? (
             <div className="text-center py-12 px-4">
               <Key className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-foreground mb-2">
-                No API keys yet
-              </h3>
+              <h3 className="text-lg font-medium text-foreground mb-2">No API keys yet</h3>
               <p className="text-gray-500 dark:text-gray-400 mb-4">
                 Create an API key to start integrating with Kanbu
               </p>
@@ -274,9 +270,7 @@ export function ApiSettings() {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <h3 className="font-medium text-foreground">
-                          {key.name}
-                        </h3>
+                        <h3 className="font-medium text-foreground">{key.name}</h3>
                         {!key.isActive && (
                           <span className="px-2 py-0.5 text-xs bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded">
                             Revoked
@@ -288,20 +282,23 @@ export function ApiSettings() {
                           {key.keyPrefix}...
                         </span>
                         <span>Created {formatDate(key.createdAt)}</span>
-                        <span>
-                          Expires: {formatDate(key.expiresAt)}
-                        </span>
-                        {key.lastUsedAt && (
-                          <span>Last used: {formatDate(key.lastUsedAt)}</span>
-                        )}
+                        <span>Expires: {formatDate(key.expiresAt)}</span>
+                        {key.lastUsedAt && <span>Last used: {formatDate(key.lastUsedAt)}</span>}
                       </div>
                       <div className="mt-3">
                         <button
-                          onClick={() => setShowPermissions(showPermissions === key.id ? null : key.id)}
+                          onClick={() =>
+                            setShowPermissions(showPermissions === key.id ? null : key.id)
+                          }
                           className="text-sm text-blue-500 hover:text-blue-600 flex items-center gap-1"
                         >
-                          {showPermissions === key.id ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                          {showPermissions === key.id ? 'Hide' : 'Show'} permissions ({(key.permissions as string[]).length})
+                          {showPermissions === key.id ? (
+                            <EyeOff className="w-4 h-4" />
+                          ) : (
+                            <Eye className="w-4 h-4" />
+                          )}
+                          {showPermissions === key.id ? 'Hide' : 'Show'} permissions (
+                          {(key.permissions as string[]).length})
                         </button>
                         {showPermissions === key.id && (
                           <div className="mt-2 flex flex-wrap gap-2">
@@ -356,7 +353,8 @@ export function ApiSettings() {
                     <div className="flex gap-3">
                       <AlertCircle className="w-5 h-5 text-yellow-500 flex-shrink-0" />
                       <p className="text-sm text-yellow-700 dark:text-yellow-300">
-                        This is the only time you'll see this key. Copy it now and store it securely.
+                        This is the only time you'll see this key. Copy it now and store it
+                        securely.
                       </p>
                     </div>
                   </div>
@@ -484,7 +482,9 @@ export function ApiSettings() {
               {!createdKey && (
                 <button
                   onClick={handleCreate}
-                  disabled={!newKey.name || newKey.permissions.length === 0 || createMutation.isPending}
+                  disabled={
+                    !newKey.name || newKey.permissions.length === 0 || createMutation.isPending
+                  }
                   className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   {createMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
@@ -496,7 +496,7 @@ export function ApiSettings() {
         </div>
       )}
     </div>
-  )
+  );
 }
 
-export default ApiSettings
+export default ApiSettings;

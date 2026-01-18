@@ -179,70 +179,70 @@ enum AccessType {
 
 ### 2.1 System Permissions
 
-| Permission | Description |
-|------------|-------------|
-| `system.admin` | Full system access |
-| `system.users.view` | View users |
-| `system.users.manage` | Create/modify users |
-| `system.groups.view` | View security groups |
-| `system.groups.manage` | Manage security groups |
-| `system.settings.view` | View system settings |
+| Permission               | Description            |
+| ------------------------ | ---------------------- |
+| `system.admin`           | Full system access     |
+| `system.users.view`      | View users             |
+| `system.users.manage`    | Create/modify users    |
+| `system.groups.view`     | View security groups   |
+| `system.groups.manage`   | Manage security groups |
+| `system.settings.view`   | View system settings   |
 | `system.settings.manage` | Modify system settings |
 
 ### 2.2 Workspace Permissions
 
-| Permission | Description |
-|------------|-------------|
-| `workspace.view` | View workspace |
+| Permission                  | Description               |
+| --------------------------- | ------------------------- |
+| `workspace.view`            | View workspace            |
 | `workspace.settings.manage` | Modify workspace settings |
-| `workspace.members.view` | View members |
-| `workspace.members.manage` | Add/remove members |
-| `workspace.projects.create` | Create new projects |
-| `workspace.projects.delete` | Delete projects |
+| `workspace.members.view`    | View members              |
+| `workspace.members.manage`  | Add/remove members        |
+| `workspace.projects.create` | Create new projects       |
+| `workspace.projects.delete` | Delete projects           |
 
 ### 2.3 Project Permissions
 
-| Permission | Description |
-|------------|-------------|
-| `project.view` | View project |
+| Permission                | Description             |
+| ------------------------- | ----------------------- |
+| `project.view`            | View project            |
 | `project.settings.manage` | Modify project settings |
-| `project.members.view` | View project members |
-| `project.members.manage` | Manage project members |
-| `project.delete` | Delete project |
+| `project.members.view`    | View project members    |
+| `project.members.manage`  | Manage project members  |
+| `project.delete`          | Delete project          |
 
 ### 2.4 Board/Tasks Permissions
 
-| Permission | Description |
-|------------|-------------|
-| `tasks.view` | View tasks |
-| `tasks.create` | Create tasks |
-| `tasks.edit` | Edit tasks |
-| `tasks.delete` | Delete tasks |
-| `tasks.move` | Move tasks (drag & drop) |
-| `tasks.assign` | Assign tasks to users |
-| `tasks.comment` | Post comments |
-| `board.columns.manage` | Manage columns |
-| `board.swimlanes.manage` | Manage swimlanes |
+| Permission               | Description              |
+| ------------------------ | ------------------------ |
+| `tasks.view`             | View tasks               |
+| `tasks.create`           | Create tasks             |
+| `tasks.edit`             | Edit tasks               |
+| `tasks.delete`           | Delete tasks             |
+| `tasks.move`             | Move tasks (drag & drop) |
+| `tasks.assign`           | Assign tasks to users    |
+| `tasks.comment`          | Post comments            |
+| `board.columns.manage`   | Manage columns           |
+| `board.swimlanes.manage` | Manage swimlanes         |
 
 ### 2.5 Planning Permissions
 
-| Permission | Description |
-|------------|-------------|
-| `sprints.view` | View sprints |
-| `sprints.manage` | Create/modify/delete sprints |
-| `milestones.view` | View milestones |
+| Permission          | Description                     |
+| ------------------- | ------------------------------- |
+| `sprints.view`      | View sprints                    |
+| `sprints.manage`    | Create/modify/delete sprints    |
+| `milestones.view`   | View milestones                 |
 | `milestones.manage` | Create/modify/delete milestones |
-| `analytics.view` | View analytics dashboard |
+| `analytics.view`    | View analytics dashboard        |
 
 ### 2.6 Integration Permissions
 
-| Permission | Description |
-|------------|-------------|
-| `webhooks.view` | View webhooks |
+| Permission        | Description                   |
+| ----------------- | ----------------------------- |
+| `webhooks.view`   | View webhooks                 |
 | `webhooks.manage` | Create/modify/delete webhooks |
-| `import.execute` | Import data |
-| `export.execute` | Export data |
-| `api.access` | API access |
+| `import.execute`  | Import data                   |
+| `export.execute`  | Export data                   |
+| `api.access`      | API access                    |
 
 ---
 
@@ -250,26 +250,26 @@ enum AccessType {
 
 ### 3.1 System-level Groups (automatic)
 
-| Group | Permissions |
-|-------|-------------|
+| Group             | Permissions                   |
+| ----------------- | ----------------------------- |
 | **Domain Admins** | `system.admin` (full control) |
-| **Domain Users** | Basic authentication |
+| **Domain Users**  | Basic authentication          |
 
 ### 3.2 Workspace-level Groups (per workspace)
 
-| Group Template | Permissions |
-|----------------|-------------|
-| **{Workspace} Admins** | Everything within workspace |
+| Group Template          | Permissions                                |
+| ----------------------- | ------------------------------------------ |
+| **{Workspace} Admins**  | Everything within workspace                |
 | **{Workspace} Members** | `workspace.view`, `workspace.members.view` |
 
 ### 3.3 Project-level Groups (per project)
 
-| Group Template | Permissions |
-|----------------|-------------|
-| **{Project} Admins** | Full control on project |
+| Group Template         | Permissions                                      |
+| ---------------------- | ------------------------------------------------ |
+| **{Project} Admins**   | Full control on project                          |
 | **{Project} Managers** | Everything except delete project, members manage |
-| **{Project} Editors** | Tasks CRUD, sprints/milestones view |
-| **{Project} Viewers** | Read-only |
+| **{Project} Editors**  | Tasks CRUD, sprints/milestones view              |
+| **{Project} Viewers**  | Read-only                                        |
 
 ---
 
@@ -290,7 +290,7 @@ enum AccessType {
 function resolvePermission(
   userId: number,
   permission: string,
-  scope: { workspaceId?: number, projectId?: number }
+  scope: { workspaceId?: number; projectId?: number }
 ): boolean {
   // 1. Get all groups where user is a member (direct or nested)
   const groups = getUserGroups(userId, { includeNested: true });
@@ -299,12 +299,12 @@ function resolvePermission(
   const entries = getPermissionEntries(groups, permission, scope);
 
   // 3. Check for DENY (highest priority)
-  if (entries.some(e => e.accessType === 'DENY')) {
+  if (entries.some((e) => e.accessType === 'DENY')) {
     return false;
   }
 
   // 4. Check for ALLOW
-  if (entries.some(e => e.accessType === 'ALLOW')) {
+  if (entries.some((e) => e.accessType === 'ALLOW')) {
     return true;
   }
 
@@ -448,28 +448,33 @@ permission.check({ userId, permission, workspaceId?, projectId? })
 ## 7. Implementation Order
 
 ### Phase 1: Database & Core (Week 1)
+
 1. ✅ Migrate database schema
 2. Permission seed data
 3. PermissionService core logic
 4. Migrate existing roles to groups
 
 ### Phase 2: API Layer (Week 1-2)
+
 1. tRPC procedures for groups
 2. tRPC procedures for permissions
 3. Permission middleware/guards
 
 ### Phase 3: UI Components (Week 2)
+
 1. Object tree component
 2. Permission grid component
 3. Group selector/picker
 4. User group membership editor
 
 ### Phase 4: Integration (Week 2-3)
+
 1. Refactor existing code to new permission checks
 2. Show/hide UI elements based on permissions
 3. Testing & debugging
 
 ### Phase 5: Advanced Features (Later)
+
 1. LDAP sync
 2. Audit logging
 3. Permission templates
@@ -480,10 +485,12 @@ permission.check({ userId, permission, workspaceId?, projectId? })
 ## 8. Migration from Existing System
 
 ### Current structure:
+
 - `WorkspaceUser` with `role`: OWNER, ADMIN, MEMBER, VIEWER
 - `ProjectMember` with `role`: OWNER, MANAGER, MEMBER, VIEWER
 
 ### Migration:
+
 1. Create security groups per workspace/project
 2. Map old roles to new groups
 3. Copy memberships

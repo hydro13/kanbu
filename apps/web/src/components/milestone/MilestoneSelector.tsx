@@ -23,20 +23,20 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState, useRef, useEffect } from 'react'
-import { trpc } from '@/lib/trpc'
+import { useState, useRef, useEffect } from 'react';
+import { trpc } from '@/lib/trpc';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface MilestoneSelectorProps {
-  projectId: number
-  taskId: number
-  currentMilestoneId: number | null
-  onMilestoneChange?: (milestoneId: number | null) => void
-  disabled?: boolean
-  className?: string
+  projectId: number;
+  taskId: number;
+  currentMilestoneId: number | null;
+  onMilestoneChange?: (milestoneId: number | null) => void;
+  disabled?: boolean;
+  className?: string;
 }
 
 // =============================================================================
@@ -46,9 +46,14 @@ export interface MilestoneSelectorProps {
 function FlagIcon({ className = 'h-4 w-4' }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"
+      />
     </svg>
-  )
+  );
 }
 
 function ChevronDownIcon({ className = 'h-4 w-4' }: { className?: string }) {
@@ -56,7 +61,7 @@ function ChevronDownIcon({ className = 'h-4 w-4' }: { className?: string }) {
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
     </svg>
-  )
+  );
 }
 
 function CheckIcon({ className = 'h-4 w-4' }: { className?: string }) {
@@ -64,24 +69,33 @@ function CheckIcon({ className = 'h-4 w-4' }: { className?: string }) {
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
     </svg>
-  )
+  );
 }
 
 function XCircleIcon({ className = 'h-4 w-4' }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
     </svg>
-  )
+  );
 }
 
 function LoadingSpinner() {
   return (
     <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+      <path
+        className="opacity-75"
+        fill="currentColor"
+        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+      />
     </svg>
-  )
+  );
 }
 
 // =============================================================================
@@ -89,22 +103,22 @@ function LoadingSpinner() {
 // =============================================================================
 
 function getProgressColor(progress: number): string {
-  if (progress >= 100) return 'bg-green-500'
-  if (progress >= 75) return 'bg-blue-500'
-  if (progress >= 50) return 'bg-yellow-500'
-  return 'bg-gray-400'
+  if (progress >= 100) return 'bg-green-500';
+  if (progress >= 75) return 'bg-blue-500';
+  if (progress >= 50) return 'bg-yellow-500';
+  return 'bg-gray-400';
 }
 
 function getDueStatusIndicator(status: string): string {
   switch (status) {
     case 'overdue':
-      return 'border-l-2 border-red-500'
+      return 'border-l-2 border-red-500';
     case 'due_soon':
-      return 'border-l-2 border-orange-500'
+      return 'border-l-2 border-orange-500';
     case 'on_track':
-      return 'border-l-2 border-green-500'
+      return 'border-l-2 border-green-500';
     default:
-      return ''
+      return '';
   }
 }
 
@@ -120,57 +134,57 @@ export function MilestoneSelector({
   disabled = false,
   className = '',
 }: MilestoneSelectorProps) {
-  const [isOpen, setIsOpen] = useState(false)
-  const dropdownRef = useRef<HTMLDivElement>(null)
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const utils = trpc.useUtils()
+  const utils = trpc.useUtils();
 
   // Fetch milestones for project
   const { data: milestones, isLoading } = trpc.milestone.list.useQuery(
     { projectId, includeCompleted: false },
     { enabled: projectId > 0 }
-  )
+  );
 
   // Set milestone mutation
   const setMilestoneMutation = trpc.milestone.setForTask.useMutation({
     onSuccess: () => {
-      utils.task.get.invalidate()
-      utils.milestone.list.invalidate()
-      setIsOpen(false)
+      utils.task.get.invalidate();
+      utils.milestone.list.invalidate();
+      setIsOpen(false);
     },
-  })
+  });
 
   // Find current milestone
-  const currentMilestone = milestones?.find((m) => m.id === currentMilestoneId)
+  const currentMilestone = milestones?.find((m) => m.id === currentMilestoneId);
 
   // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false)
+        setIsOpen(false);
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Handle select
   const handleSelect = (milestoneId: number | null) => {
     if (milestoneId === currentMilestoneId) {
-      setIsOpen(false)
-      return
+      setIsOpen(false);
+      return;
     }
 
     setMilestoneMutation.mutate(
       { taskId, milestoneId },
       {
         onSuccess: () => {
-          onMilestoneChange?.(milestoneId)
+          onMilestoneChange?.(milestoneId);
         },
       }
-    )
-  }
+    );
+  };
 
   return (
     <div ref={dropdownRef} className={`relative ${className}`}>
@@ -179,12 +193,12 @@ export function MilestoneSelector({
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled || setMilestoneMutation.isPending}
         className={`flex items-center gap-2 pl-0 pr-2 py-0 w-full text-left transition-colors ${
-          disabled
-            ? 'text-gray-400 cursor-not-allowed'
-            : 'hover:bg-gray-50 cursor-pointer rounded'
+          disabled ? 'text-gray-400 cursor-not-allowed' : 'hover:bg-gray-50 cursor-pointer rounded'
         }`}
       >
-        <FlagIcon className={`h-4 w-4 flex-shrink-0 ${currentMilestone ? 'text-blue-500' : 'text-gray-400'}`} />
+        <FlagIcon
+          className={`h-4 w-4 flex-shrink-0 ${currentMilestone ? 'text-blue-500' : 'text-gray-400'}`}
+        />
 
         <div className="flex-1 min-w-0">
           {setMilestoneMutation.isPending ? (
@@ -206,8 +220,8 @@ export function MilestoneSelector({
         {currentMilestone && !disabled && !setMilestoneMutation.isPending && (
           <button
             onClick={(e) => {
-              e.stopPropagation()
-              handleSelect(null)
+              e.stopPropagation();
+              handleSelect(null);
             }}
             className="p-0.5 hover:bg-gray-200 rounded text-gray-400 hover:text-gray-600"
             title="Remove from milestone"
@@ -216,7 +230,9 @@ export function MilestoneSelector({
           </button>
         )}
 
-        <ChevronDownIcon className={`h-4 w-4 flex-shrink-0 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDownIcon
+          className={`h-4 w-4 flex-shrink-0 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+        />
       </button>
 
       {/* Dropdown */}
@@ -283,7 +299,7 @@ export function MilestoneSelector({
         </div>
       )}
     </div>
-  )
+  );
 }
 
-export default MilestoneSelector
+export default MilestoneSelector;

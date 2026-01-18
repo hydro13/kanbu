@@ -12,37 +12,37 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useEffect, useCallback, useRef, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { trpc } from '@/lib/trpc'
-import { cn } from '@/lib/utils'
-import { useCommandPalette } from './CommandPaletteContext'
-import { useNavigationContext } from '@/hooks/useNavigationContext'
+import { useEffect, useCallback, useRef, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { trpc } from '@/lib/trpc';
+import { cn } from '@/lib/utils';
+import { useCommandPalette } from './CommandPaletteContext';
+import { useNavigationContext } from '@/hooks/useNavigationContext';
 
 // Re-export useCommandPalette from context for backwards compatibility
-export { useCommandPalette } from './CommandPaletteContext'
+export { useCommandPalette } from './CommandPaletteContext';
 
 // =============================================================================
 // Types
 // =============================================================================
 
-type CommandType = 'navigation' | 'action' | 'task' | 'project' | 'workspace'
+type CommandType = 'navigation' | 'action' | 'task' | 'project' | 'workspace';
 
 interface CommandItem {
-  id: string
-  type: CommandType
-  label: string
-  description?: string
-  icon?: React.ReactNode
-  shortcut?: string
-  keywords?: string[]
-  section?: string
-  onSelect: () => void
+  id: string;
+  type: CommandType;
+  label: string;
+  description?: string;
+  icon?: React.ReactNode;
+  shortcut?: string;
+  keywords?: string[];
+  section?: string;
+  onSelect: () => void;
 }
 
 export interface CommandPaletteProps {
-  projectId?: number
-  onOpenTaskDetail?: (taskId: number) => void
+  projectId?: number;
+  onOpenTaskDetail?: (taskId: number) => void;
 }
 
 // =============================================================================
@@ -65,129 +65,277 @@ function SearchIcon() {
         d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
       />
     </svg>
-  )
+  );
 }
 
 function DashboardIcon() {
   return (
-    <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
+    <svg
+      className="h-4 w-4"
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"
+      />
     </svg>
-  )
+  );
 }
 
 function TaskIcon() {
   return (
-    <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+    <svg
+      className="h-4 w-4"
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+      />
     </svg>
-  )
+  );
 }
 
 function InboxIcon() {
   return (
-    <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+    <svg
+      className="h-4 w-4"
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+      />
     </svg>
-  )
+  );
 }
 
 function WorkspaceIcon() {
   return (
-    <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+    <svg
+      className="h-4 w-4"
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+      />
     </svg>
-  )
+  );
 }
 
 function ProjectIcon() {
   return (
-    <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+    <svg
+      className="h-4 w-4"
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"
+      />
     </svg>
-  )
+  );
 }
 
 function NotesIcon() {
   return (
-    <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+    <svg
+      className="h-4 w-4"
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+      />
     </svg>
-  )
+  );
 }
 
 function UsersIcon() {
   return (
-    <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+    <svg
+      className="h-4 w-4"
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+      />
     </svg>
-  )
+  );
 }
 
 function ChartIcon() {
   return (
-    <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+    <svg
+      className="h-4 w-4"
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+      />
     </svg>
-  )
+  );
 }
 
 function SettingsIcon() {
   return (
-    <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    <svg
+      className="h-4 w-4"
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+      />
     </svg>
-  )
+  );
 }
 
 function WikiIcon() {
   return (
-    <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+    <svg
+      className="h-4 w-4"
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+      />
     </svg>
-  )
+  );
 }
 
 function BoardIcon() {
   return (
-    <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
+    <svg
+      className="h-4 w-4"
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"
+      />
     </svg>
-  )
+  );
 }
 
 function CalendarIcon() {
   return (
-    <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+    <svg
+      className="h-4 w-4"
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+      />
     </svg>
-  )
+  );
 }
 
 function ListIcon() {
   return (
-    <svg className="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+    <svg
+      className="h-4 w-4"
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M4 6h16M4 10h16M4 14h16M4 18h16"
+      />
     </svg>
-  )
+  );
 }
 
 function getTypeIcon(type: CommandType, icon?: React.ReactNode) {
-  if (icon) return icon
+  if (icon) return icon;
   switch (type) {
     case 'task':
-      return <TaskIcon />
+      return <TaskIcon />;
     case 'navigation':
-      return <DashboardIcon />
+      return <DashboardIcon />;
     case 'workspace':
-      return <WorkspaceIcon />
+      return <WorkspaceIcon />;
     case 'project':
-      return <ProjectIcon />
+      return <ProjectIcon />;
     case 'action':
-      return <TaskIcon />
+      return <TaskIcon />;
     default:
-      return null
+      return null;
   }
 }
 
@@ -195,67 +343,73 @@ function getTypeIcon(type: CommandType, icon?: React.ReactNode) {
 // Component
 // =============================================================================
 
-export function CommandPalette({ projectId: propProjectId, onOpenTaskDetail }: CommandPaletteProps) {
-  const [query, setQuery] = useState('')
-  const [selectedIndex, setSelectedIndex] = useState(0)
-  const { isOpen, close } = useCommandPalette()
-  const inputRef = useRef<HTMLInputElement>(null)
-  const listRef = useRef<HTMLDivElement>(null)
-  const navigate = useNavigate()
-  const navContext = useNavigationContext()
+export function CommandPalette({
+  projectId: propProjectId,
+  onOpenTaskDetail,
+}: CommandPaletteProps) {
+  const [query, setQuery] = useState('');
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const { isOpen, close } = useCommandPalette();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  const navContext = useNavigationContext();
 
   // Use projectId from props or from navigation context
-  const projectId = propProjectId ?? (navContext.projectIdentifier ? parseInt(navContext.projectIdentifier, 10) : undefined)
-  const workspaceSlug = navContext.workspaceSlug
+  const projectId =
+    propProjectId ??
+    (navContext.projectIdentifier ? parseInt(navContext.projectIdentifier, 10) : undefined);
+  const workspaceSlug = navContext.workspaceSlug;
 
   // ==========================================================================
   // Data Fetching
   // ==========================================================================
 
   // Fetch workspaces for search
-  const { data: workspaces } = trpc.workspace.list.useQuery(
-    undefined,
-    { enabled: isOpen && query.length >= 2 }
-  )
+  const { data: workspaces } = trpc.workspace.list.useQuery(undefined, {
+    enabled: isOpen && query.length >= 2,
+  });
 
   // Fetch my tasks for search
-  const { data: myTasks } = trpc.user.getMyTasks.useQuery(
-    undefined,
-    { enabled: isOpen && query.length >= 2 }
-  )
+  const { data: myTasks } = trpc.user.getMyTasks.useQuery(undefined, {
+    enabled: isOpen && query.length >= 2,
+  });
 
   // Fetch project tasks if in project context
   const { data: projectTasks } = trpc.task.list.useQuery(
     { projectId: projectId! },
     { enabled: isOpen && !!projectId && query.length >= 2 }
-  )
+  );
 
   // Fetch workspace by slug for wiki search
   const { data: workspace } = trpc.workspace.getBySlug.useQuery(
     { slug: workspaceSlug! },
     { enabled: isOpen && !!workspaceSlug && query.length >= 2 }
-  )
+  );
 
   // Fetch wiki pages for workspace
   const { data: wikiPages } = trpc.workspaceWiki.getTree.useQuery(
     { workspaceId: workspace?.id ?? 0 },
     { enabled: isOpen && !!workspace?.id && query.length >= 2 }
-  )
+  );
 
   // ==========================================================================
   // Build Command Items
   // ==========================================================================
 
   const commandItems = useMemo<CommandItem[]>(() => {
-    const items: CommandItem[] = []
-    const lowerQuery = query.toLowerCase()
+    const items: CommandItem[] = [];
+    const lowerQuery = query.toLowerCase();
 
     // Helper to check if item matches query
     const matchesQuery = (label: string, description?: string, keywords?: string[]) => {
-      if (query.length === 0) return true
-      const searchText = [label, description, ...(keywords || [])].filter(Boolean).join(' ').toLowerCase()
-      return searchText.includes(lowerQuery)
-    }
+      if (query.length === 0) return true;
+      const searchText = [label, description, ...(keywords || [])]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      return searchText.includes(lowerQuery);
+    };
 
     // ========================================================================
     // Navigation Commands (Always Available)
@@ -312,7 +466,7 @@ export function CommandPalette({ projectId: propProjectId, onOpenTaskDetail }: C
         icon: <NotesIcon />,
         section: 'Navigation',
       },
-    ]
+    ];
 
     // Add navigation routes
     const navRoutes: Record<string, string> = {
@@ -321,22 +475,22 @@ export function CommandPalette({ projectId: propProjectId, onOpenTaskDetail }: C
       'nav-inbox': '/dashboard/inbox',
       'nav-workspaces': '/workspaces',
       'nav-notes': '/dashboard/notes',
-    }
+    };
 
-    navCommands.forEach(cmd => {
+    navCommands.forEach((cmd) => {
       if (matchesQuery(cmd.label, cmd.description, cmd.keywords)) {
-        const route = navRoutes[cmd.id]
+        const route = navRoutes[cmd.id];
         if (route) {
           items.push({
             ...cmd,
             onSelect: () => {
-              navigate(route)
-              close()
+              navigate(route);
+              close();
             },
-          })
+          });
         }
       }
-    })
+    });
 
     // ========================================================================
     // Workspace Context Commands
@@ -384,7 +538,7 @@ export function CommandPalette({ projectId: propProjectId, onOpenTaskDetail }: C
           icon: <SettingsIcon />,
           section: 'Workspace',
         },
-      ]
+      ];
 
       const wsRoutes: Record<string, string> = {
         'ws-overview': `/workspace/${workspaceSlug}`,
@@ -392,22 +546,22 @@ export function CommandPalette({ projectId: propProjectId, onOpenTaskDetail }: C
         'ws-stats': `/workspace/${workspaceSlug}/stats`,
         'ws-wiki': `/workspace/${workspaceSlug}/wiki`,
         'ws-settings': `/workspace/${workspaceSlug}/settings`,
-      }
+      };
 
-      wsCommands.forEach(cmd => {
+      wsCommands.forEach((cmd) => {
         if (matchesQuery(cmd.label, cmd.description)) {
-          const route = wsRoutes[cmd.id]
+          const route = wsRoutes[cmd.id];
           if (route) {
             items.push({
               ...cmd,
               onSelect: () => {
-                navigate(route)
-                close()
+                navigate(route);
+                close();
               },
-            })
+            });
           }
         }
-      })
+      });
     }
 
     // ========================================================================
@@ -448,29 +602,29 @@ export function CommandPalette({ projectId: propProjectId, onOpenTaskDetail }: C
           icon: <ChartIcon />,
           section: 'Project',
         },
-      ]
+      ];
 
       const projRoutes: Record<string, string> = {
         'proj-board': `/workspace/${workspaceSlug}/project/${projectId}/board`,
         'proj-list': `/workspace/${workspaceSlug}/project/${projectId}/list`,
         'proj-calendar': `/workspace/${workspaceSlug}/project/${projectId}/calendar`,
         'proj-analytics': `/workspace/${workspaceSlug}/project/${projectId}/analytics`,
-      }
+      };
 
-      projCommands.forEach(cmd => {
+      projCommands.forEach((cmd) => {
         if (matchesQuery(cmd.label, cmd.description)) {
-          const route = projRoutes[cmd.id]
+          const route = projRoutes[cmd.id];
           if (route) {
             items.push({
               ...cmd,
               onSelect: () => {
-                navigate(route)
-                close()
+                navigate(route);
+                close();
               },
-            })
+            });
           }
         }
-      })
+      });
 
       // Action: Create new task
       if (matchesQuery('Create New Task', 'Add task')) {
@@ -484,9 +638,9 @@ export function CommandPalette({ projectId: propProjectId, onOpenTaskDetail }: C
           section: 'Actions',
           onSelect: () => {
             // TODO: Open create task modal
-            close()
+            close();
           },
-        })
+        });
       }
     }
 
@@ -498,10 +652,10 @@ export function CommandPalette({ projectId: propProjectId, onOpenTaskDetail }: C
       // Workspace search results
       if (workspaces) {
         const matchingWorkspaces = workspaces
-          .filter(ws => ws.name.toLowerCase().includes(lowerQuery))
-          .slice(0, 5)
+          .filter((ws) => ws.name.toLowerCase().includes(lowerQuery))
+          .slice(0, 5);
 
-        matchingWorkspaces.forEach(ws => {
+        matchingWorkspaces.forEach((ws) => {
           items.push({
             id: `workspace-${ws.id}`,
             type: 'workspace',
@@ -510,22 +664,20 @@ export function CommandPalette({ projectId: propProjectId, onOpenTaskDetail }: C
             icon: <WorkspaceIcon />,
             section: 'Workspaces',
             onSelect: () => {
-              navigate(`/workspace/${ws.slug}`)
-              close()
+              navigate(`/workspace/${ws.slug}`);
+              close();
             },
-          })
-        })
+          });
+        });
       }
 
       // Task search results (from my tasks)
       if (myTasks) {
         const matchingTasks = myTasks
-          .filter(task =>
-            task.title.toLowerCase().includes(lowerQuery)
-          )
-          .slice(0, 10)
+          .filter((task) => task.title.toLowerCase().includes(lowerQuery))
+          .slice(0, 10);
 
-        matchingTasks.forEach(task => {
+        matchingTasks.forEach((task) => {
           items.push({
             id: `task-${task.id}`,
             type: 'task',
@@ -535,28 +687,31 @@ export function CommandPalette({ projectId: propProjectId, onOpenTaskDetail }: C
             section: 'Tasks',
             onSelect: () => {
               if (onOpenTaskDetail) {
-                onOpenTaskDetail(task.id)
+                onOpenTaskDetail(task.id);
               } else if (task.project?.workspace?.slug && task.project?.identifier) {
-                navigate(`/workspace/${task.project.workspace.slug}/project/${task.project.identifier}/board?task=${task.id}`)
+                navigate(
+                  `/workspace/${task.project.workspace.slug}/project/${task.project.identifier}/board?task=${task.id}`
+                );
               }
-              close()
+              close();
             },
-          })
-        })
+          });
+        });
       }
 
       // Project tasks (if in project context)
       if (projectTasks && projectId && workspaceSlug) {
         const matchingProjectTasks = projectTasks
-          .filter(task =>
-            task.title.toLowerCase().includes(lowerQuery) ||
-            task.reference?.toLowerCase().includes(lowerQuery)
+          .filter(
+            (task) =>
+              task.title.toLowerCase().includes(lowerQuery) ||
+              task.reference?.toLowerCase().includes(lowerQuery)
           )
           // Filter out tasks already shown from myTasks
-          .filter(task => !myTasks?.some(t => t.id === task.id))
-          .slice(0, 5)
+          .filter((task) => !myTasks?.some((t) => t.id === task.id))
+          .slice(0, 5);
 
-        matchingProjectTasks.forEach(task => {
+        matchingProjectTasks.forEach((task) => {
           items.push({
             id: `project-task-${task.id}`,
             type: 'task',
@@ -566,26 +721,27 @@ export function CommandPalette({ projectId: propProjectId, onOpenTaskDetail }: C
             section: 'Project Tasks',
             onSelect: () => {
               if (onOpenTaskDetail) {
-                onOpenTaskDetail(task.id)
+                onOpenTaskDetail(task.id);
               } else {
-                navigate(`/workspace/${workspaceSlug}/project/${projectId}/board?task=${task.id}`)
+                navigate(`/workspace/${workspaceSlug}/project/${projectId}/board?task=${task.id}`);
               }
-              close()
+              close();
             },
-          })
-        })
+          });
+        });
       }
 
       // Wiki page search results (when in workspace context)
       if (wikiPages && workspaceSlug) {
         const matchingWikiPages = wikiPages
-          .filter(page =>
-            page.title.toLowerCase().includes(lowerQuery) ||
-            page.slug.toLowerCase().includes(lowerQuery)
+          .filter(
+            (page) =>
+              page.title.toLowerCase().includes(lowerQuery) ||
+              page.slug.toLowerCase().includes(lowerQuery)
           )
-          .slice(0, 5)
+          .slice(0, 5);
 
-        matchingWikiPages.forEach(page => {
+        matchingWikiPages.forEach((page) => {
           items.push({
             id: `wiki-${page.id}`,
             type: 'navigation',
@@ -594,37 +750,49 @@ export function CommandPalette({ projectId: propProjectId, onOpenTaskDetail }: C
             icon: <WikiIcon />,
             section: 'Wiki Pages',
             onSelect: () => {
-              navigate(`/workspace/${workspaceSlug}/wiki/${page.slug}`)
-              close()
+              navigate(`/workspace/${workspaceSlug}/wiki/${page.slug}`);
+              close();
             },
-          })
-        })
+          });
+        });
       }
     }
 
-    return items
-  }, [query, workspaces, myTasks, projectTasks, wikiPages, projectId, workspaceSlug, navContext, navigate, close, onOpenTaskDetail])
+    return items;
+  }, [
+    query,
+    workspaces,
+    myTasks,
+    projectTasks,
+    wikiPages,
+    projectId,
+    workspaceSlug,
+    navContext,
+    navigate,
+    close,
+    onOpenTaskDetail,
+  ]);
 
   // ==========================================================================
   // Group items by section
   // ==========================================================================
 
   const groupedItems = useMemo(() => {
-    const groups: Record<string, CommandItem[]> = {}
-    commandItems.forEach(item => {
-      const section = item.section || 'Other'
+    const groups: Record<string, CommandItem[]> = {};
+    commandItems.forEach((item) => {
+      const section = item.section || 'Other';
       if (!groups[section]) {
-        groups[section] = []
+        groups[section] = [];
       }
-      groups[section].push(item)
-    })
-    return groups
-  }, [commandItems])
+      groups[section].push(item);
+    });
+    return groups;
+  }, [commandItems]);
 
   // Flatten for keyboard navigation
   const flatItems = useMemo(() => {
-    return Object.values(groupedItems).flat()
-  }, [groupedItems])
+    return Object.values(groupedItems).flat();
+  }, [groupedItems]);
 
   // ==========================================================================
   // Effects
@@ -632,29 +800,27 @@ export function CommandPalette({ projectId: propProjectId, onOpenTaskDetail }: C
 
   // Reset selection when items change
   useEffect(() => {
-    setSelectedIndex(0)
-  }, [flatItems.length])
+    setSelectedIndex(0);
+  }, [flatItems.length]);
 
   // Focus input when opened
   useEffect(() => {
     if (isOpen) {
-      setQuery('')
-      setSelectedIndex(0)
-      setTimeout(() => inputRef.current?.focus(), 0)
+      setQuery('');
+      setSelectedIndex(0);
+      setTimeout(() => inputRef.current?.focus(), 0);
     }
-  }, [isOpen])
+  }, [isOpen]);
 
   // Scroll selected item into view
   useEffect(() => {
     if (listRef.current) {
-      const selectedElement = listRef.current.querySelector(
-        `[data-index="${selectedIndex}"]`
-      )
+      const selectedElement = listRef.current.querySelector(`[data-index="${selectedIndex}"]`);
       if (selectedElement) {
-        selectedElement.scrollIntoView({ block: 'nearest' })
+        selectedElement.scrollIntoView({ block: 'nearest' });
       }
     }
-  }, [selectedIndex])
+  }, [selectedIndex]);
 
   // ==========================================================================
   // Keyboard Navigation
@@ -664,44 +830,37 @@ export function CommandPalette({ projectId: propProjectId, onOpenTaskDetail }: C
     (e: React.KeyboardEvent) => {
       switch (e.key) {
         case 'ArrowDown':
-          e.preventDefault()
-          setSelectedIndex((prev) =>
-            prev < flatItems.length - 1 ? prev + 1 : 0
-          )
-          break
+          e.preventDefault();
+          setSelectedIndex((prev) => (prev < flatItems.length - 1 ? prev + 1 : 0));
+          break;
         case 'ArrowUp':
-          e.preventDefault()
-          setSelectedIndex((prev) =>
-            prev > 0 ? prev - 1 : flatItems.length - 1
-          )
-          break
+          e.preventDefault();
+          setSelectedIndex((prev) => (prev > 0 ? prev - 1 : flatItems.length - 1));
+          break;
         case 'Enter':
-          e.preventDefault()
+          e.preventDefault();
           if (flatItems[selectedIndex]) {
-            flatItems[selectedIndex].onSelect()
+            flatItems[selectedIndex].onSelect();
           }
-          break
+          break;
         case 'Escape':
-          e.preventDefault()
-          close()
-          break
+          e.preventDefault();
+          close();
+          break;
       }
     },
     [flatItems, selectedIndex, close]
-  )
+  );
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   // Calculate the flat index for each item
-  let flatIndex = -1
+  let flatIndex = -1;
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-[15vh]">
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={close}
-      />
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={close} />
 
       {/* Palette */}
       <div className="relative w-full max-w-xl bg-card rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
@@ -738,8 +897,8 @@ export function CommandPalette({ projectId: propProjectId, onOpenTaskDetail }: C
                     {section}
                   </div>
                   {items.map((item) => {
-                    flatIndex++
-                    const itemIndex = flatIndex
+                    flatIndex++;
+                    const itemIndex = flatIndex;
                     return (
                       <button
                         key={item.id}
@@ -764,9 +923,7 @@ export function CommandPalette({ projectId: propProjectId, onOpenTaskDetail }: C
                           {getTypeIcon(item.type, item.icon)}
                         </span>
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium truncate">
-                            {item.label}
-                          </div>
+                          <div className="text-sm font-medium truncate">{item.label}</div>
                           {item.description && (
                             <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
                               {item.description}
@@ -779,7 +936,7 @@ export function CommandPalette({ projectId: propProjectId, onOpenTaskDetail }: C
                           </kbd>
                         )}
                       </button>
-                    )
+                    );
                   })}
                 </div>
               ))}
@@ -806,7 +963,7 @@ export function CommandPalette({ projectId: propProjectId, onOpenTaskDetail }: C
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default CommandPalette
+export default CommandPalette;

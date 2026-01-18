@@ -13,11 +13,8 @@
  * =============================================================================
  */
 
-import { prisma } from '../../lib/prisma'
-import {
-  createNotification,
-  type NotificationData,
-} from '../../lib/notificationService'
+import { prisma } from '../../lib/prisma';
+import { createNotification, type NotificationData } from '../../lib/notificationService';
 
 // =============================================================================
 // Types
@@ -30,52 +27,52 @@ export type CICDNotificationType =
   | 'deployment_succeeded'
   | 'deployment_pending'
   | 'check_run_failed'
-  | 'check_run_succeeded'
+  | 'check_run_succeeded';
 
-export type NotificationTrigger = 'all' | 'failures_only' | 'none'
+export type NotificationTrigger = 'all' | 'failures_only' | 'none';
 
 export interface CICDNotificationSettings {
-  enabled: boolean
+  enabled: boolean;
   triggers: {
-    workflow?: NotificationTrigger
-    deployment?: NotificationTrigger
-    checkRun?: NotificationTrigger
-  }
-  notifyRoles?: ('admin' | 'member')[]
-  notifyPRAuthor?: boolean
-  notifyTaskAssignees?: boolean
+    workflow?: NotificationTrigger;
+    deployment?: NotificationTrigger;
+    checkRun?: NotificationTrigger;
+  };
+  notifyRoles?: ('admin' | 'member')[];
+  notifyPRAuthor?: boolean;
+  notifyTaskAssignees?: boolean;
 }
 
 export interface WorkflowNotificationData {
-  repositoryId: number
-  workflowName: string
-  workflowRunId: bigint
-  branch: string
-  conclusion: string
-  htmlUrl?: string
-  actorLogin?: string
-  prNumber?: number
-  taskId?: number
+  repositoryId: number;
+  workflowName: string;
+  workflowRunId: bigint;
+  branch: string;
+  conclusion: string;
+  htmlUrl?: string;
+  actorLogin?: string;
+  prNumber?: number;
+  taskId?: number;
 }
 
 export interface DeploymentNotificationData {
-  repositoryId: number
-  environment: string
-  status: string
-  ref: string
-  targetUrl?: string
-  creator?: string
-  taskId?: number
+  repositoryId: number;
+  environment: string;
+  status: string;
+  ref: string;
+  targetUrl?: string;
+  creator?: string;
+  taskId?: number;
 }
 
 export interface CheckRunNotificationData {
-  repositoryId: number
-  checkName: string
-  conclusion: string
-  headSha: string
-  outputTitle?: string
-  prNumber?: number
-  taskId?: number
+  repositoryId: number;
+  checkName: string;
+  conclusion: string;
+  headSha: string;
+  outputTitle?: string;
+  prNumber?: number;
+  taskId?: number;
 }
 
 // =============================================================================
@@ -92,16 +89,19 @@ const DEFAULT_CICD_SETTINGS: CICDNotificationSettings = {
   notifyRoles: ['admin'],
   notifyPRAuthor: true,
   notifyTaskAssignees: true,
-}
+};
 
 // =============================================================================
 // Notification Templates
 // =============================================================================
 
-const TEMPLATES: Record<CICDNotificationType, {
-  title: (data: Record<string, unknown>) => string
-  content?: (data: Record<string, unknown>) => string | undefined
-}> = {
+const TEMPLATES: Record<
+  CICDNotificationType,
+  {
+    title: (data: Record<string, unknown>) => string;
+    content?: (data: Record<string, unknown>) => string | undefined;
+  }
+> = {
   workflow_failed: {
     title: (d) => `Workflow "${d.workflowName}" failed`,
     content: (d) => `Branch: ${d.branch}${d.actorLogin ? ` | Triggered by: ${d.actorLogin}` : ''}`,
@@ -116,7 +116,7 @@ const TEMPLATES: Record<CICDNotificationType, {
   },
   deployment_succeeded: {
     title: (d) => `Deployment to ${d.environment} succeeded`,
-    content: (d) => d.targetUrl ? `View: ${d.targetUrl}` : `Ref: ${d.ref}`,
+    content: (d) => (d.targetUrl ? `View: ${d.targetUrl}` : `Ref: ${d.ref}`),
   },
   deployment_pending: {
     title: (d) => `Deployment to ${d.environment} started`,
@@ -129,7 +129,7 @@ const TEMPLATES: Record<CICDNotificationType, {
   check_run_succeeded: {
     title: (d) => `Check "${d.checkName}" passed`,
   },
-}
+};
 
 // =============================================================================
 // Helper Functions
@@ -138,20 +138,18 @@ const TEMPLATES: Record<CICDNotificationType, {
 /**
  * Get CI/CD notification settings for a repository
  */
-export async function getCICDSettings(
-  repositoryId: number
-): Promise<CICDNotificationSettings> {
+export async function getCICDSettings(repositoryId: number): Promise<CICDNotificationSettings> {
   const repo = await prisma.gitHubRepository.findFirst({
     where: { id: repositoryId },
     select: { syncSettings: true },
-  })
+  });
 
   if (!repo?.syncSettings) {
-    return DEFAULT_CICD_SETTINGS
+    return DEFAULT_CICD_SETTINGS;
   }
 
-  const settings = repo.syncSettings as Record<string, unknown>
-  const cicdSettings = settings.notifications as CICDNotificationSettings | undefined
+  const settings = repo.syncSettings as Record<string, unknown>;
+  const cicdSettings = settings.notifications as CICDNotificationSettings | undefined;
 
   return {
     ...DEFAULT_CICD_SETTINGS,
@@ -160,7 +158,7 @@ export async function getCICDSettings(
       ...DEFAULT_CICD_SETTINGS.triggers,
       ...(cicdSettings?.triggers || {}),
     },
-  }
+  };
 }
 
 /**
@@ -173,10 +171,11 @@ export async function updateCICDSettings(
   const repo = await prisma.gitHubRepository.findFirst({
     where: { id: repositoryId },
     select: { syncSettings: true },
-  })
+  });
 
-  const currentSettings = (repo?.syncSettings as Record<string, unknown>) || {}
-  const currentCICD = (currentSettings.notifications as CICDNotificationSettings) || DEFAULT_CICD_SETTINGS
+  const currentSettings = (repo?.syncSettings as Record<string, unknown>) || {};
+  const currentCICD =
+    (currentSettings.notifications as CICDNotificationSettings) || DEFAULT_CICD_SETTINGS;
 
   const newCICDSettings: CICDNotificationSettings = {
     ...currentCICD,
@@ -185,19 +184,21 @@ export async function updateCICDSettings(
       ...currentCICD.triggers,
       ...(settings.triggers || {}),
     },
-  }
+  };
 
   await prisma.gitHubRepository.update({
     where: { id: repositoryId },
     data: {
-      syncSettings: JSON.parse(JSON.stringify({
-        ...currentSettings,
-        notifications: newCICDSettings,
-      })),
+      syncSettings: JSON.parse(
+        JSON.stringify({
+          ...currentSettings,
+          notifications: newCICDSettings,
+        })
+      ),
     },
-  })
+  });
 
-  return newCICDSettings
+  return newCICDSettings;
 }
 
 /**
@@ -207,11 +208,11 @@ async function getUsersToNotify(
   repositoryId: number,
   settings: CICDNotificationSettings,
   context?: {
-    prAuthorLogin?: string
-    taskId?: number
+    prAuthorLogin?: string;
+    taskId?: number;
   }
 ): Promise<number[]> {
-  const userIds = new Set<number>()
+  const userIds = new Set<number>();
 
   // Get repository with project info
   const repo = await prisma.gitHubRepository.findFirst({
@@ -223,14 +224,14 @@ async function getUsersToNotify(
         },
       },
     },
-  })
+  });
 
   if (!repo?.project) {
-    return []
+    return [];
   }
 
-  const projectId = repo.project.id
-  const workspaceId = repo.project.workspaceId
+  const projectId = repo.project.id;
+  const workspaceId = repo.project.workspaceId;
 
   // Get project members based on roles
   if (settings.notifyRoles && settings.notifyRoles.length > 0) {
@@ -244,10 +245,10 @@ async function getUsersToNotify(
         permissions: { gte: 1 }, // At least read permission
       },
       select: { principalId: true },
-    })
+    });
 
     for (const acl of projectAcls) {
-      userIds.add(acl.principalId)
+      userIds.add(acl.principalId);
     }
 
     // Also get workspace admins if 'admin' is in notifyRoles
@@ -262,11 +263,11 @@ async function getUsersToNotify(
             select: { userId: true },
           },
         },
-      })
+      });
 
       if (workspaceAdminGroup) {
         for (const member of workspaceAdminGroup.members) {
-          userIds.add(member.userId)
+          userIds.add(member.userId);
         }
       }
     }
@@ -280,10 +281,10 @@ async function getUsersToNotify(
         githubLogin: context.prAuthorLogin,
       },
       select: { userId: true },
-    })
+    });
 
     if (userMapping) {
-      userIds.add(userMapping.userId)
+      userIds.add(userMapping.userId);
     }
   }
 
@@ -292,15 +293,15 @@ async function getUsersToNotify(
     const taskAssignees = await prisma.taskAssignee.findMany({
       where: { taskId: context.taskId },
       select: { userId: true },
-    })
+    });
 
     for (const assignee of taskAssignees) {
-      userIds.add(assignee.userId)
+      userIds.add(assignee.userId);
     }
   }
 
   // Filter out users who have disabled this notification type
-  const enabledUserIds: number[] = []
+  const enabledUserIds: number[] = [];
   for (const userId of userIds) {
     const setting = await prisma.userNotificationSetting.findUnique({
       where: {
@@ -309,28 +310,25 @@ async function getUsersToNotify(
           notificationType: 'cicd',
         },
       },
-    })
+    });
 
     // If no setting exists or isEnabled is true, include the user
     if (!setting || setting.isEnabled) {
-      enabledUserIds.push(userId)
+      enabledUserIds.push(userId);
     }
   }
 
-  return enabledUserIds
+  return enabledUserIds;
 }
 
 /**
  * Check if notification should be sent based on trigger settings
  */
-function shouldNotify(
-  trigger: NotificationTrigger | undefined,
-  isSuccess: boolean
-): boolean {
-  if (!trigger || trigger === 'none') return false
-  if (trigger === 'all') return true
-  if (trigger === 'failures_only') return !isSuccess
-  return false
+function shouldNotify(trigger: NotificationTrigger | undefined, isSuccess: boolean): boolean {
+  if (!trigger || trigger === 'none') return false;
+  if (trigger === 'all') return true;
+  if (trigger === 'failures_only') return !isSuccess;
+  return false;
 }
 
 // =============================================================================
@@ -340,21 +338,19 @@ function shouldNotify(
 /**
  * Send workflow run notification
  */
-export async function notifyWorkflowRun(
-  data: WorkflowNotificationData
-): Promise<number> {
-  const settings = await getCICDSettings(data.repositoryId)
+export async function notifyWorkflowRun(data: WorkflowNotificationData): Promise<number> {
+  const settings = await getCICDSettings(data.repositoryId);
 
-  if (!settings.enabled) return 0
+  if (!settings.enabled) return 0;
 
-  const isSuccess = data.conclusion === 'success'
-  if (!shouldNotify(settings.triggers.workflow, isSuccess)) return 0
+  const isSuccess = data.conclusion === 'success';
+  if (!shouldNotify(settings.triggers.workflow, isSuccess)) return 0;
 
-  const type: CICDNotificationType = isSuccess ? 'workflow_succeeded' : 'workflow_failed'
-  const template = TEMPLATES[type]
+  const type: CICDNotificationType = isSuccess ? 'workflow_succeeded' : 'workflow_failed';
+  const template = TEMPLATES[type];
 
   // Get PR author if we have a PR number
-  let prAuthorLogin: string | undefined
+  let prAuthorLogin: string | undefined;
   if (data.prNumber) {
     const pr = await prisma.gitHubPullRequest.findFirst({
       where: {
@@ -362,22 +358,22 @@ export async function notifyWorkflowRun(
         prNumber: data.prNumber,
       },
       select: { authorLogin: true },
-    })
-    prAuthorLogin = pr?.authorLogin
+    });
+    prAuthorLogin = pr?.authorLogin;
   }
 
   const userIds = await getUsersToNotify(data.repositoryId, settings, {
     prAuthorLogin,
     taskId: data.taskId,
-  })
+  });
 
-  if (userIds.length === 0) return 0
+  if (userIds.length === 0) return 0;
 
   // Get project info for link
   const repo = await prisma.gitHubRepository.findFirst({
     where: { id: data.repositoryId },
     select: { projectId: true },
-  })
+  });
 
   const notificationData: NotificationData = {
     projectId: repo?.projectId,
@@ -385,10 +381,10 @@ export async function notifyWorkflowRun(
     workflowName: data.workflowName,
     branch: data.branch,
     conclusion: data.conclusion,
-  }
+  };
 
   // Create notifications for all users
-  let count = 0
+  let count = 0;
   for (const userId of userIds) {
     await createNotification(prisma, {
       userId,
@@ -396,70 +392,68 @@ export async function notifyWorkflowRun(
       title: template.title(data as unknown as Record<string, unknown>),
       content: template.content?.(data as unknown as Record<string, unknown>),
       data: notificationData,
-    })
-    count++
+    });
+    count++;
   }
 
-  return count
+  return count;
 }
 
 /**
  * Send deployment notification
  */
-export async function notifyDeployment(
-  data: DeploymentNotificationData
-): Promise<number> {
-  const settings = await getCICDSettings(data.repositoryId)
+export async function notifyDeployment(data: DeploymentNotificationData): Promise<number> {
+  const settings = await getCICDSettings(data.repositoryId);
 
-  if (!settings.enabled) return 0
+  if (!settings.enabled) return 0;
 
-  const isSuccess = data.status === 'success'
-  const isPending = data.status === 'pending' || data.status === 'in_progress'
-  const isFailed = ['failure', 'error'].includes(data.status)
+  const isSuccess = data.status === 'success';
+  const isPending = data.status === 'pending' || data.status === 'in_progress';
+  const isFailed = ['failure', 'error'].includes(data.status);
 
   // Determine notification type
-  let type: CICDNotificationType
+  let type: CICDNotificationType;
   if (isSuccess) {
-    type = 'deployment_succeeded'
+    type = 'deployment_succeeded';
   } else if (isFailed) {
-    type = 'deployment_failed'
+    type = 'deployment_failed';
   } else if (isPending) {
-    type = 'deployment_pending'
+    type = 'deployment_pending';
   } else {
-    return 0 // Unknown status, don't notify
+    return 0; // Unknown status, don't notify
   }
 
   // Check if we should notify based on trigger settings
   if (!shouldNotify(settings.triggers.deployment, isSuccess)) {
     // Exception: always notify on pending if 'all' is set
     if (!(isPending && settings.triggers.deployment === 'all')) {
-      return 0
+      return 0;
     }
   }
 
-  const template = TEMPLATES[type]
+  const template = TEMPLATES[type];
 
   const userIds = await getUsersToNotify(data.repositoryId, settings, {
     taskId: data.taskId,
-  })
+  });
 
-  if (userIds.length === 0) return 0
+  if (userIds.length === 0) return 0;
 
   // Get project info for link
   const repo = await prisma.gitHubRepository.findFirst({
     where: { id: data.repositoryId },
     select: { projectId: true },
-  })
+  });
 
   const notificationData: NotificationData = {
     projectId: repo?.projectId,
     link: data.targetUrl || (repo?.projectId ? `/projects/${repo.projectId}/cicd` : undefined),
     environment: data.environment,
     status: data.status,
-  }
+  };
 
   // Create notifications for all users
-  let count = 0
+  let count = 0;
   for (const userId of userIds) {
     await createNotification(prisma, {
       userId,
@@ -467,31 +461,29 @@ export async function notifyDeployment(
       title: template.title(data as unknown as Record<string, unknown>),
       content: template.content?.(data as unknown as Record<string, unknown>),
       data: notificationData,
-    })
-    count++
+    });
+    count++;
   }
 
-  return count
+  return count;
 }
 
 /**
  * Send check run notification
  */
-export async function notifyCheckRun(
-  data: CheckRunNotificationData
-): Promise<number> {
-  const settings = await getCICDSettings(data.repositoryId)
+export async function notifyCheckRun(data: CheckRunNotificationData): Promise<number> {
+  const settings = await getCICDSettings(data.repositoryId);
 
-  if (!settings.enabled) return 0
+  if (!settings.enabled) return 0;
 
-  const isSuccess = data.conclusion === 'success'
-  if (!shouldNotify(settings.triggers.checkRun, isSuccess)) return 0
+  const isSuccess = data.conclusion === 'success';
+  if (!shouldNotify(settings.triggers.checkRun, isSuccess)) return 0;
 
-  const type: CICDNotificationType = isSuccess ? 'check_run_succeeded' : 'check_run_failed'
-  const template = TEMPLATES[type]
+  const type: CICDNotificationType = isSuccess ? 'check_run_succeeded' : 'check_run_failed';
+  const template = TEMPLATES[type];
 
   // Get PR author if we have a PR number
-  let prAuthorLogin: string | undefined
+  let prAuthorLogin: string | undefined;
   if (data.prNumber) {
     const pr = await prisma.gitHubPullRequest.findFirst({
       where: {
@@ -499,32 +491,32 @@ export async function notifyCheckRun(
         prNumber: data.prNumber,
       },
       select: { authorLogin: true },
-    })
-    prAuthorLogin = pr?.authorLogin
+    });
+    prAuthorLogin = pr?.authorLogin;
   }
 
   const userIds = await getUsersToNotify(data.repositoryId, settings, {
     prAuthorLogin,
     taskId: data.taskId,
-  })
+  });
 
-  if (userIds.length === 0) return 0
+  if (userIds.length === 0) return 0;
 
   // Get project info for link
   const repo = await prisma.gitHubRepository.findFirst({
     where: { id: data.repositoryId },
     select: { projectId: true },
-  })
+  });
 
   const notificationData: NotificationData = {
     projectId: repo?.projectId,
     link: repo?.projectId ? `/projects/${repo.projectId}/cicd` : undefined,
     checkName: data.checkName,
     conclusion: data.conclusion,
-  }
+  };
 
   // Create notifications for all users
-  let count = 0
+  let count = 0;
   for (const userId of userIds) {
     await createNotification(prisma, {
       userId,
@@ -532,11 +524,11 @@ export async function notifyCheckRun(
       title: template.title(data as unknown as Record<string, unknown>),
       content: template.content?.(data as unknown as Record<string, unknown>),
       data: notificationData,
-    })
-    count++
+    });
+    count++;
   }
 
-  return count
+  return count;
 }
 
 // =============================================================================
@@ -549,6 +541,6 @@ export const cicdNotificationService = {
   notifyWorkflowRun,
   notifyDeployment,
   notifyCheckRun,
-}
+};
 
-export default cicdNotificationService
+export default cicdNotificationService;

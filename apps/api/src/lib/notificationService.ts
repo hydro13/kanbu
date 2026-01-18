@@ -13,7 +13,7 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import type { PrismaClient } from '@prisma/client'
+import type { PrismaClient } from '@prisma/client';
 
 // =============================================================================
 // Types
@@ -43,63 +43,69 @@ export type NotificationType =
   | 'backup_completed'
   | 'backup_failed'
   | 'restore_completed'
-  | 'restore_failed'
+  | 'restore_failed';
 
 export interface NotificationData {
-  taskId?: number
-  taskTitle?: string
-  taskReference?: string
-  projectId?: number
-  projectName?: string
-  commentId?: number
-  subtaskId?: number
-  subtaskTitle?: string
-  actorId?: number
-  actorName?: string
-  link?: string
+  taskId?: number;
+  taskTitle?: string;
+  taskReference?: string;
+  projectId?: number;
+  projectName?: string;
+  commentId?: number;
+  subtaskId?: number;
+  subtaskTitle?: string;
+  actorId?: number;
+  actorName?: string;
+  link?: string;
   // Backup data
-  backupType?: 'database' | 'source'
-  backupFilename?: string
-  backupSize?: number
-  backupDuration?: number
-  backupError?: string
-  [key: string]: unknown
+  backupType?: 'database' | 'source';
+  backupFilename?: string;
+  backupSize?: number;
+  backupDuration?: number;
+  backupError?: string;
+  [key: string]: unknown;
 }
 
 export interface CreateNotificationInput {
-  userId: number
-  type: NotificationType
-  title: string
-  content?: string
-  data?: NotificationData
+  userId: number;
+  type: NotificationType;
+  title: string;
+  content?: string;
+  data?: NotificationData;
 }
 
 export interface NotificationWithMeta {
-  id: number
-  userId: number
-  type: string
-  title: string
-  content: string | null
-  data: NotificationData
-  isRead: boolean
-  createdAt: Date
+  id: number;
+  userId: number;
+  type: string;
+  title: string;
+  content: string | null;
+  data: NotificationData;
+  isRead: boolean;
+  createdAt: Date;
 }
 
 // =============================================================================
 // Notification Templates
 // =============================================================================
 
-const NOTIFICATION_TEMPLATES: Record<NotificationType, { title: (data: NotificationData) => string; content?: (data: NotificationData) => string | undefined }> = {
+const NOTIFICATION_TEMPLATES: Record<
+  NotificationType,
+  {
+    title: (data: NotificationData) => string;
+    content?: (data: NotificationData) => string | undefined;
+  }
+> = {
   task_assigned: {
     title: (d) => `You were assigned to "${d.taskTitle || 'a task'}"`,
-    content: (d) => d.actorName ? `${d.actorName} assigned you to this task` : undefined,
+    content: (d) => (d.actorName ? `${d.actorName} assigned you to this task` : undefined),
   },
   task_updated: {
     title: (d) => `Task "${d.taskTitle || 'unknown'}" was updated`,
   },
   task_completed: {
     title: (d) => `Task "${d.taskTitle || 'unknown'}" was completed`,
-    content: (d) => d.actorName ? `Completed by ${d.actorName}` : undefined,
+    content: (d) => (d.actorName ? `Completed by ${d.actorName}` : undefined),
   },
   task_due_soon: {
     title: (d) => `Task "${d.taskTitle || 'unknown'}" is due soon`,
@@ -111,23 +117,23 @@ const NOTIFICATION_TEMPLATES: Record<NotificationType, { title: (data: Notificat
   },
   comment_added: {
     title: (d) => `New comment on "${d.taskTitle || 'a task'}"`,
-    content: (d) => d.actorName ? `${d.actorName} left a comment` : undefined,
+    content: (d) => (d.actorName ? `${d.actorName} left a comment` : undefined),
   },
   comment_mentioned: {
     title: () => `You were mentioned in a comment`,
-    content: (d) => d.taskTitle ? `On task "${d.taskTitle}"` : undefined,
+    content: (d) => (d.taskTitle ? `On task "${d.taskTitle}"` : undefined),
   },
   subtask_assigned: {
     title: (d) => `You were assigned to subtask "${d.subtaskTitle || 'unknown'}"`,
-    content: (d) => d.taskTitle ? `On task "${d.taskTitle}"` : undefined,
+    content: (d) => (d.taskTitle ? `On task "${d.taskTitle}"` : undefined),
   },
   subtask_completed: {
     title: (d) => `Subtask "${d.subtaskTitle || 'unknown'}" was completed`,
-    content: (d) => d.actorName ? `Completed by ${d.actorName}` : undefined,
+    content: (d) => (d.actorName ? `Completed by ${d.actorName}` : undefined),
   },
   project_invited: {
     title: (d) => `You were invited to project "${d.projectName || 'unknown'}"`,
-    content: (d) => d.actorName ? `Invited by ${d.actorName}` : undefined,
+    content: (d) => (d.actorName ? `Invited by ${d.actorName}` : undefined),
   },
   project_role_changed: {
     title: (d) => `Your role changed in project "${d.projectName || 'unknown'}"`,
@@ -146,11 +152,13 @@ const NOTIFICATION_TEMPLATES: Record<NotificationType, { title: (data: Notificat
     content: (d) => `Repository: ${(d as Record<string, unknown>).repository || 'unknown'}`,
   },
   deployment_succeeded: {
-    title: (d) => `Deployment succeeded to ${(d as Record<string, unknown>).environment || 'unknown'}`,
+    title: (d) =>
+      `Deployment succeeded to ${(d as Record<string, unknown>).environment || 'unknown'}`,
     content: (d) => `Repository: ${(d as Record<string, unknown>).repository || 'unknown'}`,
   },
   deployment_pending: {
-    title: (d) => `Deployment pending to ${(d as Record<string, unknown>).environment || 'unknown'}`,
+    title: (d) =>
+      `Deployment pending to ${(d as Record<string, unknown>).environment || 'unknown'}`,
     content: (d) => `Repository: ${(d as Record<string, unknown>).repository || 'unknown'}`,
   },
   check_run_failed: {
@@ -165,10 +173,10 @@ const NOTIFICATION_TEMPLATES: Record<NotificationType, { title: (data: Notificat
   backup_completed: {
     title: (d) => `${d.backupType === 'database' ? 'Database' : 'Source'} backup completed`,
     content: (d) => {
-      const parts = [`File: ${d.backupFilename || 'unknown'}`]
-      if (d.backupSize) parts.push(`Size: ${Math.round(d.backupSize / 1024)} KB`)
-      if (d.backupDuration) parts.push(`Duration: ${Math.round(d.backupDuration / 1000)}s`)
-      return parts.join(' | ')
+      const parts = [`File: ${d.backupFilename || 'unknown'}`];
+      if (d.backupSize) parts.push(`Size: ${Math.round(d.backupSize / 1024)} KB`);
+      if (d.backupDuration) parts.push(`Duration: ${Math.round(d.backupDuration / 1000)}s`);
+      return parts.join(' | ');
     },
   },
   backup_failed: {
@@ -183,7 +191,7 @@ const NOTIFICATION_TEMPLATES: Record<NotificationType, { title: (data: Notificat
     title: (d) => `${d.backupType === 'database' ? 'Database' : 'Source'} restore failed`,
     content: (d) => d.backupError || 'An error occurred during restore',
   },
-}
+};
 
 // =============================================================================
 // Service Functions
@@ -205,12 +213,12 @@ export async function createNotification(
       data: (input.data || {}) as object,
       isRead: false,
     },
-  })
+  });
 
   return {
     ...notification,
     data: notification.data as NotificationData,
-  }
+  };
 }
 
 /**
@@ -222,13 +230,13 @@ export async function createNotificationFromTemplate(
   type: NotificationType,
   data: NotificationData = {}
 ): Promise<NotificationWithMeta> {
-  const template = NOTIFICATION_TEMPLATES[type]
+  const template = NOTIFICATION_TEMPLATES[type];
   if (!template) {
-    throw new Error(`Unknown notification type: ${type}`)
+    throw new Error(`Unknown notification type: ${type}`);
   }
 
-  const title = template.title(data)
-  const content = template.content?.(data)
+  const title = template.title(data);
+  const content = template.content?.(data);
 
   return createNotification(prisma, {
     userId,
@@ -236,7 +244,7 @@ export async function createNotificationFromTemplate(
     title,
     content,
     data,
-  })
+  });
 }
 
 /**
@@ -248,15 +256,15 @@ export async function createNotificationsForUsers(
   type: NotificationType,
   data: NotificationData = {}
 ): Promise<number> {
-  if (userIds.length === 0) return 0
+  if (userIds.length === 0) return 0;
 
-  const template = NOTIFICATION_TEMPLATES[type]
+  const template = NOTIFICATION_TEMPLATES[type];
   if (!template) {
-    throw new Error(`Unknown notification type: ${type}`)
+    throw new Error(`Unknown notification type: ${type}`);
   }
 
-  const title = template.title(data)
-  const content = template.content?.(data)
+  const title = template.title(data);
+  const content = template.content?.(data);
 
   const result = await prisma.notification.createMany({
     data: userIds.map((userId) => ({
@@ -267,24 +275,21 @@ export async function createNotificationsForUsers(
       data: (data || {}) as object,
       isRead: false,
     })),
-  })
+  });
 
-  return result.count
+  return result.count;
 }
 
 /**
  * Get unread notification count for a user
  */
-export async function getUnreadCount(
-  prisma: PrismaClient,
-  userId: number
-): Promise<number> {
+export async function getUnreadCount(prisma: PrismaClient, userId: number): Promise<number> {
   return prisma.notification.count({
     where: {
       userId,
       isRead: false,
     },
-  })
+  });
 }
 
 /**
@@ -303,18 +308,15 @@ export async function markAsRead(
     data: {
       isRead: true,
     },
-  })
+  });
 
-  return result.count
+  return result.count;
 }
 
 /**
  * Mark all notifications as read for a user
  */
-export async function markAllAsRead(
-  prisma: PrismaClient,
-  userId: number
-): Promise<number> {
+export async function markAllAsRead(prisma: PrismaClient, userId: number): Promise<number> {
   const result = await prisma.notification.updateMany({
     where: {
       userId,
@@ -323,9 +325,9 @@ export async function markAllAsRead(
     data: {
       isRead: true,
     },
-  })
+  });
 
-  return result.count
+  return result.count;
 }
 
 /**
@@ -335,8 +337,8 @@ export async function deleteOldNotifications(
   prisma: PrismaClient,
   olderThanDays: number = 30
 ): Promise<number> {
-  const cutoffDate = new Date()
-  cutoffDate.setDate(cutoffDate.getDate() - olderThanDays)
+  const cutoffDate = new Date();
+  cutoffDate.setDate(cutoffDate.getDate() - olderThanDays);
 
   const result = await prisma.notification.deleteMany({
     where: {
@@ -345,9 +347,9 @@ export async function deleteOldNotifications(
         lt: cutoffDate,
       },
     },
-  })
+  });
 
-  return result.count
+  return result.count;
 }
 
 /**
@@ -357,16 +359,16 @@ export function generateNotificationLink(
   _type: NotificationType,
   data: NotificationData
 ): string | undefined {
-  if (data.link) return data.link
+  if (data.link) return data.link;
 
   // Generate links based on notification type
   if (data.taskId && data.projectId) {
-    return `/projects/${data.projectId}/board?task=${data.taskId}`
+    return `/projects/${data.projectId}/board?task=${data.taskId}`;
   }
 
   if (data.projectId) {
-    return `/projects/${data.projectId}`
+    return `/projects/${data.projectId}`;
   }
 
-  return undefined
+  return undefined;
 }

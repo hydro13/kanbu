@@ -14,9 +14,9 @@
  * =============================================================================
  */
 
-import { useState } from 'react'
-import { trpc } from '@/lib/trpc'
-import { Button } from '@/components/ui/button'
+import { useState } from 'react';
+import { trpc } from '@/lib/trpc';
+import { Button } from '@/components/ui/button';
 import {
   Tag,
   Loader2,
@@ -27,26 +27,26 @@ import {
   FileText,
   Download,
   GitBranch,
-} from 'lucide-react'
+} from 'lucide-react';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface ProjectReleasesPanelProps {
-  projectId: number
+  projectId: number;
 }
 
 interface ReleaseInfo {
-  id: number
-  tagName: string
-  name: string | null
-  body: string | null
-  draft: boolean
-  prerelease: boolean
-  authorLogin: string | null
-  htmlUrl: string | null
-  publishedAt: string | null
+  id: number;
+  tagName: string;
+  name: string | null;
+  body: string | null;
+  draft: boolean;
+  prerelease: boolean;
+  authorLogin: string | null;
+  htmlUrl: string | null;
+  publishedAt: string | null;
 }
 
 // =============================================================================
@@ -54,14 +54,14 @@ interface ReleaseInfo {
 // =============================================================================
 
 function ReleaseCard({ release }: { release: ReleaseInfo }) {
-  const [isExpanded, setIsExpanded] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false);
   const publishedDate = release.publishedAt
     ? new Date(release.publishedAt).toLocaleDateString(undefined, {
         month: 'short',
         day: 'numeric',
         year: 'numeric',
       })
-    : null
+    : null;
 
   return (
     <div className="bg-card rounded-card border border-border p-4">
@@ -70,9 +70,7 @@ function ReleaseCard({ release }: { release: ReleaseInfo }) {
           <Tag className="w-5 h-5 text-blue-500" />
           <div>
             <div className="flex items-center gap-2">
-              <h4 className="font-medium text-foreground">
-                {release.name || release.tagName}
-              </h4>
+              <h4 className="font-medium text-foreground">{release.name || release.tagName}</h4>
               {release.draft && (
                 <span className="px-2 py-0.5 text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 rounded-full">
                   Draft
@@ -95,9 +93,7 @@ function ReleaseCard({ release }: { release: ReleaseInfo }) {
                   {publishedDate}
                 </span>
               )}
-              {release.authorLogin && (
-                <span>by {release.authorLogin}</span>
-              )}
+              {release.authorLogin && <span>by {release.authorLogin}</span>}
             </div>
           </div>
         </div>
@@ -133,7 +129,7 @@ function ReleaseCard({ release }: { release: ReleaseInfo }) {
         </>
       )}
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -147,7 +143,7 @@ function LatestReleaseHighlight({ release }: { release: ReleaseInfo }) {
         day: 'numeric',
         year: 'numeric',
       })
-    : null
+    : null;
 
   return (
     <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-lg border border-blue-200 dark:border-blue-800 p-4 mb-4">
@@ -178,14 +174,18 @@ function LatestReleaseHighlight({ release }: { release: ReleaseInfo }) {
         )}
       </div>
     </div>
-  )
+  );
 }
 
 // =============================================================================
 // Stats Summary Component
 // =============================================================================
 
-function StatsSummary({ stats }: { stats: { total: number; published: number; drafts: number; prereleases: number } }) {
+function StatsSummary({
+  stats,
+}: {
+  stats: { total: number; published: number; drafts: number; prereleases: number };
+}) {
   return (
     <div className="grid grid-cols-4 gap-3 mb-4">
       <div className="text-center p-2 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
@@ -193,7 +193,9 @@ function StatsSummary({ stats }: { stats: { total: number; published: number; dr
         <div className="text-xs text-gray-500 dark:text-gray-400">Total</div>
       </div>
       <div className="text-center p-2 bg-green-50 dark:bg-green-900/20 rounded-lg">
-        <div className="text-xl font-bold text-green-600 dark:text-green-400">{stats.published}</div>
+        <div className="text-xl font-bold text-green-600 dark:text-green-400">
+          {stats.published}
+        </div>
         <div className="text-xs text-gray-500 dark:text-gray-400">Published</div>
       </div>
       <div className="text-center p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
@@ -201,11 +203,13 @@ function StatsSummary({ stats }: { stats: { total: number; published: number; dr
         <div className="text-xs text-gray-500 dark:text-gray-400">Drafts</div>
       </div>
       <div className="text-center p-2 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
-        <div className="text-xl font-bold text-orange-600 dark:text-orange-400">{stats.prereleases}</div>
+        <div className="text-xl font-bold text-orange-600 dark:text-orange-400">
+          {stats.prereleases}
+        </div>
         <div className="text-xs text-gray-500 dark:text-gray-400">Pre-releases</div>
       </div>
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -213,24 +217,19 @@ function StatsSummary({ stats }: { stats: { total: number; published: number; dr
 // =============================================================================
 
 function ReleaseNotesGenerator({ projectId }: { projectId: number }) {
-  const [isOpen, setIsOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(false);
   const notesQuery = trpc.github.generateReleaseNotes.useQuery(
     { projectId, includeTaskLinks: true },
     { enabled: isOpen }
-  )
+  );
 
   if (!isOpen) {
     return (
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => setIsOpen(true)}
-        className="mb-4"
-      >
+      <Button variant="outline" size="sm" onClick={() => setIsOpen(true)} className="mb-4">
         <FileText className="w-4 h-4 mr-2" />
         Generate Release Notes
       </Button>
-    )
+    );
   }
 
   return (
@@ -264,7 +263,7 @@ function ReleaseNotesGenerator({ projectId }: { projectId: number }) {
         </div>
       ) : null}
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -276,7 +275,7 @@ function LoadingState() {
     <div className="flex items-center justify-center py-12">
       <Loader2 className="w-8 h-8 text-gray-400 animate-spin" />
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -287,14 +286,12 @@ function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
       <Tag className="w-12 h-12 text-gray-300 dark:text-gray-600 mb-4" />
-      <h3 className="text-lg font-medium text-foreground mb-2">
-        No releases found
-      </h3>
+      <h3 className="text-lg font-medium text-foreground mb-2">No releases found</h3>
       <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm">
         Releases will appear here once they are published in the linked GitHub repository.
       </p>
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -305,16 +302,14 @@ function ErrorState({ message, onRetry }: { message: string; onRetry: () => void
   return (
     <div className="flex flex-col items-center justify-center py-12 text-center">
       <AlertCircle className="w-12 h-12 text-red-400 mb-4" />
-      <h3 className="text-lg font-medium text-foreground mb-2">
-        Failed to load releases
-      </h3>
+      <h3 className="text-lg font-medium text-foreground mb-2">Failed to load releases</h3>
       <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{message}</p>
       <Button variant="outline" size="sm" onClick={onRetry}>
         <RefreshCw className="w-4 h-4 mr-2" />
         Retry
       </Button>
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -322,39 +317,32 @@ function ErrorState({ message, onRetry }: { message: string; onRetry: () => void
 // =============================================================================
 
 export function ProjectReleasesPanel({ projectId }: ProjectReleasesPanelProps) {
-  const [isRefreshing, setIsRefreshing] = useState(false)
-  const [includePrereleases, setIncludePrereleases] = useState(true)
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [includePrereleases, setIncludePrereleases] = useState(true);
 
   const releasesQuery = trpc.github.getProjectReleases.useQuery(
     { projectId, includePrereleases },
     { enabled: !!projectId }
-  )
+  );
 
-  const statsQuery = trpc.github.getReleaseStats.useQuery(
-    { projectId },
-    { enabled: !!projectId }
-  )
+  const statsQuery = trpc.github.getReleaseStats.useQuery({ projectId }, { enabled: !!projectId });
 
   const latestQuery = trpc.github.getLatestRelease.useQuery(
     { projectId },
     { enabled: !!projectId }
-  )
+  );
 
   const handleRefresh = async () => {
-    setIsRefreshing(true)
+    setIsRefreshing(true);
     try {
-      await Promise.all([
-        releasesQuery.refetch(),
-        statsQuery.refetch(),
-        latestQuery.refetch(),
-      ])
+      await Promise.all([releasesQuery.refetch(), statsQuery.refetch(), latestQuery.refetch()]);
     } finally {
-      setIsRefreshing(false)
+      setIsRefreshing(false);
     }
-  }
+  };
 
   if (releasesQuery.isLoading) {
-    return <LoadingState />
+    return <LoadingState />;
   }
 
   if (releasesQuery.isError) {
@@ -363,15 +351,15 @@ export function ProjectReleasesPanel({ projectId }: ProjectReleasesPanelProps) {
         message={releasesQuery.error?.message ?? 'Unknown error'}
         onRetry={handleRefresh}
       />
-    )
+    );
   }
 
-  const releases = (releasesQuery.data ?? []) as ReleaseInfo[]
-  const stats = statsQuery.data
-  const latestRelease = latestQuery.data as ReleaseInfo | null
+  const releases = (releasesQuery.data ?? []) as ReleaseInfo[];
+  const stats = statsQuery.data;
+  const latestRelease = latestQuery.data as ReleaseInfo | null;
 
   if (releases.length === 0) {
-    return <EmptyState />
+    return <EmptyState />;
   }
 
   return (
@@ -392,12 +380,7 @@ export function ProjectReleasesPanel({ projectId }: ProjectReleasesPanelProps) {
             />
             <span className="text-gray-600 dark:text-gray-400">Include pre-releases</span>
           </label>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-          >
+          <Button variant="ghost" size="sm" onClick={handleRefresh} disabled={isRefreshing}>
             {isRefreshing ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
@@ -423,7 +406,7 @@ export function ProjectReleasesPanel({ projectId }: ProjectReleasesPanelProps) {
         ))}
       </div>
     </div>
-  )
+  );
 }
 
-export default ProjectReleasesPanel
+export default ProjectReleasesPanel;

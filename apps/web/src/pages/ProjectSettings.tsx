@@ -18,11 +18,11 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState, useEffect, useCallback } from 'react'
-import { useParams, useNavigate, useLocation } from 'react-router-dom'
-import { ProjectLayout } from '@/components/layout/ProjectLayout'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { useState, useEffect, useCallback } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { ProjectLayout } from '@/components/layout/ProjectLayout';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Card,
   CardHeader,
@@ -30,137 +30,141 @@ import {
   CardDescription,
   CardContent,
   CardFooter,
-} from '@/components/ui/card'
-import { useAppSelector } from '@/store'
-import { selectCurrentWorkspace } from '@/store/workspaceSlice'
-import { trpc } from '@/lib/trpc'
-import { RichTextEditor, getDisplayContent, isLexicalContent, lexicalToPlainText } from '@/components/editor'
-import type { EditorState, LexicalEditor } from 'lexical'
+} from '@/components/ui/card';
+import { useAppSelector } from '@/store';
+import { selectCurrentWorkspace } from '@/store/workspaceSlice';
+import { trpc } from '@/lib/trpc';
+import {
+  RichTextEditor,
+  getDisplayContent,
+  isLexicalContent,
+  lexicalToPlainText,
+} from '@/components/editor';
+import type { EditorState, LexicalEditor } from 'lexical';
 
 // =============================================================================
 // Types
 // =============================================================================
 
-type ProjectMemberRole = 'MANAGER' | 'MEMBER' | 'VIEWER'
+type ProjectMemberRole = 'MANAGER' | 'MEMBER' | 'VIEWER';
 
 // =============================================================================
 // Component
 // =============================================================================
 
 export function ProjectSettingsPage() {
-  const { projectIdentifier } = useParams<{ projectIdentifier: string }>()
-  const navigate = useNavigate()
-  const location = useLocation()
-  const currentWorkspace = useAppSelector(selectCurrentWorkspace)
-  const utils = trpc.useUtils()
+  const { projectIdentifier } = useParams<{ projectIdentifier: string }>();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const currentWorkspace = useAppSelector(selectCurrentWorkspace);
+  const utils = trpc.useUtils();
 
   // Form states
-  const [name, setName] = useState('')
-  const [description, setDescription] = useState('')
-  const [startDate, setStartDate] = useState('')
-  const [endDate, setEndDate] = useState('')
-  const [addMemberId, setAddMemberId] = useState('')
-  const [addMemberRole, setAddMemberRole] = useState<ProjectMemberRole>('MEMBER')
-  const [editorKey, setEditorKey] = useState(0)
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [addMemberId, setAddMemberId] = useState('');
+  const [addMemberRole, setAddMemberRole] = useState<ProjectMemberRole>('MEMBER');
+  const [editorKey, setEditorKey] = useState(0);
 
   // Fetch project by identifier (SEO-friendly URL)
   const projectQuery = trpc.project.getByIdentifier.useQuery(
     { identifier: projectIdentifier! },
     { enabled: !!projectIdentifier }
-  )
+  );
 
   // Get project ID from fetched data
-  const projectId = projectQuery.data?.id ?? 0
+  const projectId = projectQuery.data?.id ?? 0;
 
-  const membersQuery = trpc.project.getMembers.useQuery(
-    { projectId },
-    { enabled: projectId > 0 }
-  )
+  const membersQuery = trpc.project.getMembers.useQuery({ projectId }, { enabled: projectId > 0 });
 
   const workspaceMembersQuery = trpc.workspace.getMembers.useQuery(
     { workspaceId: currentWorkspace?.id ?? 0 },
     { enabled: !!currentWorkspace }
-  )
+  );
 
   // Sync project data to form
   useEffect(() => {
     if (projectQuery.data) {
-      setName(projectQuery.data.name)
-      setDescription(getDisplayContent(projectQuery.data.description ?? ''))
-      setStartDate(projectQuery.data.startDate ? projectQuery.data.startDate.split('T')[0] ?? '' : '')
-      setEndDate(projectQuery.data.endDate ? projectQuery.data.endDate.split('T')[0] ?? '' : '')
-      setEditorKey((k) => k + 1)
+      setName(projectQuery.data.name);
+      setDescription(getDisplayContent(projectQuery.data.description ?? ''));
+      setStartDate(
+        projectQuery.data.startDate ? (projectQuery.data.startDate.split('T')[0] ?? '') : ''
+      );
+      setEndDate(projectQuery.data.endDate ? (projectQuery.data.endDate.split('T')[0] ?? '') : '');
+      setEditorKey((k) => k + 1);
     }
-  }, [projectQuery.data])
+  }, [projectQuery.data]);
 
   // Handle editor content changes
   const handleEditorChange = useCallback(
     (_editorState: EditorState, _editor: LexicalEditor, jsonString: string) => {
-      setDescription(jsonString)
+      setDescription(jsonString);
     },
     []
-  )
+  );
 
   // Check if description content is empty
   const isDescriptionEmpty = useCallback((content: string) => {
-    if (!content) return true
-    if (!isLexicalContent(content)) return !content.trim()
-    const plainText = lexicalToPlainText(content)
-    return !plainText.trim()
-  }, [])
+    if (!content) return true;
+    if (!isLexicalContent(content)) return !content.trim();
+    const plainText = lexicalToPlainText(content);
+    return !plainText.trim();
+  }, []);
 
   // Scroll to anchor (e.g., #members) when URL hash changes
   useEffect(() => {
-    const hash = location.hash
-    const isDataLoaded = !!projectQuery.data
+    const hash = location.hash;
+    const isDataLoaded = !!projectQuery.data;
     if (hash && isDataLoaded) {
-      const element = document.querySelector(hash)
+      const element = document.querySelector(hash);
       if (element) {
         setTimeout(() => {
-          element.scrollIntoView({ behavior: 'smooth', block: 'start' })
-        }, 100)
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
       }
     }
-  }, [location.hash, projectQuery.data !== null])
+  }, [location.hash, projectQuery.data !== null]);
 
   // Mutations
   const updateMutation = trpc.project.update.useMutation({
     onSuccess: () => {
-      utils.project.get.invalidate({ projectId })
-      utils.project.list.invalidate()
+      utils.project.get.invalidate({ projectId });
+      utils.project.list.invalidate();
     },
-  })
+  });
 
   const addMemberMutation = trpc.project.addMember.useMutation({
     onSuccess: () => {
-      setAddMemberId('')
-      utils.project.getMembers.invalidate({ projectId })
+      setAddMemberId('');
+      utils.project.getMembers.invalidate({ projectId });
     },
-  })
+  });
 
   const removeMemberMutation = trpc.project.removeMember.useMutation({
     onSuccess: () => {
-      utils.project.getMembers.invalidate({ projectId })
+      utils.project.getMembers.invalidate({ projectId });
     },
-  })
+  });
 
   const updateRoleMutation = trpc.project.updateMemberRole.useMutation({
     onSuccess: () => {
-      utils.project.getMembers.invalidate({ projectId })
+      utils.project.getMembers.invalidate({ projectId });
     },
-  })
+  });
 
   const archiveMutation = trpc.project.archive.useMutation({
     onSuccess: () => {
-      navigate('/workspaces')
+      navigate('/workspaces');
     },
-  })
+  });
 
   const deleteMutation = trpc.project.delete.useMutation({
     onSuccess: () => {
-      navigate('/workspaces')
+      navigate('/workspaces');
     },
-  })
+  });
 
   // Handlers
   const handleUpdateProject = () => {
@@ -170,44 +174,44 @@ export function ProjectSettingsPage() {
       description: isDescriptionEmpty(description) ? undefined : description,
       startDate: startDate || undefined,
       endDate: endDate || undefined,
-    })
-  }
+    });
+  };
 
   const handleAddMember = () => {
-    const userId = parseInt(addMemberId, 10)
-    if (isNaN(userId)) return
+    const userId = parseInt(addMemberId, 10);
+    if (isNaN(userId)) return;
     addMemberMutation.mutate({
       projectId,
       userId,
       role: addMemberRole,
-    })
-  }
+    });
+  };
 
   const handleRemoveMember = (memberId: number) => {
-    if (!confirm('Are you sure you want to remove this member?')) return
+    if (!confirm('Are you sure you want to remove this member?')) return;
     removeMemberMutation.mutate({
       projectId,
       userId: memberId,
-    })
-  }
+    });
+  };
 
   const handleUpdateRole = (memberId: number, newRole: ProjectMemberRole) => {
     updateRoleMutation.mutate({
       projectId,
       userId: memberId,
       role: newRole,
-    })
-  }
+    });
+  };
 
   const handleArchive = () => {
-    if (!confirm(`Are you sure you want to archive "${name}"?`)) return
-    archiveMutation.mutate({ projectId })
-  }
+    if (!confirm(`Are you sure you want to archive "${name}"?`)) return;
+    archiveMutation.mutate({ projectId });
+  };
 
   const handleDelete = () => {
-    if (!confirm(`Are you sure you want to DELETE "${name}"? This cannot be undone.`)) return
-    deleteMutation.mutate({ projectId })
-  }
+    if (!confirm(`Are you sure you want to DELETE "${name}"? This cannot be undone.`)) return;
+    deleteMutation.mutate({ projectId });
+  };
 
   // Loading/error states
   if (projectQuery.isLoading) {
@@ -217,7 +221,7 @@ export function ProjectSettingsPage() {
           <p className="text-muted-foreground">Loading project...</p>
         </div>
       </ProjectLayout>
-    )
+    );
   }
 
   if (!projectQuery.data) {
@@ -227,18 +231,18 @@ export function ProjectSettingsPage() {
           <p className="text-muted-foreground">Project not found</p>
         </div>
       </ProjectLayout>
-    )
+    );
   }
 
-  const project = projectQuery.data
-  const userRole = project.userRole
-  const isManager = userRole === 'OWNER' || userRole === 'MANAGER'
-  const isOwner = userRole === 'OWNER'
+  const project = projectQuery.data;
+  const userRole = project.userRole;
+  const isManager = userRole === 'OWNER' || userRole === 'MANAGER';
+  const isOwner = userRole === 'OWNER';
 
   // Get workspace members not already in project
-  const availableMembers = workspaceMembersQuery.data?.filter(
-    (wm) => !membersQuery.data?.some((pm) => pm.id === wm.id)
-  ) ?? []
+  const availableMembers =
+    workspaceMembersQuery.data?.filter((wm) => !membersQuery.data?.some((pm) => pm.id === wm.id)) ??
+    [];
 
   return (
     <ProjectLayout>
@@ -298,19 +302,12 @@ export function ProjectSettingsPage() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">End Date</label>
-                  <Input
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                  />
+                  <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
                 </div>
               </div>
             </CardContent>
             <CardFooter>
-              <Button
-                onClick={handleUpdateProject}
-                disabled={updateMutation.isPending}
-              >
+              <Button onClick={handleUpdateProject} disabled={updateMutation.isPending}>
                 {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
               </Button>
             </CardFooter>
@@ -377,7 +374,9 @@ export function ProjectSettingsPage() {
                       {isManager && member.role !== 'OWNER' ? (
                         <select
                           value={member.role}
-                          onChange={(e) => handleUpdateRole(member.id, e.target.value as ProjectMemberRole)}
+                          onChange={(e) =>
+                            handleUpdateRole(member.id, e.target.value as ProjectMemberRole)
+                          }
                           className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm"
                         >
                           <option value="VIEWER">Viewer</option>
@@ -504,11 +503,11 @@ export function ProjectSettingsPage() {
         )}
       </div>
     </ProjectLayout>
-  )
+  );
 }
 
 // =============================================================================
 // Exports
 // =============================================================================
 
-export default ProjectSettingsPage
+export default ProjectSettingsPage;

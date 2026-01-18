@@ -10,11 +10,11 @@
  * ===================================================================
  */
 
-import type { Meta, StoryObj } from '@storybook/react-vite'
-import { Slider } from './slider'
-import { Label } from './label'
-import { Volume2, Sun, DollarSign } from 'lucide-react'
-import { useState } from 'react'
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import { Slider } from './slider';
+import { Label } from './label';
+import { Volume2, Sun, DollarSign } from 'lucide-react';
+import { useState } from 'react';
 
 const meta: Meta<typeof Slider> = {
   title: 'UI/Slider',
@@ -50,10 +50,10 @@ const meta: Meta<typeof Slider> = {
       },
     },
   },
-}
+};
 
-export default meta
-type Story = StoryObj<typeof Slider>
+export default meta;
+type Story = StoryObj<typeof Slider>;
 
 // =============================================================================
 // Basic Variants
@@ -64,7 +64,7 @@ export const Default: Story = {
     defaultValue: [50],
     max: 100,
   },
-}
+};
 
 export const WithLabel: Story = {
   render: () => (
@@ -73,11 +73,11 @@ export const WithLabel: Story = {
       <Slider defaultValue={[50]} max={100} />
     </div>
   ),
-}
+};
 
 export const WithValueDisplay: Story = {
   render: function ValueDisplayStory() {
-    const [value, setValue] = useState([50])
+    const [value, setValue] = useState([50]);
 
     return (
       <div className="w-[400px] space-y-4">
@@ -87,7 +87,7 @@ export const WithValueDisplay: Story = {
         </div>
         <Slider value={value} onValueChange={setValue} max={100} />
       </div>
-    )
+    );
   },
   parameters: {
     docs: {
@@ -96,7 +96,7 @@ export const WithValueDisplay: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // States and Configurations
@@ -109,7 +109,7 @@ export const Disabled: Story = {
       <Slider defaultValue={[50]} max={100} disabled />
     </div>
   ),
-}
+};
 
 export const DifferentRanges: Story = {
   render: () => (
@@ -135,11 +135,11 @@ export const DifferentRanges: Story = {
       },
     },
   },
-}
+};
 
 export const WithStep: Story = {
   render: function StepStory() {
-    const [value, setValue] = useState([50])
+    const [value, setValue] = useState([50]);
 
     return (
       <div className="w-[400px] space-y-4">
@@ -148,11 +148,9 @@ export const WithStep: Story = {
           <span className="text-sm text-muted-foreground">{value[0]}%</span>
         </div>
         <Slider value={value} onValueChange={setValue} max={100} step={10} />
-        <p className="text-sm text-muted-foreground">
-          This slider increments by 10 each step
-        </p>
+        <p className="text-sm text-muted-foreground">This slider increments by 10 each step</p>
       </div>
-    )
+    );
   },
   parameters: {
     docs: {
@@ -161,11 +159,11 @@ export const WithStep: Story = {
       },
     },
   },
-}
+};
 
 export const MinMaxRange: Story = {
   render: function MinMaxStory() {
-    const [value, setValue] = useState([0])
+    const [value, setValue] = useState([0]);
 
     return (
       <div className="w-[400px] space-y-4">
@@ -175,7 +173,7 @@ export const MinMaxRange: Story = {
         </div>
         <Slider value={value} onValueChange={setValue} min={-20} max={40} />
       </div>
-    )
+    );
   },
   parameters: {
     docs: {
@@ -184,7 +182,7 @@ export const MinMaxRange: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Real-World Examples
@@ -192,7 +190,7 @@ export const MinMaxRange: Story = {
 
 export const VolumeControl: Story = {
   render: function VolumeStory() {
-    const [volume, setVolume] = useState([70])
+    const [volume, setVolume] = useState([70]);
 
     return (
       <div className="w-[300px]">
@@ -207,7 +205,7 @@ export const VolumeControl: Story = {
           <Slider value={volume} onValueChange={setVolume} max={100} />
         </div>
       </div>
-    )
+    );
   },
   parameters: {
     docs: {
@@ -216,11 +214,11 @@ export const VolumeControl: Story = {
       },
     },
   },
-}
+};
 
 export const BrightnessControl: Story = {
   render: function BrightnessStory() {
-    const [brightness, setBrightness] = useState([50])
+    const [brightness, setBrightness] = useState([50]);
 
     return (
       <div className="w-[300px]">
@@ -235,13 +233,13 @@ export const BrightnessControl: Story = {
           <Slider value={brightness} onValueChange={setBrightness} max={100} />
         </div>
       </div>
-    )
+    );
   },
-}
+};
 
 export const PriceRange: Story = {
   render: function PriceStory() {
-    const [price, setPrice] = useState([500])
+    const [price, setPrice] = useState([500]);
 
     return (
       <div className="w-[400px]">
@@ -253,20 +251,14 @@ export const PriceRange: Story = {
             </div>
             <span className="text-sm font-medium">${price[0]}</span>
           </div>
-          <Slider
-            value={price}
-            onValueChange={setPrice}
-            min={0}
-            max={1000}
-            step={50}
-          />
+          <Slider value={price} onValueChange={setPrice} min={0} max={1000} step={50} />
           <div className="flex justify-between text-sm text-muted-foreground">
             <span>$0</span>
             <span>$1,000</span>
           </div>
         </div>
       </div>
-    )
+    );
   },
   parameters: {
     docs: {
@@ -275,14 +267,14 @@ export const PriceRange: Story = {
       },
     },
   },
-}
+};
 
 export const MultipleSliders: Story = {
   render: function MultipleStory() {
-    const [volume, setVolume] = useState([70])
-    const [bass, setBass] = useState([50])
-    const [treble, setTreble] = useState([50])
-    const [balance, setBalance] = useState([0])
+    const [volume, setVolume] = useState([70]);
+    const [bass, setBass] = useState([50]);
+    const [treble, setTreble] = useState([50]);
+    const [balance, setBalance] = useState([0]);
 
     return (
       <div className="w-[400px] space-y-6">
@@ -316,7 +308,11 @@ export const MultipleSliders: Story = {
           <div className="flex justify-between">
             <Label>Balance</Label>
             <span className="text-sm text-muted-foreground">
-              {(balance[0] ?? 0) > 0 ? `R ${balance[0]}` : (balance[0] ?? 0) < 0 ? `L ${Math.abs(balance[0] ?? 0)}` : 'Center'}
+              {(balance[0] ?? 0) > 0
+                ? `R ${balance[0]}`
+                : (balance[0] ?? 0) < 0
+                  ? `L ${Math.abs(balance[0] ?? 0)}`
+                  : 'Center'}
             </span>
           </div>
           <Slider value={balance} onValueChange={setBalance} min={-50} max={50} />
@@ -326,7 +322,7 @@ export const MultipleSliders: Story = {
           </div>
         </div>
       </div>
-    )
+    );
   },
   parameters: {
     docs: {
@@ -335,7 +331,7 @@ export const MultipleSliders: Story = {
       },
     },
   },
-}
+};
 
 export const ProgressiveValues: Story = {
   render: () => (
@@ -380,13 +376,13 @@ export const ProgressiveValues: Story = {
       },
     },
   },
-}
+};
 
 export const WithUnits: Story = {
   render: function UnitsStory() {
-    const [fontSize, setFontSize] = useState([16])
-    const [lineHeight, setLineHeight] = useState([1.5])
-    const [spacing, setSpacing] = useState([0])
+    const [fontSize, setFontSize] = useState([16]);
+    const [lineHeight, setLineHeight] = useState([1.5]);
+    const [spacing, setSpacing] = useState([0]);
 
     return (
       <div className="w-[400px] space-y-6">
@@ -397,13 +393,7 @@ export const WithUnits: Story = {
             <Label>Font Size</Label>
             <span className="text-sm text-muted-foreground">{fontSize[0]}px</span>
           </div>
-          <Slider
-            value={fontSize}
-            onValueChange={setFontSize}
-            min={12}
-            max={24}
-            step={1}
-          />
+          <Slider value={fontSize} onValueChange={setFontSize} min={12} max={24} step={1} />
         </div>
 
         <div className="space-y-2">
@@ -413,13 +403,7 @@ export const WithUnits: Story = {
               {(lineHeight[0] ?? 1.5).toFixed(1)}
             </span>
           </div>
-          <Slider
-            value={lineHeight}
-            onValueChange={setLineHeight}
-            min={1}
-            max={2}
-            step={0.1}
-          />
+          <Slider value={lineHeight} onValueChange={setLineHeight} min={1} max={2} step={0.1} />
         </div>
 
         <div className="space-y-2">
@@ -429,13 +413,7 @@ export const WithUnits: Story = {
               {(spacing[0] ?? 0) > 0 ? `+${spacing[0]}px` : `${spacing[0]}px`}
             </span>
           </div>
-          <Slider
-            value={spacing}
-            onValueChange={setSpacing}
-            min={-2}
-            max={4}
-            step={0.5}
-          />
+          <Slider value={spacing} onValueChange={setSpacing} min={-2} max={4} step={0.5} />
         </div>
 
         <div className="rounded-lg border p-4">
@@ -450,7 +428,7 @@ export const WithUnits: Story = {
           </p>
         </div>
       </div>
-    )
+    );
   },
   parameters: {
     docs: {
@@ -459,4 +437,4 @@ export const WithUnits: Story = {
       },
     },
   },
-}
+};

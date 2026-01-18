@@ -21,36 +21,36 @@ import type {
   NodeKey,
   SerializedLexicalNode,
   Spread,
-} from 'lexical'
-import type { JSX } from 'react'
-import { $applyNodeReplacement, DecoratorNode } from 'lexical'
-import { Suspense, useCallback } from 'react'
-import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import { ResizableMediaWrapper, type MediaAlignment } from '../ResizableMediaWrapper'
+} from 'lexical';
+import type { JSX } from 'react';
+import { $applyNodeReplacement, DecoratorNode } from 'lexical';
+import { Suspense, useCallback } from 'react';
+import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
+import { ResizableMediaWrapper, type MediaAlignment } from '../ResizableMediaWrapper';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface VideoPayload {
-  src: string
-  width?: number
-  height?: number
-  poster?: string
-  alignment?: MediaAlignment
-  key?: NodeKey
+  src: string;
+  width?: number;
+  height?: number;
+  poster?: string;
+  alignment?: MediaAlignment;
+  key?: NodeKey;
 }
 
 export type SerializedVideoNode = Spread<
   {
-    src: string
-    width?: number
-    height?: number
-    poster?: string
-    alignment?: MediaAlignment
+    src: string;
+    width?: number;
+    height?: number;
+    poster?: string;
+    alignment?: MediaAlignment;
   },
   SerializedLexicalNode
->
+>;
 
 // =============================================================================
 // Video Component
@@ -65,58 +65,58 @@ function VideoComponent({
   nodeKey,
   readOnly,
 }: {
-  src: string
-  width: number | undefined
-  height: number | undefined
-  poster: string | undefined
-  alignment: MediaAlignment
-  nodeKey: NodeKey
-  readOnly: boolean
+  src: string;
+  width: number | undefined;
+  height: number | undefined;
+  poster: string | undefined;
+  alignment: MediaAlignment;
+  nodeKey: NodeKey;
+  readOnly: boolean;
 }) {
-  const [editor] = useLexicalComposerContext()
+  const [editor] = useLexicalComposerContext();
 
   const handleResize = useCallback(
     (newWidth: number, newHeight: number) => {
       editor.update(() => {
         const node = editor.getEditorState().read(() => {
-          const nodes = editor.getEditorState()._nodeMap
+          const nodes = editor.getEditorState()._nodeMap;
           for (const [, n] of nodes) {
             if ($isVideoNode(n) && n.getKey() === nodeKey) {
-              return n
+              return n;
             }
           }
-          return null
-        })
+          return null;
+        });
         if (node && $isVideoNode(node)) {
-          const writable = node.getWritable()
-          writable.__width = newWidth
-          writable.__height = newHeight
+          const writable = node.getWritable();
+          writable.__width = newWidth;
+          writable.__height = newHeight;
         }
-      })
+      });
     },
     [editor, nodeKey]
-  )
+  );
 
   const handleAlignmentChange = useCallback(
     (newAlignment: MediaAlignment) => {
       editor.update(() => {
         const node = editor.getEditorState().read(() => {
-          const nodes = editor.getEditorState()._nodeMap
+          const nodes = editor.getEditorState()._nodeMap;
           for (const [, n] of nodes) {
             if ($isVideoNode(n) && n.getKey() === nodeKey) {
-              return n
+              return n;
             }
           }
-          return null
-        })
+          return null;
+        });
         if (node && $isVideoNode(node)) {
-          const writable = node.getWritable()
-          writable.__alignment = newAlignment
+          const writable = node.getWritable();
+          writable.__alignment = newAlignment;
         }
-      })
+      });
     },
     [editor, nodeKey]
-  )
+  );
 
   return (
     <ResizableMediaWrapper
@@ -147,7 +147,7 @@ function VideoComponent({
         Your browser does not support the video tag.
       </video>
     </ResizableMediaWrapper>
-  )
+  );
 }
 
 // =============================================================================
@@ -155,28 +155,28 @@ function VideoComponent({
 // =============================================================================
 
 function $convertVideoElement(domNode: Node): null | DOMConversionOutput {
-  const video = domNode as HTMLVideoElement
-  const src = video.getAttribute('src')
+  const video = domNode as HTMLVideoElement;
+  const src = video.getAttribute('src');
 
   if (!src || src.startsWith('file:///')) {
-    return null
+    return null;
   }
 
-  const width = video.width || undefined
-  const height = video.height || undefined
-  const poster = video.poster || undefined
+  const width = video.width || undefined;
+  const height = video.height || undefined;
+  const poster = video.poster || undefined;
 
   // Try to determine alignment from styles
-  let alignment: MediaAlignment = 'default'
-  const style = video.getAttribute('style') || ''
-  const cssFloat = video.style?.cssFloat || ''
+  let alignment: MediaAlignment = 'default';
+  const style = video.getAttribute('style') || '';
+  const cssFloat = video.style?.cssFloat || '';
 
   if (cssFloat === 'left' || style.includes('float: left')) {
-    alignment = 'left'
+    alignment = 'left';
   } else if (cssFloat === 'right' || style.includes('float: right')) {
-    alignment = 'right'
+    alignment = 'right';
   } else if (style.includes('margin-left: auto') && style.includes('margin-right: auto')) {
-    alignment = 'center'
+    alignment = 'center';
   }
 
   const node = $createVideoNode({
@@ -185,9 +185,9 @@ function $convertVideoElement(domNode: Node): null | DOMConversionOutput {
     height,
     poster,
     alignment,
-  })
+  });
 
-  return { node }
+  return { node };
 }
 
 // =============================================================================
@@ -195,14 +195,14 @@ function $convertVideoElement(domNode: Node): null | DOMConversionOutput {
 // =============================================================================
 
 export class VideoNode extends DecoratorNode<JSX.Element> {
-  __src: string
-  __width: number | undefined
-  __height: number | undefined
-  __poster: string | undefined
-  __alignment: MediaAlignment
+  __src: string;
+  __width: number | undefined;
+  __height: number | undefined;
+  __poster: string | undefined;
+  __alignment: MediaAlignment;
 
   static getType(): string {
-    return 'video'
+    return 'video';
   }
 
   static clone(node: VideoNode): VideoNode {
@@ -213,18 +213,18 @@ export class VideoNode extends DecoratorNode<JSX.Element> {
       node.__poster,
       node.__alignment,
       node.__key
-    )
+    );
   }
 
   static importJSON(serializedNode: SerializedVideoNode): VideoNode {
-    const { src, width, height, poster, alignment } = serializedNode
+    const { src, width, height, poster, alignment } = serializedNode;
     return $createVideoNode({
       src,
       width,
       height,
       poster,
       alignment: alignment || 'default',
-    })
+    });
   }
 
   static importDOM(): DOMConversionMap | null {
@@ -233,7 +233,7 @@ export class VideoNode extends DecoratorNode<JSX.Element> {
         conversion: $convertVideoElement,
         priority: 0,
       }),
-    }
+    };
   }
 
   constructor(
@@ -244,12 +244,12 @@ export class VideoNode extends DecoratorNode<JSX.Element> {
     alignment?: MediaAlignment,
     key?: NodeKey
   ) {
-    super(key)
-    this.__src = src
-    this.__width = width
-    this.__height = height
-    this.__poster = poster
-    this.__alignment = alignment || 'default'
+    super(key);
+    this.__src = src;
+    this.__width = width;
+    this.__height = height;
+    this.__poster = poster;
+    this.__alignment = alignment || 'default';
   }
 
   exportJSON(): SerializedVideoNode {
@@ -262,84 +262,84 @@ export class VideoNode extends DecoratorNode<JSX.Element> {
       alignment: this.__alignment,
       type: 'video',
       version: 1,
-    }
+    };
   }
 
   exportDOM(): DOMExportOutput {
-    const video = document.createElement('video')
-    video.setAttribute('src', this.__src)
-    video.setAttribute('controls', 'true')
+    const video = document.createElement('video');
+    video.setAttribute('src', this.__src);
+    video.setAttribute('controls', 'true');
     if (this.__width) {
-      video.setAttribute('width', this.__width.toString())
+      video.setAttribute('width', this.__width.toString());
     }
     if (this.__height) {
-      video.setAttribute('height', this.__height.toString())
+      video.setAttribute('height', this.__height.toString());
     }
     if (this.__poster) {
-      video.setAttribute('poster', this.__poster)
+      video.setAttribute('poster', this.__poster);
     }
 
     // Apply alignment styles
     switch (this.__alignment) {
       case 'left':
-        video.style.cssFloat = 'left'
-        video.style.marginRight = '1rem'
-        video.style.marginBottom = '0.5rem'
-        break
+        video.style.cssFloat = 'left';
+        video.style.marginRight = '1rem';
+        video.style.marginBottom = '0.5rem';
+        break;
       case 'right':
-        video.style.cssFloat = 'right'
-        video.style.marginLeft = '1rem'
-        video.style.marginBottom = '0.5rem'
-        break
+        video.style.cssFloat = 'right';
+        video.style.marginLeft = '1rem';
+        video.style.marginBottom = '0.5rem';
+        break;
       case 'center':
-        video.style.display = 'block'
-        video.style.marginLeft = 'auto'
-        video.style.marginRight = 'auto'
-        break
+        video.style.display = 'block';
+        video.style.marginLeft = 'auto';
+        video.style.marginRight = 'auto';
+        break;
     }
 
-    return { element: video }
+    return { element: video };
   }
 
   createDOM(config: EditorConfig): HTMLElement {
-    const span = document.createElement('span')
-    const theme = config.theme
-    const className = theme.video
+    const span = document.createElement('span');
+    const theme = config.theme;
+    const className = theme.video;
     if (className) {
-      span.className = className
+      span.className = className;
     }
-    return span
+    return span;
   }
 
   updateDOM(): false {
-    return false
+    return false;
   }
 
   isInline(): boolean {
-    return true
+    return true;
   }
 
   getSrc(): string {
-    return this.__src
+    return this.__src;
   }
 
   getAlignment(): MediaAlignment {
-    return this.__alignment
+    return this.__alignment;
   }
 
   setWidthAndHeight(width: number | undefined, height: number | undefined): void {
-    const writable = this.getWritable()
-    writable.__width = width
-    writable.__height = height
+    const writable = this.getWritable();
+    writable.__width = width;
+    writable.__height = height;
   }
 
   setAlignment(alignment: MediaAlignment): void {
-    const writable = this.getWritable()
-    writable.__alignment = alignment
+    const writable = this.getWritable();
+    writable.__alignment = alignment;
   }
 
   decorate(_editor: LexicalEditor, _config: EditorConfig): JSX.Element {
-    const isEditable = _editor.isEditable()
+    const isEditable = _editor.isEditable();
     return (
       <Suspense fallback={<div className="lexical-video-loading">Loading...</div>}>
         <VideoComponent
@@ -352,7 +352,7 @@ export class VideoNode extends DecoratorNode<JSX.Element> {
           readOnly={!isEditable}
         />
       </Suspense>
-    )
+    );
   }
 }
 
@@ -368,13 +368,9 @@ export function $createVideoNode({
   alignment,
   key,
 }: VideoPayload): VideoNode {
-  return $applyNodeReplacement(
-    new VideoNode(src, width, height, poster, alignment, key)
-  )
+  return $applyNodeReplacement(new VideoNode(src, width, height, poster, alignment, key));
 }
 
-export function $isVideoNode(
-  node: LexicalNode | null | undefined
-): node is VideoNode {
-  return node instanceof VideoNode
+export function $isVideoNode(node: LexicalNode | null | undefined): node is VideoNode {
+  return node instanceof VideoNode;
 }

@@ -8,18 +8,18 @@
  * Task: 253 - Multi-Workspace / Organisatie Systeem
  */
 
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { AdminLayout } from '@/components/admin'
-import { trpc, getMediaUrl } from '@/lib/trpc'
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { AdminLayout } from '@/components/admin';
+import { trpc, getMediaUrl } from '@/lib/trpc';
 
 // =============================================================================
 // Types
 // =============================================================================
 
-type StatusFilter = boolean | undefined
-type SortField = 'id' | 'name' | 'createdAt' | 'updatedAt'
-type SortOrder = 'asc' | 'desc'
+type StatusFilter = boolean | undefined;
+type SortField = 'id' | 'name' | 'createdAt' | 'updatedAt';
+type SortOrder = 'asc' | 'desc';
 
 // =============================================================================
 // Icons
@@ -27,42 +27,87 @@ type SortOrder = 'asc' | 'desc'
 
 function SearchIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+      />
     </svg>
-  )
+  );
 }
 
 function ChevronUpIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
     </svg>
-  )
+  );
 }
 
 function ChevronDownIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
     </svg>
-  )
+  );
 }
 
 function PencilIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+      />
     </svg>
-  )
+  );
 }
 
 function BuildingIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+      />
     </svg>
-  )
+  );
 }
 
 // =============================================================================
@@ -70,12 +115,12 @@ function BuildingIcon({ className }: { className?: string }) {
 // =============================================================================
 
 export function WorkspaceListPage() {
-  const [search, setSearch] = useState('')
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>(undefined)
-  const [sortBy, setSortBy] = useState<SortField>('name')
-  const [sortOrder, setSortOrder] = useState<SortOrder>('asc')
-  const [page, setPage] = useState(0)
-  const limit = 25
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>(undefined);
+  const [sortBy, setSortBy] = useState<SortField>('name');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+  const [page, setPage] = useState(0);
+  const limit = 25;
 
   const { data, isLoading, error } = trpc.admin.listAllWorkspaces.useQuery({
     search: search || undefined,
@@ -84,41 +129,38 @@ export function WorkspaceListPage() {
     sortOrder,
     limit,
     offset: page * limit,
-  })
+  });
 
   const handleSort = (field: SortField) => {
     if (sortBy === field) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
     } else {
-      setSortBy(field)
-      setSortOrder('asc')
+      setSortBy(field);
+      setSortOrder('asc');
     }
-    setPage(0)
-  }
+    setPage(0);
+  };
 
   const SortIcon = ({ field }: { field: SortField }) => {
-    if (sortBy !== field) return null
+    if (sortBy !== field) return null;
     return sortOrder === 'asc' ? (
       <ChevronUpIcon className="h-4 w-4 inline ml-1" />
     ) : (
       <ChevronDownIcon className="h-4 w-4 inline ml-1" />
-    )
-  }
+    );
+  };
 
   const formatDate = (date: string | Date | null) => {
-    if (!date) return '-'
+    if (!date) return '-';
     return new Date(date).toLocaleDateString('nl-NL', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
-    })
-  }
+    });
+  };
 
   return (
-    <AdminLayout
-      title="Workspaces"
-      description="Manage organisation workspaces"
-    >
+    <AdminLayout title="Workspaces" description="Manage organisation workspaces">
       {/* Filters */}
       <div className="mb-6 flex flex-wrap gap-4">
         {/* Search */}
@@ -129,8 +171,8 @@ export function WorkspaceListPage() {
             placeholder="Search by name, slug, or description..."
             value={search}
             onChange={(e) => {
-              setSearch(e.target.value)
-              setPage(0)
+              setSearch(e.target.value);
+              setPage(0);
             }}
             className="w-full pl-10 pr-4 py-2 border border-input rounded-lg bg-card text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
@@ -140,9 +182,9 @@ export function WorkspaceListPage() {
         <select
           value={statusFilter === undefined ? '' : statusFilter ? 'active' : 'inactive'}
           onChange={(e) => {
-            const val = e.target.value
-            setStatusFilter(val === '' ? undefined : val === 'active')
-            setPage(0)
+            const val = e.target.value;
+            setStatusFilter(val === '' ? undefined : val === 'active');
+            setPage(0);
           }}
           className="px-4 py-2 border border-input rounded-lg bg-card text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         >
@@ -168,11 +210,7 @@ export function WorkspaceListPage() {
       )}
 
       {/* Loading state */}
-      {isLoading && (
-        <div className="text-center py-12 text-gray-500">
-          Loading workspaces...
-        </div>
-      )}
+      {isLoading && <div className="text-center py-12 text-gray-500">Loading workspaces...</div>}
 
       {/* Workspaces table */}
       {data && (
@@ -243,9 +281,7 @@ export function WorkspaceListPage() {
                           </div>
                         )}
                         <div>
-                          <div className="font-medium text-foreground">
-                            {workspace.name}
-                          </div>
+                          <div className="font-medium text-foreground">{workspace.name}</div>
                           {workspace.description && (
                             <div className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-xs">
                               {workspace.description}
@@ -298,7 +334,8 @@ export function WorkspaceListPage() {
           {/* Pagination */}
           <div className="mt-4 flex items-center justify-between">
             <div className="text-sm text-gray-600 dark:text-gray-400">
-              Showing {page * limit + 1} to {Math.min((page + 1) * limit, data.total)} of {data.total} workspaces
+              Showing {page * limit + 1} to {Math.min((page + 1) * limit, data.total)} of{' '}
+              {data.total} workspaces
             </div>
             <div className="flex gap-2">
               <button
@@ -343,7 +380,7 @@ export function WorkspaceListPage() {
         </div>
       )}
     </AdminLayout>
-  )
+  );
 }
 
-export default WorkspaceListPage
+export default WorkspaceListPage;

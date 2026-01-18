@@ -12,27 +12,27 @@
 
 export interface ExistingFact {
   /** Unique identifier for the fact (edge) */
-  id: string
+  id: string;
   /** Human-readable description of the fact */
-  fact: string
+  fact: string;
   /** When the fact became true (ISO 8601) */
-  validAt: string | null
+  validAt: string | null;
   /** When the fact stopped being true (ISO 8601) */
-  invalidAt: string | null
+  invalidAt: string | null;
 }
 
 export interface DetectContradictionsContext {
   /** The new fact being added */
-  newFact: string
+  newFact: string;
   /** List of existing facts to compare against */
-  existingFacts: ExistingFact[]
+  existingFacts: ExistingFact[];
 }
 
 export interface ContradictionResult {
   /** IDs of existing facts that are contradicted by the new fact */
-  contradictedFactIds: string[]
+  contradictedFactIds: string[];
   /** Brief explanation of why these facts contradict */
-  reasoning: string
+  reasoning: string;
 }
 
 // =============================================================================
@@ -58,13 +58,13 @@ export enum ContradictionCategory {
  */
 export interface ContradictionDetail {
   /** ID of the contradicted fact */
-  factId: string
+  factId: string;
   /** Confidence score 0.0 - 1.0 */
-  confidence: number
+  confidence: number;
   /** Type of contradiction */
-  category: ContradictionCategory
+  category: ContradictionCategory;
   /** Human-readable description of the conflict */
-  conflictDescription: string
+  conflictDescription: string;
 }
 
 /**
@@ -72,11 +72,11 @@ export interface ContradictionDetail {
  */
 export interface EnhancedContradictionResult {
   /** Detailed list of contradictions found */
-  contradictions: ContradictionDetail[]
+  contradictions: ContradictionDetail[];
   /** Overall reasoning for the analysis */
-  reasoning: string
+  reasoning: string;
   /** Suggested resolution strategy */
-  suggestedResolution?: 'INVALIDATE_OLD' | 'INVALIDATE_NEW' | 'MERGE' | 'ASK_USER'
+  suggestedResolution?: 'INVALIDATE_OLD' | 'INVALIDATE_NEW' | 'MERGE' | 'ASK_USER';
 }
 
 /**
@@ -120,7 +120,7 @@ If no contradictions are found, return:
 {
   "contradicted_fact_ids": [],
   "reasoning": "No contradictions found - the new fact is compatible with existing facts"
-}`
+}`;
 }
 
 /**
@@ -128,16 +128,18 @@ If no contradictions are found, return:
  */
 export function getDetectContradictionsUserPrompt(context: DetectContradictionsContext): string {
   // Format existing facts with their IDs and temporal info
-  const formattedFacts = context.existingFacts.map(f => {
-    let temporal = ''
-    if (f.validAt) {
-      temporal += ` (valid since: ${f.validAt})`
-    }
-    if (f.invalidAt) {
-      temporal += ` (invalid since: ${f.invalidAt})`
-    }
-    return `[${f.id}] ${f.fact}${temporal}`
-  }).join('\n')
+  const formattedFacts = context.existingFacts
+    .map((f) => {
+      let temporal = '';
+      if (f.validAt) {
+        temporal += ` (valid since: ${f.validAt})`;
+      }
+      if (f.invalidAt) {
+        temporal += ` (invalid since: ${f.invalidAt})`;
+      }
+      return `[${f.id}] ${f.fact}${temporal}`;
+    })
+    .join('\n');
 
   return `<EXISTING_FACTS>
 ${formattedFacts || '(no existing facts)'}
@@ -147,7 +149,7 @@ ${formattedFacts || '(no existing facts)'}
 ${context.newFact}
 </NEW_FACT>
 
-Determine which existing facts (if any) are directly contradicted by the new fact. Return only the JSON object.`
+Determine which existing facts (if any) are directly contradicted by the new fact. Return only the JSON object.`;
 }
 
 /**
@@ -156,41 +158,39 @@ Determine which existing facts (if any) are directly contradicted by the new fac
  */
 export function parseDetectContradictionsResponse(response: string): ContradictionResult {
   // Try to extract JSON from the response
-  let jsonStr = response.trim()
+  let jsonStr = response.trim();
 
   // Handle markdown code blocks
-  const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/)
+  const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (jsonMatch) {
-    jsonStr = jsonMatch[1]?.trim() ?? jsonStr
+    jsonStr = jsonMatch[1]?.trim() ?? jsonStr;
   }
 
   // Try to find JSON object in the response
-  const jsonObjectMatch = jsonStr.match(/\{[\s\S]*\}/)
+  const jsonObjectMatch = jsonStr.match(/\{[\s\S]*\}/);
   if (jsonObjectMatch) {
-    jsonStr = jsonObjectMatch[0]
+    jsonStr = jsonObjectMatch[0];
   }
 
   try {
-    const parsed = JSON.parse(jsonStr) as Record<string, unknown>
+    const parsed = JSON.parse(jsonStr) as Record<string, unknown>;
 
     // Handle both snake_case and camelCase field names
-    const contradictedIds = (
-      parsed.contradicted_fact_ids ??
+    const contradictedIds = (parsed.contradicted_fact_ids ??
       parsed.contradictedFactIds ??
       parsed.contradicted_facts ??
-      []
-    ) as (string | number)[]
+      []) as (string | number)[];
 
     return {
-      contradictedFactIds: contradictedIds.map(id => String(id)),
+      contradictedFactIds: contradictedIds.map((id) => String(id)),
       reasoning: typeof parsed.reasoning === 'string' ? parsed.reasoning : 'No reasoning provided',
-    }
+    };
   } catch {
     // If parsing fails, return empty result
     return {
       contradictedFactIds: [],
       reasoning: `Failed to parse LLM response: ${response.substring(0, 100)}...`,
-    }
+    };
   }
 }
 
@@ -265,24 +265,28 @@ If no contradictions with confidence >= 0.7 are found, return:
 {
   "contradictions": [],
   "reasoning": "No clear contradictions found"
-}`
+}`;
 }
 
 /**
  * Generate the user prompt for enhanced contradiction detection
  */
-export function getEnhancedDetectContradictionsUserPrompt(context: DetectContradictionsContext): string {
+export function getEnhancedDetectContradictionsUserPrompt(
+  context: DetectContradictionsContext
+): string {
   // Format existing facts with their IDs and temporal info
-  const formattedFacts = context.existingFacts.map(f => {
-    let temporal = ''
-    if (f.validAt) {
-      temporal += ` [valid since: ${f.validAt}]`
-    }
-    if (f.invalidAt) {
-      temporal += ` [ALREADY INVALID since: ${f.invalidAt}]`
-    }
-    return `[${f.id}] ${f.fact}${temporal}`
-  }).join('\n')
+  const formattedFacts = context.existingFacts
+    .map((f) => {
+      let temporal = '';
+      if (f.validAt) {
+        temporal += ` [valid since: ${f.validAt}]`;
+      }
+      if (f.invalidAt) {
+        temporal += ` [ALREADY INVALID since: ${f.invalidAt}]`;
+      }
+      return `[${f.id}] ${f.fact}${temporal}`;
+    })
+    .join('\n');
 
   return `<EXISTING_FACTS>
 ${formattedFacts || '(no existing facts)'}
@@ -292,64 +296,70 @@ ${formattedFacts || '(no existing facts)'}
 ${context.newFact}
 </NEW_FACT>
 
-Analyze which existing facts (if any) are contradicted by the new fact. Include confidence scores and categories. Return only the JSON object.`
+Analyze which existing facts (if any) are contradicted by the new fact. Include confidence scores and categories. Return only the JSON object.`;
 }
 
 /**
  * Parse the LLM response into EnhancedContradictionResult
  */
-export function parseEnhancedDetectContradictionsResponse(response: string): EnhancedContradictionResult {
+export function parseEnhancedDetectContradictionsResponse(
+  response: string
+): EnhancedContradictionResult {
   // Try to extract JSON from the response
-  let jsonStr = response.trim()
+  let jsonStr = response.trim();
 
   // Handle markdown code blocks
-  const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/)
+  const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (jsonMatch) {
-    jsonStr = jsonMatch[1]?.trim() ?? jsonStr
+    jsonStr = jsonMatch[1]?.trim() ?? jsonStr;
   }
 
   // Try to find JSON object in the response
-  const jsonObjectMatch = jsonStr.match(/\{[\s\S]*\}/)
+  const jsonObjectMatch = jsonStr.match(/\{[\s\S]*\}/);
   if (jsonObjectMatch) {
-    jsonStr = jsonObjectMatch[0]
+    jsonStr = jsonObjectMatch[0];
   }
 
   try {
-    const parsed = JSON.parse(jsonStr) as Record<string, unknown>
+    const parsed = JSON.parse(jsonStr) as Record<string, unknown>;
 
     // Parse contradictions array
-    const rawContradictions = (parsed.contradictions ?? []) as Array<Record<string, unknown>>
+    const rawContradictions = (parsed.contradictions ?? []) as Array<Record<string, unknown>>;
 
     const contradictions: ContradictionDetail[] = rawContradictions
-      .filter(c => {
-        const confidence = typeof c.confidence === 'number' ? c.confidence : 0
-        return confidence >= 0.7 // Only include high-confidence contradictions
+      .filter((c) => {
+        const confidence = typeof c.confidence === 'number' ? c.confidence : 0;
+        return confidence >= 0.7; // Only include high-confidence contradictions
       })
-      .map(c => ({
+      .map((c) => ({
         factId: String(c.factId ?? c.fact_id ?? ''),
         confidence: typeof c.confidence === 'number' ? c.confidence : 0.7,
         category: parseCategory(c.category),
-        conflictDescription: String(c.conflictDescription ?? c.conflict_description ?? 'No description'),
-      }))
+        conflictDescription: String(
+          c.conflictDescription ?? c.conflict_description ?? 'No description'
+        ),
+      }));
 
     // Parse suggested resolution
-    const resolution = parsed.suggestedResolution ?? parsed.suggested_resolution
-    const validResolutions = ['INVALIDATE_OLD', 'INVALIDATE_NEW', 'MERGE', 'ASK_USER'] as const
-    const suggestedResolution = validResolutions.includes(resolution as typeof validResolutions[number])
-      ? (resolution as typeof validResolutions[number])
-      : undefined
+    const resolution = parsed.suggestedResolution ?? parsed.suggested_resolution;
+    const validResolutions = ['INVALIDATE_OLD', 'INVALIDATE_NEW', 'MERGE', 'ASK_USER'] as const;
+    const suggestedResolution = validResolutions.includes(
+      resolution as (typeof validResolutions)[number]
+    )
+      ? (resolution as (typeof validResolutions)[number])
+      : undefined;
 
     return {
       contradictions,
       reasoning: typeof parsed.reasoning === 'string' ? parsed.reasoning : 'No reasoning provided',
       suggestedResolution,
-    }
+    };
   } catch {
     // If parsing fails, return empty result
     return {
       contradictions: [],
       reasoning: `Failed to parse LLM response: ${response.substring(0, 100)}...`,
-    }
+    };
   }
 }
 
@@ -357,18 +367,18 @@ export function parseEnhancedDetectContradictionsResponse(response: string): Enh
  * Parse category string into ContradictionCategory enum
  */
 function parseCategory(category: unknown): ContradictionCategory {
-  const categoryStr = String(category ?? '').toUpperCase()
+  const categoryStr = String(category ?? '').toUpperCase();
   switch (categoryStr) {
     case 'SEMANTIC':
-      return ContradictionCategory.SEMANTIC
+      return ContradictionCategory.SEMANTIC;
     case 'TEMPORAL':
-      return ContradictionCategory.TEMPORAL
+      return ContradictionCategory.TEMPORAL;
     case 'FACTUAL':
-      return ContradictionCategory.FACTUAL
+      return ContradictionCategory.FACTUAL;
     case 'ATTRIBUTE':
-      return ContradictionCategory.ATTRIBUTE
+      return ContradictionCategory.ATTRIBUTE;
     default:
-      return ContradictionCategory.FACTUAL // Default to factual
+      return ContradictionCategory.FACTUAL; // Default to factual
   }
 }
 
@@ -376,11 +386,13 @@ function parseCategory(category: unknown): ContradictionCategory {
  * Convert EnhancedContradictionResult to basic ContradictionResult
  * For backwards compatibility with existing code
  */
-export function toBasicContradictionResult(enhanced: EnhancedContradictionResult): ContradictionResult {
+export function toBasicContradictionResult(
+  enhanced: EnhancedContradictionResult
+): ContradictionResult {
   return {
-    contradictedFactIds: enhanced.contradictions.map(c => c.factId),
+    contradictedFactIds: enhanced.contradictions.map((c) => c.factId),
     reasoning: enhanced.reasoning,
-  }
+  };
 }
 
 // =============================================================================
@@ -388,16 +400,16 @@ export function toBasicContradictionResult(enhanced: EnhancedContradictionResult
 // =============================================================================
 
 /** Maximum number of new facts per batch to avoid token limits */
-export const MAX_BATCH_SIZE = 10
+export const MAX_BATCH_SIZE = 10;
 
 /**
  * Input for batch contradiction detection
  */
 export interface BatchNewFact {
   /** Unique identifier for this new fact (for result mapping) */
-  id: string
+  id: string;
   /** The fact content */
-  fact: string
+  fact: string;
 }
 
 /**
@@ -405,15 +417,15 @@ export interface BatchNewFact {
  */
 export interface BatchFactResult {
   /** ID of the new fact (from BatchNewFact.id) */
-  newFactId: string
+  newFactId: string;
   /** Contradictions found for this fact */
-  contradictions: ContradictionDetail[]
+  contradictions: ContradictionDetail[];
   /** Reasoning for this specific fact */
-  reasoning: string
+  reasoning: string;
   /** Suggested resolution */
-  suggestedResolution?: 'INVALIDATE_OLD' | 'INVALIDATE_NEW' | 'MERGE' | 'ASK_USER'
+  suggestedResolution?: 'INVALIDATE_OLD' | 'INVALIDATE_NEW' | 'MERGE' | 'ASK_USER';
   /** Error message if processing failed for this fact */
-  error?: string
+  error?: string;
 }
 
 /**
@@ -421,11 +433,11 @@ export interface BatchFactResult {
  */
 export interface BatchContradictionResult {
   /** Results per new fact */
-  results: BatchFactResult[]
+  results: BatchFactResult[];
   /** Overall summary */
-  summary: string
+  summary: string;
   /** Number of facts that had errors */
-  errorCount: number
+  errorCount: number;
 }
 
 /**
@@ -480,32 +492,32 @@ Return a JSON object with results for EACH new fact:
     }
   ],
   "summary": "Brief overall summary of the batch analysis"
-}`
+}`;
 }
 
 /**
  * Generate user prompt for batch contradiction detection
  */
 export function getBatchDetectContradictionsUserPrompt(context: {
-  newFacts: BatchNewFact[]
-  existingFacts: ExistingFact[]
+  newFacts: BatchNewFact[];
+  existingFacts: ExistingFact[];
 }): string {
   // Format existing facts
-  const formattedExisting = context.existingFacts.map(f => {
-    let temporal = ''
-    if (f.validAt) {
-      temporal += ` [valid since: ${f.validAt}]`
-    }
-    if (f.invalidAt) {
-      temporal += ` [ALREADY INVALID since: ${f.invalidAt}]`
-    }
-    return `[${f.id}] ${f.fact}${temporal}`
-  }).join('\n')
+  const formattedExisting = context.existingFacts
+    .map((f) => {
+      let temporal = '';
+      if (f.validAt) {
+        temporal += ` [valid since: ${f.validAt}]`;
+      }
+      if (f.invalidAt) {
+        temporal += ` [ALREADY INVALID since: ${f.invalidAt}]`;
+      }
+      return `[${f.id}] ${f.fact}${temporal}`;
+    })
+    .join('\n');
 
   // Format new facts
-  const formattedNew = context.newFacts.map(f =>
-    `[${f.id}] ${f.fact}`
-  ).join('\n')
+  const formattedNew = context.newFacts.map((f) => `[${f.id}] ${f.fact}`).join('\n');
 
   return `<EXISTING_FACTS>
 ${formattedExisting || '(no existing facts)'}
@@ -515,7 +527,7 @@ ${formattedExisting || '(no existing facts)'}
 ${formattedNew}
 </NEW_FACTS>
 
-Analyze which existing facts (if any) are contradicted by EACH new fact. Return results for ALL new facts in a single JSON response.`
+Analyze which existing facts (if any) are contradicted by EACH new fact. Return results for ALL new facts in a single JSON response.`;
 }
 
 /**
@@ -526,66 +538,70 @@ export function parseBatchDetectContradictionsResponse(
   newFactIds: string[]
 ): BatchContradictionResult {
   // Try to extract JSON from the response
-  let jsonStr = response.trim()
+  let jsonStr = response.trim();
 
   // Handle markdown code blocks
-  const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/)
+  const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (jsonMatch) {
-    jsonStr = jsonMatch[1]?.trim() ?? jsonStr
+    jsonStr = jsonMatch[1]?.trim() ?? jsonStr;
   }
 
   // Try to find JSON object in the response
-  const jsonObjectMatch = jsonStr.match(/\{[\s\S]*\}/)
+  const jsonObjectMatch = jsonStr.match(/\{[\s\S]*\}/);
   if (jsonObjectMatch) {
-    jsonStr = jsonObjectMatch[0]
+    jsonStr = jsonObjectMatch[0];
   }
 
   try {
-    const parsed = JSON.parse(jsonStr) as Record<string, unknown>
-    const rawResults = (parsed.results ?? []) as Array<Record<string, unknown>>
+    const parsed = JSON.parse(jsonStr) as Record<string, unknown>;
+    const rawResults = (parsed.results ?? []) as Array<Record<string, unknown>>;
 
     // Create a map of results by newFactId
-    const resultMap = new Map<string, BatchFactResult>()
+    const resultMap = new Map<string, BatchFactResult>();
 
     for (const raw of rawResults) {
-      const newFactId = String(raw.newFactId ?? raw.new_fact_id ?? '')
-      if (!newFactId) continue
+      const newFactId = String(raw.newFactId ?? raw.new_fact_id ?? '');
+      if (!newFactId) continue;
 
-      const rawContradictions = (raw.contradictions ?? []) as Array<Record<string, unknown>>
+      const rawContradictions = (raw.contradictions ?? []) as Array<Record<string, unknown>>;
       const contradictions: ContradictionDetail[] = rawContradictions
-        .filter(c => {
-          const confidence = typeof c.confidence === 'number' ? c.confidence : 0
-          return confidence >= 0.7
+        .filter((c) => {
+          const confidence = typeof c.confidence === 'number' ? c.confidence : 0;
+          return confidence >= 0.7;
         })
-        .map(c => ({
+        .map((c) => ({
           factId: String(c.factId ?? c.fact_id ?? ''),
           confidence: typeof c.confidence === 'number' ? c.confidence : 0.7,
           category: parseCategory(c.category),
-          conflictDescription: String(c.conflictDescription ?? c.conflict_description ?? 'No description'),
-        }))
+          conflictDescription: String(
+            c.conflictDescription ?? c.conflict_description ?? 'No description'
+          ),
+        }));
 
-      const resolution = raw.suggestedResolution ?? raw.suggested_resolution
-      const validResolutions = ['INVALIDATE_OLD', 'INVALIDATE_NEW', 'MERGE', 'ASK_USER'] as const
-      const suggestedResolution = validResolutions.includes(resolution as typeof validResolutions[number])
-        ? (resolution as typeof validResolutions[number])
-        : undefined
+      const resolution = raw.suggestedResolution ?? raw.suggested_resolution;
+      const validResolutions = ['INVALIDATE_OLD', 'INVALIDATE_NEW', 'MERGE', 'ASK_USER'] as const;
+      const suggestedResolution = validResolutions.includes(
+        resolution as (typeof validResolutions)[number]
+      )
+        ? (resolution as (typeof validResolutions)[number])
+        : undefined;
 
       resultMap.set(newFactId, {
         newFactId,
         contradictions,
         reasoning: typeof raw.reasoning === 'string' ? raw.reasoning : 'No reasoning provided',
         suggestedResolution,
-      })
+      });
     }
 
     // Ensure all newFactIds have a result (even if LLM missed some)
-    const results: BatchFactResult[] = []
-    let errorCount = 0
+    const results: BatchFactResult[] = [];
+    let errorCount = 0;
 
     for (const id of newFactIds) {
-      const result = resultMap.get(id)
+      const result = resultMap.get(id);
       if (result) {
-        results.push(result)
+        results.push(result);
       } else {
         // LLM missed this fact - mark as error
         results.push({
@@ -593,8 +609,8 @@ export function parseBatchDetectContradictionsResponse(
           contradictions: [],
           reasoning: 'No result returned by LLM for this fact',
           error: 'Missing from LLM response',
-        })
-        errorCount++
+        });
+        errorCount++;
       }
     }
 
@@ -602,11 +618,11 @@ export function parseBatchDetectContradictionsResponse(
       results,
       summary: typeof parsed.summary === 'string' ? parsed.summary : 'Batch analysis completed',
       errorCount,
-    }
+    };
   } catch {
     // If parsing fails, return error results for all facts
     return {
-      results: newFactIds.map(id => ({
+      results: newFactIds.map((id) => ({
         newFactId: id,
         contradictions: [],
         reasoning: 'Failed to parse LLM response',
@@ -614,7 +630,7 @@ export function parseBatchDetectContradictionsResponse(
       })),
       summary: 'Failed to parse batch response',
       errorCount: newFactIds.length,
-    }
+    };
   }
 }
 
@@ -641,13 +657,13 @@ export enum ResolutionAction {
  */
 export interface CategoryHandlingConfig {
   /** Action to take for this category */
-  action: ResolutionAction
+  action: ResolutionAction;
   /** Minimum confidence threshold for this category (overrides global) */
-  minConfidence?: number
+  minConfidence?: number;
   /** Whether to notify user about contradictions of this category */
-  notifyUser: boolean
+  notifyUser: boolean;
   /** Custom message template for notifications */
-  notificationTemplate?: string
+  notificationTemplate?: string;
 }
 
 /**
@@ -678,7 +694,7 @@ export const DEFAULT_CATEGORY_HANDLING: Record<ContradictionCategory, CategoryHa
     notifyUser: true,
     notificationTemplate: 'Semantic contradiction: {description}',
   },
-}
+};
 
 /**
  * Determine the resolution action for a contradiction based on its category
@@ -687,15 +703,15 @@ export function getResolutionAction(
   contradiction: ContradictionDetail,
   config: Record<ContradictionCategory, CategoryHandlingConfig> = DEFAULT_CATEGORY_HANDLING
 ): ResolutionAction {
-  const categoryConfig = config[contradiction.category]
+  const categoryConfig = config[contradiction.category];
 
   // Check if confidence meets category-specific threshold
-  const minConfidence = categoryConfig.minConfidence ?? 0.7
+  const minConfidence = categoryConfig.minConfidence ?? 0.7;
   if (contradiction.confidence < minConfidence) {
-    return ResolutionAction.WARN_ONLY
+    return ResolutionAction.WARN_ONLY;
   }
 
-  return categoryConfig.action
+  return categoryConfig.action;
 }
 
 /**
@@ -706,36 +722,36 @@ export function filterContradictionsByCategory(
   contradictions: ContradictionDetail[],
   config: Record<ContradictionCategory, CategoryHandlingConfig> = DEFAULT_CATEGORY_HANDLING
 ): {
-  toAutoInvalidate: ContradictionDetail[]
-  toConfirm: ContradictionDetail[]
-  toWarn: ContradictionDetail[]
-  toSkip: ContradictionDetail[]
+  toAutoInvalidate: ContradictionDetail[];
+  toConfirm: ContradictionDetail[];
+  toWarn: ContradictionDetail[];
+  toSkip: ContradictionDetail[];
 } {
-  const toAutoInvalidate: ContradictionDetail[] = []
-  const toConfirm: ContradictionDetail[] = []
-  const toWarn: ContradictionDetail[] = []
-  const toSkip: ContradictionDetail[] = []
+  const toAutoInvalidate: ContradictionDetail[] = [];
+  const toConfirm: ContradictionDetail[] = [];
+  const toWarn: ContradictionDetail[] = [];
+  const toSkip: ContradictionDetail[] = [];
 
   for (const contradiction of contradictions) {
-    const action = getResolutionAction(contradiction, config)
+    const action = getResolutionAction(contradiction, config);
 
     switch (action) {
       case ResolutionAction.AUTO_INVALIDATE:
-        toAutoInvalidate.push(contradiction)
-        break
+        toAutoInvalidate.push(contradiction);
+        break;
       case ResolutionAction.REQUIRE_CONFIRMATION:
-        toConfirm.push(contradiction)
-        break
+        toConfirm.push(contradiction);
+        break;
       case ResolutionAction.WARN_ONLY:
-        toWarn.push(contradiction)
-        break
+        toWarn.push(contradiction);
+        break;
       case ResolutionAction.SKIP:
-        toSkip.push(contradiction)
-        break
+        toSkip.push(contradiction);
+        break;
     }
   }
 
-  return { toAutoInvalidate, toConfirm, toWarn, toSkip }
+  return { toAutoInvalidate, toConfirm, toWarn, toSkip };
 }
 
 /**
@@ -745,12 +761,12 @@ export function getContradictionNotification(
   contradiction: ContradictionDetail,
   config: Record<ContradictionCategory, CategoryHandlingConfig> = DEFAULT_CATEGORY_HANDLING
 ): string {
-  const categoryConfig = config[contradiction.category]
-  const template = categoryConfig.notificationTemplate ?? 'Contradiction detected: {description}'
+  const categoryConfig = config[contradiction.category];
+  const template = categoryConfig.notificationTemplate ?? 'Contradiction detected: {description}';
 
   return template
     .replace('{description}', contradiction.conflictDescription)
     .replace('{category}', contradiction.category)
     .replace('{confidence}', (contradiction.confidence * 100).toFixed(0) + '%')
-    .replace('{factId}', contradiction.factId)
+    .replace('{factId}', contradiction.factId);
 }

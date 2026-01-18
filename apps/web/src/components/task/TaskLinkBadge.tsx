@@ -14,47 +14,41 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { Ban, Link2 } from 'lucide-react'
-import { trpc } from '@/lib/trpc'
+import { Ban, Link2 } from 'lucide-react';
+import { trpc } from '@/lib/trpc';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface TaskLinkBadgeProps {
-  taskId: number
-  showBlockedOnly?: boolean
-  size?: 'sm' | 'md'
+  taskId: number;
+  showBlockedOnly?: boolean;
+  size?: 'sm' | 'md';
 }
 
 export interface BlockedBadgeProps {
-  isBlocked: boolean
-  blockingCount: number
-  size?: 'sm' | 'md'
+  isBlocked: boolean;
+  blockingCount: number;
+  size?: 'sm' | 'md';
 }
 
 export interface LinkCountBadgeProps {
-  outgoingCount: number
-  incomingCount: number
-  size?: 'sm' | 'md'
+  outgoingCount: number;
+  incomingCount: number;
+  size?: 'sm' | 'md';
 }
 
 // =============================================================================
 // BlockedBadge Component
 // =============================================================================
 
-export function BlockedBadge({
-  isBlocked,
-  blockingCount,
-  size = 'sm',
-}: BlockedBadgeProps) {
-  if (!isBlocked) return null
+export function BlockedBadge({ isBlocked, blockingCount, size = 'sm' }: BlockedBadgeProps) {
+  if (!isBlocked) return null;
 
-  const sizeClasses = size === 'sm'
-    ? 'text-xs px-1.5 py-0.5'
-    : 'text-sm px-2 py-1'
+  const sizeClasses = size === 'sm' ? 'text-xs px-1.5 py-0.5' : 'text-sm px-2 py-1';
 
-  const iconSize = size === 'sm' ? 'h-3 w-3' : 'h-4 w-4'
+  const iconSize = size === 'sm' ? 'h-3 w-3' : 'h-4 w-4';
 
   return (
     <div
@@ -64,27 +58,21 @@ export function BlockedBadge({
       <Ban className={iconSize} />
       <span>{blockingCount}</span>
     </div>
-  )
+  );
 }
 
 // =============================================================================
 // LinkCountBadge Component
 // =============================================================================
 
-export function LinkCountBadge({
-  outgoingCount,
-  incomingCount,
-  size = 'sm',
-}: LinkCountBadgeProps) {
-  const totalCount = outgoingCount + incomingCount
+export function LinkCountBadge({ outgoingCount, incomingCount, size = 'sm' }: LinkCountBadgeProps) {
+  const totalCount = outgoingCount + incomingCount;
 
-  if (totalCount === 0) return null
+  if (totalCount === 0) return null;
 
-  const sizeClasses = size === 'sm'
-    ? 'text-xs px-1.5 py-0.5'
-    : 'text-sm px-2 py-1'
+  const sizeClasses = size === 'sm' ? 'text-xs px-1.5 py-0.5' : 'text-sm px-2 py-1';
 
-  const iconSize = size === 'sm' ? 'h-3 w-3' : 'h-4 w-4'
+  const iconSize = size === 'sm' ? 'h-3 w-3' : 'h-4 w-4';
 
   return (
     <div
@@ -94,7 +82,7 @@ export function LinkCountBadge({
       <Link2 className={iconSize} />
       <span>{totalCount}</span>
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -110,7 +98,7 @@ export function TaskLinkBadge({
   const blockingQuery = trpc.taskLink.getBlocking.useQuery(
     { taskId },
     { staleTime: 30000 } // Cache for 30 seconds
-  )
+  );
 
   // Fetch link counts
   const linksQuery = trpc.taskLink.list.useQuery(
@@ -119,42 +107,28 @@ export function TaskLinkBadge({
       staleTime: 30000,
       enabled: !showBlockedOnly,
     }
-  )
+  );
 
   if (blockingQuery.isLoading) {
-    return null
+    return null;
   }
 
-  const isBlocked = blockingQuery.data?.isBlocked ?? false
-  const blockingCount = blockingQuery.data?.blockingCount ?? 0
+  const isBlocked = blockingQuery.data?.isBlocked ?? false;
+  const blockingCount = blockingQuery.data?.blockingCount ?? 0;
 
   if (showBlockedOnly) {
-    return (
-      <BlockedBadge
-        isBlocked={isBlocked}
-        blockingCount={blockingCount}
-        size={size}
-      />
-    )
+    return <BlockedBadge isBlocked={isBlocked} blockingCount={blockingCount} size={size} />;
   }
 
-  const outgoingCount = linksQuery.data?.outgoing?.length ?? 0
-  const incomingCount = linksQuery.data?.incoming?.length ?? 0
+  const outgoingCount = linksQuery.data?.outgoing?.length ?? 0;
+  const incomingCount = linksQuery.data?.incoming?.length ?? 0;
 
   return (
     <div className="inline-flex items-center gap-1">
-      <BlockedBadge
-        isBlocked={isBlocked}
-        blockingCount={blockingCount}
-        size={size}
-      />
-      <LinkCountBadge
-        outgoingCount={outgoingCount}
-        incomingCount={incomingCount}
-        size={size}
-      />
+      <BlockedBadge isBlocked={isBlocked} blockingCount={blockingCount} size={size} />
+      <LinkCountBadge outgoingCount={outgoingCount} incomingCount={incomingCount} size={size} />
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -162,10 +136,10 @@ export function TaskLinkBadge({
 // =============================================================================
 
 export interface TaskLinkBadgeLightProps {
-  isBlocked?: boolean
-  blockingCount?: number
-  linkCount?: number
-  size?: 'sm' | 'md'
+  isBlocked?: boolean;
+  blockingCount?: number;
+  linkCount?: number;
+  size?: 'sm' | 'md';
 }
 
 export function TaskLinkBadgeLight({
@@ -174,24 +148,14 @@ export function TaskLinkBadgeLight({
   linkCount = 0,
   size = 'sm',
 }: TaskLinkBadgeLightProps) {
-  if (!isBlocked && linkCount === 0) return null
+  if (!isBlocked && linkCount === 0) return null;
 
   return (
     <div className="inline-flex items-center gap-1">
-      <BlockedBadge
-        isBlocked={isBlocked}
-        blockingCount={blockingCount}
-        size={size}
-      />
-      {linkCount > 0 && (
-        <LinkCountBadge
-          outgoingCount={linkCount}
-          incomingCount={0}
-          size={size}
-        />
-      )}
+      <BlockedBadge isBlocked={isBlocked} blockingCount={blockingCount} size={size} />
+      {linkCount > 0 && <LinkCountBadge outgoingCount={linkCount} incomingCount={0} size={size} />}
     </div>
-  )
+  );
 }
 
-export default TaskLinkBadge
+export default TaskLinkBadge;

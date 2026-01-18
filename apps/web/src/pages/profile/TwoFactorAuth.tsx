@@ -8,60 +8,60 @@
  * Task: USER-01 (Task 247), Task 264 - UX improvements
  */
 
-import { useState } from 'react'
-import { QRCodeSVG } from 'qrcode.react'
-import { ProfileLayout } from '../../components/profile/ProfileLayout'
-import { Button } from '../../components/ui/button'
-import { trpc } from '../../lib/trpc'
+import { useState } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
+import { ProfileLayout } from '../../components/profile/ProfileLayout';
+import { Button } from '../../components/ui/button';
+import { trpc } from '../../lib/trpc';
 
 // =============================================================================
 // Component
 // =============================================================================
 
 export function TwoFactorAuth() {
-  const [setupData, setSetupData] = useState<{ secret: string; qrCodeUri: string } | null>(null)
-  const [verificationCode, setVerificationCode] = useState('')
-  const [backupCodes, setBackupCodes] = useState<string[] | null>(null)
-  const [disablePassword, setDisablePassword] = useState('')
-  const [showDisable, setShowDisable] = useState(false)
+  const [setupData, setSetupData] = useState<{ secret: string; qrCodeUri: string } | null>(null);
+  const [verificationCode, setVerificationCode] = useState('');
+  const [backupCodes, setBackupCodes] = useState<string[] | null>(null);
+  const [disablePassword, setDisablePassword] = useState('');
+  const [showDisable, setShowDisable] = useState(false);
 
-  const utils = trpc.useUtils()
-  const { data: status, isLoading } = trpc.user.get2FAStatus.useQuery()
+  const utils = trpc.useUtils();
+  const { data: status, isLoading } = trpc.user.get2FAStatus.useQuery();
 
   const setup2FA = trpc.user.setup2FA.useMutation({
     onSuccess: (data) => {
-      setSetupData(data)
+      setSetupData(data);
     },
-  })
+  });
 
   const verify2FA = trpc.user.verify2FA.useMutation({
     onSuccess: (data) => {
-      setBackupCodes(data.backupCodes)
-      setSetupData(null)
-      setVerificationCode('')
-      utils.user.get2FAStatus.invalidate()
+      setBackupCodes(data.backupCodes);
+      setSetupData(null);
+      setVerificationCode('');
+      utils.user.get2FAStatus.invalidate();
     },
-  })
+  });
 
   const disable2FA = trpc.user.disable2FA.useMutation({
     onSuccess: () => {
-      setShowDisable(false)
-      setDisablePassword('')
-      utils.user.get2FAStatus.invalidate()
+      setShowDisable(false);
+      setDisablePassword('');
+      utils.user.get2FAStatus.invalidate();
     },
-  })
+  });
 
   const handleVerify = () => {
     if (verificationCode.length === 6) {
-      verify2FA.mutate({ token: verificationCode })
+      verify2FA.mutate({ token: verificationCode });
     }
-  }
+  };
 
   const handleDisable = () => {
     if (disablePassword) {
-      disable2FA.mutate({ password: disablePassword })
+      disable2FA.mutate({ password: disablePassword });
     }
-  }
+  };
 
   if (isLoading) {
     return (
@@ -70,7 +70,7 @@ export function TwoFactorAuth() {
           <p className="text-muted-foreground">Loading...</p>
         </div>
       </ProfileLayout>
-    )
+    );
   }
 
   // Show backup codes after successful setup
@@ -79,22 +79,31 @@ export function TwoFactorAuth() {
       <ProfileLayout title="Two-Factor Authentication" description="Secure your account with 2FA">
         <div className="bg-card rounded-card border border-border">
           <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
-            <h3 className="text-sm font-semibold text-green-600 dark:text-green-400">2FA Enabled Successfully!</h3>
-            <p className="text-xs text-muted-foreground mt-0.5">Save these backup codes - use them if you lose your device</p>
+            <h3 className="text-sm font-semibold text-green-600 dark:text-green-400">
+              2FA Enabled Successfully!
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Save these backup codes - use them if you lose your device
+            </p>
           </div>
           <div className="p-4 space-y-3">
             <div className="grid grid-cols-4 gap-2">
               {backupCodes.map((code, index) => (
-                <code key={index} className="font-mono text-xs p-1.5 bg-muted rounded border text-center">
+                <code
+                  key={index}
+                  className="font-mono text-xs p-1.5 bg-muted rounded border text-center"
+                >
                   {code}
                 </code>
               ))}
             </div>
-            <Button size="sm" onClick={() => setBackupCodes(null)} className="w-full">Done</Button>
+            <Button size="sm" onClick={() => setBackupCodes(null)} className="w-full">
+              Done
+            </Button>
           </div>
         </div>
       </ProfileLayout>
-    )
+    );
   }
 
   // Show setup flow
@@ -104,7 +113,9 @@ export function TwoFactorAuth() {
         <div className="bg-card rounded-card border border-border">
           <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
             <h3 className="text-sm font-semibold text-foreground">Setup 2FA</h3>
-            <p className="text-xs text-muted-foreground mt-0.5">Scan with Google Authenticator, Authy, etc.</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Scan with Google Authenticator, Authy, etc.
+            </p>
           </div>
           <div className="p-4">
             <div className="grid grid-cols-2 gap-4">
@@ -121,11 +132,15 @@ export function TwoFactorAuth() {
               {/* Right: Verification */}
               <div className="space-y-3">
                 <div>
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Enter 6-digit code:</label>
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Enter 6-digit code:
+                  </label>
                   <div className="flex gap-2 mt-1">
                     <input
                       value={verificationCode}
-                      onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      onChange={(e) =>
+                        setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))
+                      }
                       placeholder="000000"
                       maxLength={6}
                       className="flex-1 h-9 px-3 text-sm font-mono text-center tracking-widest rounded-md border border-input bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -139,10 +154,17 @@ export function TwoFactorAuth() {
                     </Button>
                   </div>
                   {verify2FA.isError && (
-                    <p className="text-xs text-red-600 dark:text-red-400 mt-1">{verify2FA.error.message}</p>
+                    <p className="text-xs text-red-600 dark:text-red-400 mt-1">
+                      {verify2FA.error.message}
+                    </p>
                   )}
                 </div>
-                <Button variant="outline" size="sm" onClick={() => setSetupData(null)} className="w-full">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSetupData(null)}
+                  className="w-full"
+                >
                   Cancel
                 </Button>
               </div>
@@ -150,7 +172,7 @@ export function TwoFactorAuth() {
           </div>
         </div>
       </ProfileLayout>
-    )
+    );
   }
 
   // Main view - enabled or disabled state
@@ -161,14 +183,18 @@ export function TwoFactorAuth() {
           <div>
             <h3 className="text-sm font-semibold text-foreground">Two-Factor Authentication</h3>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {status?.enabled ? 'Your account is protected with 2FA' : 'Add extra security to your account'}
+              {status?.enabled
+                ? 'Your account is protected with 2FA'
+                : 'Add extra security to your account'}
             </p>
           </div>
-          <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-            status?.enabled
-              ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-              : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
-          }`}>
+          <span
+            className={`px-2 py-0.5 rounded text-xs font-medium ${
+              status?.enabled
+                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+            }`}
+          >
             {status?.enabled ? 'Enabled' : 'Disabled'}
           </span>
         </div>
@@ -192,7 +218,15 @@ export function TwoFactorAuth() {
                   placeholder="Your password"
                   className="flex-1 h-8 px-2 text-sm rounded border border-input bg-white dark:bg-gray-900 focus:outline-none focus:ring-1 focus:ring-blue-500"
                 />
-                <Button size="sm" variant="outline" onClick={() => { setShowDisable(false); setDisablePassword('') }} className="h-8">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setShowDisable(false);
+                    setDisablePassword('');
+                  }}
+                  className="h-8"
+                >
                   Cancel
                 </Button>
                 <Button
@@ -216,7 +250,7 @@ export function TwoFactorAuth() {
         </div>
       </div>
     </ProfileLayout>
-  )
+  );
 }
 
-export default TwoFactorAuth
+export default TwoFactorAuth;

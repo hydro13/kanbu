@@ -34,21 +34,17 @@
  * =============================================================================
  */
 
-import { useMemo } from 'react'
-import { useAclPermission, type AclResourceType } from './useAclPermission'
+import { useMemo } from 'react';
+import { useAclPermission, type AclResourceType } from './useAclPermission';
 
 // =============================================================================
 // Types
 // =============================================================================
 
-export type FeatureScope = 'dashboard' | 'profile' | 'admin'
+export type FeatureScope = 'dashboard' | 'profile' | 'admin';
 
 // Dashboard feature slugs (from DashboardSidebar.tsx)
-export type DashboardFeatureSlug =
-  | 'overview'
-  | 'my-tasks'
-  | 'my-subtasks'
-  | 'my-workspaces'
+export type DashboardFeatureSlug = 'overview' | 'my-tasks' | 'my-subtasks' | 'my-workspaces';
 
 // Profile feature slugs (from ProfileSidebar.tsx)
 export type ProfileFeatureSlug =
@@ -69,7 +65,7 @@ export type ProfileFeatureSlug =
   | 'external-accounts'
   | 'integrations'
   | 'api-tokens'
-  | 'hourly-rate'
+  | 'hourly-rate';
 
 // Admin feature slugs (from AdminSidebar.tsx)
 export type AdminFeatureSlug =
@@ -86,33 +82,56 @@ export type AdminFeatureSlug =
   | 'settings-security'
   | 'backup'
   // Integrations section
-  | 'github'
+  | 'github';
 
 // Union of all feature slugs
-export type SystemFeatureSlug = DashboardFeatureSlug | ProfileFeatureSlug | AdminFeatureSlug
+export type SystemFeatureSlug = DashboardFeatureSlug | ProfileFeatureSlug | AdminFeatureSlug;
 
 // =============================================================================
 // Feature Categories by Scope
 // =============================================================================
 
 // Dashboard features: all require at least READ on dashboard
-const DASHBOARD_READ_FEATURES: DashboardFeatureSlug[] = ['overview', 'my-tasks', 'my-subtasks', 'my-workspaces']
-const DASHBOARD_EXECUTE_FEATURES: DashboardFeatureSlug[] = []
+const DASHBOARD_READ_FEATURES: DashboardFeatureSlug[] = [
+  'overview',
+  'my-tasks',
+  'my-subtasks',
+  'my-workspaces',
+];
+const DASHBOARD_EXECUTE_FEATURES: DashboardFeatureSlug[] = [];
 
 // Profile features: all require at least READ on profile
 const PROFILE_READ_FEATURES: ProfileFeatureSlug[] = [
-  'summary', 'time-tracking', 'last-logins', 'sessions', 'password-history', 'metadata',
-  'edit-profile', 'avatar', 'notifications',
-]
+  'summary',
+  'time-tracking',
+  'last-logins',
+  'sessions',
+  'password-history',
+  'metadata',
+  'edit-profile',
+  'avatar',
+  'notifications',
+];
 const PROFILE_EXECUTE_FEATURES: ProfileFeatureSlug[] = [
-  'change-password', 'two-factor-auth', 'public-access', 'external-accounts',
-  'integrations', 'api-tokens', 'hourly-rate',
-]
+  'change-password',
+  'two-factor-auth',
+  'public-access',
+  'external-accounts',
+  'integrations',
+  'api-tokens',
+  'hourly-rate',
+];
 
 // Admin features: different permission levels
-const ADMIN_READ_FEATURES: AdminFeatureSlug[] = ['users', 'workspaces', 'github']
-const ADMIN_EXECUTE_FEATURES: AdminFeatureSlug[] = ['create-user', 'invites']
-const ADMIN_PERMISSIONS_FEATURES: AdminFeatureSlug[] = ['acl', 'permission-tree', 'settings-general', 'settings-security', 'backup']
+const ADMIN_READ_FEATURES: AdminFeatureSlug[] = ['users', 'workspaces', 'github'];
+const ADMIN_EXECUTE_FEATURES: AdminFeatureSlug[] = ['create-user', 'invites'];
+const ADMIN_PERMISSIONS_FEATURES: AdminFeatureSlug[] = [
+  'acl',
+  'permission-tree',
+  'settings-general',
+  'settings-security',
+  'backup',
+];
 
 // =============================================================================
 // Hook Result Interface
@@ -120,16 +139,16 @@ const ADMIN_PERMISSIONS_FEATURES: AdminFeatureSlug[] = ['acl', 'permission-tree'
 
 export interface UseFeatureAccessResult<T extends string> {
   /** Whether any features are accessible */
-  hasAccess: boolean
+  hasAccess: boolean;
 
   /** Check if a specific feature is visible */
-  canSeeFeature: (slug: T) => boolean
+  canSeeFeature: (slug: T) => boolean;
 
   /** List of all visible feature slugs */
-  visibleFeatures: T[]
+  visibleFeatures: T[];
 
   /** Whether permission data is still loading */
-  isLoading: boolean
+  isLoading: boolean;
 }
 
 // =============================================================================
@@ -142,11 +161,11 @@ export interface UseFeatureAccessResult<T extends string> {
 function scopeToResourceType(scope: FeatureScope): AclResourceType {
   switch (scope) {
     case 'dashboard':
-      return 'dashboard'
+      return 'dashboard';
     case 'profile':
-      return 'profile'
+      return 'profile';
     case 'admin':
-      return 'admin'
+      return 'admin';
   }
 }
 
@@ -159,8 +178,8 @@ function scopeToResourceType(scope: FeatureScope): AclResourceType {
 export function useFeatureAccess<T extends SystemFeatureSlug>(
   scope: FeatureScope
 ): UseFeatureAccessResult<T> {
-  const resourceType = scopeToResourceType(scope)
-  const aclResult = useAclPermission({ resourceType, resourceId: null })
+  const resourceType = scopeToResourceType(scope);
+  const aclResult = useAclPermission({ resourceType, resourceId: null });
 
   const result = useMemo((): UseFeatureAccessResult<T> => {
     // While loading, show nothing
@@ -170,56 +189,62 @@ export function useFeatureAccess<T extends SystemFeatureSlug>(
         canSeeFeature: () => false,
         visibleFeatures: [],
         isLoading: true,
-      }
+      };
     }
 
-    const visibleFeatures: string[] = []
+    const visibleFeatures: string[] = [];
 
     // Build visible features based on scope and permissions
     switch (scope) {
       case 'dashboard':
         if (aclResult.canRead) {
-          visibleFeatures.push(...DASHBOARD_READ_FEATURES)
+          visibleFeatures.push(...DASHBOARD_READ_FEATURES);
         }
         if (aclResult.canExecute) {
-          visibleFeatures.push(...DASHBOARD_EXECUTE_FEATURES)
+          visibleFeatures.push(...DASHBOARD_EXECUTE_FEATURES);
         }
-        break
+        break;
 
       case 'profile':
         if (aclResult.canRead) {
-          visibleFeatures.push(...PROFILE_READ_FEATURES)
+          visibleFeatures.push(...PROFILE_READ_FEATURES);
         }
         if (aclResult.canExecute) {
-          visibleFeatures.push(...PROFILE_EXECUTE_FEATURES)
+          visibleFeatures.push(...PROFILE_EXECUTE_FEATURES);
         }
-        break
+        break;
 
       case 'admin':
         if (aclResult.canRead) {
-          visibleFeatures.push(...ADMIN_READ_FEATURES)
+          visibleFeatures.push(...ADMIN_READ_FEATURES);
         }
         if (aclResult.canExecute) {
-          visibleFeatures.push(...ADMIN_EXECUTE_FEATURES)
+          visibleFeatures.push(...ADMIN_EXECUTE_FEATURES);
         }
         if (aclResult.canManagePermissions) {
-          visibleFeatures.push(...ADMIN_PERMISSIONS_FEATURES)
+          visibleFeatures.push(...ADMIN_PERMISSIONS_FEATURES);
         }
-        break
+        break;
     }
 
     // Create a Set for fast lookups
-    const visibleSet = new Set(visibleFeatures)
+    const visibleSet = new Set(visibleFeatures);
 
     return {
       hasAccess: visibleFeatures.length > 0,
       canSeeFeature: (slug: T) => visibleSet.has(slug),
       visibleFeatures: visibleFeatures as T[],
       isLoading: false,
-    }
-  }, [scope, aclResult.isLoading, aclResult.canRead, aclResult.canExecute, aclResult.canManagePermissions])
+    };
+  }, [
+    scope,
+    aclResult.isLoading,
+    aclResult.canRead,
+    aclResult.canExecute,
+    aclResult.canManagePermissions,
+  ]);
 
-  return result
+  return result;
 }
 
 // =============================================================================
@@ -230,21 +255,21 @@ export function useFeatureAccess<T extends SystemFeatureSlug>(
  * Hook for dashboard feature access.
  */
 export function useDashboardFeatureAccess(): UseFeatureAccessResult<DashboardFeatureSlug> {
-  return useFeatureAccess<DashboardFeatureSlug>('dashboard')
+  return useFeatureAccess<DashboardFeatureSlug>('dashboard');
 }
 
 /**
  * Hook for profile feature access.
  */
 export function useProfileFeatureAccess(): UseFeatureAccessResult<ProfileFeatureSlug> {
-  return useFeatureAccess<ProfileFeatureSlug>('profile')
+  return useFeatureAccess<ProfileFeatureSlug>('profile');
 }
 
 /**
  * Hook for admin feature access.
  */
 export function useAdminFeatureAccess(): UseFeatureAccessResult<AdminFeatureSlug> {
-  return useFeatureAccess<AdminFeatureSlug>('admin')
+  return useFeatureAccess<AdminFeatureSlug>('admin');
 }
 
-export default useFeatureAccess
+export default useFeatureAccess;

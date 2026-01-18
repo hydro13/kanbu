@@ -9,8 +9,8 @@
  * - Member count per community
  */
 
-import { useCommunities } from '@/hooks/wiki'
-import { cn } from '@/lib/utils'
+import { useCommunities } from '@/hooks/wiki';
+import { cn } from '@/lib/utils';
 
 // =============================================================================
 // Types
@@ -18,15 +18,15 @@ import { cn } from '@/lib/utils'
 
 export interface ClusterLegendProps {
   /** Workspace ID for scoping */
-  workspaceId: number
+  workspaceId: number;
   /** Optional project ID for project-level communities */
-  projectId?: number
+  projectId?: number;
   /** Callback when community is clicked */
-  onCommunityClick?: (communityUuid: string) => void
+  onCommunityClick?: (communityUuid: string) => void;
   /** Currently selected community UUID */
-  selectedCommunityUuid?: string
+  selectedCommunityUuid?: string;
   /** Additional CSS classes */
-  className?: string
+  className?: string;
 }
 
 // =============================================================================
@@ -45,14 +45,14 @@ export function ClusterLegend({
     projectId,
     includeMembers: false,
     minMembers: 2,
-  })
+  });
 
   if (isLoading) {
     return (
       <div className={cn('p-4', className)}>
         <div className="animate-pulse text-muted-foreground">Loading clusters...</div>
       </div>
-    )
+    );
   }
 
   if (!data || data.communities.length === 0) {
@@ -60,7 +60,7 @@ export function ClusterLegend({
       <div className={cn('p-4', className)}>
         <div className="text-muted-foreground text-sm">No communities detected</div>
       </div>
-    )
+    );
   }
 
   return (
@@ -83,14 +83,12 @@ export function ClusterLegend({
               style={{ backgroundColor: getCommunityColor(index) }}
             />
             <span className="flex-1 text-sm truncate">{community.name}</span>
-            <span className="text-xs text-muted-foreground shrink-0">
-              {community.memberCount}
-            </span>
+            <span className="text-xs text-muted-foreground shrink-0">{community.memberCount}</span>
           </li>
         ))}
       </ul>
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -113,6 +111,6 @@ function getCommunityColor(index: number): string {
     '#2563eb', // blue
     '#16a34a', // green
     '#ea580c', // orange
-  ]
-  return colors[index % colors.length] || '#4f46e5'
+  ];
+  return colors[index % colors.length] || '#4f46e5';
 }

@@ -10,13 +10,9 @@
  * Fase 22.4 - Entity Deduplication (LLM-based)
  */
 
-import type { PrismaClient } from '@prisma/client'
-import { getProviderRegistry, type ProviderRegistry } from '../providers/registry'
-import type {
-  EmbeddingProvider,
-  ReasoningProvider,
-  ExtractedEntity,
-} from '../providers/types'
+import type { PrismaClient } from '@prisma/client';
+import { getProviderRegistry, type ProviderRegistry } from '../providers/registry';
+import type { EmbeddingProvider, ReasoningProvider, ExtractedEntity } from '../providers/types';
 import {
   getExtractEdgeDatesSystemPrompt,
   getExtractEdgeDatesUserPrompt,
@@ -58,7 +54,7 @@ import {
   type BatchNewFact,
   type CategoryHandlingConfig,
   type ExtractedFact,
-} from './prompts'
+} from './prompts';
 import type {
   NodeResolutionsResponse,
   EdgeDuplicateResponse,
@@ -67,35 +63,32 @@ import type {
   EdgeReflexionResult,
   MissedEntity,
   MissedFact,
-} from './types'
-import {
-  ChunkingService,
-  type ChunkingConfig,
-} from './ChunkingService'
+} from './types';
+import { ChunkingService, type ChunkingConfig } from './ChunkingService';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface WikiContext {
-  workspaceId: number
-  projectId?: number
+  workspaceId: number;
+  projectId?: number;
 }
 
 export interface EmbeddingResult {
-  text: string
-  embedding: number[]
-  dimensions: number
-  model: string
-  provider: string
+  text: string;
+  embedding: number[];
+  dimensions: number;
+  model: string;
+  provider: string;
 }
 
 export interface EntityExtractionResult {
-  entities: ExtractedEntity[]
-  provider: string
-  model: string
+  entities: ExtractedEntity[];
+  provider: string;
+  model: string;
   /** Number of chunks processed (Fase 25 - only set when chunking was used) */
-  chunksProcessed?: number
+  chunksProcessed?: number;
 }
 
 /**
@@ -103,25 +96,25 @@ export interface EntityExtractionResult {
  */
 export interface ChunkedExtractionOptions {
   /** Enable chunking for large content (default: true, respects DISABLE_TEXT_CHUNKING env) */
-  enableChunking?: boolean
+  enableChunking?: boolean;
   /** Custom chunking configuration */
-  chunkingConfig?: ChunkingConfig
+  chunkingConfig?: ChunkingConfig;
 }
 
 export interface SummarizeResult {
-  summary: string
-  originalLength: number
-  summaryLength: number
-  provider: string
+  summary: string;
+  originalLength: number;
+  summaryLength: number;
+  provider: string;
 }
 
 export interface WikiAiCapabilities {
-  embedding: boolean
-  reasoning: boolean
-  embeddingProvider?: string
-  embeddingModel?: string
-  reasoningProvider?: string
-  reasoningModel?: string
+  embedding: boolean;
+  reasoning: boolean;
+  embeddingProvider?: string;
+  embeddingModel?: string;
+  reasoningProvider?: string;
+  reasoningModel?: string;
 }
 
 /**
@@ -129,15 +122,15 @@ export interface WikiAiCapabilities {
  */
 export interface EdgeDateExtractionResult {
   /** When the fact became true in the real world */
-  validAt: Date | null
+  validAt: Date | null;
   /** When the fact stopped being true */
-  invalidAt: Date | null
+  invalidAt: Date | null;
   /** Explanation of how dates were determined */
-  reasoning: string
+  reasoning: string;
   /** Provider used for extraction */
-  provider: string
+  provider: string;
   /** Model used for extraction */
-  model: string
+  model: string;
 }
 
 /**
@@ -145,13 +138,13 @@ export interface EdgeDateExtractionResult {
  */
 export interface ContradictionDetectionResult {
   /** IDs of existing facts that are contradicted by the new fact */
-  contradictedFactIds: string[]
+  contradictedFactIds: string[];
   /** Explanation of why these facts contradict */
-  reasoning: string
+  reasoning: string;
   /** Provider used for detection */
-  provider: string
+  provider: string;
   /** Model used for detection */
-  model: string
+  model: string;
 }
 
 /**
@@ -160,15 +153,15 @@ export interface ContradictionDetectionResult {
  */
 export interface EnhancedContradictionDetectionResult {
   /** Detailed list of contradictions found */
-  contradictions: ContradictionDetail[]
+  contradictions: ContradictionDetail[];
   /** Overall reasoning for the analysis */
-  reasoning: string
+  reasoning: string;
   /** Suggested resolution strategy */
-  suggestedResolution?: 'INVALIDATE_OLD' | 'INVALIDATE_NEW' | 'MERGE' | 'ASK_USER'
+  suggestedResolution?: 'INVALIDATE_OLD' | 'INVALIDATE_NEW' | 'MERGE' | 'ASK_USER';
   /** Provider used for detection */
-  provider: string
+  provider: string;
   /** Model used for detection */
-  model: string
+  model: string;
 }
 
 /**
@@ -178,24 +171,24 @@ export interface BatchContradictionDetectionResult {
   /** Results per new fact */
   results: Array<{
     /** ID of the new fact */
-    newFactId: string
+    newFactId: string;
     /** Contradictions found */
-    contradictions: ContradictionDetail[]
+    contradictions: ContradictionDetail[];
     /** Reasoning for this fact */
-    reasoning: string
+    reasoning: string;
     /** Suggested resolution */
-    suggestedResolution?: 'INVALIDATE_OLD' | 'INVALIDATE_NEW' | 'MERGE' | 'ASK_USER'
+    suggestedResolution?: 'INVALIDATE_OLD' | 'INVALIDATE_NEW' | 'MERGE' | 'ASK_USER';
     /** Error if processing failed */
-    error?: string
-  }>
+    error?: string;
+  }>;
   /** Overall summary */
-  summary: string
+  summary: string;
   /** Number of facts that had errors */
-  errorCount: number
+  errorCount: number;
   /** Provider used */
-  provider: string
+  provider: string;
   /** Model used */
-  model: string
+  model: string;
 }
 
 /**
@@ -203,13 +196,13 @@ export interface BatchContradictionDetectionResult {
  */
 export interface FilteredContradictions {
   /** Contradictions to auto-invalidate */
-  toAutoInvalidate: ContradictionDetail[]
+  toAutoInvalidate: ContradictionDetail[];
   /** Contradictions requiring user confirmation */
-  toConfirm: ContradictionDetail[]
+  toConfirm: ContradictionDetail[];
   /** Contradictions to warn about only */
-  toWarn: ContradictionDetail[]
+  toWarn: ContradictionDetail[];
   /** Contradictions to skip */
-  toSkip: ContradictionDetail[]
+  toSkip: ContradictionDetail[];
 }
 
 // Re-export types for consumers
@@ -220,17 +213,17 @@ export {
   type EnhancedContradictionResult,
   type BatchNewFact,
   type CategoryHandlingConfig,
-}
+};
 
 // =============================================================================
 // Wiki AI Service Class
 // =============================================================================
 
 export class WikiAiService {
-  private registry: ProviderRegistry
+  private registry: ProviderRegistry;
 
   constructor(prisma: PrismaClient) {
-    this.registry = getProviderRegistry(prisma)
+    this.registry = getProviderRegistry(prisma);
   }
 
   // ===========================================================================
@@ -250,7 +243,7 @@ export class WikiAiService {
         workspaceId: context.workspaceId,
         projectId: context.projectId,
       }),
-    ])
+    ]);
 
     return {
       embedding: embeddingProvider !== null,
@@ -259,15 +252,15 @@ export class WikiAiService {
       embeddingModel: embeddingProvider?.getModelName(),
       reasoningProvider: reasoningProvider?.type,
       reasoningModel: reasoningProvider?.getReasoningModel(),
-    }
+    };
   }
 
   /**
    * Test if AI services are available and working for a context
    */
   async testConnection(context: WikiContext): Promise<{
-    embedding: { available: boolean; latencyMs?: number; error?: string }
-    reasoning: { available: boolean; latencyMs?: number; error?: string }
+    embedding: { available: boolean; latencyMs?: number; error?: string };
+    reasoning: { available: boolean; latencyMs?: number; error?: string };
   }> {
     const [embeddingProvider, reasoningProvider] = await Promise.all([
       this.registry.getEmbeddingProvider({
@@ -278,40 +271,40 @@ export class WikiAiService {
         workspaceId: context.workspaceId,
         projectId: context.projectId,
       }),
-    ])
+    ]);
 
     const results = {
       embedding: { available: false } as {
-        available: boolean
-        latencyMs?: number
-        error?: string
+        available: boolean;
+        latencyMs?: number;
+        error?: string;
       },
       reasoning: { available: false } as {
-        available: boolean
-        latencyMs?: number
-        error?: string
+        available: boolean;
+        latencyMs?: number;
+        error?: string;
       },
-    }
+    };
 
     if (embeddingProvider) {
-      const testResult = await embeddingProvider.testConnection()
+      const testResult = await embeddingProvider.testConnection();
       results.embedding = {
         available: testResult.success,
         latencyMs: testResult.latencyMs ?? undefined,
         error: testResult.error,
-      }
+      };
     }
 
     if (reasoningProvider) {
-      const testResult = await reasoningProvider.testConnection()
+      const testResult = await reasoningProvider.testConnection();
       results.reasoning = {
         available: testResult.success,
         latencyMs: testResult.latencyMs ?? undefined,
         error: testResult.error,
-      }
+      };
     }
 
-    return results
+    return results;
   }
 
   // ===========================================================================
@@ -322,9 +315,9 @@ export class WikiAiService {
    * Get embedding for a single text
    */
   async embed(context: WikiContext, text: string): Promise<EmbeddingResult> {
-    const provider = await this.getEmbeddingProviderOrThrow(context)
+    const provider = await this.getEmbeddingProviderOrThrow(context);
 
-    const embedding = await provider.embed(text)
+    const embedding = await provider.embed(text);
 
     return {
       text,
@@ -332,21 +325,18 @@ export class WikiAiService {
       dimensions: provider.getDimensions(),
       model: provider.getModelName(),
       provider: provider.type,
-    }
+    };
   }
 
   /**
    * Get embeddings for multiple texts (batched)
    */
-  async embedBatch(
-    context: WikiContext,
-    texts: string[]
-  ): Promise<EmbeddingResult[]> {
-    if (texts.length === 0) return []
+  async embedBatch(context: WikiContext, texts: string[]): Promise<EmbeddingResult[]> {
+    if (texts.length === 0) return [];
 
-    const provider = await this.getEmbeddingProviderOrThrow(context)
+    const provider = await this.getEmbeddingProviderOrThrow(context);
 
-    const embeddings = await provider.embedBatch(texts)
+    const embeddings = await provider.embedBatch(texts);
 
     return texts.map((text, i) => ({
       text,
@@ -354,25 +344,25 @@ export class WikiAiService {
       dimensions: provider.getDimensions(),
       model: provider.getModelName(),
       provider: provider.type,
-    }))
+    }));
   }
 
   /**
    * Get the embedding provider info for a context
    */
   async getEmbeddingInfo(context: WikiContext): Promise<{
-    available: boolean
-    provider?: string
-    model?: string
-    dimensions?: number
+    available: boolean;
+    provider?: string;
+    model?: string;
+    dimensions?: number;
   }> {
     const provider = await this.registry.getEmbeddingProvider({
       workspaceId: context.workspaceId,
       projectId: context.projectId,
-    })
+    });
 
     if (!provider) {
-      return { available: false }
+      return { available: false };
     }
 
     return {
@@ -380,7 +370,7 @@ export class WikiAiService {
       provider: provider.type,
       model: provider.getModelName(),
       dimensions: provider.getDimensions(),
-    }
+    };
   }
 
   // ===========================================================================
@@ -407,60 +397,59 @@ export class WikiAiService {
     entityTypes: string[] = ['WikiPage', 'Task', 'User', 'Project', 'Concept'],
     options?: ChunkedExtractionOptions
   ): Promise<EntityExtractionResult> {
-    const provider = await this.getReasoningProviderOrThrow(context)
+    const provider = await this.getReasoningProviderOrThrow(context);
 
     // Check if chunking is enabled (default: true, unless DISABLE_TEXT_CHUNKING=true)
-    const enableChunking = options?.enableChunking ??
-      (process.env.DISABLE_TEXT_CHUNKING !== 'true')
+    const enableChunking = options?.enableChunking ?? process.env.DISABLE_TEXT_CHUNKING !== 'true';
 
     // Create chunking service with optional custom config
-    const chunkingService = new ChunkingService(options?.chunkingConfig)
+    const chunkingService = new ChunkingService(options?.chunkingConfig);
 
     // If chunking disabled or content is small, use original behavior
     if (!enableChunking || !chunkingService.needsChunking(text)) {
-      const entities = await provider.extractEntities(text, entityTypes)
+      const entities = await provider.extractEntities(text, entityTypes);
       return {
         entities,
         provider: provider.type,
         model: provider.getReasoningModel(),
-      }
+      };
     }
 
     // Chunk the content using Markdown-aware splitting
-    const chunkResult = chunkingService.chunkMarkdown(text)
+    const chunkResult = chunkingService.chunkMarkdown(text);
 
     console.log(
       `[WikiAiService] Chunking large content: ${chunkResult.totalTokens} tokens → ${chunkResult.chunks.length} chunks`
-    )
+    );
 
     // Extract entities from each chunk in parallel
     const chunkEntities = await Promise.all(
       chunkResult.chunks.map(async (chunk) => {
         try {
-          return await provider.extractEntities(chunk.text, entityTypes)
+          return await provider.extractEntities(chunk.text, entityTypes);
         } catch (error) {
           console.warn(
             `[WikiAiService] Entity extraction failed for chunk ${chunk.index}: ${error instanceof Error ? error.message : 'Unknown error'}`
-          )
-          return []
+          );
+          return [];
         }
       })
-    )
+    );
 
     // Merge and deduplicate entities across all chunks
-    const mergedEntities = this.deduplicateEntities(chunkEntities.flat())
+    const mergedEntities = this.deduplicateEntities(chunkEntities.flat());
 
     console.log(
       `[WikiAiService] Extracted ${chunkEntities.flat().length} entities, ` +
-      `${mergedEntities.length} after deduplication`
-    )
+        `${mergedEntities.length} after deduplication`
+    );
 
     return {
       entities: mergedEntities,
       provider: provider.type,
       model: provider.getReasoningModel(),
       chunksProcessed: chunkResult.chunks.length,
-    }
+    };
   }
 
   /**
@@ -470,20 +459,20 @@ export class WikiAiService {
    * Normalization: lowercase, trimmed, keyed by "type:name"
    */
   private deduplicateEntities(entities: ExtractedEntity[]): ExtractedEntity[] {
-    const entityMap = new Map<string, ExtractedEntity>()
+    const entityMap = new Map<string, ExtractedEntity>();
 
     for (const entity of entities) {
       // Create normalized key: "Type:normalized_name"
-      const key = `${entity.type}:${entity.name.toLowerCase().trim()}`
+      const key = `${entity.type}:${entity.name.toLowerCase().trim()}`;
 
-      const existing = entityMap.get(key)
+      const existing = entityMap.get(key);
       if (!existing || entity.confidence > existing.confidence) {
         // Keep entity with highest confidence
-        entityMap.set(key, entity)
+        entityMap.set(key, entity);
       }
     }
 
-    return Array.from(entityMap.values())
+    return Array.from(entityMap.values());
   }
 
   // ===========================================================================
@@ -507,14 +496,14 @@ export class WikiAiService {
     episodeContent: string,
     referenceTimestamp: Date
   ): Promise<EdgeDateExtractionResult> {
-    const provider = await this.getReasoningProviderOrThrow(context)
+    const provider = await this.getReasoningProviderOrThrow(context);
 
-    const systemPrompt = getExtractEdgeDatesSystemPrompt()
+    const systemPrompt = getExtractEdgeDatesSystemPrompt();
     const userPrompt = getExtractEdgeDatesUserPrompt({
       fact,
       episodeContent,
       referenceTimestamp: referenceTimestamp.toISOString(),
-    })
+    });
 
     try {
       const response = await provider.chat(
@@ -524,11 +513,11 @@ export class WikiAiService {
         ],
         {
           temperature: 0.1, // Low temperature for consistent date extraction
-          maxTokens: 500,   // Dates don't need many tokens
+          maxTokens: 500, // Dates don't need many tokens
         }
-      )
+      );
 
-      const parsed = parseExtractEdgeDatesResponse(response)
+      const parsed = parseExtractEdgeDatesResponse(response);
 
       return {
         validAt: parsed.valid_at ? new Date(parsed.valid_at) : null,
@@ -536,19 +525,19 @@ export class WikiAiService {
         reasoning: parsed.reasoning,
         provider: provider.type,
         model: provider.getReasoningModel(),
-      }
+      };
     } catch (error) {
       // If LLM call fails, return default dates
       console.warn(
         `[WikiAiService] extractEdgeDates failed: ${error instanceof Error ? error.message : 'Unknown error'}`
-      )
+      );
       return {
         validAt: referenceTimestamp,
         invalidAt: null,
         reasoning: 'Fallback: LLM extraction failed, using reference timestamp',
         provider: provider.type,
         model: provider.getReasoningModel(),
-      }
+      };
     }
   }
 
@@ -564,19 +553,14 @@ export class WikiAiService {
   ): Promise<EdgeDateExtractionResult[]> {
     // For now, process sequentially
     // TODO: Optimize with parallel calls or batch LLM request
-    const results: EdgeDateExtractionResult[] = []
+    const results: EdgeDateExtractionResult[] = [];
 
     for (const fact of facts) {
-      const result = await this.extractEdgeDates(
-        context,
-        fact,
-        episodeContent,
-        referenceTimestamp
-      )
-      results.push(result)
+      const result = await this.extractEdgeDates(context, fact, episodeContent, referenceTimestamp);
+      results.push(result);
     }
 
-    return results
+    return results;
   }
 
   // ===========================================================================
@@ -598,7 +582,7 @@ export class WikiAiService {
     newFact: string,
     existingFacts: ExistingFact[]
   ): Promise<ContradictionDetectionResult> {
-    const provider = await this.getReasoningProviderOrThrow(context)
+    const provider = await this.getReasoningProviderOrThrow(context);
 
     // If no existing facts, nothing to contradict
     if (existingFacts.length === 0) {
@@ -607,14 +591,14 @@ export class WikiAiService {
         reasoning: 'No existing facts to compare against',
         provider: provider.type,
         model: provider.getReasoningModel(),
-      }
+      };
     }
 
-    const systemPrompt = getDetectContradictionsSystemPrompt()
+    const systemPrompt = getDetectContradictionsSystemPrompt();
     const userPrompt = getDetectContradictionsUserPrompt({
       newFact,
       existingFacts,
-    })
+    });
 
     try {
       const response = await provider.chat(
@@ -624,29 +608,29 @@ export class WikiAiService {
         ],
         {
           temperature: 0.1, // Low temperature for consistent detection
-          maxTokens: 500,   // Contradictions don't need many tokens
+          maxTokens: 500, // Contradictions don't need many tokens
         }
-      )
+      );
 
-      const parsed = parseDetectContradictionsResponse(response)
+      const parsed = parseDetectContradictionsResponse(response);
 
       return {
         contradictedFactIds: parsed.contradictedFactIds,
         reasoning: parsed.reasoning,
         provider: provider.type,
         model: provider.getReasoningModel(),
-      }
+      };
     } catch (error) {
       // If LLM call fails, be conservative and return no contradictions
       console.warn(
         `[WikiAiService] detectContradictions failed: ${error instanceof Error ? error.message : 'Unknown error'}`
-      )
+      );
       return {
         contradictedFactIds: [],
         reasoning: 'Fallback: LLM detection failed, assuming no contradictions',
         provider: provider.type,
         model: provider.getReasoningModel(),
-      }
+      };
     }
   }
 
@@ -671,11 +655,11 @@ export class WikiAiService {
     existingFacts: ExistingFact[],
     options?: {
       /** Minimum confidence threshold (default: 0.7) */
-      confidenceThreshold?: number
+      confidenceThreshold?: number;
     }
   ): Promise<EnhancedContradictionDetectionResult> {
-    const provider = await this.getReasoningProviderOrThrow(context)
-    const confidenceThreshold = options?.confidenceThreshold ?? 0.7
+    const provider = await this.getReasoningProviderOrThrow(context);
+    const confidenceThreshold = options?.confidenceThreshold ?? 0.7;
 
     // If no existing facts, nothing to contradict
     if (existingFacts.length === 0) {
@@ -684,14 +668,14 @@ export class WikiAiService {
         reasoning: 'No existing facts to compare against',
         provider: provider.type,
         model: provider.getReasoningModel(),
-      }
+      };
     }
 
-    const systemPrompt = getEnhancedDetectContradictionsSystemPrompt()
+    const systemPrompt = getEnhancedDetectContradictionsSystemPrompt();
     const userPrompt = getEnhancedDetectContradictionsUserPrompt({
       newFact,
       existingFacts,
-    })
+    });
 
     try {
       const response = await provider.chat(
@@ -701,16 +685,16 @@ export class WikiAiService {
         ],
         {
           temperature: 0.1, // Low temperature for consistent detection
-          maxTokens: 800,   // More tokens for detailed response
+          maxTokens: 800, // More tokens for detailed response
         }
-      )
+      );
 
-      const parsed = parseEnhancedDetectContradictionsResponse(response)
+      const parsed = parseEnhancedDetectContradictionsResponse(response);
 
       // Filter by confidence threshold
       const filteredContradictions = parsed.contradictions.filter(
-        c => c.confidence >= confidenceThreshold
-      )
+        (c) => c.confidence >= confidenceThreshold
+      );
 
       return {
         contradictions: filteredContradictions,
@@ -718,18 +702,18 @@ export class WikiAiService {
         suggestedResolution: parsed.suggestedResolution,
         provider: provider.type,
         model: provider.getReasoningModel(),
-      }
+      };
     } catch (error) {
       // If LLM call fails, be conservative and return no contradictions
       console.warn(
         `[WikiAiService] detectContradictionsEnhanced failed: ${error instanceof Error ? error.message : 'Unknown error'}`
-      )
+      );
       return {
         contradictions: [],
         reasoning: 'Fallback: LLM detection failed, assuming no contradictions',
         provider: provider.type,
         model: provider.getReasoningModel(),
-      }
+      };
     }
   }
 
@@ -740,11 +724,11 @@ export class WikiAiService {
     enhanced: EnhancedContradictionDetectionResult
   ): ContradictionDetectionResult {
     return {
-      contradictedFactIds: enhanced.contradictions.map(c => c.factId),
+      contradictedFactIds: enhanced.contradictions.map((c) => c.factId),
       reasoning: enhanced.reasoning,
       provider: enhanced.provider,
       model: enhanced.model,
-    }
+    };
   }
 
   // ===========================================================================
@@ -768,11 +752,11 @@ export class WikiAiService {
     existingFacts: ExistingFact[],
     options?: {
       /** Minimum confidence threshold (default: 0.7) */
-      confidenceThreshold?: number
+      confidenceThreshold?: number;
     }
   ): Promise<BatchContradictionDetectionResult> {
-    const provider = await this.getReasoningProviderOrThrow(context)
-    const confidenceThreshold = options?.confidenceThreshold ?? 0.7
+    const provider = await this.getReasoningProviderOrThrow(context);
+    const confidenceThreshold = options?.confidenceThreshold ?? 0.7;
 
     // If no new facts or existing facts, return empty result
     if (newFacts.length === 0) {
@@ -782,12 +766,12 @@ export class WikiAiService {
         errorCount: 0,
         provider: provider.type,
         model: provider.getReasoningModel(),
-      }
+      };
     }
 
     if (existingFacts.length === 0) {
       return {
-        results: newFacts.map(f => ({
+        results: newFacts.map((f) => ({
           newFactId: f.id,
           contradictions: [],
           reasoning: 'No existing facts to compare against',
@@ -796,18 +780,18 @@ export class WikiAiService {
         errorCount: 0,
         provider: provider.type,
         model: provider.getReasoningModel(),
-      }
+      };
     }
 
     // Split into batches of MAX_BATCH_SIZE
-    const batches: BatchNewFact[][] = []
+    const batches: BatchNewFact[][] = [];
     for (let i = 0; i < newFacts.length; i += MAX_BATCH_SIZE) {
-      batches.push(newFacts.slice(i, i + MAX_BATCH_SIZE))
+      batches.push(newFacts.slice(i, i + MAX_BATCH_SIZE));
     }
 
     // Process each batch
-    const allResults: BatchContradictionDetectionResult['results'] = []
-    let totalErrorCount = 0
+    const allResults: BatchContradictionDetectionResult['results'] = [];
+    let totalErrorCount = 0;
 
     for (const batch of batches) {
       const batchResult = await this.processSingleBatch(
@@ -815,9 +799,9 @@ export class WikiAiService {
         batch,
         existingFacts,
         confidenceThreshold
-      )
-      allResults.push(...batchResult.results)
-      totalErrorCount += batchResult.errorCount
+      );
+      allResults.push(...batchResult.results);
+      totalErrorCount += batchResult.errorCount;
     }
 
     return {
@@ -826,7 +810,7 @@ export class WikiAiService {
       errorCount: totalErrorCount,
       provider: provider.type,
       model: provider.getReasoningModel(),
-    }
+    };
   }
 
   /**
@@ -838,11 +822,11 @@ export class WikiAiService {
     existingFacts: ExistingFact[],
     confidenceThreshold: number
   ): Promise<{ results: BatchContradictionDetectionResult['results']; errorCount: number }> {
-    const systemPrompt = getBatchDetectContradictionsSystemPrompt()
+    const systemPrompt = getBatchDetectContradictionsSystemPrompt();
     const userPrompt = getBatchDetectContradictionsUserPrompt({
       newFacts: batch,
       existingFacts,
-    })
+    });
 
     try {
       const response = await provider.chat(
@@ -854,34 +838,34 @@ export class WikiAiService {
           temperature: 0.1,
           maxTokens: 1500, // More tokens for batch response
         }
-      )
+      );
 
       const parsed = parseBatchDetectContradictionsResponse(
         response,
-        batch.map(f => f.id)
-      )
+        batch.map((f) => f.id)
+      );
 
       // Apply confidence threshold to each result
-      const results = parsed.results.map(r => ({
+      const results = parsed.results.map((r) => ({
         ...r,
-        contradictions: r.contradictions.filter(c => c.confidence >= confidenceThreshold),
-      }))
+        contradictions: r.contradictions.filter((c) => c.confidence >= confidenceThreshold),
+      }));
 
-      return { results, errorCount: parsed.errorCount }
+      return { results, errorCount: parsed.errorCount };
     } catch (error) {
       // If batch fails, mark all facts as errored
       console.warn(
         `[WikiAiService] detectContradictionsBatch failed: ${error instanceof Error ? error.message : 'Unknown error'}`
-      )
+      );
       return {
-        results: batch.map(f => ({
+        results: batch.map((f) => ({
           newFactId: f.id,
           contradictions: [],
           reasoning: 'Batch processing failed',
           error: error instanceof Error ? error.message : 'Unknown error',
         })),
         errorCount: batch.length,
-      }
+      };
     }
   }
 
@@ -905,14 +889,14 @@ export class WikiAiService {
     contradictions: ContradictionDetail[],
     config?: Record<ContradictionCategory, CategoryHandlingConfig>
   ): FilteredContradictions {
-    return filterContradictionsByCategory(contradictions, config ?? DEFAULT_CATEGORY_HANDLING)
+    return filterContradictionsByCategory(contradictions, config ?? DEFAULT_CATEGORY_HANDLING);
   }
 
   /**
    * Get the default category handling configuration
    */
   getDefaultCategoryConfig(): Record<ContradictionCategory, CategoryHandlingConfig> {
-    return { ...DEFAULT_CATEGORY_HANDLING }
+    return { ...DEFAULT_CATEGORY_HANDLING };
   }
 
   // ===========================================================================
@@ -938,9 +922,9 @@ export class WikiAiService {
     episodeContent: string,
     previousEpisodes?: string[]
   ): Promise<NodeResolutionsResponse> {
-    const provider = await this.getReasoningProviderOrThrow(context)
+    const provider = await this.getReasoningProviderOrThrow(context);
 
-    const systemPrompt = getDeduplicateNodesSystemPrompt()
+    const systemPrompt = getDeduplicateNodesSystemPrompt();
     const userPrompt = getDeduplicateNodesUserPrompt({
       extractedNodes: extractedNodes.map((n) => ({
         id: n.id,
@@ -955,7 +939,7 @@ export class WikiAiService {
       })),
       episodeContent,
       previousEpisodes,
-    })
+    });
 
     try {
       const response = await provider.chat(
@@ -967,15 +951,15 @@ export class WikiAiService {
           temperature: 0.1, // Low temperature for deterministic results
           maxTokens: 2000,
         }
-      )
+      );
 
-      return parseDeduplicateNodesResponse(response, extractedNodes.length)
+      return parseDeduplicateNodesResponse(response, extractedNodes.length);
     } catch (error) {
       console.error(
         '[WikiAiService] detectNodeDuplicates failed:',
         error instanceof Error ? error.message : error
-      )
-      return { entityResolutions: [] }
+      );
+      return { entityResolutions: [] };
     }
   }
 
@@ -994,13 +978,13 @@ export class WikiAiService {
     existingEdges: Array<{ idx: number; fact: string; sourceUuid: string; targetUuid: string }>,
     newEdge: { fact: string; sourceUuid: string; targetUuid: string }
   ): Promise<EdgeDuplicateResponse> {
-    const provider = await this.getReasoningProviderOrThrow(context)
+    const provider = await this.getReasoningProviderOrThrow(context);
 
-    const systemPrompt = getDeduplicateEdgeSystemPrompt()
+    const systemPrompt = getDeduplicateEdgeSystemPrompt();
     const userPrompt = getDeduplicateEdgeUserPrompt({
       existingEdges,
       newEdge,
-    })
+    });
 
     try {
       const response = await provider.chat(
@@ -1012,15 +996,15 @@ export class WikiAiService {
           temperature: 0.1,
           maxTokens: 500,
         }
-      )
+      );
 
-      return parseDeduplicateEdgeResponse(response, existingEdges.length)
+      return parseDeduplicateEdgeResponse(response, existingEdges.length);
     } catch (error) {
       console.error(
         '[WikiAiService] detectEdgeDuplicates failed:',
         error instanceof Error ? error.message : error
-      )
-      return { duplicateFacts: [], contradictedFacts: [], factType: 'DEFAULT' }
+      );
+      return { duplicateFacts: [], contradictedFacts: [], factType: 'DEFAULT' };
     }
   }
 
@@ -1036,16 +1020,16 @@ export class WikiAiService {
     text: string,
     maxLength?: number
   ): Promise<SummarizeResult> {
-    const provider = await this.getReasoningProviderOrThrow(context)
+    const provider = await this.getReasoningProviderOrThrow(context);
 
-    const summary = await provider.summarize(text, maxLength)
+    const summary = await provider.summarize(text, maxLength);
 
     return {
       summary,
       originalLength: text.length,
       summaryLength: summary.length,
       provider: provider.type,
-    }
+    };
   }
 
   /**
@@ -1056,9 +1040,9 @@ export class WikiAiService {
     messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>,
     options?: { temperature?: number; maxTokens?: number }
   ): Promise<string> {
-    const provider = await this.getReasoningProviderOrThrow(context)
+    const provider = await this.getReasoningProviderOrThrow(context);
 
-    return provider.chat(messages, options)
+    return provider.chat(messages, options);
   }
 
   /**
@@ -1069,9 +1053,9 @@ export class WikiAiService {
     messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>,
     options?: { temperature?: number; maxTokens?: number }
   ): AsyncIterable<string> {
-    const provider = await this.getReasoningProviderOrThrow(context)
+    const provider = await this.getReasoningProviderOrThrow(context);
 
-    yield* provider.stream(messages, options)
+    yield* provider.stream(messages, options);
   }
 
   // ===========================================================================
@@ -1095,14 +1079,14 @@ export class WikiAiService {
     extractedEntities: string[],
     previousEpisodes?: string[]
   ): Promise<NodeReflexionResult> {
-    const provider = await this.getReasoningProviderOrThrow(context)
+    const provider = await this.getReasoningProviderOrThrow(context);
 
-    const systemPrompt = getReflexionNodesSystemPrompt()
+    const systemPrompt = getReflexionNodesSystemPrompt();
     const userPrompt = getReflexionNodesUserPrompt({
       episodeContent,
       previousEpisodes,
       extractedEntities,
-    })
+    });
 
     try {
       const response = await provider.chat(
@@ -1114,9 +1098,9 @@ export class WikiAiService {
           temperature: 0.1,
           maxTokens: 1000,
         }
-      )
+      );
 
-      const parsed = parseReflexionNodesResponse(response)
+      const parsed = parseReflexionNodesResponse(response);
 
       return {
         missedEntities: parsed.missedEntities.map(
@@ -1129,17 +1113,17 @@ export class WikiAiService {
         reasoning: parsed.reasoning,
         provider: provider.type,
         model: provider.getReasoningModel(),
-      }
+      };
     } catch (error) {
       console.warn(
         `[WikiAiService] extractNodesReflexion failed: ${error instanceof Error ? error.message : 'Unknown error'}`
-      )
+      );
       return {
         missedEntities: [],
         reasoning: 'Reflexion failed - fallback to no missed entities',
         provider: provider.type,
         model: provider.getReasoningModel(),
-      }
+      };
     }
   }
 
@@ -1165,15 +1149,15 @@ export class WikiAiService {
     extractedFacts: ExtractedFact[],
     previousEpisodes?: string[]
   ): Promise<EdgeReflexionResult> {
-    const provider = await this.getReasoningProviderOrThrow(context)
+    const provider = await this.getReasoningProviderOrThrow(context);
 
-    const systemPrompt = getReflexionEdgesSystemPrompt()
+    const systemPrompt = getReflexionEdgesSystemPrompt();
     const userPrompt = getReflexionEdgesUserPrompt({
       episodeContent,
       previousEpisodes,
       extractedNodes,
       extractedFacts,
-    })
+    });
 
     try {
       const response = await provider.chat(
@@ -1185,9 +1169,9 @@ export class WikiAiService {
           temperature: 0.1,
           maxTokens: 1500,
         }
-      )
+      );
 
-      const parsed = parseReflexionEdgesResponse(response)
+      const parsed = parseReflexionEdgesResponse(response);
 
       return {
         missedFacts: parsed.missedFacts.map(
@@ -1202,17 +1186,17 @@ export class WikiAiService {
         reasoning: parsed.reasoning,
         provider: provider.type,
         model: provider.getReasoningModel(),
-      }
+      };
     } catch (error) {
       console.warn(
         `[WikiAiService] extractEdgesReflexion failed: ${error instanceof Error ? error.message : 'Unknown error'}`
-      )
+      );
       return {
         missedFacts: [],
         reasoning: 'Reflexion failed - fallback to no missed facts',
         provider: provider.type,
         model: provider.getReasoningModel(),
-      }
+      };
     }
   }
 
@@ -1220,40 +1204,36 @@ export class WikiAiService {
   // Private Helpers
   // ===========================================================================
 
-  private async getEmbeddingProviderOrThrow(
-    context: WikiContext
-  ): Promise<EmbeddingProvider> {
+  private async getEmbeddingProviderOrThrow(context: WikiContext): Promise<EmbeddingProvider> {
     const provider = await this.registry.getEmbeddingProvider({
       workspaceId: context.workspaceId,
       projectId: context.projectId,
-    })
+    });
 
     if (!provider) {
       throw new WikiAiError(
         'No embedding provider configured for this context',
         'NO_EMBEDDING_PROVIDER'
-      )
+      );
     }
 
-    return provider
+    return provider;
   }
 
-  private async getReasoningProviderOrThrow(
-    context: WikiContext
-  ): Promise<ReasoningProvider> {
+  private async getReasoningProviderOrThrow(context: WikiContext): Promise<ReasoningProvider> {
     const provider = await this.registry.getReasoningProvider({
       workspaceId: context.workspaceId,
       projectId: context.projectId,
-    })
+    });
 
     if (!provider) {
       throw new WikiAiError(
         'No reasoning provider configured for this context',
         'NO_REASONING_PROVIDER'
-      )
+      );
     }
 
-    return provider
+    return provider;
   }
 }
 
@@ -1270,8 +1250,8 @@ export class WikiAiError extends Error {
       | 'PROVIDER_ERROR'
       | 'INVALID_INPUT'
   ) {
-    super(message)
-    this.name = 'WikiAiError'
+    super(message);
+    this.name = 'WikiAiError';
   }
 }
 
@@ -1279,21 +1259,21 @@ export class WikiAiError extends Error {
 // Singleton Instance
 // =============================================================================
 
-let serviceInstance: WikiAiService | null = null
+let serviceInstance: WikiAiService | null = null;
 
 /**
  * Get or create the singleton WikiAiService
  */
 export function getWikiAiService(prisma: PrismaClient): WikiAiService {
   if (!serviceInstance) {
-    serviceInstance = new WikiAiService(prisma)
+    serviceInstance = new WikiAiService(prisma);
   }
-  return serviceInstance
+  return serviceInstance;
 }
 
 /**
  * Reset the singleton (useful for testing)
  */
 export function resetWikiAiService(): void {
-  serviceInstance = null
+  serviceInstance = null;
 }

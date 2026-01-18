@@ -13,21 +13,9 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  useCallback,
-  type ReactNode,
-} from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, type ReactNode } from 'react';
 import type { Socket } from 'socket.io-client';
-import {
-  getSocket,
-  connectSocket,
-  disconnectSocket,
-  isSocketConnected,
-} from '@/lib/socket';
+import { getSocket, connectSocket, disconnectSocket, isSocketConnected } from '@/lib/socket';
 
 // =============================================================================
 // Types
@@ -121,9 +109,7 @@ export function SocketProvider({ children }: SocketProviderProps) {
     disconnect,
   };
 
-  return (
-    <SocketContext.Provider value={value}>{children}</SocketContext.Provider>
-  );
+  return <SocketContext.Provider value={value}>{children}</SocketContext.Provider>;
 }
 
 // =============================================================================

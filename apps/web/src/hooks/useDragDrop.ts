@@ -14,30 +14,30 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useCallback, useState } from 'react'
-import { trpc } from '@/lib/trpc'
-import type { BoardTask } from '@/components/board/Board'
+import { useCallback, useState } from 'react';
+import { trpc } from '@/lib/trpc';
+import type { BoardTask } from '@/components/board/Board';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface UseDragDropOptions {
-  projectId: number
-  tasks: BoardTask[]
-  onOptimisticUpdate?: (updatedTasks: BoardTask[]) => void
+  projectId: number;
+  tasks: BoardTask[];
+  onOptimisticUpdate?: (updatedTasks: BoardTask[]) => void;
 }
 
 export interface UseDragDropResult {
-  isMoving: boolean
-  error: string | null
+  isMoving: boolean;
+  error: string | null;
   moveTask: (
     taskId: number,
     targetColumnId: number,
     targetSwimlaneId: number | null,
     newPosition: number
-  ) => Promise<void>
-  clearError: () => void
+  ) => Promise<void>;
+  clearError: () => void;
 }
 
 // =============================================================================
@@ -49,23 +49,23 @@ export function useDragDrop({
   tasks: _tasks, // Used for type inference, actual data from tRPC cache
   onOptimisticUpdate,
 }: UseDragDropOptions): UseDragDropResult {
-  const [isMoving, setIsMoving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [isMoving, setIsMoving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const utils = trpc.useUtils()
+  const utils = trpc.useUtils();
 
   // Get the move mutation
   const moveMutation = trpc.task.move.useMutation({
     onMutate: async ({ taskId, columnId, swimlaneId, position }) => {
       // Cancel any outgoing refetches
-      await utils.task.list.cancel({ projectId, isActive: true, limit: 500 })
+      await utils.task.list.cancel({ projectId, isActive: true, limit: 500 });
 
       // Snapshot the previous tasks
       const previousTasks = utils.task.list.getData({
         projectId,
         isActive: true,
         limit: 500,
-      })
+      });
 
       // Optimistically update the task
       if (previousTasks) {
@@ -80,44 +80,38 @@ export function useDragDrop({
               swimlane: swimlaneId
                 ? { id: swimlaneId, name: task.swimlane?.name ?? 'Default' }
                 : null,
-            }
+            };
           }
-          return task
-        })
+          return task;
+        });
 
         // Update cache optimistically
-        utils.task.list.setData(
-          { projectId, isActive: true, limit: 500 },
-          updatedTasks
-        )
+        utils.task.list.setData({ projectId, isActive: true, limit: 500 }, updatedTasks);
 
         // Notify parent of optimistic update
         if (onOptimisticUpdate) {
-          onOptimisticUpdate(updatedTasks as BoardTask[])
+          onOptimisticUpdate(updatedTasks as BoardTask[]);
         }
       }
 
-      return { previousTasks }
+      return { previousTasks };
     },
     onError: (_err, _variables, context) => {
       // Rollback to previous state on error
       if (context?.previousTasks) {
-        utils.task.list.setData(
-          { projectId, isActive: true, limit: 500 },
-          context.previousTasks
-        )
+        utils.task.list.setData({ projectId, isActive: true, limit: 500 }, context.previousTasks);
 
         // Notify parent of rollback
         if (onOptimisticUpdate) {
-          onOptimisticUpdate(context.previousTasks as BoardTask[])
+          onOptimisticUpdate(context.previousTasks as BoardTask[]);
         }
       }
     },
     onSettled: () => {
       // Refetch to ensure consistency
-      utils.task.list.invalidate({ projectId, isActive: true, limit: 500 })
+      utils.task.list.invalidate({ projectId, isActive: true, limit: 500 });
     },
-  })
+  });
 
   const moveTask = useCallback(
     async (
@@ -126,8 +120,8 @@ export function useDragDrop({
       targetSwimlaneId: number | null,
       newPosition: number
     ) => {
-      setIsMoving(true)
-      setError(null)
+      setIsMoving(true);
+      setError(null);
 
       try {
         await moveMutation.mutateAsync({
@@ -135,28 +129,28 @@ export function useDragDrop({
           columnId: targetColumnId,
           swimlaneId: targetSwimlaneId ?? undefined,
           position: newPosition,
-        })
+        });
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to move task'
-        setError(message)
-        throw err
+        const message = err instanceof Error ? err.message : 'Failed to move task';
+        setError(message);
+        throw err;
       } finally {
-        setIsMoving(false)
+        setIsMoving(false);
       }
     },
     [moveMutation]
-  )
+  );
 
   const clearError = useCallback(() => {
-    setError(null)
-  }, [])
+    setError(null);
+  }, []);
 
   return {
     isMoving,
     error,
     moveTask,
     clearError,
-  }
+  };
 }
 
-export default useDragDrop
+export default useDragDrop;

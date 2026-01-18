@@ -8,17 +8,17 @@
 
 ## Overview of Completed Phases
 
-| Phase | Status | Date | Description |
-|------|--------|-------|--------------|
-| Phase 1 | ✅ Complete | 2026-01-15 | Foundation - Primitive, semantic, component tokens |
-| Phase 2 | ✅ Complete | 2026-01-15 | Hardcoded Color Migration (100%) |
-| Phase 3.1 | ✅ Complete | 2026-01-15 | Theme Infrastructure (ThemeContext) |
-| Phase 3.2 | ✅ Complete | 2026-01-15 | Accent Color System (6 colors) |
-| Phase 4 | ✅ Complete | 2026-01-15 | Backend Persistence (database sync) |
-| Phase 6 | ✅ Complete | 2026-01-15 | Design Tokens v2.0.0 (complete system) |
-| Phase 7 | ✅ Complete | 2026-01-16 | Component Library Audit (all UI components on tokens) |
-| Phase 8 | ✅ Complete | 2026-01-16 | Advanced Theming (custom colors, density, sidebar, export) |
-| Phase 9 | ✅ Complete | 2026-01-16 | Documentation (Token Reference, Component Usage, Migration Guide) |
+| Phase     | Status      | Date       | Description                                                       |
+| --------- | ----------- | ---------- | ----------------------------------------------------------------- |
+| Phase 1   | ✅ Complete | 2026-01-15 | Foundation - Primitive, semantic, component tokens                |
+| Phase 2   | ✅ Complete | 2026-01-15 | Hardcoded Color Migration (100%)                                  |
+| Phase 3.1 | ✅ Complete | 2026-01-15 | Theme Infrastructure (ThemeContext)                               |
+| Phase 3.2 | ✅ Complete | 2026-01-15 | Accent Color System (6 colors)                                    |
+| Phase 4   | ✅ Complete | 2026-01-15 | Backend Persistence (database sync)                               |
+| Phase 6   | ✅ Complete | 2026-01-15 | Design Tokens v2.0.0 (complete system)                            |
+| Phase 7   | ✅ Complete | 2026-01-16 | Component Library Audit (all UI components on tokens)             |
+| Phase 8   | ✅ Complete | 2026-01-16 | Advanced Theming (custom colors, density, sidebar, export)        |
+| Phase 9   | ✅ Complete | 2026-01-16 | Documentation (Token Reference, Component Usage, Migration Guide) |
 
 ---
 
@@ -107,11 +107,11 @@ feat(design-system): Add component tokens
 
 ### Statistics
 
-| Metric | Before | After |
-|--------|------|-----|
-| Hardcoded bg-colors | 1,443 | 0 |
-| Hardcoded text-colors | 2,405 | 0 |
-| Design system usage | 804 | 100% |
+| Metric                | Before | After |
+| --------------------- | ------ | ----- |
+| Hardcoded bg-colors   | 1,443  | 0     |
+| Hardcoded text-colors | 2,405  | 0     |
+| Design system usage   | 804    | 100%  |
 
 ### Key Commit
 
@@ -194,14 +194,14 @@ Next login: backend value restored
 
 ### Added Token Categories
 
-| Category | Count | Description |
-|-----------|--------|--------------|
-| Animation | 8 durations + 6 easings | instant→slowest, linear→spring |
-| Z-Index | 11 levels | base(0) → max(9999) |
-| Focus Ring | 4 tokens | width, offset, color, style |
-| Color Scales | 4 new | Teal, Violet, Rose, Cyan (50-950) |
-| State Colors | 12 | success/warning/error/info (+foreground/muted) |
-| Component | 40+ | Badge, Avatar, Tooltip, Toast, Tabs, etc. |
+| Category     | Count                   | Description                                    |
+| ------------ | ----------------------- | ---------------------------------------------- |
+| Animation    | 8 durations + 6 easings | instant→slowest, linear→spring                 |
+| Z-Index      | 11 levels               | base(0) → max(9999)                            |
+| Focus Ring   | 4 tokens                | width, offset, color, style                    |
+| Color Scales | 4 new                   | Teal, Violet, Rose, Cyan (50-950)              |
+| State Colors | 12                      | success/warning/error/info (+foreground/muted) |
+| Component    | 40+                     | Badge, Avatar, Tooltip, Toast, Tabs, etc.      |
 
 ### Animation Tokens
 
@@ -261,10 +261,14 @@ Next login: backend value restored
 --focus-ring-color: var(--color-blue-500);
 
 /* High contrast mode */
-[data-contrast="high"] { /* enhanced borders, text */ }
+[data-contrast='high'] {
+  /* enhanced borders, text */
+}
 
 /* Reduced motion */
-@media (prefers-reduced-motion: reduce) { /* disable animations */ }
+@media (prefers-reduced-motion: reduce) {
+  /* disable animations */
+}
 ```
 
 ### Key Commit
@@ -289,16 +293,16 @@ ce26b0c0 feat(design-system): Complete design token system (Phase 6)
 
 All UI components use design tokens correctly:
 
-| Component | Status | Tokens |
-|-----------|--------|--------|
-| Button | ✅ | `bg-primary`, `bg-destructive`, `bg-success`, `bg-warning`, focus ring |
-| Badge | ✅ | Status variants (success/warning/error/info), priority variants |
-| Card | ✅ | `bg-card`, `text-card-foreground`, `border`, `shadow-sm` |
-| Dialog | ✅ | `bg-background`, `ring-offset-background`, blur overlay |
-| Input | ✅ | `border-input`, `bg-background`, focus ring tokens |
-| Dropdown | ✅ | `bg-popover`, `text-popover-foreground`, `bg-accent` |
-| Tooltip | ✅ | `bg-popover`, `text-popover-foreground` |
-| Toast/Sonner | ✅ | `bg-background`, status colors (success/warning/error) |
+| Component    | Status | Tokens                                                                 |
+| ------------ | ------ | ---------------------------------------------------------------------- |
+| Button       | ✅     | `bg-primary`, `bg-destructive`, `bg-success`, `bg-warning`, focus ring |
+| Badge        | ✅     | Status variants (success/warning/error/info), priority variants        |
+| Card         | ✅     | `bg-card`, `text-card-foreground`, `border`, `shadow-sm`               |
+| Dialog       | ✅     | `bg-background`, `ring-offset-background`, blur overlay                |
+| Input        | ✅     | `border-input`, `bg-background`, focus ring tokens                     |
+| Dropdown     | ✅     | `bg-popover`, `text-popover-foreground`, `bg-accent`                   |
+| Tooltip      | ✅     | `bg-popover`, `text-popover-foreground`                                |
+| Toast/Sonner | ✅     | `bg-background`, status colors (success/warning/error)                 |
 
 ### Pre-flight Checks (Reference)
 
@@ -318,6 +322,7 @@ grep -r "bg-\(gray\|blue\|red\|green\)" apps/web/src/components/ui/ | wc -l
 **Goal:** Align Button variants with design tokens.
 
 **Tasks:**
+
 - [x] Audit existing Button variants (default, destructive, outline, secondary, ghost, link)
 - [x] Replace hardcoded colors with semantic tokens
 - [x] Add missing variants (success, warning)
@@ -336,31 +341,32 @@ cat apps/web/src/components/ui/button.tsx
 ```tsx
 // button.tsx - Token-based variants
 const buttonVariants = cva(
-  "inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  'inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
-        destructive: "bg-error text-error-foreground hover:bg-error/90",
-        success: "bg-success text-success-foreground hover:bg-success/90",
-        warning: "bg-warning text-warning-foreground hover:bg-warning/90",
-        outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
-        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
+        default: 'bg-primary text-primary-foreground hover:bg-primary/90',
+        destructive: 'bg-error text-error-foreground hover:bg-error/90',
+        success: 'bg-success text-success-foreground hover:bg-success/90',
+        warning: 'bg-warning text-warning-foreground hover:bg-warning/90',
+        outline: 'border border-input bg-background hover:bg-accent hover:text-accent-foreground',
+        secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
+        ghost: 'hover:bg-accent hover:text-accent-foreground',
+        link: 'text-primary underline-offset-4 hover:underline',
       },
       size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3",
-        lg: "h-11 rounded-md px-8",
-        icon: "h-10 w-10",
+        default: 'h-10 px-4 py-2',
+        sm: 'h-9 rounded-md px-3',
+        lg: 'h-11 rounded-md px-8',
+        icon: 'h-10 w-10',
       },
     },
   }
-)
+);
 ```
 
 **Acceptance criteria:**
+
 - [x] No hardcoded colors in Button component
 - [x] All variants work in light/dark mode
 - [x] Focus ring consistent with design system
@@ -373,6 +379,7 @@ const buttonVariants = cva(
 **Goal:** Make Card component consistent with surface tokens.
 
 **Tasks:**
+
 - [x] Card uses `bg-card` token (equivalent to surface)
 - [x] Card padding consistent
 - [x] Card border and shadow via tokens
@@ -388,31 +395,33 @@ cat apps/web/src/components/ui/card.tsx
 
 ```tsx
 // card.tsx - Token-based styling
-const Card = React.forwardRef<HTMLDivElement, CardProps & { variant?: 'default' | 'compact' | 'spacious' }>(
-  ({ className, variant = 'default', ...props }, ref) => {
-    const paddingClasses = {
-      compact: 'p-4',
-      default: 'p-6',
-      spacious: 'p-8',
-    }
+const Card = React.forwardRef<
+  HTMLDivElement,
+  CardProps & { variant?: 'default' | 'compact' | 'spacious' }
+>(({ className, variant = 'default', ...props }, ref) => {
+  const paddingClasses = {
+    compact: 'p-4',
+    default: 'p-6',
+    spacious: 'p-8',
+  };
 
-    return (
-      <div
-        ref={ref}
-        className={cn(
-          "rounded-lg border border-border bg-surface-1 text-foreground shadow-sm",
-          "transition-shadow duration-fast hover:shadow-md",
-          paddingClasses[variant],
-          className
-        )}
-        {...props}
-      />
-    )
-  }
-)
+  return (
+    <div
+      ref={ref}
+      className={cn(
+        'rounded-lg border border-border bg-surface-1 text-foreground shadow-sm',
+        'transition-shadow duration-fast hover:shadow-md',
+        paddingClasses[variant],
+        className
+      )}
+      {...props}
+    />
+  );
+});
 ```
 
 **Acceptance criteria:**
+
 - [x] Card uses `bg-card` token
 - [x] Padding consistent via classes
 - [x] Shadow via `shadow-sm` token
@@ -425,6 +434,7 @@ const Card = React.forwardRef<HTMLDivElement, CardProps & { variant?: 'default' 
 **Goal:** Dialog overlay and content consistent with design tokens.
 
 **Tasks:**
+
 - [x] Overlay color via `--modal-overlay`
 - [x] Content background via `--modal-bg`
 - [x] Border via `--modal-border`
@@ -471,6 +481,7 @@ const DialogContent = React.forwardRef<...>(({ className, children, ...props }, 
 ```
 
 **Acceptance criteria:**
+
 - [x] Overlay uses `--modal-overlay` token
 - [x] Content background and border via tokens
 - [x] Z-index consistent with z-index scale
@@ -483,6 +494,7 @@ const DialogContent = React.forwardRef<...>(({ className, children, ...props }, 
 **Goal:** Make all form elements consistent.
 
 **Tasks:**
+
 - [x] Input border colors via tokens
 - [x] Focus ring via `--focus-ring-*` tokens
 - [x] Error state via `--error` tokens
@@ -491,14 +503,14 @@ const DialogContent = React.forwardRef<...>(({ className, children, ...props }, 
 
 **Components:**
 
-| Component | File | Status |
-|-----------|---------|--------|
-| Input | `input.tsx` | [x] |
-| Textarea | `textarea.tsx` | [x] |
-| Select | `select.tsx` | [x] |
-| Checkbox | `checkbox.tsx` | [x] |
-| Switch | `switch.tsx` | [x] |
-| Slider | `slider.tsx` | [x] |
+| Component | File           | Status |
+| --------- | -------------- | ------ |
+| Input     | `input.tsx`    | [x]    |
+| Textarea  | `textarea.tsx` | [x]    |
+| Select    | `select.tsx`   | [x]    |
+| Checkbox  | `checkbox.tsx` | [x]    |
+| Switch    | `switch.tsx`   | [x]    |
+| Slider    | `slider.tsx`   | [x]    |
 
 **Desired implementation:**
 
@@ -510,23 +522,24 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
       <input
         type={type}
         className={cn(
-          "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2",
-          "text-sm text-foreground placeholder:text-muted-foreground",
-          "ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-          "disabled:cursor-not-allowed disabled:opacity-50",
-          "transition-colors duration-fast",
+          'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2',
+          'text-sm text-foreground placeholder:text-muted-foreground',
+          'ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+          'disabled:cursor-not-allowed disabled:opacity-50',
+          'transition-colors duration-fast',
           className
         )}
         ref={ref}
         {...props}
       />
-    )
+    );
   }
-)
+);
 ```
 
 **Acceptance criteria:**
+
 - [x] All form elements use design tokens
 - [x] Focus states consistent
 - [x] Error states work with `--error` token
@@ -539,6 +552,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
 **Goal:** Badge colors via semantic tokens.
 
 **Tasks:**
+
 - [x] Use `--badge-*` tokens from globals.css
 - [x] Add status variants (success, warning, error, info)
 - [x] Priority variants (low, medium, high, urgent)
@@ -548,34 +562,35 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
 ```tsx
 // badge.tsx - Complete variant set
 const badgeVariants = cva(
-  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+  'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
   {
     variants: {
       variant: {
-        default: "border-transparent bg-primary text-primary-foreground",
-        secondary: "border-transparent bg-secondary text-secondary-foreground",
-        destructive: "border-transparent bg-error text-error-foreground",
-        outline: "text-foreground border-border",
+        default: 'border-transparent bg-primary text-primary-foreground',
+        secondary: 'border-transparent bg-secondary text-secondary-foreground',
+        destructive: 'border-transparent bg-error text-error-foreground',
+        outline: 'text-foreground border-border',
         // Status variants
-        success: "border-transparent bg-success/10 text-success",
-        warning: "border-transparent bg-warning/10 text-warning",
-        error: "border-transparent bg-error/10 text-error",
-        info: "border-transparent bg-info/10 text-info",
+        success: 'border-transparent bg-success/10 text-success',
+        warning: 'border-transparent bg-warning/10 text-warning',
+        error: 'border-transparent bg-error/10 text-error',
+        info: 'border-transparent bg-info/10 text-info',
         // Priority variants
-        "priority-low": "border-transparent bg-priority-low-light text-priority-low",
-        "priority-medium": "border-transparent bg-priority-medium-light text-priority-medium",
-        "priority-high": "border-transparent bg-priority-high-light text-priority-high",
-        "priority-urgent": "border-transparent bg-priority-urgent-light text-priority-urgent",
+        'priority-low': 'border-transparent bg-priority-low-light text-priority-low',
+        'priority-medium': 'border-transparent bg-priority-medium-light text-priority-medium',
+        'priority-high': 'border-transparent bg-priority-high-light text-priority-high',
+        'priority-urgent': 'border-transparent bg-priority-urgent-light text-priority-urgent',
       },
     },
     defaultVariants: {
-      variant: "default",
+      variant: 'default',
     },
   }
-)
+);
 ```
 
 **Acceptance criteria:**
+
 - [x] All badge variants available
 - [x] Priority badges consistent with rest of app
 - [x] Status badges for feedback messages
@@ -587,6 +602,7 @@ const badgeVariants = cva(
 **Goal:** Toast notifications consistent with design system.
 
 **Tasks:**
+
 - [x] Toast background via `--toast-bg`
 - [x] Status colors (success, error, warning, info)
 - [x] Z-index via `--z-toast`
@@ -599,17 +615,18 @@ const badgeVariants = cva(
 <Toaster
   toastOptions={{
     classNames: {
-      toast: "bg-toast-bg border-toast-border text-foreground shadow-lg",
-      success: "bg-toast-success-bg border-success/20 text-success-foreground",
-      error: "bg-toast-error-bg border-error/20 text-error-foreground",
-      warning: "bg-toast-warning-bg border-warning/20 text-warning-foreground",
-      info: "bg-toast-info-bg border-info/20 text-info-foreground",
+      toast: 'bg-toast-bg border-toast-border text-foreground shadow-lg',
+      success: 'bg-toast-success-bg border-success/20 text-success-foreground',
+      error: 'bg-toast-error-bg border-error/20 text-error-foreground',
+      warning: 'bg-toast-warning-bg border-warning/20 text-warning-foreground',
+      info: 'bg-toast-info-bg border-info/20 text-info-foreground',
     },
   }}
 />
 ```
 
 **Acceptance criteria:**
+
 - [x] Toast uses design tokens
 - [x] All status variants work
 - [x] Correct z-index level
@@ -621,12 +638,14 @@ const badgeVariants = cva(
 **Goal:** Dropdown consistent with popover tokens.
 
 **Tasks:**
+
 - [x] Background via `--dropdown-bg`
 - [x] Border via `--dropdown-border`
 - [x] Item hover via `--dropdown-item-hover`
 - [x] Z-index via `--z-dropdown`
 
 **Acceptance criteria:**
+
 - [x] Dropdown styling via tokens
 - [x] Hover states consistent
 - [x] Separator via `--dropdown-separator`
@@ -638,11 +657,13 @@ const badgeVariants = cva(
 **Goal:** Tooltip consistent with design system.
 
 **Tasks:**
+
 - [x] Background via `--tooltip-bg`
 - [x] Text via `--tooltip-text`
 - [x] Z-index via `--z-tooltip`
 
 **Acceptance criteria:**
+
 - [x] Tooltip uses tokens
 - [x] Correct z-index (above modals)
 - [x] Arrow color consistent
@@ -692,6 +713,7 @@ grep -A5 "theme" apps/api/prisma/schema.prisma
 **Goal:** Users can choose their own accent color outside the 6 presets.
 
 **Tasks:**
+
 - [x] Build color picker component (HSL input)
 - [x] Live preview of custom accent
 - [x] Color contrast validation (WCAG)
@@ -729,7 +751,7 @@ export function CustomColorPicker({
   currentHue,
   currentSaturation,
   currentLightness,
-  onChange
+  onChange,
 }: CustomColorPickerProps) {
   const [hue, setHue] = useState(currentHue);
   const [saturation, setSaturation] = useState(currentSaturation);
@@ -745,10 +767,7 @@ export function CustomColorPicker({
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-4">
-        <div
-          className="w-16 h-16 rounded-lg border"
-          style={{ backgroundColor: previewColor }}
-        />
+        <div className="w-16 h-16 rounded-lg border" style={{ backgroundColor: previewColor }} />
         <div className="flex-1">
           <Label>Hue (0-360)</Label>
           <Slider value={[hue]} onValueChange={([v]) => setHue(v)} max={360} />
@@ -766,14 +785,10 @@ export function CustomColorPicker({
       </div>
 
       {!meetsWCAG && (
-        <Alert variant="warning">
-          Color has insufficient contrast. Adjust the lightness.
-        </Alert>
+        <Alert variant="warning">Color has insufficient contrast. Adjust the lightness.</Alert>
       )}
 
-      <Button onClick={() => onChange({ h: hue, s: saturation, l: lightness })}>
-        Apply
-      </Button>
+      <Button onClick={() => onChange({ h: hue, s: saturation, l: lightness })}>Apply</Button>
     </div>
   );
 }
@@ -787,12 +802,16 @@ useEffect(() => {
   if (customAccent) {
     const { h, s, l } = customAccent;
     document.documentElement.style.setProperty('--accent', `${h} ${s}% ${l}%`);
-    document.documentElement.style.setProperty('--accent-foreground', l > 50 ? '222 47% 11%' : '0 0% 100%');
+    document.documentElement.style.setProperty(
+      '--accent-foreground',
+      l > 50 ? '222 47% 11%' : '0 0% 100%'
+    );
   }
 }, [customAccent]);
 ```
 
 **Acceptance criteria:**
+
 - [x] Custom color picker works with HSL
 - [x] Live preview available
 - [x] Contrast validation (WCAG AA)
@@ -806,6 +825,7 @@ useEffect(() => {
 **Goal:** Users can choose UI density (compact/normal/spacious).
 
 **Tasks:**
+
 - [x] Define density tokens
 - [x] Implement DensityContext
 - [x] Adjust sidebar padding
@@ -830,7 +850,7 @@ useEffect(() => {
   --density-sidebar-padding: 1rem;
 }
 
-[data-density="compact"] {
+[data-density='compact'] {
   --density-spacing-xs: 0.125rem;
   --density-spacing-sm: 0.25rem;
   --density-spacing-md: 0.5rem;
@@ -842,7 +862,7 @@ useEffect(() => {
   --density-sidebar-padding: 0.75rem;
 }
 
-[data-density="spacious"] {
+[data-density='spacious'] {
   --density-spacing-xs: 0.5rem;
   --density-spacing-sm: 0.75rem;
   --density-spacing-md: 1.5rem;
@@ -889,9 +909,7 @@ export function DensityProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <DensityContext.Provider value={{ density, setDensity }}>
-      {children}
-    </DensityContext.Provider>
+    <DensityContext.Provider value={{ density, setDensity }}>{children}</DensityContext.Provider>
   );
 }
 ```
@@ -927,6 +945,7 @@ export function DensityPicker() {
 ```
 
 **Acceptance criteria:**
+
 - [x] 3 density levels available
 - [x] Consistently applied to all components
 - [x] Stored in database
@@ -939,6 +958,7 @@ export function DensityPicker() {
 **Goal:** Sidebar can be placed left or right.
 
 **Tasks:**
+
 - [x] SidebarPosition context
 - [x] Adjust layout component
 - [x] CSS for right sidebar
@@ -962,10 +982,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
   const { sidebarPosition } = useSidebarPosition();
 
   return (
-    <div className={cn(
-      "flex min-h-screen",
-      sidebarPosition === 'right' && "flex-row-reverse"
-    )}>
+    <div className={cn('flex min-h-screen', sidebarPosition === 'right' && 'flex-row-reverse')}>
       <Sidebar />
       <main className="flex-1">{children}</main>
     </div>
@@ -974,6 +991,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
 ```
 
 **Acceptance criteria:**
+
 - [x] Sidebar can be left/right
 - [x] Smooth transition when switching
 - [x] Keyboard shortcuts respect position
@@ -986,6 +1004,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
 **Goal:** Users can export and share theme settings.
 
 **Tasks:**
+
 - [x] Export function (JSON format)
 - [x] Import function with validation
 - [x] Share URL generation
@@ -1011,10 +1030,10 @@ interface ThemeExport {
 export function exportTheme(): string {
   const settings: ThemeExport = {
     version: '1.0',
-    theme: localStorage.getItem('kanbu-theme') as any || 'system',
+    theme: (localStorage.getItem('kanbu-theme') as any) || 'system',
     accent: localStorage.getItem('kanbu-accent') || 'blue',
-    density: localStorage.getItem('kanbu-density') as any || 'normal',
-    sidebarPosition: localStorage.getItem('kanbu-sidebar-position') as any || 'left',
+    density: (localStorage.getItem('kanbu-density') as any) || 'normal',
+    sidebarPosition: (localStorage.getItem('kanbu-sidebar-position') as any) || 'left',
   };
 
   return btoa(JSON.stringify(settings));
@@ -1084,6 +1103,7 @@ export function ThemeExportImport() {
 ```
 
 **Acceptance criteria:**
+
 - [x] Export generates shareable code
 - [x] Import validates and applies
 - [x] Error handling for invalid codes
@@ -1126,23 +1146,25 @@ Signed-off-by: Robin Waslander <R.Waslander@gmail.com>
 
 ### Documentation Files
 
-| Document | Location | Description |
-|----------|---------|--------------|
+| Document        | Location                                   | Description                                        |
+| --------------- | ------------------------------------------ | -------------------------------------------------- |
 | Token Reference | [TOKEN-REFERENCE.md](./TOKEN-REFERENCE.md) | All design tokens with values and Tailwind mapping |
-| Component Usage | [COMPONENT-USAGE.md](./COMPONENT-USAGE.md) | Do's and Don'ts, accessibility guidelines |
-| Migration Guide | [MIGRATION-GUIDE.md](./MIGRATION-GUIDE.md) | Migration from hardcoded colors to tokens |
+| Component Usage | [COMPONENT-USAGE.md](./COMPONENT-USAGE.md) | Do's and Don'ts, accessibility guidelines          |
+| Migration Guide | [MIGRATION-GUIDE.md](./MIGRATION-GUIDE.md) | Migration from hardcoded colors to tokens          |
 
 ### Storybook
 
 **Location:** `apps/web/.storybook/`
 
 **Scripts:**
+
 ```bash
 pnpm storybook      # Start dev server on port 6006
 pnpm build-storybook # Build static storybook
 ```
 
 **Stories:**
+
 - `src/components/ui/button.stories.tsx` - All Button variants
 - `src/components/ui/badge.stories.tsx` - Status and priority badges
 - `src/components/ui/card.stories.tsx` - Card layouts and patterns
@@ -1168,6 +1190,7 @@ ls -la docs/UI-Design-Kanbu/
 **Goal:** Complete reference of all design tokens with examples.
 
 **Tasks:**
+
 - [x] Generate token overview from globals.css
 - [x] Categorize tokens (colors, typography, spacing, etc.)
 - [x] Add examples per token
@@ -1176,45 +1199,48 @@ ls -la docs/UI-Design-Kanbu/
 
 **Document structure:**
 
-```markdown
+````markdown
 # Design Token Reference Guide
 
 ## Quick Reference
 
-| Category | Count | Example |
-|----------|-------|---------|
-| Color Scales | 10 | `--color-blue-500` |
-| Semantic Colors | 40+ | `--surface-1` |
-| Typography | 15 | `--text-sm` |
-| Spacing | 12 | `--spacing-4` |
-| Shadows | 6 | `--shadow-md` |
-| Animation | 14 | `--duration-normal` |
-| Z-Index | 11 | `--z-modal` |
+| Category        | Count | Example             |
+| --------------- | ----- | ------------------- |
+| Color Scales    | 10    | `--color-blue-500`  |
+| Semantic Colors | 40+   | `--surface-1`       |
+| Typography      | 15    | `--text-sm`         |
+| Spacing         | 12    | `--spacing-4`       |
+| Shadows         | 6     | `--shadow-md`       |
+| Animation       | 14    | `--duration-normal` |
+| Z-Index         | 11    | `--z-modal`         |
 
 ## Color Tokens
 
 ### Primitive Colors
 
 #### Gray Scale
-| Token | Light Value | Usage |
-|-------|-------------|-------|
-| `--color-gray-50` | #f9fafb | Background subtle |
-| `--color-gray-100` | #f3f4f6 | Background muted |
-| ... | ... | ... |
+
+| Token              | Light Value | Usage             |
+| ------------------ | ----------- | ----------------- |
+| `--color-gray-50`  | #f9fafb     | Background subtle |
+| `--color-gray-100` | #f3f4f6     | Background muted  |
+| ...                | ...         | ...               |
 
 ### Semantic Colors
 
 #### Surfaces
-| Token | Light | Dark | Tailwind |
-|-------|-------|------|----------|
-| `--background` | white | gray-950 | `bg-background` |
-| `--surface-1` | white | gray-900 | `bg-surface-1` |
-| `--surface-2` | gray-50 | gray-800 | `bg-surface-2` |
-| `--surface-3` | gray-100 | gray-700 | `bg-surface-3` |
+
+| Token          | Light    | Dark     | Tailwind        |
+| -------------- | -------- | -------- | --------------- |
+| `--background` | white    | gray-950 | `bg-background` |
+| `--surface-1`  | white    | gray-900 | `bg-surface-1`  |
+| `--surface-2`  | gray-50  | gray-800 | `bg-surface-2`  |
+| `--surface-3`  | gray-100 | gray-700 | `bg-surface-3`  |
 
 ## Usage Examples
 
 ### Background Colors
+
 ```tsx
 // ✅ Correct
 <div className="bg-surface-1">
@@ -1224,8 +1250,10 @@ ls -la docs/UI-Design-Kanbu/
 <div className="bg-white dark:bg-gray-900">
 <div className="bg-gray-50">
 ```
+````
 
 ### Text Colors
+
 ```tsx
 // ✅ Correct
 <p className="text-foreground">Primary text</p>
@@ -1234,7 +1262,8 @@ ls -la docs/UI-Design-Kanbu/
 // ❌ Avoid
 <p className="text-gray-900 dark:text-gray-100">
 ```
-```
+
+````
 
 **Acceptance criteria:**
 - [x] All tokens documented
@@ -1274,9 +1303,10 @@ import { Button } from '@/components/ui/button'
 // Status buttons
 <Button variant="success">Approve</Button>
 <Button variant="warning">Review Required</Button>
-```
+````
 
 ### Button Sizes
+
 ```tsx
 <Button size="sm">Small</Button>
 <Button size="default">Default</Button>
@@ -1287,16 +1317,19 @@ import { Button } from '@/components/ui/button'
 ### Do's and Don'ts
 
 ✅ **Do:**
+
 - Use `variant="destructive"` for delete actions
 - Use `variant="success"` for confirmations
 - Provide clear action labels
 
 ❌ **Don't:**
+
 - Use custom colors: `className="bg-red-500"`
 - Mix icon-only with text buttons in same group
 - Use destructive style for non-destructive actions
 
 ### Accessibility
+
 - Buttons must have accessible names
 - Icon-only buttons need `aria-label`
 - Disabled buttons should explain why
@@ -1307,7 +1340,8 @@ import { Button } from '@/components/ui/button'
   <Plus className="h-4 w-4" />
 </Button>
 ```
-```
+
+````
 
 **Acceptance criteria:**
 - [x] Examples for all components
@@ -1348,14 +1382,16 @@ import { Button } from '@/components/ui/button'
 ### Find hardcoded backgrounds
 ```regex
 bg-(white|black|gray|blue|red|green|orange|yellow)-\d{2,3}
-```
+````
 
 ### Find hardcoded text colors
+
 ```regex
 text-(gray|blue|red|green|orange|yellow)-\d{2,3}
 ```
 
 ### Find dark mode overrides
+
 ```regex
 dark:(bg|text|border)-\w+-\d{2,3}
 ```
@@ -1363,6 +1399,7 @@ dark:(bg|text|border)-\w+-\d{2,3}
 ## Common Migrations
 
 ### Card backgrounds
+
 ```tsx
 // Before
 <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
@@ -1372,6 +1409,7 @@ dark:(bg|text|border)-\w+-\d{2,3}
 ```
 
 ### Status colors
+
 ```tsx
 // Before
 <span className="text-green-500">Success</span>
@@ -1384,12 +1422,13 @@ dark:(bg|text|border)-\w+-\d{2,3}
 
 ## Checklist for Code Review
 
-- [ ] No hardcoded colors (bg-gray-*, text-blue-*, etc.)
+- [ ] No hardcoded colors (bg-gray-_, text-blue-_, etc.)
 - [ ] No `dark:` prefixes for colors
 - [ ] Semantic tokens used where possible
 - [ ] Priority colors via `--priority-*` tokens
 - [ ] State colors via `--success/warning/error/info`
-```
+
+````
 
 **Acceptance criteria:**
 - [x] Complete mapping table
@@ -1420,7 +1459,7 @@ pnpm dlx storybook@latest init
 
 # Install addons
 pnpm add -D @storybook/addon-a11y @storybook/addon-themes
-```
+````
 
 **Configuration:**
 
@@ -1482,7 +1521,16 @@ const meta: Meta<typeof Button> = {
   argTypes: {
     variant: {
       control: 'select',
-      options: ['default', 'destructive', 'outline', 'secondary', 'ghost', 'link', 'success', 'warning'],
+      options: [
+        'default',
+        'destructive',
+        'outline',
+        'secondary',
+        'ghost',
+        'link',
+        'success',
+        'warning',
+      ],
     },
     size: {
       control: 'select',
@@ -1544,35 +1592,37 @@ export const AllVariants: Story = {
 
 **Component Index (20 total):**
 
-| Component | Stories | Priority | Status |
-|-----------|---------|------------|--------|
-| badge | ✅ | High | Complete |
-| button | ✅ | High | Complete |
-| card | ✅ | High | Complete |
-| checkbox | ✅ | High | Complete |
-| collapsible | ✅ | Low | Complete |
-| dialog | ✅ | High | Complete |
-| dropdown-menu | ✅ | High | Complete |
-| HoverPopover | ✅ | Medium | Complete |
-| input | ✅ | High | Complete |
-| label | ✅ | Medium | Complete |
-| progress | ✅ | Medium | Complete |
-| scroll-area | ✅ | Low | Complete |
-| select | ✅ | High | Complete |
-| separator | ✅ | Low | Complete |
-| slider | ✅ | Medium | Complete |
-| sonner | ✅ | Medium | Complete |
-| switch | ✅ | High | Complete |
-| tabs | ✅ | High | Complete |
-| tooltip | ✅ | High | Complete |
-| UndoRedoButtons | ✅ | Low | Complete |
+| Component       | Stories | Priority | Status   |
+| --------------- | ------- | -------- | -------- |
+| badge           | ✅      | High     | Complete |
+| button          | ✅      | High     | Complete |
+| card            | ✅      | High     | Complete |
+| checkbox        | ✅      | High     | Complete |
+| collapsible     | ✅      | Low      | Complete |
+| dialog          | ✅      | High     | Complete |
+| dropdown-menu   | ✅      | High     | Complete |
+| HoverPopover    | ✅      | Medium   | Complete |
+| input           | ✅      | High     | Complete |
+| label           | ✅      | Medium   | Complete |
+| progress        | ✅      | Medium   | Complete |
+| scroll-area     | ✅      | Low      | Complete |
+| select          | ✅      | High     | Complete |
+| separator       | ✅      | Low      | Complete |
+| slider          | ✅      | Medium   | Complete |
+| sonner          | ✅      | Medium   | Complete |
+| switch          | ✅      | High     | Complete |
+| tabs            | ✅      | High     | Complete |
+| tooltip         | ✅      | High     | Complete |
+| UndoRedoButtons | ✅      | Low      | Complete |
 
 **Priority for stories:**
+
 1. **High (9):** checkbox, dialog, dropdown-menu, select, switch, tabs, tooltip (+ badge, button, card, input ✅)
 2. **Medium (4):** HoverPopover, label, progress, slider, sonner
 3. **Low (3):** collapsible, scroll-area, separator, UndoRedoButtons
 
 **Acceptance criteria:**
+
 - [x] Storybook runs locally
 - [x] Stories for all ui/ components (20/20 complete)
 - [x] Theme switching works
@@ -1586,6 +1636,7 @@ export const AllVariants: Story = {
 **Goal:** Automatically generate token documentation from CSS.
 
 **Tasks:**
+
 - [ ] Write script that parses globals.css
 - [ ] JSON/TypeScript output for tokens
 - [ ] Markdown generator for docs
@@ -1607,10 +1658,7 @@ interface Token {
 }
 
 function parseGlobalsCss(): Token[] {
-  const content = fs.readFileSync(
-    path.join(__dirname, '../src/styles/globals.css'),
-    'utf-8'
-  );
+  const content = fs.readFileSync(path.join(__dirname, '../src/styles/globals.css'), 'utf-8');
 
   const tokens: Token[] = [];
   const rootMatch = content.match(/:root\s*{([^}]+)}/);
@@ -1655,6 +1703,7 @@ fs.writeFileSync('docs/UI-Design-Kanbu/TOKEN-REFERENCE.md', markdown);
 ```
 
 **Acceptance criteria:**
+
 - [ ] Script parses globals.css correctly
 - [ ] Output is accurate and complete
 - [ ] Can run in CI
@@ -1680,11 +1729,11 @@ Signed-off-by: Robin Waslander <R.Waslander@gmail.com>
 
 ## Overview of Completed Implementation Phases
 
-| Phase | Status | Complexity | Description |
-|------|--------|--------------|--------------|
-| Phase 7 | ✅ Complete | High | Component Library Audit |
-| Phase 8 | ✅ Complete | High | Advanced Theming |
-| Phase 9 | ✅ Complete | Medium | Documentation & Storybook |
+| Phase   | Status      | Complexity | Description               |
+| ------- | ----------- | ---------- | ------------------------- |
+| Phase 7 | ✅ Complete | High       | Component Library Audit   |
+| Phase 8 | ✅ Complete | High       | Advanced Theming          |
+| Phase 9 | ✅ Complete | Medium     | Documentation & Storybook |
 
 ### Implementation Order (Completed)
 
@@ -1748,16 +1797,30 @@ module.exports = {
         // 10 color scales mapped to CSS vars
         // Semantic colors (surface, text-color, success, etc.)
       },
-      zIndex: { /* 11 levels */ },
-      transitionDuration: { /* 8 durations */ },
-      transitionTimingFunction: { /* 6 easings */ },
-      animation: { /* fade, slide, scale, pulse, shimmer, bounce */ },
-      borderRadius: { /* component-specific */ },
-      fontSize: { /* page-title, section-title */ },
-      boxShadow: { /* custom shadows */ },
+      zIndex: {
+        /* 11 levels */
+      },
+      transitionDuration: {
+        /* 8 durations */
+      },
+      transitionTimingFunction: {
+        /* 6 easings */
+      },
+      animation: {
+        /* fade, slide, scale, pulse, shimmer, bounce */
+      },
+      borderRadius: {
+        /* component-specific */
+      },
+      fontSize: {
+        /* page-title, section-title */
+      },
+      boxShadow: {
+        /* custom shadows */
+      },
     },
   },
-}
+};
 ```
 
 ---
@@ -1776,5 +1839,5 @@ c3e7a709 refactor(design-system): Remove ALL hardcoded colors (Phase 2 - 100%)
 
 ---
 
-*Document version: 2.4.0*
-*Last updated: 2026-01-16*
+_Document version: 2.4.0_
+_Last updated: 2026-01-16_

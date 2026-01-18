@@ -13,8 +13,8 @@
  * ===================================================================
  */
 
-import { useState, useRef, useEffect } from 'react'
-import { trpc } from '../../lib/trpc'
+import { useState, useRef, useEffect } from 'react';
+import { trpc } from '../../lib/trpc';
 import {
   ChevronDown,
   Calendar,
@@ -24,24 +24,24 @@ import {
   CalendarDays,
   Sun,
   CalendarRange,
-} from 'lucide-react'
+} from 'lucide-react';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface DueDatePickerProps {
-  taskId: number
-  currentDueDate: Date | string | null
-  onDueDateChange?: (dueDate: Date | null) => void
-  disabled?: boolean
-  showTime?: boolean
+  taskId: number;
+  currentDueDate: Date | string | null;
+  onDueDateChange?: (dueDate: Date | null) => void;
+  disabled?: boolean;
+  showTime?: boolean;
 }
 
 interface QuickOption {
-  label: string
-  icon: React.ReactNode
-  getDate: () => Date
+  label: string;
+  icon: React.ReactNode;
+  getDate: () => Date;
 }
 
 // =============================================================================
@@ -49,32 +49,32 @@ interface QuickOption {
 // =============================================================================
 
 function formatDateForInput(date: Date): string {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 function formatTimeForInput(date: Date): string {
-  const hours = String(date.getHours()).padStart(2, '0')
-  const minutes = String(date.getMinutes()).padStart(2, '0')
-  return `${hours}:${minutes}`
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${hours}:${minutes}`;
 }
 
 function formatDueDateDisplay(date: Date): string {
-  const now = new Date()
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-  const dueDay = new Date(date.getFullYear(), date.getMonth(), date.getDate())
-  const diffDays = Math.ceil((dueDay.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const dueDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const diffDays = Math.ceil((dueDay.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
   if (diffDays < 0) {
-    return diffDays === -1 ? 'Yesterday' : `${Math.abs(diffDays)} days ago`
+    return diffDays === -1 ? 'Yesterday' : `${Math.abs(diffDays)} days ago`;
   }
-  if (diffDays === 0) return 'Today'
-  if (diffDays === 1) return 'Tomorrow'
-  if (diffDays <= 7) return `In ${diffDays} days`
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Tomorrow';
+  if (diffDays <= 7) return `In ${diffDays} days`;
 
-  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 // =============================================================================
@@ -82,8 +82,8 @@ function formatDueDateDisplay(date: Date): string {
 // =============================================================================
 
 function getQuickOptions(): QuickOption[] {
-  const now = new Date()
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 17, 0, 0) // 5 PM
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 17, 0, 0); // 5 PM
 
   return [
     {
@@ -101,7 +101,7 @@ function getQuickOptions(): QuickOption[] {
       icon: <CalendarRange className="w-4 h-4" />,
       getDate: () => new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000),
     },
-  ]
+  ];
 }
 
 // =============================================================================
@@ -115,93 +115,93 @@ export function DueDatePicker({
   disabled = false,
   showTime = false,
 }: DueDatePickerProps) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [selectedDate, setSelectedDate] = useState<string>('')
-  const [selectedTime, setSelectedTime] = useState<string>('17:00')
-  const [includeTime, setIncludeTime] = useState(showTime)
-  const containerRef = useRef<HTMLDivElement>(null)
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<string>('');
+  const [selectedTime, setSelectedTime] = useState<string>('17:00');
+  const [includeTime, setIncludeTime] = useState(showTime);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Parse current due date
   const parsedDueDate = currentDueDate
     ? typeof currentDueDate === 'string'
       ? new Date(currentDueDate)
       : currentDueDate
-    : null
+    : null;
 
   // Initialize form values when opening
   useEffect(() => {
     if (isOpen && parsedDueDate) {
-      setSelectedDate(formatDateForInput(parsedDueDate))
-      setSelectedTime(formatTimeForInput(parsedDueDate))
+      setSelectedDate(formatDateForInput(parsedDueDate));
+      setSelectedTime(formatTimeForInput(parsedDueDate));
     }
-  }, [isOpen, parsedDueDate])
+  }, [isOpen, parsedDueDate]);
 
   // Mutations
-  const utils = trpc.useUtils()
+  const utils = trpc.useUtils();
 
   const setDueDateMutation = trpc.task.setDueDate.useMutation({
     onSuccess: (result) => {
-      utils.task.get.invalidate({ taskId })
-      utils.task.list.invalidate()
-      onDueDateChange?.(result.dateDue ? new Date(result.dateDue) : null)
-      setIsOpen(false)
+      utils.task.get.invalidate({ taskId });
+      utils.task.list.invalidate();
+      onDueDateChange?.(result.dateDue ? new Date(result.dateDue) : null);
+      setIsOpen(false);
     },
-  })
+  });
 
   // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false)
+        setIsOpen(false);
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleQuickOption = (option: QuickOption) => {
-    if (disabled) return
-    const date = option.getDate()
+    if (disabled) return;
+    const date = option.getDate();
     setDueDateMutation.mutate({
       taskId,
       dateDue: date.toISOString(),
       includeTime: false,
-    })
-  }
+    });
+  };
 
   const handleCustomDate = () => {
-    if (!selectedDate) return
+    if (!selectedDate) return;
 
-    let dateTime: Date
+    let dateTime: Date;
     if (includeTime && selectedTime) {
-      const parts = selectedTime.split(':').map(Number)
-      const hours = parts[0] ?? 17
-      const minutes = parts[1] ?? 0
-      dateTime = new Date(selectedDate)
-      dateTime.setHours(hours, minutes, 0, 0)
+      const parts = selectedTime.split(':').map(Number);
+      const hours = parts[0] ?? 17;
+      const minutes = parts[1] ?? 0;
+      dateTime = new Date(selectedDate);
+      dateTime.setHours(hours, minutes, 0, 0);
     } else {
-      dateTime = new Date(selectedDate)
-      dateTime.setHours(17, 0, 0, 0) // Default to 5 PM
+      dateTime = new Date(selectedDate);
+      dateTime.setHours(17, 0, 0, 0); // Default to 5 PM
     }
 
     setDueDateMutation.mutate({
       taskId,
       dateDue: dateTime.toISOString(),
       includeTime,
-    })
-  }
+    });
+  };
 
   const handleClearDueDate = () => {
     setDueDateMutation.mutate({
       taskId,
       dateDue: null,
       includeTime: false,
-    })
-  }
+    });
+  };
 
-  const isMutating = setDueDateMutation.isPending
-  const quickOptions = getQuickOptions()
+  const isMutating = setDueDateMutation.isPending;
+  const quickOptions = getQuickOptions();
 
   return (
     <div ref={containerRef} className="relative">
@@ -228,8 +228,8 @@ export function DueDatePicker({
         ) : parsedDueDate ? (
           <button
             onClick={(e) => {
-              e.stopPropagation()
-              handleClearDueDate()
+              e.stopPropagation();
+              handleClearDueDate();
             }}
             className="p-0.5 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
             title="Clear due date"
@@ -335,7 +335,7 @@ export function DueDatePicker({
         </div>
       )}
     </div>
-  )
+  );
 }
 
-export default DueDatePicker
+export default DueDatePicker;

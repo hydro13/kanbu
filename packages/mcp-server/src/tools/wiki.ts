@@ -14,57 +14,57 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { z } from 'zod'
-import { requireAuth, client, success, formatDate, truncate } from '../tools.js'
+import { z } from 'zod';
+import { requireAuth, client, success, formatDate, truncate } from '../tools.js';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface WikiPage {
-  id: number
-  title: string
-  slug: string
-  content?: string | null
-  status: string
-  parentId: number | null
-  currentVersion?: number
-  versionCount?: number
-  childCount?: number
-  sortOrder?: number
-  createdAt: string
-  updatedAt: string
+  id: number;
+  title: string;
+  slug: string;
+  content?: string | null;
+  status: string;
+  parentId: number | null;
+  currentVersion?: number;
+  versionCount?: number;
+  childCount?: number;
+  sortOrder?: number;
+  createdAt: string;
+  updatedAt: string;
   author?: {
-    id: number
-    name: string
-    username: string
-  } | null
+    id: number;
+    name: string;
+    username: string;
+  } | null;
   lastEditedBy?: {
-    id: number
-    name: string
-    username: string
-  } | null
-  children?: WikiPage[]
+    id: number;
+    name: string;
+    username: string;
+  } | null;
+  children?: WikiPage[];
 }
 
 interface WikiVersion {
-  version: number
-  title: string
-  content: string | null
-  changeNote: string | null
-  createdAt: string
+  version: number;
+  title: string;
+  content: string | null;
+  changeNote: string | null;
+  createdAt: string;
   author?: {
-    id: number
-    name: string
-    username: string
-  } | null
+    id: number;
+    name: string;
+    username: string;
+  } | null;
 }
 
 // Response wrapper for create/update operations (includes Graphiti contradictions)
 interface WikiPageResponse {
-  page: WikiPage
-  contradictions: unknown[]
-  contradictionsResolved: number
+  page: WikiPage;
+  contradictions: unknown[];
+  contradictionsResolved: number;
 }
 
 // =============================================================================
@@ -73,26 +73,36 @@ interface WikiPageResponse {
 
 export const ListProjectWikiPagesSchema = z.object({
   projectId: z.number().describe('Project ID'),
-  parentId: z.number().nullable().optional().describe('Filter by parent page ID (null for root pages)'),
-  includeUnpublished: z.boolean().optional().describe('Include draft and archived pages (default: false)'),
-})
+  parentId: z
+    .number()
+    .nullable()
+    .optional()
+    .describe('Filter by parent page ID (null for root pages)'),
+  includeUnpublished: z
+    .boolean()
+    .optional()
+    .describe('Include draft and archived pages (default: false)'),
+});
 
 export const GetProjectWikiPageSchema = z.object({
   id: z.number().describe('Wiki page ID'),
-})
+});
 
 export const GetProjectWikiPageBySlugSchema = z.object({
   projectId: z.number().describe('Project ID'),
   slug: z.string().describe('Page slug'),
-})
+});
 
 export const CreateProjectWikiPageSchema = z.object({
   projectId: z.number().describe('Project ID'),
   parentId: z.number().nullable().optional().describe('Parent page ID (null for root page)'),
   title: z.string().describe('Page title'),
   content: z.string().optional().describe('Page content (plain text)'),
-  status: z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']).optional().describe('Page status (default: DRAFT)'),
-})
+  status: z
+    .enum(['DRAFT', 'PUBLISHED', 'ARCHIVED'])
+    .optional()
+    .describe('Page status (default: DRAFT)'),
+});
 
 export const UpdateProjectWikiPageSchema = z.object({
   id: z.number().describe('Wiki page ID'),
@@ -101,27 +111,27 @@ export const UpdateProjectWikiPageSchema = z.object({
   status: z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']).optional().describe('New status'),
   parentId: z.number().nullable().optional().describe('New parent page ID'),
   changeNote: z.string().optional().describe('Note for version history'),
-})
+});
 
 export const DeleteProjectWikiPageSchema = z.object({
   id: z.number().describe('Wiki page ID to delete'),
-})
+});
 
 export const GetProjectWikiVersionsSchema = z.object({
   pageId: z.number().describe('Wiki page ID'),
   limit: z.number().optional().describe('Maximum number of versions (default: 20)'),
-})
+});
 
 export const GetProjectWikiVersionSchema = z.object({
   pageId: z.number().describe('Wiki page ID'),
   version: z.number().describe('Version number'),
-})
+});
 
 export const RestoreProjectWikiVersionSchema = z.object({
   pageId: z.number().describe('Wiki page ID'),
   version: z.number().describe('Version number to restore'),
   changeNote: z.string().optional().describe('Note for version history'),
-})
+});
 
 // =============================================================================
 // Schemas - Workspace Wiki
@@ -129,26 +139,36 @@ export const RestoreProjectWikiVersionSchema = z.object({
 
 export const ListWorkspaceWikiPagesSchema = z.object({
   workspaceId: z.number().describe('Workspace ID'),
-  parentId: z.number().nullable().optional().describe('Filter by parent page ID (null for root pages)'),
-  includeUnpublished: z.boolean().optional().describe('Include draft and archived pages (default: false)'),
-})
+  parentId: z
+    .number()
+    .nullable()
+    .optional()
+    .describe('Filter by parent page ID (null for root pages)'),
+  includeUnpublished: z
+    .boolean()
+    .optional()
+    .describe('Include draft and archived pages (default: false)'),
+});
 
 export const GetWorkspaceWikiPageSchema = z.object({
   id: z.number().describe('Wiki page ID'),
-})
+});
 
 export const GetWorkspaceWikiPageBySlugSchema = z.object({
   workspaceId: z.number().describe('Workspace ID'),
   slug: z.string().describe('Page slug'),
-})
+});
 
 export const CreateWorkspaceWikiPageSchema = z.object({
   workspaceId: z.number().describe('Workspace ID'),
   parentId: z.number().nullable().optional().describe('Parent page ID (null for root page)'),
   title: z.string().describe('Page title'),
   content: z.string().optional().describe('Page content (plain text)'),
-  status: z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']).optional().describe('Page status (default: DRAFT)'),
-})
+  status: z
+    .enum(['DRAFT', 'PUBLISHED', 'ARCHIVED'])
+    .optional()
+    .describe('Page status (default: DRAFT)'),
+});
 
 export const UpdateWorkspaceWikiPageSchema = z.object({
   id: z.number().describe('Wiki page ID'),
@@ -157,27 +177,27 @@ export const UpdateWorkspaceWikiPageSchema = z.object({
   status: z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']).optional().describe('New status'),
   parentId: z.number().nullable().optional().describe('New parent page ID'),
   changeNote: z.string().optional().describe('Note for version history'),
-})
+});
 
 export const DeleteWorkspaceWikiPageSchema = z.object({
   id: z.number().describe('Wiki page ID to delete'),
-})
+});
 
 export const GetWorkspaceWikiVersionsSchema = z.object({
   pageId: z.number().describe('Wiki page ID'),
   limit: z.number().optional().describe('Maximum number of versions (default: 20)'),
-})
+});
 
 export const GetWorkspaceWikiVersionSchema = z.object({
   pageId: z.number().describe('Wiki page ID'),
   version: z.number().describe('Version number'),
-})
+});
 
 export const RestoreWorkspaceWikiVersionSchema = z.object({
   pageId: z.number().describe('Wiki page ID'),
   version: z.number().describe('Version number to restore'),
   changeNote: z.string().optional().describe('Note for version history'),
-})
+});
 
 // =============================================================================
 // Tool Definitions
@@ -314,8 +334,7 @@ export const wikiToolDefinitions = [
   },
   {
     name: 'kanbu_delete_project_wiki_page',
-    description:
-      'Delete a project wiki page. You need Write permission on the project.',
+    description: 'Delete a project wiki page. You need Write permission on the project.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -348,8 +367,7 @@ export const wikiToolDefinitions = [
   },
   {
     name: 'kanbu_get_project_wiki_version',
-    description:
-      'Get a specific version of a project wiki page by version number.',
+    description: 'Get a specific version of a project wiki page by version number.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -519,8 +537,7 @@ export const wikiToolDefinitions = [
   },
   {
     name: 'kanbu_delete_workspace_wiki_page',
-    description:
-      'Delete a workspace wiki page. You need Write permission on the workspace.',
+    description: 'Delete a workspace wiki page. You need Write permission on the workspace.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -553,8 +570,7 @@ export const wikiToolDefinitions = [
   },
   {
     name: 'kanbu_get_workspace_wiki_version',
-    description:
-      'Get a specific version of a workspace wiki page by version number.',
+    description: 'Get a specific version of a workspace wiki page by version number.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -593,35 +609,38 @@ export const wikiToolDefinitions = [
       required: ['pageId', 'version'],
     },
   },
-]
+];
 
 // =============================================================================
 // Helper Functions
 // =============================================================================
 
 function formatAuthor(author: { name: string; username: string } | null | undefined): string {
-  if (!author) return 'Unknown'
-  return `${author.name} (@${author.username})`
+  if (!author) return 'Unknown';
+  return `${author.name} (@${author.username})`;
 }
 
 function formatWikiPageSummary(page: WikiPage): string[] {
-  const lines: string[] = []
-  const statusIcon = page.status === 'PUBLISHED' ? '📄' : page.status === 'DRAFT' ? '📝' : '📦'
-  const hasChildren = (page.childCount && page.childCount > 0) || (page.children && page.children.length > 0) ? ' 📁' : ''
+  const lines: string[] = [];
+  const statusIcon = page.status === 'PUBLISHED' ? '📄' : page.status === 'DRAFT' ? '📝' : '📦';
+  const hasChildren =
+    (page.childCount && page.childCount > 0) || (page.children && page.children.length > 0)
+      ? ' 📁'
+      : '';
 
-  lines.push(`${statusIcon} ${page.title}${hasChildren}`)
-  lines.push(`   ID: ${page.id} | Slug: ${page.slug}`)
+  lines.push(`${statusIcon} ${page.title}${hasChildren}`);
+  lines.push(`   ID: ${page.id} | Slug: ${page.slug}`);
 
-  const version = page.currentVersion ?? page.versionCount ?? 1
-  lines.push(`   Status: ${page.status} | Versions: ${version}`)
+  const version = page.currentVersion ?? page.versionCount ?? 1;
+  lines.push(`   Status: ${page.status} | Versions: ${version}`);
 
   if (page.author) {
-    lines.push(`   Author: ${formatAuthor(page.author)} | Updated: ${formatDate(page.updatedAt)}`)
+    lines.push(`   Author: ${formatAuthor(page.author)} | Updated: ${formatDate(page.updatedAt)}`);
   } else {
-    lines.push(`   Updated: ${formatDate(page.updatedAt)}`)
+    lines.push(`   Updated: ${formatDate(page.updatedAt)}`);
   }
 
-  return lines
+  return lines;
 }
 
 // =============================================================================
@@ -632,43 +651,40 @@ function formatWikiPageSummary(page: WikiPage): string[] {
  * List wiki pages in a project
  */
 export async function handleListProjectWikiPages(args: unknown) {
-  const input = ListProjectWikiPagesSchema.parse(args)
-  const config = requireAuth()
+  const input = ListProjectWikiPagesSchema.parse(args);
+  const config = requireAuth();
 
   const pages = await client.call<WikiPage[]>(
     config.kanbuUrl,
     config.token,
     'projectWiki.list',
     input
-  )
+  );
 
   if (!pages || pages.length === 0) {
-    return success('No wiki pages found in this project.')
+    return success('No wiki pages found in this project.');
   }
 
-  const lines: string[] = [`Wiki Pages (${pages.length}):`, '']
+  const lines: string[] = [`Wiki Pages (${pages.length}):`, ''];
 
   pages.forEach((page) => {
-    lines.push(...formatWikiPageSummary(page))
-    lines.push('')
-  })
+    lines.push(...formatWikiPageSummary(page));
+    lines.push('');
+  });
 
-  return success(lines.join('\n'))
+  return success(lines.join('\n'));
 }
 
 /**
  * Get project wiki page details
  */
 export async function handleGetProjectWikiPage(args: unknown) {
-  const { id } = GetProjectWikiPageSchema.parse(args)
-  const config = requireAuth()
+  const { id } = GetProjectWikiPageSchema.parse(args);
+  const config = requireAuth();
 
-  const page = await client.call<WikiPage>(
-    config.kanbuUrl,
-    config.token,
-    'projectWiki.get',
-    { id }
-  )
+  const page = await client.call<WikiPage>(config.kanbuUrl, config.token, 'projectWiki.get', {
+    id,
+  });
 
   const lines: string[] = [
     `📄 ${page.title}`,
@@ -683,31 +699,31 @@ export async function handleGetProjectWikiPage(args: unknown) {
     `Last edited by: ${formatAuthor(page.lastEditedBy)}`,
     `Created: ${formatDate(page.createdAt)}`,
     `Updated: ${formatDate(page.updatedAt)}`,
-  ]
+  ];
 
   if (page.content) {
-    lines.push('')
-    lines.push('Content:')
-    lines.push('─'.repeat(40))
-    lines.push(page.content)
+    lines.push('');
+    lines.push('Content:');
+    lines.push('─'.repeat(40));
+    lines.push(page.content);
   }
 
-  return success(lines.join('\n'))
+  return success(lines.join('\n'));
 }
 
 /**
  * Get project wiki page by slug
  */
 export async function handleGetProjectWikiPageBySlug(args: unknown) {
-  const input = GetProjectWikiPageBySlugSchema.parse(args)
-  const config = requireAuth()
+  const input = GetProjectWikiPageBySlugSchema.parse(args);
+  const config = requireAuth();
 
   const page = await client.call<WikiPage>(
     config.kanbuUrl,
     config.token,
     'projectWiki.getBySlug',
     input
-  )
+  );
 
   const lines: string[] = [
     `📄 ${page.title}`,
@@ -719,24 +735,24 @@ export async function handleGetProjectWikiPageBySlug(args: unknown) {
     '',
     `Created: ${formatDate(page.createdAt)}`,
     `Updated: ${formatDate(page.updatedAt)}`,
-  ]
+  ];
 
   if (page.content) {
-    lines.push('')
-    lines.push('Content:')
-    lines.push('─'.repeat(40))
-    lines.push(page.content)
+    lines.push('');
+    lines.push('Content:');
+    lines.push('─'.repeat(40));
+    lines.push(page.content);
   }
 
-  return success(lines.join('\n'))
+  return success(lines.join('\n'));
 }
 
 /**
  * Create a new project wiki page
  */
 export async function handleCreateProjectWikiPage(args: unknown) {
-  const input = CreateProjectWikiPageSchema.parse(args)
-  const config = requireAuth()
+  const input = CreateProjectWikiPageSchema.parse(args);
+  const config = requireAuth();
 
   const result = await client.call<WikiPageResponse>(
     config.kanbuUrl,
@@ -744,9 +760,9 @@ export async function handleCreateProjectWikiPage(args: unknown) {
     'projectWiki.create',
     input,
     'POST'
-  )
+  );
 
-  const page = result.page
+  const page = result.page;
 
   const lines: string[] = [
     'Wiki page created:',
@@ -757,17 +773,17 @@ export async function handleCreateProjectWikiPage(args: unknown) {
     `Status: ${page.status}`,
     '',
     `URL: /project/${input.projectId}/wiki/${page.slug}`,
-  ]
+  ];
 
-  return success(lines.join('\n'))
+  return success(lines.join('\n'));
 }
 
 /**
  * Update a project wiki page
  */
 export async function handleUpdateProjectWikiPage(args: unknown) {
-  const input = UpdateProjectWikiPageSchema.parse(args)
-  const config = requireAuth()
+  const input = UpdateProjectWikiPageSchema.parse(args);
+  const config = requireAuth();
 
   const result = await client.call<WikiPageResponse>(
     config.kanbuUrl,
@@ -775,9 +791,9 @@ export async function handleUpdateProjectWikiPage(args: unknown) {
     'projectWiki.update',
     input,
     'POST'
-  )
+  );
 
-  const page = result.page
+  const page = result.page;
 
   const lines: string[] = [
     'Wiki page updated:',
@@ -786,17 +802,17 @@ export async function handleUpdateProjectWikiPage(args: unknown) {
     `ID: ${page.id}`,
     `Version: ${page.currentVersion}`,
     `Updated: ${formatDate(page.updatedAt)}`,
-  ]
+  ];
 
-  return success(lines.join('\n'))
+  return success(lines.join('\n'));
 }
 
 /**
  * Delete a project wiki page
  */
 export async function handleDeleteProjectWikiPage(args: unknown) {
-  const { id } = DeleteProjectWikiPageSchema.parse(args)
-  const config = requireAuth()
+  const { id } = DeleteProjectWikiPageSchema.parse(args);
+  const config = requireAuth();
 
   await client.call<{ success: boolean }>(
     config.kanbuUrl,
@@ -804,84 +820,84 @@ export async function handleDeleteProjectWikiPage(args: unknown) {
     'projectWiki.delete',
     { id },
     'POST'
-  )
+  );
 
-  return success(`Wiki page #${id} deleted.`)
+  return success(`Wiki page #${id} deleted.`);
 }
 
 /**
  * Get version history for a project wiki page
  */
 export async function handleGetProjectWikiVersions(args: unknown) {
-  const input = GetProjectWikiVersionsSchema.parse(args)
-  const config = requireAuth()
+  const input = GetProjectWikiVersionsSchema.parse(args);
+  const config = requireAuth();
 
   const versions = await client.call<WikiVersion[]>(
     config.kanbuUrl,
     config.token,
     'projectWiki.getVersions',
     input
-  )
+  );
 
   if (!versions || versions.length === 0) {
-    return success('No versions found for this wiki page.')
+    return success('No versions found for this wiki page.');
   }
 
-  const lines: string[] = [`Version History (${versions.length}):`, '']
+  const lines: string[] = [`Version History (${versions.length}):`, ''];
 
   versions.forEach((v) => {
-    lines.push(`v${v.version}: ${v.title}`)
-    lines.push(`   Author: ${formatAuthor(v.author)} | Date: ${formatDate(v.createdAt)}`)
+    lines.push(`v${v.version}: ${v.title}`);
+    lines.push(`   Author: ${formatAuthor(v.author)} | Date: ${formatDate(v.createdAt)}`);
     if (v.changeNote) {
-      lines.push(`   Note: ${v.changeNote}`)
+      lines.push(`   Note: ${v.changeNote}`);
     }
-    lines.push('')
-  })
+    lines.push('');
+  });
 
-  return success(lines.join('\n'))
+  return success(lines.join('\n'));
 }
 
 /**
  * Get a specific version of a project wiki page
  */
 export async function handleGetProjectWikiVersion(args: unknown) {
-  const input = GetProjectWikiVersionSchema.parse(args)
-  const config = requireAuth()
+  const input = GetProjectWikiVersionSchema.parse(args);
+  const config = requireAuth();
 
   const version = await client.call<WikiVersion>(
     config.kanbuUrl,
     config.token,
     'projectWiki.getVersion',
     input
-  )
+  );
 
   const lines: string[] = [
     `📜 Version ${version.version}: ${version.title}`,
     '',
     `Author: ${formatAuthor(version.author)}`,
     `Date: ${formatDate(version.createdAt)}`,
-  ]
+  ];
 
   if (version.changeNote) {
-    lines.push(`Change note: ${version.changeNote}`)
+    lines.push(`Change note: ${version.changeNote}`);
   }
 
   if (version.content) {
-    lines.push('')
-    lines.push('Content:')
-    lines.push('─'.repeat(40))
-    lines.push(version.content)
+    lines.push('');
+    lines.push('Content:');
+    lines.push('─'.repeat(40));
+    lines.push(version.content);
   }
 
-  return success(lines.join('\n'))
+  return success(lines.join('\n'));
 }
 
 /**
  * Restore an old version of a project wiki page
  */
 export async function handleRestoreProjectWikiVersion(args: unknown) {
-  const input = RestoreProjectWikiVersionSchema.parse(args)
-  const config = requireAuth()
+  const input = RestoreProjectWikiVersionSchema.parse(args);
+  const config = requireAuth();
 
   const page = await client.call<WikiPage>(
     config.kanbuUrl,
@@ -889,7 +905,7 @@ export async function handleRestoreProjectWikiVersion(args: unknown) {
     'projectWiki.restoreVersion',
     input,
     'POST'
-  )
+  );
 
   const lines: string[] = [
     `Wiki page restored from version ${input.version}:`,
@@ -898,9 +914,9 @@ export async function handleRestoreProjectWikiVersion(args: unknown) {
     `ID: ${page.id}`,
     `New version: ${page.currentVersion}`,
     `Updated: ${formatDate(page.updatedAt)}`,
-  ]
+  ];
 
-  return success(lines.join('\n'))
+  return success(lines.join('\n'));
 }
 
 // =============================================================================
@@ -911,43 +927,40 @@ export async function handleRestoreProjectWikiVersion(args: unknown) {
  * List wiki pages in a workspace
  */
 export async function handleListWorkspaceWikiPages(args: unknown) {
-  const input = ListWorkspaceWikiPagesSchema.parse(args)
-  const config = requireAuth()
+  const input = ListWorkspaceWikiPagesSchema.parse(args);
+  const config = requireAuth();
 
   const pages = await client.call<WikiPage[]>(
     config.kanbuUrl,
     config.token,
     'workspaceWiki.list',
     input
-  )
+  );
 
   if (!pages || pages.length === 0) {
-    return success('No wiki pages found in this workspace.')
+    return success('No wiki pages found in this workspace.');
   }
 
-  const lines: string[] = [`Wiki Pages (${pages.length}):`, '']
+  const lines: string[] = [`Wiki Pages (${pages.length}):`, ''];
 
   pages.forEach((page) => {
-    lines.push(...formatWikiPageSummary(page))
-    lines.push('')
-  })
+    lines.push(...formatWikiPageSummary(page));
+    lines.push('');
+  });
 
-  return success(lines.join('\n'))
+  return success(lines.join('\n'));
 }
 
 /**
  * Get workspace wiki page details
  */
 export async function handleGetWorkspaceWikiPage(args: unknown) {
-  const { id } = GetWorkspaceWikiPageSchema.parse(args)
-  const config = requireAuth()
+  const { id } = GetWorkspaceWikiPageSchema.parse(args);
+  const config = requireAuth();
 
-  const page = await client.call<WikiPage>(
-    config.kanbuUrl,
-    config.token,
-    'workspaceWiki.get',
-    { id }
-  )
+  const page = await client.call<WikiPage>(config.kanbuUrl, config.token, 'workspaceWiki.get', {
+    id,
+  });
 
   const lines: string[] = [
     `📄 ${page.title}`,
@@ -962,31 +975,31 @@ export async function handleGetWorkspaceWikiPage(args: unknown) {
     `Last edited by: ${formatAuthor(page.lastEditedBy)}`,
     `Created: ${formatDate(page.createdAt)}`,
     `Updated: ${formatDate(page.updatedAt)}`,
-  ]
+  ];
 
   if (page.content) {
-    lines.push('')
-    lines.push('Content:')
-    lines.push('─'.repeat(40))
-    lines.push(page.content)
+    lines.push('');
+    lines.push('Content:');
+    lines.push('─'.repeat(40));
+    lines.push(page.content);
   }
 
-  return success(lines.join('\n'))
+  return success(lines.join('\n'));
 }
 
 /**
  * Get workspace wiki page by slug
  */
 export async function handleGetWorkspaceWikiPageBySlug(args: unknown) {
-  const input = GetWorkspaceWikiPageBySlugSchema.parse(args)
-  const config = requireAuth()
+  const input = GetWorkspaceWikiPageBySlugSchema.parse(args);
+  const config = requireAuth();
 
   const page = await client.call<WikiPage>(
     config.kanbuUrl,
     config.token,
     'workspaceWiki.getBySlug',
     input
-  )
+  );
 
   const lines: string[] = [
     `📄 ${page.title}`,
@@ -998,24 +1011,24 @@ export async function handleGetWorkspaceWikiPageBySlug(args: unknown) {
     '',
     `Created: ${formatDate(page.createdAt)}`,
     `Updated: ${formatDate(page.updatedAt)}`,
-  ]
+  ];
 
   if (page.content) {
-    lines.push('')
-    lines.push('Content:')
-    lines.push('─'.repeat(40))
-    lines.push(page.content)
+    lines.push('');
+    lines.push('Content:');
+    lines.push('─'.repeat(40));
+    lines.push(page.content);
   }
 
-  return success(lines.join('\n'))
+  return success(lines.join('\n'));
 }
 
 /**
  * Create a new workspace wiki page
  */
 export async function handleCreateWorkspaceWikiPage(args: unknown) {
-  const input = CreateWorkspaceWikiPageSchema.parse(args)
-  const config = requireAuth()
+  const input = CreateWorkspaceWikiPageSchema.parse(args);
+  const config = requireAuth();
 
   const result = await client.call<WikiPageResponse>(
     config.kanbuUrl,
@@ -1023,9 +1036,9 @@ export async function handleCreateWorkspaceWikiPage(args: unknown) {
     'workspaceWiki.create',
     input,
     'POST'
-  )
+  );
 
-  const page = result.page
+  const page = result.page;
 
   const lines: string[] = [
     'Wiki page created:',
@@ -1036,17 +1049,17 @@ export async function handleCreateWorkspaceWikiPage(args: unknown) {
     `Status: ${page.status}`,
     '',
     `URL: /workspace/${input.workspaceId}/wiki/${page.slug}`,
-  ]
+  ];
 
-  return success(lines.join('\n'))
+  return success(lines.join('\n'));
 }
 
 /**
  * Update a workspace wiki page
  */
 export async function handleUpdateWorkspaceWikiPage(args: unknown) {
-  const input = UpdateWorkspaceWikiPageSchema.parse(args)
-  const config = requireAuth()
+  const input = UpdateWorkspaceWikiPageSchema.parse(args);
+  const config = requireAuth();
 
   const result = await client.call<WikiPageResponse>(
     config.kanbuUrl,
@@ -1054,9 +1067,9 @@ export async function handleUpdateWorkspaceWikiPage(args: unknown) {
     'workspaceWiki.update',
     input,
     'POST'
-  )
+  );
 
-  const page = result.page
+  const page = result.page;
 
   const lines: string[] = [
     'Wiki page updated:',
@@ -1065,17 +1078,17 @@ export async function handleUpdateWorkspaceWikiPage(args: unknown) {
     `ID: ${page.id}`,
     `Version: ${page.currentVersion}`,
     `Updated: ${formatDate(page.updatedAt)}`,
-  ]
+  ];
 
-  return success(lines.join('\n'))
+  return success(lines.join('\n'));
 }
 
 /**
  * Delete a workspace wiki page
  */
 export async function handleDeleteWorkspaceWikiPage(args: unknown) {
-  const { id } = DeleteWorkspaceWikiPageSchema.parse(args)
-  const config = requireAuth()
+  const { id } = DeleteWorkspaceWikiPageSchema.parse(args);
+  const config = requireAuth();
 
   await client.call<{ success: boolean }>(
     config.kanbuUrl,
@@ -1083,84 +1096,84 @@ export async function handleDeleteWorkspaceWikiPage(args: unknown) {
     'workspaceWiki.delete',
     { id },
     'POST'
-  )
+  );
 
-  return success(`Wiki page #${id} deleted.`)
+  return success(`Wiki page #${id} deleted.`);
 }
 
 /**
  * Get version history for a workspace wiki page
  */
 export async function handleGetWorkspaceWikiVersions(args: unknown) {
-  const input = GetWorkspaceWikiVersionsSchema.parse(args)
-  const config = requireAuth()
+  const input = GetWorkspaceWikiVersionsSchema.parse(args);
+  const config = requireAuth();
 
   const versions = await client.call<WikiVersion[]>(
     config.kanbuUrl,
     config.token,
     'workspaceWiki.getVersions',
     input
-  )
+  );
 
   if (!versions || versions.length === 0) {
-    return success('No versions found for this wiki page.')
+    return success('No versions found for this wiki page.');
   }
 
-  const lines: string[] = [`Version History (${versions.length}):`, '']
+  const lines: string[] = [`Version History (${versions.length}):`, ''];
 
   versions.forEach((v) => {
-    lines.push(`v${v.version}: ${v.title}`)
-    lines.push(`   Author: ${formatAuthor(v.author)} | Date: ${formatDate(v.createdAt)}`)
+    lines.push(`v${v.version}: ${v.title}`);
+    lines.push(`   Author: ${formatAuthor(v.author)} | Date: ${formatDate(v.createdAt)}`);
     if (v.changeNote) {
-      lines.push(`   Note: ${v.changeNote}`)
+      lines.push(`   Note: ${v.changeNote}`);
     }
-    lines.push('')
-  })
+    lines.push('');
+  });
 
-  return success(lines.join('\n'))
+  return success(lines.join('\n'));
 }
 
 /**
  * Get a specific version of a workspace wiki page
  */
 export async function handleGetWorkspaceWikiVersion(args: unknown) {
-  const input = GetWorkspaceWikiVersionSchema.parse(args)
-  const config = requireAuth()
+  const input = GetWorkspaceWikiVersionSchema.parse(args);
+  const config = requireAuth();
 
   const version = await client.call<WikiVersion>(
     config.kanbuUrl,
     config.token,
     'workspaceWiki.getVersion',
     input
-  )
+  );
 
   const lines: string[] = [
     `📜 Version ${version.version}: ${version.title}`,
     '',
     `Author: ${formatAuthor(version.author)}`,
     `Date: ${formatDate(version.createdAt)}`,
-  ]
+  ];
 
   if (version.changeNote) {
-    lines.push(`Change note: ${version.changeNote}`)
+    lines.push(`Change note: ${version.changeNote}`);
   }
 
   if (version.content) {
-    lines.push('')
-    lines.push('Content:')
-    lines.push('─'.repeat(40))
-    lines.push(version.content)
+    lines.push('');
+    lines.push('Content:');
+    lines.push('─'.repeat(40));
+    lines.push(version.content);
   }
 
-  return success(lines.join('\n'))
+  return success(lines.join('\n'));
 }
 
 /**
  * Restore an old version of a workspace wiki page
  */
 export async function handleRestoreWorkspaceWikiVersion(args: unknown) {
-  const input = RestoreWorkspaceWikiVersionSchema.parse(args)
-  const config = requireAuth()
+  const input = RestoreWorkspaceWikiVersionSchema.parse(args);
+  const config = requireAuth();
 
   const page = await client.call<WikiPage>(
     config.kanbuUrl,
@@ -1168,7 +1181,7 @@ export async function handleRestoreWorkspaceWikiVersion(args: unknown) {
     'workspaceWiki.restoreVersion',
     input,
     'POST'
-  )
+  );
 
   const lines: string[] = [
     `Wiki page restored from version ${input.version}:`,
@@ -1177,7 +1190,7 @@ export async function handleRestoreWorkspaceWikiVersion(args: unknown) {
     `ID: ${page.id}`,
     `New version: ${page.currentVersion}`,
     `Updated: ${formatDate(page.updatedAt)}`,
-  ]
+  ];
 
-  return success(lines.join('\n'))
+  return success(lines.join('\n'));
 }

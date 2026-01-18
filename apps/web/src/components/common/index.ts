@@ -16,17 +16,17 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-export { ShortcutsModal } from './ShortcutsModal'
-export type { ShortcutsModalProps } from './ShortcutsModal'
+export { ShortcutsModal } from './ShortcutsModal';
+export type { ShortcutsModalProps } from './ShortcutsModal';
 
-export { NotificationBell } from './NotificationBell'
-export type { NotificationBellProps } from './NotificationBell'
+export { NotificationBell } from './NotificationBell';
+export type { NotificationBellProps } from './NotificationBell';
 
-export { NotificationItem } from './NotificationItem'
-export type { NotificationItemProps, NotificationItemData } from './NotificationItem'
+export { NotificationItem } from './NotificationItem';
+export type { NotificationItemProps, NotificationItemData } from './NotificationItem';
 
-export { CanDo, CanDoAny, CanDoAll } from './CanDo'
-export type { CanDoProps, CanDoAnyProps, CanDoAllProps } from './CanDo'
+export { CanDo, CanDoAny, CanDoAll } from './CanDo';
+export type { CanDoProps, CanDoAnyProps, CanDoAllProps } from './CanDo';
 
-export { AclGate, AclGateAll, AclGateAny } from './AclGate'
-export type { AclGateProps, AclGateAllProps, AclGateAnyProps, AclPermissionType } from './AclGate'
+export { AclGate, AclGateAll, AclGateAny } from './AclGate';
+export type { AclGateProps, AclGateAllProps, AclGateAnyProps, AclPermissionType } from './AclGate';

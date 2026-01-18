@@ -8,6 +8,7 @@ If you discover a security vulnerability in Kanbu, please report it responsibly 
 **security@kanbu.dev** or **R.Waslander@gmail.com**
 
 Please include:
+
 - Description of the vulnerability
 - Steps to reproduce (if possible)
 - Potential impact
@@ -20,6 +21,7 @@ We will acknowledge your report within 48 hours and provide updates on our progr
 Kanbu includes several security-focused features:
 
 ### Access Control List (ACL) System
+
 - **NTFS-style permissions** with Read, Write, Execute, Delete, and Permissions controls
 - **Deny-first logic** where explicit deny entries override any grants
 - **Permission inheritance** from workspace to project to task levels
@@ -27,6 +29,7 @@ Kanbu includes several security-focused features:
 - **Audit logging** of all permission changes
 
 ### Data Protection
+
 - **HTTPS-only** communication (enforced on deployment)
 - **JWT token-based** authentication with configurable secrets
 - **Permission-based access** ensures Claude Code and API keys only access what the user allows
@@ -45,12 +48,14 @@ Kanbu includes several security-focused features:
 8. **API Key Management**: Rotate API keys regularly and revoke unused ones
 
 ### Authentication & Authorization
+
 - **Single Sign-On (SSO)** support via OAuth2 (configurable)
 - **Two-Factor Authentication** support (2FA)
 - **Session Management** with automatic timeout
 - **API Key Scoping** (User, Workspace, or Project level)
 
 ### Third-Party Integrations
+
 - **Claude Code Integration**: Uses MCP protocol with permission inheritance
 - **GitHub Integration**: OAuth2-based with minimal required permissions
 - **Custom API Keys**: Generated with limited scopes
@@ -70,6 +75,7 @@ For historical security issues and their resolutions, see: [GitHub Security Advi
 ## Compliance
 
 Kanbu can be deployed to meet various compliance requirements:
+
 - **GDPR**: By using proper access controls and audit logging
 - **HIPAA**: With encrypted storage and audit trails (requires additional configuration)
 - **SOC 2**: With proper monitoring, backups, and access controls
@@ -77,6 +83,7 @@ Kanbu can be deployed to meet various compliance requirements:
 ## Support
 
 For security-related questions or concerns, please contact:
+
 - Email: R.Waslander@gmail.com
 - Security Issues: Use responsible disclosure via the email above
 

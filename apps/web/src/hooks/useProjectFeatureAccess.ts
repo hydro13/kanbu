@@ -17,8 +17,8 @@
  * =============================================================================
  */
 
-import { useMemo } from 'react'
-import { useProjectAcl } from './useAclPermission'
+import { useMemo } from 'react';
+import { useProjectAcl } from './useAclPermission';
 
 // =============================================================================
 // Types
@@ -39,25 +39,32 @@ export type FeatureSlug =
   | 'settings'
   | 'import-export'
   | 'webhooks'
-  | 'github'
+  | 'github';
 
 // Feature categories based on permission requirements
-const BASIC_FEATURES: FeatureSlug[] = ['board', 'list', 'calendar', 'timeline', 'wiki']
-const PLANNING_FEATURES: FeatureSlug[] = ['sprints', 'milestones', 'analytics']
-const MANAGEMENT_FEATURES: FeatureSlug[] = ['details', 'members', 'settings', 'import-export', 'webhooks', 'github']
+const BASIC_FEATURES: FeatureSlug[] = ['board', 'list', 'calendar', 'timeline', 'wiki'];
+const PLANNING_FEATURES: FeatureSlug[] = ['sprints', 'milestones', 'analytics'];
+const MANAGEMENT_FEATURES: FeatureSlug[] = [
+  'details',
+  'members',
+  'settings',
+  'import-export',
+  'webhooks',
+  'github',
+];
 
 export interface UseProjectFeatureAccessResult {
   /** Whether any features are accessible */
-  hasAccess: boolean
+  hasAccess: boolean;
 
   /** Check if a specific feature is visible */
-  canSeeFeature: (slug: FeatureSlug) => boolean
+  canSeeFeature: (slug: FeatureSlug) => boolean;
 
   /** List of all visible feature slugs */
-  visibleFeatures: FeatureSlug[]
+  visibleFeatures: FeatureSlug[];
 
   /** Whether permission data is still loading */
-  isLoading: boolean
+  isLoading: boolean;
 }
 
 // =============================================================================
@@ -65,7 +72,7 @@ export interface UseProjectFeatureAccessResult {
 // =============================================================================
 
 export function useProjectFeatureAccess(projectId: number): UseProjectFeatureAccessResult {
-  const aclResult = useProjectAcl(projectId)
+  const aclResult = useProjectAcl(projectId);
 
   const result = useMemo((): UseProjectFeatureAccessResult => {
     // While loading, show nothing
@@ -75,39 +82,44 @@ export function useProjectFeatureAccess(projectId: number): UseProjectFeatureAcc
         canSeeFeature: () => false,
         visibleFeatures: [],
         isLoading: true,
-      }
+      };
     }
 
     // Build list of visible features based on permissions
-    const visibleFeatures: FeatureSlug[] = []
+    const visibleFeatures: FeatureSlug[] = [];
 
     // READ permission grants access to basic features
     if (aclResult.canRead) {
-      visibleFeatures.push(...BASIC_FEATURES)
+      visibleFeatures.push(...BASIC_FEATURES);
     }
 
     // EXECUTE permission grants access to planning features
     if (aclResult.canExecute) {
-      visibleFeatures.push(...PLANNING_FEATURES)
+      visibleFeatures.push(...PLANNING_FEATURES);
     }
 
     // PERMISSIONS permission grants access to management features
     if (aclResult.canManagePermissions) {
-      visibleFeatures.push(...MANAGEMENT_FEATURES)
+      visibleFeatures.push(...MANAGEMENT_FEATURES);
     }
 
     // Create a Set for fast lookups
-    const visibleSet = new Set(visibleFeatures)
+    const visibleSet = new Set(visibleFeatures);
 
     return {
       hasAccess: visibleFeatures.length > 0,
       canSeeFeature: (slug: FeatureSlug) => visibleSet.has(slug),
       visibleFeatures,
       isLoading: false,
-    }
-  }, [aclResult.isLoading, aclResult.canRead, aclResult.canExecute, aclResult.canManagePermissions])
+    };
+  }, [
+    aclResult.isLoading,
+    aclResult.canRead,
+    aclResult.canExecute,
+    aclResult.canManagePermissions,
+  ]);
 
-  return result
+  return result;
 }
 
-export default useProjectFeatureAccess
+export default useProjectFeatureAccess;

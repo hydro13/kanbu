@@ -27,32 +27,32 @@
  * =============================================================================
  */
 
-import { TRPCError } from '@trpc/server'
-import { AppRole, WorkspaceRole, ProjectRole } from '@prisma/client'
-import { prisma } from '../lib/prisma'
-import { aclService, ACL_PERMISSIONS } from './aclService'
+import { TRPCError } from '@trpc/server';
+import { AppRole, WorkspaceRole, ProjectRole } from '@prisma/client';
+import { prisma } from '../lib/prisma';
+import { aclService, ACL_PERMISSIONS } from './aclService';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface WorkspaceAccess {
-  workspaceId: number
-  userId: number
-  role: WorkspaceRole
+  workspaceId: number;
+  userId: number;
+  role: WorkspaceRole;
 }
 
 export interface ProjectAccess {
-  projectId: number
-  userId: number
-  role: ProjectRole
-  workspaceId: number
-  workspaceRole: WorkspaceRole
+  projectId: number;
+  userId: number;
+  role: ProjectRole;
+  workspaceId: number;
+  workspaceRole: WorkspaceRole;
 }
 
 export interface UserWithRole {
-  id: number
-  role: AppRole
+  id: number;
+  role: AppRole;
 }
 
 // Role hierarchies for permission checks
@@ -61,14 +61,14 @@ const WORKSPACE_ROLE_HIERARCHY: Record<WorkspaceRole, number> = {
   MEMBER: 2,
   ADMIN: 3,
   OWNER: 4,
-}
+};
 
 const PROJECT_ROLE_HIERARCHY: Record<ProjectRole, number> = {
   VIEWER: 1,
   MEMBER: 2,
   MANAGER: 3,
   OWNER: 4,
-}
+};
 
 // =============================================================================
 // PermissionService Class
@@ -84,7 +84,7 @@ export class PermissionService {
    * Super Admins can manage all workspaces, users, and system settings.
    */
   isSuperAdmin(appRole: AppRole): boolean {
-    return appRole === 'ADMIN'
+    return appRole === 'ADMIN';
   }
 
   /**
@@ -95,8 +95,8 @@ export class PermissionService {
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { role: true },
-    })
-    return user?.role === 'ADMIN'
+    });
+    return user?.role === 'ADMIN';
   }
 
   /**
@@ -108,7 +108,7 @@ export class PermissionService {
       throw new TRPCError({
         code: 'FORBIDDEN',
         message: 'This action requires system administrator privileges',
-      })
+      });
     }
   }
 
@@ -129,24 +129,29 @@ export class PermissionService {
     const workspace = await prisma.workspace.findUnique({
       where: { id: workspaceId },
       select: { isActive: true },
-    })
+    });
     if (!workspace?.isActive) {
-      return false
+      return false;
     }
 
     // Super Admins (AppRole.ADMIN) can access all workspaces
     if (await this.isSuperAdminById(userId)) {
-      return true
+      return true;
     }
 
     // Check if user has admin ACL (Super Admin via ACL)
-    const hasAdminAcl = await aclService.hasPermission(userId, 'admin', null, ACL_PERMISSIONS.PERMISSIONS)
+    const hasAdminAcl = await aclService.hasPermission(
+      userId,
+      'admin',
+      null,
+      ACL_PERMISSIONS.PERMISSIONS
+    );
     if (hasAdminAcl) {
-      return true
+      return true;
     }
 
     // Check ACL system for workspace access
-    return aclService.hasPermission(userId, 'workspace', workspaceId, ACL_PERMISSIONS.READ)
+    return aclService.hasPermission(userId, 'workspace', workspaceId, ACL_PERMISSIONS.READ);
   }
 
   /**
@@ -159,36 +164,38 @@ export class PermissionService {
    * - Admin ACL holders: ADMIN
    * - ACL permissions: P=ADMIN, W=MEMBER, R=VIEWER
    */
-  async getWorkspaceRole(
-    userId: number,
-    workspaceId: number
-  ): Promise<WorkspaceRole | null> {
+  async getWorkspaceRole(userId: number, workspaceId: number): Promise<WorkspaceRole | null> {
     // Super Admins have effective OWNER access
     if (await this.isSuperAdminById(userId)) {
-      return 'OWNER'
+      return 'OWNER';
     }
 
     // Check if user has admin ACL (Super Admin via ACL)
-    const hasAdminAcl = await aclService.hasPermission(userId, 'admin', null, ACL_PERMISSIONS.PERMISSIONS)
+    const hasAdminAcl = await aclService.hasPermission(
+      userId,
+      'admin',
+      null,
+      ACL_PERMISSIONS.PERMISSIONS
+    );
     if (hasAdminAcl) {
-      return 'ADMIN'
+      return 'ADMIN';
     }
 
     // Check workspace is active
     const workspace = await prisma.workspace.findUnique({
       where: { id: workspaceId },
       select: { isActive: true },
-    })
+    });
     if (!workspace?.isActive) {
-      return null
+      return null;
     }
 
     // Check ACL-based access (user and group-based)
     const userGroups = await prisma.groupMember.findMany({
       where: { userId },
       select: { groupId: true },
-    })
-    const groupIds = userGroups.map((g) => g.groupId)
+    });
+    const groupIds = userGroups.map((g) => g.groupId);
 
     const aclEntry = await prisma.aclEntry.findFirst({
       where: {
@@ -197,23 +204,25 @@ export class PermissionService {
         deny: false,
         OR: [
           { principalType: 'user', principalId: userId },
-          ...(groupIds.length > 0 ? [{ principalType: 'group', principalId: { in: groupIds } }] : []),
+          ...(groupIds.length > 0
+            ? [{ principalType: 'group', principalId: { in: groupIds } }]
+            : []),
         ],
       },
       select: { permissions: true },
-    })
+    });
 
     if (!aclEntry || (aclEntry.permissions & ACL_PERMISSIONS.READ) === 0) {
-      return null
+      return null;
     }
 
     // Convert ACL permissions to workspace role
     if (aclEntry.permissions & ACL_PERMISSIONS.PERMISSIONS) {
-      return 'ADMIN'
+      return 'ADMIN';
     } else if (aclEntry.permissions & ACL_PERMISSIONS.WRITE) {
-      return 'MEMBER'
+      return 'MEMBER';
     } else {
-      return 'VIEWER'
+      return 'VIEWER';
     }
   }
 
@@ -221,20 +230,17 @@ export class PermissionService {
    * Get workspace access details including role.
    * Returns null if no access.
    */
-  async getWorkspaceAccess(
-    userId: number,
-    workspaceId: number
-  ): Promise<WorkspaceAccess | null> {
-    const role = await this.getWorkspaceRole(userId, workspaceId)
+  async getWorkspaceAccess(userId: number, workspaceId: number): Promise<WorkspaceAccess | null> {
+    const role = await this.getWorkspaceRole(userId, workspaceId);
     if (!role) {
-      return null
+      return null;
     }
 
     return {
       workspaceId,
       userId,
       role,
-    }
+    };
   }
 
   /**
@@ -246,30 +252,30 @@ export class PermissionService {
     workspaceId: number,
     minRole: WorkspaceRole = 'VIEWER'
   ): Promise<WorkspaceAccess> {
-    const access = await this.getWorkspaceAccess(userId, workspaceId)
+    const access = await this.getWorkspaceAccess(userId, workspaceId);
 
     if (!access) {
       throw new TRPCError({
         code: 'FORBIDDEN',
         message: 'You do not have access to this workspace',
-      })
+      });
     }
 
     if (!this.hasMinWorkspaceRole(access.role, minRole)) {
       throw new TRPCError({
         code: 'FORBIDDEN',
         message: `This action requires ${minRole} role or higher`,
-      })
+      });
     }
 
-    return access
+    return access;
   }
 
   /**
    * Check if a workspace role meets the minimum requirement.
    */
   hasMinWorkspaceRole(userRole: WorkspaceRole, minRole: WorkspaceRole): boolean {
-    return WORKSPACE_ROLE_HIERARCHY[userRole] >= WORKSPACE_ROLE_HIERARCHY[minRole]
+    return WORKSPACE_ROLE_HIERARCHY[userRole] >= WORKSPACE_ROLE_HIERARCHY[minRole];
   }
 
   /**
@@ -283,19 +289,19 @@ export class PermissionService {
    */
   async getUserWorkspaces(userId: number): Promise<
     Array<{
-      id: number
-      name: string
-      slug: string
-      role: WorkspaceRole
+      id: number;
+      name: string;
+      slug: string;
+      role: WorkspaceRole;
     }>
   > {
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { role: true },
-    })
+    });
 
     if (!user) {
-      return []
+      return [];
     }
 
     // Super Admins (AppRole.ADMIN) see all workspaces with OWNER role
@@ -304,27 +310,32 @@ export class PermissionService {
         where: { isActive: true },
         select: { id: true, name: true, slug: true },
         orderBy: { name: 'asc' },
-      })
-      return workspaces.map((ws) => ({ ...ws, role: 'OWNER' as WorkspaceRole }))
+      });
+      return workspaces.map((ws) => ({ ...ws, role: 'OWNER' as WorkspaceRole }));
     }
 
     // Check if user has admin ACL (Super Admin via ACL)
-    const hasAdminAcl = await aclService.hasPermission(userId, 'admin', null, ACL_PERMISSIONS.PERMISSIONS)
+    const hasAdminAcl = await aclService.hasPermission(
+      userId,
+      'admin',
+      null,
+      ACL_PERMISSIONS.PERMISSIONS
+    );
     if (hasAdminAcl) {
       const workspaces = await prisma.workspace.findMany({
         where: { isActive: true },
         select: { id: true, name: true, slug: true },
         orderBy: { name: 'asc' },
-      })
-      return workspaces.map((ws) => ({ ...ws, role: 'ADMIN' as WorkspaceRole }))
+      });
+      return workspaces.map((ws) => ({ ...ws, role: 'ADMIN' as WorkspaceRole }));
     }
 
     // Get ACL-based workspace access (user and group-based)
     const userGroups = await prisma.groupMember.findMany({
       where: { userId },
       select: { groupId: true },
-    })
-    const groupIds = userGroups.map((g) => g.groupId)
+    });
+    const groupIds = userGroups.map((g) => g.groupId);
 
     const aclEntries = await prisma.aclEntry.findMany({
       where: {
@@ -333,22 +344,24 @@ export class PermissionService {
         deny: false, // Only allow entries
         OR: [
           { principalType: 'user', principalId: userId },
-          ...(groupIds.length > 0 ? [{ principalType: 'group', principalId: { in: groupIds } }] : []),
+          ...(groupIds.length > 0
+            ? [{ principalType: 'group', principalId: { in: groupIds } }]
+            : []),
         ],
       },
       select: {
         resourceId: true,
         permissions: true,
       },
-    })
+    });
 
     // Filter to entries with READ permission
     const aclWorkspaceIds = aclEntries
       .filter((e) => e.resourceId !== null && (e.permissions & ACL_PERMISSIONS.READ) !== 0)
-      .map((e) => e.resourceId as number)
+      .map((e) => e.resourceId as number);
 
     if (aclWorkspaceIds.length === 0) {
-      return []
+      return [];
     }
 
     const workspaces = await prisma.workspace.findMany({
@@ -358,17 +371,17 @@ export class PermissionService {
       },
       select: { id: true, name: true, slug: true },
       orderBy: { name: 'asc' },
-    })
+    });
 
     return workspaces.map((ws) => {
       // Determine role from ACL permissions
-      const entry = aclEntries.find((e) => e.resourceId === ws.id)
-      const perms = entry?.permissions ?? 0
-      let role: WorkspaceRole = 'VIEWER'
+      const entry = aclEntries.find((e) => e.resourceId === ws.id);
+      const perms = entry?.permissions ?? 0;
+      let role: WorkspaceRole = 'VIEWER';
       if (perms & ACL_PERMISSIONS.PERMISSIONS) {
-        role = 'ADMIN' // Has P permission = admin level
+        role = 'ADMIN'; // Has P permission = admin level
       } else if (perms & ACL_PERMISSIONS.WRITE) {
-        role = 'MEMBER' // Has W permission = member level
+        role = 'MEMBER'; // Has W permission = member level
       }
 
       return {
@@ -376,8 +389,8 @@ export class PermissionService {
         name: ws.name,
         slug: ws.slug,
         role,
-      }
-    })
+      };
+    });
   }
 
   // ===========================================================================
@@ -402,25 +415,30 @@ export class PermissionService {
         isActive: true,
         isPublic: true,
       },
-    })
+    });
 
     if (!project || !project.isActive) {
-      return false
+      return false;
     }
 
     // Public projects are accessible to all authenticated users
     if (project.isPublic) {
-      return true
+      return true;
     }
 
     // Check ACL system (includes inheritance from workspace)
-    const hasAclAccess = await aclService.hasPermission(userId, 'project', projectId, ACL_PERMISSIONS.READ)
+    const hasAclAccess = await aclService.hasPermission(
+      userId,
+      'project',
+      projectId,
+      ACL_PERMISSIONS.READ
+    );
     if (hasAclAccess) {
-      return true
+      return true;
     }
 
     // Workspace access grants project access (ACL-based)
-    return this.canAccessWorkspace(userId, project.workspaceId)
+    return this.canAccessWorkspace(userId, project.workspaceId);
   }
 
   /**
@@ -431,10 +449,7 @@ export class PermissionService {
    * - Project ACL entry (direct or via group)
    * - Derived from workspace role (workspace OWNER/ADMIN = project MANAGER)
    */
-  async getProjectRole(
-    userId: number,
-    projectId: number
-  ): Promise<ProjectRole | null> {
+  async getProjectRole(userId: number, projectId: number): Promise<ProjectRole | null> {
     // Get project with workspace info
     const project = await prisma.project.findUnique({
       where: { id: projectId },
@@ -442,24 +457,24 @@ export class PermissionService {
         workspaceId: true,
         isActive: true,
       },
-    })
+    });
 
     if (!project || !project.isActive) {
-      return null
+      return null;
     }
 
     // Check workspace role first (ACL-based)
-    const workspaceRole = await this.getWorkspaceRole(userId, project.workspaceId)
+    const workspaceRole = await this.getWorkspaceRole(userId, project.workspaceId);
     if (!workspaceRole) {
-      return null
+      return null;
     }
 
     // Check ACL entry for the project (user and group-based)
     const userGroups = await prisma.groupMember.findMany({
       where: { userId },
       select: { groupId: true },
-    })
-    const groupIds = userGroups.map((g) => g.groupId)
+    });
+    const groupIds = userGroups.map((g) => g.groupId);
 
     const aclEntry = await prisma.aclEntry.findFirst({
       where: {
@@ -468,76 +483,75 @@ export class PermissionService {
         deny: false,
         OR: [
           { principalType: 'user', principalId: userId },
-          ...(groupIds.length > 0 ? [{ principalType: 'group', principalId: { in: groupIds } }] : []),
+          ...(groupIds.length > 0
+            ? [{ principalType: 'group', principalId: { in: groupIds } }]
+            : []),
         ],
       },
       select: { permissions: true },
-    })
+    });
 
     // Collect all applicable roles
-    const roles: ProjectRole[] = []
+    const roles: ProjectRole[] = [];
 
     // Add role from project ACL if exists
     if (aclEntry && (aclEntry.permissions & ACL_PERMISSIONS.READ) !== 0) {
       if (aclEntry.permissions & ACL_PERMISSIONS.PERMISSIONS) {
-        roles.push('OWNER') // Has P = owner
+        roles.push('OWNER'); // Has P = owner
       } else if (aclEntry.permissions & ACL_PERMISSIONS.DELETE) {
-        roles.push('MANAGER') // Has D = manager
+        roles.push('MANAGER'); // Has D = manager
       } else if (aclEntry.permissions & ACL_PERMISSIONS.WRITE) {
-        roles.push('MEMBER') // Has W = member
+        roles.push('MEMBER'); // Has W = member
       } else {
-        roles.push('VIEWER') // Has R = viewer
+        roles.push('VIEWER'); // Has R = viewer
       }
     }
 
     // Derive project role from workspace role
-    let derivedRole: ProjectRole
+    let derivedRole: ProjectRole;
     if (workspaceRole === 'OWNER') {
-      derivedRole = 'OWNER'
+      derivedRole = 'OWNER';
     } else if (workspaceRole === 'ADMIN') {
-      derivedRole = 'MANAGER'
+      derivedRole = 'MANAGER';
     } else if (workspaceRole === 'MEMBER') {
-      derivedRole = 'MEMBER'
+      derivedRole = 'MEMBER';
     } else {
-      derivedRole = 'VIEWER'
+      derivedRole = 'VIEWER';
     }
-    roles.push(derivedRole)
+    roles.push(derivedRole);
 
     // Return the highest role
     return roles.reduce((highest, current) => {
-      const currentLevel = PROJECT_ROLE_HIERARCHY[current]
-      const highestLevel = PROJECT_ROLE_HIERARCHY[highest]
-      return currentLevel >= highestLevel ? current : highest
-    })
+      const currentLevel = PROJECT_ROLE_HIERARCHY[current];
+      const highestLevel = PROJECT_ROLE_HIERARCHY[highest];
+      return currentLevel >= highestLevel ? current : highest;
+    });
   }
 
   /**
    * Get project access details including both project and workspace roles.
    */
-  async getProjectAccess(
-    userId: number,
-    projectId: number
-  ): Promise<ProjectAccess | null> {
+  async getProjectAccess(userId: number, projectId: number): Promise<ProjectAccess | null> {
     const project = await prisma.project.findUnique({
       where: { id: projectId },
       select: {
         workspaceId: true,
         isActive: true,
       },
-    })
+    });
 
     if (!project || !project.isActive) {
-      return null
+      return null;
     }
 
-    const workspaceRole = await this.getWorkspaceRole(userId, project.workspaceId)
+    const workspaceRole = await this.getWorkspaceRole(userId, project.workspaceId);
     if (!workspaceRole) {
-      return null
+      return null;
     }
 
-    const projectRole = await this.getProjectRole(userId, projectId)
+    const projectRole = await this.getProjectRole(userId, projectId);
     if (!projectRole) {
-      return null
+      return null;
     }
 
     return {
@@ -546,7 +560,7 @@ export class PermissionService {
       role: projectRole,
       workspaceId: project.workspaceId,
       workspaceRole,
-    }
+    };
   }
 
   /**
@@ -558,30 +572,30 @@ export class PermissionService {
     projectId: number,
     minRole: ProjectRole = 'VIEWER'
   ): Promise<ProjectAccess> {
-    const access = await this.getProjectAccess(userId, projectId)
+    const access = await this.getProjectAccess(userId, projectId);
 
     if (!access) {
       throw new TRPCError({
         code: 'FORBIDDEN',
         message: 'You do not have access to this project',
-      })
+      });
     }
 
     if (!this.hasMinProjectRole(access.role, minRole)) {
       throw new TRPCError({
         code: 'FORBIDDEN',
         message: `This action requires ${minRole} role or higher`,
-      })
+      });
     }
 
-    return access
+    return access;
   }
 
   /**
    * Check if a project role meets the minimum requirement.
    */
   hasMinProjectRole(userRole: ProjectRole, minRole: ProjectRole): boolean {
-    return PROJECT_ROLE_HIERARCHY[userRole] >= PROJECT_ROLE_HIERARCHY[minRole]
+    return PROJECT_ROLE_HIERARCHY[userRole] >= PROJECT_ROLE_HIERARCHY[minRole];
   }
 
   /**
@@ -593,16 +607,16 @@ export class PermissionService {
     workspaceId: number
   ): Promise<
     Array<{
-      id: number
-      name: string
-      identifier: string | null
-      role: ProjectRole
+      id: number;
+      name: string;
+      identifier: string | null;
+      role: ProjectRole;
     }>
   > {
     // First check workspace access (ACL-based)
-    const workspaceRole = await this.getWorkspaceRole(userId, workspaceId)
+    const workspaceRole = await this.getWorkspaceRole(userId, workspaceId);
     if (!workspaceRole) {
-      return []
+      return [];
     }
 
     // Get all projects in workspace
@@ -617,21 +631,21 @@ export class PermissionService {
         identifier: true,
       },
       orderBy: { name: 'asc' },
-    })
+    });
 
     if (projects.length === 0) {
-      return []
+      return [];
     }
 
     // Get user's groups for ACL checks
     const userGroups = await prisma.groupMember.findMany({
       where: { userId },
       select: { groupId: true },
-    })
-    const groupIds = userGroups.map((g) => g.groupId)
+    });
+    const groupIds = userGroups.map((g) => g.groupId);
 
     // Get ACL entries for all projects
-    const projectIds = projects.map((p) => p.id)
+    const projectIds = projects.map((p) => p.id);
     const aclEntries = await prisma.aclEntry.findMany({
       where: {
         resourceType: 'project',
@@ -639,51 +653,53 @@ export class PermissionService {
         deny: false,
         OR: [
           { principalType: 'user', principalId: userId },
-          ...(groupIds.length > 0 ? [{ principalType: 'group', principalId: { in: groupIds } }] : []),
+          ...(groupIds.length > 0
+            ? [{ principalType: 'group', principalId: { in: groupIds } }]
+            : []),
         ],
       },
       select: {
         resourceId: true,
         permissions: true,
       },
-    })
+    });
 
-    const aclMap = new Map(aclEntries.map((e) => [e.resourceId, e.permissions]))
+    const aclMap = new Map(aclEntries.map((e) => [e.resourceId, e.permissions]));
 
     // Derive project role from workspace role
-    let derivedRole: ProjectRole
+    let derivedRole: ProjectRole;
     if (workspaceRole === 'OWNER') {
-      derivedRole = 'OWNER'
+      derivedRole = 'OWNER';
     } else if (workspaceRole === 'ADMIN') {
-      derivedRole = 'MANAGER'
+      derivedRole = 'MANAGER';
     } else if (workspaceRole === 'MEMBER') {
-      derivedRole = 'MEMBER'
+      derivedRole = 'MEMBER';
     } else {
-      derivedRole = 'VIEWER'
+      derivedRole = 'VIEWER';
     }
 
     return projects.map((p) => {
-      const perms = aclMap.get(p.id)
-      let aclRole: ProjectRole | null = null
+      const perms = aclMap.get(p.id);
+      let aclRole: ProjectRole | null = null;
 
       if (perms !== undefined && (perms & ACL_PERMISSIONS.READ) !== 0) {
         if (perms & ACL_PERMISSIONS.PERMISSIONS) {
-          aclRole = 'OWNER'
+          aclRole = 'OWNER';
         } else if (perms & ACL_PERMISSIONS.DELETE) {
-          aclRole = 'MANAGER'
+          aclRole = 'MANAGER';
         } else if (perms & ACL_PERMISSIONS.WRITE) {
-          aclRole = 'MEMBER'
+          aclRole = 'MEMBER';
         } else {
-          aclRole = 'VIEWER'
+          aclRole = 'VIEWER';
         }
       }
 
       // Return highest role between ACL and derived
-      let effectiveRole = derivedRole
+      let effectiveRole = derivedRole;
       if (aclRole) {
-        const aclLevel = PROJECT_ROLE_HIERARCHY[aclRole]
-        const derivedLevel = PROJECT_ROLE_HIERARCHY[derivedRole]
-        effectiveRole = aclLevel >= derivedLevel ? aclRole : derivedRole
+        const aclLevel = PROJECT_ROLE_HIERARCHY[aclRole];
+        const derivedLevel = PROJECT_ROLE_HIERARCHY[derivedRole];
+        effectiveRole = aclLevel >= derivedLevel ? aclRole : derivedRole;
       }
 
       return {
@@ -691,8 +707,8 @@ export class PermissionService {
         name: p.name,
         identifier: p.identifier,
         role: effectiveRole,
-      }
-    })
+      };
+    });
   }
 
   // ===========================================================================
@@ -707,13 +723,13 @@ export class PermissionService {
     const task = await prisma.task.findUnique({
       where: { id: taskId },
       select: { projectId: true, isActive: true },
-    })
+    });
 
     if (!task) {
-      return false
+      return false;
     }
 
-    return this.canAccessProject(userId, task.projectId)
+    return this.canAccessProject(userId, task.projectId);
   }
 
   /**
@@ -724,18 +740,18 @@ export class PermissionService {
     const task = await prisma.task.findUnique({
       where: { id: taskId },
       select: { projectId: true },
-    })
+    });
 
     if (!task) {
-      return false
+      return false;
     }
 
-    const role = await this.getProjectRole(userId, task.projectId)
+    const role = await this.getProjectRole(userId, task.projectId);
     if (!role) {
-      return false
+      return false;
     }
 
-    return this.hasMinProjectRole(role, 'MEMBER')
+    return this.hasMinProjectRole(role, 'MEMBER');
   }
 
   /**
@@ -749,19 +765,19 @@ export class PermissionService {
     const task = await prisma.task.findUnique({
       where: { id: taskId },
       select: { projectId: true, isActive: true },
-    })
+    });
 
     if (!task) {
       throw new TRPCError({
         code: 'NOT_FOUND',
         message: 'Task not found',
-      })
+      });
     }
 
-    const minRole: ProjectRole = requireModify ? 'MEMBER' : 'VIEWER'
-    const projectAccess = await this.requireProjectAccess(userId, task.projectId, minRole)
+    const minRole: ProjectRole = requireModify ? 'MEMBER' : 'VIEWER';
+    const projectAccess = await this.requireProjectAccess(userId, task.projectId, minRole);
 
-    return { projectAccess, taskId }
+    return { projectAccess, taskId };
   }
 
   // ===========================================================================
@@ -773,11 +789,11 @@ export class PermissionService {
    * Requires ADMIN role or higher.
    */
   async canInviteToWorkspace(userId: number, workspaceId: number): Promise<boolean> {
-    const role = await this.getWorkspaceRole(userId, workspaceId)
+    const role = await this.getWorkspaceRole(userId, workspaceId);
     if (!role) {
-      return false
+      return false;
     }
-    return this.hasMinWorkspaceRole(role, 'ADMIN')
+    return this.hasMinWorkspaceRole(role, 'ADMIN');
   }
 
   /**
@@ -785,11 +801,11 @@ export class PermissionService {
    * Requires ADMIN role or higher.
    */
   async canManageWorkspace(userId: number, workspaceId: number): Promise<boolean> {
-    const role = await this.getWorkspaceRole(userId, workspaceId)
+    const role = await this.getWorkspaceRole(userId, workspaceId);
     if (!role) {
-      return false
+      return false;
     }
-    return this.hasMinWorkspaceRole(role, 'ADMIN')
+    return this.hasMinWorkspaceRole(role, 'ADMIN');
   }
 
   /**
@@ -797,8 +813,8 @@ export class PermissionService {
    * Only OWNER can delete.
    */
   async canDeleteWorkspace(userId: number, workspaceId: number): Promise<boolean> {
-    const role = await this.getWorkspaceRole(userId, workspaceId)
-    return role === 'OWNER'
+    const role = await this.getWorkspaceRole(userId, workspaceId);
+    return role === 'OWNER';
   }
 
   /**
@@ -806,11 +822,11 @@ export class PermissionService {
    * Requires MANAGER role or higher.
    */
   async canManageProject(userId: number, projectId: number): Promise<boolean> {
-    const role = await this.getProjectRole(userId, projectId)
+    const role = await this.getProjectRole(userId, projectId);
     if (!role) {
-      return false
+      return false;
     }
-    return this.hasMinProjectRole(role, 'MANAGER')
+    return this.hasMinProjectRole(role, 'MANAGER');
   }
 
   /**
@@ -818,18 +834,18 @@ export class PermissionService {
    * Only project OWNER or workspace OWNER/ADMIN can delete.
    */
   async canDeleteProject(userId: number, projectId: number): Promise<boolean> {
-    const access = await this.getProjectAccess(userId, projectId)
+    const access = await this.getProjectAccess(userId, projectId);
     if (!access) {
-      return false
+      return false;
     }
 
     // Workspace OWNER/ADMIN can delete any project
     if (this.hasMinWorkspaceRole(access.workspaceRole, 'ADMIN')) {
-      return true
+      return true;
     }
 
     // Project OWNER can delete their project
-    return access.role === 'OWNER'
+    return access.role === 'OWNER';
   }
 }
 
@@ -841,4 +857,4 @@ export class PermissionService {
  * Singleton instance of PermissionService.
  * Use this for all permission checks across the application.
  */
-export const permissionService = new PermissionService()
+export const permissionService = new PermissionService();

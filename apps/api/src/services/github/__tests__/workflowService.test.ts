@@ -13,7 +13,7 @@
  * =============================================================================
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock prisma
 vi.mock('../../../lib/prisma', () => ({
@@ -35,15 +35,15 @@ vi.mock('../../../lib/prisma', () => ({
       count: vi.fn(),
     },
   },
-}))
+}));
 
 // Mock githubService
 vi.mock('../githubService', () => ({
   getInstallationOctokit: vi.fn(),
-}))
+}));
 
-import { prisma } from '../../../lib/prisma'
-import { getInstallationOctokit } from '../githubService'
+import { prisma } from '../../../lib/prisma';
+import { getInstallationOctokit } from '../githubService';
 import {
   upsertWorkflowRun,
   getWorkflowRuns,
@@ -57,7 +57,7 @@ import {
   getWorkflowStats,
   processWorkflowRunEvent,
   type WorkflowRunData,
-} from '../workflowService'
+} from '../workflowService';
 
 // =============================================================================
 // Test Data
@@ -79,7 +79,7 @@ const mockWorkflowRunData: WorkflowRunData = {
   actor: 'testuser',
   startedAt: new Date('2026-01-09T10:00:00Z'),
   completedAt: new Date('2026-01-09T10:05:00Z'),
-}
+};
 
 const mockWorkflowRun = {
   id: 1,
@@ -111,7 +111,7 @@ const mockWorkflowRun = {
   },
   task: null,
   pullRequest: null,
-}
+};
 
 // =============================================================================
 // Upsert Workflow Run Tests
@@ -119,17 +119,17 @@ const mockWorkflowRun = {
 
 describe('upsertWorkflowRun', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-  })
+    vi.clearAllMocks();
+  });
 
   it('should create a new workflow run', async () => {
-    vi.mocked(prisma.task.findFirst).mockResolvedValue(null)
-    vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue(null)
-    vi.mocked(prisma.gitHubWorkflowRun.upsert).mockResolvedValue({ id: 1 } as any)
+    vi.mocked(prisma.task.findFirst).mockResolvedValue(null);
+    vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue(null);
+    vi.mocked(prisma.gitHubWorkflowRun.upsert).mockResolvedValue({ id: 1 } as any);
 
-    const result = await upsertWorkflowRun(mockWorkflowRunData)
+    const result = await upsertWorkflowRun(mockWorkflowRunData);
 
-    expect(result).toEqual({ id: 1 })
+    expect(result).toEqual({ id: 1 });
     expect(prisma.gitHubWorkflowRun.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
         where: {
@@ -139,15 +139,15 @@ describe('upsertWorkflowRun', () => {
           },
         },
       })
-    )
-  })
+    );
+  });
 
   it('should link to task when branch matches', async () => {
-    vi.mocked(prisma.task.findFirst).mockResolvedValue({ id: 42 } as any)
-    vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue(null)
-    vi.mocked(prisma.gitHubWorkflowRun.upsert).mockResolvedValue({ id: 1 } as any)
+    vi.mocked(prisma.task.findFirst).mockResolvedValue({ id: 42 } as any);
+    vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue(null);
+    vi.mocked(prisma.gitHubWorkflowRun.upsert).mockResolvedValue({ id: 1 } as any);
 
-    await upsertWorkflowRun(mockWorkflowRunData)
+    await upsertWorkflowRun(mockWorkflowRunData);
 
     expect(prisma.gitHubWorkflowRun.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -155,16 +155,16 @@ describe('upsertWorkflowRun', () => {
           taskId: 42,
         }),
       })
-    )
-  })
+    );
+  });
 
   it('should link to PR when branch matches', async () => {
-    vi.mocked(prisma.task.findFirst).mockResolvedValue(null)
-    vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue({ id: 1 } as any)
-    vi.mocked(prisma.gitHubPullRequest.findFirst).mockResolvedValue({ id: 99 } as any)
-    vi.mocked(prisma.gitHubWorkflowRun.upsert).mockResolvedValue({ id: 1 } as any)
+    vi.mocked(prisma.task.findFirst).mockResolvedValue(null);
+    vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue({ id: 1 } as any);
+    vi.mocked(prisma.gitHubPullRequest.findFirst).mockResolvedValue({ id: 99 } as any);
+    vi.mocked(prisma.gitHubWorkflowRun.upsert).mockResolvedValue({ id: 1 } as any);
 
-    await upsertWorkflowRun(mockWorkflowRunData)
+    await upsertWorkflowRun(mockWorkflowRunData);
 
     expect(prisma.gitHubWorkflowRun.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -172,9 +172,9 @@ describe('upsertWorkflowRun', () => {
           pullRequestId: 99,
         }),
       })
-    )
-  })
-})
+    );
+  });
+});
 
 // =============================================================================
 // Get Workflow Runs Tests
@@ -182,26 +182,26 @@ describe('upsertWorkflowRun', () => {
 
 describe('getWorkflowRuns', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-  })
+    vi.clearAllMocks();
+  });
 
   it('should return workflow runs with pagination', async () => {
-    const mockRuns = [mockWorkflowRun, { ...mockWorkflowRun, id: 2 }]
-    vi.mocked(prisma.gitHubWorkflowRun.findMany).mockResolvedValue(mockRuns as any)
-    vi.mocked(prisma.gitHubWorkflowRun.count).mockResolvedValue(5)
+    const mockRuns = [mockWorkflowRun, { ...mockWorkflowRun, id: 2 }];
+    vi.mocked(prisma.gitHubWorkflowRun.findMany).mockResolvedValue(mockRuns as any);
+    vi.mocked(prisma.gitHubWorkflowRun.count).mockResolvedValue(5);
 
-    const result = await getWorkflowRuns(1, {}, 2, 0)
+    const result = await getWorkflowRuns(1, {}, 2, 0);
 
-    expect(result.runs).toHaveLength(2)
-    expect(result.total).toBe(5)
-    expect(result.hasMore).toBe(true)
-  })
+    expect(result.runs).toHaveLength(2);
+    expect(result.total).toBe(5);
+    expect(result.hasMore).toBe(true);
+  });
 
   it('should apply status filter', async () => {
-    vi.mocked(prisma.gitHubWorkflowRun.findMany).mockResolvedValue([])
-    vi.mocked(prisma.gitHubWorkflowRun.count).mockResolvedValue(0)
+    vi.mocked(prisma.gitHubWorkflowRun.findMany).mockResolvedValue([]);
+    vi.mocked(prisma.gitHubWorkflowRun.count).mockResolvedValue(0);
 
-    await getWorkflowRuns(1, { status: 'completed' })
+    await getWorkflowRuns(1, { status: 'completed' });
 
     expect(prisma.gitHubWorkflowRun.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -209,14 +209,14 @@ describe('getWorkflowRuns', () => {
           status: 'completed',
         }),
       })
-    )
-  })
+    );
+  });
 
   it('should apply conclusion filter', async () => {
-    vi.mocked(prisma.gitHubWorkflowRun.findMany).mockResolvedValue([])
-    vi.mocked(prisma.gitHubWorkflowRun.count).mockResolvedValue(0)
+    vi.mocked(prisma.gitHubWorkflowRun.findMany).mockResolvedValue([]);
+    vi.mocked(prisma.gitHubWorkflowRun.count).mockResolvedValue(0);
 
-    await getWorkflowRuns(1, { conclusion: 'failure' })
+    await getWorkflowRuns(1, { conclusion: 'failure' });
 
     expect(prisma.gitHubWorkflowRun.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -224,14 +224,14 @@ describe('getWorkflowRuns', () => {
           conclusion: 'failure',
         }),
       })
-    )
-  })
+    );
+  });
 
   it('should apply branch filter', async () => {
-    vi.mocked(prisma.gitHubWorkflowRun.findMany).mockResolvedValue([])
-    vi.mocked(prisma.gitHubWorkflowRun.count).mockResolvedValue(0)
+    vi.mocked(prisma.gitHubWorkflowRun.findMany).mockResolvedValue([]);
+    vi.mocked(prisma.gitHubWorkflowRun.count).mockResolvedValue(0);
 
-    await getWorkflowRuns(1, { branch: 'main' })
+    await getWorkflowRuns(1, { branch: 'main' });
 
     expect(prisma.gitHubWorkflowRun.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -239,9 +239,9 @@ describe('getWorkflowRuns', () => {
           headBranch: 'main',
         }),
       })
-    )
-  })
-})
+    );
+  });
+});
 
 // =============================================================================
 // Get Task Workflow Runs Tests
@@ -249,19 +249,19 @@ describe('getWorkflowRuns', () => {
 
 describe('getTaskWorkflowRuns', () => {
   it('should return workflow runs for a task', async () => {
-    const mockRuns = [mockWorkflowRun]
-    vi.mocked(prisma.gitHubWorkflowRun.findMany).mockResolvedValue(mockRuns as any)
+    const mockRuns = [mockWorkflowRun];
+    vi.mocked(prisma.gitHubWorkflowRun.findMany).mockResolvedValue(mockRuns as any);
 
-    const result = await getTaskWorkflowRuns(42)
+    const result = await getTaskWorkflowRuns(42);
 
-    expect(result.runs).toHaveLength(1)
+    expect(result.runs).toHaveLength(1);
     expect(prisma.gitHubWorkflowRun.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { taskId: 42 },
       })
-    )
-  })
-})
+    );
+  });
+});
 
 // =============================================================================
 // Get PR Workflow Runs Tests
@@ -269,19 +269,19 @@ describe('getTaskWorkflowRuns', () => {
 
 describe('getPRWorkflowRuns', () => {
   it('should return workflow runs for a PR', async () => {
-    const mockRuns = [mockWorkflowRun]
-    vi.mocked(prisma.gitHubWorkflowRun.findMany).mockResolvedValue(mockRuns as any)
+    const mockRuns = [mockWorkflowRun];
+    vi.mocked(prisma.gitHubWorkflowRun.findMany).mockResolvedValue(mockRuns as any);
 
-    const result = await getPRWorkflowRuns(99)
+    const result = await getPRWorkflowRuns(99);
 
-    expect(result.runs).toHaveLength(1)
+    expect(result.runs).toHaveLength(1);
     expect(prisma.gitHubWorkflowRun.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { pullRequestId: 99 },
       })
-    )
-  })
-})
+    );
+  });
+});
 
 // =============================================================================
 // Get Workflow Run Details Tests
@@ -289,12 +289,12 @@ describe('getPRWorkflowRuns', () => {
 
 describe('getWorkflowRunDetails', () => {
   it('should return workflow run with relations', async () => {
-    vi.mocked(prisma.gitHubWorkflowRun.findUnique).mockResolvedValue(mockWorkflowRun as any)
+    vi.mocked(prisma.gitHubWorkflowRun.findUnique).mockResolvedValue(mockWorkflowRun as any);
 
-    const result = await getWorkflowRunDetails(1)
+    const result = await getWorkflowRunDetails(1);
 
-    expect(result).toBeDefined()
-    expect(result?.id).toBe(1)
+    expect(result).toBeDefined();
+    expect(result?.id).toBe(1);
     expect(prisma.gitHubWorkflowRun.findUnique).toHaveBeenCalledWith(
       expect.objectContaining({
         include: expect.objectContaining({
@@ -303,17 +303,17 @@ describe('getWorkflowRunDetails', () => {
           pullRequest: expect.any(Object),
         }),
       })
-    )
-  })
+    );
+  });
 
   it('should return null for non-existent run', async () => {
-    vi.mocked(prisma.gitHubWorkflowRun.findUnique).mockResolvedValue(null)
+    vi.mocked(prisma.gitHubWorkflowRun.findUnique).mockResolvedValue(null);
 
-    const result = await getWorkflowRunDetails(999)
+    const result = await getWorkflowRunDetails(999);
 
-    expect(result).toBeNull()
-  })
-})
+    expect(result).toBeNull();
+  });
+});
 
 // =============================================================================
 // Rerun Workflow Tests
@@ -321,50 +321,50 @@ describe('getWorkflowRunDetails', () => {
 
 describe('rerunWorkflow', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-  })
+    vi.clearAllMocks();
+  });
 
   it('should return error if workflow run not found', async () => {
-    vi.mocked(prisma.gitHubWorkflowRun.findUnique).mockResolvedValue(null)
+    vi.mocked(prisma.gitHubWorkflowRun.findUnique).mockResolvedValue(null);
 
-    const result = await rerunWorkflow(999)
+    const result = await rerunWorkflow(999);
 
-    expect(result.success).toBe(false)
-    expect(result.message).toBe('Workflow run not found')
-  })
+    expect(result.success).toBe(false);
+    expect(result.message).toBe('Workflow run not found');
+  });
 
   it('should return error if workflow not completed', async () => {
     vi.mocked(prisma.gitHubWorkflowRun.findUnique).mockResolvedValue({
       ...mockWorkflowRun,
       status: 'in_progress',
-    } as any)
+    } as any);
 
-    const result = await rerunWorkflow(1)
+    const result = await rerunWorkflow(1);
 
-    expect(result.success).toBe(false)
-    expect(result.message).toBe('Can only re-run completed workflows')
-  })
+    expect(result.success).toBe(false);
+    expect(result.message).toBe('Can only re-run completed workflows');
+  });
 
   it('should successfully rerun workflow', async () => {
-    vi.mocked(prisma.gitHubWorkflowRun.findUnique).mockResolvedValue(mockWorkflowRun as any)
+    vi.mocked(prisma.gitHubWorkflowRun.findUnique).mockResolvedValue(mockWorkflowRun as any);
     const mockOctokit = {
       actions: {
         reRunWorkflow: vi.fn().mockResolvedValue({}),
       },
-    }
-    vi.mocked(getInstallationOctokit).mockResolvedValue(mockOctokit as any)
+    };
+    vi.mocked(getInstallationOctokit).mockResolvedValue(mockOctokit as any);
 
-    const result = await rerunWorkflow(1)
+    const result = await rerunWorkflow(1);
 
-    expect(result.success).toBe(true)
-    expect(result.message).toBe('Workflow re-run initiated')
+    expect(result.success).toBe(true);
+    expect(result.message).toBe('Workflow re-run initiated');
     expect(mockOctokit.actions.reRunWorkflow).toHaveBeenCalledWith({
       owner: 'testowner',
       repo: 'testrepo',
       run_id: 12345678,
-    })
-  })
-})
+    });
+  });
+});
 
 // =============================================================================
 // Rerun Failed Jobs Tests
@@ -372,48 +372,48 @@ describe('rerunWorkflow', () => {
 
 describe('rerunFailedJobs', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-  })
+    vi.clearAllMocks();
+  });
 
   it('should return error if workflow run not found', async () => {
-    vi.mocked(prisma.gitHubWorkflowRun.findUnique).mockResolvedValue(null)
+    vi.mocked(prisma.gitHubWorkflowRun.findUnique).mockResolvedValue(null);
 
-    const result = await rerunFailedJobs(999)
+    const result = await rerunFailedJobs(999);
 
-    expect(result.success).toBe(false)
-    expect(result.message).toBe('Workflow run not found')
-  })
+    expect(result.success).toBe(false);
+    expect(result.message).toBe('Workflow run not found');
+  });
 
   it('should return error if conclusion is not failure', async () => {
     vi.mocked(prisma.gitHubWorkflowRun.findUnique).mockResolvedValue({
       ...mockWorkflowRun,
       conclusion: 'success',
-    } as any)
+    } as any);
 
-    const result = await rerunFailedJobs(1)
+    const result = await rerunFailedJobs(1);
 
-    expect(result.success).toBe(false)
-    expect(result.message).toBe('Can only re-run failed jobs from failed workflows')
-  })
+    expect(result.success).toBe(false);
+    expect(result.message).toBe('Can only re-run failed jobs from failed workflows');
+  });
 
   it('should successfully rerun failed jobs', async () => {
     vi.mocked(prisma.gitHubWorkflowRun.findUnique).mockResolvedValue({
       ...mockWorkflowRun,
       conclusion: 'failure',
-    } as any)
+    } as any);
     const mockOctokit = {
       actions: {
         reRunWorkflowFailedJobs: vi.fn().mockResolvedValue({}),
       },
-    }
-    vi.mocked(getInstallationOctokit).mockResolvedValue(mockOctokit as any)
+    };
+    vi.mocked(getInstallationOctokit).mockResolvedValue(mockOctokit as any);
 
-    const result = await rerunFailedJobs(1)
+    const result = await rerunFailedJobs(1);
 
-    expect(result.success).toBe(true)
-    expect(result.message).toBe('Failed jobs re-run initiated')
-  })
-})
+    expect(result.success).toBe(true);
+    expect(result.message).toBe('Failed jobs re-run initiated');
+  });
+});
 
 // =============================================================================
 // Cancel Workflow Tests
@@ -421,45 +421,45 @@ describe('rerunFailedJobs', () => {
 
 describe('cancelWorkflow', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-  })
+    vi.clearAllMocks();
+  });
 
   it('should return error if workflow run not found', async () => {
-    vi.mocked(prisma.gitHubWorkflowRun.findUnique).mockResolvedValue(null)
+    vi.mocked(prisma.gitHubWorkflowRun.findUnique).mockResolvedValue(null);
 
-    const result = await cancelWorkflow(999)
+    const result = await cancelWorkflow(999);
 
-    expect(result.success).toBe(false)
-    expect(result.message).toBe('Workflow run not found')
-  })
+    expect(result.success).toBe(false);
+    expect(result.message).toBe('Workflow run not found');
+  });
 
   it('should return error if workflow already completed', async () => {
-    vi.mocked(prisma.gitHubWorkflowRun.findUnique).mockResolvedValue(mockWorkflowRun as any)
+    vi.mocked(prisma.gitHubWorkflowRun.findUnique).mockResolvedValue(mockWorkflowRun as any);
 
-    const result = await cancelWorkflow(1)
+    const result = await cancelWorkflow(1);
 
-    expect(result.success).toBe(false)
-    expect(result.message).toBe('Cannot cancel completed workflow')
-  })
+    expect(result.success).toBe(false);
+    expect(result.message).toBe('Cannot cancel completed workflow');
+  });
 
   it('should successfully cancel running workflow', async () => {
     vi.mocked(prisma.gitHubWorkflowRun.findUnique).mockResolvedValue({
       ...mockWorkflowRun,
       status: 'in_progress',
-    } as any)
+    } as any);
     const mockOctokit = {
       actions: {
         cancelWorkflowRun: vi.fn().mockResolvedValue({}),
       },
-    }
-    vi.mocked(getInstallationOctokit).mockResolvedValue(mockOctokit as any)
+    };
+    vi.mocked(getInstallationOctokit).mockResolvedValue(mockOctokit as any);
 
-    const result = await cancelWorkflow(1)
+    const result = await cancelWorkflow(1);
 
-    expect(result.success).toBe(true)
-    expect(result.message).toBe('Workflow cancelled')
-  })
-})
+    expect(result.success).toBe(true);
+    expect(result.message).toBe('Workflow cancelled');
+  });
+});
 
 // =============================================================================
 // Get Workflow Jobs Tests
@@ -467,19 +467,19 @@ describe('cancelWorkflow', () => {
 
 describe('getWorkflowJobs', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-  })
+    vi.clearAllMocks();
+  });
 
   it('should return empty array if workflow run not found', async () => {
-    vi.mocked(prisma.gitHubWorkflowRun.findUnique).mockResolvedValue(null)
+    vi.mocked(prisma.gitHubWorkflowRun.findUnique).mockResolvedValue(null);
 
-    const result = await getWorkflowJobs(999)
+    const result = await getWorkflowJobs(999);
 
-    expect(result.jobs).toEqual([])
-  })
+    expect(result.jobs).toEqual([]);
+  });
 
   it('should return jobs from GitHub API', async () => {
-    vi.mocked(prisma.gitHubWorkflowRun.findUnique).mockResolvedValue(mockWorkflowRun as any)
+    vi.mocked(prisma.gitHubWorkflowRun.findUnique).mockResolvedValue(mockWorkflowRun as any);
     const mockJobs = [
       {
         id: 1001,
@@ -499,21 +499,21 @@ describe('getWorkflowJobs', () => {
           },
         ],
       },
-    ]
+    ];
     const mockOctokit = {
       actions: {
         listJobsForWorkflowRun: vi.fn().mockResolvedValue({ data: { jobs: mockJobs } }),
       },
-    }
-    vi.mocked(getInstallationOctokit).mockResolvedValue(mockOctokit as any)
+    };
+    vi.mocked(getInstallationOctokit).mockResolvedValue(mockOctokit as any);
 
-    const result = await getWorkflowJobs(1)
+    const result = await getWorkflowJobs(1);
 
-    expect(result.jobs).toHaveLength(1)
-    expect(result.jobs[0]!.name).toBe('build')
-    expect(result.jobs[0]!.steps).toHaveLength(1)
-  })
-})
+    expect(result.jobs).toHaveLength(1);
+    expect(result.jobs[0]!.name).toBe('build');
+    expect(result.jobs[0]!.steps).toHaveLength(1);
+  });
+});
 
 // =============================================================================
 // Get Workflow Stats Tests
@@ -522,34 +522,52 @@ describe('getWorkflowJobs', () => {
 describe('getWorkflowStats', () => {
   it('should return workflow statistics', async () => {
     const mockRuns = [
-      { status: 'completed', conclusion: 'success', workflowName: 'CI', startedAt: new Date(), completedAt: new Date(Date.now() + 300000) },
-      { status: 'completed', conclusion: 'failure', workflowName: 'CI', startedAt: new Date(), completedAt: new Date(Date.now() + 600000) },
-      { status: 'completed', conclusion: 'success', workflowName: 'Deploy', startedAt: new Date(), completedAt: new Date(Date.now() + 120000) },
-    ]
-    vi.mocked(prisma.gitHubWorkflowRun.findMany).mockResolvedValue(mockRuns as any)
+      {
+        status: 'completed',
+        conclusion: 'success',
+        workflowName: 'CI',
+        startedAt: new Date(),
+        completedAt: new Date(Date.now() + 300000),
+      },
+      {
+        status: 'completed',
+        conclusion: 'failure',
+        workflowName: 'CI',
+        startedAt: new Date(),
+        completedAt: new Date(Date.now() + 600000),
+      },
+      {
+        status: 'completed',
+        conclusion: 'success',
+        workflowName: 'Deploy',
+        startedAt: new Date(),
+        completedAt: new Date(Date.now() + 120000),
+      },
+    ];
+    vi.mocked(prisma.gitHubWorkflowRun.findMany).mockResolvedValue(mockRuns as any);
 
-    const result = await getWorkflowStats(1, 30)
+    const result = await getWorkflowStats(1, 30);
 
-    expect(result.total).toBe(3)
-    expect(result.byConclusion).toHaveProperty('success', 2)
-    expect(result.byConclusion).toHaveProperty('failure', 1)
-    expect(result.byWorkflow).toHaveProperty('CI')
-    expect(result.byWorkflow['CI']!.total).toBe(2)
-    expect(result.byWorkflow['CI']!.success).toBe(1)
-    expect(result.byWorkflow['CI']!.failure).toBe(1)
-    expect(result.successRate).toBeCloseTo(66.7, 0)
-  })
+    expect(result.total).toBe(3);
+    expect(result.byConclusion).toHaveProperty('success', 2);
+    expect(result.byConclusion).toHaveProperty('failure', 1);
+    expect(result.byWorkflow).toHaveProperty('CI');
+    expect(result.byWorkflow['CI']!.total).toBe(2);
+    expect(result.byWorkflow['CI']!.success).toBe(1);
+    expect(result.byWorkflow['CI']!.failure).toBe(1);
+    expect(result.successRate).toBeCloseTo(66.7, 0);
+  });
 
   it('should return empty stats when no runs', async () => {
-    vi.mocked(prisma.gitHubWorkflowRun.findMany).mockResolvedValue([])
+    vi.mocked(prisma.gitHubWorkflowRun.findMany).mockResolvedValue([]);
 
-    const result = await getWorkflowStats(1)
+    const result = await getWorkflowStats(1);
 
-    expect(result.total).toBe(0)
-    expect(result.successRate).toBe(0)
-    expect(result.avgDurationMinutes).toBe(0)
-  })
-})
+    expect(result.total).toBe(0);
+    expect(result.successRate).toBe(0);
+    expect(result.avgDurationMinutes).toBe(0);
+  });
+});
 
 // =============================================================================
 // Process Workflow Run Event Tests
@@ -557,13 +575,13 @@ describe('getWorkflowStats', () => {
 
 describe('processWorkflowRunEvent', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-  })
+    vi.clearAllMocks();
+  });
 
   it('should process workflow_run webhook event', async () => {
-    vi.mocked(prisma.task.findFirst).mockResolvedValue(null)
-    vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue(null)
-    vi.mocked(prisma.gitHubWorkflowRun.upsert).mockResolvedValue({ id: 1 } as any)
+    vi.mocked(prisma.task.findFirst).mockResolvedValue(null);
+    vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue(null);
+    vi.mocked(prisma.gitHubWorkflowRun.upsert).mockResolvedValue({ id: 1 } as any);
 
     const webhookPayload = {
       id: 12345678,
@@ -580,17 +598,17 @@ describe('processWorkflowRunEvent', () => {
       actor: { login: 'testuser' },
       run_started_at: '2026-01-09T10:00:00Z',
       updated_at: '2026-01-09T10:05:00Z',
-    }
+    };
 
-    await processWorkflowRunEvent(1, 'completed', webhookPayload)
+    await processWorkflowRunEvent(1, 'completed', webhookPayload);
 
-    expect(prisma.gitHubWorkflowRun.upsert).toHaveBeenCalled()
-  })
+    expect(prisma.gitHubWorkflowRun.upsert).toHaveBeenCalled();
+  });
 
   it('should handle completed event with completedAt', async () => {
-    vi.mocked(prisma.task.findFirst).mockResolvedValue(null)
-    vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue(null)
-    vi.mocked(prisma.gitHubWorkflowRun.upsert).mockResolvedValue({ id: 1 } as any)
+    vi.mocked(prisma.task.findFirst).mockResolvedValue(null);
+    vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue(null);
+    vi.mocked(prisma.gitHubWorkflowRun.upsert).mockResolvedValue({ id: 1 } as any);
 
     const webhookPayload = {
       id: 12345678,
@@ -607,9 +625,9 @@ describe('processWorkflowRunEvent', () => {
       actor: null,
       run_started_at: '2026-01-09T10:00:00Z',
       updated_at: '2026-01-09T10:05:00Z',
-    }
+    };
 
-    await processWorkflowRunEvent(1, 'completed', webhookPayload)
+    await processWorkflowRunEvent(1, 'completed', webhookPayload);
 
     expect(prisma.gitHubWorkflowRun.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -617,6 +635,6 @@ describe('processWorkflowRunEvent', () => {
           completedAt: expect.any(Date),
         }),
       })
-    )
-  })
-})
+    );
+  });
+});

@@ -9,4 +9,4 @@ export {
   buildProjectionFromEdges,
   getClusterStats,
   mergeSmallClusters,
-} from './labelPropagation'
+} from './labelPropagation';

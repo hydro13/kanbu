@@ -33,7 +33,7 @@ export const CHUNK_CONFIG = {
   CHARS_PER_TOKEN: 4,
   /** Maximum parallel LLM calls for chunk processing */
   MAX_PARALLEL_CHUNKS: 5,
-} as const
+} as const;
 
 // =============================================================================
 // Types
@@ -44,13 +44,13 @@ export const CHUNK_CONFIG = {
  */
 export interface ChunkingConfig {
   /** Target chunk size in tokens (default: 3000) */
-  chunkTokenSize?: number
+  chunkTokenSize?: number;
   /** Overlap between chunks in tokens (default: 200) */
-  chunkOverlapTokens?: number
+  chunkOverlapTokens?: number;
   /** Minimum tokens before splitting (default: 1000) */
-  chunkMinTokens?: number
+  chunkMinTokens?: number;
   /** Characters per token estimate (default: 4) */
-  charsPerToken?: number
+  charsPerToken?: number;
 }
 
 /**
@@ -58,17 +58,17 @@ export interface ChunkingConfig {
  */
 export interface ContentChunk {
   /** Chunk index (0-based) */
-  index: number
+  index: number;
   /** Chunk text content */
-  text: string
+  text: string;
   /** Estimated token count */
-  tokenCount: number
+  tokenCount: number;
   /** Start position in original text */
-  startOffset: number
+  startOffset: number;
   /** End position in original text */
-  endOffset: number
+  endOffset: number;
   /** Markdown context (header hierarchy, etc.) */
-  context?: ChunkContext
+  context?: ChunkContext;
 }
 
 /**
@@ -76,11 +76,11 @@ export interface ContentChunk {
  */
 export interface ChunkContext {
   /** Current section header (if any) */
-  sectionHeader?: string
+  sectionHeader?: string;
   /** Parent headers hierarchy */
-  headerPath?: string[]
+  headerPath?: string[];
   /** Is inside code block */
-  inCodeBlock?: boolean
+  inCodeBlock?: boolean;
 }
 
 /**
@@ -88,15 +88,15 @@ export interface ChunkContext {
  */
 export interface ChunkingResult {
   /** Original text */
-  originalText: string
+  originalText: string;
   /** Total estimated tokens in original */
-  totalTokens: number
+  totalTokens: number;
   /** Generated chunks */
-  chunks: ContentChunk[]
+  chunks: ContentChunk[];
   /** Was content actually chunked or passed through */
-  wasChunked: boolean
+  wasChunked: boolean;
   /** Chunking strategy used */
-  strategy: 'passthrough' | 'markdown' | 'paragraph' | 'sentence' | 'fixed'
+  strategy: 'passthrough' | 'markdown' | 'paragraph' | 'sentence' | 'fixed';
 }
 
 /**
@@ -104,15 +104,15 @@ export interface ChunkingResult {
  */
 interface MarkdownSection {
   /** Header text (e.g., "## Introduction") */
-  header: string
+  header: string;
   /** Header level (1-6) */
-  level: number
+  level: number;
   /** Section content (excluding header) */
-  content: string
+  content: string;
   /** Full section (header + content) */
-  fullText: string
+  fullText: string;
   /** Start offset in original text */
-  startOffset: number
+  startOffset: number;
 }
 
 // =============================================================================
@@ -126,7 +126,7 @@ interface MarkdownSection {
  * adapted for Markdown wiki content.
  */
 export class ChunkingService {
-  private readonly config: Required<ChunkingConfig>
+  private readonly config: Required<ChunkingConfig>;
 
   constructor(config?: ChunkingConfig) {
     this.config = {
@@ -134,7 +134,7 @@ export class ChunkingService {
       chunkOverlapTokens: config?.chunkOverlapTokens ?? CHUNK_CONFIG.CHUNK_OVERLAP_TOKENS,
       chunkMinTokens: config?.chunkMinTokens ?? CHUNK_CONFIG.CHUNK_MIN_TOKENS,
       charsPerToken: config?.charsPerToken ?? CHUNK_CONFIG.CHARS_PER_TOKEN,
-    }
+    };
   }
 
   // ===========================================================================
@@ -146,9 +146,9 @@ export class ChunkingService {
    */
   needsChunking(text: string): boolean {
     if (!text || text.trim().length === 0) {
-      return false
+      return false;
     }
-    return this.estimateTokens(text) >= this.config.chunkMinTokens
+    return this.estimateTokens(text) >= this.config.chunkMinTokens;
   }
 
   /**
@@ -156,8 +156,8 @@ export class ChunkingService {
    * Uses simple character-based estimation (accurate within ~20%)
    */
   estimateTokens(text: string): number {
-    if (!text) return 0
-    return Math.ceil(text.length / this.config.charsPerToken)
+    if (!text) return 0;
+    return Math.ceil(text.length / this.config.charsPerToken);
   }
 
   /**
@@ -166,18 +166,18 @@ export class ChunkingService {
    */
   chunk(text: string): ChunkingResult {
     if (!text || text.trim().length === 0) {
-      return this.createPassthroughResult(text)
+      return this.createPassthroughResult(text);
     }
 
-    const totalTokens = this.estimateTokens(text)
+    const totalTokens = this.estimateTokens(text);
 
     // Small content - no chunking needed
     if (totalTokens < this.config.chunkMinTokens) {
-      return this.createPassthroughResult(text)
+      return this.createPassthroughResult(text);
     }
 
     // Try Markdown-aware chunking first
-    return this.chunkMarkdown(text)
+    return this.chunkMarkdown(text);
   }
 
   /**
@@ -185,36 +185,36 @@ export class ChunkingService {
    * Respects headers, code blocks, and lists
    */
   chunkMarkdown(text: string): ChunkingResult {
-    const totalTokens = this.estimateTokens(text)
+    const totalTokens = this.estimateTokens(text);
 
     // Small content - passthrough
     if (totalTokens < this.config.chunkMinTokens) {
-      return this.createPassthroughResult(text)
+      return this.createPassthroughResult(text);
     }
 
     // Try section-based chunking (by headers)
-    const sections = this.parseMarkdownSections(text)
+    const sections = this.parseMarkdownSections(text);
     if (sections.length > 1) {
-      const sectionResult = this.chunkBySections(sections, text)
+      const sectionResult = this.chunkBySections(sections, text);
       if (sectionResult.chunks.length > 0) {
-        return sectionResult
+        return sectionResult;
       }
     }
 
     // Fall back to paragraph chunking
-    const paragraphResult = this.chunkByParagraphs(text)
+    const paragraphResult = this.chunkByParagraphs(text);
     if (paragraphResult.chunks.length > 1) {
-      return paragraphResult
+      return paragraphResult;
     }
 
     // Fall back to sentence chunking
-    const sentenceResult = this.chunkBySentences(text)
+    const sentenceResult = this.chunkBySentences(text);
     if (sentenceResult.chunks.length > 1) {
-      return sentenceResult
+      return sentenceResult;
     }
 
     // Last resort: fixed-size chunking
-    return this.chunkByFixedSize(text)
+    return this.chunkByFixedSize(text);
   }
 
   // ===========================================================================
@@ -225,20 +225,20 @@ export class ChunkingService {
    * Chunk by Markdown sections (headers)
    */
   private chunkBySections(sections: MarkdownSection[], originalText: string): ChunkingResult {
-    const chunks: ContentChunk[] = []
-    let currentText = ''
-    let currentTokens = 0
-    let currentStartOffset = 0
-    const maxTokens = this.config.chunkTokenSize
-    const overlapTokens = this.config.chunkOverlapTokens
+    const chunks: ContentChunk[] = [];
+    let currentText = '';
+    let currentTokens = 0;
+    let currentStartOffset = 0;
+    const maxTokens = this.config.chunkTokenSize;
+    const overlapTokens = this.config.chunkOverlapTokens;
 
     for (const section of sections) {
-      const sectionTokens = this.estimateTokens(section.fullText)
+      const sectionTokens = this.estimateTokens(section.fullText);
 
       // If section alone is too big, we need deeper chunking
       if (sectionTokens > maxTokens && currentText === '') {
         // Try to chunk this large section by paragraphs
-        const subResult = this.chunkByParagraphs(section.fullText)
+        const subResult = this.chunkByParagraphs(section.fullText);
         for (const subChunk of subResult.chunks) {
           chunks.push({
             ...subChunk,
@@ -249,44 +249,48 @@ export class ChunkingService {
               sectionHeader: section.header,
               headerPath: [section.header],
             },
-          })
+          });
         }
-        continue
+        continue;
       }
 
       // Would adding this section exceed chunk size?
       if (currentTokens + sectionTokens > maxTokens && currentText !== '') {
         // Save current chunk
-        chunks.push(this.createChunk(
-          currentText,
-          chunks.length,
-          currentStartOffset,
-          currentStartOffset + currentText.length
-        ))
+        chunks.push(
+          this.createChunk(
+            currentText,
+            chunks.length,
+            currentStartOffset,
+            currentStartOffset + currentText.length
+          )
+        );
 
         // Start new chunk with overlap from previous
-        const overlap = this.getOverlapText(currentText, overlapTokens)
-        currentText = overlap + section.fullText
-        currentTokens = this.estimateTokens(currentText)
-        currentStartOffset = section.startOffset - overlap.length
+        const overlap = this.getOverlapText(currentText, overlapTokens);
+        currentText = overlap + section.fullText;
+        currentTokens = this.estimateTokens(currentText);
+        currentStartOffset = section.startOffset - overlap.length;
       } else {
         // Add section to current chunk
         if (currentText === '') {
-          currentStartOffset = section.startOffset
+          currentStartOffset = section.startOffset;
         }
-        currentText += (currentText ? '\n\n' : '') + section.fullText
-        currentTokens += sectionTokens
+        currentText += (currentText ? '\n\n' : '') + section.fullText;
+        currentTokens += sectionTokens;
       }
     }
 
     // Don't forget the last chunk
     if (currentText.trim()) {
-      chunks.push(this.createChunk(
-        currentText,
-        chunks.length,
-        currentStartOffset,
-        currentStartOffset + currentText.length
-      ))
+      chunks.push(
+        this.createChunk(
+          currentText,
+          chunks.length,
+          currentStartOffset,
+          currentStartOffset + currentText.length
+        )
+      );
     }
 
     return {
@@ -295,7 +299,7 @@ export class ChunkingService {
       chunks,
       wasChunked: chunks.length > 1,
       strategy: 'markdown',
-    }
+    };
   }
 
   /**
@@ -303,77 +307,81 @@ export class ChunkingService {
    */
   private chunkByParagraphs(text: string): ChunkingResult {
     // First, protect code blocks by replacing them with placeholders
-    const { text: protectedText, codeBlocks } = this.protectCodeBlocks(text)
+    const { text: protectedText, codeBlocks } = this.protectCodeBlocks(text);
 
     // Split on double newlines
-    const paragraphs = protectedText.split(/\n\s*\n/)
-    const chunks: ContentChunk[] = []
-    let currentText = ''
-    let currentTokens = 0
-    let currentStartOffset = 0
-    let textOffset = 0
-    const maxTokens = this.config.chunkTokenSize
-    const overlapTokens = this.config.chunkOverlapTokens
+    const paragraphs = protectedText.split(/\n\s*\n/);
+    const chunks: ContentChunk[] = [];
+    let currentText = '';
+    let currentTokens = 0;
+    let currentStartOffset = 0;
+    let textOffset = 0;
+    const maxTokens = this.config.chunkTokenSize;
+    const overlapTokens = this.config.chunkOverlapTokens;
 
     for (let i = 0; i < paragraphs.length; i++) {
-      const rawParagraph = paragraphs[i]
-      if (rawParagraph === undefined) continue
+      const rawParagraph = paragraphs[i];
+      if (rawParagraph === undefined) continue;
 
       // Restore code blocks in this paragraph
-      const paragraph = this.restoreCodeBlocks(rawParagraph, codeBlocks)
+      const paragraph = this.restoreCodeBlocks(rawParagraph, codeBlocks);
 
-      const paragraphTokens = this.estimateTokens(paragraph)
+      const paragraphTokens = this.estimateTokens(paragraph);
 
       // If single paragraph is too big, chunk by sentences
       if (paragraphTokens > maxTokens && currentText === '') {
-        const subResult = this.chunkBySentences(paragraph)
+        const subResult = this.chunkBySentences(paragraph);
         for (const subChunk of subResult.chunks) {
           chunks.push({
             ...subChunk,
             index: chunks.length,
             startOffset: textOffset + subChunk.startOffset,
             endOffset: textOffset + subChunk.endOffset,
-          })
+          });
         }
-        textOffset += paragraph.length + 2 // +2 for \n\n
-        continue
+        textOffset += paragraph.length + 2; // +2 for \n\n
+        continue;
       }
 
       // Would adding this paragraph exceed chunk size?
       if (currentTokens + paragraphTokens > maxTokens && currentText !== '') {
         // Save current chunk
-        chunks.push(this.createChunk(
-          currentText,
-          chunks.length,
-          currentStartOffset,
-          currentStartOffset + currentText.length
-        ))
+        chunks.push(
+          this.createChunk(
+            currentText,
+            chunks.length,
+            currentStartOffset,
+            currentStartOffset + currentText.length
+          )
+        );
 
         // Start new chunk with overlap
-        const overlap = this.getOverlapText(currentText, overlapTokens)
-        currentText = overlap + paragraph
-        currentTokens = this.estimateTokens(currentText)
-        currentStartOffset = textOffset - overlap.length
+        const overlap = this.getOverlapText(currentText, overlapTokens);
+        currentText = overlap + paragraph;
+        currentTokens = this.estimateTokens(currentText);
+        currentStartOffset = textOffset - overlap.length;
       } else {
         // Add paragraph to current chunk
         if (currentText === '') {
-          currentStartOffset = textOffset
+          currentStartOffset = textOffset;
         }
-        currentText += (currentText ? '\n\n' : '') + paragraph
-        currentTokens += paragraphTokens
+        currentText += (currentText ? '\n\n' : '') + paragraph;
+        currentTokens += paragraphTokens;
       }
 
-      textOffset += paragraph.length + 2 // +2 for \n\n separator
+      textOffset += paragraph.length + 2; // +2 for \n\n separator
     }
 
     // Don't forget the last chunk
     if (currentText.trim()) {
-      chunks.push(this.createChunk(
-        currentText,
-        chunks.length,
-        currentStartOffset,
-        currentStartOffset + currentText.length
-      ))
+      chunks.push(
+        this.createChunk(
+          currentText,
+          chunks.length,
+          currentStartOffset,
+          currentStartOffset + currentText.length
+        )
+      );
     }
 
     return {
@@ -382,7 +390,7 @@ export class ChunkingService {
       chunks,
       wasChunked: chunks.length > 1,
       strategy: 'paragraph',
-    }
+    };
   }
 
   /**
@@ -390,68 +398,72 @@ export class ChunkingService {
    */
   private chunkBySentences(text: string): ChunkingResult {
     // Split on sentence boundaries (. ! ? followed by space or end)
-    const sentences = text.split(/(?<=[.!?])\s+/)
-    const chunks: ContentChunk[] = []
-    let currentText = ''
-    let currentTokens = 0
-    let currentStartOffset = 0
-    let textOffset = 0
-    const maxTokens = this.config.chunkTokenSize
-    const overlapTokens = this.config.chunkOverlapTokens
+    const sentences = text.split(/(?<=[.!?])\s+/);
+    const chunks: ContentChunk[] = [];
+    let currentText = '';
+    let currentTokens = 0;
+    let currentStartOffset = 0;
+    let textOffset = 0;
+    const maxTokens = this.config.chunkTokenSize;
+    const overlapTokens = this.config.chunkOverlapTokens;
 
     for (const sentence of sentences) {
-      const sentenceTokens = this.estimateTokens(sentence)
+      const sentenceTokens = this.estimateTokens(sentence);
 
       // If single sentence is too big, use fixed-size chunking
       if (sentenceTokens > maxTokens && currentText === '') {
-        const subResult = this.chunkByFixedSize(sentence)
+        const subResult = this.chunkByFixedSize(sentence);
         for (const subChunk of subResult.chunks) {
           chunks.push({
             ...subChunk,
             index: chunks.length,
             startOffset: textOffset + subChunk.startOffset,
             endOffset: textOffset + subChunk.endOffset,
-          })
+          });
         }
-        textOffset += sentence.length + 1
-        continue
+        textOffset += sentence.length + 1;
+        continue;
       }
 
       // Would adding this sentence exceed chunk size?
       if (currentTokens + sentenceTokens > maxTokens && currentText !== '') {
         // Save current chunk
-        chunks.push(this.createChunk(
-          currentText,
-          chunks.length,
-          currentStartOffset,
-          currentStartOffset + currentText.length
-        ))
+        chunks.push(
+          this.createChunk(
+            currentText,
+            chunks.length,
+            currentStartOffset,
+            currentStartOffset + currentText.length
+          )
+        );
 
         // Start new chunk with overlap
-        const overlap = this.getOverlapText(currentText, overlapTokens)
-        currentText = overlap + sentence
-        currentTokens = this.estimateTokens(currentText)
-        currentStartOffset = textOffset - overlap.length
+        const overlap = this.getOverlapText(currentText, overlapTokens);
+        currentText = overlap + sentence;
+        currentTokens = this.estimateTokens(currentText);
+        currentStartOffset = textOffset - overlap.length;
       } else {
         // Add sentence to current chunk
         if (currentText === '') {
-          currentStartOffset = textOffset
+          currentStartOffset = textOffset;
         }
-        currentText += (currentText ? ' ' : '') + sentence
-        currentTokens += sentenceTokens
+        currentText += (currentText ? ' ' : '') + sentence;
+        currentTokens += sentenceTokens;
       }
 
-      textOffset += sentence.length + 1 // +1 for space
+      textOffset += sentence.length + 1; // +1 for space
     }
 
     // Don't forget the last chunk
     if (currentText.trim()) {
-      chunks.push(this.createChunk(
-        currentText,
-        chunks.length,
-        currentStartOffset,
-        currentStartOffset + currentText.length
-      ))
+      chunks.push(
+        this.createChunk(
+          currentText,
+          chunks.length,
+          currentStartOffset,
+          currentStartOffset + currentText.length
+        )
+      );
     }
 
     return {
@@ -460,42 +472,37 @@ export class ChunkingService {
       chunks,
       wasChunked: chunks.length > 1,
       strategy: 'sentence',
-    }
+    };
   }
 
   /**
    * Fixed-size chunking with word boundaries (last resort)
    */
   private chunkByFixedSize(text: string): ChunkingResult {
-    const chunks: ContentChunk[] = []
-    const maxChars = this.config.chunkTokenSize * this.config.charsPerToken
-    const overlapChars = this.config.chunkOverlapTokens * this.config.charsPerToken
-    let start = 0
+    const chunks: ContentChunk[] = [];
+    const maxChars = this.config.chunkTokenSize * this.config.charsPerToken;
+    const overlapChars = this.config.chunkOverlapTokens * this.config.charsPerToken;
+    let start = 0;
 
     while (start < text.length) {
-      let end = Math.min(start + maxChars, text.length)
+      let end = Math.min(start + maxChars, text.length);
 
       // Try to break at word boundary
       if (end < text.length) {
-        const lastSpace = text.lastIndexOf(' ', end)
+        const lastSpace = text.lastIndexOf(' ', end);
         if (lastSpace > start + maxChars / 2) {
-          end = lastSpace
+          end = lastSpace;
         }
       }
 
-      const chunkText = text.slice(start, end).trim()
+      const chunkText = text.slice(start, end).trim();
       if (chunkText) {
-        chunks.push(this.createChunk(
-          chunkText,
-          chunks.length,
-          start,
-          end
-        ))
+        chunks.push(this.createChunk(chunkText, chunks.length, start, end));
       }
 
       // Move forward, accounting for overlap
-      const minProgress = Math.max(1, maxChars - overlapChars)
-      start = Math.max(start + minProgress, end - overlapChars)
+      const minProgress = Math.max(1, maxChars - overlapChars);
+      start = Math.max(start + minProgress, end - overlapChars);
     }
 
     return {
@@ -504,7 +511,7 @@ export class ChunkingService {
       chunks,
       wasChunked: chunks.length > 1,
       strategy: 'fixed',
-    }
+    };
   }
 
   // ===========================================================================
@@ -515,44 +522,46 @@ export class ChunkingService {
    * Parse Markdown into sections based on headers
    */
   private parseMarkdownSections(text: string): MarkdownSection[] {
-    const sections: MarkdownSection[] = []
+    const sections: MarkdownSection[] = [];
 
     // Regex to match Markdown headers (# to ######)
-    const headerRegex = /^(#{1,6})\s+(.+)$/gm
-    const matches: Array<{ index: number; level: number; header: string }> = []
+    const headerRegex = /^(#{1,6})\s+(.+)$/gm;
+    const matches: Array<{ index: number; level: number; header: string }> = [];
 
-    let match
+    let match;
     while ((match = headerRegex.exec(text)) !== null) {
-      const headerMarker = match[1]
-      const headerText = match[0]
+      const headerMarker = match[1];
+      const headerText = match[0];
       if (headerMarker && headerText) {
         matches.push({
           index: match.index,
           level: headerMarker.length,
           header: headerText,
-        })
+        });
       }
     }
 
     // If no headers, return single section with all content
     if (matches.length === 0) {
-      return [{
-        header: '',
-        level: 0,
-        content: text,
-        fullText: text,
-        startOffset: 0,
-      }]
+      return [
+        {
+          header: '',
+          level: 0,
+          content: text,
+          fullText: text,
+          startOffset: 0,
+        },
+      ];
     }
 
     // Build sections from header positions
     for (let i = 0; i < matches.length; i++) {
-      const current = matches[i]
-      if (!current) continue
+      const current = matches[i];
+      if (!current) continue;
 
-      const next = matches[i + 1]
-      const endIndex = next ? next.index : text.length
-      const content = text.slice(current.index, endIndex)
+      const next = matches[i + 1];
+      const endIndex = next ? next.index : text.length;
+      const content = text.slice(current.index, endIndex);
 
       sections.push({
         header: current.header,
@@ -560,13 +569,13 @@ export class ChunkingService {
         content: content.slice(current.header.length).trim(),
         fullText: content.trim(),
         startOffset: current.index,
-      })
+      });
     }
 
     // Handle content before first header
-    const firstMatch = matches[0]
+    const firstMatch = matches[0];
     if (firstMatch && firstMatch.index > 0) {
-      const preContent = text.slice(0, firstMatch.index).trim()
+      const preContent = text.slice(0, firstMatch.index).trim();
       if (preContent) {
         sections.unshift({
           header: '',
@@ -574,11 +583,11 @@ export class ChunkingService {
           content: preContent,
           fullText: preContent,
           startOffset: 0,
-        })
+        });
       }
     }
 
-    return sections
+    return sections;
   }
 
   // ===========================================================================
@@ -589,31 +598,28 @@ export class ChunkingService {
    * Replace code blocks with placeholders to prevent splitting
    */
   private protectCodeBlocks(text: string): { text: string; codeBlocks: Map<string, string> } {
-    const codeBlocks = new Map<string, string>()
-    let counter = 0
+    const codeBlocks = new Map<string, string>();
+    let counter = 0;
 
     // Match fenced code blocks (``` or ~~~)
-    const protectedText = text.replace(
-      /```[\s\S]*?```|~~~[\s\S]*?~~~/g,
-      (match) => {
-        const placeholder = `__CODE_BLOCK_${counter++}__`
-        codeBlocks.set(placeholder, match)
-        return placeholder
-      }
-    )
+    const protectedText = text.replace(/```[\s\S]*?```|~~~[\s\S]*?~~~/g, (match) => {
+      const placeholder = `__CODE_BLOCK_${counter++}__`;
+      codeBlocks.set(placeholder, match);
+      return placeholder;
+    });
 
-    return { text: protectedText, codeBlocks }
+    return { text: protectedText, codeBlocks };
   }
 
   /**
    * Restore code blocks from placeholders
    */
   private restoreCodeBlocks(text: string, codeBlocks: Map<string, string>): string {
-    let result = text
+    let result = text;
     for (const [placeholder, code] of codeBlocks) {
-      result = result.replace(placeholder, code)
+      result = result.replace(placeholder, code);
     }
-    return result
+    return result;
   }
 
   // ===========================================================================
@@ -637,49 +643,53 @@ export class ChunkingService {
       startOffset,
       endOffset,
       context,
-    }
+    };
   }
 
   /**
    * Get overlap text from end of previous chunk
    */
   private getOverlapText(text: string, overlapTokens: number): string {
-    const overlapChars = overlapTokens * this.config.charsPerToken
+    const overlapChars = overlapTokens * this.config.charsPerToken;
 
     if (text.length <= overlapChars) {
-      return text
+      return text;
     }
 
-    const overlapStart = text.length - overlapChars
+    const overlapStart = text.length - overlapChars;
     // Find next word boundary after overlap start
-    const spaceIndex = text.indexOf(' ', overlapStart)
+    const spaceIndex = text.indexOf(' ', overlapStart);
 
     if (spaceIndex !== -1 && spaceIndex < text.length - 1) {
-      return text.slice(spaceIndex + 1)
+      return text.slice(spaceIndex + 1);
     }
 
-    return text.slice(overlapStart)
+    return text.slice(overlapStart);
   }
 
   /**
    * Create passthrough result (no chunking needed)
    */
   private createPassthroughResult(text: string): ChunkingResult {
-    const totalTokens = this.estimateTokens(text)
+    const totalTokens = this.estimateTokens(text);
 
     return {
       originalText: text,
       totalTokens,
-      chunks: text.trim() ? [{
-        index: 0,
-        text: text.trim(),
-        tokenCount: totalTokens,
-        startOffset: 0,
-        endOffset: text.length,
-      }] : [],
+      chunks: text.trim()
+        ? [
+            {
+              index: 0,
+              text: text.trim(),
+              tokenCount: totalTokens,
+              startOffset: 0,
+              endOffset: text.length,
+            },
+          ]
+        : [],
       wasChunked: false,
       strategy: 'passthrough',
-    }
+    };
   }
 }
 
@@ -687,21 +697,21 @@ export class ChunkingService {
 // Singleton Instance
 // =============================================================================
 
-let chunkingServiceInstance: ChunkingService | null = null
+let chunkingServiceInstance: ChunkingService | null = null;
 
 /**
  * Get singleton ChunkingService instance
  */
 export function getChunkingService(config?: ChunkingConfig): ChunkingService {
   if (!chunkingServiceInstance) {
-    chunkingServiceInstance = new ChunkingService(config)
+    chunkingServiceInstance = new ChunkingService(config);
   }
-  return chunkingServiceInstance
+  return chunkingServiceInstance;
 }
 
 /**
  * Reset singleton instance (for testing)
  */
 export function resetChunkingService(): void {
-  chunkingServiceInstance = null
+  chunkingServiceInstance = null;
 }

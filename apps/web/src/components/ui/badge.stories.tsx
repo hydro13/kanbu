@@ -10,8 +10,8 @@
  * ===================================================================
  */
 
-import type { Meta, StoryObj } from '@storybook/react-vite'
-import { Badge } from './badge'
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import { Badge } from './badge';
 
 const meta: Meta<typeof Badge> = {
   title: 'UI/Badge',
@@ -45,10 +45,10 @@ const meta: Meta<typeof Badge> = {
       },
     },
   },
-}
+};
 
-export default meta
-type Story = StoryObj<typeof Badge>
+export default meta;
+type Story = StoryObj<typeof Badge>;
 
 // =============================================================================
 // Basic Variants
@@ -59,28 +59,28 @@ export const Default: Story = {
     children: 'Badge',
     variant: 'default',
   },
-}
+};
 
 export const Secondary: Story = {
   args: {
     children: 'Secondary',
     variant: 'secondary',
   },
-}
+};
 
 export const Outline: Story = {
   args: {
     children: 'v2.0.0',
     variant: 'outline',
   },
-}
+};
 
 export const Destructive: Story = {
   args: {
     children: 'Deleted',
     variant: 'destructive',
   },
-}
+};
 
 // =============================================================================
 // Status Variants
@@ -98,7 +98,7 @@ export const Success: Story = {
       },
     },
   },
-}
+};
 
 export const Warning: Story = {
   args: {
@@ -112,7 +112,7 @@ export const Warning: Story = {
       },
     },
   },
-}
+};
 
 export const Error: Story = {
   args: {
@@ -126,7 +126,7 @@ export const Error: Story = {
       },
     },
   },
-}
+};
 
 export const Info: Story = {
   args: {
@@ -140,7 +140,7 @@ export const Info: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Priority Variants
@@ -151,28 +151,28 @@ export const PriorityLow: Story = {
     children: 'Low',
     variant: 'priority-low',
   },
-}
+};
 
 export const PriorityMedium: Story = {
   args: {
     children: 'Medium',
     variant: 'priority-medium',
   },
-}
+};
 
 export const PriorityHigh: Story = {
   args: {
     children: 'High',
     variant: 'priority-high',
   },
-}
+};
 
 export const PriorityUrgent: Story = {
   args: {
     children: 'Urgent',
     variant: 'priority-urgent',
   },
-}
+};
 
 // =============================================================================
 // Overview Stories
@@ -194,7 +194,7 @@ export const AllStatusVariants: Story = {
       },
     },
   },
-}
+};
 
 export const AllPriorityVariants: Story = {
   render: () => (
@@ -212,15 +212,13 @@ export const AllPriorityVariants: Story = {
       },
     },
   },
-}
+};
 
 export const AllVariants: Story = {
   render: () => (
     <div className="space-y-4">
       <div>
-        <h3 className="text-sm font-medium mb-2 text-muted-foreground">
-          Basic
-        </h3>
+        <h3 className="text-sm font-medium mb-2 text-muted-foreground">Basic</h3>
         <div className="flex flex-wrap gap-2">
           <Badge variant="default">Default</Badge>
           <Badge variant="secondary">Secondary</Badge>
@@ -229,9 +227,7 @@ export const AllVariants: Story = {
         </div>
       </div>
       <div>
-        <h3 className="text-sm font-medium mb-2 text-muted-foreground">
-          Status
-        </h3>
+        <h3 className="text-sm font-medium mb-2 text-muted-foreground">Status</h3>
         <div className="flex flex-wrap gap-2">
           <Badge variant="success">Success</Badge>
           <Badge variant="warning">Warning</Badge>
@@ -240,9 +236,7 @@ export const AllVariants: Story = {
         </div>
       </div>
       <div>
-        <h3 className="text-sm font-medium mb-2 text-muted-foreground">
-          Priority
-        </h3>
+        <h3 className="text-sm font-medium mb-2 text-muted-foreground">Priority</h3>
         <div className="flex flex-wrap gap-2">
           <Badge variant="priority-low">Low</Badge>
           <Badge variant="priority-medium">Medium</Badge>
@@ -259,7 +253,7 @@ export const AllVariants: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Usage Examples
@@ -281,4 +275,4 @@ export const TaskExample: Story = {
       },
     },
   },
-}
+};

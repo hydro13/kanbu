@@ -48,13 +48,16 @@ export const priorityColors = {
     border: 'border-red-300 dark:border-red-700',
     dot: 'bg-red-500',
   },
-} as const
+} as const;
 
-export type Priority = keyof typeof priorityColors
+export type Priority = keyof typeof priorityColors;
 
 // Helper functie voor priority styling
-export function getPriorityClasses(priority: Priority, variant: 'bg' | 'text' | 'border' | 'dot' = 'bg') {
-  return priorityColors[priority]?.[variant] ?? priorityColors.MEDIUM[variant]
+export function getPriorityClasses(
+  priority: Priority,
+  variant: 'bg' | 'text' | 'border' | 'dot' = 'bg'
+) {
+  return priorityColors[priority]?.[variant] ?? priorityColors.MEDIUM[variant];
 }
 
 // =============================================================================
@@ -83,9 +86,9 @@ export const statusColors = {
     text: 'text-red-600 dark:text-red-400',
     dot: 'bg-red-500',
   },
-} as const
+} as const;
 
-export type Status = keyof typeof statusColors
+export type Status = keyof typeof statusColors;
 
 // =============================================================================
 // Semantic Colors
@@ -112,7 +115,7 @@ export const semanticColors = {
     text: 'text-blue-600 dark:text-blue-400',
     border: 'border-blue-300 dark:border-blue-700',
   },
-} as const
+} as const;
 
 // =============================================================================
 // Typography
@@ -148,7 +151,7 @@ export const typography = {
   // Stats/numbers
   statLarge: 'text-2xl font-bold text-foreground',
   statMedium: 'text-xl font-semibold text-foreground',
-} as const
+} as const;
 
 // =============================================================================
 // Cards & Panels
@@ -161,7 +164,8 @@ export const cards = {
   base: 'bg-card border border-border rounded-card shadow-sm',
 
   // Card met hover effect
-  interactive: 'bg-card border border-border rounded-card shadow-sm hover:shadow-md transition-shadow',
+  interactive:
+    'bg-card border border-border rounded-card shadow-sm hover:shadow-md transition-shadow',
 
   // Inset card (nested binnen andere card)
   inset: 'bg-muted/50 rounded-card',
@@ -173,14 +177,14 @@ export const cards = {
   surface1: 'bg-surface border border-border rounded-card shadow-sm',
   surface2: 'bg-surface-2 border border-border rounded-card shadow-sm',
   elevated: 'bg-surface-elevated border border-border rounded-card shadow-md',
-} as const
+} as const;
 
 export const cardPadding = {
   // Uses CSS custom properties: --card-padding-*
   sm: 'p-card-sm',
   md: 'p-card',
   lg: 'p-card-lg',
-} as const
+} as const;
 
 // =============================================================================
 // Page Layout
@@ -198,7 +202,7 @@ export const pageLayout = {
   // Smaller container (voor forms, settings)
   // Uses: max-w-page-narrow (--page-max-width-narrow)
   containerNarrow: 'max-w-page-narrow mx-auto',
-} as const
+} as const;
 
 // =============================================================================
 // Spacing
@@ -218,7 +222,7 @@ export const spacing = {
   gridSm: 'gap-3',
   gridMd: 'gap-4',
   gridLg: 'gap-6',
-} as const
+} as const;
 
 // =============================================================================
 // Buttons (aanvulling op shadcn Button)
@@ -230,7 +234,7 @@ export const buttonVariants = {
 
   // Text link style
   link: 'text-primary hover:underline',
-} as const
+} as const;
 
 // =============================================================================
 // Form Elements
@@ -238,14 +242,17 @@ export const buttonVariants = {
 
 export const formElements = {
   // Standaard input (aanvulling als shadcn Input niet gebruikt wordt)
-  input: 'w-full px-3 py-2 bg-background border border-input rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring',
+  input:
+    'w-full px-3 py-2 bg-background border border-input rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring',
 
   // Select
-  select: 'w-full px-3 py-2 bg-background border border-input rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-ring',
+  select:
+    'w-full px-3 py-2 bg-background border border-input rounded-lg text-foreground focus:outline-none focus:ring-2 focus:ring-ring',
 
   // Textarea
-  textarea: 'w-full px-3 py-2 bg-background border border-input rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none',
-} as const
+  textarea:
+    'w-full px-3 py-2 bg-background border border-input rounded-lg text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none',
+} as const;
 
 // =============================================================================
 // Empty States
@@ -256,7 +263,7 @@ export const emptyState = {
   icon: 'w-12 h-12 text-muted-foreground mb-4',
   title: 'text-lg font-medium text-foreground mb-2',
   description: 'text-sm text-muted-foreground mb-4 max-w-md',
-} as const
+} as const;
 
 // =============================================================================
 // Loading States
@@ -265,7 +272,7 @@ export const emptyState = {
 export const loadingState = {
   container: 'flex items-center justify-center py-12',
   spinner: 'w-8 h-8 animate-spin text-primary',
-} as const
+} as const;
 
 // =============================================================================
 // Sidebar
@@ -285,11 +292,12 @@ export const sidebar = {
   item: 'flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent rounded-lg transition-colors',
 
   // Sidebar item (actief)
-  itemActive: 'flex items-center gap-3 px-3 py-2 text-sm text-foreground bg-accent rounded-lg font-medium',
+  itemActive:
+    'flex items-center gap-3 px-3 py-2 text-sm text-foreground bg-accent rounded-lg font-medium',
 
   // Section header
   sectionHeader: 'px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider',
-} as const
+} as const;
 
 // =============================================================================
 // Tables
@@ -298,10 +306,11 @@ export const sidebar = {
 export const table = {
   container: 'w-full border border-border rounded-lg overflow-hidden',
   header: 'bg-muted/50',
-  headerCell: 'px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider',
+  headerCell:
+    'px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider',
   row: 'border-t border-border hover:bg-muted/30 transition-colors',
   cell: 'px-4 py-3 text-sm text-foreground',
-} as const
+} as const;
 
 // =============================================================================
 // Badges
@@ -316,15 +325,16 @@ export const badges = {
   success: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
   warning: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400',
   error: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400',
-} as const
+} as const;
 
 // =============================================================================
 // Tooltips & Popovers
 // =============================================================================
 
 export const tooltip = {
-  content: 'bg-popover text-popover-foreground px-3 py-1.5 text-sm rounded-lg shadow-lg border border-border',
-} as const
+  content:
+    'bg-popover text-popover-foreground px-3 py-1.5 text-sm rounded-lg shadow-lg border border-border',
+} as const;
 
 // =============================================================================
 // Helper: Combine classes with design tokens
@@ -335,9 +345,9 @@ export function combineCardClasses(
   padding: keyof typeof cardPadding = 'md',
   extraClasses?: string
 ): string {
-  const base = cards[variant]
-  const pad = cardPadding[padding]
-  return extraClasses ? `${base} ${pad} ${extraClasses}` : `${base} ${pad}`
+  const base = cards[variant];
+  const pad = cardPadding[padding];
+  return extraClasses ? `${base} ${pad} ${extraClasses}` : `${base} ${pad}`;
 }
 
 // =============================================================================

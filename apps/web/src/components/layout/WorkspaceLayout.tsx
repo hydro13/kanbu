@@ -12,17 +12,17 @@
  * ===================================================================
  */
 
-import { type ReactNode } from 'react'
-import { Outlet } from 'react-router-dom'
-import { BaseLayout } from '@/components/layout/BaseLayout'
-import { WorkspaceSidebar } from './WorkspaceSidebar'
+import { type ReactNode } from 'react';
+import { Outlet } from 'react-router-dom';
+import { BaseLayout } from '@/components/layout/BaseLayout';
+import { WorkspaceSidebar } from './WorkspaceSidebar';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface WorkspaceLayoutProps {
-  children?: ReactNode
+  children?: ReactNode;
 }
 
 // =============================================================================
@@ -38,7 +38,7 @@ export function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
     >
       {children ?? <Outlet />}
     </BaseLayout>
-  )
+  );
 }
 
-export default WorkspaceLayout
+export default WorkspaceLayout;

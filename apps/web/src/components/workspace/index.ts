@@ -11,4 +11,4 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-export { WorkspaceSelector } from './WorkspaceSelector'
+export { WorkspaceSelector } from './WorkspaceSelector';

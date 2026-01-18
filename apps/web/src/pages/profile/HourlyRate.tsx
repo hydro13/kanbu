@@ -8,56 +8,56 @@
  * Task: USER-01 (Task 247), Task 264 - UX improvements
  */
 
-import { useState, useEffect } from 'react'
-import { ProfileLayout } from '../../components/profile/ProfileLayout'
-import { Button } from '../../components/ui/button'
-import { trpc } from '../../lib/trpc'
+import { useState, useEffect } from 'react';
+import { ProfileLayout } from '../../components/profile/ProfileLayout';
+import { Button } from '../../components/ui/button';
+import { trpc } from '../../lib/trpc';
 
 // =============================================================================
 // Component
 // =============================================================================
 
 export function HourlyRate() {
-  const [rate, setRate] = useState<string>('')
-  const [hasChanges, setHasChanges] = useState(false)
+  const [rate, setRate] = useState<string>('');
+  const [hasChanges, setHasChanges] = useState(false);
 
-  const utils = trpc.useUtils()
-  const { data, isLoading } = trpc.user.getHourlyRate.useQuery()
+  const utils = trpc.useUtils();
+  const { data, isLoading } = trpc.user.getHourlyRate.useQuery();
 
   const updateRate = trpc.user.updateHourlyRate.useMutation({
     onSuccess: () => {
-      utils.user.getHourlyRate.invalidate()
-      setHasChanges(false)
+      utils.user.getHourlyRate.invalidate();
+      setHasChanges(false);
     },
-  })
+  });
 
   // Initialize form with current rate
   useEffect(() => {
     if (data?.hourlyRate !== undefined) {
-      setRate(data.hourlyRate !== null ? String(data.hourlyRate) : '')
+      setRate(data.hourlyRate !== null ? String(data.hourlyRate) : '');
     }
-  }, [data])
+  }, [data]);
 
   // Track changes
   useEffect(() => {
     if (data !== undefined) {
-      const currentRate = data.hourlyRate !== null ? String(data.hourlyRate) : ''
-      setHasChanges(rate !== currentRate)
+      const currentRate = data.hourlyRate !== null ? String(data.hourlyRate) : '';
+      setHasChanges(rate !== currentRate);
     }
-  }, [rate, data])
+  }, [rate, data]);
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    const numericRate = rate.trim() === '' ? null : parseFloat(rate)
-    updateRate.mutate({ hourlyRate: numericRate })
-  }
+    e.preventDefault();
+    const numericRate = rate.trim() === '' ? null : parseFloat(rate);
+    updateRate.mutate({ hourlyRate: numericRate });
+  };
 
   const handleRateChange = (value: string) => {
     // Only allow valid decimal numbers
     if (value === '' || /^\d*\.?\d{0,2}$/.test(value)) {
-      setRate(value)
+      setRate(value);
     }
-  }
+  };
 
   if (isLoading) {
     return (
@@ -66,10 +66,10 @@ export function HourlyRate() {
           <p className="text-muted-foreground">Loading...</p>
         </div>
       </ProfileLayout>
-    )
+    );
   }
 
-  const numericRate = rate ? parseFloat(rate) : 0
+  const numericRate = rate ? parseFloat(rate) : 0;
 
   return (
     <ProfileLayout title="Hourly Rate" description="Set your hourly rate for cost calculations">
@@ -100,8 +100,9 @@ export function HourlyRate() {
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  const currentRate = data?.hourlyRate !== null ? String(data?.hourlyRate ?? '') : ''
-                  setRate(currentRate)
+                  const currentRate =
+                    data?.hourlyRate !== null ? String(data?.hourlyRate ?? '') : '';
+                  setRate(currentRate);
                 }}
                 disabled={!hasChanges}
               >
@@ -151,15 +152,21 @@ export function HourlyRate() {
               <h3 className="text-sm font-semibold text-foreground">About Rates</h3>
             </div>
             <div className="p-4 space-y-2 text-xs text-muted-foreground">
-              <p><strong>Time Tracking:</strong> Rate × time = cost per task</p>
-              <p><strong>Reports:</strong> Used for budget and cost reports</p>
-              <p><strong>Privacy:</strong> Only visible to you and admins</p>
+              <p>
+                <strong>Time Tracking:</strong> Rate × time = cost per task
+              </p>
+              <p>
+                <strong>Reports:</strong> Used for budget and cost reports
+              </p>
+              <p>
+                <strong>Privacy:</strong> Only visible to you and admins
+              </p>
             </div>
           </div>
         </div>
       </div>
     </ProfileLayout>
-  )
+  );
 }
 
-export default HourlyRate
+export default HourlyRate;

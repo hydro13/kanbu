@@ -13,8 +13,8 @@
  * =============================================================================
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { prisma } from '../../../lib/prisma'
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { prisma } from '../../../lib/prisma';
 import {
   upsertRelease,
   getReleases,
@@ -25,7 +25,7 @@ import {
   deleteRelease,
   syncReleaseFromWebhook,
   generateReleaseNotes,
-} from '../releaseService'
+} from '../releaseService';
 
 // Mock Prisma
 vi.mock('../../../lib/prisma', () => ({
@@ -45,12 +45,12 @@ vi.mock('../../../lib/prisma', () => ({
       findMany: vi.fn(),
     },
   },
-}))
+}));
 
 describe('releaseService', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-  })
+    vi.clearAllMocks();
+  });
 
   // ===========================================================================
   // upsertRelease
@@ -58,7 +58,7 @@ describe('releaseService', () => {
 
   describe('upsertRelease', () => {
     it('should create or update a release', async () => {
-      vi.mocked(prisma.gitHubRelease.upsert).mockResolvedValue({ id: 1 } as any)
+      vi.mocked(prisma.gitHubRelease.upsert).mockResolvedValue({ id: 1 } as any);
 
       const result = await upsertRelease({
         repositoryId: 1,
@@ -71,9 +71,9 @@ describe('releaseService', () => {
         authorLogin: 'developer',
         htmlUrl: 'https://github.com/owner/repo/releases/tag/v1.0.0',
         publishedAt: new Date('2026-01-09'),
-      })
+      });
 
-      expect(result).toEqual({ id: 1 })
+      expect(result).toEqual({ id: 1 });
       expect(prisma.gitHubRelease.upsert).toHaveBeenCalledWith({
         where: {
           repositoryId_releaseId: {
@@ -91,9 +91,9 @@ describe('releaseService', () => {
           name: 'Version 1.0.0',
         }),
         select: { id: true },
-      })
-    })
-  })
+      });
+    });
+  });
 
   // ===========================================================================
   // getReleases
@@ -119,18 +119,18 @@ describe('releaseService', () => {
           createdAt: new Date(),
           updatedAt: new Date(),
         },
-      ] as any)
+      ] as any);
 
-      const result = await getReleases(1)
+      const result = await getReleases(1);
 
-      expect(result).toHaveLength(1)
-      expect(result[0]!.tagName).toBe('v1.1.0')
-    })
+      expect(result).toHaveLength(1);
+      expect(result[0]!.tagName).toBe('v1.1.0');
+    });
 
     it('should filter out drafts by default', async () => {
-      vi.mocked(prisma.gitHubRelease.findMany).mockResolvedValue([])
+      vi.mocked(prisma.gitHubRelease.findMany).mockResolvedValue([]);
 
-      await getReleases(1)
+      await getReleases(1);
 
       expect(prisma.gitHubRelease.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -139,13 +139,13 @@ describe('releaseService', () => {
             draft: false,
           }),
         })
-      )
-    })
+      );
+    });
 
     it('should include drafts when requested', async () => {
-      vi.mocked(prisma.gitHubRelease.findMany).mockResolvedValue([])
+      vi.mocked(prisma.gitHubRelease.findMany).mockResolvedValue([]);
 
-      await getReleases(1, { includeDrafts: true })
+      await getReleases(1, { includeDrafts: true });
 
       expect(prisma.gitHubRelease.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -153,9 +153,9 @@ describe('releaseService', () => {
             draft: false,
           }),
         })
-      )
-    })
-  })
+      );
+    });
+  });
 
   // ===========================================================================
   // getReleaseByTag
@@ -179,22 +179,22 @@ describe('releaseService', () => {
         publishedAt: new Date('2026-01-09'),
         createdAt: new Date(),
         updatedAt: new Date(),
-      } as any)
+      } as any);
 
-      const result = await getReleaseByTag(1, 'v1.0.0')
+      const result = await getReleaseByTag(1, 'v1.0.0');
 
-      expect(result).not.toBeNull()
-      expect(result!.tagName).toBe('v1.0.0')
-    })
+      expect(result).not.toBeNull();
+      expect(result!.tagName).toBe('v1.0.0');
+    });
 
     it('should return null when release not found', async () => {
-      vi.mocked(prisma.gitHubRelease.findFirst).mockResolvedValue(null)
+      vi.mocked(prisma.gitHubRelease.findFirst).mockResolvedValue(null);
 
-      const result = await getReleaseByTag(1, 'v999.0.0')
+      const result = await getReleaseByTag(1, 'v999.0.0');
 
-      expect(result).toBeNull()
-    })
-  })
+      expect(result).toBeNull();
+    });
+  });
 
   // ===========================================================================
   // getLatestRelease
@@ -218,14 +218,14 @@ describe('releaseService', () => {
         publishedAt: new Date('2026-01-15'),
         createdAt: new Date(),
         updatedAt: new Date(),
-      } as any)
+      } as any);
 
-      const result = await getLatestRelease(1)
+      const result = await getLatestRelease(1);
 
-      expect(result).not.toBeNull()
-      expect(result!.tagName).toBe('v1.1.0')
-    })
-  })
+      expect(result).not.toBeNull();
+      expect(result!.tagName).toBe('v1.1.0');
+    });
+  });
 
   // ===========================================================================
   // getProjectReleases
@@ -233,15 +233,15 @@ describe('releaseService', () => {
 
   describe('getProjectReleases', () => {
     it('should return empty array when no repository linked', async () => {
-      vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue(null)
+      vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue(null);
 
-      const result = await getProjectReleases(1)
+      const result = await getProjectReleases(1);
 
-      expect(result).toEqual([])
-    })
+      expect(result).toEqual([]);
+    });
 
     it('should return releases for linked repository', async () => {
-      vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue({ id: 1 } as any)
+      vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue({ id: 1 } as any);
       vi.mocked(prisma.gitHubRelease.findMany).mockResolvedValue([
         {
           id: 1,
@@ -260,13 +260,13 @@ describe('releaseService', () => {
           createdAt: new Date(),
           updatedAt: new Date(),
         },
-      ] as any)
+      ] as any);
 
-      const result = await getProjectReleases(1)
+      const result = await getProjectReleases(1);
 
-      expect(result).toHaveLength(1)
-    })
-  })
+      expect(result).toHaveLength(1);
+    });
+  });
 
   // ===========================================================================
   // getReleaseStats
@@ -274,9 +274,9 @@ describe('releaseService', () => {
 
   describe('getReleaseStats', () => {
     it('should return zero stats when no repository linked', async () => {
-      vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue(null)
+      vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue(null);
 
-      const result = await getReleaseStats(1)
+      const result = await getReleaseStats(1);
 
       expect(result).toEqual({
         total: 0,
@@ -284,29 +284,29 @@ describe('releaseService', () => {
         drafts: 0,
         prereleases: 0,
         latestRelease: null,
-      })
-    })
+      });
+    });
 
     it('should return aggregated stats', async () => {
-      vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue({ id: 1 } as any)
+      vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue({ id: 1 } as any);
       vi.mocked(prisma.gitHubRelease.count)
         .mockResolvedValueOnce(10) // total
         .mockResolvedValueOnce(2) // drafts
-        .mockResolvedValueOnce(3) // prereleases
+        .mockResolvedValueOnce(3); // prereleases
       vi.mocked(prisma.gitHubRelease.findFirst).mockResolvedValue({
         id: 1,
         tagName: 'v1.5.0',
-      } as any)
+      } as any);
 
-      const result = await getReleaseStats(1)
+      const result = await getReleaseStats(1);
 
-      expect(result.total).toBe(10)
-      expect(result.published).toBe(8) // 10 - 2 drafts
-      expect(result.drafts).toBe(2)
-      expect(result.prereleases).toBe(3)
-      expect(result.latestRelease).not.toBeNull()
-    })
-  })
+      expect(result.total).toBe(10);
+      expect(result.published).toBe(8); // 10 - 2 drafts
+      expect(result.drafts).toBe(2);
+      expect(result.prereleases).toBe(3);
+      expect(result.latestRelease).not.toBeNull();
+    });
+  });
 
   // ===========================================================================
   // syncReleaseFromWebhook
@@ -314,7 +314,7 @@ describe('releaseService', () => {
 
   describe('syncReleaseFromWebhook', () => {
     it('should upsert release on published action', async () => {
-      vi.mocked(prisma.gitHubRelease.upsert).mockResolvedValue({ id: 1 } as any)
+      vi.mocked(prisma.gitHubRelease.upsert).mockResolvedValue({ id: 1 } as any);
 
       const result = await syncReleaseFromWebhook(1, 'published', {
         id: 12345,
@@ -326,14 +326,14 @@ describe('releaseService', () => {
         author: { login: 'developer' },
         html_url: 'https://github.com/owner/repo/releases/tag/v1.0.0',
         published_at: '2026-01-09T00:00:00Z',
-      })
+      });
 
-      expect(result).toEqual({ id: 1 })
-      expect(prisma.gitHubRelease.upsert).toHaveBeenCalled()
-    })
+      expect(result).toEqual({ id: 1 });
+      expect(prisma.gitHubRelease.upsert).toHaveBeenCalled();
+    });
 
     it('should delete release on deleted action', async () => {
-      vi.mocked(prisma.gitHubRelease.delete).mockResolvedValue({ id: 1 } as any)
+      vi.mocked(prisma.gitHubRelease.delete).mockResolvedValue({ id: 1 } as any);
 
       const result = await syncReleaseFromWebhook(1, 'deleted', {
         id: 12345,
@@ -341,12 +341,12 @@ describe('releaseService', () => {
         draft: false,
         prerelease: false,
         html_url: 'https://github.com/owner/repo/releases/tag/v1.0.0',
-      })
+      });
 
-      expect(result).toBeNull()
-      expect(prisma.gitHubRelease.delete).toHaveBeenCalled()
-    })
-  })
+      expect(result).toBeNull();
+      expect(prisma.gitHubRelease.delete).toHaveBeenCalled();
+    });
+  });
 
   // ===========================================================================
   // generateReleaseNotes
@@ -354,18 +354,18 @@ describe('releaseService', () => {
 
   describe('generateReleaseNotes', () => {
     it('should return empty notes when no repository linked', async () => {
-      vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue(null)
+      vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue(null);
 
-      const result = await generateReleaseNotes(1)
+      const result = await generateReleaseNotes(1);
 
-      expect(result).toContain('No repository linked')
-    })
+      expect(result).toContain('No repository linked');
+    });
 
     it('should generate notes from merged PRs', async () => {
       vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue({
         id: 1,
         fullName: 'owner/repo',
-      } as any)
+      } as any);
       vi.mocked(prisma.gitHubPullRequest.findMany).mockResolvedValue([
         {
           id: 1,
@@ -383,27 +383,27 @@ describe('releaseService', () => {
           taskId: 2,
           task: { id: 2, title: 'Fix critical bug', reference: 'PROJ-124' },
         },
-      ] as any)
+      ] as any);
 
-      const result = await generateReleaseNotes(1)
+      const result = await generateReleaseNotes(1);
 
-      expect(result).toContain('# Release Notes')
-      expect(result).toContain('## Features')
-      expect(result).toContain('## Bug Fixes')
-    })
+      expect(result).toContain('# Release Notes');
+      expect(result).toContain('## Features');
+      expect(result).toContain('## Bug Fixes');
+    });
 
     it('should show no changes message when no PRs found', async () => {
       vi.mocked(prisma.gitHubRepository.findFirst).mockResolvedValue({
         id: 1,
         fullName: 'owner/repo',
-      } as any)
-      vi.mocked(prisma.gitHubPullRequest.findMany).mockResolvedValue([])
+      } as any);
+      vi.mocked(prisma.gitHubPullRequest.findMany).mockResolvedValue([]);
 
-      const result = await generateReleaseNotes(1)
+      const result = await generateReleaseNotes(1);
 
-      expect(result).toContain('No changes found')
-    })
-  })
+      expect(result).toContain('No changes found');
+    });
+  });
 
   // ===========================================================================
   // deleteRelease
@@ -411,9 +411,9 @@ describe('releaseService', () => {
 
   describe('deleteRelease', () => {
     it('should delete a release', async () => {
-      vi.mocked(prisma.gitHubRelease.delete).mockResolvedValue({ id: 1 } as any)
+      vi.mocked(prisma.gitHubRelease.delete).mockResolvedValue({ id: 1 } as any);
 
-      await deleteRelease(1, BigInt(12345))
+      await deleteRelease(1, BigInt(12345));
 
       expect(prisma.gitHubRelease.delete).toHaveBeenCalledWith({
         where: {
@@ -422,7 +422,7 @@ describe('releaseService', () => {
             releaseId: BigInt(12345),
           },
         },
-      })
-    })
-  })
-})
+      });
+    });
+  });
+});

@@ -25,79 +25,79 @@
  * =============================================================================
  */
 
-import { useMemo } from 'react'
-import { trpc } from '@/lib/trpc'
-import { useAppSelector } from '@/store'
-import { selectUser } from '@/store/authSlice'
+import { useMemo } from 'react';
+import { trpc } from '@/lib/trpc';
+import { useAppSelector } from '@/store';
+import { selectUser } from '@/store/authSlice';
 
 // =============================================================================
 // Types
 // =============================================================================
 
-export type ScopeLevel = 'system' | 'workspace' | 'project' | 'none'
+export type ScopeLevel = 'system' | 'workspace' | 'project' | 'none';
 
 export interface AdminScope {
   /** The highest scope level this user has */
-  level: ScopeLevel
+  level: ScopeLevel;
 
   /** Is this user a Domain Admin (full system access) */
-  isDomainAdmin: boolean
+  isDomainAdmin: boolean;
 
   /** Workspace IDs the user has access to */
-  workspaceIds: number[]
+  workspaceIds: number[];
 
   /** Project IDs the user has access to */
-  projectIds: number[]
+  projectIds: number[];
 
   /** Permission flags for common operations */
   permissions: {
-    canManageUsers: boolean
-    canManageGroups: boolean
-    canManageWorkspaces: boolean
-    canAccessAdminPanel: boolean
-    canManageAcl: boolean
-  }
+    canManageUsers: boolean;
+    canManageGroups: boolean;
+    canManageWorkspaces: boolean;
+    canAccessAdminPanel: boolean;
+    canManageAcl: boolean;
+  };
 
   /** Convenience flags for UI */
-  hasAnyAdminAccess: boolean
-  canSeeAllUsers: boolean
-  canSeeAllGroups: boolean
-  canSeeSystemSettings: boolean
+  hasAnyAdminAccess: boolean;
+  canSeeAllUsers: boolean;
+  canSeeAllGroups: boolean;
+  canSeeSystemSettings: boolean;
 }
 
 export interface UseAdminScopeResult {
   /** The user's admin scope (null if loading or not logged in) */
-  scope: AdminScope | null
+  scope: AdminScope | null;
 
   /** Is the scope data loading? */
-  isLoading: boolean
+  isLoading: boolean;
 
   /** Is this user a Domain Admin? */
-  isDomainAdmin: boolean
+  isDomainAdmin: boolean;
 
   /** Does user have any admin access? */
-  hasAnyAdminAccess: boolean
+  hasAnyAdminAccess: boolean;
 
   /** Can user see system-wide settings? */
-  canSeeSystemSettings: boolean
+  canSeeSystemSettings: boolean;
 
   /** Can user manage users? */
-  canManageUsers: boolean
+  canManageUsers: boolean;
 
   /** Can user manage groups? */
-  canManageGroups: boolean
+  canManageGroups: boolean;
 
   /** Can user manage ACL entries? */
-  canManageAcl: boolean
+  canManageAcl: boolean;
 
   /** Check if a workspace is in scope */
-  isWorkspaceInScope: (workspaceId: number) => boolean
+  isWorkspaceInScope: (workspaceId: number) => boolean;
 
   /** Check if a project is in scope */
-  isProjectInScope: (projectId: number) => boolean
+  isProjectInScope: (projectId: number) => boolean;
 
   /** Refetch scope data */
-  refetch: () => void
+  refetch: () => void;
 }
 
 // =============================================================================
@@ -105,18 +105,18 @@ export interface UseAdminScopeResult {
 // =============================================================================
 
 export function useAdminScope(): UseAdminScopeResult {
-  const user = useAppSelector(selectUser)
+  const user = useAppSelector(selectUser);
 
   // Fetch admin scope from backend
   const { data, isLoading, refetch } = trpc.group.myAdminScope.useQuery(undefined, {
     enabled: !!user, // Only fetch when logged in
     staleTime: 30000, // Cache for 30 seconds
     refetchOnWindowFocus: false,
-  })
+  });
 
   // Build the scope object
   const scope: AdminScope | null = useMemo(() => {
-    if (!data) return null
+    if (!data) return null;
 
     return {
       level: data.level as ScopeLevel,
@@ -128,26 +128,26 @@ export function useAdminScope(): UseAdminScopeResult {
       canSeeAllUsers: data.canSeeAllUsers,
       canSeeAllGroups: data.canSeeAllGroups,
       canSeeSystemSettings: data.canSeeSystemSettings,
-    }
-  }, [data])
+    };
+  }, [data]);
 
   // Helper to check if workspace is in scope
   const isWorkspaceInScope = useMemo(() => {
     return (workspaceId: number): boolean => {
-      if (!scope) return false
-      if (scope.isDomainAdmin) return true
-      return scope.workspaceIds.includes(workspaceId)
-    }
-  }, [scope])
+      if (!scope) return false;
+      if (scope.isDomainAdmin) return true;
+      return scope.workspaceIds.includes(workspaceId);
+    };
+  }, [scope]);
 
   // Helper to check if project is in scope
   const isProjectInScope = useMemo(() => {
     return (projectId: number): boolean => {
-      if (!scope) return false
-      if (scope.isDomainAdmin) return true
-      return scope.projectIds.includes(projectId)
-    }
-  }, [scope])
+      if (!scope) return false;
+      if (scope.isDomainAdmin) return true;
+      return scope.projectIds.includes(projectId);
+    };
+  }, [scope]);
 
   return {
     scope,
@@ -161,7 +161,7 @@ export function useAdminScope(): UseAdminScopeResult {
     isWorkspaceInScope,
     isProjectInScope,
     refetch: () => refetch(),
-  }
+  };
 }
 
-export default useAdminScope
+export default useAdminScope;

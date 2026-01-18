@@ -2,58 +2,56 @@
  * Register Form Component
  */
 
-import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
-import { Button } from '../ui/button'
-import { Input } from '../ui/input'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../ui/card'
-import { trpc, queryClient } from '../../lib/trpc'
-import { useAppDispatch } from '../../store'
-import { loginSuccess, setLoading } from '../../store/authSlice'
+import { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../ui/card';
+import { trpc, queryClient } from '../../lib/trpc';
+import { useAppDispatch } from '../../store';
+import { loginSuccess, setLoading } from '../../store/authSlice';
 
 export function RegisterForm() {
-  const navigate = useNavigate()
-  const dispatch = useAppDispatch()
-  const [email, setEmail] = useState('')
-  const [username, setUsername] = useState('')
-  const [name, setName] = useState('')
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
+  const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
+  const [name, setName] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   const registerMutation = trpc.auth.register.useMutation({
     onSuccess: (data) => {
       // Clear React Query cache to start fresh
-      queryClient.clear()
-      dispatch(loginSuccess(data))
-      navigate('/')
+      queryClient.clear();
+      dispatch(loginSuccess(data));
+      navigate('/');
     },
     onError: (err) => {
-      setError(err.message)
-      dispatch(setLoading(false))
+      setError(err.message);
+      dispatch(setLoading(false));
     },
-  })
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    setError(null)
+    e.preventDefault();
+    setError(null);
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match')
-      return
+      setError('Passwords do not match');
+      return;
     }
 
-    dispatch(setLoading(true))
-    registerMutation.mutate({ email, username, name, password })
-  }
+    dispatch(setLoading(true));
+    registerMutation.mutate({ email, username, name, password });
+  };
 
   return (
     <Card className="w-full max-w-md">
       <CardHeader className="space-y-1">
         <CardTitle className="text-2xl font-bold">Create account</CardTitle>
-        <CardDescription>
-          Enter your details to create a new account
-        </CardDescription>
+        <CardDescription>Enter your details to create a new account</CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
         <CardContent className="space-y-4">
@@ -136,11 +134,7 @@ export function RegisterForm() {
           </div>
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={registerMutation.isPending}
-          >
+          <Button type="submit" className="w-full" disabled={registerMutation.isPending}>
             {registerMutation.isPending ? 'Creating account...' : 'Create account'}
           </Button>
           <p className="text-sm text-muted-foreground text-center">
@@ -152,5 +146,5 @@ export function RegisterForm() {
         </CardFooter>
       </form>
     </Card>
-  )
+  );
 }

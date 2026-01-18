@@ -18,10 +18,10 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState, useRef, useEffect, useCallback } from 'react'
-import { WorkspaceLayout } from '../components/layout/WorkspaceLayout'
-import { Button } from '../components/ui/button'
-import { Input } from '../components/ui/input'
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { WorkspaceLayout } from '../components/layout/WorkspaceLayout';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
 import {
   Card,
   CardHeader,
@@ -29,13 +29,13 @@ import {
   CardDescription,
   CardContent,
   CardFooter,
-} from '../components/ui/card'
-import { useAppSelector } from '../store'
-import { selectCurrentWorkspace } from '../store/workspaceSlice'
-import { trpc, getMediaUrl } from '../lib/trpc'
-import { useNavigate } from 'react-router-dom'
-import { UserSearchDropdown } from '../components/workspace/UserSearchDropdown'
-import { AddMembersModal } from '../components/workspace/AddMembersModal'
+} from '../components/ui/card';
+import { useAppSelector } from '../store';
+import { selectCurrentWorkspace } from '../store/workspaceSlice';
+import { trpc, getMediaUrl } from '../lib/trpc';
+import { useNavigate } from 'react-router-dom';
+import { UserSearchDropdown } from '../components/workspace/UserSearchDropdown';
+import { AddMembersModal } from '../components/workspace/AddMembersModal';
 import {
   MemberFilters,
   filterAndSortMembers,
@@ -43,24 +43,29 @@ import {
   getTotalPages,
   type MemberFiltersState,
   type PaginationState,
-} from '../components/workspace/MemberFilters'
-import { WorkspaceAiConfigCard } from '../components/workspace/WorkspaceAiConfigCard'
-import { RichTextEditor, getDisplayContent, isLexicalContent, lexicalToPlainText } from '../components/editor'
-import type { EditorState, LexicalEditor } from 'lexical'
+} from '../components/workspace/MemberFilters';
+import { WorkspaceAiConfigCard } from '../components/workspace/WorkspaceAiConfigCard';
+import {
+  RichTextEditor,
+  getDisplayContent,
+  isLexicalContent,
+  lexicalToPlainText,
+} from '../components/editor';
+import type { EditorState, LexicalEditor } from 'lexical';
 
 // =============================================================================
 // Constants
 // =============================================================================
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
-const DEFAULT_PAGE_SIZE = 10
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+const DEFAULT_PAGE_SIZE = 10;
 
 // =============================================================================
 // Types
 // =============================================================================
 
-type InviteRole = 'ADMIN' | 'MEMBER' | 'VIEWER'
+type InviteRole = 'ADMIN' | 'MEMBER' | 'VIEWER';
 
 // =============================================================================
 // Icons
@@ -68,34 +73,78 @@ type InviteRole = 'ADMIN' | 'MEMBER' | 'VIEWER'
 
 function BuildingIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+      />
     </svg>
-  )
+  );
 }
 
 function UploadIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+      />
     </svg>
-  )
+  );
 }
 
 function TrashIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+      />
     </svg>
-  )
+  );
 }
 
 function UsersIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+      />
     </svg>
-  )
+  );
 }
 
 // =============================================================================
@@ -103,28 +152,30 @@ function UsersIcon({ className }: { className?: string }) {
 // =============================================================================
 
 export function WorkspaceSettingsPage() {
-  const navigate = useNavigate()
-  const currentWorkspace = useAppSelector(selectCurrentWorkspace)
-  const utils = trpc.useUtils()
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const navigate = useNavigate();
+  const currentWorkspace = useAppSelector(selectCurrentWorkspace);
+  const utils = trpc.useUtils();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form states
-  const [name, setName] = useState(currentWorkspace?.name ?? '')
+  const [name, setName] = useState(currentWorkspace?.name ?? '');
   const [description, setDescription] = useState(
     getDisplayContent(currentWorkspace?.description ?? '')
-  )
-  const [editorKey] = useState(0)
+  );
+  const [editorKey] = useState(0);
 
   // Logo states
-  const [logoPreview, setLogoPreview] = useState<string | null>(null)
-  const [selectedLogo, setSelectedLogo] = useState<{ base64: string; mimeType: string } | null>(null)
-  const [currentLogoUrl, setCurrentLogoUrl] = useState<string | null>(null)
-  const [logoTimestamp, setLogoTimestamp] = useState(Date.now())
-  const [logoError, setLogoError] = useState<string | null>(null)
-  const [logoSuccess, setLogoSuccess] = useState<string | null>(null)
-  const [inviteEmail, setInviteEmail] = useState('')
-  const [inviteRole, setInviteRole] = useState<InviteRole>('MEMBER')
-  const [isAddMembersModalOpen, setIsAddMembersModalOpen] = useState(false)
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [selectedLogo, setSelectedLogo] = useState<{ base64: string; mimeType: string } | null>(
+    null
+  );
+  const [currentLogoUrl, setCurrentLogoUrl] = useState<string | null>(null);
+  const [logoTimestamp, setLogoTimestamp] = useState(Date.now());
+  const [logoError, setLogoError] = useState<string | null>(null);
+  const [logoSuccess, setLogoSuccess] = useState<string | null>(null);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState<InviteRole>('MEMBER');
+  const [isAddMembersModalOpen, setIsAddMembersModalOpen] = useState(false);
 
   // Member filters and pagination state
   const [memberFilters, setMemberFilters] = useState<MemberFiltersState>({
@@ -132,150 +183,154 @@ export function WorkspaceSettingsPage() {
     role: 'ALL',
     sortField: 'name',
     sortOrder: 'asc',
-  })
+  });
   const [memberPagination, setMemberPagination] = useState<PaginationState>({
     page: 1,
     pageSize: DEFAULT_PAGE_SIZE,
-  })
+  });
 
   // Fetch workspace details with logo
   const workspaceQuery = trpc.workspace.get.useQuery(
     { workspaceId: currentWorkspace?.id ?? 0 },
     { enabled: !!currentWorkspace }
-  )
+  );
 
   // Initialize logo URL from fetched data
   useEffect(() => {
     if (workspaceQuery.data?.logoUrl) {
-      setCurrentLogoUrl(workspaceQuery.data.logoUrl)
+      setCurrentLogoUrl(workspaceQuery.data.logoUrl);
     }
-  }, [workspaceQuery.data])
+  }, [workspaceQuery.data]);
 
   // Queries
   const membersQuery = trpc.workspace.getMembers.useQuery(
     { workspaceId: currentWorkspace?.id ?? 0 },
     { enabled: !!currentWorkspace }
-  )
+  );
 
   const invitationsQuery = trpc.workspace.getInvitations.useQuery(
     { workspaceId: currentWorkspace?.id ?? 0 },
-    { enabled: !!currentWorkspace && (currentWorkspace.role === 'OWNER' || currentWorkspace.role === 'ADMIN') }
-  )
+    {
+      enabled:
+        !!currentWorkspace &&
+        (currentWorkspace.role === 'OWNER' || currentWorkspace.role === 'ADMIN'),
+    }
+  );
 
   // Mutations
   const updateMutation = trpc.workspace.update.useMutation({
     onSuccess: () => {
-      utils.workspace.list.invalidate()
+      utils.workspace.list.invalidate();
     },
-  })
+  });
 
   const inviteMutation = trpc.workspace.invite.useMutation({
     onSuccess: () => {
-      setInviteEmail('')
-      utils.workspace.getInvitations.invalidate()
+      setInviteEmail('');
+      utils.workspace.getInvitations.invalidate();
     },
-  })
+  });
 
   const removeMemberMutation = trpc.workspace.removeMember.useMutation({
     onSuccess: () => {
-      utils.workspace.getMembers.invalidate()
+      utils.workspace.getMembers.invalidate();
     },
-  })
+  });
 
   const updateRoleMutation = trpc.workspace.updateMemberRole.useMutation({
     onSuccess: () => {
-      utils.workspace.getMembers.invalidate()
+      utils.workspace.getMembers.invalidate();
     },
-  })
+  });
 
   const cancelInvitationMutation = trpc.workspace.cancelInvitation.useMutation({
     onSuccess: () => {
-      utils.workspace.getInvitations.invalidate()
+      utils.workspace.getInvitations.invalidate();
     },
-  })
+  });
 
   const deleteMutation = trpc.workspace.delete.useMutation({
     onSuccess: () => {
-      navigate('/')
+      navigate('/');
     },
-  })
+  });
 
   const uploadLogoMutation = trpc.workspace.uploadLogo.useMutation({
     onSuccess: (data) => {
-      utils.workspace.get.invalidate({ workspaceId: currentWorkspace?.id ?? 0 })
-      utils.workspace.list.invalidate()
-      setCurrentLogoUrl(data.logoUrl)
-      setLogoTimestamp(Date.now())
-      setLogoPreview(null)
-      setSelectedLogo(null)
-      setLogoSuccess('Logo uploaded successfully')
-      setTimeout(() => setLogoSuccess(null), 3000)
+      utils.workspace.get.invalidate({ workspaceId: currentWorkspace?.id ?? 0 });
+      utils.workspace.list.invalidate();
+      setCurrentLogoUrl(data.logoUrl);
+      setLogoTimestamp(Date.now());
+      setLogoPreview(null);
+      setSelectedLogo(null);
+      setLogoSuccess('Logo uploaded successfully');
+      setTimeout(() => setLogoSuccess(null), 3000);
     },
     onError: (err: { message: string }) => {
-      setLogoError(err.message)
+      setLogoError(err.message);
     },
-  })
+  });
 
   const removeLogoMutation = trpc.workspace.removeLogo.useMutation({
     onSuccess: () => {
-      utils.workspace.get.invalidate({ workspaceId: currentWorkspace?.id ?? 0 })
-      utils.workspace.list.invalidate()
-      setCurrentLogoUrl(null)
-      setLogoSuccess('Logo removed successfully')
-      setTimeout(() => setLogoSuccess(null), 3000)
+      utils.workspace.get.invalidate({ workspaceId: currentWorkspace?.id ?? 0 });
+      utils.workspace.list.invalidate();
+      setCurrentLogoUrl(null);
+      setLogoSuccess('Logo removed successfully');
+      setTimeout(() => setLogoSuccess(null), 3000);
     },
     onError: (err: { message: string }) => {
-      setLogoError(err.message)
+      setLogoError(err.message);
     },
-  })
+  });
 
   // Handle editor content changes
   const handleEditorChange = useCallback(
     (_editorState: EditorState, _editor: LexicalEditor, jsonString: string) => {
-      setDescription(jsonString)
+      setDescription(jsonString);
     },
     []
-  )
+  );
 
   // Check if description content is empty
   const isDescriptionEmpty = useCallback((content: string) => {
-    if (!content) return true
-    if (!isLexicalContent(content)) return !content.trim()
-    const plainText = lexicalToPlainText(content)
-    return !plainText.trim()
-  }, [])
+    if (!content) return true;
+    if (!isLexicalContent(content)) return !content.trim();
+    const plainText = lexicalToPlainText(content);
+    return !plainText.trim();
+  }, []);
 
   // Handlers
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-    setLogoError(null)
+    setLogoError(null);
 
     if (!ALLOWED_TYPES.includes(file.type)) {
-      setLogoError('Please select a valid image file (JPEG, PNG, GIF, or WebP)')
-      return
+      setLogoError('Please select a valid image file (JPEG, PNG, GIF, or WebP)');
+      return;
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      setLogoError('File size must be less than 5MB')
-      return
+      setLogoError('File size must be less than 5MB');
+      return;
     }
 
-    const reader = new FileReader()
+    const reader = new FileReader();
     reader.onload = (event) => {
-      const result = event.target?.result as string
-      const base64 = result.split(',')[1]
+      const result = event.target?.result as string;
+      const base64 = result.split(',')[1];
       if (base64) {
-        setLogoPreview(result)
+        setLogoPreview(result);
         setSelectedLogo({
           base64,
           mimeType: file.type,
-        })
+        });
       }
-    }
-    reader.readAsDataURL(file)
-  }
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleUploadLogo = () => {
     if (selectedLogo && currentWorkspace) {
@@ -283,77 +338,82 @@ export function WorkspaceSettingsPage() {
         workspaceId: currentWorkspace.id,
         base64: selectedLogo.base64,
         mimeType: selectedLogo.mimeType as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp',
-      })
+      });
     }
-  }
+  };
 
   const handleRemoveLogo = () => {
     if (currentLogoUrl && currentWorkspace) {
-      removeLogoMutation.mutate({ workspaceId: currentWorkspace.id })
+      removeLogoMutation.mutate({ workspaceId: currentWorkspace.id });
     }
-    setLogoPreview(null)
-    setSelectedLogo(null)
+    setLogoPreview(null);
+    setSelectedLogo(null);
     if (fileInputRef.current) {
-      fileInputRef.current.value = ''
+      fileInputRef.current.value = '';
     }
-  }
+  };
 
   const handleCancelLogoChange = () => {
-    setLogoPreview(null)
-    setSelectedLogo(null)
+    setLogoPreview(null);
+    setSelectedLogo(null);
     if (fileInputRef.current) {
-      fileInputRef.current.value = ''
+      fileInputRef.current.value = '';
     }
-  }
+  };
 
   const handleUpdateWorkspace = () => {
-    if (!currentWorkspace) return
+    if (!currentWorkspace) return;
     updateMutation.mutate({
       workspaceId: currentWorkspace.id,
       name,
       description: isDescriptionEmpty(description) ? undefined : description,
-    })
-  }
+    });
+  };
 
   const handleInvite = () => {
-    if (!currentWorkspace || !inviteEmail) return
+    if (!currentWorkspace || !inviteEmail) return;
     inviteMutation.mutate({
       workspaceId: currentWorkspace.id,
       email: inviteEmail,
       role: inviteRole,
-    })
-  }
+    });
+  };
 
   const handleRemoveMember = (memberId: number) => {
-    if (!currentWorkspace) return
-    if (!confirm('Are you sure you want to remove this member?')) return
+    if (!currentWorkspace) return;
+    if (!confirm('Are you sure you want to remove this member?')) return;
     removeMemberMutation.mutate({
       workspaceId: currentWorkspace.id,
       userId: memberId,
-    })
-  }
+    });
+  };
 
   const handleUpdateRole = (memberId: number, newRole: InviteRole) => {
-    if (!currentWorkspace) return
+    if (!currentWorkspace) return;
     updateRoleMutation.mutate({
       workspaceId: currentWorkspace.id,
       userId: memberId,
       role: newRole,
-    })
-  }
+    });
+  };
 
   const handleCancelInvitation = (invitationId: number) => {
-    if (!currentWorkspace) return
+    if (!currentWorkspace) return;
     cancelInvitationMutation.mutate({
       invitationId,
-    })
-  }
+    });
+  };
 
   const handleDeleteWorkspace = () => {
-    if (!currentWorkspace) return
-    if (!confirm(`Are you sure you want to delete "${currentWorkspace.name}"? This action cannot be undone.`)) return
-    deleteMutation.mutate({ workspaceId: currentWorkspace.id })
-  }
+    if (!currentWorkspace) return;
+    if (
+      !confirm(
+        `Are you sure you want to delete "${currentWorkspace.name}"? This action cannot be undone.`
+      )
+    )
+      return;
+    deleteMutation.mutate({ workspaceId: currentWorkspace.id });
+  };
 
   // Loading/error states
   if (!currentWorkspace) {
@@ -363,20 +423,18 @@ export function WorkspaceSettingsPage() {
           <p className="text-muted-foreground">No workspace selected</p>
         </div>
       </WorkspaceLayout>
-    )
+    );
   }
 
-  const isAdmin = currentWorkspace.role === 'OWNER' || currentWorkspace.role === 'ADMIN'
-  const isOwner = currentWorkspace.role === 'OWNER'
+  const isAdmin = currentWorkspace.role === 'OWNER' || currentWorkspace.role === 'ADMIN';
+  const isOwner = currentWorkspace.role === 'OWNER';
 
   return (
     <WorkspaceLayout>
       <div className="space-y-6 max-w-4xl">
         <div>
           <h1 className="text-page-title-lg tracking-tight text-foreground">Workspace Settings</h1>
-          <p className="text-muted-foreground">
-            Manage {currentWorkspace.name}
-          </p>
+          <p className="text-muted-foreground">Manage {currentWorkspace.name}</p>
         </div>
 
         {/* Workspace Details */}
@@ -407,9 +465,7 @@ export function WorkspaceSettingsPage() {
                   <p className="text-sm text-muted-foreground mb-3">
                     Upload a logo (JPEG, PNG, GIF, WebP - max 5MB)
                   </p>
-                  {logoError && (
-                    <p className="text-sm text-destructive mb-2">{logoError}</p>
-                  )}
+                  {logoError && <p className="text-sm text-destructive mb-2">{logoError}</p>}
                   {logoSuccess && (
                     <p className="text-sm text-green-600 dark:text-green-400 mb-2">{logoSuccess}</p>
                   )}
@@ -494,10 +550,7 @@ export function WorkspaceSettingsPage() {
               </div>
             </CardContent>
             <CardFooter>
-              <Button
-                onClick={handleUpdateWorkspace}
-                disabled={updateMutation.isPending}
-              >
+              <Button onClick={handleUpdateWorkspace} disabled={updateMutation.isPending}>
                 {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
               </Button>
             </CardFooter>
@@ -522,8 +575,8 @@ export function WorkspaceSettingsPage() {
                   <MemberFilters
                     filters={memberFilters}
                     onFiltersChange={(newFilters) => {
-                      setMemberFilters(newFilters)
-                      setMemberPagination({ ...memberPagination, page: 1 })
+                      setMemberFilters(newFilters);
+                      setMemberPagination({ ...memberPagination, page: 1 });
                     }}
                     totalCount={membersQuery.data?.length ?? 0}
                     filteredCount={
@@ -535,10 +588,13 @@ export function WorkspaceSettingsPage() {
                 {/* Member List */}
                 <div className="space-y-3">
                   {(() => {
-                    const allMembers = membersQuery.data ?? []
-                    const filteredMembers = filterAndSortMembers(allMembers, memberFilters)
-                    const paginatedMembers = paginateMembers(filteredMembers, memberPagination)
-                    const totalPages = getTotalPages(filteredMembers.length, memberPagination.pageSize)
+                    const allMembers = membersQuery.data ?? [];
+                    const filteredMembers = filterAndSortMembers(allMembers, memberFilters);
+                    const paginatedMembers = paginateMembers(filteredMembers, memberPagination);
+                    const totalPages = getTotalPages(
+                      filteredMembers.length,
+                      memberPagination.pageSize
+                    );
 
                     if (paginatedMembers.length === 0) {
                       return (
@@ -547,7 +603,7 @@ export function WorkspaceSettingsPage() {
                             ? 'No members yet'
                             : 'No members match your filters'}
                         </p>
-                      )
+                      );
                     }
 
                     return (
@@ -565,7 +621,9 @@ export function WorkspaceSettingsPage() {
                               {isAdmin && member.role !== 'OWNER' ? (
                                 <select
                                   value={member.role}
-                                  onChange={(e) => handleUpdateRole(member.id, e.target.value as InviteRole)}
+                                  onChange={(e) =>
+                                    handleUpdateRole(member.id, e.target.value as InviteRole)
+                                  }
                                   className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm"
                                 >
                                   <option value="VIEWER">Viewer</option>
@@ -601,10 +659,12 @@ export function WorkspaceSettingsPage() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => setMemberPagination({
-                                  ...memberPagination,
-                                  page: memberPagination.page - 1,
-                                })}
+                                onClick={() =>
+                                  setMemberPagination({
+                                    ...memberPagination,
+                                    page: memberPagination.page - 1,
+                                  })
+                                }
                                 disabled={memberPagination.page <= 1}
                               >
                                 Previous
@@ -612,10 +672,12 @@ export function WorkspaceSettingsPage() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => setMemberPagination({
-                                  ...memberPagination,
-                                  page: memberPagination.page + 1,
-                                })}
+                                onClick={() =>
+                                  setMemberPagination({
+                                    ...memberPagination,
+                                    page: memberPagination.page + 1,
+                                  })
+                                }
                                 disabled={memberPagination.page >= totalPages}
                               >
                                 Next
@@ -624,7 +686,7 @@ export function WorkspaceSettingsPage() {
                           </div>
                         )}
                       </>
-                    )
+                    );
                   })()}
                 </div>
               </>
@@ -641,11 +703,7 @@ export function WorkspaceSettingsPage() {
                   <CardTitle>Add Existing Users</CardTitle>
                   <CardDescription>Add users who already have an account</CardDescription>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsAddMembersModalOpen(true)}
-                >
+                <Button variant="outline" size="sm" onClick={() => setIsAddMembersModalOpen(true)}>
                   <UsersIcon className="h-4 w-4 mr-2" />
                   Bulk Add
                 </Button>
@@ -655,7 +713,7 @@ export function WorkspaceSettingsPage() {
               <UserSearchDropdown
                 workspaceId={currentWorkspace.id}
                 onMemberAdded={() => {
-                  utils.workspace.getMembers.invalidate({ workspaceId: currentWorkspace.id })
+                  utils.workspace.getMembers.invalidate({ workspaceId: currentWorkspace.id });
                 }}
               />
             </CardContent>
@@ -695,10 +753,7 @@ export function WorkspaceSettingsPage() {
               </div>
             </CardContent>
             <CardFooter>
-              <Button
-                onClick={handleInvite}
-                disabled={inviteMutation.isPending || !inviteEmail}
-              >
+              <Button onClick={handleInvite} disabled={inviteMutation.isPending || !inviteEmail}>
                 {inviteMutation.isPending ? 'Sending...' : 'Send Invitation'}
               </Button>
             </CardFooter>
@@ -710,9 +765,7 @@ export function WorkspaceSettingsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Pending Invitations</CardTitle>
-              <CardDescription>
-                {invitationsQuery.data.length} pending
-              </CardDescription>
+              <CardDescription>{invitationsQuery.data.length} pending</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
@@ -724,7 +777,8 @@ export function WorkspaceSettingsPage() {
                     <div>
                       <p className="font-medium">{invitation.email}</p>
                       <p className="text-sm text-muted-foreground">
-                        Role: {invitation.role.toLowerCase()} · Expires: {new Date(invitation.expiresAt).toLocaleDateString()}
+                        Role: {invitation.role.toLowerCase()} · Expires:{' '}
+                        {new Date(invitation.expiresAt).toLocaleDateString()}
                       </p>
                     </div>
                     <Button
@@ -743,10 +797,7 @@ export function WorkspaceSettingsPage() {
         )}
 
         {/* AI Configuration */}
-        <WorkspaceAiConfigCard
-          workspaceId={currentWorkspace.id}
-          isAdmin={isAdmin}
-        />
+        <WorkspaceAiConfigCard workspaceId={currentWorkspace.id} isAdmin={isAdmin} />
 
         {/* Danger Zone */}
         {isOwner && (
@@ -782,9 +833,9 @@ export function WorkspaceSettingsPage() {
         isOpen={isAddMembersModalOpen}
         onClose={() => setIsAddMembersModalOpen(false)}
         onMembersAdded={() => {
-          utils.workspace.getMembers.invalidate({ workspaceId: currentWorkspace.id })
+          utils.workspace.getMembers.invalidate({ workspaceId: currentWorkspace.id });
         }}
       />
     </WorkspaceLayout>
-  )
+  );
 }

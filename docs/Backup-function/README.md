@@ -12,38 +12,40 @@ The Kanbu backup system provides enterprise-grade data protection for both datab
 
 ### Components
 
-| Component | Location | Description |
-|-----------|----------|-------------|
-| BackupService | `apps/api/src/services/backup/backupService.ts` | Main orchestration service |
-| BackupPage | `apps/web/src/pages/admin/BackupPage.tsx` | Admin UI for backups |
-| dockerDiscovery.ts | `apps/api/src/services/backup/container/` | Dual-mode PostgreSQL backup |
-| Storage Backends | `apps/api/src/services/backup/storage/` | Local and Google Drive storage |
-| Scheduler | `apps/api/src/services/backup/scheduler/` | Cron-style scheduling |
-| Crypto | `apps/api/src/services/backup/crypto/` | AES-256-GCM encryption |
-| Verification | `apps/api/src/services/backup/verification/` | SHA-256 checksums |
+| Component          | Location                                        | Description                    |
+| ------------------ | ----------------------------------------------- | ------------------------------ |
+| BackupService      | `apps/api/src/services/backup/backupService.ts` | Main orchestration service     |
+| BackupPage         | `apps/web/src/pages/admin/BackupPage.tsx`       | Admin UI for backups           |
+| dockerDiscovery.ts | `apps/api/src/services/backup/container/`       | Dual-mode PostgreSQL backup    |
+| Storage Backends   | `apps/api/src/services/backup/storage/`         | Local and Google Drive storage |
+| Scheduler          | `apps/api/src/services/backup/scheduler/`       | Cron-style scheduling          |
+| Crypto             | `apps/api/src/services/backup/crypto/`          | AES-256-GCM encryption         |
+| Verification       | `apps/api/src/services/backup/verification/`    | SHA-256 checksums              |
 
 ### Backup Modes
 
 The system supports two modes for database backups:
 
-| Mode | Description | Use Case |
-|------|-------------|----------|
+| Mode       | Description                                           | Use Case                                    |
+| ---------- | ----------------------------------------------------- | ------------------------------------------- |
 | **Direct** | `pg_dump` via network connection using `DATABASE_URL` | Containerized deployments (Coolify, Docker) |
-| **Docker** | `docker exec pg_dump` in the postgres container | Development, Docker socket access |
+| **Docker** | `docker exec pg_dump` in the postgres container       | Development, Docker socket access           |
 
 **Auto-detection:** By default (`BACKUP_PG_MODE=auto`), the system tries direct mode first, then falls back to Docker mode.
 
 ### Backup Types
 
 #### 1. Database Backup
+
 - **Direct Mode:** `PGPASSWORD=xxx pg_dump -h host -U user -d database`
 - **Docker Mode:** `docker exec container pg_dump -U kanbu -d kanbu`
 - **Output:** Compressed SQL dump (`.sql.gz`) with optional encryption (`.sql.gz.enc`)
 - **Features:** Checksum verification, optional AES-256-GCM encryption
 
 #### 2. Source Code Backup
+
 - **Method:** `tar -czf` of Kanbu directory
-- **Exclusions:** node_modules, .git, .turbo, dist, .next, *.log, .env.local, coverage
+- **Exclusions:** node_modules, .git, .turbo, dist, .next, \*.log, .env.local, coverage
 - **Output:** `.tar.gz` archive with optional encryption (`.tar.gz.enc`)
 
 ### Data Flow
@@ -65,21 +67,21 @@ The system supports two modes for database backups:
 
 ### Completed Features
 
-| Feature | Phase | Status |
-|---------|-------|--------|
-| Dual-mode backup (direct/docker) | 1 | ✅ |
-| Local storage backend | 1 | ✅ |
-| Google Drive storage backend | 1 | ✅ |
-| Environment-based configuration | 1 | ✅ |
-| Backup list & history | 2 | ✅ |
-| Download functionality | 2 | ✅ |
-| Delete with confirmation | 2 | ✅ |
-| Hybrid scheduler (internal/external) | 3 | ✅ |
-| Retention policies | 3 | ✅ |
-| Database restore with safety checks | 3 | ✅ |
-| Webhook notifications | 3 | ✅ |
-| AES-256-GCM encryption | 4 | ✅ |
-| SHA-256 verification | 4 | ✅ |
+| Feature                              | Phase | Status |
+| ------------------------------------ | ----- | ------ |
+| Dual-mode backup (direct/docker)     | 1     | ✅     |
+| Local storage backend                | 1     | ✅     |
+| Google Drive storage backend         | 1     | ✅     |
+| Environment-based configuration      | 1     | ✅     |
+| Backup list & history                | 2     | ✅     |
+| Download functionality               | 2     | ✅     |
+| Delete with confirmation             | 2     | ✅     |
+| Hybrid scheduler (internal/external) | 3     | ✅     |
+| Retention policies                   | 3     | ✅     |
+| Database restore with safety checks  | 3     | ✅     |
+| Webhook notifications                | 3     | ✅     |
+| AES-256-GCM encryption               | 4     | ✅     |
+| SHA-256 verification                 | 4     | ✅     |
 
 ### Planned Features
 
@@ -166,10 +168,11 @@ curl -X POST https://kanbu.example.com/api/backup/trigger \
 Uses `DATABASE_URL` to connect directly to PostgreSQL:
 
 ```typescript
-const command = `PGPASSWORD='${password}' pg_dump -h ${host} -p ${port} -U ${user} -d ${database}`
+const command = `PGPASSWORD='${password}' pg_dump -h ${host} -p ${port} -U ${user} -d ${database}`;
 ```
 
 **Requirements:**
+
 - `postgresql-client` installed in API container (included in Dockerfile)
 - `DATABASE_URL` environment variable set
 
@@ -178,21 +181,22 @@ const command = `PGPASSWORD='${password}' pg_dump -h ${host} -p ${port} -U ${use
 Uses Docker exec to run pg_dump in the postgres container:
 
 ```typescript
-const command = `docker exec ${container} pg_dump -U kanbu -d kanbu`
+const command = `docker exec ${container} pg_dump -U kanbu -d kanbu`;
 ```
 
 **Requirements:**
+
 - Docker socket access (`/var/run/docker.sock`)
 - Running PostgreSQL container
 
 ## Dependencies
 
-| Dependency | Version | Usage |
-|------------|---------|-------|
-| postgresql-client | 16 | Direct pg_dump (in Docker image) |
-| Docker | 20+ | Docker mode backups |
-| gzip | - | Compression |
-| Node.js crypto | - | AES-256-GCM encryption |
+| Dependency        | Version | Usage                            |
+| ----------------- | ------- | -------------------------------- |
+| postgresql-client | 16      | Direct pg_dump (in Docker image) |
+| Docker            | 20+     | Docker mode backups              |
+| gzip              | -       | Compression                      |
+| Node.js crypto    | -       | AES-256-GCM encryption           |
 
 ## Related Documentation
 

@@ -13,11 +13,11 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState, useEffect, useCallback } from 'react'
-import { Link } from 'react-router-dom'
-import { AdminLayout } from '@/components/admin'
-import { trpc } from '@/lib/trpc'
-import { cn } from '@/lib/utils'
+import { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
+import { AdminLayout } from '@/components/admin';
+import { trpc } from '@/lib/trpc';
+import { cn } from '@/lib/utils';
 import {
   getSocket,
   joinAdminRoom,
@@ -25,19 +25,19 @@ import {
   type GroupEventPayload,
   type GroupMemberEventPayload,
   type RoleAssignmentEventPayload,
-} from '@/lib/socket'
+} from '@/lib/socket';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 type ExpandedState = {
-  domain: boolean
-  domainAdmins: boolean
-  securityGroups: boolean
-  workspaces: Record<number, boolean>
-  projects: Record<number, boolean>
-}
+  domain: boolean;
+  domainAdmins: boolean;
+  securityGroups: boolean;
+  workspaces: Record<number, boolean>;
+  projects: Record<number, boolean>;
+};
 
 // =============================================================================
 // Compact Icons (12x12)
@@ -46,28 +46,43 @@ type ExpandedState = {
 function ChevronIcon({ expanded, className }: { expanded: boolean; className?: string }) {
   return (
     <svg className={cn('w-3 h-3', className)} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={expanded ? "M19 9l-7 7-7-7" : "M9 5l7 7-7 7"} />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d={expanded ? 'M19 9l-7 7-7-7' : 'M9 5l7 7-7 7'}
+      />
     </svg>
-  )
+  );
 }
 
-function Icon({ type, className }: { type: 'building' | 'folder' | 'users' | 'user' | 'shield' | 'globe' | 'plus' | 'x' | 'cog'; className?: string }) {
+function Icon({
+  type,
+  className,
+}: {
+  type: 'building' | 'folder' | 'users' | 'user' | 'shield' | 'globe' | 'plus' | 'x' | 'cog';
+  className?: string;
+}) {
   const paths: Record<string, string> = {
-    building: "M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4",
-    folder: "M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z",
-    users: "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z",
-    user: "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z",
-    shield: "M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z",
-    globe: "M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
-    plus: "M12 4v16m8-8H4",
-    x: "M6 18L18 6M6 6l12 12",
-    cog: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z",
-  }
+    building:
+      'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4',
+    folder: 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z',
+    users:
+      'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z',
+    user: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
+    shield:
+      'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z',
+    globe:
+      'M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+    plus: 'M12 4v16m8-8H4',
+    x: 'M6 18L18 6M6 6l12 12',
+    cog: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z',
+  };
   return (
     <svg className={cn('w-3 h-3', className)} fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={paths[type]} />
     </svg>
-  )
+  );
 }
 
 // =============================================================================
@@ -81,160 +96,185 @@ export function PermissionTreePage() {
     securityGroups: true,
     workspaces: {},
     projects: {},
-  })
+  });
 
   // Dialogs
-  const [showAddDomainAdminDialog, setShowAddDomainAdminDialog] = useState(false)
-  const [showAssignGroupDialog, setShowAssignGroupDialog] = useState<{ workspaceId: number; workspaceName: string } | null>(null)
-  const [selectedUserId, setSelectedUserId] = useState<number | null>(null)
-  const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null)
-  const [selectedRole, setSelectedRole] = useState<'VIEWER' | 'MEMBER' | 'MANAGER' | 'ADMIN'>('MEMBER')
-  const [inheritToChildren, setInheritToChildren] = useState(true)
+  const [showAddDomainAdminDialog, setShowAddDomainAdminDialog] = useState(false);
+  const [showAssignGroupDialog, setShowAssignGroupDialog] = useState<{
+    workspaceId: number;
+    workspaceName: string;
+  } | null>(null);
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
+  const [selectedRole, setSelectedRole] = useState<'VIEWER' | 'MEMBER' | 'MANAGER' | 'ADMIN'>(
+    'MEMBER'
+  );
+  const [inheritToChildren, setInheritToChildren] = useState(true);
 
-  const utils = trpc.useUtils()
+  const utils = trpc.useUtils();
 
   // =============================================================================
   // WebSocket Real-time Updates
   // =============================================================================
 
-  const handleGroupEvent = useCallback((_payload: GroupEventPayload) => {
-    // Refresh all group-related data
-    utils.group.list.invalidate()
-    utils.group.listMembers.invalidate()
-  }, [utils])
+  const handleGroupEvent = useCallback(
+    (_payload: GroupEventPayload) => {
+      // Refresh all group-related data
+      utils.group.list.invalidate();
+      utils.group.listMembers.invalidate();
+    },
+    [utils]
+  );
 
-  const handleGroupMemberEvent = useCallback((_payload: GroupMemberEventPayload) => {
-    // Refresh member lists and group counts
-    utils.group.list.invalidate()
-    utils.group.listMembers.invalidate()
-  }, [utils])
+  const handleGroupMemberEvent = useCallback(
+    (_payload: GroupMemberEventPayload) => {
+      // Refresh member lists and group counts
+      utils.group.list.invalidate();
+      utils.group.listMembers.invalidate();
+    },
+    [utils]
+  );
 
-  const handleRoleAssignmentEvent = useCallback((_payload: RoleAssignmentEventPayload) => {
-    // Refresh role assignments
-    utils.roleAssignment.listForWorkspace.invalidate()
-    utils.roleAssignment.listForProject.invalidate()
-  }, [utils])
+  const handleRoleAssignmentEvent = useCallback(
+    (_payload: RoleAssignmentEventPayload) => {
+      // Refresh role assignments
+      utils.roleAssignment.listForWorkspace.invalidate();
+      utils.roleAssignment.listForProject.invalidate();
+    },
+    [utils]
+  );
 
   useEffect(() => {
-    const socket = getSocket()
-    if (!socket) return
+    const socket = getSocket();
+    if (!socket) return;
 
     // Join admin room to receive permission tree updates
     const setup = async () => {
       if (socket.connected) {
-        await joinAdminRoom()
+        await joinAdminRoom();
       } else {
         socket.once('connect', () => {
-          joinAdminRoom()
-        })
+          joinAdminRoom();
+        });
       }
-    }
+    };
 
-    setup()
+    setup();
 
     // Listen for group events
-    socket.on('group:created', handleGroupEvent)
-    socket.on('group:updated', handleGroupEvent)
-    socket.on('group:deleted', handleGroupEvent)
-    socket.on('group:member:added', handleGroupMemberEvent)
-    socket.on('group:member:removed', handleGroupMemberEvent)
-    socket.on('roleAssignment:created', handleRoleAssignmentEvent)
-    socket.on('roleAssignment:removed', handleRoleAssignmentEvent)
+    socket.on('group:created', handleGroupEvent);
+    socket.on('group:updated', handleGroupEvent);
+    socket.on('group:deleted', handleGroupEvent);
+    socket.on('group:member:added', handleGroupMemberEvent);
+    socket.on('group:member:removed', handleGroupMemberEvent);
+    socket.on('roleAssignment:created', handleRoleAssignmentEvent);
+    socket.on('roleAssignment:removed', handleRoleAssignmentEvent);
 
     return () => {
       // Cleanup
-      socket.off('group:created', handleGroupEvent)
-      socket.off('group:updated', handleGroupEvent)
-      socket.off('group:deleted', handleGroupEvent)
-      socket.off('group:member:added', handleGroupMemberEvent)
-      socket.off('group:member:removed', handleGroupMemberEvent)
-      socket.off('roleAssignment:created', handleRoleAssignmentEvent)
-      socket.off('roleAssignment:removed', handleRoleAssignmentEvent)
-      leaveAdminRoom()
-    }
-  }, [handleGroupEvent, handleGroupMemberEvent, handleRoleAssignmentEvent])
+      socket.off('group:created', handleGroupEvent);
+      socket.off('group:updated', handleGroupEvent);
+      socket.off('group:deleted', handleGroupEvent);
+      socket.off('group:member:added', handleGroupMemberEvent);
+      socket.off('group:member:removed', handleGroupMemberEvent);
+      socket.off('roleAssignment:created', handleRoleAssignmentEvent);
+      socket.off('roleAssignment:removed', handleRoleAssignmentEvent);
+      leaveAdminRoom();
+    };
+  }, [handleGroupEvent, handleGroupMemberEvent, handleRoleAssignmentEvent]);
 
   // =============================================================================
   // Fetch all data
-  const { data: workspacesData, isLoading: isLoadingWorkspaces } = trpc.admin.listAllWorkspaces.useQuery({
-    limit: 100,
-    isActive: true,
-  })
+  const { data: workspacesData, isLoading: isLoadingWorkspaces } =
+    trpc.admin.listAllWorkspaces.useQuery({
+      limit: 100,
+      isActive: true,
+    });
 
   const { data: groupsData, isLoading: isLoadingGroups } = trpc.group.list.useQuery({
     limit: 100,
-  })
+  });
 
   const { data: usersData } = trpc.admin.listUsers.useQuery({
     limit: 100,
     isActive: true,
-  })
+  });
 
-  const domainAdminsGroup = groupsData?.groups.find(g => g.type === 'SYSTEM' && (g.name === 'domain-admins' || g.name === 'Domain Admins'))
+  const domainAdminsGroup = groupsData?.groups.find(
+    (g) => g.type === 'SYSTEM' && (g.name === 'domain-admins' || g.name === 'Domain Admins')
+  );
 
   const { data: domainAdminMembers } = trpc.group.listMembers.useQuery(
     { groupId: domainAdminsGroup?.id ?? 0 },
     { enabled: !!domainAdminsGroup?.id }
-  )
+  );
 
-  const securityGroups = groupsData?.groups.filter(g => g.isSecurityGroup) ?? []
-  const workspaceGroups = groupsData?.groups.filter(g =>
-    g.workspaceId !== null && (g.type === 'WORKSPACE' || g.type === 'WORKSPACE_ADMIN')
-  ) ?? []
+  const securityGroups = groupsData?.groups.filter((g) => g.isSecurityGroup) ?? [];
+  const workspaceGroups =
+    groupsData?.groups.filter(
+      (g) => g.workspaceId !== null && (g.type === 'WORKSPACE' || g.type === 'WORKSPACE_ADMIN')
+    ) ?? [];
 
   // Mutations
   const addDomainAdmin = trpc.group.addMember.useMutation({
     onSuccess: () => {
-      utils.group.listMembers.invalidate()
-      utils.group.list.invalidate()
-      setShowAddDomainAdminDialog(false)
-      setSelectedUserId(null)
+      utils.group.listMembers.invalidate();
+      utils.group.list.invalidate();
+      setShowAddDomainAdminDialog(false);
+      setSelectedUserId(null);
     },
-  })
+  });
 
   const removeDomainAdmin = trpc.group.removeMember.useMutation({
     onSuccess: () => {
-      utils.group.listMembers.invalidate()
-      utils.group.list.invalidate()
+      utils.group.listMembers.invalidate();
+      utils.group.list.invalidate();
     },
-  })
+  });
 
   const assignToWorkspace = trpc.roleAssignment.assign.useMutation({
     onSuccess: () => {
-      utils.roleAssignment.listForWorkspace.invalidate()
-      setShowAssignGroupDialog(null)
-      setSelectedGroupId(null)
-      setSelectedRole('MEMBER')
-      setInheritToChildren(true)
+      utils.roleAssignment.listForWorkspace.invalidate();
+      setShowAssignGroupDialog(null);
+      setSelectedGroupId(null);
+      setSelectedRole('MEMBER');
+      setInheritToChildren(true);
     },
-  })
+  });
 
   const toggleExpand = (key: keyof Omit<ExpandedState, 'workspaces' | 'projects'>) => {
-    setExpanded(prev => ({ ...prev, [key]: !prev[key] }))
-  }
+    setExpanded((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
 
   const toggleWorkspace = (id: number) => {
-    setExpanded(prev => ({
+    setExpanded((prev) => ({
       ...prev,
       workspaces: { ...prev.workspaces, [id]: !prev.workspaces[id] },
-    }))
-  }
+    }));
+  };
 
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
-      case 'OWNER': return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
-      case 'ADMIN': return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
-      case 'MANAGER': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-      case 'MEMBER': return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-      case 'VIEWER': return 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300'
-      default: return 'bg-gray-100 text-gray-600'
+      case 'OWNER':
+        return 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400';
+      case 'ADMIN':
+        return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400';
+      case 'MANAGER':
+        return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
+      case 'MEMBER':
+        return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
+      case 'VIEWER':
+        return 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300';
+      default:
+        return 'bg-gray-100 text-gray-600';
     }
-  }
+  };
 
-  const isLoading = isLoadingWorkspaces || isLoadingGroups
-  const nonAdminUsers = usersData?.users.filter(
-    u => !domainAdminMembers?.members.some((m: { user: { id: number } }) => m.user.id === u.id)
-  ) ?? []
+  const isLoading = isLoadingWorkspaces || isLoadingGroups;
+  const nonAdminUsers =
+    usersData?.users.filter(
+      (u) => !domainAdminMembers?.members.some((m: { user: { id: number } }) => m.user.id === u.id)
+    ) ?? [];
 
   return (
     <AdminLayout
@@ -247,11 +287,21 @@ export function PermissionTreePage() {
         <div className="space-y-3">
           {/* Compact Legend */}
           <div className="flex flex-wrap gap-3 text-[11px] text-gray-500 dark:text-gray-400 px-1">
-            <span className="flex items-center gap-1"><Icon type="globe" className="text-purple-500" /> Domain</span>
-            <span className="flex items-center gap-1"><Icon type="building" className="text-blue-500" /> Workspace</span>
-            <span className="flex items-center gap-1"><Icon type="folder" className="text-green-500" /> Project</span>
-            <span className="flex items-center gap-1"><Icon type="shield" className="text-indigo-500" /> Security Group</span>
-            <span className="flex items-center gap-1"><Icon type="user" className="text-gray-500" /> User</span>
+            <span className="flex items-center gap-1">
+              <Icon type="globe" className="text-purple-500" /> Domain
+            </span>
+            <span className="flex items-center gap-1">
+              <Icon type="building" className="text-blue-500" /> Workspace
+            </span>
+            <span className="flex items-center gap-1">
+              <Icon type="folder" className="text-green-500" /> Project
+            </span>
+            <span className="flex items-center gap-1">
+              <Icon type="shield" className="text-indigo-500" /> Security Group
+            </span>
+            <span className="flex items-center gap-1">
+              <Icon type="user" className="text-gray-500" /> User
+            </span>
           </div>
 
           {/* Tree Container */}
@@ -275,7 +325,11 @@ export function PermissionTreePage() {
                         onClick={() => toggleExpand('domainAdmins')}
                         expanded={expanded.domainAdmins}
                         icon={<Icon type="shield" className="text-purple-500" />}
-                        label={<span className="text-purple-600 dark:text-purple-400">Domain Admins</span>}
+                        label={
+                          <span className="text-purple-600 dark:text-purple-400">
+                            Domain Admins
+                          </span>
+                        }
                         meta={`${domainAdminsGroup?.memberCount ?? 0} members`}
                         className="flex-1"
                       />
@@ -291,21 +345,36 @@ export function PermissionTreePage() {
                     {expanded.domainAdmins && domainAdminMembers?.members && (
                       <div className="ml-3 pl-2 border-l border-purple-200 dark:border-purple-800">
                         {domainAdminMembers.members.length === 0 ? (
-                          <div className="text-gray-400 italic py-0.5 pl-4">No domain admins yet</div>
+                          <div className="text-gray-400 italic py-0.5 pl-4">
+                            No domain admins yet
+                          </div>
                         ) : (
                           domainAdminMembers.members.map((member) => (
-                            <div key={member.id} className="flex items-center justify-between py-0.5 group hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded">
+                            <div
+                              key={member.id}
+                              className="flex items-center justify-between py-0.5 group hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded"
+                            >
                               <div className="flex items-center gap-1 pl-4">
                                 <Icon type="user" className="text-purple-400" />
-                                <Link to={`/admin/users/${member.user.id}`} className="text-purple-600 dark:text-purple-400 hover:underline">
+                                <Link
+                                  to={`/admin/users/${member.user.id}`}
+                                  className="text-purple-600 dark:text-purple-400 hover:underline"
+                                >
                                   {member.user.name || member.user.email}
                                 </Link>
                                 <span className="text-gray-400">{member.user.email}</span>
                               </div>
                               <button
                                 onClick={() => {
-                                  if (confirm(`Remove ${member.user.name || member.user.email} from Domain Admins?`)) {
-                                    removeDomainAdmin.mutate({ groupId: domainAdminsGroup!.id, userId: member.user.id })
+                                  if (
+                                    confirm(
+                                      `Remove ${member.user.name || member.user.email} from Domain Admins?`
+                                    )
+                                  ) {
+                                    removeDomainAdmin.mutate({
+                                      groupId: domainAdminsGroup!.id,
+                                      userId: member.user.id,
+                                    });
                                   }
                                 }}
                                 className="p-0.5 opacity-0 group-hover:opacity-100 hover:bg-red-100 dark:hover:bg-red-900/30 rounded text-red-600"
@@ -324,11 +393,19 @@ export function PermissionTreePage() {
                         onClick={() => toggleExpand('securityGroups')}
                         expanded={expanded.securityGroups}
                         icon={<Icon type="shield" className="text-indigo-500" />}
-                        label={<span className="text-indigo-600 dark:text-indigo-400">Security Groups</span>}
+                        label={
+                          <span className="text-indigo-600 dark:text-indigo-400">
+                            Security Groups
+                          </span>
+                        }
                         meta={`${securityGroups.length}`}
                         className="flex-1"
                       />
-                      <Link to="/admin/groups" className="p-0.5 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 rounded text-indigo-600" title="Manage">
+                      <Link
+                        to="/admin/groups"
+                        className="p-0.5 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 rounded text-indigo-600"
+                        title="Manage"
+                      >
                         <Icon type="cog" />
                       </Link>
                     </div>
@@ -341,14 +418,19 @@ export function PermissionTreePage() {
                     <div className="text-[10px] text-gray-400 uppercase tracking-wider py-1 mt-1">
                       Workspaces ({workspacesData?.total ?? 0})
                     </div>
-                    {workspacesData?.workspaces.map(workspace => (
+                    {workspacesData?.workspaces.map((workspace) => (
                       <WorkspaceNode
                         key={workspace.id}
                         workspace={workspace}
                         workspaceGroups={workspaceGroups}
                         isExpanded={expanded.workspaces[workspace.id] ?? false}
                         onToggle={() => toggleWorkspace(workspace.id)}
-                        onAssignGroup={() => setShowAssignGroupDialog({ workspaceId: workspace.id, workspaceName: workspace.name })}
+                        onAssignGroup={() =>
+                          setShowAssignGroupDialog({
+                            workspaceId: workspace.id,
+                            workspaceName: workspace.name,
+                          })
+                        }
                         getRoleBadgeColor={getRoleBadgeColor}
                       />
                     ))}
@@ -363,34 +445,48 @@ export function PermissionTreePage() {
             <Stat value={workspacesData?.total ?? 0} label="Workspaces" />
             <Stat value={groupsData?.total ?? 0} label="Total Groups" />
             <Stat value={securityGroups.length} label="Security Groups" color="indigo" />
-            <Stat value={domainAdminsGroup?.memberCount ?? 0} label="Domain Admins" color="purple" />
+            <Stat
+              value={domainAdminsGroup?.memberCount ?? 0}
+              label="Domain Admins"
+              color="purple"
+            />
           </div>
         </div>
       )}
 
       {/* Add Domain Admin Dialog */}
       {showAddDomainAdminDialog && (
-        <Dialog title="Add Domain Admin" subtitle="Domain Admins have full access to everything in Kanbu.">
+        <Dialog
+          title="Add Domain Admin"
+          subtitle="Domain Admins have full access to everything in Kanbu."
+        >
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Select User</label>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Select User
+              </label>
               <select
                 value={selectedUserId ?? ''}
                 onChange={(e) => setSelectedUserId(e.target.value ? Number(e.target.value) : null)}
                 className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-foreground"
               >
                 <option value="">Choose a user...</option>
-                {nonAdminUsers.map(user => (
-                  <option key={user.id} value={user.id}>{user.name || user.email} ({user.email})</option>
+                {nonAdminUsers.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.name || user.email} ({user.email})
+                  </option>
                 ))}
               </select>
             </div>
           </div>
           <DialogFooter
-            onCancel={() => { setShowAddDomainAdminDialog(false); setSelectedUserId(null) }}
+            onCancel={() => {
+              setShowAddDomainAdminDialog(false);
+              setSelectedUserId(null);
+            }}
             onConfirm={() => {
               if (selectedUserId && domainAdminsGroup) {
-                addDomainAdmin.mutate({ groupId: domainAdminsGroup.id, userId: selectedUserId })
+                addDomainAdmin.mutate({ groupId: domainAdminsGroup.id, userId: selectedUserId });
               }
             }}
             confirmLabel={addDomainAdmin.isPending ? 'Adding...' : 'Add Domain Admin'}
@@ -402,26 +498,37 @@ export function PermissionTreePage() {
 
       {/* Assign Group Dialog */}
       {showAssignGroupDialog && (
-        <Dialog title="Assign Security Group" subtitle={`Assign to ${showAssignGroupDialog.workspaceName}`}>
+        <Dialog
+          title="Assign Security Group"
+          subtitle={`Assign to ${showAssignGroupDialog.workspaceName}`}
+        >
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Security Group</label>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Security Group
+              </label>
               <select
                 value={selectedGroupId ?? ''}
                 onChange={(e) => setSelectedGroupId(e.target.value ? Number(e.target.value) : null)}
                 className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-foreground"
               >
                 <option value="">Choose a group...</option>
-                {securityGroups.map(group => (
-                  <option key={group.id} value={group.id}>{group.displayName} ({group.memberCount} members)</option>
+                {securityGroups.map((group) => (
+                  <option key={group.id} value={group.id}>
+                    {group.displayName} ({group.memberCount} members)
+                  </option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Role</label>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Role
+              </label>
               <select
                 value={selectedRole}
-                onChange={(e) => setSelectedRole(e.target.value as 'VIEWER' | 'MEMBER' | 'MANAGER' | 'ADMIN')}
+                onChange={(e) =>
+                  setSelectedRole(e.target.value as 'VIEWER' | 'MEMBER' | 'MANAGER' | 'ADMIN')
+                }
                 className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-foreground"
               >
                 <option value="VIEWER">Viewer</option>
@@ -441,7 +548,12 @@ export function PermissionTreePage() {
             </label>
           </div>
           <DialogFooter
-            onCancel={() => { setShowAssignGroupDialog(null); setSelectedGroupId(null); setSelectedRole('MEMBER'); setInheritToChildren(true) }}
+            onCancel={() => {
+              setShowAssignGroupDialog(null);
+              setSelectedGroupId(null);
+              setSelectedRole('MEMBER');
+              setInheritToChildren(true);
+            }}
             onConfirm={() => {
               if (selectedGroupId && showAssignGroupDialog) {
                 assignToWorkspace.mutate({
@@ -449,7 +561,7 @@ export function PermissionTreePage() {
                   workspaceId: showAssignGroupDialog.workspaceId,
                   role: selectedRole,
                   inheritToChildren,
-                })
+                });
               }
             }}
             confirmLabel={assignToWorkspace.isPending ? 'Assigning...' : 'Assign'}
@@ -459,7 +571,7 @@ export function PermissionTreePage() {
         </Dialog>
       )}
     </AdminLayout>
-  )
+  );
 }
 
 // =============================================================================
@@ -474,39 +586,61 @@ function Row({
   meta,
   className,
 }: {
-  onClick?: () => void
-  expanded?: boolean
-  icon: React.ReactNode
-  label: React.ReactNode
-  meta?: string
-  className?: string
+  onClick?: () => void;
+  expanded?: boolean;
+  icon: React.ReactNode;
+  label: React.ReactNode;
+  meta?: string;
+  className?: string;
 }) {
   return (
     <button
       onClick={onClick}
-      className={cn('flex items-center gap-1 hover:bg-gray-50 dark:hover:bg-gray-700/50 px-1 py-0.5 rounded text-left', className)}
+      className={cn(
+        'flex items-center gap-1 hover:bg-gray-50 dark:hover:bg-gray-700/50 px-1 py-0.5 rounded text-left',
+        className
+      )}
     >
       {expanded !== undefined && <ChevronIcon expanded={expanded} className="text-gray-400" />}
       {icon}
       {label}
       {meta && <span className="text-gray-400 ml-1">({meta})</span>}
     </button>
-  )
+  );
 }
 
-function Stat({ value, label, color }: { value: number; label: string; color?: 'indigo' | 'purple' }) {
-  const valueColor = color === 'indigo' ? 'text-indigo-600 dark:text-indigo-400'
-    : color === 'purple' ? 'text-purple-600 dark:text-purple-400'
-    : 'text-foreground'
+function Stat({
+  value,
+  label,
+  color,
+}: {
+  value: number;
+  label: string;
+  color?: 'indigo' | 'purple';
+}) {
+  const valueColor =
+    color === 'indigo'
+      ? 'text-indigo-600 dark:text-indigo-400'
+      : color === 'purple'
+        ? 'text-purple-600 dark:text-purple-400'
+        : 'text-foreground';
   return (
     <div className="bg-card rounded border border-gray-200 dark:border-gray-700 py-2 px-3">
       <div className={cn('text-lg font-bold', valueColor)}>{value}</div>
       <div className="text-gray-500">{label}</div>
     </div>
-  )
+  );
 }
 
-function Dialog({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
+function Dialog({
+  title,
+  subtitle,
+  children,
+}: {
+  title: string;
+  subtitle?: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-card rounded-lg shadow-xl w-full max-w-sm mx-4">
@@ -517,7 +651,7 @@ function Dialog({ title, subtitle, children }: { title: string; subtitle?: strin
         <div className="px-4 py-3">{children}</div>
       </div>
     </div>
-  )
+  );
 }
 
 function DialogFooter({
@@ -527,16 +661,22 @@ function DialogFooter({
   confirmDisabled,
   confirmColor = 'indigo',
 }: {
-  onCancel: () => void
-  onConfirm: () => void
-  confirmLabel: string
-  confirmDisabled?: boolean
-  confirmColor?: 'indigo' | 'purple'
+  onCancel: () => void;
+  onConfirm: () => void;
+  confirmLabel: string;
+  confirmDisabled?: boolean;
+  confirmColor?: 'indigo' | 'purple';
 }) {
-  const colorClass = confirmColor === 'purple' ? 'bg-purple-600 hover:bg-purple-700' : 'bg-indigo-600 hover:bg-indigo-700'
+  const colorClass =
+    confirmColor === 'purple'
+      ? 'bg-purple-600 hover:bg-purple-700'
+      : 'bg-indigo-600 hover:bg-indigo-700';
   return (
     <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-2 -mx-4 -mb-3 mt-3">
-      <button onClick={onCancel} className="px-3 py-1.5 text-xs text-gray-700 dark:text-gray-300 hover:bg-accent rounded">
+      <button
+        onClick={onCancel}
+        className="px-3 py-1.5 text-xs text-gray-700 dark:text-gray-300 hover:bg-accent rounded"
+      >
         Cancel
       </button>
       <button
@@ -547,30 +687,42 @@ function DialogFooter({
         {confirmLabel}
       </button>
     </div>
-  )
+  );
 }
 
 // Security Groups List with expandable groups
-function SecurityGroupsList({ securityGroups }: { securityGroups: Array<{ id: number; displayName: string; memberCount: number; assignmentCount?: number }> }) {
-  const [expandedGroups, setExpandedGroups] = useState<Record<number, boolean>>({})
+function SecurityGroupsList({
+  securityGroups,
+}: {
+  securityGroups: Array<{
+    id: number;
+    displayName: string;
+    memberCount: number;
+    assignmentCount?: number;
+  }>;
+}) {
+  const [expandedGroups, setExpandedGroups] = useState<Record<number, boolean>>({});
 
   const toggleGroup = (groupId: number) => {
-    setExpandedGroups(prev => ({ ...prev, [groupId]: !prev[groupId] }))
-  }
+    setExpandedGroups((prev) => ({ ...prev, [groupId]: !prev[groupId] }));
+  };
 
   if (securityGroups.length === 0) {
     return (
       <div className="ml-3 pl-2 border-l border-indigo-200 dark:border-indigo-800">
         <div className="text-gray-400 italic py-0.5 pl-4">
-          No security groups yet. <Link to="/admin/groups" className="text-indigo-500 hover:underline">Create one</Link>
+          No security groups yet.{' '}
+          <Link to="/admin/groups" className="text-indigo-500 hover:underline">
+            Create one
+          </Link>
         </div>
       </div>
-    )
+    );
   }
 
   return (
     <div className="ml-3 pl-2 border-l border-indigo-200 dark:border-indigo-800">
-      {securityGroups.map(group => (
+      {securityGroups.map((group) => (
         <ExpandableSecurityGroup
           key={group.id}
           group={group}
@@ -579,7 +731,7 @@ function SecurityGroupsList({ securityGroups }: { securityGroups: Array<{ id: nu
         />
       ))}
     </div>
-  )
+  );
 }
 
 // Expandable security group with members and add/remove functionality
@@ -588,44 +740,43 @@ function ExpandableSecurityGroup({
   isExpanded,
   onToggle,
 }: {
-  group: { id: number; displayName: string; memberCount: number; assignmentCount?: number }
-  isExpanded: boolean
-  onToggle: () => void
+  group: { id: number; displayName: string; memberCount: number; assignmentCount?: number };
+  isExpanded: boolean;
+  onToggle: () => void;
 }) {
-  const [showAddDialog, setShowAddDialog] = useState(false)
-  const [selectedUserId, setSelectedUserId] = useState<number | null>(null)
-  const utils = trpc.useUtils()
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const utils = trpc.useUtils();
 
   const { data: membersData } = trpc.group.listMembers.useQuery(
     { groupId: group.id },
     { enabled: isExpanded }
-  )
+  );
 
   const { data: usersData } = trpc.admin.listUsers.useQuery(
     { limit: 100, isActive: true },
     { enabled: showAddDialog }
-  )
+  );
 
   const addMember = trpc.group.addMember.useMutation({
     onSuccess: () => {
-      utils.group.listMembers.invalidate({ groupId: group.id })
-      utils.group.list.invalidate()
-      setShowAddDialog(false)
-      setSelectedUserId(null)
+      utils.group.listMembers.invalidate({ groupId: group.id });
+      utils.group.list.invalidate();
+      setShowAddDialog(false);
+      setSelectedUserId(null);
     },
-  })
+  });
 
   const removeMember = trpc.group.removeMember.useMutation({
     onSuccess: () => {
-      utils.group.listMembers.invalidate({ groupId: group.id })
-      utils.group.list.invalidate()
+      utils.group.listMembers.invalidate({ groupId: group.id });
+      utils.group.list.invalidate();
     },
-  })
+  });
 
   // Filter out users already in this group
-  const availableUsers = usersData?.users.filter(
-    u => !membersData?.members?.some(m => m.user.id === u.id)
-  ) ?? []
+  const availableUsers =
+    usersData?.users.filter((u) => !membersData?.members?.some((m) => m.user.id === u.id)) ?? [];
 
   return (
     <div>
@@ -638,12 +789,14 @@ function ExpandableSecurityGroup({
           <Icon type="shield" className="text-indigo-400" />
           <Link
             to={`/admin/groups/${group.id}`}
-            onClick={e => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
             className="text-indigo-600 dark:text-indigo-400 hover:underline"
           >
             {group.displayName}
           </Link>
-          <span className="text-gray-400">({group.memberCount} members, {group.assignmentCount ?? 0} assignments)</span>
+          <span className="text-gray-400">
+            ({group.memberCount} members, {group.assignmentCount ?? 0} assignments)
+          </span>
         </button>
         <button
           onClick={() => setShowAddDialog(true)}
@@ -659,8 +812,11 @@ function ExpandableSecurityGroup({
           {!membersData?.members?.length ? (
             <div className="text-gray-400 italic py-0.5 pl-2">No members yet</div>
           ) : (
-            membersData.members.map(member => (
-              <div key={member.id} className="flex items-center justify-between py-0.5 pl-2 group hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded">
+            membersData.members.map((member) => (
+              <div
+                key={member.id}
+                className="flex items-center justify-between py-0.5 pl-2 group hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded"
+              >
                 <div className="flex items-center gap-1">
                   <Icon type="user" className="text-indigo-400" />
                   <Link
@@ -673,8 +829,12 @@ function ExpandableSecurityGroup({
                 </div>
                 <button
                   onClick={() => {
-                    if (confirm(`Remove ${member.user.name || member.user.email} from ${group.displayName}?`)) {
-                      removeMember.mutate({ groupId: group.id, userId: member.user.id })
+                    if (
+                      confirm(
+                        `Remove ${member.user.name || member.user.email} from ${group.displayName}?`
+                      )
+                    ) {
+                      removeMember.mutate({ groupId: group.id, userId: member.user.id });
                     }
                   }}
                   className="p-0.5 opacity-0 group-hover:opacity-100 hover:bg-red-100 dark:hover:bg-red-900/30 rounded text-red-600"
@@ -692,24 +852,31 @@ function ExpandableSecurityGroup({
         <Dialog title={`Add member to ${group.displayName}`}>
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Select User</label>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Select User
+              </label>
               <select
                 value={selectedUserId ?? ''}
                 onChange={(e) => setSelectedUserId(e.target.value ? Number(e.target.value) : null)}
                 className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-foreground"
               >
                 <option value="">Choose a user...</option>
-                {availableUsers.map(user => (
-                  <option key={user.id} value={user.id}>{user.name || user.email} ({user.email})</option>
+                {availableUsers.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.name || user.email} ({user.email})
+                  </option>
                 ))}
               </select>
             </div>
           </div>
           <DialogFooter
-            onCancel={() => { setShowAddDialog(false); setSelectedUserId(null) }}
+            onCancel={() => {
+              setShowAddDialog(false);
+              setSelectedUserId(null);
+            }}
             onConfirm={() => {
               if (selectedUserId) {
-                addMember.mutate({ groupId: group.id, userId: selectedUserId })
+                addMember.mutate({ groupId: group.id, userId: selectedUserId });
               }
             }}
             confirmLabel={addMember.isPending ? 'Adding...' : 'Add member'}
@@ -719,38 +886,51 @@ function ExpandableSecurityGroup({
         </Dialog>
       )}
     </div>
-  )
+  );
 }
 
 interface WorkspaceNodeProps {
-  workspace: { id: number; name: string; projectCount: number; memberCount: number }
-  workspaceGroups: Array<{ id: number; workspaceId: number | null; type: string; displayName: string; memberCount: number }>
-  isExpanded: boolean
-  onToggle: () => void
-  onAssignGroup: () => void
-  getRoleBadgeColor: (role: string) => string
+  workspace: { id: number; name: string; projectCount: number; memberCount: number };
+  workspaceGroups: Array<{
+    id: number;
+    workspaceId: number | null;
+    type: string;
+    displayName: string;
+    memberCount: number;
+  }>;
+  isExpanded: boolean;
+  onToggle: () => void;
+  onAssignGroup: () => void;
+  getRoleBadgeColor: (role: string) => string;
 }
 
-function WorkspaceNode({ workspace, workspaceGroups, isExpanded, onToggle, onAssignGroup, getRoleBadgeColor }: WorkspaceNodeProps) {
-  const [expandedGroups, setExpandedGroups] = useState<Record<number, boolean>>({})
-  const [expandedProjects, setExpandedProjects] = useState<Record<number, boolean>>({})
+function WorkspaceNode({
+  workspace,
+  workspaceGroups,
+  isExpanded,
+  onToggle,
+  onAssignGroup,
+  getRoleBadgeColor,
+}: WorkspaceNodeProps) {
+  const [expandedGroups, setExpandedGroups] = useState<Record<number, boolean>>({});
+  const [expandedProjects, setExpandedProjects] = useState<Record<number, boolean>>({});
 
-  const wsGroups = workspaceGroups.filter(g => g.workspaceId === workspace.id)
-  const adminGroup = wsGroups.find(g => g.type === 'WORKSPACE_ADMIN')
-  const memberGroup = wsGroups.find(g => g.type === 'WORKSPACE')
+  const wsGroups = workspaceGroups.filter((g) => g.workspaceId === workspace.id);
+  const adminGroup = wsGroups.find((g) => g.type === 'WORKSPACE_ADMIN');
+  const memberGroup = wsGroups.find((g) => g.type === 'WORKSPACE');
 
   const { data: projects } = trpc.project.list.useQuery(
     { workspaceId: workspace.id },
     { enabled: isExpanded }
-  )
+  );
 
   const toggleGroup = (groupId: number) => {
-    setExpandedGroups(prev => ({ ...prev, [groupId]: !prev[groupId] }))
-  }
+    setExpandedGroups((prev) => ({ ...prev, [groupId]: !prev[groupId] }));
+  };
 
   const toggleProject = (projectId: number) => {
-    setExpandedProjects(prev => ({ ...prev, [projectId]: !prev[projectId] }))
-  }
+    setExpandedProjects((prev) => ({ ...prev, [projectId]: !prev[projectId] }));
+  };
 
   return (
     <div>
@@ -763,14 +943,20 @@ function WorkspaceNode({ workspace, workspaceGroups, isExpanded, onToggle, onAss
           <Icon type="building" className="text-blue-500" />
           <Link
             to={`/admin/workspaces/${workspace.id}`}
-            onClick={e => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
             className="text-blue-600 dark:text-blue-400 hover:underline"
           >
             {workspace.name}
           </Link>
-          <span className="text-gray-400">({workspace.projectCount} projects, {workspace.memberCount} members)</span>
+          <span className="text-gray-400">
+            ({workspace.projectCount} projects, {workspace.memberCount} members)
+          </span>
         </button>
-        <button onClick={onAssignGroup} className="p-0.5 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 rounded text-indigo-600" title="Assign Group">
+        <button
+          onClick={onAssignGroup}
+          className="p-0.5 hover:bg-indigo-100 dark:hover:bg-indigo-900/30 rounded text-indigo-600"
+          title="Assign Group"
+        >
           <Icon type="plus" />
         </button>
       </div>
@@ -778,7 +964,9 @@ function WorkspaceNode({ workspace, workspaceGroups, isExpanded, onToggle, onAss
       {isExpanded && (
         <div className="ml-3 pl-2 border-l border-blue-200 dark:border-blue-800">
           {/* Auto Groups */}
-          <div className="text-[10px] text-gray-400 uppercase tracking-wider py-0.5">Auto Groups</div>
+          <div className="text-[10px] text-gray-400 uppercase tracking-wider py-0.5">
+            Auto Groups
+          </div>
           {adminGroup && (
             <ExpandableGroup
               group={adminGroup}
@@ -804,8 +992,10 @@ function WorkspaceNode({ workspace, workspaceGroups, isExpanded, onToggle, onAss
           {/* Projects */}
           {projects && projects.length > 0 && (
             <>
-              <div className="text-[10px] text-gray-400 uppercase tracking-wider py-0.5 mt-1">Projects</div>
-              {projects.map(project => (
+              <div className="text-[10px] text-gray-400 uppercase tracking-wider py-0.5 mt-1">
+                Projects
+              </div>
+              {projects.map((project) => (
                 <ExpandableProject
                   key={project.id}
                   project={project}
@@ -818,7 +1008,7 @@ function WorkspaceNode({ workspace, workspaceGroups, isExpanded, onToggle, onAss
         </div>
       )}
     </div>
-  )
+  );
 }
 
 // Expandable group with members and add functionality
@@ -829,50 +1019,58 @@ function ExpandableGroup({
   color,
   label,
 }: {
-  group: { id: number; displayName: string; memberCount: number }
-  isExpanded: boolean
-  onToggle: () => void
-  color: 'orange' | 'blue'
-  label: string
+  group: { id: number; displayName: string; memberCount: number };
+  isExpanded: boolean;
+  onToggle: () => void;
+  color: 'orange' | 'blue';
+  label: string;
 }) {
-  const [showAddDialog, setShowAddDialog] = useState(false)
-  const [selectedUserId, setSelectedUserId] = useState<number | null>(null)
-  const utils = trpc.useUtils()
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const utils = trpc.useUtils();
 
   const { data: membersData } = trpc.group.listMembers.useQuery(
     { groupId: group.id },
     { enabled: isExpanded }
-  )
+  );
 
   const { data: usersData } = trpc.admin.listUsers.useQuery(
     { limit: 100, isActive: true },
     { enabled: showAddDialog }
-  )
+  );
 
   const addMember = trpc.group.addMember.useMutation({
     onSuccess: () => {
-      utils.group.listMembers.invalidate({ groupId: group.id })
-      utils.group.list.invalidate()
-      setShowAddDialog(false)
-      setSelectedUserId(null)
+      utils.group.listMembers.invalidate({ groupId: group.id });
+      utils.group.list.invalidate();
+      setShowAddDialog(false);
+      setSelectedUserId(null);
     },
-  })
+  });
 
   const removeMember = trpc.group.removeMember.useMutation({
     onSuccess: () => {
-      utils.group.listMembers.invalidate({ groupId: group.id })
-      utils.group.list.invalidate()
+      utils.group.listMembers.invalidate({ groupId: group.id });
+      utils.group.list.invalidate();
     },
-  })
+  });
 
-  const colorClasses = color === 'orange'
-    ? { icon: 'text-orange-400', text: 'text-orange-600 dark:text-orange-400', btn: 'hover:bg-orange-100 dark:hover:bg-orange-900/30 text-orange-600' }
-    : { icon: 'text-blue-400', text: 'text-blue-600 dark:text-blue-400', btn: 'hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-600' }
+  const colorClasses =
+    color === 'orange'
+      ? {
+          icon: 'text-orange-400',
+          text: 'text-orange-600 dark:text-orange-400',
+          btn: 'hover:bg-orange-100 dark:hover:bg-orange-900/30 text-orange-600',
+        }
+      : {
+          icon: 'text-blue-400',
+          text: 'text-blue-600 dark:text-blue-400',
+          btn: 'hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-600',
+        };
 
   // Filter out users already in this group
-  const availableUsers = usersData?.users.filter(
-    u => !membersData?.members?.some(m => m.user.id === u.id)
-  ) ?? []
+  const availableUsers =
+    usersData?.users.filter((u) => !membersData?.members?.some((m) => m.user.id === u.id)) ?? [];
 
   return (
     <div>
@@ -885,12 +1083,14 @@ function ExpandableGroup({
           <Icon type="users" className={colorClasses.icon} />
           <Link
             to={`/admin/groups/${group.id}`}
-            onClick={e => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
             className={cn(colorClasses.text, 'hover:underline')}
           >
             {group.displayName}
           </Link>
-          <span className="text-gray-400">({group.memberCount} {label})</span>
+          <span className="text-gray-400">
+            ({group.memberCount} {label})
+          </span>
         </button>
         <button
           onClick={() => setShowAddDialog(true)}
@@ -906,8 +1106,11 @@ function ExpandableGroup({
           {!membersData?.members?.length ? (
             <div className="text-gray-400 italic py-0.5 pl-2">No {label} yet</div>
           ) : (
-            membersData.members.map(member => (
-              <div key={member.id} className="flex items-center justify-between py-0.5 pl-2 group hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded">
+            membersData.members.map((member) => (
+              <div
+                key={member.id}
+                className="flex items-center justify-between py-0.5 pl-2 group hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded"
+              >
                 <div className="flex items-center gap-1">
                   <Icon type="user" className={colorClasses.icon} />
                   <Link
@@ -920,8 +1123,12 @@ function ExpandableGroup({
                 </div>
                 <button
                   onClick={() => {
-                    if (confirm(`Remove ${member.user.name || member.user.email} from ${group.displayName}?`)) {
-                      removeMember.mutate({ groupId: group.id, userId: member.user.id })
+                    if (
+                      confirm(
+                        `Remove ${member.user.name || member.user.email} from ${group.displayName}?`
+                      )
+                    ) {
+                      removeMember.mutate({ groupId: group.id, userId: member.user.id });
                     }
                   }}
                   className="p-0.5 opacity-0 group-hover:opacity-100 hover:bg-red-100 dark:hover:bg-red-900/30 rounded text-red-600"
@@ -939,24 +1146,31 @@ function ExpandableGroup({
         <Dialog title={`Add ${label.slice(0, -1)} to ${group.displayName}`}>
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Select User</label>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Select User
+              </label>
               <select
                 value={selectedUserId ?? ''}
                 onChange={(e) => setSelectedUserId(e.target.value ? Number(e.target.value) : null)}
                 className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-foreground"
               >
                 <option value="">Choose a user...</option>
-                {availableUsers.map(user => (
-                  <option key={user.id} value={user.id}>{user.name || user.email} ({user.email})</option>
+                {availableUsers.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.name || user.email} ({user.email})
+                  </option>
                 ))}
               </select>
             </div>
           </div>
           <DialogFooter
-            onCancel={() => { setShowAddDialog(false); setSelectedUserId(null) }}
+            onCancel={() => {
+              setShowAddDialog(false);
+              setSelectedUserId(null);
+            }}
             onConfirm={() => {
               if (selectedUserId) {
-                addMember.mutate({ groupId: group.id, userId: selectedUserId })
+                addMember.mutate({ groupId: group.id, userId: selectedUserId });
               }
             }}
             confirmLabel={addMember.isPending ? 'Adding...' : `Add ${label.slice(0, -1)}`}
@@ -966,7 +1180,7 @@ function ExpandableGroup({
         </Dialog>
       )}
     </div>
-  )
+  );
 }
 
 // Expandable project with groups
@@ -975,25 +1189,25 @@ function ExpandableProject({
   isExpanded,
   onToggle,
 }: {
-  project: { id: number; name: string }
-  isExpanded: boolean
-  onToggle: () => void
+  project: { id: number; name: string };
+  isExpanded: boolean;
+  onToggle: () => void;
 }) {
-  const [expandedGroups, setExpandedGroups] = useState<Record<number, boolean>>({})
+  const [expandedGroups, setExpandedGroups] = useState<Record<number, boolean>>({});
 
   // Fetch project groups when expanded
   const { data: groupsData } = trpc.group.list.useQuery(
     { projectId: project.id, limit: 50 },
     { enabled: isExpanded }
-  )
+  );
 
-  const projectGroups = groupsData?.groups ?? []
-  const adminGroup = projectGroups.find(g => g.type === 'PROJECT_ADMIN')
-  const memberGroup = projectGroups.find(g => g.type === 'PROJECT')
+  const projectGroups = groupsData?.groups ?? [];
+  const adminGroup = projectGroups.find((g) => g.type === 'PROJECT_ADMIN');
+  const memberGroup = projectGroups.find((g) => g.type === 'PROJECT');
 
   const toggleGroup = (groupId: number) => {
-    setExpandedGroups(prev => ({ ...prev, [groupId]: !prev[groupId] }))
-  }
+    setExpandedGroups((prev) => ({ ...prev, [groupId]: !prev[groupId] }));
+  };
 
   return (
     <div>
@@ -1005,7 +1219,7 @@ function ExpandableProject({
         <Icon type="folder" className="text-green-400" />
         <Link
           to={`/project/${project.id}/board`}
-          onClick={e => e.stopPropagation()}
+          onClick={(e) => e.stopPropagation()}
           className="text-green-600 dark:text-green-400 hover:underline"
         >
           {project.name}
@@ -1041,7 +1255,7 @@ function ExpandableProject({
         </div>
       )}
     </div>
-  )
+  );
 }
 
 // Expandable project group with members and add/remove functionality
@@ -1052,50 +1266,58 @@ function ExpandableProjectGroup({
   color,
   label,
 }: {
-  group: { id: number; displayName: string; memberCount: number }
-  isExpanded: boolean
-  onToggle: () => void
-  color: 'orange' | 'green'
-  label: string
+  group: { id: number; displayName: string; memberCount: number };
+  isExpanded: boolean;
+  onToggle: () => void;
+  color: 'orange' | 'green';
+  label: string;
 }) {
-  const [showAddDialog, setShowAddDialog] = useState(false)
-  const [selectedUserId, setSelectedUserId] = useState<number | null>(null)
-  const utils = trpc.useUtils()
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const utils = trpc.useUtils();
 
   const { data: membersData } = trpc.group.listMembers.useQuery(
     { groupId: group.id },
     { enabled: isExpanded }
-  )
+  );
 
   const { data: usersData } = trpc.admin.listUsers.useQuery(
     { limit: 100, isActive: true },
     { enabled: showAddDialog }
-  )
+  );
 
   const addMember = trpc.group.addMember.useMutation({
     onSuccess: () => {
-      utils.group.listMembers.invalidate({ groupId: group.id })
-      utils.group.list.invalidate()
-      setShowAddDialog(false)
-      setSelectedUserId(null)
+      utils.group.listMembers.invalidate({ groupId: group.id });
+      utils.group.list.invalidate();
+      setShowAddDialog(false);
+      setSelectedUserId(null);
     },
-  })
+  });
 
   const removeMember = trpc.group.removeMember.useMutation({
     onSuccess: () => {
-      utils.group.listMembers.invalidate({ groupId: group.id })
-      utils.group.list.invalidate()
+      utils.group.listMembers.invalidate({ groupId: group.id });
+      utils.group.list.invalidate();
     },
-  })
+  });
 
-  const colorClasses = color === 'orange'
-    ? { icon: 'text-orange-400', text: 'text-orange-600 dark:text-orange-400', btn: 'hover:bg-orange-100 dark:hover:bg-orange-900/30 text-orange-600' }
-    : { icon: 'text-green-400', text: 'text-green-600 dark:text-green-400', btn: 'hover:bg-green-100 dark:hover:bg-green-900/30 text-green-600' }
+  const colorClasses =
+    color === 'orange'
+      ? {
+          icon: 'text-orange-400',
+          text: 'text-orange-600 dark:text-orange-400',
+          btn: 'hover:bg-orange-100 dark:hover:bg-orange-900/30 text-orange-600',
+        }
+      : {
+          icon: 'text-green-400',
+          text: 'text-green-600 dark:text-green-400',
+          btn: 'hover:bg-green-100 dark:hover:bg-green-900/30 text-green-600',
+        };
 
   // Filter out users already in this group
-  const availableUsers = usersData?.users.filter(
-    u => !membersData?.members?.some(m => m.user.id === u.id)
-  ) ?? []
+  const availableUsers =
+    usersData?.users.filter((u) => !membersData?.members?.some((m) => m.user.id === u.id)) ?? [];
 
   return (
     <div>
@@ -1108,12 +1330,14 @@ function ExpandableProjectGroup({
           <Icon type="users" className={colorClasses.icon} />
           <Link
             to={`/admin/groups/${group.id}`}
-            onClick={e => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
             className={cn(colorClasses.text, 'hover:underline')}
           >
             {group.displayName}
           </Link>
-          <span className="text-gray-400">({group.memberCount} {label})</span>
+          <span className="text-gray-400">
+            ({group.memberCount} {label})
+          </span>
         </button>
         <button
           onClick={() => setShowAddDialog(true)}
@@ -1129,8 +1353,11 @@ function ExpandableProjectGroup({
           {!membersData?.members?.length ? (
             <div className="text-gray-400 italic py-0.5 pl-2">No {label} yet</div>
           ) : (
-            membersData.members.map(member => (
-              <div key={member.id} className="flex items-center justify-between py-0.5 pl-2 group hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded">
+            membersData.members.map((member) => (
+              <div
+                key={member.id}
+                className="flex items-center justify-between py-0.5 pl-2 group hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded"
+              >
                 <div className="flex items-center gap-1">
                   <Icon type="user" className={colorClasses.icon} />
                   <Link
@@ -1143,8 +1370,12 @@ function ExpandableProjectGroup({
                 </div>
                 <button
                   onClick={() => {
-                    if (confirm(`Remove ${member.user.name || member.user.email} from ${group.displayName}?`)) {
-                      removeMember.mutate({ groupId: group.id, userId: member.user.id })
+                    if (
+                      confirm(
+                        `Remove ${member.user.name || member.user.email} from ${group.displayName}?`
+                      )
+                    ) {
+                      removeMember.mutate({ groupId: group.id, userId: member.user.id });
                     }
                   }}
                   className="p-0.5 opacity-0 group-hover:opacity-100 hover:bg-red-100 dark:hover:bg-red-900/30 rounded text-red-600"
@@ -1162,24 +1393,31 @@ function ExpandableProjectGroup({
         <Dialog title={`Add ${label.slice(0, -1)} to ${group.displayName}`}>
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Select User</label>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Select User
+              </label>
               <select
                 value={selectedUserId ?? ''}
                 onChange={(e) => setSelectedUserId(e.target.value ? Number(e.target.value) : null)}
                 className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-foreground"
               >
                 <option value="">Choose a user...</option>
-                {availableUsers.map(user => (
-                  <option key={user.id} value={user.id}>{user.name || user.email} ({user.email})</option>
+                {availableUsers.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.name || user.email} ({user.email})
+                  </option>
                 ))}
               </select>
             </div>
           </div>
           <DialogFooter
-            onCancel={() => { setShowAddDialog(false); setSelectedUserId(null) }}
+            onCancel={() => {
+              setShowAddDialog(false);
+              setSelectedUserId(null);
+            }}
             onConfirm={() => {
               if (selectedUserId) {
-                addMember.mutate({ groupId: group.id, userId: selectedUserId })
+                addMember.mutate({ groupId: group.id, userId: selectedUserId });
               }
             }}
             confirmLabel={addMember.isPending ? 'Adding...' : `Add ${label.slice(0, -1)}`}
@@ -1189,34 +1427,51 @@ function ExpandableProjectGroup({
         </Dialog>
       )}
     </div>
-  )
+  );
 }
 
-function RoleAssignments({ workspaceId, getRoleBadgeColor }: { workspaceId: number; getRoleBadgeColor: (role: string) => string }) {
-  const utils = trpc.useUtils()
-  const { data: assignmentsData } = trpc.roleAssignment.listForWorkspace.useQuery({ workspaceId })
+function RoleAssignments({
+  workspaceId,
+  getRoleBadgeColor,
+}: {
+  workspaceId: number;
+  getRoleBadgeColor: (role: string) => string;
+}) {
+  const utils = trpc.useUtils();
+  const { data: assignmentsData } = trpc.roleAssignment.listForWorkspace.useQuery({ workspaceId });
   const removeAssignment = trpc.roleAssignment.remove.useMutation({
     onSuccess: () => utils.roleAssignment.listForWorkspace.invalidate({ workspaceId }),
-  })
+  });
 
-  if (!assignmentsData?.assignments?.length) return null
+  if (!assignmentsData?.assignments?.length) return null;
 
   return (
     <>
-      <div className="text-[10px] text-gray-400 uppercase tracking-wider py-0.5 mt-1">Security Group Assignments</div>
-      {assignmentsData.assignments.map(a => (
-        <div key={a.id} className="flex items-center justify-between py-0.5 pl-4 group hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded">
+      <div className="text-[10px] text-gray-400 uppercase tracking-wider py-0.5 mt-1">
+        Security Group Assignments
+      </div>
+      {assignmentsData.assignments.map((a) => (
+        <div
+          key={a.id}
+          className="flex items-center justify-between py-0.5 pl-4 group hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded"
+        >
           <div className="flex items-center gap-1">
             <Icon type="shield" className="text-indigo-400" />
-            <Link to={`/admin/groups/${a.group.id}`} className="text-indigo-600 dark:text-indigo-400 hover:underline">
+            <Link
+              to={`/admin/groups/${a.group.id}`}
+              className="text-indigo-600 dark:text-indigo-400 hover:underline"
+            >
               {a.group.displayName}
             </Link>
-            <span className={cn('text-[10px] px-1 py-0.5 rounded', getRoleBadgeColor(a.role))}>{a.role}</span>
+            <span className={cn('text-[10px] px-1 py-0.5 rounded', getRoleBadgeColor(a.role))}>
+              {a.role}
+            </span>
             {a.inheritToChildren && <span className="text-gray-400">→ inherits</span>}
           </div>
           <button
             onClick={() => {
-              if (confirm(`Remove ${a.group.displayName}?`)) removeAssignment.mutate({ assignmentId: a.id })
+              if (confirm(`Remove ${a.group.displayName}?`))
+                removeAssignment.mutate({ assignmentId: a.id });
             }}
             className="p-0.5 opacity-0 group-hover:opacity-100 hover:bg-red-100 dark:hover:bg-red-900/30 rounded text-red-600"
           >
@@ -1225,7 +1480,7 @@ function RoleAssignments({ workspaceId, getRoleBadgeColor }: { workspaceId: numb
         </div>
       ))}
     </>
-  )
+  );
 }
 
-export default PermissionTreePage
+export default PermissionTreePage;

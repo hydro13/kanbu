@@ -35,15 +35,15 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { type ReactNode, useState, useCallback, useRef, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { WorkspaceSelector } from '@/components/workspace'
-import { CommandPalette, useCommandPalette } from '@/components/command'
-import { ShortcutsModal } from '@/components/common'
-import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
-import { useAppSelector, useAppDispatch } from '@/store'
-import { selectUser, logout } from '@/store/authSlice'
-import { queryClient, trpc } from '@/lib/trpc'
+import { type ReactNode, useState, useCallback, useRef, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { WorkspaceSelector } from '@/components/workspace';
+import { CommandPalette, useCommandPalette } from '@/components/command';
+import { ShortcutsModal } from '@/components/common';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+import { useAppSelector, useAppDispatch } from '@/store';
+import { selectUser, logout } from '@/store/authSlice';
+import { queryClient, trpc } from '@/lib/trpc';
 
 // =============================================================================
 // Icons
@@ -51,48 +51,87 @@ import { queryClient, trpc } from '@/lib/trpc'
 
 function UserIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+      />
     </svg>
-  )
+  );
 }
 
 function LogoutIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+      />
     </svg>
-  )
+  );
 }
 
 function ChevronDownIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
     </svg>
-  )
+  );
 }
 
 function ShieldIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"
+      />
     </svg>
-  )
+  );
 }
 
 interface LayoutProps {
-  children: ReactNode
+  children: ReactNode;
 }
 
 export function Layout({ children }: LayoutProps) {
-  const [shortcutsOpen, setShortcutsOpen] = useState(false)
-  const [userMenuOpen, setUserMenuOpen] = useState(false)
-  const userMenuRef = useRef<HTMLDivElement>(null)
-  const { open: openCommandPalette } = useCommandPalette()
-  const navigate = useNavigate()
-  const dispatch = useAppDispatch()
-  const user = useAppSelector(selectUser)
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+  const { open: openCommandPalette } = useCommandPalette();
+  const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const user = useAppSelector(selectUser);
 
   // Use the new AD-style permission system to check admin access
   // This checks if user is a Domain Admin OR a Workspace Admin
@@ -101,31 +140,31 @@ export function Layout({ children }: LayoutProps) {
     enabled: !!user,
     // Cache for 5 minutes, don't refetch constantly
     staleTime: 5 * 60 * 1000,
-  })
-  const hasAdminAccess = adminScope?.hasAnyAdminAccess ?? false
+  });
+  const hasAdminAccess = adminScope?.hasAnyAdminAccess ?? false;
 
   // Close shortcuts modal handler
-  const closeShortcuts = useCallback(() => setShortcutsOpen(false), [])
+  const closeShortcuts = useCallback(() => setShortcutsOpen(false), []);
 
   // Close user menu when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
-        setUserMenuOpen(false)
+        setUserMenuOpen(false);
       }
     }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Handle logout
   const handleLogout = useCallback(() => {
     // Clear Redux auth state
-    dispatch(logout())
+    dispatch(logout());
     // Clear React Query cache to prevent stale data for new user
-    queryClient.clear()
-    navigate('/login')
-  }, [dispatch, navigate])
+    queryClient.clear();
+    navigate('/login');
+  }, [dispatch, navigate]);
 
   // Global keyboard shortcuts (including G+key navigation chords)
   useKeyboardShortcuts(
@@ -145,7 +184,7 @@ export function Layout({ children }: LayoutProps) {
       activeCategories: ['global', 'navigation'],
       enabled: true,
     }
-  )
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -257,5 +296,5 @@ export function Layout({ children }: LayoutProps) {
       {/* Keyboard Shortcuts Help (?) */}
       <ShortcutsModal isOpen={shortcutsOpen} onClose={closeShortcuts} />
     </div>
-  )
+  );
 }

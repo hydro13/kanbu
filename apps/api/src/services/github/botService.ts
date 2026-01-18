@@ -16,72 +16,72 @@
  * =============================================================================
  */
 
-import { prisma } from '../../lib/prisma'
-import { getInstallationOctokit } from './githubService'
-import { linkPRToTask, extractTaskReferences, findTaskFromReferences } from './prCommitLinkService'
-import { generatePRSummary, isAIConfigured, type PRSummaryInput } from './aiService'
+import { prisma } from '../../lib/prisma';
+import { getInstallationOctokit } from './githubService';
+import { linkPRToTask, extractTaskReferences, findTaskFromReferences } from './prCommitLinkService';
+import { generatePRSummary, isAIConfigured, type PRSummaryInput } from './aiService';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface BotCommand {
-  command: string
-  args: string[]
-  raw: string
+  command: string;
+  args: string[];
+  raw: string;
 }
 
 export interface CommentContext {
-  repositoryId: number
-  owner: string
-  repo: string
-  issueNumber: number
-  isPullRequest: boolean
-  commentId: number
-  commentBody: string
-  commentAuthor: string
-  installationId: number
+  repositoryId: number;
+  owner: string;
+  repo: string;
+  issueNumber: number;
+  isPullRequest: boolean;
+  commentId: number;
+  commentBody: string;
+  commentAuthor: string;
+  installationId: number;
 }
 
 export interface BotResponse {
-  processed: boolean
-  command?: string
-  message?: string
-  error?: string
+  processed: boolean;
+  command?: string;
+  message?: string;
+  error?: string;
 }
 
 // =============================================================================
 // Command Parsing
 // =============================================================================
 
-const COMMAND_PREFIX = '/kanbu'
+const COMMAND_PREFIX = '/kanbu';
 
 /**
  * Parse bot commands from comment body
  * Supports: /kanbu link PROJ-123, /kanbu status, /kanbu unlink, /kanbu summary
  */
 export function parseCommands(body: string): BotCommand[] {
-  const commands: BotCommand[] = []
-  const lines = body.split('\n')
+  const commands: BotCommand[] = [];
+  const lines = body.split('\n');
 
   for (const line of lines) {
-    const trimmed = line.trim()
+    const trimmed = line.trim();
     if (trimmed.startsWith(COMMAND_PREFIX)) {
-      const parts = trimmed.slice(COMMAND_PREFIX.length).trim().split(/\s+/)
-      const command = parts[0]?.toLowerCase() || ''
-      const args = parts.slice(1)
+      const parts = trimmed.slice(COMMAND_PREFIX.length).trim().split(/\s+/);
+      const command = parts[0]?.toLowerCase() || '';
+      const args = parts.slice(1);
 
       if (command) {
         commands.push({
           command,
           args,
           raw: trimmed,
-        })
+        });
       }
     }
   }
 
-  return commands
+  return commands;
 }
 
 // =============================================================================
@@ -99,17 +99,17 @@ async function postComment(
   body: string
 ): Promise<number | null> {
   try {
-    const octokit = await getInstallationOctokit(installationId)
+    const octokit = await getInstallationOctokit(installationId);
     const response = await octokit.issues.createComment({
       owner,
       repo,
       issue_number: issueNumber,
       body,
-    })
-    return response.data.id
+    });
+    return response.data.id;
   } catch (error) {
-    console.error('[GitHub Bot] Failed to post comment:', error)
-    return null
+    console.error('[GitHub Bot] Failed to post comment:', error);
+    return null;
   }
 }
 
@@ -124,44 +124,39 @@ async function addReaction(
   reaction: '+1' | '-1' | 'eyes' | 'rocket' | 'confused' | 'heart'
 ): Promise<boolean> {
   try {
-    const octokit = await getInstallationOctokit(installationId)
+    const octokit = await getInstallationOctokit(installationId);
     await octokit.reactions.createForIssueComment({
       owner,
       repo,
       comment_id: commentId,
       content: reaction,
-    })
-    return true
+    });
+    return true;
   } catch (error) {
-    console.error('[GitHub Bot] Failed to add reaction:', error)
-    return false
+    console.error('[GitHub Bot] Failed to add reaction:', error);
+    return false;
   }
 }
 
 /**
  * Get PR details including commits
  */
-async function getPRDetails(
-  installationId: number,
-  owner: string,
-  repo: string,
-  prNumber: number
-) {
+async function getPRDetails(installationId: number, owner: string, repo: string, prNumber: number) {
   try {
-    const octokit = await getInstallationOctokit(installationId)
+    const octokit = await getInstallationOctokit(installationId);
 
     const [prResponse, commitsResponse] = await Promise.all([
       octokit.pulls.get({ owner, repo, pull_number: prNumber }),
       octokit.pulls.listCommits({ owner, repo, pull_number: prNumber, per_page: 100 }),
-    ])
+    ]);
 
     return {
       pr: prResponse.data,
       commits: commitsResponse.data,
-    }
+    };
   } catch (error) {
-    console.error('[GitHub Bot] Failed to get PR details:', error)
-    return null
+    console.error('[GitHub Bot] Failed to get PR details:', error);
+    return null;
   }
 }
 
@@ -172,16 +167,13 @@ async function getPRDetails(
 /**
  * Handle /kanbu link PROJ-123
  */
-async function handleLinkCommand(
-  ctx: CommentContext,
-  args: string[]
-): Promise<BotResponse> {
+async function handleLinkCommand(ctx: CommentContext, args: string[]): Promise<BotResponse> {
   if (!ctx.isPullRequest) {
     return {
       processed: true,
       command: 'link',
       error: 'The link command can only be used on pull requests.',
-    }
+    };
   }
 
   if (args.length === 0) {
@@ -189,49 +181,49 @@ async function handleLinkCommand(
       processed: true,
       command: 'link',
       error: 'Please specify a task reference. Usage: `/kanbu link PROJ-123`',
-    }
+    };
   }
 
-  const taskRef = args[0]!
+  const taskRef = args[0]!;
 
   // Get the repository's project ID
   const repo = await prisma.gitHubRepository.findUnique({
     where: { id: ctx.repositoryId },
     select: { projectId: true },
-  })
+  });
 
   if (!repo) {
     return {
       processed: true,
       command: 'link',
       error: 'Repository not found.',
-    }
+    };
   }
 
   // Parse task reference and find the task
-  const references = extractTaskReferences(taskRef)
+  const references = extractTaskReferences(taskRef);
   if (references.length === 0) {
     return {
       processed: true,
       command: 'link',
       error: `Invalid task reference: \`${taskRef}\`. Use format like PROJ-123 or #123.`,
-    }
+    };
   }
 
-  const task = await findTaskFromReferences(repo.projectId, references)
+  const task = await findTaskFromReferences(repo.projectId, references);
   if (!task) {
     return {
       processed: true,
       command: 'link',
       error: `Task \`${taskRef}\` not found. Make sure the task exists and belongs to this project.`,
-    }
+    };
   }
 
   // Get task title for the response
   const taskDetails = await prisma.task.findUnique({
     where: { id: task.taskId },
     select: { title: true },
-  })
+  });
 
   // Find the PR record
   const pr = await prisma.gitHubPullRequest.findUnique({
@@ -241,45 +233,43 @@ async function handleLinkCommand(
         prNumber: ctx.issueNumber,
       },
     },
-  })
+  });
 
   if (!pr) {
     return {
       processed: true,
       command: 'link',
       error: 'This pull request is not tracked. It may need to be synced first.',
-    }
+    };
   }
 
   // Link the PR to the task
-  const result = await linkPRToTask(pr.id, task.taskId)
+  const result = await linkPRToTask(pr.id, task.taskId);
   if (!result.linked) {
     return {
       processed: true,
       command: 'link',
       error: 'Failed to link PR to task.',
-    }
+    };
   }
 
   return {
     processed: true,
     command: 'link',
     message: `✅ Linked this PR to task **${task.reference}**: ${taskDetails?.title ?? 'Unknown'}`,
-  }
+  };
 }
 
 /**
  * Handle /kanbu unlink
  */
-async function handleUnlinkCommand(
-  ctx: CommentContext
-): Promise<BotResponse> {
+async function handleUnlinkCommand(ctx: CommentContext): Promise<BotResponse> {
   if (!ctx.isPullRequest) {
     return {
       processed: true,
       command: 'unlink',
       error: 'The unlink command can only be used on pull requests.',
-    }
+    };
   }
 
   // Find and update the PR record
@@ -290,14 +280,14 @@ async function handleUnlinkCommand(
         prNumber: ctx.issueNumber,
       },
     },
-  })
+  });
 
   if (!pr) {
     return {
       processed: true,
       command: 'unlink',
       error: 'This pull request is not tracked.',
-    }
+    };
   }
 
   if (!pr.taskId) {
@@ -305,27 +295,25 @@ async function handleUnlinkCommand(
       processed: true,
       command: 'unlink',
       error: 'This PR is not linked to any task.',
-    }
+    };
   }
 
   await prisma.gitHubPullRequest.update({
     where: { id: pr.id },
     data: { taskId: null },
-  })
+  });
 
   return {
     processed: true,
     command: 'unlink',
     message: '✅ Unlinked this PR from its task.',
-  }
+  };
 }
 
 /**
  * Handle /kanbu status
  */
-async function handleStatusCommand(
-  ctx: CommentContext
-): Promise<BotResponse> {
+async function handleStatusCommand(ctx: CommentContext): Promise<BotResponse> {
   if (ctx.isPullRequest) {
     // Get PR status with linked task info
     const pr = await prisma.gitHubPullRequest.findUnique({
@@ -342,14 +330,14 @@ async function handleStatusCommand(
           },
         },
       },
-    })
+    });
 
     if (!pr) {
       return {
         processed: true,
         command: 'status',
         message: '📋 This PR is not tracked in Kanbu.',
-      }
+      };
     }
 
     if (!pr.task) {
@@ -357,10 +345,10 @@ async function handleStatusCommand(
         processed: true,
         command: 'status',
         message: `📋 **PR Status**\n- State: \`${pr.state}\`\n- Not linked to any task`,
-      }
+      };
     }
 
-    const task = pr.task
+    const task = pr.task;
     return {
       processed: true,
       command: 'status',
@@ -373,7 +361,7 @@ async function handleStatusCommand(
 | Task Title | ${task.title} |
 | Task Status | \`${task.column?.title || 'Unknown'}\` |
 | Priority | \`${task.priority}\` |`,
-    }
+    };
   } else {
     // Get issue status
     const issue = await prisma.gitHubIssue.findUnique({
@@ -390,17 +378,17 @@ async function handleStatusCommand(
           },
         },
       },
-    })
+    });
 
     if (!issue || !issue.task) {
       return {
         processed: true,
         command: 'status',
         message: '📋 This issue is not tracked in Kanbu.',
-      }
+      };
     }
 
-    const task = issue.task
+    const task = issue.task;
     return {
       processed: true,
       command: 'status',
@@ -412,22 +400,20 @@ async function handleStatusCommand(
 | Title | ${task.title} |
 | Status | \`${task.column?.title || 'Unknown'}\` |
 | Priority | \`${task.priority}\` |`,
-    }
+    };
   }
 }
 
 /**
  * Handle /kanbu summary - Generate AI summary for PR
  */
-async function handleSummaryCommand(
-  ctx: CommentContext
-): Promise<BotResponse> {
+async function handleSummaryCommand(ctx: CommentContext): Promise<BotResponse> {
   if (!ctx.isPullRequest) {
     return {
       processed: true,
       command: 'summary',
       error: 'The summary command can only be used on pull requests.',
-    }
+    };
   }
 
   if (!isAIConfigured()) {
@@ -435,67 +421,62 @@ async function handleSummaryCommand(
       processed: true,
       command: 'summary',
       error: 'AI service is not configured. Please set up an AI provider.',
-    }
+    };
   }
 
   // Get PR details from GitHub
-  const details = await getPRDetails(
-    ctx.installationId,
-    ctx.owner,
-    ctx.repo,
-    ctx.issueNumber
-  )
+  const details = await getPRDetails(ctx.installationId, ctx.owner, ctx.repo, ctx.issueNumber);
 
   if (!details) {
     return {
       processed: true,
       command: 'summary',
       error: 'Failed to fetch PR details from GitHub.',
-    }
+    };
   }
 
   // Generate AI summary
   const input: PRSummaryInput = {
     title: details.pr.title,
-    commits: details.commits.map(c => ({
+    commits: details.commits.map((c) => ({
       sha: c.sha,
       message: c.commit.message,
       author: c.commit.author?.name || c.author?.login || 'unknown',
     })),
     baseBranch: details.pr.base.ref,
     headBranch: details.pr.head.ref,
-  }
+  };
 
   try {
-    const summary = await generatePRSummary(input)
+    const summary = await generatePRSummary(input);
 
     const message = `## 🤖 AI-Generated Summary
 
 ${summary.summary}
 
 ### Key Changes
-${summary.keyChanges.map(c => `- ${c}`).join('\n') || '_No key changes identified_'}
+${summary.keyChanges.map((c) => `- ${c}`).join('\n') || '_No key changes identified_'}
 
-${summary.breakingChanges.length > 0 ? `### ⚠️ Breaking Changes\n${summary.breakingChanges.map(c => `- ${c}`).join('\n')}` : ''}
+${summary.breakingChanges.length > 0 ? `### ⚠️ Breaking Changes\n${summary.breakingChanges.map((c) => `- ${c}`).join('\n')}` : ''}
 
 ### Affected Areas
-${summary.affectedAreas.map(a => `\`${a}\``).join(', ') || '_None identified_'}
+${summary.affectedAreas.map((a) => `\`${a}\``).join(', ') || '_None identified_'}
 
 ---
-<sub>Generated by Kanbu AI • [Learn more](https://kanbu.app)</sub>`
+<sub>Generated by Kanbu AI • [Learn more](https://kanbu.app)</sub>`;
 
     return {
       processed: true,
       command: 'summary',
       message,
-    }
+    };
   } catch (error) {
-    console.error('[GitHub Bot] AI summary generation failed:', error)
+    console.error('[GitHub Bot] AI summary generation failed:', error);
     return {
       processed: true,
       command: 'summary',
       error: 'Failed to generate AI summary. Please try again later.',
-    }
+    };
   }
 }
 
@@ -518,7 +499,7 @@ function handleHelpCommand(): BotResponse {
 
 ---
 <sub>Kanbu Bot • [Documentation](https://kanbu.app/docs/bot)</sub>`,
-  }
+  };
 }
 
 // =============================================================================
@@ -529,58 +510,50 @@ function handleHelpCommand(): BotResponse {
  * Process a comment and execute any bot commands
  */
 export async function processComment(ctx: CommentContext): Promise<BotResponse[]> {
-  const commands = parseCommands(ctx.commentBody)
+  const commands = parseCommands(ctx.commentBody);
 
   if (commands.length === 0) {
-    return []
+    return [];
   }
 
-  console.log(`[GitHub Bot] Processing ${commands.length} command(s) from @${ctx.commentAuthor}`)
+  console.log(`[GitHub Bot] Processing ${commands.length} command(s) from @${ctx.commentAuthor}`);
 
-  const responses: BotResponse[] = []
+  const responses: BotResponse[] = [];
 
   for (const cmd of commands) {
-    let response: BotResponse
+    let response: BotResponse;
 
     switch (cmd.command) {
       case 'link':
-        response = await handleLinkCommand(ctx, cmd.args)
-        break
+        response = await handleLinkCommand(ctx, cmd.args);
+        break;
       case 'unlink':
-        response = await handleUnlinkCommand(ctx)
-        break
+        response = await handleUnlinkCommand(ctx);
+        break;
       case 'status':
-        response = await handleStatusCommand(ctx)
-        break
+        response = await handleStatusCommand(ctx);
+        break;
       case 'summary':
-        response = await handleSummaryCommand(ctx)
-        break
+        response = await handleSummaryCommand(ctx);
+        break;
       case 'help':
-        response = handleHelpCommand()
-        break
+        response = handleHelpCommand();
+        break;
       default:
         response = {
           processed: true,
           command: cmd.command,
           error: `Unknown command: \`${cmd.command}\`. Use \`/kanbu help\` for available commands.`,
-        }
+        };
     }
 
-    responses.push(response)
+    responses.push(response);
 
     // Post response as comment
     if (response.message || response.error) {
-      const commentBody = response.error
-        ? `❌ **Error:** ${response.error}`
-        : response.message!
+      const commentBody = response.error ? `❌ **Error:** ${response.error}` : response.message!;
 
-      await postComment(
-        ctx.installationId,
-        ctx.owner,
-        ctx.repo,
-        ctx.issueNumber,
-        commentBody
-      )
+      await postComment(ctx.installationId, ctx.owner, ctx.repo, ctx.issueNumber, commentBody);
     }
 
     // Add reaction to the command comment
@@ -590,10 +563,10 @@ export async function processComment(ctx: CommentContext): Promise<BotResponse[]
       ctx.repo,
       ctx.commentId,
       response.error ? 'confused' : 'rocket'
-    )
+    );
   }
 
-  return responses
+  return responses;
 }
 
 // =============================================================================
@@ -621,15 +594,16 @@ export async function postTaskInfoComment(
         },
       },
     },
-  })
+  });
 
   if (!task) {
-    return false
+    return false;
   }
 
-  const assigneesList = task.assignees.length > 0
-    ? task.assignees.map(a => a.user.name || a.user.username).join(', ')
-    : '_Unassigned_'
+  const assigneesList =
+    task.assignees.length > 0
+      ? task.assignees.map((a) => a.user.name || a.user.username).join(', ')
+      : '_Unassigned_';
 
   const message = `## 📋 Linked to Kanbu Task
 
@@ -645,10 +619,10 @@ export async function postTaskInfoComment(
 ${task.description ? `### Description\n${task.description.slice(0, 500)}${task.description.length > 500 ? '...' : ''}` : ''}
 
 ---
-<sub>Linked by Kanbu Bot • Task status will update automatically</sub>`
+<sub>Linked by Kanbu Bot • Task status will update automatically</sub>`;
 
-  const commentId = await postComment(installationId, owner, repo, prNumber, message)
-  return commentId !== null
+  const commentId = await postComment(installationId, owner, repo, prNumber, message);
+  return commentId !== null;
 }
 
 /**
@@ -661,55 +635,55 @@ export async function autoPostPRSummary(
   prNumber: number
 ): Promise<boolean> {
   if (!isAIConfigured()) {
-    console.log('[GitHub Bot] AI not configured, skipping auto-summary')
-    return false
+    console.log('[GitHub Bot] AI not configured, skipping auto-summary');
+    return false;
   }
 
   // Get PR details
-  const details = await getPRDetails(installationId, owner, repo, prNumber)
+  const details = await getPRDetails(installationId, owner, repo, prNumber);
   if (!details) {
-    return false
+    return false;
   }
 
   // Skip if no commits or very simple PR
   if (details.commits.length === 0) {
-    return false
+    return false;
   }
 
   const input: PRSummaryInput = {
     title: details.pr.title,
-    commits: details.commits.map(c => ({
+    commits: details.commits.map((c) => ({
       sha: c.sha,
       message: c.commit.message,
       author: c.commit.author?.name || c.author?.login || 'unknown',
     })),
     baseBranch: details.pr.base.ref,
     headBranch: details.pr.head.ref,
-  }
+  };
 
   try {
-    const summary = await generatePRSummary(input)
+    const summary = await generatePRSummary(input);
 
     const message = `## 🤖 AI-Generated Summary
 
 ${summary.summary}
 
 ### Key Changes
-${summary.keyChanges.map(c => `- ${c}`).join('\n') || '_No key changes identified_'}
+${summary.keyChanges.map((c) => `- ${c}`).join('\n') || '_No key changes identified_'}
 
-${summary.breakingChanges.length > 0 ? `### ⚠️ Breaking Changes\n${summary.breakingChanges.map(c => `- ${c}`).join('\n')}` : ''}
+${summary.breakingChanges.length > 0 ? `### ⚠️ Breaking Changes\n${summary.breakingChanges.map((c) => `- ${c}`).join('\n')}` : ''}
 
 ### Affected Areas
-${summary.affectedAreas.map(a => `\`${a}\``).join(', ') || '_None identified_'}
+${summary.affectedAreas.map((a) => `\`${a}\``).join(', ') || '_None identified_'}
 
 ---
-<sub>Auto-generated by Kanbu AI • Use \`/kanbu summary\` to regenerate</sub>`
+<sub>Auto-generated by Kanbu AI • Use \`/kanbu summary\` to regenerate</sub>`;
 
-    const commentId = await postComment(installationId, owner, repo, prNumber, message)
-    return commentId !== null
+    const commentId = await postComment(installationId, owner, repo, prNumber, message);
+    return commentId !== null;
   } catch (error) {
-    console.error('[GitHub Bot] Auto PR summary failed:', error)
-    return false
+    console.error('[GitHub Bot] Auto PR summary failed:', error);
+    return false;
   }
 }
 
@@ -722,6 +696,6 @@ export const botService = {
   processComment,
   postTaskInfoComment,
   autoPostPRSummary,
-}
+};
 
-export default botService
+export default botService;

@@ -14,26 +14,26 @@
  * =============================================================================
  */
 
-import crypto from 'crypto'
-import { prisma } from '../../lib/prisma'
-import { getInstallationOctokit } from './githubService'
+import crypto from 'crypto';
+import { prisma } from '../../lib/prisma';
+import { getInstallationOctokit } from './githubService';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface MilestoneSyncData {
-  title: string
-  description: string | null
-  dueOn: Date | null
-  state: 'open' | 'closed'
+  title: string;
+  description: string | null;
+  dueOn: Date | null;
+  state: 'open' | 'closed';
 }
 
 interface SyncResult {
-  milestoneId: number
-  created: boolean
-  updated: boolean
-  linked: boolean
+  milestoneId: number;
+  created: boolean;
+  updated: boolean;
+  linked: boolean;
 }
 
 // =============================================================================
@@ -50,27 +50,27 @@ export function calculateMilestoneSyncHash(data: MilestoneSyncData): string {
     description: (data.description || '').trim(),
     dueOn: data.dueOn?.toISOString() ?? null,
     state: data.state,
-  })
-  return crypto.createHash('sha256').update(content).digest('hex').substring(0, 64)
+  });
+  return crypto.createHash('sha256').update(content).digest('hex').substring(0, 64);
 }
 
 /**
  * Check if a Kanbu milestone has changed since last sync
  */
 export async function hasMilestoneChangedSinceSync(milestoneId: number): Promise<{
-  changed: boolean
-  currentHash: string
-  lastHash: string | null
+  changed: boolean;
+  currentHash: string;
+  lastHash: string | null;
 }> {
   const milestone = await prisma.milestone.findUnique({
     where: { id: milestoneId },
     include: {
       githubMilestone: true,
     },
-  })
+  });
 
   if (!milestone) {
-    return { changed: true, currentHash: '', lastHash: null }
+    return { changed: true, currentHash: '', lastHash: null };
   }
 
   const currentHash = calculateMilestoneSyncHash({
@@ -78,15 +78,15 @@ export async function hasMilestoneChangedSinceSync(milestoneId: number): Promise
     description: milestone.description,
     dueOn: milestone.dateDue,
     state: milestone.isCompleted ? 'closed' : 'open',
-  })
+  });
 
-  const lastHash = milestone.syncHash
+  const lastHash = milestone.syncHash;
 
   return {
     changed: lastHash !== currentHash,
     currentHash,
     lastHash,
-  }
+  };
 }
 
 // =============================================================================
@@ -107,10 +107,10 @@ export async function syncGitHubToKanbu(
     include: {
       kanbuMilestone: true,
     },
-  })
+  });
 
   if (!githubMilestone) {
-    throw new Error(`GitHub milestone ${githubMilestoneId} not found`)
+    throw new Error(`GitHub milestone ${githubMilestoneId} not found`);
   }
 
   // Calculate sync hash from GitHub data
@@ -119,7 +119,7 @@ export async function syncGitHubToKanbu(
     description: githubMilestone.description,
     dueOn: githubMilestone.dueOn,
     state: githubMilestone.state as 'open' | 'closed',
-  })
+  });
 
   // If already linked, update the existing Kanbu milestone
   if (githubMilestone.kanbuMilestone) {
@@ -132,16 +132,18 @@ export async function syncGitHubToKanbu(
         isCompleted: githubMilestone.state === 'closed',
         syncHash,
       },
-    })
+    });
 
-    console.log(`[MilestoneSyncService] Updated Kanbu milestone ${updated.id} from GitHub milestone ${githubMilestone.milestoneNumber}`)
+    console.log(
+      `[MilestoneSyncService] Updated Kanbu milestone ${updated.id} from GitHub milestone ${githubMilestone.milestoneNumber}`
+    );
 
     return {
       milestoneId: updated.id,
       created: false,
       updated: true,
       linked: true,
-    }
+    };
   }
 
   // Not linked - create a new Kanbu milestone
@@ -155,25 +157,27 @@ export async function syncGitHubToKanbu(
       githubMilestoneId: githubMilestone.id,
       syncHash,
     },
-  })
+  });
 
-  console.log(`[MilestoneSyncService] Created Kanbu milestone ${newMilestone.id} from GitHub milestone ${githubMilestone.milestoneNumber}`)
+  console.log(
+    `[MilestoneSyncService] Created Kanbu milestone ${newMilestone.id} from GitHub milestone ${githubMilestone.milestoneNumber}`
+  );
 
   return {
     milestoneId: newMilestone.id,
     created: true,
     updated: false,
     linked: true,
-  }
+  };
 }
 
 /**
  * Sync all GitHub milestones to Kanbu for a project
  */
 export async function syncAllGitHubToKanbu(projectId: number): Promise<{
-  created: number
-  updated: number
-  total: number
+  created: number;
+  updated: number;
+  total: number;
 }> {
   // Get the repository for this project
   const repository = await prisma.gitHubRepository.findFirst({
@@ -181,26 +185,26 @@ export async function syncAllGitHubToKanbu(projectId: number): Promise<{
     include: {
       milestones: true,
     },
-  })
+  });
 
   if (!repository) {
-    return { created: 0, updated: 0, total: 0 }
+    return { created: 0, updated: 0, total: 0 };
   }
 
-  let created = 0
-  let updated = 0
+  let created = 0;
+  let updated = 0;
 
   for (const ghMilestone of repository.milestones) {
-    const result = await syncGitHubToKanbu(ghMilestone.id, projectId)
-    if (result.created) created++
-    if (result.updated) updated++
+    const result = await syncGitHubToKanbu(ghMilestone.id, projectId);
+    if (result.created) created++;
+    if (result.updated) updated++;
   }
 
   return {
     created,
     updated,
     total: repository.milestones.length,
-  }
+  };
 }
 
 // =============================================================================
@@ -221,10 +225,10 @@ export async function syncKanbuToGitHub(
     include: {
       githubMilestone: true,
     },
-  })
+  });
 
   if (!milestone) {
-    throw new Error(`Milestone ${milestoneId} not found`)
+    throw new Error(`Milestone ${milestoneId} not found`);
   }
 
   // Get the project with its GitHub repositories
@@ -237,13 +241,13 @@ export async function syncKanbuToGitHub(
         },
       },
     },
-  })
+  });
 
   // Check if project has a GitHub repository linked (use first one)
-  const repository = project?.githubRepositories[0]
+  const repository = project?.githubRepositories[0];
   if (!repository || !repository.installation) {
     // No GitHub repo linked - nothing to sync
-    return null
+    return null;
   }
 
   // Check sync settings - is milestone sync enabled?
@@ -255,7 +259,7 @@ export async function syncKanbuToGitHub(
     description: milestone.description,
     dueOn: milestone.dateDue,
     state: milestone.isCompleted ? 'closed' : 'open',
-  })
+  });
 
   // Skip if unchanged (unless force)
   if (!options.force && milestone.syncHash === syncHash && milestone.githubMilestone) {
@@ -264,13 +268,13 @@ export async function syncKanbuToGitHub(
       created: false,
       updated: false,
       linked: true,
-    }
+    };
   }
 
   // Get Octokit client
-  const octokit = await getInstallationOctokit(repository.installation.installationId)
+  const octokit = await getInstallationOctokit(repository.installation.installationId);
 
-  const state = milestone.isCompleted ? 'closed' : 'open'
+  const state = milestone.isCompleted ? 'closed' : 'open';
 
   // If already linked, update the GitHub milestone
   if (milestone.githubMilestone) {
@@ -282,7 +286,7 @@ export async function syncKanbuToGitHub(
       description: milestone.description ?? undefined,
       due_on: milestone.dateDue?.toISOString() ?? undefined,
       state,
-    })
+    });
 
     // Update the GitHubMilestone record
     await prisma.gitHubMilestone.update({
@@ -294,15 +298,17 @@ export async function syncKanbuToGitHub(
         state,
         closedAt: milestone.isCompleted ? new Date() : null,
       },
-    })
+    });
 
     // Update sync hash on Kanbu milestone
     await prisma.milestone.update({
       where: { id: milestone.id },
       data: { syncHash },
-    })
+    });
 
-    console.log(`[MilestoneSyncService] Updated GitHub milestone ${milestone.githubMilestone.milestoneNumber} from Kanbu milestone ${milestone.id}`)
+    console.log(
+      `[MilestoneSyncService] Updated GitHub milestone ${milestone.githubMilestone.milestoneNumber} from Kanbu milestone ${milestone.id}`
+    );
 
     // Log sync operation
     await prisma.gitHubSyncLog.create({
@@ -318,14 +324,14 @@ export async function syncKanbuToGitHub(
           githubMilestoneNumber: milestone.githubMilestone.milestoneNumber,
         },
       },
-    })
+    });
 
     return {
       milestoneId: milestone.id,
       created: false,
       updated: true,
       linked: true,
-    }
+    };
   }
 
   // Not linked - create a new GitHub milestone
@@ -336,7 +342,7 @@ export async function syncKanbuToGitHub(
     description: milestone.description ?? undefined,
     due_on: milestone.dateDue?.toISOString() ?? undefined,
     state,
-  })
+  });
 
   // Create GitHubMilestone record and link to Kanbu milestone
   const newGhMilestone = await prisma.gitHubMilestone.create({
@@ -352,7 +358,7 @@ export async function syncKanbuToGitHub(
       closedIssues: ghMilestone.closed_issues,
       htmlUrl: ghMilestone.html_url,
     },
-  })
+  });
 
   // Link Kanbu milestone to GitHub milestone
   await prisma.milestone.update({
@@ -361,9 +367,11 @@ export async function syncKanbuToGitHub(
       githubMilestoneId: newGhMilestone.id,
       syncHash,
     },
-  })
+  });
 
-  console.log(`[MilestoneSyncService] Created GitHub milestone ${ghMilestone.number} from Kanbu milestone ${milestone.id}`)
+  console.log(
+    `[MilestoneSyncService] Created GitHub milestone ${ghMilestone.number} from Kanbu milestone ${milestone.id}`
+  );
 
   // Log sync operation
   await prisma.gitHubSyncLog.create({
@@ -380,14 +388,14 @@ export async function syncKanbuToGitHub(
         githubMilestoneId: ghMilestone.id,
       },
     },
-  })
+  });
 
   return {
     milestoneId: milestone.id,
     created: true,
     updated: false,
     linked: true,
-  }
+  };
 }
 
 /**
@@ -400,10 +408,10 @@ export async function deleteGitHubMilestone(milestoneId: number): Promise<boolea
     include: {
       githubMilestone: true,
     },
-  })
+  });
 
   if (!milestone || !milestone.githubMilestone) {
-    return false
+    return false;
   }
 
   // Get the project with its GitHub repositories
@@ -416,30 +424,32 @@ export async function deleteGitHubMilestone(milestoneId: number): Promise<boolea
         },
       },
     },
-  })
+  });
 
-  const repository = project?.githubRepositories[0]
+  const repository = project?.githubRepositories[0];
   if (!repository || !repository.installation) {
-    return false
+    return false;
   }
 
   try {
     // Get Octokit client
-    const octokit = await getInstallationOctokit(repository.installation.installationId)
+    const octokit = await getInstallationOctokit(repository.installation.installationId);
 
     // Delete the GitHub milestone
     await octokit.rest.issues.deleteMilestone({
       owner: repository.owner,
       repo: repository.name,
       milestone_number: milestone.githubMilestone.milestoneNumber,
-    })
+    });
 
     // Delete the GitHubMilestone record (will automatically unlink via cascade)
     await prisma.gitHubMilestone.delete({
       where: { id: milestone.githubMilestone.id },
-    })
+    });
 
-    console.log(`[MilestoneSyncService] Deleted GitHub milestone ${milestone.githubMilestone.milestoneNumber}`)
+    console.log(
+      `[MilestoneSyncService] Deleted GitHub milestone ${milestone.githubMilestone.milestoneNumber}`
+    );
 
     // Log sync operation
     await prisma.gitHubSyncLog.create({
@@ -455,45 +465,45 @@ export async function deleteGitHubMilestone(milestoneId: number): Promise<boolea
           githubMilestoneNumber: milestone.githubMilestone.milestoneNumber,
         },
       },
-    })
+    });
 
-    return true
+    return true;
   } catch (error) {
-    console.error(`[MilestoneSyncService] Failed to delete GitHub milestone:`, error)
-    return false
+    console.error(`[MilestoneSyncService] Failed to delete GitHub milestone:`, error);
+    return false;
   }
 }
 
 /**
  * Delete a Kanbu milestone when the linked GitHub milestone is deleted (via webhook)
  */
-export async function deleteKanbuMilestoneFromGitHub(
-  githubMilestoneId: number
-): Promise<boolean> {
+export async function deleteKanbuMilestoneFromGitHub(githubMilestoneId: number): Promise<boolean> {
   // Get the GitHub milestone with its linked Kanbu milestone
   const githubMilestone = await prisma.gitHubMilestone.findUnique({
     where: { id: githubMilestoneId },
     include: {
       kanbuMilestone: true,
     },
-  })
+  });
 
   if (!githubMilestone || !githubMilestone.kanbuMilestone) {
-    return false
+    return false;
   }
 
   try {
     // Delete the Kanbu milestone (tasks will have milestoneId set to null via Prisma behavior)
     await prisma.milestone.delete({
       where: { id: githubMilestone.kanbuMilestone.id },
-    })
+    });
 
-    console.log(`[MilestoneSyncService] Deleted Kanbu milestone ${githubMilestone.kanbuMilestone.id} (GitHub milestone deleted)`)
+    console.log(
+      `[MilestoneSyncService] Deleted Kanbu milestone ${githubMilestone.kanbuMilestone.id} (GitHub milestone deleted)`
+    );
 
-    return true
+    return true;
   } catch (error) {
-    console.error(`[MilestoneSyncService] Failed to delete Kanbu milestone:`, error)
-    return false
+    console.error(`[MilestoneSyncService] Failed to delete Kanbu milestone:`, error);
+    return false;
   }
 }
 
@@ -509,4 +519,4 @@ export const milestoneSyncService = {
   syncKanbuToGitHub,
   deleteGitHubMilestone,
   deleteKanbuMilestoneFromGitHub,
-}
+};

@@ -1,6 +1,7 @@
 # Kanbu Container Structure
 
 ## Version: 1.1.0
+
 ## Date: 2026-01-10
 
 ---
@@ -34,13 +35,13 @@ Kanbu (root)
 
 ### RWXDP Permissions (Filesystem-style)
 
-| Permission | Meaning |
-|------------|---------|
-| **R** | Read - View/access |
-| **W** | Write - Modify/edit |
-| **X** | Execute - Run/use |
-| **D** | Delete - Remove |
-| **P** | Permissions - Manage ACL |
+| Permission | Meaning                  |
+| ---------- | ------------------------ |
+| **R**      | Read - View/access       |
+| **W**      | Write - Modify/edit      |
+| **X**      | Execute - Run/use        |
+| **D**      | Delete - Remove          |
+| **P**      | Permissions - Manage ACL |
 
 ### Security Groups
 
@@ -78,11 +79,11 @@ Project-Website-Admin
 
 ### User Management per Level
 
-| Admin Level | Can create users? | Can send invites? | Scope |
-|-------------|-------------------|-------------------|-------|
-| **Domain Admin** | ✅ Yes | ✅ Yes | Entire system |
-| **Workspace-X-Admin** | ✅ Yes | ✅ Yes | Workspace X |
-| **Project-Y-Admin** | ✅ Yes | ✅ Yes | Project Y |
+| Admin Level           | Can create users? | Can send invites? | Scope         |
+| --------------------- | ----------------- | ----------------- | ------------- |
+| **Domain Admin**      | ✅ Yes            | ✅ Yes            | Entire system |
+| **Workspace-X-Admin** | ✅ Yes            | ✅ Yes            | Workspace X   |
+| **Project-Y-Admin**   | ✅ Yes            | ✅ Yes            | Project Y     |
 
 **All users live in one global user pool (Kanbu/Domain level).**
 
@@ -100,11 +101,11 @@ Jan automatically becomes member of "Project-Website" security group
 Jan now has permissions on Project Website (via that group)
 ```
 
-| Invite from | New user becomes member of |
-|-------------|----------------------------|
-| Domain Admin | (admin chooses group) |
-| Workspace-X-Admin | Workspace-X |
-| Project-Y-Admin | Project-Y |
+| Invite from       | New user becomes member of |
+| ----------------- | -------------------------- |
+| Domain Admin      | (admin chooses group)      |
+| Workspace-X-Admin | Workspace-X                |
+| Project-Y-Admin   | Project-Y                  |
 
 ### Example: User with Multiple Roles
 
@@ -150,13 +151,13 @@ Kanbu (Root)
 
 ### Who sees what? (Via Security Groups)
 
-| Security Group | Sees | Can manage |
-|----------------|------|------------|
-| **Domain Admins** | EVERYTHING | Users, Workspaces, Projects, ACL |
-| **Workspace-X-Admin** | Workspace X + projects | Users for X, Projects in X |
-| **Workspace-X** | Workspace X + projects | Tasks in projects |
-| **Project-Y-Admin** | Project Y | Users for Y, Project settings |
-| **Project-Y** | Project Y | Own tasks |
+| Security Group        | Sees                   | Can manage                       |
+| --------------------- | ---------------------- | -------------------------------- |
+| **Domain Admins**     | EVERYTHING             | Users, Workspaces, Projects, ACL |
+| **Workspace-X-Admin** | Workspace X + projects | Users for X, Projects in X       |
+| **Workspace-X**       | Workspace X + projects | Tasks in projects                |
+| **Project-Y-Admin**   | Project Y              | Users for Y, Project settings    |
+| **Project-Y**         | Project Y              | Own tasks                        |
 
 ### Example: GenX Organization
 
@@ -197,14 +198,14 @@ Each feature belongs to a specific container level:
 
 Features that are **cross-container** - aggregation of everything you have access to.
 
-| Feature | Description |
-|---------|-------------|
-| **Favorites** | Your shortcuts to projects from ALL workspaces |
-| **My Tasks** | Tasks from ALL projects you're member of |
-| **My Subtasks** | Subtasks from ALL projects |
-| **Overview/Widgets** | Personal stats and dashboards |
-| **Notes** | Personal notes |
-| **Inbox** | Notifications from ALL containers |
+| Feature              | Description                                    |
+| -------------------- | ---------------------------------------------- |
+| **Favorites**        | Your shortcuts to projects from ALL workspaces |
+| **My Tasks**         | Tasks from ALL projects you're member of       |
+| **My Subtasks**      | Subtasks from ALL projects                     |
+| **Overview/Widgets** | Personal stats and dashboards                  |
+| **Notes**            | Personal notes                                 |
+| **Inbox**            | Notifications from ALL containers              |
 
 **URL Pattern:** `/dashboard/*`
 
@@ -214,14 +215,14 @@ Features that are **cross-container** - aggregation of everything you have acces
 
 Features that belong to **one workspace**.
 
-| Feature | Description |
-|---------|-------------|
-| **Projects** | List of projects in this workspace |
-| **Groups** | Organization/categorization of projects |
-| **Wiki** | Knowledge base of the workspace |
-| **Members** | Users member of this workspace |
-| **Statistics** | Stats about this workspace |
-| **Settings** | Workspace configuration |
+| Feature        | Description                             |
+| -------------- | --------------------------------------- |
+| **Projects**   | List of projects in this workspace      |
+| **Groups**     | Organization/categorization of projects |
+| **Wiki**       | Knowledge base of the workspace         |
+| **Members**    | Users member of this workspace          |
+| **Statistics** | Stats about this workspace              |
+| **Settings**   | Workspace configuration                 |
 
 **URL Pattern:** `/workspace/:slug/*`
 
@@ -231,18 +232,18 @@ Features that belong to **one workspace**.
 
 Features that belong to **one project**.
 
-| Feature | Description |
-|---------|-------------|
-| **Board** | Kanban board |
-| **List** | Task list |
-| **Calendar** | Calendar view |
-| **Timeline** | Gantt/timeline view |
-| **Sprints** | Sprint planning |
-| **Milestones** | Milestones management |
-| **Analytics** | Project statistics |
-| **GitHub** | Linked repository |
-| **Members** | Users member of this project |
-| **Settings** | Project configuration |
+| Feature        | Description                  |
+| -------------- | ---------------------------- |
+| **Board**      | Kanban board                 |
+| **List**       | Task list                    |
+| **Calendar**   | Calendar view                |
+| **Timeline**   | Gantt/timeline view          |
+| **Sprints**    | Sprint planning              |
+| **Milestones** | Milestones management        |
+| **Analytics**  | Project statistics           |
+| **GitHub**     | Linked repository            |
+| **Members**    | Users member of this project |
+| **Settings**   | Project configuration        |
 
 **URL Pattern:** `/workspace/:slug/project/:id/*`
 
@@ -272,6 +273,7 @@ Each container level has its own sidebar:
 ### 3. Favorites are Personal
 
 Favorites only appear in `DashboardSidebar` because:
+
 - They are cross-container (projects from different workspaces)
 - They are personal (your shortcuts)
 - They don't belong to one workspace

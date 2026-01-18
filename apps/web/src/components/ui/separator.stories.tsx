@@ -10,8 +10,8 @@
  * ===================================================================
  */
 
-import type { Meta, StoryObj } from '@storybook/react-vite'
-import { Separator } from './separator'
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import { Separator } from './separator';
 
 const meta: Meta<typeof Separator> = {
   title: 'UI/Separator',
@@ -36,10 +36,10 @@ const meta: Meta<typeof Separator> = {
       },
     },
   },
-}
+};
 
-export default meta
-type Story = StoryObj<typeof Separator>
+export default meta;
+type Story = StoryObj<typeof Separator>;
 
 // =============================================================================
 // Basic Variants
@@ -53,7 +53,7 @@ export const Horizontal: Story = {
       <p className="text-sm">Content below</p>
     </div>
   ),
-}
+};
 
 export const Vertical: Story = {
   render: () => (
@@ -72,7 +72,7 @@ export const Vertical: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // In Content
@@ -104,30 +104,24 @@ export const InList: Story = {
       },
     },
   },
-}
+};
 
 export const InSections: Story = {
   render: () => (
     <div className="max-w-md space-y-4">
       <div>
         <h3 className="text-lg font-semibold mb-2">Section 1</h3>
-        <p className="text-sm text-muted-foreground">
-          This is the content for the first section.
-        </p>
+        <p className="text-sm text-muted-foreground">This is the content for the first section.</p>
       </div>
       <Separator />
       <div>
         <h3 className="text-lg font-semibold mb-2">Section 2</h3>
-        <p className="text-sm text-muted-foreground">
-          This is the content for the second section.
-        </p>
+        <p className="text-sm text-muted-foreground">This is the content for the second section.</p>
       </div>
       <Separator />
       <div>
         <h3 className="text-lg font-semibold mb-2">Section 3</h3>
-        <p className="text-sm text-muted-foreground">
-          This is the content for the third section.
-        </p>
+        <p className="text-sm text-muted-foreground">This is the content for the third section.</p>
       </div>
     </div>
   ),
@@ -138,7 +132,7 @@ export const InSections: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // In Layouts
@@ -157,9 +151,7 @@ export const InCard: Story = {
       </div>
       <Separator />
       <div className="p-4 flex justify-end gap-2">
-        <button className="px-3 py-1.5 text-sm rounded-md border">
-          Cancel
-        </button>
+        <button className="px-3 py-1.5 text-sm rounded-md border">Cancel</button>
         <button className="px-3 py-1.5 text-sm rounded-md bg-primary text-primary-foreground">
           Save
         </button>
@@ -173,7 +165,7 @@ export const InCard: Story = {
       },
     },
   },
-}
+};
 
 export const InToolbar: Story = {
   render: () => (
@@ -210,7 +202,7 @@ export const InToolbar: Story = {
       },
     },
   },
-}
+};
 
 export const InMenu: Story = {
   render: () => (
@@ -241,7 +233,7 @@ export const InMenu: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Spacing Variations
@@ -276,7 +268,7 @@ export const WithDifferentSpacing: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Real-World Examples
@@ -311,9 +303,7 @@ export const UserProfile: Story = {
       </div>
       <Separator />
       <div className="p-6 flex gap-2">
-        <button className="flex-1 px-3 py-1.5 text-sm rounded-md border">
-          View Profile
-        </button>
+        <button className="flex-1 px-3 py-1.5 text-sm rounded-md border">View Profile</button>
         <button className="flex-1 px-3 py-1.5 text-sm rounded-md bg-primary text-primary-foreground">
           Edit
         </button>
@@ -327,7 +317,7 @@ export const UserProfile: Story = {
       },
     },
   },
-}
+};
 
 export const FeatureList: Story = {
   render: () => (
@@ -338,9 +328,7 @@ export const FeatureList: Story = {
             <h4 className="text-sm font-medium">Feature 1</h4>
             <p className="text-sm text-muted-foreground">Description</p>
           </div>
-          <span className="text-xs bg-success/10 text-success px-2 py-1 rounded-full">
-            Active
-          </span>
+          <span className="text-xs bg-success/10 text-success px-2 py-1 rounded-full">Active</span>
         </div>
         <Separator />
         <div className="flex items-center justify-between p-3 hover:bg-accent rounded-md">
@@ -348,9 +336,7 @@ export const FeatureList: Story = {
             <h4 className="text-sm font-medium">Feature 2</h4>
             <p className="text-sm text-muted-foreground">Description</p>
           </div>
-          <span className="text-xs bg-success/10 text-success px-2 py-1 rounded-full">
-            Active
-          </span>
+          <span className="text-xs bg-success/10 text-success px-2 py-1 rounded-full">Active</span>
         </div>
         <Separator />
         <div className="flex items-center justify-between p-3 hover:bg-accent rounded-md opacity-60">
@@ -372,4 +358,4 @@ export const FeatureList: Story = {
       },
     },
   },
-}
+};

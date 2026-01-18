@@ -7,7 +7,7 @@
  * Used for multi-pass extraction to improve entity recall.
  */
 
-import type { ParsedMissedEntity } from '../types/reflexion'
+import type { ParsedMissedEntity } from '../types/reflexion';
 
 // ===========================================================================
 // System Prompt
@@ -35,7 +35,7 @@ Entity Types to consider:
 - Concept: Abstract ideas, technologies, methodologies
 - WikiPage: Referenced wiki pages or documents
 - Task: Named tasks, issues, or work items
-- Project: Named projects or initiatives`
+- Project: Named projects or initiatives`;
 }
 
 // ===========================================================================
@@ -47,18 +47,18 @@ Entity Types to consider:
  */
 export interface ReflexionNodesContext {
   /** Current wiki page content being analyzed */
-  episodeContent: string
+  episodeContent: string;
   /** Previous wiki pages for context (optional) */
-  previousEpisodes?: string[]
+  previousEpisodes?: string[];
   /** Entities already extracted in first pass */
-  extractedEntities: string[]
+  extractedEntities: string[];
 }
 
 /**
  * Get user prompt for node reflexion
  */
 export function getReflexionNodesUserPrompt(context: ReflexionNodesContext): string {
-  const { episodeContent, previousEpisodes = [], extractedEntities } = context
+  const { episodeContent, previousEpisodes = [], extractedEntities } = context;
 
   const previousSection =
     previousEpisodes.length > 0
@@ -67,12 +67,12 @@ ${previousEpisodes.map((ep, i) => `[${i + 1}] ${ep}`).join('\n')}
 </PREVIOUS MESSAGES>
 
 `
-      : ''
+      : '';
 
   const entitiesSection =
     extractedEntities.length > 0
       ? extractedEntities.map((e, i) => `${i + 1}. ${e}`).join('\n')
-      : '(none extracted)'
+      : '(none extracted)';
 
   return `${previousSection}<CURRENT MESSAGE>
 ${episodeContent}
@@ -96,7 +96,7 @@ Respond with a JSON object:
   "reasoning": "Overall explanation of the analysis"
 }
 
-If no entities were missed, return an empty missed_entities array.`
+If no entities were missed, return an empty missed_entities array.`;
 }
 
 // ===========================================================================
@@ -107,8 +107,8 @@ If no entities were missed, return an empty missed_entities array.`
  * Parsed response from reflexion nodes prompt
  */
 export interface ReflexionNodesResponse {
-  missedEntities: ParsedMissedEntity[]
-  reasoning: string
+  missedEntities: ParsedMissedEntity[];
+  reasoning: string;
 }
 
 /**
@@ -117,53 +117,55 @@ export interface ReflexionNodesResponse {
 export function parseReflexionNodesResponse(response: string): ReflexionNodesResponse {
   try {
     // Try to extract JSON from response (handle markdown code blocks)
-    let jsonStr = response.trim()
+    let jsonStr = response.trim();
 
     // Remove markdown code block if present
-    const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/)
+    const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
     if (jsonMatch && jsonMatch[1]) {
-      jsonStr = jsonMatch[1].trim()
+      jsonStr = jsonMatch[1].trim();
     }
 
-    const parsed = JSON.parse(jsonStr)
+    const parsed = JSON.parse(jsonStr);
 
     const missedEntities = (parsed.missed_entities || [])
       .map((e: unknown): ParsedMissedEntity | null => {
         if (typeof e === 'string') {
-          return { name: e }
+          return { name: e };
         }
         if (typeof e === 'object' && e !== null) {
-          const obj = e as Record<string, unknown>
-          const name = String(obj.name || '').trim()
-          if (!name) return null
+          const obj = e as Record<string, unknown>;
+          const name = String(obj.name || '').trim();
+          if (!name) return null;
           return {
             name,
             reason: obj.reason ? String(obj.reason) : undefined,
             suggestedType: obj.suggested_type ? String(obj.suggested_type) : undefined,
-          }
+          };
         }
-        return null
+        return null;
       })
-      .filter((e: ParsedMissedEntity | null): e is ParsedMissedEntity => e !== null && e.name !== '')
+      .filter(
+        (e: ParsedMissedEntity | null): e is ParsedMissedEntity => e !== null && e.name !== ''
+      );
 
     return {
       missedEntities,
       reasoning: parsed.reasoning || '',
-    }
+    };
   } catch {
     // If JSON parsing fails, try to extract entity names from text
-    const lines = response.split('\n').filter((line) => line.trim())
+    const lines = response.split('\n').filter((line) => line.trim());
     const missedEntities = lines
       .filter((line) => /^[-*•]\s*/.test(line) || /^\d+\.\s*/.test(line))
       .map((line) => ({
         // Remove bullet points (-, *, •) or numbered list prefixes (1., 2., etc.)
         name: line.replace(/^(?:[-*•]|\d+\.)\s*/, '').trim(),
       }))
-      .filter((e) => e.name !== '' && e.name.length < 100) // Sanity check
+      .filter((e) => e.name !== '' && e.name.length < 100); // Sanity check
 
     return {
       missedEntities,
       reasoning: 'Parsed from unstructured response',
-    }
+    };
   }
 }

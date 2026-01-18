@@ -9,7 +9,7 @@
  * - Analytics view
  */
 
-import { definePermissions } from '../registry'
+import { definePermissions } from '../registry';
 
 export const viewsPermissions = definePermissions('views', {
   board: {
@@ -72,4 +72,4 @@ export const viewsPermissions = definePermissions('views', {
       },
     },
   },
-})
+});

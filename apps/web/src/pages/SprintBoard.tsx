@@ -18,8 +18,8 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState, useRef } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useState, useRef } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   Loader2,
   AlertCircle,
@@ -30,15 +30,15 @@ import {
   Settings,
   ArrowLeft,
   Calendar,
-} from 'lucide-react'
-import { ProjectLayout } from '@/components/layout/ProjectLayout'
-import { Board } from '@/components/board/Board'
-import { LiveCursors } from '@/components/board/LiveCursors'
-import { SprintSelector } from '@/components/sprint/SprintSelector'
-import { trpc } from '@/lib/trpc'
-import { useRealtimeSync } from '@/hooks/useRealtimeSync'
-import { useAppSelector } from '@/store'
-import { selectUser } from '@/store/authSlice'
+} from 'lucide-react';
+import { ProjectLayout } from '@/components/layout/ProjectLayout';
+import { Board } from '@/components/board/Board';
+import { LiveCursors } from '@/components/board/LiveCursors';
+import { SprintSelector } from '@/components/sprint/SprintSelector';
+import { trpc } from '@/lib/trpc';
+import { useRealtimeSync } from '@/hooks/useRealtimeSync';
+import { useAppSelector } from '@/store';
+import { selectUser } from '@/store/authSlice';
 
 // =============================================================================
 // Types
@@ -46,22 +46,22 @@ import { selectUser } from '@/store/authSlice'
 
 interface SprintHeaderProps {
   sprint: {
-    id: number
-    name: string
-    status: string
-    description?: string | null
-    dateStart: string
-    dateEnd: string
-    totalTasks: number
-    completedTasks: number
-    openTasks: number
-    progress: number
-  }
-  projectId: number
-  onStart: () => void
-  onComplete: () => void
-  isStarting: boolean
-  isCompleting: boolean
+    id: number;
+    name: string;
+    status: string;
+    description?: string | null;
+    dateStart: string;
+    dateEnd: string;
+    totalTasks: number;
+    completedTasks: number;
+    openTasks: number;
+    progress: number;
+  };
+  projectId: number;
+  onStart: () => void;
+  onComplete: () => void;
+  isStarting: boolean;
+  isCompleting: boolean;
 }
 
 // =============================================================================
@@ -73,21 +73,21 @@ function formatDate(date: string): string {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
-  })
+  });
 }
 
 function getDaysRemaining(endDate: string): number {
-  const end = new Date(endDate)
-  const now = new Date()
-  const diff = end.getTime() - now.getTime()
-  return Math.ceil(diff / (1000 * 60 * 60 * 24))
+  const end = new Date(endDate);
+  const now = new Date();
+  const diff = end.getTime() - now.getTime();
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
 }
 
 function getProgressColor(progress: number): string {
-  if (progress >= 75) return 'bg-green-500'
-  if (progress >= 50) return 'bg-blue-500'
-  if (progress >= 25) return 'bg-yellow-500'
-  return 'bg-gray-400'
+  if (progress >= 75) return 'bg-green-500';
+  if (progress >= 50) return 'bg-blue-500';
+  if (progress >= 25) return 'bg-yellow-500';
+  return 'bg-gray-400';
 }
 
 // =============================================================================
@@ -102,8 +102,8 @@ function SprintHeader({
   isStarting,
   isCompleting,
 }: SprintHeaderProps) {
-  const daysRemaining = getDaysRemaining(sprint.dateEnd)
-  const progressColor = getProgressColor(sprint.progress)
+  const daysRemaining = getDaysRemaining(sprint.dateEnd);
+  const progressColor = getProgressColor(sprint.progress);
 
   return (
     <div className="bg-card border-b border-gray-200 dark:border-gray-700 px-6 py-4">
@@ -111,9 +111,7 @@ function SprintHeader({
         {/* Sprint info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3">
-            <h2 className="text-xl font-semibold text-foreground truncate">
-              {sprint.name}
-            </h2>
+            <h2 className="text-xl font-semibold text-foreground truncate">{sprint.name}</h2>
             <span
               className={`px-2 py-1 text-xs font-medium rounded-full ${
                 sprint.status === 'ACTIVE'
@@ -190,9 +188,7 @@ function SprintHeader({
                 />
               </svg>
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-sm font-semibold text-foreground">
-                  {sprint.progress}%
-                </span>
+                <span className="text-sm font-semibold text-foreground">{sprint.progress}%</span>
               </div>
             </div>
             <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
@@ -251,7 +247,7 @@ function SprintHeader({
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -260,39 +256,43 @@ function SprintHeader({
 
 export function SprintBoard() {
   const { projectIdentifier, sprintId } = useParams<{
-    projectIdentifier: string
-    sprintId?: string
-  }>()
-  const navigate = useNavigate()
-  const utils = trpc.useUtils()
-  const currentUser = useAppSelector(selectUser)
-  const sprintContainerRef = useRef<HTMLDivElement>(null)
+    projectIdentifier: string;
+    sprintId?: string;
+  }>();
+  const navigate = useNavigate();
+  const utils = trpc.useUtils();
+  const currentUser = useAppSelector(selectUser);
+  const sprintContainerRef = useRef<HTMLDivElement>(null);
 
-  const sprintIdNum = sprintId ? parseInt(sprintId, 10) : null
+  const sprintIdNum = sprintId ? parseInt(sprintId, 10) : null;
 
   // Fetch project by identifier (SEO-friendly URL)
-  const { data: project, isLoading: isProjectLoading, error: projectError } = trpc.project.getByIdentifier.useQuery(
+  const {
+    data: project,
+    isLoading: isProjectLoading,
+    error: projectError,
+  } = trpc.project.getByIdentifier.useQuery(
     { identifier: projectIdentifier! },
     { enabled: !!projectIdentifier }
-  )
+  );
 
   // Get project ID from fetched data
-  const projectIdNum = project?.id ?? 0
+  const projectIdNum = project?.id ?? 0;
 
   // Real-time collaboration sync
   useRealtimeSync({
     projectId: projectIdNum,
     currentUserId: currentUser?.id ?? 0,
-  })
+  });
 
   // State for selected sprint (from URL or selector)
-  const [selectedSprintId, setSelectedSprintId] = useState<number | null>(sprintIdNum)
+  const [selectedSprintId, setSelectedSprintId] = useState<number | null>(sprintIdNum);
 
   // Queries - Sprint details
   const { data: sprint, isLoading: isSprintLoading } = trpc.sprint.get.useQuery(
     { sprintId: selectedSprintId ?? 0, includeTasks: false },
     { enabled: selectedSprintId !== null && selectedSprintId > 0 }
-  )
+  );
 
   // Queries - Tasks filtered by sprint
   const { data: tasks, isLoading: isTasksLoading } = trpc.task.list.useQuery(
@@ -303,49 +303,49 @@ export function SprintBoard() {
       limit: 500,
     },
     { enabled: projectIdNum > 0 }
-  )
+  );
 
   // Mutations
   const startSprintMutation = trpc.sprint.start.useMutation({
     onSuccess: () => {
-      utils.sprint.list.invalidate()
-      utils.sprint.get.invalidate()
+      utils.sprint.list.invalidate();
+      utils.sprint.get.invalidate();
     },
-  })
+  });
 
   const completeSprintMutation = trpc.sprint.complete.useMutation({
     onSuccess: () => {
-      utils.sprint.list.invalidate()
-      utils.sprint.get.invalidate()
-      utils.task.list.invalidate()
+      utils.sprint.list.invalidate();
+      utils.sprint.get.invalidate();
+      utils.task.list.invalidate();
     },
-  })
+  });
 
   // Handle sprint change
   const handleSprintChange = (newSprintId: number | null) => {
-    setSelectedSprintId(newSprintId)
+    setSelectedSprintId(newSprintId);
     if (newSprintId) {
-      navigate(`/project/${projectIdNum}/sprint/${newSprintId}`)
+      navigate(`/project/${projectIdNum}/sprint/${newSprintId}`);
     } else {
-      navigate(`/project/${projectIdNum}/board`)
+      navigate(`/project/${projectIdNum}/board`);
     }
-  }
+  };
 
   // Handle sprint actions
   const handleStartSprint = () => {
     if (selectedSprintId) {
-      startSprintMutation.mutate({ sprintId: selectedSprintId })
+      startSprintMutation.mutate({ sprintId: selectedSprintId });
     }
-  }
+  };
 
   const handleCompleteSprint = () => {
     if (selectedSprintId) {
       completeSprintMutation.mutate({
         sprintId: selectedSprintId,
         moveRemainingToBacklog: true,
-      })
+      });
     }
-  }
+  };
 
   // Loading state
   if (isProjectLoading || isTasksLoading) {
@@ -355,7 +355,7 @@ export function SprintBoard() {
           <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
         </div>
       </ProjectLayout>
-    )
+    );
   }
 
   // Error state
@@ -364,24 +364,19 @@ export function SprintBoard() {
       <ProjectLayout>
         <div className="flex flex-col items-center justify-center h-64 gap-4">
           <AlertCircle className="w-12 h-12 text-red-500" />
-          <h2 className="text-xl font-semibold text-foreground">
-            Project not found
-          </h2>
-          <Link
-            to="/"
-            className="text-blue-500 hover:text-blue-600 dark:text-blue-400"
-          >
+          <h2 className="text-xl font-semibold text-foreground">Project not found</h2>
+          <Link to="/" className="text-blue-500 hover:text-blue-600 dark:text-blue-400">
             Return to projects
           </Link>
         </div>
       </ProjectLayout>
-    )
+    );
   }
 
   // Extract data from project
-  const columns = project.columns ?? []
-  const swimlanes = project.swimlanes ?? []
-  const taskList = tasks ?? []
+  const columns = project.columns ?? [];
+  const swimlanes = project.swimlanes ?? [];
+  const taskList = tasks ?? [];
 
   return (
     <ProjectLayout>
@@ -397,12 +392,8 @@ export function SprintBoard() {
                 <ArrowLeft className="w-5 h-5" />
               </Link>
               <div>
-                <h1 className="text-section-title text-foreground">
-                  Sprint Board
-                </h1>
-                <p className="text-sm text-muted-foreground">
-                  {project.name}
-                </p>
+                <h1 className="text-section-title text-foreground">Sprint Board</h1>
+                <p className="text-sm text-muted-foreground">{project.name}</p>
               </div>
             </div>
 
@@ -455,7 +446,7 @@ export function SprintBoard() {
         />
       )}
     </ProjectLayout>
-  )
+  );
 }
 
-export default SprintBoard
+export default SprintBoard;

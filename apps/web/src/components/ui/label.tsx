@@ -5,10 +5,10 @@
  * Form label with consistent styling.
  */
 
-import { cn } from '@/lib/utils'
+import { cn } from '@/lib/utils';
 
 interface LabelProps extends React.LabelHTMLAttributes<HTMLLabelElement> {
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
 export function Label({ className, children, ...props }: LabelProps) {
@@ -22,5 +22,5 @@ export function Label({ className, children, ...props }: LabelProps) {
     >
       {children}
     </label>
-  )
+  );
 }

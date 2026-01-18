@@ -13,131 +13,131 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { TRPCError } from '@trpc/server'
-import { prisma } from './prisma'
-import { checkWIPLimit, type WIPValidation } from './board'
+import { TRPCError } from '@trpc/server';
+import { prisma } from './prisma';
+import { checkWIPLimit, type WIPValidation } from './board';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface TaskProgress {
-  taskId: number
-  totalSubtasks: number
-  completedSubtasks: number
-  progressPercentage: number
-  hasSubtasks: boolean
+  taskId: number;
+  totalSubtasks: number;
+  completedSubtasks: number;
+  progressPercentage: number;
+  hasSubtasks: boolean;
 }
 
 export interface TaskMoveValidation {
-  canMove: boolean
-  reason?: string
-  wipValidation?: WIPValidation
+  canMove: boolean;
+  reason?: string;
+  wipValidation?: WIPValidation;
 }
 
 export interface TaskWithRelations {
-  id: number
-  projectId: number
-  columnId: number
-  swimlaneId: number | null
-  creatorId: number
-  title: string
-  description: string | null
-  reference: string | null
-  priority: number
-  score: number
-  progress: number
-  position: number
-  color: string | null
-  dateStarted: Date | null
-  dateDue: Date | null
-  dateCompleted: Date | null
-  timeEstimated: number
-  timeSpent: number
-  isActive: boolean
-  isDraggable: boolean
-  recurrenceData: unknown
-  createdAt: Date
-  updatedAt: Date
-  milestoneId: number | null
-  moduleId: number | null
-  sprintId: number | null
-  categoryId: number | null
+  id: number;
+  projectId: number;
+  columnId: number;
+  swimlaneId: number | null;
+  creatorId: number;
+  title: string;
+  description: string | null;
+  reference: string | null;
+  priority: number;
+  score: number;
+  progress: number;
+  position: number;
+  color: string | null;
+  dateStarted: Date | null;
+  dateDue: Date | null;
+  dateCompleted: Date | null;
+  timeEstimated: number;
+  timeSpent: number;
+  isActive: boolean;
+  isDraggable: boolean;
+  recurrenceData: unknown;
+  createdAt: Date;
+  updatedAt: Date;
+  milestoneId: number | null;
+  moduleId: number | null;
+  sprintId: number | null;
+  categoryId: number | null;
   column: {
-    id: number
-    title: string
-    taskLimit: number
-  }
+    id: number;
+    title: string;
+    taskLimit: number;
+  };
   swimlane: {
-    id: number
-    name: string
-  } | null
+    id: number;
+    name: string;
+  } | null;
   creator: {
-    id: number
-    username: string
-    name: string
-    avatarUrl: string | null
-  }
+    id: number;
+    username: string;
+    name: string;
+    avatarUrl: string | null;
+  };
   assignees: Array<{
-    id: number
+    id: number;
     user: {
-      id: number
-      username: string
-      name: string
-      avatarUrl: string | null
-    }
-  }>
+      id: number;
+      username: string;
+      name: string;
+      avatarUrl: string | null;
+    };
+  }>;
   subtasks: Array<{
-    id: number
-    title: string
-    status: string
-    position: number
-    timeEstimated: number
-    timeSpent: number
+    id: number;
+    title: string;
+    status: string;
+    position: number;
+    timeEstimated: number;
+    timeSpent: number;
     assignee: {
-      id: number
-      username: string
-      name: string
-    } | null
-  }>
+      id: number;
+      username: string;
+      name: string;
+    } | null;
+  }>;
   comments: Array<{
-    id: number
-    content: string
-    createdAt: Date
+    id: number;
+    content: string;
+    createdAt: Date;
     user: {
-      id: number
-      username: string
-      name: string
-      avatarUrl: string | null
-    }
-  }>
+      id: number;
+      username: string;
+      name: string;
+      avatarUrl: string | null;
+    };
+  }>;
   tags: Array<{
-    id: number
+    id: number;
     tag: {
-      id: number
-      name: string
-      color: string
-    }
-  }>
+      id: number;
+      name: string;
+      color: string;
+    };
+  }>;
   category: {
-    id: number
-    name: string
-    color: string
-  } | null
+    id: number;
+    name: string;
+    color: string;
+  } | null;
   milestone: {
-    id: number
-    name: string
-  } | null
+    id: number;
+    name: string;
+  } | null;
   module: {
-    id: number
-    name: string
-    color: string
-  } | null
+    id: number;
+    name: string;
+    color: string;
+  } | null;
   sprint: {
-    id: number
-    name: string
-    status: string
-  } | null
+    id: number;
+    name: string;
+    status: string;
+  } | null;
 }
 
 // =============================================================================
@@ -163,20 +163,20 @@ export async function calculateTaskProgress(taskId: number): Promise<TaskProgres
         },
       },
     },
-  })
+  });
 
   if (!task) {
     throw new TRPCError({
       code: 'NOT_FOUND',
       message: 'Task not found',
-    })
+    });
   }
 
-  const totalSubtasks = task.subtasks.length
-  const completedSubtasks = task.subtasks.filter((s) => s.status === 'DONE').length
+  const totalSubtasks = task.subtasks.length;
+  const completedSubtasks = task.subtasks.filter((s) => s.status === 'DONE').length;
 
   const progressPercentage =
-    totalSubtasks > 0 ? Math.round((completedSubtasks / totalSubtasks) * 100) : 0
+    totalSubtasks > 0 ? Math.round((completedSubtasks / totalSubtasks) * 100) : 0;
 
   return {
     taskId,
@@ -184,7 +184,7 @@ export async function calculateTaskProgress(taskId: number): Promise<TaskProgres
     completedSubtasks,
     progressPercentage,
     hasSubtasks: totalSubtasks > 0,
-  }
+  };
 }
 
 /**
@@ -195,14 +195,14 @@ export async function calculateTaskProgress(taskId: number): Promise<TaskProgres
  * @returns Updated progress percentage
  */
 export async function updateTaskProgress(taskId: number): Promise<number> {
-  const progress = await calculateTaskProgress(taskId)
+  const progress = await calculateTaskProgress(taskId);
 
   await prisma.task.update({
     where: { id: taskId },
     data: { progress: progress.progressPercentage },
-  })
+  });
 
-  return progress.progressPercentage
+  return progress.progressPercentage;
 }
 
 // =============================================================================
@@ -230,25 +230,25 @@ export async function validateTaskMove(
       projectId: true,
       isActive: true,
     },
-  })
+  });
 
   if (!task) {
     return {
       canMove: false,
       reason: 'Task not found',
-    }
+    };
   }
 
   if (!task.isActive) {
     return {
       canMove: false,
       reason: 'Cannot move a closed task',
-    }
+    };
   }
 
   // If moving to same column, always allowed
   if (task.columnId === targetColumnId) {
-    return { canMove: true }
+    return { canMove: true };
   }
 
   // Check target column exists and belongs to same project
@@ -258,37 +258,37 @@ export async function validateTaskMove(
       id: true,
       projectId: true,
     },
-  })
+  });
 
   if (!targetColumn) {
     return {
       canMove: false,
       reason: 'Target column not found',
-    }
+    };
   }
 
   if (targetColumn.projectId !== task.projectId) {
     return {
       canMove: false,
       reason: 'Cannot move task to a column in a different project',
-    }
+    };
   }
 
   // Check WIP limit on target column
-  const wipValidation = await checkWIPLimit(targetColumnId)
+  const wipValidation = await checkWIPLimit(targetColumnId);
 
   if (!wipValidation.canAddTask) {
     return {
       canMove: false,
       reason: `Column WIP limit reached (${wipValidation.currentCount}/${wipValidation.taskLimit})`,
       wipValidation,
-    }
+    };
   }
 
   return {
     canMove: true,
     wipValidation,
-  }
+  };
 }
 
 // =============================================================================
@@ -413,16 +413,16 @@ export async function getTaskWithRelations(taskId: number): Promise<TaskWithRela
         },
       },
     },
-  })
+  });
 
   if (!task) {
     throw new TRPCError({
       code: 'NOT_FOUND',
       message: 'Task not found',
-    })
+    });
   }
 
-  return task as TaskWithRelations
+  return task as TaskWithRelations;
 }
 
 // =============================================================================
@@ -448,9 +448,9 @@ export async function getNextTaskPosition(
     },
     orderBy: { position: 'desc' },
     select: { position: true },
-  })
+  });
 
-  return (maxTask?.position ?? 0) + 1
+  return (maxTask?.position ?? 0) + 1;
 }
 
 /**
@@ -468,7 +468,7 @@ export async function applyTaskPositions(
         data: { position: update.position },
       })
     )
-  )
+  );
 }
 
 // =============================================================================
@@ -485,14 +485,14 @@ export async function recalculateTaskTime(taskId: number): Promise<number> {
   const subtasks = await prisma.subtask.findMany({
     where: { taskId },
     select: { timeSpent: true },
-  })
+  });
 
-  const totalTimeSpent = subtasks.reduce((sum, s) => sum + s.timeSpent, 0)
+  const totalTimeSpent = subtasks.reduce((sum, s) => sum + s.timeSpent, 0);
 
   await prisma.task.update({
     where: { id: taskId },
     data: { timeSpent: totalTimeSpent },
-  })
+  });
 
-  return totalTimeSpent
+  return totalTimeSpent;
 }

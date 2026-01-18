@@ -14,19 +14,19 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState, useRef, useEffect } from 'react'
-import { trpc } from '@/lib/trpc'
-import { X, Loader2 } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react';
+import { trpc } from '@/lib/trpc';
+import { X, Loader2 } from 'lucide-react';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface TimeEstimatedSelectorProps {
-  taskId: number
-  currentHours: number
-  onTimeChange?: (hours: number) => void
-  disabled?: boolean
+  taskId: number;
+  currentHours: number;
+  onTimeChange?: (hours: number) => void;
+  disabled?: boolean;
 }
 
 // =============================================================================
@@ -34,47 +34,47 @@ export interface TimeEstimatedSelectorProps {
 // =============================================================================
 
 function formatTimeForDisplay(hours: number): string {
-  if (hours === 0) return 'Not set'
+  if (hours === 0) return 'Not set';
   if (hours < 1) {
-    const mins = Math.round(hours * 60)
-    return `${mins}m`
+    const mins = Math.round(hours * 60);
+    return `${mins}m`;
   }
-  const h = Math.floor(hours)
-  const m = Math.round((hours - h) * 60)
-  return m > 0 ? `${h}h ${m}m` : `${h}h`
+  const h = Math.floor(hours);
+  const m = Math.round((hours - h) * 60);
+  return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
 
 function parseTimeInput(input: string): number {
   // Support formats: "2", "2h", "2.5", "2h 30m", "30m", "2:30"
-  const trimmed = input.trim().toLowerCase()
+  const trimmed = input.trim().toLowerCase();
 
-  if (!trimmed) return 0
+  if (!trimmed) return 0;
 
   // Try "Xh Ym" format
-  const hhmm = trimmed.match(/^(\d+(?:\.\d+)?)\s*h(?:\s+(\d+)\s*m)?$/)
+  const hhmm = trimmed.match(/^(\d+(?:\.\d+)?)\s*h(?:\s+(\d+)\s*m)?$/);
   if (hhmm) {
-    const hours = parseFloat(hhmm[1] ?? '0')
-    const mins = parseInt(hhmm[2] ?? '0', 10)
-    return hours + mins / 60
+    const hours = parseFloat(hhmm[1] ?? '0');
+    const mins = parseInt(hhmm[2] ?? '0', 10);
+    return hours + mins / 60;
   }
 
   // Try "Xm" format (minutes only)
-  const mOnly = trimmed.match(/^(\d+)\s*m$/)
+  const mOnly = trimmed.match(/^(\d+)\s*m$/);
   if (mOnly) {
-    return parseInt(mOnly[1] ?? '0', 10) / 60
+    return parseInt(mOnly[1] ?? '0', 10) / 60;
   }
 
   // Try "X:Y" format (hours:minutes)
-  const colonFormat = trimmed.match(/^(\d+):(\d+)$/)
+  const colonFormat = trimmed.match(/^(\d+):(\d+)$/);
   if (colonFormat) {
-    const hours = parseInt(colonFormat[1] ?? '0', 10)
-    const mins = parseInt(colonFormat[2] ?? '0', 10)
-    return hours + mins / 60
+    const hours = parseInt(colonFormat[1] ?? '0', 10);
+    const mins = parseInt(colonFormat[2] ?? '0', 10);
+    return hours + mins / 60;
   }
 
   // Try plain number (treat as hours)
-  const num = parseFloat(trimmed)
-  return isNaN(num) ? 0 : num
+  const num = parseFloat(trimmed);
+  return isNaN(num) ? 0 : num;
 }
 
 // =============================================================================
@@ -87,53 +87,53 @@ export function TimeEstimatedSelector({
   onTimeChange,
   disabled = false,
 }: TimeEstimatedSelectorProps) {
-  const [isEditing, setIsEditing] = useState(false)
-  const [inputValue, setInputValue] = useState('')
-  const inputRef = useRef<HTMLInputElement>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
+  const [isEditing, setIsEditing] = useState(false);
+  const [inputValue, setInputValue] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const utils = trpc.useUtils()
+  const utils = trpc.useUtils();
 
   const updateMutation = trpc.task.update.useMutation({
     onSuccess: () => {
-      utils.task.get.invalidate({ taskId })
-      setIsEditing(false)
+      utils.task.get.invalidate({ taskId });
+      setIsEditing(false);
     },
-  })
+  });
 
   // Set input value when entering edit mode
   useEffect(() => {
     if (isEditing) {
       // Show current value in a nice format for editing
       if (currentHours === 0) {
-        setInputValue('')
+        setInputValue('');
       } else if (currentHours < 1) {
-        setInputValue(`${Math.round(currentHours * 60)}m`)
+        setInputValue(`${Math.round(currentHours * 60)}m`);
       } else {
-        const h = Math.floor(currentHours)
-        const m = Math.round((currentHours - h) * 60)
-        setInputValue(m > 0 ? `${h}h ${m}m` : `${h}h`)
+        const h = Math.floor(currentHours);
+        const m = Math.round((currentHours - h) * 60);
+        setInputValue(m > 0 ? `${h}h ${m}m` : `${h}h`);
       }
-      setTimeout(() => inputRef.current?.focus(), 0)
+      setTimeout(() => inputRef.current?.focus(), 0);
     }
-  }, [isEditing, currentHours])
+  }, [isEditing, currentHours]);
 
   // Close on click outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         if (isEditing) {
-          handleSave()
+          handleSave();
         }
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [isEditing, inputValue])
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isEditing, inputValue]);
 
   const handleSave = () => {
-    const newHours = parseTimeInput(inputValue)
+    const newHours = parseTimeInput(inputValue);
 
     // Only save if different (with small epsilon for float comparison)
     if (Math.abs(newHours - currentHours) > 0.001) {
@@ -141,35 +141,35 @@ export function TimeEstimatedSelector({
         { taskId, timeEstimated: newHours },
         {
           onSuccess: () => {
-            onTimeChange?.(newHours)
+            onTimeChange?.(newHours);
           },
         }
-      )
+      );
     } else {
-      setIsEditing(false)
+      setIsEditing(false);
     }
-  }
+  };
 
   const handleClear = (e: React.MouseEvent) => {
-    e.stopPropagation()
+    e.stopPropagation();
     updateMutation.mutate(
       { taskId, timeEstimated: 0 },
       {
         onSuccess: () => {
-          onTimeChange?.(0)
-          setIsEditing(false)
+          onTimeChange?.(0);
+          setIsEditing(false);
         },
       }
-    )
-  }
+    );
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      handleSave()
+      handleSave();
     } else if (e.key === 'Escape') {
-      setIsEditing(false)
+      setIsEditing(false);
     }
-  }
+  };
 
   if (isEditing) {
     return (
@@ -184,11 +184,9 @@ export function TimeEstimatedSelector({
           placeholder="e.g. 2h, 30m, 2h 30m"
           className="flex-1 px-2 py-1 text-sm border border-input rounded bg-background text-foreground placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
-        {updateMutation.isPending && (
-          <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
-        )}
+        {updateMutation.isPending && <Loader2 className="w-4 h-4 animate-spin text-gray-400" />}
       </div>
-    )
+    );
   }
 
   return (
@@ -198,7 +196,9 @@ export function TimeEstimatedSelector({
         onClick={() => !disabled && setIsEditing(true)}
         disabled={disabled || updateMutation.isPending}
         className={`flex items-center gap-1 transition-colors ${
-          disabled ? 'cursor-not-allowed' : 'hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer rounded px-1'
+          disabled
+            ? 'cursor-not-allowed'
+            : 'hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer rounded px-1'
         }`}
       >
         {updateMutation.isPending ? (
@@ -207,7 +207,9 @@ export function TimeEstimatedSelector({
           </span>
         ) : (
           <>
-            <span className={`text-sm ${currentHours === 0 ? 'text-gray-500 dark:text-gray-400' : 'text-foreground'}`}>
+            <span
+              className={`text-sm ${currentHours === 0 ? 'text-gray-500 dark:text-gray-400' : 'text-foreground'}`}
+            >
               {formatTimeForDisplay(currentHours)}
             </span>
             {currentHours > 0 && !disabled && (
@@ -223,7 +225,7 @@ export function TimeEstimatedSelector({
         )}
       </button>
     </div>
-  )
+  );
 }
 
-export default TimeEstimatedSelector
+export default TimeEstimatedSelector;

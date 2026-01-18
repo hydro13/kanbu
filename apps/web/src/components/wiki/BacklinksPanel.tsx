@@ -12,10 +12,10 @@
  * ===================================================================
  */
 
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { trpc } from '@/lib/trpc'
-import { Button } from '@/components/ui/button'
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { trpc } from '@/lib/trpc';
+import { Button } from '@/components/ui/button';
 import {
   ChevronDown,
   ChevronRight,
@@ -24,8 +24,8 @@ import {
   FileText,
   AlertCircle,
   Loader2,
-} from 'lucide-react'
-import { cn } from '@/lib/utils'
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 // =============================================================================
 // Types
@@ -33,11 +33,11 @@ import { cn } from '@/lib/utils'
 
 interface BacklinksPanelProps {
   /** The wiki page ID to show backlinks for */
-  pageId: number
+  pageId: number;
   /** Base path for wiki links (e.g., /workspace/genx/wiki) */
-  basePath: string
+  basePath: string;
   /** Optional className */
-  className?: string
+  className?: string;
 }
 
 // =============================================================================
@@ -45,19 +45,20 @@ interface BacklinksPanelProps {
 // =============================================================================
 
 interface BacklinksSectionProps {
-  pageId: number
-  basePath: string
+  pageId: number;
+  basePath: string;
 }
 
 function BacklinksSection({ pageId, basePath }: BacklinksSectionProps) {
-  const [isExpanded, setIsExpanded] = useState(true)
+  const [isExpanded, setIsExpanded] = useState(true);
 
-  const { data: backlinks, isLoading, error } = trpc.graphiti.getBacklinks.useQuery(
-    { pageId },
-    { enabled: pageId > 0 }
-  )
+  const {
+    data: backlinks,
+    isLoading,
+    error,
+  } = trpc.graphiti.getBacklinks.useQuery({ pageId }, { enabled: pageId > 0 });
 
-  const hasBacklinks = backlinks && backlinks.length > 0
+  const hasBacklinks = backlinks && backlinks.length > 0;
 
   return (
     <div>
@@ -67,29 +68,19 @@ function BacklinksSection({ pageId, basePath }: BacklinksSectionProps) {
         className="w-full justify-start gap-2 h-8 px-2"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        {isExpanded ? (
-          <ChevronDown className="h-4 w-4" />
-        ) : (
-          <ChevronRight className="h-4 w-4" />
-        )}
+        {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
         <LinkIcon className="h-4 w-4" />
         <span className="font-medium">Backlinks</span>
         {!isLoading && hasBacklinks && (
-          <span className="ml-auto text-xs text-muted-foreground">
-            {backlinks.length}
-          </span>
+          <span className="ml-auto text-xs text-muted-foreground">{backlinks.length}</span>
         )}
-        {isLoading && (
-          <Loader2 className="ml-auto h-3 w-3 animate-spin text-muted-foreground" />
-        )}
+        {isLoading && <Loader2 className="ml-auto h-3 w-3 animate-spin text-muted-foreground" />}
       </Button>
 
       {isExpanded && (
         <div className="ml-6 mt-1 space-y-1">
           {isLoading ? (
-            <p className="text-sm text-muted-foreground px-2 py-1">
-              Loading...
-            </p>
+            <p className="text-sm text-muted-foreground px-2 py-1">Loading...</p>
           ) : error ? (
             <div className="flex items-center gap-2 text-sm text-muted-foreground px-2 py-1">
               <AlertCircle className="h-3.5 w-3.5" />
@@ -114,7 +105,7 @@ function BacklinksSection({ pageId, basePath }: BacklinksSectionProps) {
         </div>
       )}
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -122,19 +113,20 @@ function BacklinksSection({ pageId, basePath }: BacklinksSectionProps) {
 // =============================================================================
 
 interface RelatedSectionProps {
-  pageId: number
-  basePath: string
+  pageId: number;
+  basePath: string;
 }
 
 function RelatedSection({ pageId, basePath }: RelatedSectionProps) {
-  const [isExpanded, setIsExpanded] = useState(true)
+  const [isExpanded, setIsExpanded] = useState(true);
 
-  const { data: related, isLoading, error } = trpc.graphiti.getRelated.useQuery(
-    { pageId, limit: 5 },
-    { enabled: pageId > 0 }
-  )
+  const {
+    data: related,
+    isLoading,
+    error,
+  } = trpc.graphiti.getRelated.useQuery({ pageId, limit: 5 }, { enabled: pageId > 0 });
 
-  const hasRelated = related && related.length > 0
+  const hasRelated = related && related.length > 0;
 
   return (
     <div>
@@ -144,29 +136,19 @@ function RelatedSection({ pageId, basePath }: RelatedSectionProps) {
         className="w-full justify-start gap-2 h-8 px-2"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        {isExpanded ? (
-          <ChevronDown className="h-4 w-4" />
-        ) : (
-          <ChevronRight className="h-4 w-4" />
-        )}
+        {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
         <Sparkles className="h-4 w-4" />
         <span className="font-medium">Related Pages</span>
         {!isLoading && hasRelated && (
-          <span className="ml-auto text-xs text-muted-foreground">
-            {related.length}
-          </span>
+          <span className="ml-auto text-xs text-muted-foreground">{related.length}</span>
         )}
-        {isLoading && (
-          <Loader2 className="ml-auto h-3 w-3 animate-spin text-muted-foreground" />
-        )}
+        {isLoading && <Loader2 className="ml-auto h-3 w-3 animate-spin text-muted-foreground" />}
       </Button>
 
       {isExpanded && (
         <div className="ml-6 mt-1 space-y-1">
           {isLoading ? (
-            <p className="text-sm text-muted-foreground px-2 py-1">
-              Loading...
-            </p>
+            <p className="text-sm text-muted-foreground px-2 py-1">Loading...</p>
           ) : error ? (
             <div className="flex items-center gap-2 text-sm text-muted-foreground px-2 py-1">
               <AlertCircle className="h-3.5 w-3.5" />
@@ -187,14 +169,12 @@ function RelatedSection({ pageId, basePath }: RelatedSectionProps) {
               </Link>
             ))
           ) : (
-            <p className="text-sm text-muted-foreground px-2 py-1">
-              No related pages found
-            </p>
+            <p className="text-sm text-muted-foreground px-2 py-1">No related pages found</p>
           )}
         </div>
       )}
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -203,7 +183,7 @@ function RelatedSection({ pageId, basePath }: RelatedSectionProps) {
 
 export function BacklinksPanel({ pageId, basePath, className }: BacklinksPanelProps) {
   // Check if Graphiti is connected
-  const { data: connectionStatus } = trpc.graphiti.isConnected.useQuery()
+  const { data: connectionStatus } = trpc.graphiti.isConnected.useQuery();
 
   if (!connectionStatus?.connected) {
     return (
@@ -213,7 +193,7 @@ export function BacklinksPanel({ pageId, basePath, className }: BacklinksPanelPr
           <span>Knowledge graph not available</span>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -221,7 +201,7 @@ export function BacklinksPanel({ pageId, basePath, className }: BacklinksPanelPr
       <BacklinksSection pageId={pageId} basePath={basePath} />
       <RelatedSection pageId={pageId} basePath={basePath} />
     </div>
-  )
+  );
 }
 
-export default BacklinksPanel
+export default BacklinksPanel;

@@ -16,161 +16,148 @@
  * =============================================================================
  */
 
-import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
-import crypto from 'crypto'
-import { prisma } from '../../lib/prisma'
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import crypto from 'crypto';
+import { prisma } from '../../lib/prisma';
 import {
   createTaskFromGitHubIssue,
   updateTaskFromGitHubIssue,
-} from '../../services/github/issueSyncService'
-import {
-  processNewPR,
-  processNewCommits,
-} from '../../services/github/prCommitLinkService'
+} from '../../services/github/issueSyncService';
+import { processNewPR, processNewCommits } from '../../services/github/prCommitLinkService';
 import {
   onPROpened,
   onPRReadyForReview,
   onPRMerged,
   onIssueClosed,
-} from '../../services/github/automationService'
-import {
-  processWorkflowRunEvent,
-} from '../../services/github/workflowService'
-import {
-  upsertReview,
-  type ReviewData,
-} from '../../services/github/reviewService'
-import {
-  processComment,
-  type CommentContext,
-} from '../../services/github/botService'
+} from '../../services/github/automationService';
+import { processWorkflowRunEvent } from '../../services/github/workflowService';
+import { upsertReview, type ReviewData } from '../../services/github/reviewService';
+import { processComment, type CommentContext } from '../../services/github/botService';
 import {
   processDeploymentWebhook,
   processDeploymentStatusWebhook,
   type DeploymentWebhookPayload,
   type DeploymentStatusWebhookPayload,
-} from '../../services/github/deploymentService'
+} from '../../services/github/deploymentService';
 import {
   processCheckRunWebhook,
   type CheckRunWebhookPayload,
-} from '../../services/github/checkRunService'
+} from '../../services/github/checkRunService';
 import {
   notifyWorkflowRun,
   notifyDeployment,
   notifyCheckRun,
-} from '../../services/github/cicdNotificationService'
-import {
-  syncMilestoneFromWebhook,
-} from '../../services/github/milestoneService'
-import type { GitHubSyncSettings } from '@kanbu/shared'
+} from '../../services/github/cicdNotificationService';
+import { syncMilestoneFromWebhook } from '../../services/github/milestoneService';
+import type { GitHubSyncSettings } from '@kanbu/shared';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface WebhookPayload {
-  action?: string
+  action?: string;
   installation?: {
-    id: number
+    id: number;
     account: {
-      login: string
-      id: number
-      type: string
-    }
-  }
+      login: string;
+      id: number;
+      type: string;
+    };
+  };
   repository?: {
-    id: number
-    name: string
-    full_name: string
+    id: number;
+    name: string;
+    full_name: string;
     owner: {
-      login: string
-    }
-  }
+      login: string;
+    };
+  };
   issue?: {
-    id: number
-    number: number
-    title: string
-    body: string | null
-    state: 'open' | 'closed'
-    labels: Array<{ name: string; color?: string }>
-    assignees: Array<{ login: string; id: number }>
-    milestone?: { id: number; number: number; title: string } | null
-    user: { login: string; id: number }
-    created_at: string
-    updated_at: string
-    closed_at?: string | null
-  }
+    id: number;
+    number: number;
+    title: string;
+    body: string | null;
+    state: 'open' | 'closed';
+    labels: Array<{ name: string; color?: string }>;
+    assignees: Array<{ login: string; id: number }>;
+    milestone?: { id: number; number: number; title: string } | null;
+    user: { login: string; id: number };
+    created_at: string;
+    updated_at: string;
+    closed_at?: string | null;
+  };
   pull_request?: {
-    id: number
-    number: number
-    title: string
-    body: string | null
-    state: 'open' | 'closed'
-    merged: boolean
-    head: { ref: string; sha: string }
-    base: { ref: string }
-    user: { login: string; id: number }
-    merged_at: string | null
-    closed_at: string | null
-  }
+    id: number;
+    number: number;
+    title: string;
+    body: string | null;
+    state: 'open' | 'closed';
+    merged: boolean;
+    head: { ref: string; sha: string };
+    base: { ref: string };
+    user: { login: string; id: number };
+    merged_at: string | null;
+    closed_at: string | null;
+  };
   commits?: Array<{
-    id: string
-    message: string
+    id: string;
+    message: string;
     author: {
-      name: string
-      email: string
-      username?: string
-    }
-    timestamp: string
-  }>
-  ref?: string
+      name: string;
+      email: string;
+      username?: string;
+    };
+    timestamp: string;
+  }>;
+  ref?: string;
   sender?: {
-    login: string
-    id: number
-  }
+    login: string;
+    id: number;
+  };
   workflow_run?: {
-    id: number
-    workflow_id: number
-    name: string
-    event: string
-    status: string
-    conclusion: string | null
-    head_sha: string
-    head_branch: string
-    html_url: string
-    run_number: number
-    run_attempt: number
-    actor: { login: string } | null
-    run_started_at: string | null
-    updated_at: string | null
-  }
+    id: number;
+    workflow_id: number;
+    name: string;
+    event: string;
+    status: string;
+    conclusion: string | null;
+    head_sha: string;
+    head_branch: string;
+    html_url: string;
+    run_number: number;
+    run_attempt: number;
+    actor: { login: string } | null;
+    run_started_at: string | null;
+    updated_at: string | null;
+  };
   comment?: {
-    id: number
-    body: string
-    user: { login: string; id: number }
-    created_at: string
-    updated_at: string
-  }
+    id: number;
+    body: string;
+    user: { login: string; id: number };
+    created_at: string;
+    updated_at: string;
+  };
   review?: {
-    id: number
-    body: string | null
-    state: string
-    user: { login: string; id: number } | null
-    html_url: string | null
-    submitted_at: string | null
-  }
+    id: number;
+    body: string | null;
+    state: string;
+    user: { login: string; id: number } | null;
+    html_url: string | null;
+    submitted_at: string | null;
+  };
   milestone?: {
-    number: number
-    id: number
-    title: string
-    description: string | null
-    state: 'open' | 'closed'
-    due_on: string | null
-    closed_at: string | null
-    open_issues: number
-    closed_issues: number
-    html_url: string
-  }
+    number: number;
+    id: number;
+    title: string;
+    description: string | null;
+    state: 'open' | 'closed';
+    due_on: string | null;
+    closed_at: string | null;
+    open_issues: number;
+    closed_issues: number;
+    html_url: string;
+  };
 }
 
 type GitHubEventType =
@@ -186,14 +173,14 @@ type GitHubEventType =
   | 'milestone'
   | 'installation'
   | 'installation_repositories'
-  | 'ping'
+  | 'ping';
 
 interface WebhookContext {
-  event: GitHubEventType
-  action: string | undefined
-  deliveryId: string
-  installationId: number | null
-  payload: WebhookPayload
+  event: GitHubEventType;
+  action: string | undefined;
+  deliveryId: string;
+  installationId: number | null;
+  payload: WebhookPayload;
 }
 
 // =============================================================================
@@ -203,34 +190,30 @@ interface WebhookContext {
 /**
  * Verify GitHub webhook signature using HMAC SHA-256
  */
-function verifySignature(
-  payload: string,
-  signature: string | undefined,
-  secret: string
-): boolean {
+function verifySignature(payload: string, signature: string | undefined, secret: string): boolean {
   if (!signature) {
-    return false
+    return false;
   }
 
   // GitHub sends signature as "sha256=<hash>"
-  const parts = signature.split('=')
+  const parts = signature.split('=');
   if (parts.length !== 2 || parts[0] !== 'sha256' || !parts[1]) {
-    return false
+    return false;
   }
 
-  const expectedSignature = parts[1]
-  const hmac = crypto.createHmac('sha256', secret)
-  hmac.update(payload, 'utf8')
-  const calculatedSignature = hmac.digest('hex')
+  const expectedSignature = parts[1];
+  const hmac = crypto.createHmac('sha256', secret);
+  hmac.update(payload, 'utf8');
+  const calculatedSignature = hmac.digest('hex');
 
   // Use timing-safe comparison to prevent timing attacks
   try {
     return crypto.timingSafeEqual(
       Buffer.from(expectedSignature, 'hex'),
       Buffer.from(calculatedSignature, 'hex')
-    )
+    );
   } catch {
-    return false
+    return false;
   }
 }
 
@@ -240,31 +223,31 @@ function verifySignature(
 
 // In-memory cache for processed webhook deliveries (prevents duplicate processing)
 // In production, this should be Redis-based
-const processedDeliveries = new Map<string, number>()
-const DELIVERY_TTL = 60 * 60 * 1000 // 1 hour
+const processedDeliveries = new Map<string, number>();
+const DELIVERY_TTL = 60 * 60 * 1000; // 1 hour
 
 function isDeliveryProcessed(deliveryId: string): boolean {
-  const timestamp = processedDeliveries.get(deliveryId)
-  if (!timestamp) return false
+  const timestamp = processedDeliveries.get(deliveryId);
+  if (!timestamp) return false;
 
   // Check if still within TTL
   if (Date.now() - timestamp > DELIVERY_TTL) {
-    processedDeliveries.delete(deliveryId)
-    return false
+    processedDeliveries.delete(deliveryId);
+    return false;
   }
 
-  return true
+  return true;
 }
 
 function markDeliveryProcessed(deliveryId: string): void {
-  processedDeliveries.set(deliveryId, Date.now())
+  processedDeliveries.set(deliveryId, Date.now());
 
   // Cleanup old entries periodically
   if (processedDeliveries.size > 10000) {
-    const now = Date.now()
+    const now = Date.now();
     for (const [id, timestamp] of processedDeliveries) {
       if (now - timestamp > DELIVERY_TTL) {
-        processedDeliveries.delete(id)
+        processedDeliveries.delete(id);
       }
     }
   }
@@ -278,70 +261,78 @@ function markDeliveryProcessed(deliveryId: string): void {
  * Handle ping event (sent when webhook is first configured)
  */
 async function handlePing(ctx: WebhookContext): Promise<{ message: string }> {
-  console.log(`[GitHub Webhook] Ping received from installation ${ctx.installationId}`)
-  return { message: 'pong' }
+  console.log(`[GitHub Webhook] Ping received from installation ${ctx.installationId}`);
+  return { message: 'pong' };
 }
 
 /**
  * Handle installation events (app installed/uninstalled)
  */
-async function handleInstallation(ctx: WebhookContext): Promise<{ processed: boolean; action: string }> {
-  const { action, payload } = ctx
-  const installation = payload.installation
+async function handleInstallation(
+  ctx: WebhookContext
+): Promise<{ processed: boolean; action: string }> {
+  const { action, payload } = ctx;
+  const installation = payload.installation;
 
   if (!installation) {
-    return { processed: false, action: action || 'unknown' }
+    return { processed: false, action: action || 'unknown' };
   }
 
-  console.log(`[GitHub Webhook] Installation ${action}: ${installation.account.login} (${installation.id})`)
+  console.log(
+    `[GitHub Webhook] Installation ${action}: ${installation.account.login} (${installation.id})`
+  );
 
   switch (action) {
     case 'created':
       // Installation created - typically handled via OAuth callback
       // But we can log it here for awareness
-      console.log(`[GitHub Webhook] New installation: ${installation.account.login}`)
-      break
+      console.log(`[GitHub Webhook] New installation: ${installation.account.login}`);
+      break;
 
     case 'deleted':
       // Mark installation as suspended/removed
       await prisma.gitHubInstallation.updateMany({
         where: { installationId: BigInt(installation.id) },
         data: { suspendedAt: new Date() },
-      })
-      console.log(`[GitHub Webhook] Installation removed: ${installation.account.login}`)
-      break
+      });
+      console.log(`[GitHub Webhook] Installation removed: ${installation.account.login}`);
+      break;
 
     case 'suspend':
       await prisma.gitHubInstallation.updateMany({
         where: { installationId: BigInt(installation.id) },
         data: { suspendedAt: new Date() },
-      })
-      break
+      });
+      break;
 
     case 'unsuspend':
       await prisma.gitHubInstallation.updateMany({
         where: { installationId: BigInt(installation.id) },
         data: { suspendedAt: null },
-      })
-      break
+      });
+      break;
   }
 
-  return { processed: true, action: action || 'unknown' }
+  return { processed: true, action: action || 'unknown' };
 }
 
 /**
  * Handle issue events
  */
-async function handleIssues(ctx: WebhookContext): Promise<{ processed: boolean; action: string; issueNumber?: number }> {
-  const { action, payload } = ctx
-  const issue = payload.issue
-  const repo = payload.repository
+async function handleIssues(
+  ctx: WebhookContext
+): Promise<{ processed: boolean; action: string; issueNumber?: number }> {
+  const { action, payload } = ctx;
+  const issue = payload.issue;
+  const repo = payload.repository;
 
   if (!issue || !repo) {
-    return { processed: false, action: action || 'unknown' }
+    return { processed: false, action: action || 'unknown' };
   }
 
-  console.log(`[GitHub Webhook] Issue ${action}: ${repo.full_name}#${issue.number} - ${issue.title}`)
+  console.log(
+    `[GitHub Webhook] Issue ${action}: ${repo.full_name}#${issue.number} - ${issue.title}`
+  );
 
   // Find the linked repository in Kanbu
   const linkedRepo = await prisma.gitHubRepository.findUnique({
@@ -354,29 +345,33 @@ async function handleIssues(ctx: WebhookContext): Promise<{ processed: boolean; 
     include: {
       project: true,
     },
-  })
+  });
 
   if (!linkedRepo) {
-    console.log(`[GitHub Webhook] Repository ${repo.full_name} not linked to any project, skipping`)
-    return { processed: false, action: action || 'unknown', issueNumber: issue.number }
+    console.log(
+      `[GitHub Webhook] Repository ${repo.full_name} not linked to any project, skipping`
+    );
+    return { processed: false, action: action || 'unknown', issueNumber: issue.number };
   }
 
   if (!linkedRepo.syncEnabled) {
-    console.log(`[GitHub Webhook] Sync disabled for ${repo.full_name}, skipping`)
-    return { processed: false, action: action || 'unknown', issueNumber: issue.number }
+    console.log(`[GitHub Webhook] Sync disabled for ${repo.full_name}, skipping`);
+    return { processed: false, action: action || 'unknown', issueNumber: issue.number };
   }
 
   // Check sync settings
-  const syncSettings = linkedRepo.syncSettings as { issues?: { enabled: boolean; direction: string } } | null
+  const syncSettings = linkedRepo.syncSettings as {
+    issues?: { enabled: boolean; direction: string };
+  } | null;
   if (!syncSettings?.issues?.enabled) {
-    console.log(`[GitHub Webhook] Issue sync disabled for ${repo.full_name}, skipping`)
-    return { processed: false, action: action || 'unknown', issueNumber: issue.number }
+    console.log(`[GitHub Webhook] Issue sync disabled for ${repo.full_name}, skipping`);
+    return { processed: false, action: action || 'unknown', issueNumber: issue.number };
   }
 
-  const direction = syncSettings.issues.direction
+  const direction = syncSettings.issues.direction;
   if (direction === 'kanbu_to_github') {
-    console.log(`[GitHub Webhook] Issue sync is Kanbu→GitHub only, skipping inbound event`)
-    return { processed: false, action: action || 'unknown', issueNumber: issue.number }
+    console.log(`[GitHub Webhook] Issue sync is Kanbu→GitHub only, skipping inbound event`);
+    return { processed: false, action: action || 'unknown', issueNumber: issue.number };
   }
 
   // Log sync operation
@@ -390,11 +385,11 @@ async function handleIssues(ctx: WebhookContext): Promise<{ processed: boolean; 
       details: {
         title: issue.title,
         state: issue.state,
-        labels: issue.labels.map(l => l.name),
+        labels: issue.labels.map((l) => l.name),
       },
       status: 'success',
     },
-  })
+  });
 
   // Find or create GitHubIssue record
   const existingIssue = await prisma.gitHubIssue.findUnique({
@@ -404,7 +399,7 @@ async function handleIssues(ctx: WebhookContext): Promise<{ processed: boolean; 
         issueNumber: issue.number,
       },
     },
-  })
+  });
 
   // Prepare issue data for sync service
   const issueData = {
@@ -415,29 +410,30 @@ async function handleIssues(ctx: WebhookContext): Promise<{ processed: boolean; 
     state: issue.state,
     labels: issue.labels,
     assignees: issue.assignees,
-    milestone: issue.milestone ? {
-      title: issue.milestone.title,
-      number: issue.milestone.number,
-    } : null,
+    milestone: issue.milestone
+      ? {
+          title: issue.milestone.title,
+          number: issue.milestone.number,
+        }
+      : null,
     created_at: issue.created_at,
     updated_at: issue.updated_at,
     closed_at: issue.closed_at,
-  }
+  };
 
   switch (action) {
     case 'opened':
       if (!existingIssue) {
         // Create task AND GitHubIssue record via sync service
-        const { taskId, created } = await createTaskFromGitHubIssue(
-          linkedRepo.id,
-          issueData,
-          { syncDirection: direction as 'github_to_kanbu' | 'kanbu_to_github' | 'bidirectional', skipExisting: false }
-        )
+        const { taskId, created } = await createTaskFromGitHubIssue(linkedRepo.id, issueData, {
+          syncDirection: direction as 'github_to_kanbu' | 'kanbu_to_github' | 'bidirectional',
+          skipExisting: false,
+        });
         if (created) {
-          console.log(`[GitHub Webhook] Created task ${taskId} from issue #${issue.number}`)
+          console.log(`[GitHub Webhook] Created task ${taskId} from issue #${issue.number}`);
         }
       }
-      break
+      break;
 
     case 'edited':
     case 'labeled':
@@ -446,88 +442,87 @@ async function handleIssues(ctx: WebhookContext): Promise<{ processed: boolean; 
     case 'unassigned':
       if (existingIssue) {
         // Update task via sync service
-        const { updated, taskId } = await updateTaskFromGitHubIssue(issue.id, issueData)
+        const { updated, taskId } = await updateTaskFromGitHubIssue(issue.id, issueData);
         if (updated) {
-          console.log(`[GitHub Webhook] Updated task ${taskId} from issue #${issue.number}`)
+          console.log(`[GitHub Webhook] Updated task ${taskId} from issue #${issue.number}`);
         }
       } else {
         // Issue not in our system yet, create it
-        const { taskId, created } = await createTaskFromGitHubIssue(
-          linkedRepo.id,
-          issueData,
-          { syncDirection: direction as 'github_to_kanbu' | 'kanbu_to_github' | 'bidirectional', skipExisting: false }
-        )
+        const { taskId, created } = await createTaskFromGitHubIssue(linkedRepo.id, issueData, {
+          syncDirection: direction as 'github_to_kanbu' | 'kanbu_to_github' | 'bidirectional',
+          skipExisting: false,
+        });
         if (created) {
-          console.log(`[GitHub Webhook] Created task ${taskId} from edited issue #${issue.number}`)
+          console.log(`[GitHub Webhook] Created task ${taskId} from edited issue #${issue.number}`);
         }
       }
-      break
+      break;
 
     case 'closed':
       if (existingIssue) {
         // Update task state via sync service
-        const { updated, taskId } = await updateTaskFromGitHubIssue(issue.id, issueData)
+        const { updated, taskId } = await updateTaskFromGitHubIssue(issue.id, issueData);
         if (updated) {
-          console.log(`[GitHub Webhook] Updated task ${taskId} state to ${issue.state}`)
+          console.log(`[GitHub Webhook] Updated task ${taskId} state to ${issue.state}`);
         }
         // Trigger automation to close task if enabled
         if (existingIssue.taskId) {
           try {
-            const result = await onIssueClosed(linkedRepo.id, existingIssue.taskId)
+            const result = await onIssueClosed(linkedRepo.id, existingIssue.taskId);
             if (result.action === 'closed') {
-              console.log(`[GitHub Webhook] Task ${existingIssue.taskId} closed via automation`)
+              console.log(`[GitHub Webhook] Task ${existingIssue.taskId} closed via automation`);
             }
           } catch (error) {
-            console.error(`[GitHub Webhook] Automation error closing task:`, error)
+            console.error(`[GitHub Webhook] Automation error closing task:`, error);
           }
         }
       }
-      break
+      break;
 
     case 'reopened':
       if (existingIssue) {
         // Update task state via sync service
-        const { updated, taskId } = await updateTaskFromGitHubIssue(issue.id, issueData)
+        const { updated, taskId } = await updateTaskFromGitHubIssue(issue.id, issueData);
         if (updated) {
-          console.log(`[GitHub Webhook] Updated task ${taskId} state to ${issue.state}`)
+          console.log(`[GitHub Webhook] Updated task ${taskId} state to ${issue.state}`);
         }
       }
-      break
+      break;
 
     case 'deleted':
       if (existingIssue) {
         // For now, just delete the GitHubIssue record (keep the task)
         await prisma.gitHubIssue.delete({
           where: { id: existingIssue.id },
-        })
-        console.log(`[GitHub Webhook] Deleted GitHubIssue record for #${issue.number}`)
+        });
+        console.log(`[GitHub Webhook] Deleted GitHubIssue record for #${issue.number}`);
       }
-      break
+      break;
   }
 
-  return { processed: true, action: action || 'unknown', issueNumber: issue.number }
+  return { processed: true, action: action || 'unknown', issueNumber: issue.number };
 }
 
 /**
  * Handle pull request events
  */
 async function handlePullRequest(ctx: WebhookContext): Promise<{
-  processed: boolean
-  action: string
-  prNumber?: number
-  taskLinked?: boolean
-  linkMethod?: string
-  automationTriggered?: string
+  processed: boolean;
+  action: string;
+  prNumber?: number;
+  taskLinked?: boolean;
+  linkMethod?: string;
+  automationTriggered?: string;
 }> {
-  const { action, payload } = ctx
-  const pr = payload.pull_request
-  const repo = payload.repository
+  const { action, payload } = ctx;
+  const pr = payload.pull_request;
+  const repo = payload.repository;
 
   if (!pr || !repo) {
-    return { processed: false, action: action || 'unknown' }
+    return { processed: false, action: action || 'unknown' };
   }
 
-  console.log(`[GitHub Webhook] PR ${action}: ${repo.full_name}#${pr.number} - ${pr.title}`)
+  console.log(`[GitHub Webhook] PR ${action}: ${repo.full_name}#${pr.number} - ${pr.title}`);
 
   // Find the linked repository in Kanbu
   const linkedRepo = await prisma.gitHubRepository.findUnique({
@@ -537,29 +532,29 @@ async function handlePullRequest(ctx: WebhookContext): Promise<{
         name: repo.name,
       },
     },
-  })
+  });
 
   if (!linkedRepo || !linkedRepo.syncEnabled) {
-    return { processed: false, action: action || 'unknown', prNumber: pr.number }
+    return { processed: false, action: action || 'unknown', prNumber: pr.number };
   }
 
   // Check sync settings
-  const syncSettings = linkedRepo.syncSettings as GitHubSyncSettings | null
+  const syncSettings = linkedRepo.syncSettings as GitHubSyncSettings | null;
   if (!syncSettings?.pullRequests?.enabled) {
-    return { processed: false, action: action || 'unknown', prNumber: pr.number }
+    return { processed: false, action: action || 'unknown', prNumber: pr.number };
   }
 
   // Determine PR state
-  let prState: 'open' | 'closed' | 'merged' = pr.state
+  let prState: 'open' | 'closed' | 'merged' = pr.state;
   if (pr.merged) {
-    prState = 'merged'
+    prState = 'merged';
   }
 
   // Process PR with auto-linking for opened/ready_for_review events
-  let taskLinked = false
-  let linkMethod = 'none'
-  let linkedTaskId: number | null = null
-  let automationTriggered: string | undefined
+  let taskLinked = false;
+  let linkMethod = 'none';
+  let linkedTaskId: number | null = null;
+  let automationTriggered: string | undefined;
 
   if (action === 'opened' || action === 'ready_for_review') {
     try {
@@ -574,17 +569,19 @@ async function handlePullRequest(ctx: WebhookContext): Promise<{
         authorLogin: pr.user.login,
         mergedAt: pr.merged_at ? new Date(pr.merged_at) : null,
         closedAt: pr.closed_at ? new Date(pr.closed_at) : null,
-      })
+      });
 
-      taskLinked = result.linked
-      linkMethod = result.method
-      linkedTaskId = result.taskId || null
+      taskLinked = result.linked;
+      linkMethod = result.method;
+      linkedTaskId = result.taskId || null;
 
       if (result.linked) {
-        console.log(`[GitHub Webhook] PR #${pr.number} auto-linked to task ${result.taskId} via ${result.method}`)
+        console.log(
+          `[GitHub Webhook] PR #${pr.number} auto-linked to task ${result.taskId} via ${result.method}`
+        );
       }
     } catch (error) {
-      console.error(`[GitHub Webhook] Error processing PR #${pr.number}:`, error)
+      console.error(`[GitHub Webhook] Error processing PR #${pr.number}:`, error);
     }
   } else {
     // For other actions, just update the existing record
@@ -595,10 +592,10 @@ async function handlePullRequest(ctx: WebhookContext): Promise<{
           prNumber: pr.number,
         },
       },
-    })
+    });
 
     if (existingPR?.taskId) {
-      linkedTaskId = existingPR.taskId
+      linkedTaskId = existingPR.taskId;
     }
 
     switch (action) {
@@ -612,7 +609,7 @@ async function handlePullRequest(ctx: WebhookContext): Promise<{
               state: prState,
               headBranch: pr.head.ref,
             },
-          })
+          });
         } else {
           // PR not tracked yet, create and auto-link
           const result = await processNewPR(linkedRepo.id, {
@@ -624,12 +621,12 @@ async function handlePullRequest(ctx: WebhookContext): Promise<{
             headBranch: pr.head.ref,
             baseBranch: pr.base.ref,
             authorLogin: pr.user.login,
-          })
-          taskLinked = result.linked
-          linkMethod = result.method
-          linkedTaskId = result.taskId || null
+          });
+          taskLinked = result.linked;
+          linkMethod = result.method;
+          linkedTaskId = result.taskId || null;
         }
-        break
+        break;
 
       case 'closed':
         if (existingPR) {
@@ -640,9 +637,9 @@ async function handlePullRequest(ctx: WebhookContext): Promise<{
               mergedAt: pr.merged_at ? new Date(pr.merged_at) : null,
               closedAt: pr.closed_at ? new Date(pr.closed_at) : null,
             },
-          })
+          });
         }
-        break
+        break;
 
       case 'reopened':
         if (existingPR) {
@@ -653,9 +650,9 @@ async function handlePullRequest(ctx: WebhookContext): Promise<{
               mergedAt: null,
               closedAt: null,
             },
-          })
+          });
         }
-        break
+        break;
     }
   }
 
@@ -663,26 +660,26 @@ async function handlePullRequest(ctx: WebhookContext): Promise<{
   if (linkedTaskId) {
     try {
       if (action === 'opened') {
-        const result = await onPROpened(linkedRepo.id, linkedTaskId)
+        const result = await onPROpened(linkedRepo.id, linkedTaskId);
         if (result.action === 'moved') {
-          automationTriggered = 'moved_to_in_progress'
-          console.log(`[GitHub Webhook] Task ${linkedTaskId} moved to In Progress`)
+          automationTriggered = 'moved_to_in_progress';
+          console.log(`[GitHub Webhook] Task ${linkedTaskId} moved to In Progress`);
         }
       } else if (action === 'ready_for_review') {
-        const result = await onPRReadyForReview(linkedRepo.id, linkedTaskId)
+        const result = await onPRReadyForReview(linkedRepo.id, linkedTaskId);
         if (result.action === 'moved') {
-          automationTriggered = 'moved_to_review'
-          console.log(`[GitHub Webhook] Task ${linkedTaskId} moved to Review`)
+          automationTriggered = 'moved_to_review';
+          console.log(`[GitHub Webhook] Task ${linkedTaskId} moved to Review`);
         }
       } else if (action === 'closed' && pr.merged) {
-        const result = await onPRMerged(linkedRepo.id, linkedTaskId)
+        const result = await onPRMerged(linkedRepo.id, linkedTaskId);
         if (result.action === 'moved') {
-          automationTriggered = 'moved_to_done'
-          console.log(`[GitHub Webhook] Task ${linkedTaskId} moved to Done`)
+          automationTriggered = 'moved_to_done';
+          console.log(`[GitHub Webhook] Task ${linkedTaskId} moved to Done`);
         }
       }
     } catch (error) {
-      console.error(`[GitHub Webhook] Automation error for task ${linkedTaskId}:`, error)
+      console.error(`[GitHub Webhook] Automation error for task ${linkedTaskId}:`, error);
     }
   }
 
@@ -705,7 +702,7 @@ async function handlePullRequest(ctx: WebhookContext): Promise<{
       },
       status: 'success',
     },
-  })
+  });
 
   return {
     processed: true,
@@ -714,27 +711,27 @@ async function handlePullRequest(ctx: WebhookContext): Promise<{
     taskLinked,
     linkMethod,
     automationTriggered,
-  }
+  };
 }
 
 /**
  * Handle push events (commits)
  */
 async function handlePush(ctx: WebhookContext): Promise<{
-  processed: boolean
-  commitCount: number
-  linkedCount: number
+  processed: boolean;
+  commitCount: number;
+  linkedCount: number;
 }> {
-  const { payload } = ctx
-  const commits = payload.commits || []
-  const repo = payload.repository
-  const ref = payload.ref
+  const { payload } = ctx;
+  const commits = payload.commits || [];
+  const repo = payload.repository;
+  const ref = payload.ref;
 
   if (!repo || commits.length === 0) {
-    return { processed: false, commitCount: 0, linkedCount: 0 }
+    return { processed: false, commitCount: 0, linkedCount: 0 };
   }
 
-  console.log(`[GitHub Webhook] Push to ${repo.full_name} (${ref}): ${commits.length} commits`)
+  console.log(`[GitHub Webhook] Push to ${repo.full_name} (${ref}): ${commits.length} commits`);
 
   // Find the linked repository in Kanbu
   const linkedRepo = await prisma.gitHubRepository.findUnique({
@@ -744,35 +741,35 @@ async function handlePush(ctx: WebhookContext): Promise<{
         name: repo.name,
       },
     },
-  })
+  });
 
   if (!linkedRepo || !linkedRepo.syncEnabled) {
-    return { processed: false, commitCount: commits.length, linkedCount: 0 }
+    return { processed: false, commitCount: commits.length, linkedCount: 0 };
   }
 
   // Check sync settings
-  const syncSettings = linkedRepo.syncSettings as GitHubSyncSettings | null
+  const syncSettings = linkedRepo.syncSettings as GitHubSyncSettings | null;
   if (!syncSettings?.commits?.enabled) {
-    return { processed: false, commitCount: commits.length, linkedCount: 0 }
+    return { processed: false, commitCount: commits.length, linkedCount: 0 };
   }
 
   // Process commits with auto-linking
-  const commitData = commits.map(commit => ({
+  const commitData = commits.map((commit) => ({
     sha: commit.id,
     message: commit.message,
     authorName: commit.author.name,
     authorEmail: commit.author.email,
     authorLogin: commit.author.username || null,
     committedAt: new Date(commit.timestamp),
-  }))
+  }));
 
-  const results = await processNewCommits(linkedRepo.id, commitData)
+  const results = await processNewCommits(linkedRepo.id, commitData);
 
-  const processedCount = results.length
-  const linkedCount = results.filter(r => r.linked).length
+  const processedCount = results.length;
+  const linkedCount = results.filter((r) => r.linked).length;
 
   if (linkedCount > 0) {
-    console.log(`[GitHub Webhook] ${linkedCount}/${processedCount} commits auto-linked to tasks`)
+    console.log(`[GitHub Webhook] ${linkedCount}/${processedCount} commits auto-linked to tasks`);
   }
 
   if (processedCount > 0 && commits[0]) {
@@ -792,30 +789,34 @@ async function handlePush(ctx: WebhookContext): Promise<{
         },
         status: 'success',
       },
-    })
+    });
   }
 
-  console.log(`[GitHub Webhook] Processed ${processedCount}/${commits.length} commits (${linkedCount} linked)`)
-  return { processed: true, commitCount: processedCount, linkedCount }
+  console.log(
+    `[GitHub Webhook] Processed ${processedCount}/${commits.length} commits (${linkedCount} linked)`
+  );
+  return { processed: true, commitCount: processedCount, linkedCount };
 }
 
 /**
  * Handle workflow_run events (GitHub Actions CI/CD)
  */
 async function handleWorkflowRun(ctx: WebhookContext): Promise<{
-  processed: boolean
-  action: string | undefined
-  workflowName: string | null
+  processed: boolean;
+  action: string | undefined;
+  workflowName: string | null;
 }> {
-  const { action, payload } = ctx
-  const repo = payload.repository
-  const workflowRun = payload.workflow_run
+  const { action, payload } = ctx;
+  const repo = payload.repository;
+  const workflowRun = payload.workflow_run;
 
   if (!repo || !workflowRun) {
-    return { processed: false, action, workflowName: null }
+    return { processed: false, action, workflowName: null };
   }
 
-  console.log(`[GitHub Webhook] Workflow run ${action}: ${workflowRun.name} #${workflowRun.run_number}`)
+  console.log(
+    `[GitHub Webhook] Workflow run ${action}: ${workflowRun.name} #${workflowRun.run_number}`
+  );
 
   // Find the linked repository in Kanbu
   const linkedRepo = await prisma.gitHubRepository.findUnique({
@@ -825,14 +826,14 @@ async function handleWorkflowRun(ctx: WebhookContext): Promise<{
         name: repo.name,
       },
     },
-  })
+  });
 
   if (!linkedRepo || !linkedRepo.syncEnabled) {
-    return { processed: false, action, workflowName: workflowRun.name }
+    return { processed: false, action, workflowName: workflowRun.name };
   }
 
   // Process the workflow run event
-  await processWorkflowRunEvent(linkedRepo.id, action || 'unknown', workflowRun)
+  await processWorkflowRunEvent(linkedRepo.id, action || 'unknown', workflowRun);
 
   // Log sync operation for completed workflows
   if (action === 'completed') {
@@ -852,7 +853,7 @@ async function handleWorkflowRun(ctx: WebhookContext): Promise<{
         },
         status: 'success',
       },
-    })
+    });
 
     // Send notifications for workflow completion (Fase 10B.3)
     if (workflowRun.conclusion) {
@@ -865,14 +866,14 @@ async function handleWorkflowRun(ctx: WebhookContext): Promise<{
           conclusion: workflowRun.conclusion,
           htmlUrl: workflowRun.html_url,
           actorLogin: workflowRun.actor?.login,
-        })
+        });
       } catch (error) {
-        console.error(`[GitHub Webhook] Failed to send workflow notification:`, error)
+        console.error(`[GitHub Webhook] Failed to send workflow notification:`, error);
       }
     }
   }
 
-  return { processed: true, action, workflowName: workflowRun.name }
+  return { processed: true, action, workflowName: workflowRun.name };
 }
 
 // =============================================================================
@@ -880,28 +881,28 @@ async function handleWorkflowRun(ctx: WebhookContext): Promise<{
 // =============================================================================
 
 async function handleIssueComment(ctx: WebhookContext): Promise<{
-  processed: boolean
-  action: string | undefined
-  commandsProcessed: number
-  commentSynced: boolean
+  processed: boolean;
+  action: string | undefined;
+  commandsProcessed: number;
+  commentSynced: boolean;
 }> {
-  const { action, payload } = ctx
-  const repo = payload.repository
-  const issue = payload.issue
-  const comment = payload.comment
+  const { action, payload } = ctx;
+  const repo = payload.repository;
+  const issue = payload.issue;
+  const comment = payload.comment;
 
   // Only process created comments (not edited/deleted for now)
   if (action !== 'created') {
-    return { processed: false, action, commandsProcessed: 0, commentSynced: false }
+    return { processed: false, action, commandsProcessed: 0, commentSynced: false };
   }
 
   if (!repo || !issue || !comment) {
-    return { processed: false, action, commandsProcessed: 0, commentSynced: false }
+    return { processed: false, action, commandsProcessed: 0, commentSynced: false };
   }
 
   // Skip comments from bots to prevent loops
   if (comment.user.login.endsWith('[bot]')) {
-    return { processed: false, action, commandsProcessed: 0, commentSynced: false }
+    return { processed: false, action, commandsProcessed: 0, commentSynced: false };
   }
 
   // Find the linked repository in Kanbu
@@ -921,22 +922,26 @@ async function handleIssueComment(ctx: WebhookContext): Promise<{
         },
       },
     },
-  })
+  });
 
   if (!linkedRepo || !linkedRepo.syncEnabled) {
-    return { processed: false, action, commandsProcessed: 0, commentSynced: false }
+    return { processed: false, action, commandsProcessed: 0, commentSynced: false };
   }
 
   // Determine if this is a PR or issue
   // GitHub sends issue_comment for both issues and PRs
-  const isPullRequest = !!payload.pull_request || issue.state === 'open' && 'pull_request' in (issue as unknown as Record<string, unknown>)
+  const isPullRequest =
+    !!payload.pull_request ||
+    (issue.state === 'open' && 'pull_request' in (issue as unknown as Record<string, unknown>));
 
-  let commandsProcessed = 0
-  let commentSynced = false
+  let commandsProcessed = 0;
+  let commentSynced = false;
 
   // Process bot commands if present
   if (comment.body.includes('/kanbu')) {
-    console.log(`[GitHub Webhook] Issue comment with /kanbu command: ${repo.full_name}#${issue.number}`)
+    console.log(
+      `[GitHub Webhook] Issue comment with /kanbu command: ${repo.full_name}#${issue.number}`
+    );
 
     const commentCtx: CommentContext = {
       repositoryId: linkedRepo.id,
@@ -948,10 +953,10 @@ async function handleIssueComment(ctx: WebhookContext): Promise<{
       commentBody: comment.body,
       commentAuthor: comment.user.login,
       installationId: Number(linkedRepo.installation.installationId),
-    }
+    };
 
-    const responses = await processComment(commentCtx)
-    commandsProcessed = responses.length
+    const responses = await processComment(commentCtx);
+    commandsProcessed = responses.length;
 
     if (responses.length > 0) {
       await prisma.gitHubSyncLog.create({
@@ -963,12 +968,12 @@ async function handleIssueComment(ctx: WebhookContext): Promise<{
           entityId: String(issue.number),
           details: JSON.stringify({
             commandCount: responses.length,
-            commands: responses.map(r => r.command).filter(Boolean),
+            commands: responses.map((r) => r.command).filter(Boolean),
             author: comment.user.login,
           }),
           status: 'success',
         },
-      })
+      });
     }
   }
 
@@ -982,7 +987,7 @@ async function handleIssueComment(ctx: WebhookContext): Promise<{
       commentBody: comment.body,
       authorLogin: comment.user.login,
       createdAt: comment.created_at,
-    })
+    });
   }
 
   return {
@@ -990,32 +995,33 @@ async function handleIssueComment(ctx: WebhookContext): Promise<{
     action,
     commandsProcessed,
     commentSynced,
-  }
+  };
 }
 
 /**
  * Sync a GitHub issue comment to the linked Kanbu task
  */
 async function syncGitHubCommentToKanbu(params: {
-  repositoryId: number
-  workspaceId: number
-  issueNumber: number
-  commentId: number
-  commentBody: string
-  authorLogin: string
-  createdAt: string
+  repositoryId: number;
+  workspaceId: number;
+  issueNumber: number;
+  commentId: number;
+  commentBody: string;
+  authorLogin: string;
+  createdAt: string;
 }): Promise<boolean> {
-  const { repositoryId, workspaceId, issueNumber, commentId, commentBody, authorLogin, createdAt } = params
+  const { repositoryId, workspaceId, issueNumber, commentId, commentBody, authorLogin, createdAt } =
+    params;
 
   try {
     // Check if comment already exists (idempotency)
     const existingComment = await prisma.comment.findUnique({
       where: { githubCommentId: BigInt(commentId) },
-    })
+    });
 
     if (existingComment) {
-      console.log(`[GitHub Webhook] Comment ${commentId} already synced, skipping`)
-      return false
+      console.log(`[GitHub Webhook] Comment ${commentId} already synced, skipping`);
+      return false;
     }
 
     // Find the linked task via GitHubIssue
@@ -1027,11 +1033,13 @@ async function syncGitHubCommentToKanbu(params: {
         },
       },
       select: { taskId: true },
-    })
+    });
 
     if (!githubIssue?.taskId) {
-      console.log(`[GitHub Webhook] No linked task for issue #${issueNumber}, skipping comment sync`)
-      return false
+      console.log(
+        `[GitHub Webhook] No linked task for issue #${issueNumber}, skipping comment sync`
+      );
+      return false;
     }
 
     // Map GitHub user to Kanbu user
@@ -1043,18 +1051,18 @@ async function syncGitHubCommentToKanbu(params: {
         },
       },
       select: { userId: true },
-    })
+    });
 
     // Fallback chain: user mapping → workspace creator → first workspace admin → user 1
-    let userId = userMapping?.userId
+    let userId = userMapping?.userId;
 
     if (!userId) {
       // Try workspace creator
       const workspace = await prisma.workspace.findUnique({
         where: { id: workspaceId },
         select: { createdById: true },
-      })
-      userId = workspace?.createdById ?? undefined
+      });
+      userId = workspace?.createdById ?? undefined;
     }
 
     if (!userId) {
@@ -1067,8 +1075,8 @@ async function syncGitHubCommentToKanbu(params: {
           deny: false,
         },
         select: { principalId: true },
-      })
-      userId = workspaceAdmin?.principalId
+      });
+      userId = workspaceAdmin?.principalId;
     }
 
     if (!userId) {
@@ -1076,16 +1084,18 @@ async function syncGitHubCommentToKanbu(params: {
       const adminUser = await prisma.user.findFirst({
         where: { role: 'ADMIN', isActive: true },
         select: { id: true },
-      })
-      userId = adminUser?.id
+      });
+      userId = adminUser?.id;
     }
 
     if (!userId) {
-      console.log(`[GitHub Webhook] No user found for comment sync, skipping`)
-      return false
+      console.log(`[GitHub Webhook] No user found for comment sync, skipping`);
+      return false;
     }
 
-    console.log(`[GitHub Webhook] Using user ${userId} for comment by ${authorLogin} (mapping: ${!!userMapping})`)
+    console.log(
+      `[GitHub Webhook] Using user ${userId} for comment by ${authorLogin} (mapping: ${!!userMapping})`
+    );
 
     // Create the comment in Kanbu
     await prisma.comment.create({
@@ -1097,7 +1107,7 @@ async function syncGitHubCommentToKanbu(params: {
         githubAuthorLogin: authorLogin,
         createdAt: new Date(createdAt),
       },
-    })
+    });
 
     // Log sync operation
     await prisma.gitHubSyncLog.create({
@@ -1115,12 +1125,12 @@ async function syncGitHubCommentToKanbu(params: {
         },
         status: 'success',
       },
-    })
+    });
 
-    console.log(`[GitHub Webhook] Synced comment ${commentId} to task ${githubIssue.taskId}`)
-    return true
+    console.log(`[GitHub Webhook] Synced comment ${commentId} to task ${githubIssue.taskId}`);
+    return true;
   } catch (error) {
-    console.error(`[GitHub Webhook] Failed to sync comment ${commentId}:`, error)
+    console.error(`[GitHub Webhook] Failed to sync comment ${commentId}:`, error);
 
     await prisma.gitHubSyncLog.create({
       data: {
@@ -1132,9 +1142,9 @@ async function syncGitHubCommentToKanbu(params: {
         status: 'failed',
         errorMessage: error instanceof Error ? error.message : String(error),
       },
-    })
+    });
 
-    return false
+    return false;
   }
 }
 
@@ -1143,21 +1153,23 @@ async function syncGitHubCommentToKanbu(params: {
 // =============================================================================
 
 async function handlePullRequestReview(ctx: WebhookContext): Promise<{
-  processed: boolean
-  action: string | undefined
-  prNumber: number | null
-  reviewState: string | null
+  processed: boolean;
+  action: string | undefined;
+  prNumber: number | null;
+  reviewState: string | null;
 }> {
-  const { action, payload } = ctx
-  const repo = payload.repository
-  const pr = payload.pull_request
-  const review = payload.review
+  const { action, payload } = ctx;
+  const repo = payload.repository;
+  const pr = payload.pull_request;
+  const review = payload.review;
 
   if (!repo || !pr || !review) {
-    return { processed: false, action, prNumber: null, reviewState: null }
+    return { processed: false, action, prNumber: null, reviewState: null };
   }
 
-  console.log(`[GitHub Webhook] PR review ${action}: ${repo.full_name}#${pr.number} by ${review.user?.login}`)
+  console.log(
+    `[GitHub Webhook] PR review ${action}: ${repo.full_name}#${pr.number} by ${review.user?.login}`
+  );
 
   // Find the linked repository in Kanbu
   const linkedRepo = await prisma.gitHubRepository.findUnique({
@@ -1167,16 +1179,16 @@ async function handlePullRequestReview(ctx: WebhookContext): Promise<{
         name: repo.name,
       },
     },
-  })
+  });
 
   if (!linkedRepo || !linkedRepo.syncEnabled) {
-    return { processed: false, action, prNumber: pr.number, reviewState: review.state }
+    return { processed: false, action, prNumber: pr.number, reviewState: review.state };
   }
 
   // Check if PR tracking is enabled
-  const syncSettings = linkedRepo.syncSettings as GitHubSyncSettings | null
+  const syncSettings = linkedRepo.syncSettings as GitHubSyncSettings | null;
   if (!syncSettings?.pullRequests?.enabled) {
-    return { processed: false, action, prNumber: pr.number, reviewState: review.state }
+    return { processed: false, action, prNumber: pr.number, reviewState: review.state };
   }
 
   // Find the PR in our database
@@ -1187,11 +1199,11 @@ async function handlePullRequestReview(ctx: WebhookContext): Promise<{
         prNumber: pr.number,
       },
     },
-  })
+  });
 
   if (!dbPR) {
     // PR not tracked yet, skip
-    return { processed: false, action, prNumber: pr.number, reviewState: review.state }
+    return { processed: false, action, prNumber: pr.number, reviewState: review.state };
   }
 
   // Upsert the review
@@ -1203,9 +1215,9 @@ async function handlePullRequestReview(ctx: WebhookContext): Promise<{
     body: review.body ?? null,
     htmlUrl: review.html_url ?? null,
     submittedAt: review.submitted_at ? new Date(review.submitted_at) : null,
-  }
+  };
 
-  await upsertReview(reviewData)
+  await upsertReview(reviewData);
 
   // Log sync operation
   await prisma.gitHubSyncLog.create({
@@ -1224,14 +1236,14 @@ async function handlePullRequestReview(ctx: WebhookContext): Promise<{
       },
       status: 'success',
     },
-  })
+  });
 
   return {
     processed: true,
     action,
     prNumber: pr.number,
     reviewState: review.state,
-  }
+  };
 }
 
 // =============================================================================
@@ -1242,47 +1254,51 @@ async function handlePullRequestReview(ctx: WebhookContext): Promise<{
  * Handle deployment event
  */
 async function handleDeployment(ctx: WebhookContext): Promise<{
-  processed: boolean
-  action: string | undefined
-  environment: string | null
+  processed: boolean;
+  action: string | undefined;
+  environment: string | null;
 }> {
-  const { action, payload } = ctx
-  const typedPayload = payload as unknown as DeploymentWebhookPayload
+  const { action, payload } = ctx;
+  const typedPayload = payload as unknown as DeploymentWebhookPayload;
 
   if (!typedPayload.deployment || !typedPayload.repository) {
-    return { processed: false, action, environment: null }
+    return { processed: false, action, environment: null };
   }
 
-  const environment = typedPayload.deployment.environment
-  console.log(`[GitHub Webhook] Deployment ${action}: ${typedPayload.repository.full_name} to ${environment}`)
+  const environment = typedPayload.deployment.environment;
+  console.log(
+    `[GitHub Webhook] Deployment ${action}: ${typedPayload.repository.full_name} to ${environment}`
+  );
 
-  const deployment = await processDeploymentWebhook(typedPayload)
+  const deployment = await processDeploymentWebhook(typedPayload);
 
   if (deployment) {
-    return { processed: true, action, environment }
+    return { processed: true, action, environment };
   }
 
-  return { processed: false, action, environment }
+  return { processed: false, action, environment };
 }
 
 /**
  * Handle deployment_status event
  */
 async function handleDeploymentStatus(ctx: WebhookContext): Promise<{
-  processed: boolean
-  status: string | null
+  processed: boolean;
+  status: string | null;
 }> {
-  const { payload } = ctx
-  const typedPayload = payload as unknown as DeploymentStatusWebhookPayload
+  const { payload } = ctx;
+  const typedPayload = payload as unknown as DeploymentStatusWebhookPayload;
 
   if (!typedPayload.deployment || !typedPayload.deployment_status || !typedPayload.repository) {
-    return { processed: false, status: null }
+    return { processed: false, status: null };
   }
 
-  const status = typedPayload.deployment_status.state
-  console.log(`[GitHub Webhook] Deployment status: ${typedPayload.repository.full_name} -> ${status}`)
+  const status = typedPayload.deployment_status.state;
+  console.log(
+    `[GitHub Webhook] Deployment status: ${typedPayload.repository.full_name} -> ${status}`
+  );
 
-  const deployment = await processDeploymentStatusWebhook(typedPayload)
+  const deployment = await processDeploymentStatusWebhook(typedPayload);
 
   if (deployment) {
     // Send notifications for deployment status (Fase 10B.3)
@@ -1294,15 +1310,15 @@ async function handleDeploymentStatus(ctx: WebhookContext): Promise<{
         ref: deployment.ref,
         targetUrl: deployment.targetUrl || undefined,
         creator: deployment.creator || undefined,
-      })
+      });
     } catch (error) {
-      console.error(`[GitHub Webhook] Failed to send deployment notification:`, error)
+      console.error(`[GitHub Webhook] Failed to send deployment notification:`, error);
     }
 
-    return { processed: true, status }
+    return { processed: true, status };
   }
 
-  return { processed: false, status }
+  return { processed: false, status };
 }
 
 // =============================================================================
@@ -1313,31 +1329,33 @@ async function handleDeploymentStatus(ctx: WebhookContext): Promise<{
  * Handle check_run event
  */
 async function handleCheckRun(ctx: WebhookContext): Promise<{
-  processed: boolean
-  action: string | undefined
-  checkName: string | null
-  conclusion: string | null
+  processed: boolean;
+  action: string | undefined;
+  checkName: string | null;
+  conclusion: string | null;
 }> {
-  const { action, payload } = ctx
-  const typedPayload = payload as unknown as CheckRunWebhookPayload
+  const { action, payload } = ctx;
+  const typedPayload = payload as unknown as CheckRunWebhookPayload;
 
   if (!typedPayload.check_run || !typedPayload.repository) {
-    return { processed: false, action, checkName: null, conclusion: null }
+    return { processed: false, action, checkName: null, conclusion: null };
   }
 
-  const checkName = typedPayload.check_run.name
-  const conclusion = typedPayload.check_run.conclusion
+  const checkName = typedPayload.check_run.name;
+  const conclusion = typedPayload.check_run.conclusion;
 
-  console.log(`[GitHub Webhook] Check run ${action}: ${typedPayload.repository.full_name} - ${checkName} (${typedPayload.check_run.status}${conclusion ? `/${conclusion}` : ''})`)
+  console.log(
+    `[GitHub Webhook] Check run ${action}: ${typedPayload.repository.full_name} - ${checkName} (${typedPayload.check_run.status}${conclusion ? `/${conclusion}` : ''})`
+  );
 
-  const checkRun = await processCheckRunWebhook(typedPayload)
+  const checkRun = await processCheckRunWebhook(typedPayload);
 
   if (checkRun) {
     // Send notifications for completed check runs (Fase 10B.3)
     if (action === 'completed' && conclusion) {
       try {
         // Get PR number if available
-        const prNumber = typedPayload.check_run.pull_requests?.[0]?.number
+        const prNumber = typedPayload.check_run.pull_requests?.[0]?.number;
 
         await notifyCheckRun({
           repositoryId: checkRun.repositoryId,
@@ -1346,16 +1364,16 @@ async function handleCheckRun(ctx: WebhookContext): Promise<{
           headSha: checkRun.headSha,
           outputTitle: checkRun.outputTitle || undefined,
           prNumber,
-        })
+        });
       } catch (error) {
-        console.error(`[GitHub Webhook] Failed to send check run notification:`, error)
+        console.error(`[GitHub Webhook] Failed to send check run notification:`, error);
       }
     }
 
-    return { processed: true, action, checkName, conclusion }
+    return { processed: true, action, checkName, conclusion };
   }
 
-  return { processed: false, action, checkName, conclusion }
+  return { processed: false, action, checkName, conclusion };
 }
 
 // =============================================================================
@@ -1366,19 +1384,19 @@ async function handleCheckRun(ctx: WebhookContext): Promise<{
  * Handle milestone events (created, edited, closed, opened, deleted)
  */
 async function handleMilestone(ctx: WebhookContext): Promise<{
-  processed: boolean
-  action: string | undefined
-  milestoneNumber: number | null
+  processed: boolean;
+  action: string | undefined;
+  milestoneNumber: number | null;
 }> {
-  const { action, payload } = ctx
-  const repo = payload.repository
-  const milestone = payload.milestone
+  const { action, payload } = ctx;
+  const repo = payload.repository;
+  const milestone = payload.milestone;
 
   if (!repo || !milestone) {
-    return { processed: false, action, milestoneNumber: null }
+    return { processed: false, action, milestoneNumber: null };
   }
 
-  console.log(`[GitHub Webhook] Milestone ${action}: ${repo.full_name} - ${milestone.title}`)
+  console.log(`[GitHub Webhook] Milestone ${action}: ${repo.full_name} - ${milestone.title}`);
 
   // Find the linked repository in Kanbu
   const linkedRepo = await prisma.gitHubRepository.findUnique({
@@ -1388,10 +1406,10 @@ async function handleMilestone(ctx: WebhookContext): Promise<{
         name: repo.name,
       },
     },
-  })
+  });
 
   if (!linkedRepo || !linkedRepo.syncEnabled) {
-    return { processed: false, action, milestoneNumber: milestone.number }
+    return { processed: false, action, milestoneNumber: milestone.number };
   }
 
   // Sync the milestone
@@ -1406,7 +1424,7 @@ async function handleMilestone(ctx: WebhookContext): Promise<{
     open_issues: milestone.open_issues,
     closed_issues: milestone.closed_issues,
     html_url: milestone.html_url,
-  })
+  });
 
   // Log sync operation
   await prisma.gitHubSyncLog.create({
@@ -1423,10 +1441,12 @@ async function handleMilestone(ctx: WebhookContext): Promise<{
       },
       status: 'success',
     },
-  })
+  });
 
-  console.log(`[GitHub Webhook] Milestone ${action}: ${milestone.title} (${result ? 'synced' : 'deleted'})`)
-  return { processed: true, action, milestoneNumber: milestone.number }
+  console.log(
+    `[GitHub Webhook] Milestone ${action}: ${milestone.title} (${result ? 'synced' : 'deleted'})`
+  );
+  return { processed: true, action, milestoneNumber: milestone.number };
 }
 
 // =============================================================================
@@ -1438,42 +1458,42 @@ async function webhookHandler(
   reply: FastifyReply
 ) {
   // Get headers
-  const event = request.headers['x-github-event'] as GitHubEventType | undefined
-  const signature = request.headers['x-hub-signature-256'] as string | undefined
-  const deliveryId = request.headers['x-github-delivery'] as string | undefined
+  const event = request.headers['x-github-event'] as GitHubEventType | undefined;
+  const signature = request.headers['x-hub-signature-256'] as string | undefined;
+  const deliveryId = request.headers['x-github-delivery'] as string | undefined;
 
   // Validate required headers
   if (!event) {
-    return reply.status(400).send({ error: 'Missing X-GitHub-Event header' })
+    return reply.status(400).send({ error: 'Missing X-GitHub-Event header' });
   }
 
   if (!deliveryId) {
-    return reply.status(400).send({ error: 'Missing X-GitHub-Delivery header' })
+    return reply.status(400).send({ error: 'Missing X-GitHub-Delivery header' });
   }
 
   // Check for duplicate delivery (idempotency)
   if (isDeliveryProcessed(deliveryId)) {
-    console.log(`[GitHub Webhook] Duplicate delivery ${deliveryId}, skipping`)
-    return reply.status(200).send({ message: 'Already processed' })
+    console.log(`[GitHub Webhook] Duplicate delivery ${deliveryId}, skipping`);
+    return reply.status(200).send({ message: 'Already processed' });
   }
 
   // Get webhook secret from environment
-  const webhookSecret = process.env.GITHUB_WEBHOOK_SECRET
+  const webhookSecret = process.env.GITHUB_WEBHOOK_SECRET;
 
   // Verify signature if secret is configured
   if (webhookSecret) {
     // Get raw body for signature verification
-    const rawBody = JSON.stringify(request.body)
+    const rawBody = JSON.stringify(request.body);
 
     if (!verifySignature(rawBody, signature, webhookSecret)) {
-      console.error(`[GitHub Webhook] Invalid signature for delivery ${deliveryId}`)
-      return reply.status(401).send({ error: 'Invalid signature' })
+      console.error(`[GitHub Webhook] Invalid signature for delivery ${deliveryId}`);
+      return reply.status(401).send({ error: 'Invalid signature' });
     }
   }
 
-  const payload = request.body
-  const action = payload.action
-  const installationId = payload.installation?.id || null
+  const payload = request.body;
+  const action = payload.action;
+  const installationId = payload.installation?.id || null;
 
   const ctx: WebhookContext = {
     event,
@@ -1481,71 +1501,73 @@ async function webhookHandler(
     deliveryId,
     installationId,
     payload,
-  }
+  };
 
-  console.log(`[GitHub Webhook] Received ${event}${action ? `.${action}` : ''} (delivery: ${deliveryId})`)
+  console.log(
+    `[GitHub Webhook] Received ${event}${action ? `.${action}` : ''} (delivery: ${deliveryId})`
+  );
 
   try {
-    let result: unknown
+    let result: unknown;
 
     // Route to appropriate handler
     switch (event) {
       case 'ping':
-        result = await handlePing(ctx)
-        break
+        result = await handlePing(ctx);
+        break;
 
       case 'installation':
       case 'installation_repositories':
-        result = await handleInstallation(ctx)
-        break
+        result = await handleInstallation(ctx);
+        break;
 
       case 'issues':
-        result = await handleIssues(ctx)
-        break
+        result = await handleIssues(ctx);
+        break;
 
       case 'pull_request':
-        result = await handlePullRequest(ctx)
-        break
+        result = await handlePullRequest(ctx);
+        break;
 
       case 'push':
-        result = await handlePush(ctx)
-        break
+        result = await handlePush(ctx);
+        break;
 
       case 'workflow_run':
-        result = await handleWorkflowRun(ctx)
-        break
+        result = await handleWorkflowRun(ctx);
+        break;
 
       case 'issue_comment':
-        result = await handleIssueComment(ctx)
-        break
+        result = await handleIssueComment(ctx);
+        break;
 
       case 'pull_request_review':
-        result = await handlePullRequestReview(ctx)
-        break
+        result = await handlePullRequestReview(ctx);
+        break;
 
       case 'deployment':
-        result = await handleDeployment(ctx)
-        break
+        result = await handleDeployment(ctx);
+        break;
 
       case 'deployment_status':
-        result = await handleDeploymentStatus(ctx)
-        break
+        result = await handleDeploymentStatus(ctx);
+        break;
 
       case 'check_run':
-        result = await handleCheckRun(ctx)
-        break
+        result = await handleCheckRun(ctx);
+        break;
 
       case 'milestone':
-        result = await handleMilestone(ctx)
-        break
+        result = await handleMilestone(ctx);
+        break;
 
       default:
-        console.log(`[GitHub Webhook] Unhandled event type: ${event}`)
-        result = { message: 'Event type not handled', event }
+        console.log(`[GitHub Webhook] Unhandled event type: ${event}`);
+        result = { message: 'Event type not handled', event };
     }
 
     // Mark delivery as processed
-    markDeliveryProcessed(deliveryId)
+    markDeliveryProcessed(deliveryId);
 
     return reply.status(200).send({
       received: true,
@@ -1553,12 +1575,12 @@ async function webhookHandler(
       action,
       deliveryId,
       result,
-    })
+    });
   } catch (error) {
-    console.error(`[GitHub Webhook] Error processing ${event}:`, error)
+    console.error(`[GitHub Webhook] Error processing ${event}:`, error);
 
     // Log error to sync log if we have repository context
-    const repo = payload.repository
+    const repo = payload.repository;
     if (repo) {
       const linkedRepo = await prisma.gitHubRepository.findUnique({
         where: {
@@ -1567,7 +1589,7 @@ async function webhookHandler(
             name: repo.name,
           },
         },
-      })
+      });
 
       if (linkedRepo) {
         await prisma.gitHubSyncLog.create({
@@ -1580,14 +1602,14 @@ async function webhookHandler(
             status: 'failed',
             errorMessage: error instanceof Error ? error.message : 'Unknown error',
           },
-        })
+        });
       }
     }
 
     return reply.status(500).send({
       error: 'Internal server error',
       message: error instanceof Error ? error.message : 'Unknown error',
-    })
+    });
   }
 }
 
@@ -1597,12 +1619,16 @@ async function webhookHandler(
 
 export async function registerGitHubWebhookRoutes(server: FastifyInstance): Promise<void> {
   // Main webhook endpoint
-  server.post('/api/webhooks/github', {
-    config: {
-      // Disable body parsing to get raw body for signature verification
-      // Actually, we need the parsed body, so we'll stringify it for verification
+  server.post(
+    '/api/webhooks/github',
+    {
+      config: {
+        // Disable body parsing to get raw body for signature verification
+        // Actually, we need the parsed body, so we'll stringify it for verification
+      },
     },
-  }, webhookHandler)
+    webhookHandler
+  );
 
-  console.log('[GitHub Webhook] Routes registered at POST /api/webhooks/github')
+  console.log('[GitHub Webhook] Routes registered at POST /api/webhooks/github');
 }

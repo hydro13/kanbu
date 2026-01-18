@@ -8,6 +8,7 @@
 Kanbu uses a **filesystem-style ACL system** inspired by NTFS/Active Directory permissions. This provides a flexible and powerful authorization model that supports both simple and complex access scenarios.
 
 The system evolves towards a **Scoped Permission Model** with:
+
 - **Resource hierarchy**: System > Workspaces > Projects
 - **Security Groups**: AD-compatible groups for role-based access
 - **Workspace isolation**: Delegated administration per workspace
@@ -16,12 +17,14 @@ The system evolves towards a **Scoped Permission Model** with:
 ## Why ACL?
 
 The previous role-based system (WorkspaceUser, ProjectMember) had limitations:
+
 - No support for explicit deny
 - No inheritance between resources
 - Limited granularity (only predefined roles)
 - No group-based permissions at resource level
 
 The new ACL system solves this with:
+
 - **Bitmask permissions** - Flexible combination of rights
 - **Deny-first logic** - Explicit denial always overrides permission
 - **Inheritance** - Workspace permissions inherit to projects
@@ -45,13 +48,13 @@ The new ACL system solves this with:
 
 ### Presets
 
-| Preset       | Value | Bits  | Description                     |
-|--------------|-------|-------|---------------------------------|
-| None         | 0     | -----  | No rights                       |
-| Read Only    | 1     | R----  | Read only                       |
-| Contributor  | 7     | RWX--  | Read, write, create             |
-| Editor       | 15    | RWXD-  | Everything except ACL management|
-| Full Control | 31    | RWXDP  | Full control                    |
+| Preset       | Value | Bits  | Description                      |
+| ------------ | ----- | ----- | -------------------------------- |
+| None         | 0     | ----- | No rights                        |
+| Read Only    | 1     | R---- | Read only                        |
+| Contributor  | 7     | RWX-- | Read, write, create              |
+| Editor       | 15    | RWXD- | Everything except ACL management |
+| Full Control | 31    | RWXDP | Full control                     |
 
 ### Bitmask Calculation
 
@@ -59,11 +62,11 @@ Permissions are stored as an integer bitmask:
 
 ```typescript
 // Example: Read + Write = 1 + 2 = 3
-const permissions = ACL_PERMISSIONS.READ | ACL_PERMISSIONS.WRITE // 3
+const permissions = ACL_PERMISSIONS.READ | ACL_PERMISSIONS.WRITE; // 3
 
 // Check if a permission is present
-const hasRead = (permissions & ACL_PERMISSIONS.READ) !== 0 // true
-const hasDelete = (permissions & ACL_PERMISSIONS.DELETE) !== 0 // false
+const hasRead = (permissions & ACL_PERMISSIONS.READ) !== 0; // true
+const hasDelete = (permissions & ACL_PERMISSIONS.DELETE) !== 0; // false
 ```
 
 ## Database Model
@@ -145,29 +148,29 @@ If a user has READ on `workspace:1` with `inheritToChildren=true`, that user aut
 ACL permissions are translated to workspace/project roles for compatibility:
 
 | ACL Permissions | Workspace Role | Project Role |
-|----------------|----------------|--------------|
-| R              | VIEWER         | VIEWER       |
-| RW or RWX      | MEMBER         | MEMBER       |
-| RWXD           | MEMBER         | MANAGER      |
-| RWXDP          | ADMIN          | OWNER        |
+| --------------- | -------------- | ------------ |
+| R               | VIEWER         | VIEWER       |
+| RW or RWX       | MEMBER         | MEMBER       |
+| RWXD            | MEMBER         | MANAGER      |
+| RWXDP           | ADMIN          | OWNER        |
 
 ## API Endpoints
 
 ### tRPC Procedures (`trpc.acl.*`)
 
-| Procedure       | Description                              |
-|-----------------|-------------------------------------------|
-| `list`          | Retrieve ACL entries for a resource      |
-| `grant`         | Grant permissions to user/group          |
-| `deny`          | Explicitly deny permissions              |
-| `revoke`        | Revoke all permissions                   |
-| `update`        | Modify existing ACL entry                |
-| `delete`        | Delete ACL entry                         |
-| `checkPermission` | Check effective permissions            |
-| `getPresets`    | Retrieve available presets               |
-| `getPrincipals` | Retrieve users and groups for assignment |
-| `getResources`  | Retrieve resources that can have ACLs    |
-| `getStats`      | ACL statistics (admin only)              |
+| Procedure         | Description                              |
+| ----------------- | ---------------------------------------- |
+| `list`            | Retrieve ACL entries for a resource      |
+| `grant`           | Grant permissions to user/group          |
+| `deny`            | Explicitly deny permissions              |
+| `revoke`          | Revoke all permissions                   |
+| `update`          | Modify existing ACL entry                |
+| `delete`          | Delete ACL entry                         |
+| `checkPermission` | Check effective permissions              |
+| `getPresets`      | Retrieve available presets               |
+| `getPrincipals`   | Retrieve users and groups for assignment |
+| `getResources`    | Retrieve resources that can have ACLs    |
+| `getStats`        | ACL statistics (admin only)              |
 
 ## Service Layer
 
@@ -175,10 +178,10 @@ ACL permissions are translated to workspace/project roles for compatibility:
 
 ```typescript
 // Check single permission
-await aclService.hasPermission(userId, 'workspace', workspaceId, ACL_PERMISSIONS.READ)
+await aclService.hasPermission(userId, 'workspace', workspaceId, ACL_PERMISSIONS.READ);
 
 // Check all permissions
-const result = await aclService.checkPermission(userId, 'project', projectId)
+const result = await aclService.checkPermission(userId, 'project', projectId);
 // result.effectivePermissions = 7 (RWX)
 // result.deniedPermissions = 0
 // result.sources = [{ type: 'user', ... }, { type: 'group', ... }]
@@ -191,7 +194,7 @@ await aclService.grantPermission({
   principalId: 5,
   permissions: ACL_PRESETS.CONTRIBUTOR,
   inheritToChildren: true,
-})
+});
 
 // Deny permission
 await aclService.denyPermission({
@@ -200,7 +203,7 @@ await aclService.denyPermission({
   principalType: 'group',
   principalId: 3,
   permissions: ACL_PERMISSIONS.DELETE,
-})
+});
 ```
 
 ## UI
@@ -208,6 +211,7 @@ await aclService.denyPermission({
 The ACL Manager is available via **Administration > ACL Manager** (`/admin/acl`).
 
 Features:
+
 - Resource selector (workspaces, projects, admin)
 - Overview of all ACL entries with ALLOW/DENY badges
 - Grant/Deny dialogs with preset selection
@@ -220,6 +224,7 @@ Features:
 ### Pure ACL Mode ✓
 
 The system now runs in **pure ACL mode** (Phase 3B completed):
+
 - [x] All workspace/project access via ACL
 - [x] Legacy fallback removed
 - [x] Members read from ACL
@@ -251,6 +256,7 @@ The system now runs in **pure ACL mode** (Phase 3B completed):
 ### Feature ACL Overview
 
 **40 features across 4 scopes:**
+
 - `dashboard` (4): overview, my-tasks, my-subtasks, my-workspaces
 - `profile` (16): summary, time-tracking, last-logins, sessions, password-history, metadata, edit-profile, avatar, change-password, two-factor-auth, public-access, notifications, external-accounts, integrations, api-tokens, hourly-rate
 - `admin` (9): users, create-user, acl, permission-tree, invites, workspaces, settings-general, settings-security, backup
@@ -276,32 +282,33 @@ See [ROADMAP.md](./ROADMAP.md) for the complete planning.
 
 ### Tables (Database)
 
-| Table | Reason for removal |
-|-------|------------------------|
+| Table             | Reason for removal                                  |
+| ----------------- | --------------------------------------------------- |
 | `GroupPermission` | Named permissions not needed, ACL bitmask is better |
-| `Permission` | Only used by GroupPermission |
-| `RoleAssignment` | Not needed, ACL presets are sufficient |
-| `WorkspaceUser` | ❌ ALREADY REMOVED - replaced by AclEntry |
-| `ProjectMember` | ❌ ALREADY REMOVED - replaced by AclEntry |
+| `Permission`      | Only used by GroupPermission                        |
+| `RoleAssignment`  | Not needed, ACL presets are sufficient              |
+| `WorkspaceUser`   | ❌ ALREADY REMOVED - replaced by AclEntry           |
+| `ProjectMember`   | ❌ ALREADY REMOVED - replaced by AclEntry           |
 
 ### Frontend Pages
 
-| Page | Reason for removal |
-|------|------------------------|
-| `GroupListPage.tsx` | Not needed, groups visible in AclPage ResourceTree |
+| Page                | Reason for removal                                   |
+| ------------------- | ---------------------------------------------------- |
+| `GroupListPage.tsx` | Not needed, groups visible in AclPage ResourceTree   |
 | `GroupEditPage.tsx` | Not needed, members via GroupMembersPanel in AclPage |
 
 ### Backend Services
 
-| Service | Reason for removal |
-|---------|------------------------|
-| `groupPermissions.ts` | Named permissions no longer needed |
-| `roleAssignmentService.ts` | RoleAssignment no longer needed |
-| `roleAssignment.ts` (procedures) | RoleAssignment no longer needed |
+| Service                          | Reason for removal                 |
+| -------------------------------- | ---------------------------------- |
+| `groupPermissions.ts`            | Named permissions no longer needed |
+| `roleAssignmentService.ts`       | RoleAssignment no longer needed    |
+| `roleAssignment.ts` (procedures) | RoleAssignment no longer needed    |
 
 ### What Remains
 
 **AclPage is the single source of truth for:**
+
 - Creating Security Groups ([+] button)
 - Managing group members (GroupMembersPanel)
 - Assigning ACL permissions (Grant/Deny dialogs)
@@ -309,14 +316,14 @@ See [ROADMAP.md](./ROADMAP.md) for the complete planning.
 
 ## Files
 
-| File | Description |
-|---------|--------------|
-| `apps/api/src/services/aclService.ts` | Core ACL service |
-| `apps/api/src/services/permissions.ts` | PermissionService with ACL integration |
-| `apps/api/src/trpc/procedures/acl.ts` | tRPC endpoints |
-| `apps/web/src/pages/admin/AclPage.tsx` | ACL Manager UI |
-| `apps/web/src/components/admin/ResourceTree.tsx` | VSCode-style resource tree component |
-| `packages/shared/prisma/schema.prisma` | AclEntry model |
+| File                                             | Description                            |
+| ------------------------------------------------ | -------------------------------------- |
+| `apps/api/src/services/aclService.ts`            | Core ACL service                       |
+| `apps/api/src/services/permissions.ts`           | PermissionService with ACL integration |
+| `apps/api/src/trpc/procedures/acl.ts`            | tRPC endpoints                         |
+| `apps/web/src/pages/admin/AclPage.tsx`           | ACL Manager UI                         |
+| `apps/web/src/components/admin/ResourceTree.tsx` | VSCode-style resource tree component   |
+| `packages/shared/prisma/schema.prisma`           | AclEntry model                         |
 
 ## See Also
 

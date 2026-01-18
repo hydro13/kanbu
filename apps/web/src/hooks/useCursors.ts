@@ -107,8 +107,8 @@ export function useCursors({
 
         // World X/Y = position relative to container + scroll offset
         // This gives us the position in the "world" (scrollable content)
-        worldX = (x - rect.left) + scrollLeft;
-        worldY = (y - rect.top) + scrollTop;
+        worldX = x - rect.left + scrollLeft;
+        worldY = y - rect.top + scrollTop;
       }
 
       socket.emit('cursor:move', {

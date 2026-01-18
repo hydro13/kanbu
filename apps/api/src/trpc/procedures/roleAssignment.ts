@@ -13,66 +13,67 @@
  * =============================================================================
  */
 
-import { z } from 'zod'
-import { TRPCError } from '@trpc/server'
-import { router, protectedProcedure } from '../router'
-import { groupPermissionService } from '../../services/groupPermissions'
-import * as roleAssignmentService from '../../services/roleAssignmentService'
-import {
-  emitRoleAssignmentCreated,
-  emitRoleAssignmentRemoved,
-} from '../../socket/emitter'
+import { z } from 'zod';
+import { TRPCError } from '@trpc/server';
+import { router, protectedProcedure } from '../router';
+import { groupPermissionService } from '../../services/groupPermissions';
+import * as roleAssignmentService from '../../services/roleAssignmentService';
+import { emitRoleAssignmentCreated, emitRoleAssignmentRemoved } from '../../socket/emitter';
 
 // =============================================================================
 // Input Schemas
 // =============================================================================
 
-const assignGroupSchema = z.object({
-  groupId: z.number(),
-  workspaceId: z.number().optional(),
-  projectId: z.number().optional(),
-  role: z.enum(['VIEWER', 'MEMBER', 'MANAGER', 'ADMIN', 'OWNER']),
-  inheritToChildren: z.boolean().default(true),
-}).refine(
-  (data) => (data.workspaceId && !data.projectId) || (!data.workspaceId && data.projectId),
-  { message: 'Exactly one of workspaceId or projectId must be provided' }
-)
+const assignGroupSchema = z
+  .object({
+    groupId: z.number(),
+    workspaceId: z.number().optional(),
+    projectId: z.number().optional(),
+    role: z.enum(['VIEWER', 'MEMBER', 'MANAGER', 'ADMIN', 'OWNER']),
+    inheritToChildren: z.boolean().default(true),
+  })
+  .refine(
+    (data) => (data.workspaceId && !data.projectId) || (!data.workspaceId && data.projectId),
+    { message: 'Exactly one of workspaceId or projectId must be provided' }
+  );
 
 const removeAssignmentSchema = z.object({
   assignmentId: z.number(),
-})
+});
 
-const removeAssignmentByScopeSchema = z.object({
-  groupId: z.number(),
-  workspaceId: z.number().optional(),
-  projectId: z.number().optional(),
-}).refine(
-  (data) => (data.workspaceId && !data.projectId) || (!data.workspaceId && data.projectId),
-  { message: 'Exactly one of workspaceId or projectId must be provided' }
-)
+const removeAssignmentByScopeSchema = z
+  .object({
+    groupId: z.number(),
+    workspaceId: z.number().optional(),
+    projectId: z.number().optional(),
+  })
+  .refine(
+    (data) => (data.workspaceId && !data.projectId) || (!data.workspaceId && data.projectId),
+    { message: 'Exactly one of workspaceId or projectId must be provided' }
+  );
 
 const listWorkspaceAssignmentsSchema = z.object({
   workspaceId: z.number(),
-})
+});
 
 const listProjectAssignmentsSchema = z.object({
   projectId: z.number(),
   includeInherited: z.boolean().default(true),
-})
+});
 
 const listGroupAssignmentsSchema = z.object({
   groupId: z.number(),
-})
+});
 
 const getUserWorkspaceRoleSchema = z.object({
   userId: z.number().optional(),
   workspaceId: z.number(),
-})
+});
 
 const getUserProjectRoleSchema = z.object({
   userId: z.number().optional(),
   projectId: z.number(),
-})
+});
 
 // =============================================================================
 // Authorization Helpers
@@ -88,14 +89,14 @@ async function canManageAssignments(
   projectId?: number,
   prisma?: typeof import('@prisma/client').PrismaClient extends new () => infer R ? R : never
 ): Promise<boolean> {
-  const isDomainAdmin = await groupPermissionService.isDomainAdmin(userId)
+  const isDomainAdmin = await groupPermissionService.isDomainAdmin(userId);
   if (isDomainAdmin) {
-    return true
+    return true;
   }
 
   // For workspace assignments
   if (workspaceId) {
-    return groupPermissionService.isWorkspaceAdmin(userId, workspaceId)
+    return groupPermissionService.isWorkspaceAdmin(userId, workspaceId);
   }
 
   // For project assignments, check workspace admin of parent workspace
@@ -103,13 +104,13 @@ async function canManageAssignments(
     const project = await prisma.project.findUnique({
       where: { id: projectId },
       select: { workspaceId: true },
-    })
+    });
     if (project) {
-      return groupPermissionService.isWorkspaceAdmin(userId, project.workspaceId)
+      return groupPermissionService.isWorkspaceAdmin(userId, project.workspaceId);
     }
   }
 
-  return false
+  return false;
 }
 
 /**
@@ -121,20 +122,20 @@ async function canViewAssignments(
   workspaceId?: number,
   projectId?: number
 ): Promise<boolean> {
-  const isDomainAdmin = await groupPermissionService.isDomainAdmin(userId)
+  const isDomainAdmin = await groupPermissionService.isDomainAdmin(userId);
   if (isDomainAdmin) {
-    return true
+    return true;
   }
 
   if (workspaceId) {
-    return groupPermissionService.canAccessWorkspace(userId, workspaceId)
+    return groupPermissionService.canAccessWorkspace(userId, workspaceId);
   }
 
   if (projectId) {
-    return groupPermissionService.canAccessProject(userId, projectId)
+    return groupPermissionService.canAccessProject(userId, projectId);
   }
 
-  return false
+  return false;
 }
 
 // =============================================================================
@@ -153,17 +154,17 @@ export const roleAssignmentRouter = router({
   listForWorkspace: protectedProcedure
     .input(listWorkspaceAssignmentsSchema)
     .query(async ({ ctx, input }) => {
-      const canView = await canViewAssignments(ctx.user!.id, input.workspaceId)
+      const canView = await canViewAssignments(ctx.user!.id, input.workspaceId);
       if (!canView) {
         throw new TRPCError({
           code: 'FORBIDDEN',
           message: 'You do not have access to this workspace',
-        })
+        });
       }
 
-      const canManage = await canManageAssignments(ctx.user!.id, input.workspaceId)
+      const canManage = await canManageAssignments(ctx.user!.id, input.workspaceId);
 
-      const assignments = await roleAssignmentService.getWorkspaceAssignments(input.workspaceId)
+      const assignments = await roleAssignmentService.getWorkspaceAssignments(input.workspaceId);
 
       return {
         assignments: assignments.map((a) => ({
@@ -181,7 +182,7 @@ export const roleAssignmentRouter = router({
           },
         })),
         canManage,
-      }
+      };
     }),
 
   /**
@@ -191,18 +192,25 @@ export const roleAssignmentRouter = router({
   listForProject: protectedProcedure
     .input(listProjectAssignmentsSchema)
     .query(async ({ ctx, input }) => {
-      const canView = await canViewAssignments(ctx.user!.id, undefined, input.projectId)
+      const canView = await canViewAssignments(ctx.user!.id, undefined, input.projectId);
       if (!canView) {
         throw new TRPCError({
           code: 'FORBIDDEN',
           message: 'You do not have access to this project',
-        })
+        });
       }
 
-      const canManage = await canManageAssignments(ctx.user!.id, undefined, input.projectId, ctx.prisma)
+      const canManage = await canManageAssignments(
+        ctx.user!.id,
+        undefined,
+        input.projectId,
+        ctx.prisma
+      );
 
       if (input.includeInherited) {
-        const result = await roleAssignmentService.getProjectAssignmentsWithInherited(input.projectId)
+        const result = await roleAssignmentService.getProjectAssignmentsWithInherited(
+          input.projectId
+        );
 
         const mapAssignment = (a: (typeof result.direct)[0]) => ({
           id: a.id,
@@ -216,7 +224,7 @@ export const roleAssignmentRouter = router({
             type: a.group.type,
             isSecurityGroup: a.group.isSecurityGroup,
           },
-        })
+        });
 
         return {
           direct: result.direct.map(mapAssignment),
@@ -226,10 +234,10 @@ export const roleAssignmentRouter = router({
             _sourceWorkspaceId: (a as { _sourceWorkspaceId?: number })._sourceWorkspaceId,
           })),
           canManage,
-        }
+        };
       }
 
-      const assignments = await roleAssignmentService.getProjectAssignments(input.projectId)
+      const assignments = await roleAssignmentService.getProjectAssignments(input.projectId);
 
       return {
         direct: assignments.map((a) => ({
@@ -248,7 +256,7 @@ export const roleAssignmentRouter = router({
         })),
         inherited: [],
         canManage,
-      }
+      };
     }),
 
   /**
@@ -262,34 +270,37 @@ export const roleAssignmentRouter = router({
       const group = await ctx.prisma.group.findUnique({
         where: { id: input.groupId },
         select: { id: true, workspaceId: true, type: true },
-      })
+      });
 
       if (!group) {
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: 'Group not found',
-        })
+        });
       }
 
       // Only Domain Admins or workspace admins of the group's workspace can view
-      const isDomainAdmin = await groupPermissionService.isDomainAdmin(ctx.user!.id)
+      const isDomainAdmin = await groupPermissionService.isDomainAdmin(ctx.user!.id);
       if (!isDomainAdmin) {
         if (!group.workspaceId) {
           throw new TRPCError({
             code: 'FORBIDDEN',
             message: 'Only Domain Admins can view system group assignments',
-          })
+          });
         }
-        const isWsAdmin = await groupPermissionService.isWorkspaceAdmin(ctx.user!.id, group.workspaceId)
+        const isWsAdmin = await groupPermissionService.isWorkspaceAdmin(
+          ctx.user!.id,
+          group.workspaceId
+        );
         if (!isWsAdmin) {
           throw new TRPCError({
             code: 'FORBIDDEN',
             message: 'You do not have permission to view this group',
-          })
+          });
         }
       }
 
-      const assignments = await roleAssignmentService.getGroupAssignments(input.groupId)
+      const assignments = await roleAssignmentService.getGroupAssignments(input.groupId);
 
       return {
         assignments: assignments.map((a) => ({
@@ -313,7 +324,7 @@ export const roleAssignmentRouter = router({
               }
             : null,
         })),
-      }
+      };
     }),
 
   /**
@@ -323,22 +334,25 @@ export const roleAssignmentRouter = router({
   getUserWorkspaceRole: protectedProcedure
     .input(getUserWorkspaceRoleSchema)
     .query(async ({ ctx, input }) => {
-      const userId = input.userId ?? ctx.user!.id
+      const userId = input.userId ?? ctx.user!.id;
 
       // Users can check their own role, admins can check others
       if (userId !== ctx.user!.id) {
-        const canManage = await canManageAssignments(ctx.user!.id, input.workspaceId)
+        const canManage = await canManageAssignments(ctx.user!.id, input.workspaceId);
         if (!canManage) {
           throw new TRPCError({
             code: 'FORBIDDEN',
             message: 'You can only check your own role',
-          })
+          });
         }
       }
 
-      const result = await roleAssignmentService.getUserWorkspaceRoleViaGroups(userId, input.workspaceId)
+      const result = await roleAssignmentService.getUserWorkspaceRoleViaGroups(
+        userId,
+        input.workspaceId
+      );
 
-      return result
+      return result;
     }),
 
   /**
@@ -348,22 +362,30 @@ export const roleAssignmentRouter = router({
   getUserProjectRole: protectedProcedure
     .input(getUserProjectRoleSchema)
     .query(async ({ ctx, input }) => {
-      const userId = input.userId ?? ctx.user!.id
+      const userId = input.userId ?? ctx.user!.id;
 
       // Users can check their own role, admins can check others
       if (userId !== ctx.user!.id) {
-        const canManage = await canManageAssignments(ctx.user!.id, undefined, input.projectId, ctx.prisma)
+        const canManage = await canManageAssignments(
+          ctx.user!.id,
+          undefined,
+          input.projectId,
+          ctx.prisma
+        );
         if (!canManage) {
           throw new TRPCError({
             code: 'FORBIDDEN',
             message: 'You can only check your own role',
-          })
+          });
         }
       }
 
-      const result = await roleAssignmentService.getUserProjectRoleViaGroups(userId, input.projectId)
+      const result = await roleAssignmentService.getUserProjectRoleViaGroups(
+        userId,
+        input.projectId
+      );
 
-      return result
+      return result;
     }),
 
   // ===========================================================================
@@ -374,186 +396,183 @@ export const roleAssignmentRouter = router({
    * Assign a security group to a workspace or project with a role.
    * Only works for groups with isSecurityGroup = true or type = SYSTEM/CUSTOM.
    */
-  assign: protectedProcedure
-    .input(assignGroupSchema)
-    .mutation(async ({ ctx, input }) => {
-      const { groupId, workspaceId, projectId, role, inheritToChildren } = input
+  assign: protectedProcedure.input(assignGroupSchema).mutation(async ({ ctx, input }) => {
+    const { groupId, workspaceId, projectId, role, inheritToChildren } = input;
 
-      // Check if user can manage assignments for this scope
-      const canManage = await canManageAssignments(ctx.user!.id, workspaceId, projectId, ctx.prisma)
-      if (!canManage) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You do not have permission to manage role assignments',
-        })
-      }
+    // Check if user can manage assignments for this scope
+    const canManage = await canManageAssignments(ctx.user!.id, workspaceId, projectId, ctx.prisma);
+    if (!canManage) {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: 'You do not have permission to manage role assignments',
+      });
+    }
 
-      // Verify the group exists and is a security group
-      const group = await ctx.prisma.group.findUnique({
-        where: { id: groupId },
-        select: {
-          id: true,
-          name: true,
-          isSecurityGroup: true,
-          type: true,
-        },
-      })
+    // Verify the group exists and is a security group
+    const group = await ctx.prisma.group.findUnique({
+      where: { id: groupId },
+      select: {
+        id: true,
+        name: true,
+        isSecurityGroup: true,
+        type: true,
+      },
+    });
 
-      if (!group) {
+    if (!group) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Group not found',
+      });
+    }
+
+    // Only security groups, SYSTEM groups, or CUSTOM groups can have role assignments
+    if (!group.isSecurityGroup && group.type !== 'SYSTEM' && group.type !== 'CUSTOM') {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message:
+          'Only security groups can be assigned via role assignments. Auto-groups (WORKSPACE, PROJECT) have implicit access.',
+      });
+    }
+
+    // Verify workspace/project exists
+    if (workspaceId) {
+      const workspace = await ctx.prisma.workspace.findUnique({
+        where: { id: workspaceId },
+        select: { id: true },
+      });
+      if (!workspace) {
         throw new TRPCError({
           code: 'NOT_FOUND',
-          message: 'Group not found',
-        })
+          message: 'Workspace not found',
+        });
       }
+    }
 
-      // Only security groups, SYSTEM groups, or CUSTOM groups can have role assignments
-      if (!group.isSecurityGroup && group.type !== 'SYSTEM' && group.type !== 'CUSTOM') {
+    if (projectId) {
+      const project = await ctx.prisma.project.findUnique({
+        where: { id: projectId },
+        select: { id: true },
+      });
+      if (!project) {
         throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Only security groups can be assigned via role assignments. Auto-groups (WORKSPACE, PROJECT) have implicit access.',
-        })
+          code: 'NOT_FOUND',
+          message: 'Project not found',
+        });
       }
+    }
 
-      // Verify workspace/project exists
-      if (workspaceId) {
-        const workspace = await ctx.prisma.workspace.findUnique({
-          where: { id: workspaceId },
-          select: { id: true },
-        })
-        if (!workspace) {
-          throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: 'Workspace not found',
-          })
-        }
-      }
+    const assignment = await roleAssignmentService.assignGroupToScope({
+      groupId,
+      workspaceId,
+      projectId,
+      role,
+      inheritToChildren,
+      createdById: ctx.user!.id,
+    });
 
-      if (projectId) {
-        const project = await ctx.prisma.project.findUnique({
-          where: { id: projectId },
-          select: { id: true },
-        })
-        if (!project) {
-          throw new TRPCError({
-            code: 'NOT_FOUND',
-            message: 'Project not found',
-          })
-        }
-      }
+    // Get names for the WebSocket event
+    let workspaceName: string | undefined;
+    let projectName: string | undefined;
 
-      const assignment = await roleAssignmentService.assignGroupToScope({
-        groupId,
-        workspaceId,
-        projectId,
-        role,
-        inheritToChildren,
-        createdById: ctx.user!.id,
-      })
+    if (workspaceId) {
+      const ws = await ctx.prisma.workspace.findUnique({
+        where: { id: workspaceId },
+        select: { name: true },
+      });
+      workspaceName = ws?.name;
+    }
 
-      // Get names for the WebSocket event
-      let workspaceName: string | undefined
-      let projectName: string | undefined
+    if (projectId) {
+      const proj = await ctx.prisma.project.findUnique({
+        where: { id: projectId },
+        select: { name: true },
+      });
+      projectName = proj?.name;
+    }
 
-      if (workspaceId) {
-        const ws = await ctx.prisma.workspace.findUnique({
-          where: { id: workspaceId },
-          select: { name: true },
-        })
-        workspaceName = ws?.name
-      }
+    // Emit WebSocket event for real-time Permission Tree updates
+    emitRoleAssignmentCreated({
+      groupId,
+      groupName: group.name,
+      workspaceId,
+      workspaceName,
+      projectId,
+      projectName,
+      role,
+      triggeredBy: {
+        id: ctx.user!.id,
+        username: ctx.user!.username,
+      },
+      timestamp: new Date().toISOString(),
+    });
 
-      if (projectId) {
-        const proj = await ctx.prisma.project.findUnique({
-          where: { id: projectId },
-          select: { name: true },
-        })
-        projectName = proj?.name
-      }
-
-      // Emit WebSocket event for real-time Permission Tree updates
-      emitRoleAssignmentCreated({
-        groupId,
-        groupName: group.name,
-        workspaceId,
-        workspaceName,
-        projectId,
-        projectName,
-        role,
-        triggeredBy: {
-          id: ctx.user!.id,
-          username: ctx.user!.username,
-        },
-        timestamp: new Date().toISOString(),
-      })
-
-      return {
-        id: assignment.id,
-        groupId: assignment.groupId,
-        workspaceId: assignment.workspaceId,
-        projectId: assignment.projectId,
-        role: assignment.role,
-        inheritToChildren: assignment.inheritToChildren,
-        createdAt: assignment.createdAt,
-      }
-    }),
+    return {
+      id: assignment.id,
+      groupId: assignment.groupId,
+      workspaceId: assignment.workspaceId,
+      projectId: assignment.projectId,
+      role: assignment.role,
+      inheritToChildren: assignment.inheritToChildren,
+      createdAt: assignment.createdAt,
+    };
+  }),
 
   /**
    * Remove a role assignment by ID.
    */
-  remove: protectedProcedure
-    .input(removeAssignmentSchema)
-    .mutation(async ({ ctx, input }) => {
-      // Get the assignment with all details for the event
-      const assignment = await ctx.prisma.roleAssignment.findUnique({
-        where: { id: input.assignmentId },
-        include: {
-          group: { select: { id: true, name: true } },
-          workspace: { select: { id: true, name: true } },
-          project: { select: { id: true, name: true } },
-        },
-      })
+  remove: protectedProcedure.input(removeAssignmentSchema).mutation(async ({ ctx, input }) => {
+    // Get the assignment with all details for the event
+    const assignment = await ctx.prisma.roleAssignment.findUnique({
+      where: { id: input.assignmentId },
+      include: {
+        group: { select: { id: true, name: true } },
+        workspace: { select: { id: true, name: true } },
+        project: { select: { id: true, name: true } },
+      },
+    });
 
-      if (!assignment) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Role assignment not found',
-        })
-      }
+    if (!assignment) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Role assignment not found',
+      });
+    }
 
-      // Check if user can manage assignments for this scope
-      const canManage = await canManageAssignments(
-        ctx.user!.id,
-        assignment.workspaceId ?? undefined,
-        assignment.projectId ?? undefined,
-        ctx.prisma
-      )
-      if (!canManage) {
-        throw new TRPCError({
-          code: 'FORBIDDEN',
-          message: 'You do not have permission to manage role assignments',
-        })
-      }
+    // Check if user can manage assignments for this scope
+    const canManage = await canManageAssignments(
+      ctx.user!.id,
+      assignment.workspaceId ?? undefined,
+      assignment.projectId ?? undefined,
+      ctx.prisma
+    );
+    if (!canManage) {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: 'You do not have permission to manage role assignments',
+      });
+    }
 
-      await roleAssignmentService.removeAssignment(input.assignmentId)
+    await roleAssignmentService.removeAssignment(input.assignmentId);
 
-      // Emit WebSocket event for real-time Permission Tree updates
-      emitRoleAssignmentRemoved({
-        groupId: assignment.group.id,
-        groupName: assignment.group.name,
-        workspaceId: assignment.workspaceId ?? undefined,
-        workspaceName: assignment.workspace?.name,
-        projectId: assignment.projectId ?? undefined,
-        projectName: assignment.project?.name,
-        role: assignment.role,
-        triggeredBy: {
-          id: ctx.user!.id,
-          username: ctx.user!.username,
-        },
-        timestamp: new Date().toISOString(),
-      })
+    // Emit WebSocket event for real-time Permission Tree updates
+    emitRoleAssignmentRemoved({
+      groupId: assignment.group.id,
+      groupName: assignment.group.name,
+      workspaceId: assignment.workspaceId ?? undefined,
+      workspaceName: assignment.workspace?.name,
+      projectId: assignment.projectId ?? undefined,
+      projectName: assignment.project?.name,
+      role: assignment.role,
+      triggeredBy: {
+        id: ctx.user!.id,
+        username: ctx.user!.username,
+      },
+      timestamp: new Date().toISOString(),
+    });
 
-      return { success: true }
-    }),
+    return { success: true };
+  }),
 
   /**
    * Remove a role assignment by group and scope.
@@ -561,15 +580,20 @@ export const roleAssignmentRouter = router({
   removeByScope: protectedProcedure
     .input(removeAssignmentByScopeSchema)
     .mutation(async ({ ctx, input }) => {
-      const { groupId, workspaceId, projectId } = input
+      const { groupId, workspaceId, projectId } = input;
 
       // Check if user can manage assignments for this scope
-      const canManage = await canManageAssignments(ctx.user!.id, workspaceId, projectId, ctx.prisma)
+      const canManage = await canManageAssignments(
+        ctx.user!.id,
+        workspaceId,
+        projectId,
+        ctx.prisma
+      );
       if (!canManage) {
         throw new TRPCError({
           code: 'FORBIDDEN',
           message: 'You do not have permission to manage role assignments',
-        })
+        });
       }
 
       // Get assignment details for the event before deleting
@@ -584,16 +608,16 @@ export const roleAssignmentRouter = router({
           workspace: { select: { id: true, name: true } },
           project: { select: { id: true, name: true } },
         },
-      })
+      });
 
       if (!assignment) {
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: 'Role assignment not found',
-        })
+        });
       }
 
-      await roleAssignmentService.removeAssignmentByScope(groupId, workspaceId, projectId)
+      await roleAssignmentService.removeAssignmentByScope(groupId, workspaceId, projectId);
 
       // Emit WebSocket event for real-time Permission Tree updates
       emitRoleAssignmentRemoved({
@@ -609,8 +633,8 @@ export const roleAssignmentRouter = router({
           username: ctx.user!.username,
         },
         timestamp: new Date().toISOString(),
-      })
+      });
 
-      return { success: true }
+      return { success: true };
     }),
-})
+});

@@ -22,48 +22,54 @@
  * Detect if the user is on macOS
  */
 export function isMac(): boolean {
-  if (typeof navigator === 'undefined') return false
-  return navigator.platform.toUpperCase().includes('MAC')
+  if (typeof navigator === 'undefined') return false;
+  return navigator.platform.toUpperCase().includes('MAC');
 }
 
 /**
  * Get the modifier key symbol based on platform
  */
 export function getModifierKey(): string {
-  return isMac() ? '⌘' : 'Ctrl'
+  return isMac() ? '⌘' : 'Ctrl';
 }
 
 /**
  * Get the modifier key name for display
  */
 export function getModifierKeyName(): string {
-  return isMac() ? 'Cmd' : 'Ctrl'
+  return isMac() ? 'Cmd' : 'Ctrl';
 }
 
 // =============================================================================
 // Types
 // =============================================================================
 
-export type ShortcutCategory = 'global' | 'navigation' | 'dashboard' | 'workspace' | 'board' | 'task'
+export type ShortcutCategory =
+  | 'global'
+  | 'navigation'
+  | 'dashboard'
+  | 'workspace'
+  | 'board'
+  | 'task';
 
 export interface ShortcutDefinition {
-  id: string
-  key: string
+  id: string;
+  key: string;
   modifiers?: {
-    cmd?: boolean   // Cmd on Mac, Ctrl on Windows/Linux
-    shift?: boolean
-    alt?: boolean
-  }
-  description: string
-  category: ShortcutCategory
+    cmd?: boolean; // Cmd on Mac, Ctrl on Windows/Linux
+    shift?: boolean;
+    alt?: boolean;
+  };
+  description: string;
+  category: ShortcutCategory;
   /** Whether this shortcut should work in input fields */
-  allowInInputs?: boolean
+  allowInInputs?: boolean;
 }
 
 export interface ShortcutGroup {
-  category: ShortcutCategory
-  label: string
-  shortcuts: ShortcutDefinition[]
+  category: ShortcutCategory;
+  label: string;
+  shortcuts: ShortcutDefinition[];
 }
 
 // =============================================================================
@@ -238,7 +244,7 @@ export const SHORTCUTS: ShortcutDefinition[] = [
     description: 'Delete task',
     category: 'task',
   },
-]
+];
 
 // =============================================================================
 // Grouped Shortcuts (for display)
@@ -275,7 +281,7 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
     label: 'Task Actions',
     shortcuts: SHORTCUTS.filter((s) => s.category === 'task'),
   },
-]
+];
 
 // =============================================================================
 // Utility Functions
@@ -285,48 +291,70 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
  * Format a shortcut for display (e.g., "⌘K" or "Ctrl+K")
  */
 export function formatShortcut(shortcut: ShortcutDefinition): string {
-  const parts: string[] = []
+  const parts: string[] = [];
 
   if (shortcut.modifiers?.cmd) {
-    parts.push(getModifierKey())
+    parts.push(getModifierKey());
   }
   if (shortcut.modifiers?.shift) {
-    parts.push('⇧')
+    parts.push('⇧');
   }
   if (shortcut.modifiers?.alt) {
-    parts.push(isMac() ? '⌥' : 'Alt')
+    parts.push(isMac() ? '⌥' : 'Alt');
   }
 
   // Format the key
-  let displayKey = shortcut.key
+  let displayKey = shortcut.key;
 
   // Handle chord shortcuts (e.g., "g d" -> "G then D")
   if (displayKey.includes(' ')) {
-    const chordParts = displayKey.split(' ')
-    displayKey = chordParts.map(k => k.toUpperCase()).join(' then ')
-    parts.push(displayKey)
-    return parts.join(isMac() ? '' : '+')
+    const chordParts = displayKey.split(' ');
+    displayKey = chordParts.map((k) => k.toUpperCase()).join(' then ');
+    parts.push(displayKey);
+    return parts.join(isMac() ? '' : '+');
   }
 
-  if (displayKey === 'ArrowUp') displayKey = '↑'
-  else if (displayKey === 'ArrowDown') displayKey = '↓'
-  else if (displayKey === 'ArrowLeft') displayKey = '←'
-  else if (displayKey === 'ArrowRight') displayKey = '→'
-  else if (displayKey === 'Escape') displayKey = 'Esc'
-  else if (displayKey === 'Delete') displayKey = '⌫'
-  else if (displayKey === 'Enter') displayKey = '↵'
-  else displayKey = displayKey.toUpperCase()
+  if (displayKey === 'ArrowUp') displayKey = '↑';
+  else if (displayKey === 'ArrowDown') displayKey = '↓';
+  else if (displayKey === 'ArrowLeft') displayKey = '←';
+  else if (displayKey === 'ArrowRight') displayKey = '→';
+  else if (displayKey === 'Escape') displayKey = 'Esc';
+  else if (displayKey === 'Delete') displayKey = '⌫';
+  else if (displayKey === 'Enter') displayKey = '↵';
+  else displayKey = displayKey.toUpperCase();
 
-  parts.push(displayKey)
+  parts.push(displayKey);
 
-  return parts.join(isMac() ? '' : '+')
+  return parts.join(isMac() ? '' : '+');
 }
 
 /**
  * Characters that inherently require Shift key on most keyboards
  * For these, we ignore the shift key check
  */
-const SHIFT_CHARS = new Set(['?', '!', '@', '#', '$', '%', '^', '&', '*', '(', ')', '_', '+', '{', '}', '|', ':', '"', '<', '>', '~'])
+const SHIFT_CHARS = new Set([
+  '?',
+  '!',
+  '@',
+  '#',
+  '$',
+  '%',
+  '^',
+  '&',
+  '*',
+  '(',
+  ')',
+  '_',
+  '+',
+  '{',
+  '}',
+  '|',
+  ':',
+  '"',
+  '<',
+  '>',
+  '~',
+]);
 
 /**
  * Check if a keyboard event matches a shortcut definition
@@ -334,52 +362,52 @@ const SHIFT_CHARS = new Set(['?', '!', '@', '#', '$', '%', '^', '&', '*', '(', '
 export function matchesShortcut(event: KeyboardEvent, shortcut: ShortcutDefinition): boolean {
   // Check the key
   if (event.key.toLowerCase() !== shortcut.key.toLowerCase()) {
-    return false
+    return false;
   }
 
   // Check modifiers
-  const wantCmd = shortcut.modifiers?.cmd ?? false
-  const wantShift = shortcut.modifiers?.shift ?? false
-  const wantAlt = shortcut.modifiers?.alt ?? false
+  const wantCmd = shortcut.modifiers?.cmd ?? false;
+  const wantShift = shortcut.modifiers?.shift ?? false;
+  const wantAlt = shortcut.modifiers?.alt ?? false;
 
   // On Mac, check metaKey. On other platforms, check ctrlKey
-  const hasCmd = isMac() ? event.metaKey : event.ctrlKey
+  const hasCmd = isMac() ? event.metaKey : event.ctrlKey;
 
-  if (hasCmd !== wantCmd) return false
+  if (hasCmd !== wantCmd) return false;
 
   // For characters that inherently require Shift (like ?), ignore shift check
   // unless the shortcut explicitly wants Shift as a modifier
   if (!SHIFT_CHARS.has(shortcut.key)) {
-    if (event.shiftKey !== wantShift) return false
+    if (event.shiftKey !== wantShift) return false;
   }
 
-  if (event.altKey !== wantAlt) return false
+  if (event.altKey !== wantAlt) return false;
 
-  return true
+  return true;
 }
 
 /**
  * Check if the event target is an input element
  */
 export function isInputElement(target: EventTarget | null): boolean {
-  if (!target || !(target instanceof HTMLElement)) return false
+  if (!target || !(target instanceof HTMLElement)) return false;
 
-  const tagName = target.tagName.toLowerCase()
+  const tagName = target.tagName.toLowerCase();
   if (tagName === 'input' || tagName === 'textarea' || tagName === 'select') {
-    return true
+    return true;
   }
 
   // Check for contenteditable
   if (target.isContentEditable) {
-    return true
+    return true;
   }
 
-  return false
+  return false;
 }
 
 /**
  * Get a shortcut by ID
  */
 export function getShortcutById(id: string): ShortcutDefinition | undefined {
-  return SHORTCUTS.find((s) => s.id === id)
+  return SHORTCUTS.find((s) => s.id === id);
 }

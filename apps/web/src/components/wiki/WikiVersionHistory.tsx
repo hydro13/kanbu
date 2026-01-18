@@ -11,7 +11,7 @@
  * ===================================================================
  */
 
-import { useState } from 'react'
+import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -19,20 +19,13 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { RichTextEditor } from '@/components/editor'
-import { trpc } from '@/lib/trpc'
-import {
-  History,
-  RotateCcw,
-  Eye,
-  User,
-  Clock,
-  FileText,
-} from 'lucide-react'
-import { cn } from '@/lib/utils'
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { RichTextEditor } from '@/components/editor';
+import { trpc } from '@/lib/trpc';
+import { History, RotateCcw, Eye, User, Clock, FileText } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 // =============================================================================
 // Types
@@ -40,28 +33,28 @@ import { cn } from '@/lib/utils'
 
 interface WikiVersionHistoryProps {
   /** Page ID to show versions for */
-  pageId: number
+  pageId: number;
   /** Current page title (for display) */
-  pageTitle: string
+  pageTitle: string;
   /** Whether the modal is open */
-  open: boolean
+  open: boolean;
   /** Close handler */
-  onClose: () => void
+  onClose: () => void;
   /** Callback when a version is restored */
-  onRestored?: () => void
+  onRestored?: () => void;
 }
 
 interface VersionSummary {
-  id: number
-  version: number
-  title: string
-  changeNote: string | null
-  createdById: number
-  createdAt: string
+  id: number;
+  version: number;
+  title: string;
+  changeNote: string | null;
+  createdById: number;
+  createdAt: string;
   createdBy: {
-    name: string
-    username: string
-  }
+    name: string;
+    username: string;
+  };
 }
 
 // =============================================================================
@@ -75,66 +68,66 @@ export function WikiVersionHistory({
   onClose,
   onRestored,
 }: WikiVersionHistoryProps) {
-  const [selectedVersion, setSelectedVersion] = useState<number | null>(null)
-  const [showRestoreConfirm, setShowRestoreConfirm] = useState(false)
+  const [selectedVersion, setSelectedVersion] = useState<number | null>(null);
+  const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
 
-  const utils = trpc.useUtils()
+  const utils = trpc.useUtils();
 
   // Fetch version list
   const versionsQuery = trpc.workspaceWiki.getVersions.useQuery(
     { pageId, limit: 20 },
     { enabled: open }
-  )
-  const versions = (versionsQuery.data ?? []) as VersionSummary[]
+  );
+  const versions = (versionsQuery.data ?? []) as VersionSummary[];
 
   // Fetch selected version content
   const versionDetailQuery = trpc.workspaceWiki.getVersion.useQuery(
     { pageId, version: selectedVersion! },
     { enabled: selectedVersion !== null }
-  )
+  );
 
   // Restore mutation
   const restoreMutation = trpc.workspaceWiki.restoreVersion.useMutation({
     onSuccess: () => {
-      utils.workspaceWiki.getBySlug.invalidate()
-      utils.workspaceWiki.get.invalidate()
-      utils.workspaceWiki.getVersions.invalidate()
-      setShowRestoreConfirm(false)
-      setSelectedVersion(null)
-      onRestored?.()
-      onClose()
+      utils.workspaceWiki.getBySlug.invalidate();
+      utils.workspaceWiki.get.invalidate();
+      utils.workspaceWiki.getVersions.invalidate();
+      setShowRestoreConfirm(false);
+      setSelectedVersion(null);
+      onRestored?.();
+      onClose();
     },
-  })
+  });
 
   // Handle restore
   const handleRestore = () => {
-    if (selectedVersion === null) return
+    if (selectedVersion === null) return;
     restoreMutation.mutate({
       pageId,
       version: selectedVersion,
       changeNote: `Restored from version ${selectedVersion}`,
-    })
-  }
+    });
+  };
 
   // Format relative time
   const formatRelativeTime = (dateStr: string) => {
-    const date = new Date(dateStr)
-    const now = new Date()
-    const diffMs = now.getTime() - date.getTime()
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
     if (diffDays === 0) {
-      const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+      const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
       if (diffHours === 0) {
-        const diffMins = Math.floor(diffMs / (1000 * 60))
-        return diffMins <= 1 ? 'just now' : `${diffMins} minutes ago`
+        const diffMins = Math.floor(diffMs / (1000 * 60));
+        return diffMins <= 1 ? 'just now' : `${diffMins} minutes ago`;
       }
-      return diffHours === 1 ? '1 hour ago' : `${diffHours} hours ago`
+      return diffHours === 1 ? '1 hour ago' : `${diffHours} hours ago`;
     }
-    if (diffDays === 1) return 'yesterday'
-    if (diffDays < 7) return `${diffDays} days ago`
-    return date.toLocaleDateString()
-  }
+    if (diffDays === 1) return 'yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    return date.toLocaleDateString();
+  };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -250,11 +243,7 @@ export function WikiVersionHistory({
                   </div>
                   {/* Don't show restore for current version (first in list) */}
                   {versions[0]?.version !== selectedVersion && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowRestoreConfirm(true)}
-                    >
+                    <Button variant="outline" size="sm" onClick={() => setShowRestoreConfirm(true)}>
                       <RotateCcw className="h-4 w-4 mr-1" />
                       Restore
                     </Button>
@@ -264,9 +253,9 @@ export function WikiVersionHistory({
                   <RichTextEditor
                     // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     initialContent={(() => {
-                      const contentJson = (versionDetailQuery.data as any).contentJson
-                      if (typeof contentJson === 'string') return contentJson
-                      return contentJson ? JSON.stringify(contentJson) : undefined
+                      const contentJson = (versionDetailQuery.data as any).contentJson;
+                      if (typeof contentJson === 'string') return contentJson;
+                      return contentJson ? JSON.stringify(contentJson) : undefined;
                     })()}
                     readOnly
                     showToolbar={false}
@@ -310,7 +299,7 @@ export function WikiVersionHistory({
         </Dialog>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
 
-export default WikiVersionHistory
+export default WikiVersionHistory;

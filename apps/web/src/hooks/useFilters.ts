@@ -14,8 +14,8 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState, useCallback, useEffect, useMemo } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 // =============================================================================
 // Types
@@ -23,64 +23,64 @@ import { useSearchParams } from 'react-router-dom'
 
 export interface FilterState {
   // Text search
-  search: string
+  search: string;
   // Priority filter (0-3)
-  priority: number | null
+  priority: number | null;
   // Assignee filter
-  assigneeId: number | null
+  assigneeId: number | null;
   // Tag filter (multiple)
-  tagIds: number[]
+  tagIds: number[];
   // Category filter
-  categoryId: number | null
+  categoryId: number | null;
   // Column filter
-  columnId: number | null
+  columnId: number | null;
   // Due date range
-  dueDateFrom: string | null
-  dueDateTo: string | null
+  dueDateFrom: string | null;
+  dueDateTo: string | null;
   // Include closed tasks
-  includeCompleted: boolean
+  includeCompleted: boolean;
 }
 
 export interface QuickFilter {
-  id: string
-  label: string
-  icon?: string
-  filter: Partial<FilterState>
+  id: string;
+  label: string;
+  icon?: string;
+  filter: Partial<FilterState>;
 }
 
 export interface SavedFilter {
-  id: string
-  name: string
-  filter: FilterState
-  createdAt: string
+  id: string;
+  name: string;
+  filter: FilterState;
+  createdAt: string;
 }
 
 export interface UseFiltersResult {
   // Current filter state
-  filters: FilterState
+  filters: FilterState;
   // Check if any filters are active
-  hasActiveFilters: boolean
+  hasActiveFilters: boolean;
   // Number of active filters
-  activeFilterCount: number
+  activeFilterCount: number;
   // Update individual filter
-  setFilter: <K extends keyof FilterState>(key: K, value: FilterState[K]) => void
+  setFilter: <K extends keyof FilterState>(key: K, value: FilterState[K]) => void;
   // Update multiple filters at once
-  setFilters: (filters: Partial<FilterState>) => void
+  setFilters: (filters: Partial<FilterState>) => void;
   // Clear all filters
-  clearFilters: () => void
+  clearFilters: () => void;
   // Clear specific filter
-  clearFilter: (key: keyof FilterState) => void
+  clearFilter: (key: keyof FilterState) => void;
   // Toggle tag in filter
-  toggleTag: (tagId: number) => void
+  toggleTag: (tagId: number) => void;
   // Apply quick filter
-  applyQuickFilter: (quickFilter: QuickFilter) => void
+  applyQuickFilter: (quickFilter: QuickFilter) => void;
   // Saved filters
-  savedFilters: SavedFilter[]
-  saveFilter: (name: string) => void
-  loadFilter: (filter: SavedFilter) => void
-  deleteFilter: (id: string) => void
+  savedFilters: SavedFilter[];
+  saveFilter: (name: string) => void;
+  loadFilter: (filter: SavedFilter) => void;
+  deleteFilter: (id: string) => void;
   // URL sync status
-  isUrlSynced: boolean
+  isUrlSynced: boolean;
 }
 
 // =============================================================================
@@ -97,79 +97,79 @@ const defaultFilters: FilterState = {
   dueDateFrom: null,
   dueDateTo: null,
   includeCompleted: false,
-}
+};
 
 // =============================================================================
 // URL Parameter Helpers
 // =============================================================================
 
 function filtersToSearchParams(filters: FilterState): URLSearchParams {
-  const params = new URLSearchParams()
+  const params = new URLSearchParams();
 
-  if (filters.search) params.set('q', filters.search)
-  if (filters.priority !== null) params.set('priority', String(filters.priority))
-  if (filters.assigneeId !== null) params.set('assignee', String(filters.assigneeId))
-  if (filters.tagIds.length > 0) params.set('tags', filters.tagIds.join(','))
-  if (filters.categoryId !== null) params.set('category', String(filters.categoryId))
-  if (filters.columnId !== null) params.set('column', String(filters.columnId))
-  if (filters.dueDateFrom) params.set('dueFrom', filters.dueDateFrom)
-  if (filters.dueDateTo) params.set('dueTo', filters.dueDateTo)
-  if (filters.includeCompleted) params.set('completed', '1')
+  if (filters.search) params.set('q', filters.search);
+  if (filters.priority !== null) params.set('priority', String(filters.priority));
+  if (filters.assigneeId !== null) params.set('assignee', String(filters.assigneeId));
+  if (filters.tagIds.length > 0) params.set('tags', filters.tagIds.join(','));
+  if (filters.categoryId !== null) params.set('category', String(filters.categoryId));
+  if (filters.columnId !== null) params.set('column', String(filters.columnId));
+  if (filters.dueDateFrom) params.set('dueFrom', filters.dueDateFrom);
+  if (filters.dueDateTo) params.set('dueTo', filters.dueDateTo);
+  if (filters.includeCompleted) params.set('completed', '1');
 
-  return params
+  return params;
 }
 
 function searchParamsToFilters(params: URLSearchParams): Partial<FilterState> {
-  const filters: Partial<FilterState> = {}
+  const filters: Partial<FilterState> = {};
 
-  const q = params.get('q')
-  if (q) filters.search = q
+  const q = params.get('q');
+  if (q) filters.search = q;
 
-  const priority = params.get('priority')
-  if (priority) filters.priority = parseInt(priority, 10)
+  const priority = params.get('priority');
+  if (priority) filters.priority = parseInt(priority, 10);
 
-  const assignee = params.get('assignee')
-  if (assignee) filters.assigneeId = parseInt(assignee, 10)
+  const assignee = params.get('assignee');
+  if (assignee) filters.assigneeId = parseInt(assignee, 10);
 
-  const tags = params.get('tags')
-  if (tags) filters.tagIds = tags.split(',').map((id) => parseInt(id, 10))
+  const tags = params.get('tags');
+  if (tags) filters.tagIds = tags.split(',').map((id) => parseInt(id, 10));
 
-  const category = params.get('category')
-  if (category) filters.categoryId = parseInt(category, 10)
+  const category = params.get('category');
+  if (category) filters.categoryId = parseInt(category, 10);
 
-  const column = params.get('column')
-  if (column) filters.columnId = parseInt(column, 10)
+  const column = params.get('column');
+  if (column) filters.columnId = parseInt(column, 10);
 
-  const dueFrom = params.get('dueFrom')
-  if (dueFrom) filters.dueDateFrom = dueFrom
+  const dueFrom = params.get('dueFrom');
+  if (dueFrom) filters.dueDateFrom = dueFrom;
 
-  const dueTo = params.get('dueTo')
-  if (dueTo) filters.dueDateTo = dueTo
+  const dueTo = params.get('dueTo');
+  if (dueTo) filters.dueDateTo = dueTo;
 
-  const completed = params.get('completed')
-  if (completed === '1') filters.includeCompleted = true
+  const completed = params.get('completed');
+  if (completed === '1') filters.includeCompleted = true;
 
-  return filters
+  return filters;
 }
 
 // =============================================================================
 // Local Storage Helpers
 // =============================================================================
 
-const SAVED_FILTERS_KEY = 'kanbu:savedFilters'
+const SAVED_FILTERS_KEY = 'kanbu:savedFilters';
 
 function loadSavedFiltersFromStorage(projectId: number): SavedFilter[] {
   try {
-    const stored = localStorage.getItem(`${SAVED_FILTERS_KEY}:${projectId}`)
-    return stored ? JSON.parse(stored) : []
+    const stored = localStorage.getItem(`${SAVED_FILTERS_KEY}:${projectId}`);
+    return stored ? JSON.parse(stored) : [];
   } catch {
-    return []
+    return [];
   }
 }
 
 function saveSavedFiltersToStorage(projectId: number, filters: SavedFilter[]): void {
   try {
-    localStorage.setItem(`${SAVED_FILTERS_KEY}:${projectId}`, JSON.stringify(filters))
+    localStorage.setItem(`${SAVED_FILTERS_KEY}:${projectId}`, JSON.stringify(filters));
   } catch {
     // Ignore storage errors
   }
@@ -180,71 +180,71 @@ function saveSavedFiltersToStorage(projectId: number, filters: SavedFilter[]): v
 // =============================================================================
 
 export function useFilters(projectId: number, syncToUrl: boolean = true): UseFiltersResult {
-  const [searchParams, setSearchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams();
   const [filters, setFiltersState] = useState<FilterState>(() => {
     // Initialize from URL params if available
     if (syncToUrl) {
-      const urlFilters = searchParamsToFilters(searchParams)
-      return { ...defaultFilters, ...urlFilters }
+      const urlFilters = searchParamsToFilters(searchParams);
+      return { ...defaultFilters, ...urlFilters };
     }
-    return defaultFilters
-  })
+    return defaultFilters;
+  });
 
   const [savedFilters, setSavedFilters] = useState<SavedFilter[]>(() =>
     loadSavedFiltersFromStorage(projectId)
-  )
+  );
 
   // Sync URL when filters change
   useEffect(() => {
-    if (!syncToUrl) return
+    if (!syncToUrl) return;
 
-    const newParams = filtersToSearchParams(filters)
-    const currentParams = new URLSearchParams(searchParams)
+    const newParams = filtersToSearchParams(filters);
+    const currentParams = new URLSearchParams(searchParams);
 
     // Only update if params actually changed
-    const newStr = newParams.toString()
-    const currentStr = currentParams.toString()
+    const newStr = newParams.toString();
+    const currentStr = currentParams.toString();
 
     if (newStr !== currentStr) {
-      setSearchParams(newParams, { replace: true })
+      setSearchParams(newParams, { replace: true });
     }
-  }, [filters, syncToUrl, searchParams, setSearchParams])
+  }, [filters, syncToUrl, searchParams, setSearchParams]);
 
   // Calculate active filter count
   const activeFilterCount = useMemo(() => {
-    let count = 0
-    if (filters.search) count++
-    if (filters.priority !== null) count++
-    if (filters.assigneeId !== null) count++
-    if (filters.tagIds.length > 0) count++
-    if (filters.categoryId !== null) count++
-    if (filters.columnId !== null) count++
-    if (filters.dueDateFrom || filters.dueDateTo) count++
-    if (filters.includeCompleted) count++
-    return count
-  }, [filters])
+    let count = 0;
+    if (filters.search) count++;
+    if (filters.priority !== null) count++;
+    if (filters.assigneeId !== null) count++;
+    if (filters.tagIds.length > 0) count++;
+    if (filters.categoryId !== null) count++;
+    if (filters.columnId !== null) count++;
+    if (filters.dueDateFrom || filters.dueDateTo) count++;
+    if (filters.includeCompleted) count++;
+    return count;
+  }, [filters]);
 
-  const hasActiveFilters = activeFilterCount > 0
+  const hasActiveFilters = activeFilterCount > 0;
 
   // Set individual filter
   const setFilter = useCallback(<K extends keyof FilterState>(key: K, value: FilterState[K]) => {
-    setFiltersState((prev) => ({ ...prev, [key]: value }))
-  }, [])
+    setFiltersState((prev) => ({ ...prev, [key]: value }));
+  }, []);
 
   // Set multiple filters
   const setFilters = useCallback((newFilters: Partial<FilterState>) => {
-    setFiltersState((prev) => ({ ...prev, ...newFilters }))
-  }, [])
+    setFiltersState((prev) => ({ ...prev, ...newFilters }));
+  }, []);
 
   // Clear all filters
   const clearFilters = useCallback(() => {
-    setFiltersState(defaultFilters)
-  }, [])
+    setFiltersState(defaultFilters);
+  }, []);
 
   // Clear specific filter
   const clearFilter = useCallback((key: keyof FilterState) => {
-    setFiltersState((prev) => ({ ...prev, [key]: defaultFilters[key] }))
-  }, [])
+    setFiltersState((prev) => ({ ...prev, [key]: defaultFilters[key] }));
+  }, []);
 
   // Toggle tag
   const toggleTag = useCallback((tagId: number) => {
@@ -253,13 +253,13 @@ export function useFilters(projectId: number, syncToUrl: boolean = true): UseFil
       tagIds: prev.tagIds.includes(tagId)
         ? prev.tagIds.filter((id) => id !== tagId)
         : [...prev.tagIds, tagId],
-    }))
-  }, [])
+    }));
+  }, []);
 
   // Apply quick filter
   const applyQuickFilter = useCallback((quickFilter: QuickFilter) => {
-    setFiltersState((prev) => ({ ...prev, ...quickFilter.filter }))
-  }, [])
+    setFiltersState((prev) => ({ ...prev, ...quickFilter.filter }));
+  }, []);
 
   // Save current filter
   const saveFilter = useCallback(
@@ -269,28 +269,28 @@ export function useFilters(projectId: number, syncToUrl: boolean = true): UseFil
         name,
         filter: { ...filters },
         createdAt: new Date().toISOString(),
-      }
-      const newSavedFilters = [...savedFilters, newFilter]
-      setSavedFilters(newSavedFilters)
-      saveSavedFiltersToStorage(projectId, newSavedFilters)
+      };
+      const newSavedFilters = [...savedFilters, newFilter];
+      setSavedFilters(newSavedFilters);
+      saveSavedFiltersToStorage(projectId, newSavedFilters);
     },
     [filters, savedFilters, projectId]
-  )
+  );
 
   // Load saved filter
   const loadFilter = useCallback((filter: SavedFilter) => {
-    setFiltersState(filter.filter)
-  }, [])
+    setFiltersState(filter.filter);
+  }, []);
 
   // Delete saved filter
   const deleteFilter = useCallback(
     (id: string) => {
-      const newSavedFilters = savedFilters.filter((f) => f.id !== id)
-      setSavedFilters(newSavedFilters)
-      saveSavedFiltersToStorage(projectId, newSavedFilters)
+      const newSavedFilters = savedFilters.filter((f) => f.id !== id);
+      setSavedFilters(newSavedFilters);
+      saveSavedFiltersToStorage(projectId, newSavedFilters);
     },
     [savedFilters, projectId]
-  )
+  );
 
   return {
     filters,
@@ -307,7 +307,7 @@ export function useFilters(projectId: number, syncToUrl: boolean = true): UseFil
     loadFilter,
     deleteFilter,
     isUrlSynced: syncToUrl,
-  }
+  };
 }
 
 // =============================================================================
@@ -345,6 +345,6 @@ export const defaultQuickFilters: QuickFilter[] = [
     label: 'Urgent',
     filter: { priority: 3 },
   },
-]
+];
 
-export default useFilters
+export default useFilters;

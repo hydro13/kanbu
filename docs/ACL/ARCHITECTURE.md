@@ -47,14 +47,14 @@ The system makes a clear distinction between:
 
 The model follows AD concepts for enterprise compatibility:
 
-| AD Concept | Kanbu Equivalent | Description |
-|------------|------------------|-------------|
-| Domain | Kanbu Instance | The root of the system |
-| Organizational Unit (OU) | Workspace | Container for projects and users |
-| Security Group | Group | Group of users that get permissions together |
-| User Account | User | Individual user |
-| ACL | AclEntry | Permission link |
-| Inheritance | inheritToChildren | Permissions inherit to children |
+| AD Concept               | Kanbu Equivalent  | Description                                  |
+| ------------------------ | ----------------- | -------------------------------------------- |
+| Domain                   | Kanbu Instance    | The root of the system                       |
+| Organizational Unit (OU) | Workspace         | Container for projects and users             |
+| Security Group           | Group             | Group of users that get permissions together |
+| User Account             | User              | Individual user                              |
+| ACL                      | AclEntry          | Permission link                              |
+| Inheritance              | inheritToChildren | Permissions inherit to children              |
 
 ---
 
@@ -92,15 +92,15 @@ Kanbu (Root)                    ← resourceType: 'root', ACL here = everything
 
 ### 2.2 Resource Types
 
-| Type | resourceType | resourceId | Scope | Status |
-|------|--------------|------------|-------|--------|
-| **Root (Kanbu)** | `root` | `null` | Everything - top-level container | Phase 4C |
-| **System** | `system` | `null` | System management (users, groups, settings) | Existing |
-| **Dashboard** | `dashboard` | `null` | Dashboard features | Phase 4C |
-| All Workspaces | `workspace` | `null` | All workspaces (container) | Existing |
-| Specific Workspace | `workspace` | `{id}` | One workspace + children | Existing |
-| All Projects | `project` | `null` | All projects | Existing |
-| Specific Project | `project` | `{id}` | One project + children | Existing |
+| Type               | resourceType | resourceId | Scope                                       | Status   |
+| ------------------ | ------------ | ---------- | ------------------------------------------- | -------- |
+| **Root (Kanbu)**   | `root`       | `null`     | Everything - top-level container            | Phase 4C |
+| **System**         | `system`     | `null`     | System management (users, groups, settings) | Existing |
+| **Dashboard**      | `dashboard`  | `null`     | Dashboard features                          | Phase 4C |
+| All Workspaces     | `workspace`  | `null`     | All workspaces (container)                  | Existing |
+| Specific Workspace | `workspace`  | `{id}`     | One workspace + children                    | Existing |
+| All Projects       | `project`    | `null`     | All projects                                | Existing |
+| Specific Project   | `project`    | `{id}`     | One project + children                      | Existing |
 
 ### 2.3 Inheritance Hierarchy
 
@@ -180,16 +180,16 @@ Project Member (RWX on project:5)
 
 ### 4.1 Proposed Standard Groups
 
-| Group Name | Description | Typical ACL |
-|------------|-------------|-------------|
-| `domain-admins` | System administrators | P on `admin:null` |
-| `system-admins` | Technical management | RWX on `admin:null` |
-| `workspace-admins` | Workspace managers | P on specific workspaces |
-| `project-managers` | Project leaders | RWXD on specific projects |
-| `users` | All users (automatic member) | RWX on their projects |
-| `viewers` | Read-only | R on specific resources |
-| `external-contractors` | External parties | Limited R/RW on specific projects |
-| `guests` | Guests | Minimal R access |
+| Group Name             | Description                  | Typical ACL                       |
+| ---------------------- | ---------------------------- | --------------------------------- |
+| `domain-admins`        | System administrators        | P on `admin:null`                 |
+| `system-admins`        | Technical management         | RWX on `admin:null`               |
+| `workspace-admins`     | Workspace managers           | P on specific workspaces          |
+| `project-managers`     | Project leaders              | RWXD on specific projects         |
+| `users`                | All users (automatic member) | RWX on their projects             |
+| `viewers`              | Read-only                    | R on specific resources           |
+| `external-contractors` | External parties             | Limited R/RW on specific projects |
+| `guests`               | Guests                       | Minimal R access                  |
 
 ### 4.2 Group Hierarchy
 
@@ -219,10 +219,10 @@ Groups
 
 ```typescript
 // WRONG - Shows all users
-const users = await prisma.user.findMany()
+const users = await prisma.user.findMany();
 
 // RIGHT - Shows only users in scope
-const users = await getUsersInScope(currentUserId)
+const users = await getUsersInScope(currentUserId);
 ```
 
 ### 5.2 Scope Filter Implementation
@@ -236,34 +236,34 @@ For each data query, the system must:
 ```typescript
 // Example: Contact List
 async function getContactList(userId: number) {
-  const scope = await getUserScope(userId)
+  const scope = await getUserScope(userId);
 
   if (scope.level === 'system') {
     // System admin: all users
-    return prisma.user.findMany()
+    return prisma.user.findMany();
   }
 
   if (scope.level === 'workspace') {
     // Workspace admin: only workspace members
-    return getUsersInWorkspaces(scope.workspaceIds)
+    return getUsersInWorkspaces(scope.workspaceIds);
   }
 
   // Project member: only project team members
-  return getUsersInProjects(scope.projectIds)
+  return getUsersInProjects(scope.projectIds);
 }
 ```
 
 ### 5.3 Scope-Affected Queries
 
-| Query | System Scope | Workspace Scope | Project Scope |
-|-------|--------------|-----------------|---------------|
-| Users list | All users | Workspace members | Project team |
-| Groups list | All groups | Workspace groups | Project groups |
-| Workspaces | All | Own workspace(s) | - |
-| Projects | All | Workspace projects | Own project(s) |
-| Tasks | All | Workspace tasks | Project tasks |
-| Admin panel | Full | Workspace admin | - |
-| Menu items | All | Filtered | Filtered |
+| Query       | System Scope | Workspace Scope    | Project Scope  |
+| ----------- | ------------ | ------------------ | -------------- |
+| Users list  | All users    | Workspace members  | Project team   |
+| Groups list | All groups   | Workspace groups   | Project groups |
+| Workspaces  | All          | Own workspace(s)   | -              |
+| Projects    | All          | Workspace projects | Own project(s) |
+| Tasks       | All          | Workspace tasks    | Project tasks  |
+| Admin panel | Full         | Workspace admin    | -              |
+| Menu items  | All          | Filtered           | Filtered       |
 
 ---
 
@@ -288,7 +288,7 @@ const menuItems = [
   { label: 'Administration', visible: hasAdminAccess },
   { label: 'All Users', visible: hasSystemScope },
   { label: 'All Groups', visible: hasSystemScope },
-]
+];
 ```
 
 ### 6.2 Admin Panel Scoping
@@ -296,6 +296,7 @@ const menuItems = [
 The admin panel shows different sections per scope:
 
 **System Admin sees:**
+
 - All Workspaces
 - All Users
 - All Groups
@@ -304,6 +305,7 @@ The admin panel shows different sections per scope:
 - Audit Logs (all logs)
 
 **Workspace Admin sees:**
+
 - Workspace Settings (own)
 - Workspace Members (own)
 - Workspace Projects (own)
@@ -315,6 +317,7 @@ The admin panel shows different sections per scope:
 ## 7. Implementation Phases
 
 ### Phase 1-3B: Foundation & Pure ACL (COMPLETED)
+
 - [x] AclEntry model
 - [x] AclService core functions
 - [x] tRPC procedures
@@ -324,12 +327,14 @@ The admin panel shows different sections per scope:
 - [x] Members via ACL
 
 ### Phase 4: Resource Tree UI (COMPLETED)
+
 - [x] VSCode-style tree component
 - [x] Full hierarchy display
 - [x] Security Groups section
 - [x] Real-time WebSocket updates
 
 ### Phase 4B: Radical Simplification (COMPLETED)
+
 - [x] [+] button for Create Security Group in ResourceTree
 - [x] Create form in right panel (not popup)
 - [x] Delete button for Security Groups
@@ -337,6 +342,7 @@ The admin panel shows different sections per scope:
 - [x] AclPage is single source of truth
 
 ### Phase 4C: Extended Resource Hierarchy (COMPLETED)
+
 - [x] Resource types: root, system, dashboard
 - [x] ResourceTree with full AD-style hierarchy
 - [x] ACL on Root level (Domain Admins with inherit)
@@ -345,33 +351,39 @@ The admin panel shows different sections per scope:
 - [x] Inheritance from root to all children
 
 ### Phase 5: Scoped Data Access (COMPLETED)
+
 - [x] getUserScope() service method
 - [x] Scope-filtered queries for all data
 - [x] Contact list scoping
 - [x] User/Group list scoping
 
 ### Phase 6: Scoped Admin Panel (COMPLETED)
+
 - [x] Workspace Admin view
 - [x] Filtered admin functions
 - [x] Scoped ACL Manager
 
 ### Phase 7: Scoped UI Elements (COMPLETED)
+
 - [x] Conditional menus
 - [x] Scoped breadcrumbs
 - [x] Permission-based component rendering
 
 ### Phase 8B: Feature ACL Project (COMPLETED)
+
 - [x] Feature table + ACL resourceType 'feature'
 - [x] 11 project features seeded
 - [x] ProjectSidebar with ACL per menu item
 
 ### Phase 8C: Feature ACL System-wide (COMPLETED)
+
 - [x] 40 features seeded (4 dashboard, 16 profile, 9 admin, 11 project)
 - [x] useFeatureAccess hook with convenience hooks
 - [x] ResourceTree shows features per scope
 - [x] Documentation updated
 
 ### Phase 9.1: Audit Logging (COMPLETED)
+
 - [x] AuditLog database model
 - [x] AuditService with categories (ACL, GROUP, USER, WORKSPACE, SETTINGS)
 - [x] Logging integration in all CRUD procedures
@@ -380,6 +392,7 @@ The admin panel shows different sections per scope:
 - [x] Workspace-scoped access (admins see only own workspace logs)
 
 ### Phase 9.6: API Keys & Service Accounts (COMPLETED)
+
 - [x] Database schema extended with ApiKeyScope enum (USER, WORKSPACE, PROJECT)
 - [x] ApiKey model with scope fields and service account support
 - [x] apiKeyService for authentication and scoped permission checks
@@ -389,6 +402,7 @@ The admin panel shows different sections per scope:
 - [x] Audit logging for API key events (created, updated, revoked, used)
 
 ### Phase 9.4: Bulk Operations (COMPLETED)
+
 - [x] `bulkGrantPermission()` - Grant to multiple users/groups
 - [x] `bulkRevokePermission()` - Revoke from multiple principals
 - [x] `copyAclEntries()` - Copy ACL to other resources
@@ -398,6 +412,7 @@ The admin panel shows different sections per scope:
 - [x] AclPage toolbar integration
 
 ### Phase 9.5: Advanced ACL UI (COMPLETED)
+
 - [x] Permission Matrix View - Grid principals × resources with effective permissions
 - [x] Effective Permissions Calculator - Debug tool for permission breakdown
 - [x] What-If Simulator - Preview ACL changes before implementation
@@ -407,6 +422,7 @@ The admin panel shows different sections per scope:
 - [x] Tools dropdown in AclPage toolbar
 
 ### Phase 9.2+: Advanced Features (PLANNED)
+
 - [ ] LDAP/AD Sync
 - [ ] Task-level ACL
 
@@ -416,40 +432,44 @@ The admin panel shows different sections per scope:
 
 ### 8.1 Core Services
 
-| Service | Responsibility |
-|---------|----------------|
-| `AclService` | ACL CRUD, permission checks |
-| `PermissionService` | High-level access checks, role mapping |
-| `ScopeService` (new) | Determine user scope, filter queries |
+| Service              | Responsibility                         |
+| -------------------- | -------------------------------------- |
+| `AclService`         | ACL CRUD, permission checks            |
+| `PermissionService`  | High-level access checks, role mapping |
+| `ScopeService` (new) | Determine user scope, filter queries   |
 
 ### 8.2 ScopeService API (to be implemented)
 
 ```typescript
 interface UserScope {
-  level: 'system' | 'workspace' | 'project'
-  workspaceIds: number[]  // Workspaces where user has access
-  projectIds: number[]    // Projects where user has access
+  level: 'system' | 'workspace' | 'project';
+  workspaceIds: number[]; // Workspaces where user has access
+  projectIds: number[]; // Projects where user has access
   permissions: {
-    canManageUsers: boolean
-    canManageGroups: boolean
-    canManageWorkspaces: boolean
-    canAccessAdminPanel: boolean
-  }
+    canManageUsers: boolean;
+    canManageGroups: boolean;
+    canManageWorkspaces: boolean;
+    canAccessAdminPanel: boolean;
+  };
 }
 
 class ScopeService {
   // Determine user's effective scope
-  async getUserScope(userId: number): Promise<UserScope>
+  async getUserScope(userId: number): Promise<UserScope>;
 
   // Filtered queries
-  async getUsersInScope(userId: number): Promise<User[]>
-  async getGroupsInScope(userId: number): Promise<Group[]>
-  async getWorkspacesInScope(userId: number): Promise<Workspace[]>
-  async getProjectsInScope(userId: number, workspaceId?: number): Promise<Project[]>
+  async getUsersInScope(userId: number): Promise<User[]>;
+  async getGroupsInScope(userId: number): Promise<Group[]>;
+  async getWorkspacesInScope(userId: number): Promise<Workspace[]>;
+  async getProjectsInScope(userId: number, workspaceId?: number): Promise<Project[]>;
 
   // Scope checks
-  async canSeeUser(viewerId: number, targetUserId: number): Promise<boolean>
-  async canManageResource(userId: number, resourceType: string, resourceId: number): Promise<boolean>
+  async canSeeUser(viewerId: number, targetUserId: number): Promise<boolean>;
+  async canManageResource(
+    userId: number,
+    resourceType: string,
+    resourceId: number
+  ): Promise<boolean>;
 }
 ```
 
@@ -459,16 +479,16 @@ All queries that fetch data must follow this pattern:
 
 ```typescript
 // 1. Get user scope (cached)
-const scope = await scopeService.getUserScope(ctx.user.id)
+const scope = await scopeService.getUserScope(ctx.user.id);
 
 // 2. Build query filter based on scope
-const whereClause = buildScopeFilter(scope, 'workspace')
+const whereClause = buildScopeFilter(scope, 'workspace');
 
 // 3. Execute query with filter
 const data = await prisma.workspace.findMany({
   where: whereClause,
-  ...otherOptions
-})
+  ...otherOptions,
+});
 ```
 
 ---
@@ -535,14 +555,14 @@ Week 9+: Advanced features
 
 ## Changelog
 
-| Version | Date | Change |
-|---------|------|--------|
-| 2.4.0 | 2026-01-09 | Phase 9.5 COMPLETED: Advanced ACL UI (Permission Matrix, Effective Permissions Calculator, What-If Simulator, Import/Export) |
-| 2.3.0 | 2026-01-09 | Phase 9.4 COMPLETED: Bulk Operations (bulkGrant, bulkRevoke, copy, template) |
-| 2.2.0 | 2026-01-09 | Phase 9.6 COMPLETED: API Keys & Service Accounts with scoped access |
-| 2.1.0 | 2026-01-09 | Phase 9.1 COMPLETED: Security Audit Logging with scope-based access |
-| 2.0.0 | 2026-01-08 | Phase 4B-8C COMPLETED: System-wide Feature ACL (40 features) |
-| 1.2.0 | 2026-01-08 | Phase 4C: Extended Resource Hierarchy (Root, System, Dashboard) |
-| 1.1.1 | 2026-01-08 | Phase 4B.1 completed: Security Groups CRUD in AclPage |
-| 1.1.0 | 2026-01-08 | Phase 4B: Radical Simplification (AclPage single source of truth) |
-| 1.0.0 | 2026-01-08 | Initial architecture document |
+| Version | Date       | Change                                                                                                                       |
+| ------- | ---------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| 2.4.0   | 2026-01-09 | Phase 9.5 COMPLETED: Advanced ACL UI (Permission Matrix, Effective Permissions Calculator, What-If Simulator, Import/Export) |
+| 2.3.0   | 2026-01-09 | Phase 9.4 COMPLETED: Bulk Operations (bulkGrant, bulkRevoke, copy, template)                                                 |
+| 2.2.0   | 2026-01-09 | Phase 9.6 COMPLETED: API Keys & Service Accounts with scoped access                                                          |
+| 2.1.0   | 2026-01-09 | Phase 9.1 COMPLETED: Security Audit Logging with scope-based access                                                          |
+| 2.0.0   | 2026-01-08 | Phase 4B-8C COMPLETED: System-wide Feature ACL (40 features)                                                                 |
+| 1.2.0   | 2026-01-08 | Phase 4C: Extended Resource Hierarchy (Root, System, Dashboard)                                                              |
+| 1.1.1   | 2026-01-08 | Phase 4B.1 completed: Security Groups CRUD in AclPage                                                                        |
+| 1.1.0   | 2026-01-08 | Phase 4B: Radical Simplification (AclPage single source of truth)                                                            |
+| 1.0.0   | 2026-01-08 | Initial architecture document                                                                                                |

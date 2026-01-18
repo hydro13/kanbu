@@ -15,36 +15,36 @@
  * =============================================================================
  */
 
-import { prisma } from '../../lib/prisma'
-import { getInstallationOctokit } from './githubService'
+import { prisma } from '../../lib/prisma';
+import { getInstallationOctokit } from './githubService';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface SyncResult {
-  commentId: number
-  githubCommentId: bigint | null
-  created: boolean
-  updated: boolean
-  deleted: boolean
+  commentId: number;
+  githubCommentId: bigint | null;
+  created: boolean;
+  updated: boolean;
+  deleted: boolean;
 }
 
 interface LexicalNode {
-  type: string
-  text?: string
-  format?: number
-  children?: LexicalNode[]
-  url?: string
-  listType?: string
-  tag?: string
-  value?: number
+  type: string;
+  text?: string;
+  format?: number;
+  children?: LexicalNode[];
+  url?: string;
+  listType?: string;
+  tag?: string;
+  value?: number;
 }
 
 interface LexicalRoot {
   root: {
-    children: LexicalNode[]
-  }
+    children: LexicalNode[];
+  };
 }
 
 // =============================================================================
@@ -58,19 +58,19 @@ interface LexicalRoot {
 function lexicalToMarkdown(content: string): string {
   // If content is not JSON, return as-is (plain text)
   if (!content.startsWith('{')) {
-    return content
+    return content;
   }
 
   try {
-    const parsed: LexicalRoot = JSON.parse(content)
+    const parsed: LexicalRoot = JSON.parse(content);
     if (!parsed.root?.children) {
-      return content
+      return content;
     }
 
-    return convertNodes(parsed.root.children).trim()
+    return convertNodes(parsed.root.children).trim();
   } catch {
     // If JSON parsing fails, return as-is
-    return content
+    return content;
   }
 }
 
@@ -78,7 +78,7 @@ function lexicalToMarkdown(content: string): string {
  * Convert an array of Lexical nodes to Markdown
  */
 function convertNodes(nodes: LexicalNode[], listDepth = 0): string {
-  return nodes.map((node) => convertNode(node, listDepth)).join('')
+  return nodes.map((node) => convertNode(node, listDepth)).join('');
 }
 
 /**
@@ -87,82 +87,83 @@ function convertNodes(nodes: LexicalNode[], listDepth = 0): string {
 function convertNode(node: LexicalNode, listDepth = 0): string {
   switch (node.type) {
     case 'root':
-      return convertNodes(node.children || [], listDepth)
+      return convertNodes(node.children || [], listDepth);
 
-    case 'paragraph':
-      const paragraphText = convertNodes(node.children || [], listDepth)
-      return paragraphText + '\n\n'
+    case 'paragraph': {
+      const paragraphText = convertNodes(node.children || [], listDepth);
+      return paragraphText + '\n\n';
+    }
 
     case 'heading': {
-      const level = parseInt(node.tag?.replace('h', '') || '1', 10)
-      const headingText = convertNodes(node.children || [], listDepth)
-      return '#'.repeat(level) + ' ' + headingText + '\n\n'
+      const level = parseInt(node.tag?.replace('h', '') || '1', 10);
+      const headingText = convertNodes(node.children || [], listDepth);
+      return '#'.repeat(level) + ' ' + headingText + '\n\n';
     }
 
     case 'text': {
-      let text = node.text || ''
-      const format = node.format || 0
+      let text = node.text || '';
+      const format = node.format || 0;
 
       // Apply formatting (Lexical format is a bitmask)
       // 1 = bold, 2 = italic, 4 = strikethrough, 8 = underline, 16 = code
       if (format & 16) {
-        text = '`' + text + '`'
+        text = '`' + text + '`';
       }
       if (format & 4) {
-        text = '~~' + text + '~~'
+        text = '~~' + text + '~~';
       }
       if (format & 2) {
-        text = '_' + text + '_'
+        text = '_' + text + '_';
       }
       if (format & 1) {
-        text = '**' + text + '**'
+        text = '**' + text + '**';
       }
 
-      return text
+      return text;
     }
 
     case 'link': {
-      const linkText = convertNodes(node.children || [], listDepth)
-      return `[${linkText}](${node.url || ''})`
+      const linkText = convertNodes(node.children || [], listDepth);
+      return `[${linkText}](${node.url || ''})`;
     }
 
     case 'list': {
-      const items = (node.children || [])
-        .map((item) => convertNode(item, listDepth))
-        .join('')
-      return items + '\n'
+      const items = (node.children || []).map((item) => convertNode(item, listDepth)).join('');
+      return items + '\n';
     }
 
     case 'listitem': {
-      const indent = '  '.repeat(listDepth)
-      const bullet = node.value !== undefined ? `${node.value}. ` : '- '
-      const itemText = convertNodes(node.children || [], listDepth + 1).trim()
-      return indent + bullet + itemText + '\n'
+      const indent = '  '.repeat(listDepth);
+      const bullet = node.value !== undefined ? `${node.value}. ` : '- ';
+      const itemText = convertNodes(node.children || [], listDepth + 1).trim();
+      return indent + bullet + itemText + '\n';
     }
 
     case 'quote': {
-      const quoteText = convertNodes(node.children || [], listDepth)
-      return quoteText
-        .split('\n')
-        .filter((line) => line.trim())
-        .map((line) => '> ' + line)
-        .join('\n') + '\n\n'
+      const quoteText = convertNodes(node.children || [], listDepth);
+      return (
+        quoteText
+          .split('\n')
+          .filter((line) => line.trim())
+          .map((line) => '> ' + line)
+          .join('\n') + '\n\n'
+      );
     }
 
     case 'code': {
-      const codeText = convertNodes(node.children || [], listDepth)
-      return '```\n' + codeText.trim() + '\n```\n\n'
+      const codeText = convertNodes(node.children || [], listDepth);
+      return '```\n' + codeText.trim() + '\n```\n\n';
     }
 
     case 'linebreak':
-      return '\n'
+      return '\n';
 
     default:
       // For unknown node types, try to extract text from children
       if (node.children) {
-        return convertNodes(node.children, listDepth)
+        return convertNodes(node.children, listDepth);
       }
-      return node.text || ''
+      return node.text || '';
   }
 }
 
@@ -174,9 +175,7 @@ function convertNode(node: LexicalNode, listDepth = 0): string {
  * Sync a Kanbu comment to GitHub
  * Creates a new GitHub comment if not linked, or updates existing one
  */
-export async function syncCommentToGitHub(
-  commentId: number
-): Promise<SyncResult | null> {
+export async function syncCommentToGitHub(commentId: number): Promise<SyncResult | null> {
   // Get the comment with task and GitHub issue info
   const comment = await prisma.comment.findUnique({
     where: { id: commentId },
@@ -202,32 +201,32 @@ export async function syncCommentToGitHub(
         },
       },
     },
-  })
+  });
 
   if (!comment) {
-    throw new Error(`Comment ${commentId} not found`)
+    throw new Error(`Comment ${commentId} not found`);
   }
 
   // Check if task is linked to a GitHub issue
   if (!comment.task.githubIssue) {
     // No GitHub issue linked - nothing to sync
-    return null
+    return null;
   }
 
   // Check if project has a GitHub repository linked
-  const repository = comment.task.project.githubRepositories[0]
+  const repository = comment.task.project.githubRepositories[0];
   if (!repository || !repository.installation) {
-    return null
+    return null;
   }
 
   // Get Octokit client
-  const octokit = await getInstallationOctokit(repository.installation.installationId)
+  const octokit = await getInstallationOctokit(repository.installation.installationId);
 
   // Format comment body with author attribution (since we're posting as the bot)
   // Convert Lexical JSON to Markdown for GitHub display
-  const authorName = comment.user.name || comment.user.username
-  const markdownContent = lexicalToMarkdown(comment.content)
-  const commentBody = `**${authorName}** commented in Kanbu:\n\n${markdownContent}`
+  const authorName = comment.user.name || comment.user.username;
+  const markdownContent = lexicalToMarkdown(comment.content);
+  const commentBody = `**${authorName}** commented in Kanbu:\n\n${markdownContent}`;
 
   // If already linked to a GitHub comment, update it
   if (comment.githubCommentId) {
@@ -237,9 +236,11 @@ export async function syncCommentToGitHub(
         repo: repository.name,
         comment_id: Number(comment.githubCommentId),
         body: commentBody,
-      })
+      });
 
-      console.log(`[CommentSyncService] Updated GitHub comment ${comment.githubCommentId} from Kanbu comment ${comment.id}`)
+      console.log(
+        `[CommentSyncService] Updated GitHub comment ${comment.githubCommentId} from Kanbu comment ${comment.id}`
+      );
 
       // Log sync operation
       await prisma.gitHubSyncLog.create({
@@ -256,7 +257,7 @@ export async function syncCommentToGitHub(
             issueNumber: comment.task.githubIssue.issueNumber,
           },
         },
-      })
+      });
 
       return {
         commentId: comment.id,
@@ -264,10 +265,10 @@ export async function syncCommentToGitHub(
         created: false,
         updated: true,
         deleted: false,
-      }
+      };
     } catch (error) {
-      console.error(`[CommentSyncService] Failed to update GitHub comment:`, error)
-      throw error
+      console.error(`[CommentSyncService] Failed to update GitHub comment:`, error);
+      throw error;
     }
   }
 
@@ -278,7 +279,7 @@ export async function syncCommentToGitHub(
       repo: repository.name,
       issue_number: comment.task.githubIssue.issueNumber,
       body: commentBody,
-    })
+    });
 
     // Update the Kanbu comment with the GitHub comment ID
     await prisma.comment.update({
@@ -286,9 +287,11 @@ export async function syncCommentToGitHub(
       data: {
         githubCommentId: BigInt(ghComment.id),
       },
-    })
+    });
 
-    console.log(`[CommentSyncService] Created GitHub comment ${ghComment.id} from Kanbu comment ${comment.id}`)
+    console.log(
+      `[CommentSyncService] Created GitHub comment ${ghComment.id} from Kanbu comment ${comment.id}`
+    );
 
     // Log sync operation
     await prisma.gitHubSyncLog.create({
@@ -305,7 +308,7 @@ export async function syncCommentToGitHub(
           issueNumber: comment.task.githubIssue.issueNumber,
         },
       },
-    })
+    });
 
     return {
       commentId: comment.id,
@@ -313,10 +316,10 @@ export async function syncCommentToGitHub(
       created: true,
       updated: false,
       deleted: false,
-    }
+    };
   } catch (error) {
-    console.error(`[CommentSyncService] Failed to create GitHub comment:`, error)
-    throw error
+    console.error(`[CommentSyncService] Failed to create GitHub comment:`, error);
+    throw error;
   }
 }
 
@@ -343,27 +346,27 @@ export async function deleteGitHubComment(
         },
       },
     },
-  })
+  });
 
   if (!task || !task.githubIssue) {
-    return false
+    return false;
   }
 
-  const repository = task.project.githubRepositories[0]
+  const repository = task.project.githubRepositories[0];
   if (!repository || !repository.installation) {
-    return false
+    return false;
   }
 
   try {
-    const octokit = await getInstallationOctokit(repository.installation.installationId)
+    const octokit = await getInstallationOctokit(repository.installation.installationId);
 
     await octokit.rest.issues.deleteComment({
       owner: repository.owner,
       repo: repository.name,
       comment_id: Number(githubCommentId),
-    })
+    });
 
-    console.log(`[CommentSyncService] Deleted GitHub comment ${githubCommentId}`)
+    console.log(`[CommentSyncService] Deleted GitHub comment ${githubCommentId}`);
 
     // Log sync operation
     await prisma.gitHubSyncLog.create({
@@ -380,12 +383,12 @@ export async function deleteGitHubComment(
           issueNumber: task.githubIssue.issueNumber,
         },
       },
-    })
+    });
 
-    return true
+    return true;
   } catch (error) {
-    console.error(`[CommentSyncService] Failed to delete GitHub comment:`, error)
-    return false
+    console.error(`[CommentSyncService] Failed to delete GitHub comment:`, error);
+    return false;
   }
 }
 
@@ -396,4 +399,4 @@ export async function deleteGitHubComment(
 export const commentSyncService = {
   syncCommentToGitHub,
   deleteGitHubComment,
-}
+};

@@ -16,15 +16,15 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState } from 'react'
-import { AdminLayout } from '@/components/admin'
-import { trpc } from '@/lib/trpc'
+import { useState } from 'react';
+import { AdminLayout } from '@/components/admin';
+import { trpc } from '@/lib/trpc';
 
 // =============================================================================
 // Types
 // =============================================================================
 
-type InviteStatus = 'pending' | 'accepted' | 'expired' | 'all'
+type InviteStatus = 'pending' | 'accepted' | 'expired' | 'all';
 
 // =============================================================================
 // Icons
@@ -32,50 +32,101 @@ type InviteStatus = 'pending' | 'accepted' | 'expired' | 'all'
 
 function MailIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+      />
     </svg>
-  )
+  );
 }
 
 function RefreshIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+      />
     </svg>
-  )
+  );
 }
 
 function XIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
     </svg>
-  )
+  );
 }
 
 function PlusIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
     </svg>
-  )
+  );
 }
 
 function CheckIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
     </svg>
-  )
+  );
 }
 
 function ClockIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
     </svg>
-  )
+  );
 }
 
 // =============================================================================
@@ -83,56 +134,56 @@ function ClockIcon({ className }: { className?: string }) {
 // =============================================================================
 
 export function InvitesPage() {
-  const [statusFilter, setStatusFilter] = useState<InviteStatus>('all')
-  const [page, setPage] = useState(0)
-  const [showSendModal, setShowSendModal] = useState(false)
-  const [emailInput, setEmailInput] = useState('')
-  const [selectedRole, setSelectedRole] = useState<'ADMIN' | 'MANAGER' | 'USER'>('USER')
-  const [expiresInDays, setExpiresInDays] = useState(7)
-  const limit = 25
+  const [statusFilter, setStatusFilter] = useState<InviteStatus>('all');
+  const [page, setPage] = useState(0);
+  const [showSendModal, setShowSendModal] = useState(false);
+  const [emailInput, setEmailInput] = useState('');
+  const [selectedRole, setSelectedRole] = useState<'ADMIN' | 'MANAGER' | 'USER'>('USER');
+  const [expiresInDays, setExpiresInDays] = useState(7);
+  const limit = 25;
 
-  const utils = trpc.useUtils()
+  const utils = trpc.useUtils();
 
   const { data, isLoading, error } = trpc.admin.listInvites.useQuery({
     status: statusFilter,
     limit,
     offset: page * limit,
-  })
+  });
 
   const sendInviteMutation = trpc.admin.sendInvite.useMutation({
     onSuccess: () => {
-      utils.admin.listInvites.invalidate()
-      setShowSendModal(false)
-      setEmailInput('')
+      utils.admin.listInvites.invalidate();
+      setShowSendModal(false);
+      setEmailInput('');
     },
-  })
+  });
 
   const cancelInviteMutation = trpc.admin.cancelInvite.useMutation({
     onSuccess: () => {
-      utils.admin.listInvites.invalidate()
+      utils.admin.listInvites.invalidate();
     },
-  })
+  });
 
   const resendInviteMutation = trpc.admin.resendInvite.useMutation({
     onSuccess: () => {
-      utils.admin.listInvites.invalidate()
+      utils.admin.listInvites.invalidate();
     },
-  })
+  });
 
   const handleSendInvites = () => {
     const emails = emailInput
       .split(/[,\n]/)
-      .map(e => e.trim())
-      .filter(e => e.length > 0)
+      .map((e) => e.trim())
+      .filter((e) => e.length > 0);
 
-    if (emails.length === 0) return
+    if (emails.length === 0) return;
 
     sendInviteMutation.mutate({
       emails,
       role: selectedRole,
       expiresInDays,
-    })
-  }
+    });
+  };
 
   const formatDate = (date: string | Date) => {
     return new Date(date).toLocaleDateString('nl-NL', {
@@ -141,8 +192,8 @@ export function InvitesPage() {
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-    })
-  }
+    });
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -152,25 +203,25 @@ export function InvitesPage() {
             <ClockIcon className="h-3 w-3" />
             Pending
           </span>
-        )
+        );
       case 'accepted':
         return (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300">
             <CheckIcon className="h-3 w-3" />
             Accepted
           </span>
-        )
+        );
       case 'expired':
         return (
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
             <XIcon className="h-3 w-3" />
             Expired
           </span>
-        )
+        );
       default:
-        return null
+        return null;
     }
-  }
+  };
 
   const getRoleBadge = (role: string) => {
     switch (role) {
@@ -179,27 +230,24 @@ export function InvitesPage() {
           <span className="px-2 py-0.5 rounded text-xs font-medium bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300">
             Admin
           </span>
-        )
+        );
       case 'MANAGER':
         return (
           <span className="px-2 py-0.5 rounded text-xs font-medium bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300">
             Manager
           </span>
-        )
+        );
       default:
         return (
           <span className="px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
             User
           </span>
-        )
+        );
     }
-  }
+  };
 
   return (
-    <AdminLayout
-      title="Invites"
-      description="Send and manage user invitations"
-    >
+    <AdminLayout title="Invites" description="Send and manage user invitations">
       {/* Filters & Actions */}
       <div className="mb-6 flex flex-wrap gap-4 items-center justify-between">
         <div className="flex gap-4">
@@ -207,8 +255,8 @@ export function InvitesPage() {
           <select
             value={statusFilter}
             onChange={(e) => {
-              setStatusFilter(e.target.value as InviteStatus)
-              setPage(0)
+              setStatusFilter(e.target.value as InviteStatus);
+              setPage(0);
             }}
             className="px-4 py-2 border border-input rounded-lg bg-card text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           >
@@ -237,11 +285,7 @@ export function InvitesPage() {
       )}
 
       {/* Loading state */}
-      {isLoading && (
-        <div className="text-center py-12 text-gray-500">
-          Loading invites...
-        </div>
-      )}
+      {isLoading && <div className="text-center py-12 text-gray-500">Loading invites...</div>}
 
       {/* Invites table */}
       {data && (
@@ -282,17 +326,11 @@ export function InvitesPage() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <MailIcon className="h-4 w-4 text-gray-400" />
-                        <span className="font-medium text-foreground">
-                          {invite.email}
-                        </span>
+                        <span className="font-medium text-foreground">{invite.email}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3">
-                      {getRoleBadge(invite.role)}
-                    </td>
-                    <td className="px-4 py-3">
-                      {getStatusBadge(invite.status)}
-                    </td>
+                    <td className="px-4 py-3">{getRoleBadge(invite.role)}</td>
+                    <td className="px-4 py-3">{getStatusBadge(invite.status)}</td>
                     <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
                       {invite.invitedBy.name}
                     </td>
@@ -317,7 +355,7 @@ export function InvitesPage() {
                           <button
                             onClick={() => {
                               if (confirm('Are you sure you want to cancel this invite?')) {
-                                cancelInviteMutation.mutate({ inviteId: invite.id })
+                                cancelInviteMutation.mutate({ inviteId: invite.id });
                               }
                             }}
                             disabled={cancelInviteMutation.isPending}
@@ -355,7 +393,8 @@ export function InvitesPage() {
           {/* Pagination */}
           <div className="mt-4 flex items-center justify-between">
             <div className="text-sm text-gray-600 dark:text-gray-400">
-              Showing {page * limit + 1} to {Math.min((page + 1) * limit, data.total)} of {data.total} invites
+              Showing {page * limit + 1} to {Math.min((page + 1) * limit, data.total)} of{' '}
+              {data.total} invites
             </div>
             <div className="flex gap-2">
               <button
@@ -396,9 +435,7 @@ export function InvitesPage() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-card rounded-lg shadow-xl max-w-md w-full mx-4">
             <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="text-lg font-semibold text-foreground">
-                Send Invites
-              </h3>
+              <h3 className="text-lg font-semibold text-foreground">Send Invites</h3>
             </div>
 
             <div className="px-6 py-4 space-y-4">
@@ -478,9 +515,9 @@ export function InvitesPage() {
             <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-3">
               <button
                 onClick={() => {
-                  setShowSendModal(false)
-                  setEmailInput('')
-                  sendInviteMutation.reset()
+                  setShowSendModal(false);
+                  setEmailInput('');
+                  sendInviteMutation.reset();
                 }}
                 className="px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-accent rounded-lg transition-colors"
               >
@@ -498,7 +535,7 @@ export function InvitesPage() {
         </div>
       )}
     </AdminLayout>
-  )
+  );
 }
 
-export default InvitesPage
+export default InvitesPage;

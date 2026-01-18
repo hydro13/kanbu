@@ -18,63 +18,63 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { Calendar, Users, Tag, Clock, Columns, GitBranch, Flag, Play } from 'lucide-react'
-import { MilestoneSelector } from '@/components/milestone/MilestoneSelector'
-import { TagSelector } from '@/components/task/TagSelector'
-import { DateSelector } from '@/components/task/DateSelector'
-import { AssigneeSelector } from '@/components/task/AssigneeSelector'
-import { LocationSelector } from '@/components/task/LocationSelector'
-import { TimeEstimatedSelector } from '@/components/task/TimeEstimatedSelector'
+import { Calendar, Users, Tag, Clock, Columns, GitBranch, Flag, Play } from 'lucide-react';
+import { MilestoneSelector } from '@/components/milestone/MilestoneSelector';
+import { TagSelector } from '@/components/task/TagSelector';
+import { DateSelector } from '@/components/task/DateSelector';
+import { AssigneeSelector } from '@/components/task/AssigneeSelector';
+import { LocationSelector } from '@/components/task/LocationSelector';
+import { TimeEstimatedSelector } from '@/components/task/TimeEstimatedSelector';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface TaskData {
-  id: number
-  dateDue: string | null
-  dateStarted: string | null
-  dateCompleted: string | null
-  createdAt: string
-  updatedAt: string
-  timeEstimated: number
-  timeSpent: number
+  id: number;
+  dateDue: string | null;
+  dateStarted: string | null;
+  dateCompleted: string | null;
+  createdAt: string;
+  updatedAt: string;
+  timeEstimated: number;
+  timeSpent: number;
   column: {
-    id: number
-    title: string
-  }
+    id: number;
+    title: string;
+  };
   swimlane: {
-    id: number
-    name: string
-  } | null
+    id: number;
+    name: string;
+  } | null;
   milestone: {
-    id: number
-    name: string
-  } | null
+    id: number;
+    name: string;
+  } | null;
   assignees: Array<{
-    id: number
+    id: number;
     user: {
-      id: number
-      username: string
-      name: string | null
-      avatarUrl: string | null
-    }
-  }>
+      id: number;
+      username: string;
+      name: string | null;
+      avatarUrl: string | null;
+    };
+  }>;
   tags: Array<{
-    id: number
+    id: number;
     tag: {
-      id: number
-      name: string
-      color: string | null
-    }
-  }>
+      id: number;
+      name: string;
+      color: string | null;
+    };
+  }>;
 }
 
 export interface TaskSidebarProps {
-  task: TaskData
-  projectId: number
-  onUpdate: (data: { taskId: number } & Record<string, unknown>) => Promise<unknown>
-  isUpdating: boolean
+  task: TaskData;
+  projectId: number;
+  onUpdate: (data: { taskId: number } & Record<string, unknown>) => Promise<unknown>;
+  isUpdating: boolean;
 }
 
 // =============================================================================
@@ -82,36 +82,36 @@ export interface TaskSidebarProps {
 // =============================================================================
 
 function formatDate(dateString: string | null): string | null {
-  if (!dateString) return null
-  const date = new Date(dateString)
+  if (!dateString) return null;
+  const date = new Date(dateString);
   return date.toLocaleDateString(undefined, {
     weekday: 'short',
     month: 'short',
     day: 'numeric',
     year: 'numeric',
-  })
+  });
 }
 
 function formatTime(hours: number): string {
-  if (hours === 0) return 'Not set'
+  if (hours === 0) return 'Not set';
   if (hours < 1) {
-    const mins = Math.round(hours * 60)
-    return `${mins}m`
+    const mins = Math.round(hours * 60);
+    return `${mins}m`;
   }
-  const h = Math.floor(hours)
-  const m = Math.round((hours - h) * 60)
-  return m > 0 ? `${h}h ${m}m` : `${h}h`
+  const h = Math.floor(hours);
+  const m = Math.round((hours - h) * 60);
+  return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
 
 function formatDateTime(dateString: string): string {
-  const date = new Date(dateString)
+  const date = new Date(dateString);
   return date.toLocaleString(undefined, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-  })
+  });
 }
 
 // =============================================================================
@@ -123,9 +123,9 @@ function SidebarSection({
   label,
   children,
 }: {
-  icon: React.ComponentType<{ className?: string }>
-  label: string
-  children: React.ReactNode
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  children: React.ReactNode;
 }) {
   return (
     <div className="space-y-2">
@@ -135,7 +135,7 @@ function SidebarSection({
       </div>
       <div className="pl-6">{children}</div>
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -148,7 +148,7 @@ export function TaskSidebar({
   onUpdate: _onUpdate,
   isUpdating: _isUpdating,
 }: TaskSidebarProps) {
-  const completedFormatted = formatDate(task.dateCompleted)
+  const completedFormatted = formatDate(task.dateCompleted);
 
   return (
     <div className="space-y-6">
@@ -168,20 +168,12 @@ export function TaskSidebar({
 
       {/* Start Date */}
       <SidebarSection icon={Play} label="Start Date">
-        <DateSelector
-          taskId={task.id}
-          dateType="start"
-          currentDate={task.dateStarted}
-        />
+        <DateSelector taskId={task.id} dateType="start" currentDate={task.dateStarted} />
       </SidebarSection>
 
       {/* Due Date */}
       <SidebarSection icon={Calendar} label="Due Date">
-        <DateSelector
-          taskId={task.id}
-          dateType="due"
-          currentDate={task.dateDue}
-        />
+        <DateSelector taskId={task.id} dateType="due" currentDate={task.dateDue} />
       </SidebarSection>
 
       {/* Milestone */}
@@ -209,10 +201,7 @@ export function TaskSidebar({
       {/* Time Tracking */}
       <SidebarSection icon={Clock} label="Time Tracking">
         <div className="space-y-1 text-sm">
-          <TimeEstimatedSelector
-            taskId={task.id}
-            currentHours={task.timeEstimated}
-          />
+          <TimeEstimatedSelector taskId={task.id} currentHours={task.timeEstimated} />
           <div className="flex justify-between">
             <span className="text-gray-600 dark:text-gray-400">Spent:</span>
             <span className="text-foreground">{formatTime(task.timeSpent)}</span>
@@ -239,7 +228,7 @@ export function TaskSidebar({
         </div>
       </SidebarSection>
     </div>
-  )
+  );
 }
 
-export default TaskSidebar
+export default TaskSidebar;

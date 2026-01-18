@@ -13,29 +13,29 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { z } from 'zod'
-import { requireAuth, client, success, formatRelativeTime, truncate } from '../tools.js'
+import { z } from 'zod';
+import { requireAuth, client, success, formatRelativeTime, truncate } from '../tools.js';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface Comment {
-  id: number
-  content: string
-  createdAt: string
-  updatedAt: string
+  id: number;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
   user: {
-    id: number
-    username: string
-    name: string
-  }
+    id: number;
+    username: string;
+    name: string;
+  };
 }
 
 interface CommentListResponse {
-  comments: Comment[]
-  total: number
-  hasMore: boolean
+  comments: Comment[];
+  total: number;
+  hasMore: boolean;
 }
 
 // =============================================================================
@@ -45,21 +45,21 @@ interface CommentListResponse {
 export const ListCommentsSchema = z.object({
   taskId: z.number().describe('Task ID to list comments for'),
   limit: z.number().optional().describe('Maximum number of comments (default: 20)'),
-})
+});
 
 export const AddCommentSchema = z.object({
   taskId: z.number().describe('Task ID to add comment to'),
   content: z.string().describe('Comment text'),
-})
+});
 
 export const UpdateCommentSchema = z.object({
   commentId: z.number().describe('Comment ID to update'),
   content: z.string().describe('New comment text'),
-})
+});
 
 export const DeleteCommentSchema = z.object({
   commentId: z.number().describe('Comment ID to delete'),
-})
+});
 
 // =============================================================================
 // Tool Definitions
@@ -122,7 +122,8 @@ export const commentToolDefinitions = [
   },
   {
     name: 'kanbu_delete_comment',
-    description: 'Delete a comment. You can delete your own comments, or any comment if you are a project manager.',
+    description:
+      'Delete a comment. You can delete your own comments, or any comment if you are a project manager.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -134,7 +135,7 @@ export const commentToolDefinitions = [
       required: ['commentId'],
     },
   },
-]
+];
 
 // =============================================================================
 // Tool Handlers
@@ -144,8 +145,8 @@ export const commentToolDefinitions = [
  * List comments on a task
  */
 export async function handleListComments(args: unknown) {
-  const input = ListCommentsSchema.parse(args)
-  const config = requireAuth()
+  const input = ListCommentsSchema.parse(args);
+  const config = requireAuth();
 
   const result = await client.call<CommentListResponse>(
     config.kanbuUrl,
@@ -156,37 +157,37 @@ export async function handleListComments(args: unknown) {
       limit: input.limit || 20,
       offset: 0,
     }
-  )
+  );
 
   if (result.comments.length === 0) {
-    return success('No comments on this task.')
+    return success('No comments on this task.');
   }
 
-  const lines: string[] = [`Comments (${result.total}):`, '']
+  const lines: string[] = [`Comments (${result.total}):`, ''];
 
   result.comments.forEach((comment) => {
-    const time = formatRelativeTime(comment.createdAt)
-    const edited = comment.updatedAt !== comment.createdAt ? ' (edited)' : ''
+    const time = formatRelativeTime(comment.createdAt);
+    const edited = comment.updatedAt !== comment.createdAt ? ' (edited)' : '';
 
-    lines.push(`${comment.user.name} - ${time}${edited}`)
-    lines.push(`  ${truncate(comment.content, 200)}`)
-    lines.push(`  ID: ${comment.id}`)
-    lines.push('')
-  })
+    lines.push(`${comment.user.name} - ${time}${edited}`);
+    lines.push(`  ${truncate(comment.content, 200)}`);
+    lines.push(`  ID: ${comment.id}`);
+    lines.push('');
+  });
 
   if (result.hasMore) {
-    lines.push(`... and ${result.total - result.comments.length} more comments`)
+    lines.push(`... and ${result.total - result.comments.length} more comments`);
   }
 
-  return success(lines.join('\n'))
+  return success(lines.join('\n'));
 }
 
 /**
  * Add a comment to a task
  */
 export async function handleAddComment(args: unknown) {
-  const input = AddCommentSchema.parse(args)
-  const config = requireAuth()
+  const input = AddCommentSchema.parse(args);
+  const config = requireAuth();
 
   const comment = await client.call<Comment>(
     config.kanbuUrl,
@@ -194,7 +195,7 @@ export async function handleAddComment(args: unknown) {
     'comment.create',
     input,
     'POST'
-  )
+  );
 
   return success(
     `Comment added:
@@ -203,15 +204,15 @@ ${comment.user.name}:
 ${truncate(comment.content, 200)}
 
 ID: ${comment.id}`
-  )
+  );
 }
 
 /**
  * Update a comment
  */
 export async function handleUpdateComment(args: unknown) {
-  const input = UpdateCommentSchema.parse(args)
-  const config = requireAuth()
+  const input = UpdateCommentSchema.parse(args);
+  const config = requireAuth();
 
   const comment = await client.call<Comment>(
     config.kanbuUrl,
@@ -219,7 +220,7 @@ export async function handleUpdateComment(args: unknown) {
     'comment.update',
     input,
     'POST'
-  )
+  );
 
   return success(
     `Comment updated:
@@ -227,23 +228,20 @@ export async function handleUpdateComment(args: unknown) {
 ${truncate(comment.content, 200)}
 
 ID: ${comment.id}`
-  )
+  );
 }
 
 /**
  * Delete a comment
  */
 export async function handleDeleteComment(args: unknown) {
-  const { commentId } = DeleteCommentSchema.parse(args)
-  const config = requireAuth()
+  const { commentId } = DeleteCommentSchema.parse(args);
+  const config = requireAuth();
 
   // Get comment info before deleting
-  const comment = await client.call<Comment>(
-    config.kanbuUrl,
-    config.token,
-    'comment.get',
-    { commentId }
-  )
+  const comment = await client.call<Comment>(config.kanbuUrl, config.token, 'comment.get', {
+    commentId,
+  });
 
   await client.call<{ success: boolean }>(
     config.kanbuUrl,
@@ -251,12 +249,12 @@ export async function handleDeleteComment(args: unknown) {
     'comment.delete',
     { commentId },
     'POST'
-  )
+  );
 
   return success(
     `Comment deleted:
 
 "${truncate(comment.content, 100)}"
 by ${comment.user.name}`
-  )
+  );
 }

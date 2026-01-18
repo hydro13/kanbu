@@ -14,13 +14,13 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import type { PrismaClient, Prisma } from '@prisma/client'
+import type { PrismaClient, Prisma } from '@prisma/client';
 
 // =============================================================================
 // Types
 // =============================================================================
 
-export type EntityType = 'task' | 'subtask' | 'comment' | 'column' | 'swimlane' | 'project'
+export type EntityType = 'task' | 'subtask' | 'comment' | 'column' | 'swimlane' | 'project';
 
 export type EventType =
   | 'task.created'
@@ -44,22 +44,22 @@ export type EventType =
   | 'swimlane.created'
   | 'swimlane.updated'
   | 'swimlane.deleted'
-  | 'project.updated'
+  | 'project.updated';
 
 export interface ActivityChange {
-  field: string
-  oldValue: unknown
-  newValue: unknown
+  field: string;
+  oldValue: unknown;
+  newValue: unknown;
 }
 
 export interface LogActivityParams {
-  projectId: number
-  userId: number | null
-  eventType: EventType
-  entityType: EntityType
-  entityId: number
-  changes?: ActivityChange[]
-  metadata?: Record<string, unknown>
+  projectId: number;
+  userId: number | null;
+  eventType: EventType;
+  entityType: EntityType;
+  entityId: number;
+  changes?: ActivityChange[];
+  metadata?: Record<string, unknown>;
 }
 
 // =============================================================================
@@ -69,11 +69,16 @@ export interface LogActivityParams {
 /**
  * Log an activity event
  */
-export async function logActivity(
-  prisma: PrismaClient,
-  params: LogActivityParams
-): Promise<void> {
-  const { projectId, userId, eventType, entityType, entityId, changes = [], metadata = {} } = params
+export async function logActivity(prisma: PrismaClient, params: LogActivityParams): Promise<void> {
+  const {
+    projectId,
+    userId,
+    eventType,
+    entityType,
+    entityId,
+    changes = [],
+    metadata = {},
+  } = params;
 
   await prisma.activity.create({
     data: {
@@ -83,7 +88,7 @@ export async function logActivity(
       entityType,
       entityId,
       changes: {
-        changes: changes.map(c => ({
+        changes: changes.map((c) => ({
           field: c.field,
           oldValue: c.oldValue,
           newValue: c.newValue,
@@ -91,13 +96,13 @@ export async function logActivity(
         metadata,
       } as Prisma.InputJsonValue,
     },
-  })
+  });
 
   // Update project last activity timestamp
   await prisma.project.update({
     where: { id: projectId },
     data: { lastActivityAt: new Date() },
-  })
+  });
 }
 
 /**
@@ -117,7 +122,7 @@ export async function logTaskCreated(
     entityType: 'task',
     entityId: taskId,
     metadata: { taskTitle },
-  })
+  });
 }
 
 /**
@@ -130,7 +135,7 @@ export async function logTaskUpdated(
   taskId: number,
   changes: ActivityChange[]
 ): Promise<void> {
-  if (changes.length === 0) return
+  if (changes.length === 0) return;
 
   await logActivity(prisma, {
     projectId,
@@ -139,7 +144,7 @@ export async function logTaskUpdated(
     entityType: 'task',
     entityId: taskId,
     changes,
-  })
+  });
 }
 
 /**
@@ -155,14 +160,14 @@ export async function logTaskMoved(
   fromSwimlane?: string | null,
   toSwimlane?: string | null
 ): Promise<void> {
-  const changes: ActivityChange[] = []
+  const changes: ActivityChange[] = [];
 
   if (fromColumn !== toColumn) {
     changes.push({
       field: 'column',
       oldValue: fromColumn,
       newValue: toColumn,
-    })
+    });
   }
 
   if (fromSwimlane !== toSwimlane) {
@@ -170,10 +175,10 @@ export async function logTaskMoved(
       field: 'swimlane',
       oldValue: fromSwimlane,
       newValue: toSwimlane,
-    })
+    });
   }
 
-  if (changes.length === 0) return
+  if (changes.length === 0) return;
 
   await logActivity(prisma, {
     projectId,
@@ -182,7 +187,7 @@ export async function logTaskMoved(
     entityType: 'task',
     entityId: taskId,
     changes,
-  })
+  });
 }
 
 /**
@@ -200,7 +205,7 @@ export async function logTaskClosed(
     eventType: 'task.closed',
     entityType: 'task',
     entityId: taskId,
-  })
+  });
 }
 
 /**
@@ -218,7 +223,7 @@ export async function logTaskReopened(
     eventType: 'task.reopened',
     entityType: 'task',
     entityId: taskId,
-  })
+  });
 }
 
 /**
@@ -239,7 +244,7 @@ export async function logSubtaskCreated(
     entityType: 'subtask',
     entityId: subtaskId,
     metadata: { taskId, subtaskTitle },
-  })
+  });
 }
 
 /**
@@ -259,7 +264,7 @@ export async function logSubtaskCompleted(
     entityType: 'subtask',
     entityId: subtaskId,
     metadata: { taskId },
-  })
+  });
 }
 
 /**
@@ -279,7 +284,7 @@ export async function logCommentCreated(
     entityType: 'comment',
     entityId: commentId,
     metadata: { taskId },
-  })
+  });
 }
 
 /**
@@ -290,7 +295,7 @@ export function detectChanges<T extends Record<string, unknown>>(
   newValues: Partial<T>,
   fieldsToTrack: (keyof T)[]
 ): ActivityChange[] {
-  const changes: ActivityChange[] = []
+  const changes: ActivityChange[] = [];
 
   for (const field of fieldsToTrack) {
     if (field in newValues && newValues[field] !== oldValues[field]) {
@@ -298,9 +303,9 @@ export function detectChanges<T extends Record<string, unknown>>(
         field: String(field),
         oldValue: oldValues[field],
         newValue: newValues[field],
-      })
+      });
     }
   }
 
-  return changes
+  return changes;
 }

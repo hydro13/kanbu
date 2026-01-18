@@ -4,11 +4,11 @@ This directory contains the vision and implementation documentation for GitHub i
 
 ## Documents
 
-| Document | Description |
-|----------|--------------|
-| [VISIE.md](./VISIE.md) | The overarching vision for GitHub integration - **READ THIS FIRST** |
-| [ROADMAP.md](./ROADMAP.md) | Phasing and deliverables per phase |
-| [IMPLEMENTATIE-PLAN.md](./IMPLEMENTATIE-PLAN.md) | Technical implementation plan with steps and code examples |
+| Document                                         | Description                                                         |
+| ------------------------------------------------ | ------------------------------------------------------------------- |
+| [VISIE.md](./VISIE.md)                           | The overarching vision for GitHub integration - **READ THIS FIRST** |
+| [ROADMAP.md](./ROADMAP.md)                       | Phasing and deliverables per phase                                  |
+| [IMPLEMENTATIE-PLAN.md](./IMPLEMENTATIE-PLAN.md) | Technical implementation plan with steps and code examples          |
 
 ## Core Message
 
@@ -28,6 +28,7 @@ This directory contains the vision and implementation documentation for GitHub i
 **Goal:** Build a complete 1-to-1 replica of GitHub Projects within Kanbu.
 
 Everything GitHub Projects can do, Kanbu must also be able to do:
+
 - ✅ Board views (Kanban)
 - ✅ List views
 - ✅ Table views
@@ -67,14 +68,14 @@ Workspace
 
 ### GitHub Module Entities
 
-| GitHub | Kanbu Table | Sync |
-|--------|-------------|------|
-| Repository | GitHubRepository | ↔️ |
-| Issue | GitHubIssue | ↔️ |
-| Milestone | GitHubMilestone | ↔️ |
+| GitHub       | Kanbu Table       | Sync          |
+| ------------ | ----------------- | ------------- |
+| Repository   | GitHubRepository  | ↔️            |
+| Issue        | GitHubIssue       | ↔️            |
+| Milestone    | GitHubMilestone   | ↔️            |
 | Pull Request | GitHubPullRequest | ← (read-only) |
-| Commit | GitHubCommit | ← (read-only) |
-| Comment | GitHubComment | ↔️ |
+| Commit       | GitHubCommit      | ← (read-only) |
+| Comment      | GitHubComment     | ↔️            |
 
 ### What Does NOT Sync (Kanbu-only)
 

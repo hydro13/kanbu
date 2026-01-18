@@ -30,11 +30,13 @@ This document describes how to migrate hardcoded Tailwind colors to the Kanbu de
 ### Principle
 
 **Avoid:**
+
 ```tsx
 <div className="bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
 ```
 
 **Use:**
+
 ```tsx
 <div className="bg-background text-foreground">
 ```
@@ -45,29 +47,29 @@ This document describes how to migrate hardcoded Tailwind colors to the Kanbu de
 
 ### Backgrounds
 
-| Old Pattern | New Pattern | Token |
-|-------------|-------------|-------|
-| `bg-white dark:bg-gray-900` | `bg-background` | `--background` |
-| `bg-white dark:bg-gray-800` | `bg-card` | `--card` |
-| `bg-gray-50 dark:bg-gray-800` | `bg-surface-2` | `--surface-2` |
-| `bg-gray-100 dark:bg-gray-700` | `bg-surface-3` | `--surface-3` |
-| `bg-gray-50 dark:bg-gray-700` | `bg-muted` | `--muted` |
-| `bg-blue-50 dark:bg-blue-900/20` | `bg-accent` | `--accent` |
+| Old Pattern                      | New Pattern     | Token          |
+| -------------------------------- | --------------- | -------------- |
+| `bg-white dark:bg-gray-900`      | `bg-background` | `--background` |
+| `bg-white dark:bg-gray-800`      | `bg-card`       | `--card`       |
+| `bg-gray-50 dark:bg-gray-800`    | `bg-surface-2`  | `--surface-2`  |
+| `bg-gray-100 dark:bg-gray-700`   | `bg-surface-3`  | `--surface-3`  |
+| `bg-gray-50 dark:bg-gray-700`    | `bg-muted`      | `--muted`      |
+| `bg-blue-50 dark:bg-blue-900/20` | `bg-accent`     | `--accent`     |
 
 ### Text Colors
 
-| Old Pattern | New Pattern | Token |
-|-------------|-------------|-------|
-| `text-gray-900 dark:text-gray-100` | `text-foreground` | `--foreground` |
-| `text-gray-900 dark:text-white` | `text-foreground` | `--foreground` |
+| Old Pattern                        | New Pattern             | Token                |
+| ---------------------------------- | ----------------------- | -------------------- |
+| `text-gray-900 dark:text-gray-100` | `text-foreground`       | `--foreground`       |
+| `text-gray-900 dark:text-white`    | `text-foreground`       | `--foreground`       |
 | `text-gray-600 dark:text-gray-300` | `text-muted-foreground` | `--muted-foreground` |
 | `text-gray-500 dark:text-gray-400` | `text-muted-foreground` | `--muted-foreground` |
 | `text-gray-400 dark:text-gray-500` | `text-muted-foreground` | `--muted-foreground` |
 
 ### Borders
 
-| Old Pattern | New Pattern | Token |
-|-------------|-------------|-------|
+| Old Pattern                            | New Pattern     | Token      |
+| -------------------------------------- | --------------- | ---------- |
 | `border-gray-200 dark:border-gray-700` | `border-border` | `--border` |
 | `border-gray-200 dark:border-gray-800` | `border-border` | `--border` |
 | `border-gray-300 dark:border-gray-600` | `border-border` | `--border` |
@@ -75,32 +77,32 @@ This document describes how to migrate hardcoded Tailwind colors to the Kanbu de
 
 ### Status Colors
 
-| Old Pattern | New Pattern | Token |
-|-------------|-------------|-------|
-| `text-green-500` / `text-green-600` | `text-success` | `--success` |
-| `text-red-500` / `text-red-600` | `text-destructive` | `--destructive` |
-| `text-yellow-500` / `text-amber-600` | `text-warning` | `--warning` |
-| `text-blue-500` / `text-blue-600` | `text-info` | `--info` |
-| `bg-green-100 dark:bg-green-900/30` | `bg-success/10` | `--success` |
-| `bg-red-100 dark:bg-red-900/30` | `bg-destructive/10` | `--destructive` |
-| `bg-yellow-100 dark:bg-amber-900/30` | `bg-warning/10` | `--warning` |
+| Old Pattern                          | New Pattern         | Token           |
+| ------------------------------------ | ------------------- | --------------- |
+| `text-green-500` / `text-green-600`  | `text-success`      | `--success`     |
+| `text-red-500` / `text-red-600`      | `text-destructive`  | `--destructive` |
+| `text-yellow-500` / `text-amber-600` | `text-warning`      | `--warning`     |
+| `text-blue-500` / `text-blue-600`    | `text-info`         | `--info`        |
+| `bg-green-100 dark:bg-green-900/30`  | `bg-success/10`     | `--success`     |
+| `bg-red-100 dark:bg-red-900/30`      | `bg-destructive/10` | `--destructive` |
+| `bg-yellow-100 dark:bg-amber-900/30` | `bg-warning/10`     | `--warning`     |
 
 ### Interactive States
 
-| Old Pattern | New Pattern | Token |
-|-------------|-------------|-------|
-| `hover:bg-gray-50 dark:hover:bg-gray-800` | `hover:bg-accent` | `--accent` |
-| `hover:bg-gray-100 dark:hover:bg-gray-700` | `hover:bg-muted` | `--muted` |
-| `focus:ring-blue-500` | `focus:ring-ring` | `--ring` |
-| `focus:border-blue-500` | `focus:border-ring` | `--ring` |
+| Old Pattern                                | New Pattern         | Token      |
+| ------------------------------------------ | ------------------- | ---------- |
+| `hover:bg-gray-50 dark:hover:bg-gray-800`  | `hover:bg-accent`   | `--accent` |
+| `hover:bg-gray-100 dark:hover:bg-gray-700` | `hover:bg-muted`    | `--muted`  |
+| `focus:ring-blue-500`                      | `focus:ring-ring`   | `--ring`   |
+| `focus:border-blue-500`                    | `focus:border-ring` | `--ring`   |
 
 ### Primary/Brand Colors
 
-| Old Pattern | New Pattern | Token |
-|-------------|-------------|-------|
-| `bg-blue-500` / `bg-blue-600` | `bg-primary` | `--primary` |
-| `text-white` (on primary) | `text-primary-foreground` | `--primary-foreground` |
-| `hover:bg-blue-600` | `hover:bg-primary/90` | `--primary` |
+| Old Pattern                   | New Pattern               | Token                  |
+| ----------------------------- | ------------------------- | ---------------------- |
+| `bg-blue-500` / `bg-blue-600` | `bg-primary`              | `--primary`            |
+| `text-white` (on primary)     | `text-primary-foreground` | `--primary-foreground` |
+| `hover:bg-blue-600`           | `hover:bg-primary/90`     | `--primary`            |
 
 ---
 
@@ -113,6 +115,7 @@ bg-(white|black|gray|blue|red|green|orange|yellow|amber|teal|violet|rose|cyan)-?
 ```
 
 **Usage in VS Code:**
+
 1. Open Search (Ctrl+Shift+F)
 2. Enable Regex (Alt+R)
 3. Search in `*.tsx` files
@@ -154,6 +157,7 @@ divide-(gray)-\d{2,3}
 ### Card Component
 
 **Before:**
+
 ```tsx
 <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
   <h3 className="text-gray-900 dark:text-white font-semibold">Title</h3>
@@ -162,6 +166,7 @@ divide-(gray)-\d{2,3}
 ```
 
 **After:**
+
 ```tsx
 <div className="bg-card border border-border rounded-lg shadow-sm">
   <h3 className="text-card-foreground font-semibold">Title</h3>
@@ -172,6 +177,7 @@ divide-(gray)-\d{2,3}
 ### Page Header
 
 **Before:**
+
 ```tsx
 <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
   <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Page Title</h1>
@@ -180,6 +186,7 @@ divide-(gray)-\d{2,3}
 ```
 
 **After:**
+
 ```tsx
 <div className="bg-background border-b border-border">
   <h1 className="text-2xl font-bold text-foreground">Page Title</h1>
@@ -190,6 +197,7 @@ divide-(gray)-\d{2,3}
 ### Table Row
 
 **Before:**
+
 ```tsx
 <tr className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800">
   <td className="text-gray-900 dark:text-gray-100">Content</td>
@@ -198,6 +206,7 @@ divide-(gray)-\d{2,3}
 ```
 
 **After:**
+
 ```tsx
 <tr className="border-b border-border hover:bg-muted/50">
   <td className="text-foreground">Content</td>
@@ -208,6 +217,7 @@ divide-(gray)-\d{2,3}
 ### Status Badge
 
 **Before:**
+
 ```tsx
 <span className="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 px-2 py-1 rounded-full text-xs">
   Active
@@ -215,53 +225,53 @@ divide-(gray)-\d{2,3}
 ```
 
 **After:**
+
 ```tsx
 <Badge variant="success">Active</Badge>
 ```
 
 Or manually:
+
 ```tsx
-<span className="bg-success/10 text-success px-2 py-1 rounded-full text-xs">
-  Active
-</span>
+<span className="bg-success/10 text-success px-2 py-1 rounded-full text-xs">Active</span>
 ```
 
 ### Form Input
 
 **Before:**
+
 ```tsx
-<input
-  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
-/>
+<input className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500" />
 ```
 
 **After:**
+
 ```tsx
 <Input />
 ```
 
 Or manually:
+
 ```tsx
-<input
-  className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:ring-ring focus:border-ring"
-/>
+<input className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:ring-ring focus:border-ring" />
 ```
 
 ### Button
 
 **Before:**
+
 ```tsx
-<button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">
-  Save
-</button>
+<button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">Save</button>
 ```
 
 **After:**
+
 ```tsx
 <Button>Save</Button>
 ```
 
 Or manually:
+
 ```tsx
 <button className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-md">
   Save
@@ -271,6 +281,7 @@ Or manually:
 ### Sidebar Item
 
 **Before:**
+
 ```tsx
 <a className="flex items-center px-3 py-2 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800">
   <Icon className="text-gray-500 dark:text-gray-400" />
@@ -279,6 +290,7 @@ Or manually:
 ```
 
 **After:**
+
 ```tsx
 <a className="flex items-center px-3 py-2 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground">
   <Icon />
@@ -289,11 +301,13 @@ Or manually:
 ### Active Sidebar Item
 
 **Before:**
+
 ```tsx
 <a className="flex items-center px-3 py-2 rounded-md bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
 ```
 
 **After:**
+
 ```tsx
 <a className="flex items-center px-3 py-2 rounded-md bg-accent text-accent-foreground">
 ```
@@ -305,12 +319,14 @@ Or manually:
 ### Dialog/Modal
 
 **Before:**
+
 ```tsx
 <div className="fixed inset-0 bg-black/50">
   <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl">
 ```
 
 **After:**
+
 ```tsx
 <DialogOverlay />
 <DialogContent>
@@ -321,31 +337,31 @@ Or manually:
 ### Tooltip
 
 **Before:**
+
 ```tsx
 <div className="bg-gray-900 dark:bg-gray-700 text-white px-2 py-1 rounded text-sm">
 ```
 
 **After:**
+
 ```tsx
-<TooltipContent>
-  {/* Uses --tooltip-background, --tooltip-foreground */}
-</TooltipContent>
+<TooltipContent>{/* Uses --tooltip-background, --tooltip-foreground */}</TooltipContent>
 ```
 
 ### Dropdown Menu
 
 **Before:**
+
 ```tsx
 <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg">
   <button className="hover:bg-gray-100 dark:hover:bg-gray-700">
 ```
 
 **After:**
+
 ```tsx
 <DropdownMenuContent>
-  <DropdownMenuItem>
-    {/* Uses bg-popover, hover:bg-accent automatically */}
-  </DropdownMenuItem>
+  <DropdownMenuItem>{/* Uses bg-popover, hover:bg-accent automatically */}</DropdownMenuItem>
 </DropdownMenuContent>
 ```
 
@@ -393,8 +409,10 @@ Some hardcoded colors are acceptable:
 Document these exceptions with a comment:
 
 ```tsx
-{/* Exception: External brand color, cannot use token */}
-<div className="bg-[#1DA1F2]">Twitter Blue</div>
+{
+  /* Exception: External brand color, cannot use token */
+}
+<div className="bg-[#1DA1F2]">Twitter Blue</div>;
 ```
 
 ---
@@ -420,6 +438,7 @@ Document these exceptions with a comment:
 **Cause:** Hardcoded `focus:ring-blue-500`.
 
 **Solution:**
+
 ```tsx
 // Problem
 <input className="focus:ring-blue-500" />
@@ -433,6 +452,7 @@ Document these exceptions with a comment:
 **Cause:** Hardcoded hover color.
 
 **Solution:**
+
 ```tsx
 // Problem
 <button className="hover:bg-gray-100 dark:hover:bg-gray-700">
@@ -448,6 +468,7 @@ Document these exceptions with a comment:
 **Cause:** Wrong variant or hardcoded color.
 
 **Solution:**
+
 ```tsx
 // Problem
 <span className="bg-green-100 text-green-800">Success</span>
@@ -461,6 +482,7 @@ Document these exceptions with a comment:
 **Cause:** Hardcoded light border color.
 
 **Solution:**
+
 ```tsx
 // Problem
 <div className="border border-gray-200">  // Invisible on dark background
@@ -479,5 +501,5 @@ Document these exceptions with a comment:
 
 ---
 
-*Document Version: 2.0.0*
-*Last Updated: 2026-01-16*
+_Document Version: 2.0.0_
+_Last Updated: 2026-01-16_

@@ -14,23 +14,23 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState, useCallback } from 'react'
-import { Button } from '@/components/ui/button'
-import { trpc } from '@/lib/trpc'
-import { cn } from '@/lib/utils'
+import { useState, useCallback } from 'react';
+import { Button } from '@/components/ui/button';
+import { trpc } from '@/lib/trpc';
+import { cn } from '@/lib/utils';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface TaskQuickActionsProps {
-  taskId: number
-  projectId: number
-  currentPriority: number
-  isVisible: boolean
-  onOpenDetail?: () => void
-  onOpenContextMenu?: (event: React.MouseEvent) => void
-  className?: string
+  taskId: number;
+  projectId: number;
+  currentPriority: number;
+  isVisible: boolean;
+  onOpenDetail?: () => void;
+  onOpenContextMenu?: (event: React.MouseEvent) => void;
+  className?: string;
 }
 
 // =============================================================================
@@ -53,7 +53,7 @@ function EditIcon() {
         d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
       />
     </svg>
-  )
+  );
 }
 
 function PriorityIcon() {
@@ -72,7 +72,7 @@ function PriorityIcon() {
         d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"
       />
     </svg>
-  )
+  );
 }
 
 function MoreIcon() {
@@ -91,7 +91,7 @@ function MoreIcon() {
         d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"
       />
     </svg>
-  )
+  );
 }
 
 function CheckIcon() {
@@ -103,14 +103,9 @@ function CheckIcon() {
       viewBox="0 0 24 24"
       stroke="currentColor"
     >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M5 13l4 4L19 7"
-      />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
     </svg>
-  )
+  );
 }
 
 // =============================================================================
@@ -123,14 +118,14 @@ const PRIORITIES = [
   { value: 2, label: 'Normal', color: 'bg-yellow-400' },
   { value: 3, label: 'High', color: 'bg-orange-400' },
   { value: 4, label: 'Urgent', color: 'bg-red-500' },
-]
+];
 
 interface PriorityDropdownProps {
-  taskId: number
-  projectId: number
-  currentPriority: number
-  isOpen: boolean
-  onClose: () => void
+  taskId: number;
+  projectId: number;
+  currentPriority: number;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
 function PriorityDropdown({
@@ -140,16 +135,16 @@ function PriorityDropdown({
   isOpen,
   onClose,
 }: PriorityDropdownProps) {
-  const utils = trpc.useUtils()
+  const utils = trpc.useUtils();
 
   const updateMutation = trpc.task.update.useMutation({
     onSuccess: () => {
-      utils.task.list.invalidate({ projectId })
-      onClose()
+      utils.task.list.invalidate({ projectId });
+      onClose();
     },
-  })
+  });
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   return (
     <div className="absolute top-full left-0 mt-1 bg-card rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50 min-w-[120px]">
@@ -164,19 +159,17 @@ function PriorityDropdown({
             updateMutation.mutate({
               taskId,
               priority: priority.value,
-            })
+            });
           }}
           disabled={updateMutation.isPending}
         >
           <span className={cn('w-2 h-2 rounded-full', priority.color)} />
           <span>{priority.label}</span>
-          {currentPriority === priority.value && (
-            <CheckIcon />
-          )}
+          {currentPriority === priority.value && <CheckIcon />}
         </button>
       ))}
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -192,30 +185,30 @@ export function TaskQuickActions({
   onOpenContextMenu,
   className,
 }: TaskQuickActionsProps) {
-  const [showPriorityDropdown, setShowPriorityDropdown] = useState(false)
+  const [showPriorityDropdown, setShowPriorityDropdown] = useState(false);
 
   const handleEditClick = useCallback(
     (e: React.MouseEvent) => {
-      e.stopPropagation()
-      onOpenDetail?.()
+      e.stopPropagation();
+      onOpenDetail?.();
     },
     [onOpenDetail]
-  )
+  );
 
   const handlePriorityClick = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation()
-    setShowPriorityDropdown((prev) => !prev)
-  }, [])
+    e.stopPropagation();
+    setShowPriorityDropdown((prev) => !prev);
+  }, []);
 
   const handleMoreClick = useCallback(
     (e: React.MouseEvent) => {
-      e.stopPropagation()
-      onOpenContextMenu?.(e)
+      e.stopPropagation();
+      onOpenContextMenu?.(e);
     },
     [onOpenContextMenu]
-  )
+  );
 
-  if (!isVisible) return null
+  if (!isVisible) return null;
 
   return (
     <div
@@ -267,7 +260,7 @@ export function TaskQuickActions({
         <MoreIcon />
       </Button>
     </div>
-  )
+  );
 }
 
-export default TaskQuickActions
+export default TaskQuickActions;

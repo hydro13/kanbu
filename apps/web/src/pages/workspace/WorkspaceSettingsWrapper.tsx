@@ -12,49 +12,47 @@
  * ===================================================================
  */
 
-import { useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import { WorkspaceLayout } from '@/components/layout/WorkspaceLayout'
-import { trpc } from '@/lib/trpc'
-import { useAppDispatch } from '@/store'
-import { setCurrentWorkspace } from '@/store/workspaceSlice'
-import { WorkspaceSettingsPage } from '../WorkspaceSettings'
-import { ArrowLeft } from 'lucide-react'
+import { useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { WorkspaceLayout } from '@/components/layout/WorkspaceLayout';
+import { trpc } from '@/lib/trpc';
+import { useAppDispatch } from '@/store';
+import { setCurrentWorkspace } from '@/store/workspaceSlice';
+import { WorkspaceSettingsPage } from '../WorkspaceSettings';
+import { ArrowLeft } from 'lucide-react';
 
 // =============================================================================
 // Component
 // =============================================================================
 
 export function WorkspaceSettingsWrapper() {
-  const { slug } = useParams<{ slug: string }>()
-  const dispatch = useAppDispatch()
+  const { slug } = useParams<{ slug: string }>();
+  const dispatch = useAppDispatch();
 
   // Fetch workspace by slug
-  const workspaceQuery = trpc.workspace.getBySlug.useQuery(
-    { slug: slug! },
-    { enabled: !!slug }
-  )
-  const workspace = workspaceQuery.data
+  const workspaceQuery = trpc.workspace.getBySlug.useQuery({ slug: slug! }, { enabled: !!slug });
+  const workspace = workspaceQuery.data;
 
   // Set current workspace in Redux when loaded
   // Using workspace?.id as dependency to avoid deep type instantiation
   useEffect(() => {
     if (workspace) {
-      dispatch(setCurrentWorkspace({
-        id: workspace.id,
-        name: workspace.name,
-        slug: workspace.slug,
-        description: workspace.description,
-        logoUrl: workspace.logoUrl,
-        role: workspace.role,
-        projectCount: workspace.projectCount,
-        memberCount: workspace.memberCount,
-        createdAt: workspace.createdAt,
-        updatedAt: workspace.updatedAt,
-      }))
+      dispatch(
+        setCurrentWorkspace({
+          id: workspace.id,
+          name: workspace.name,
+          slug: workspace.slug,
+          description: workspace.description,
+          logoUrl: workspace.logoUrl,
+          role: workspace.role,
+          projectCount: workspace.projectCount,
+          memberCount: workspace.memberCount,
+          createdAt: workspace.createdAt,
+          updatedAt: workspace.updatedAt,
+        })
+      );
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [workspace?.id, dispatch])
+  }, [workspace?.id, dispatch]);
 
   // Loading state
   if (workspaceQuery.isLoading) {
@@ -67,7 +65,7 @@ export function WorkspaceSettingsWrapper() {
           </div>
         </div>
       </WorkspaceLayout>
-    )
+    );
   }
 
   // Workspace not found
@@ -82,11 +80,11 @@ export function WorkspaceSettingsWrapper() {
           </Link>
         </div>
       </WorkspaceLayout>
-    )
+    );
   }
 
   // Render the settings page (it uses Redux for current workspace and has its own WorkspaceLayout)
-  return <WorkspaceSettingsPage />
+  return <WorkspaceSettingsPage />;
 }
 
-export default WorkspaceSettingsWrapper
+export default WorkspaceSettingsWrapper;

@@ -14,27 +14,27 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState, useRef, useEffect } from 'react'
-import { trpc, getMediaUrl } from '@/lib/trpc'
-import { Check, X, Loader2, UserPlus } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react';
+import { trpc, getMediaUrl } from '@/lib/trpc';
+import { Check, X, Loader2, UserPlus } from 'lucide-react';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface User {
-  id: number
-  username: string
-  name: string | null
-  avatarUrl: string | null
+  id: number;
+  username: string;
+  name: string | null;
+  avatarUrl: string | null;
 }
 
 export interface AssigneeSelectorProps {
-  projectId: number
-  taskId: number
-  assignees: User[]
-  onAssigneesChange?: (assignees: User[]) => void
-  disabled?: boolean
+  projectId: number;
+  taskId: number;
+  assignees: User[];
+  onAssigneesChange?: (assignees: User[]) => void;
+  disabled?: boolean;
 }
 
 // =============================================================================
@@ -42,9 +42,9 @@ export interface AssigneeSelectorProps {
 // =============================================================================
 
 function UserAvatar({ user, size = 'sm' }: { user: User; size?: 'sm' | 'md' }) {
-  const sizeClass = size === 'sm' ? 'w-6 h-6 text-xs' : 'w-8 h-8 text-sm'
+  const sizeClass = size === 'sm' ? 'w-6 h-6 text-xs' : 'w-8 h-8 text-sm';
 
-  const avatarSrc = getMediaUrl(user.avatarUrl)
+  const avatarSrc = getMediaUrl(user.avatarUrl);
   if (avatarSrc) {
     return (
       <img
@@ -52,7 +52,7 @@ function UserAvatar({ user, size = 'sm' }: { user: User; size?: 'sm' | 'md' }) {
         alt={user.name ?? user.username}
         className={`${sizeClass} rounded-full`}
       />
-    )
+    );
   }
 
   return (
@@ -61,7 +61,7 @@ function UserAvatar({ user, size = 'sm' }: { user: User; size?: 'sm' | 'md' }) {
     >
       {(user.name ?? user.username).charAt(0).toUpperCase()}
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -75,81 +75,81 @@ export function AssigneeSelector({
   onAssigneesChange,
   disabled = false,
 }: AssigneeSelectorProps) {
-  const [isOpen, setIsOpen] = useState(false)
-  const containerRef = useRef<HTMLDivElement>(null)
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const utils = trpc.useUtils()
+  const utils = trpc.useUtils();
 
   // Fetch project members
   const { data: members, isLoading: isLoadingMembers } = trpc.project.getMembers.useQuery(
     { projectId },
     { enabled: projectId > 0 }
-  )
+  );
 
   // Set assignees mutation
   const setAssigneesMutation = trpc.task.setAssignees.useMutation({
     onSuccess: () => {
-      utils.task.get.invalidate({ taskId })
+      utils.task.get.invalidate({ taskId });
     },
-  })
+  });
 
   // Close dropdown on click outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false)
+        setIsOpen(false);
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
-  const assigneeIds = new Set(assignees.map((a) => a.id))
+  const assigneeIds = new Set(assignees.map((a) => a.id));
 
   const handleToggleAssignee = (member: User) => {
-    if (disabled) return
+    if (disabled) return;
 
-    let newAssigneeIds: number[]
-    let newAssignees: User[]
+    let newAssigneeIds: number[];
+    let newAssignees: User[];
 
     if (assigneeIds.has(member.id)) {
       // Remove
-      newAssigneeIds = assignees.filter((a) => a.id !== member.id).map((a) => a.id)
-      newAssignees = assignees.filter((a) => a.id !== member.id)
+      newAssigneeIds = assignees.filter((a) => a.id !== member.id).map((a) => a.id);
+      newAssignees = assignees.filter((a) => a.id !== member.id);
     } else {
       // Add
-      newAssigneeIds = [...assignees.map((a) => a.id), member.id]
-      newAssignees = [...assignees, member]
+      newAssigneeIds = [...assignees.map((a) => a.id), member.id];
+      newAssignees = [...assignees, member];
     }
 
     setAssigneesMutation.mutate(
       { taskId, assigneeIds: newAssigneeIds },
       {
         onSuccess: () => {
-          onAssigneesChange?.(newAssignees)
+          onAssigneesChange?.(newAssignees);
         },
       }
-    )
-  }
+    );
+  };
 
   const handleRemoveAssignee = (userId: number) => {
-    if (disabled) return
+    if (disabled) return;
 
-    const newAssigneeIds = assignees.filter((a) => a.id !== userId).map((a) => a.id)
-    const newAssignees = assignees.filter((a) => a.id !== userId)
+    const newAssigneeIds = assignees.filter((a) => a.id !== userId).map((a) => a.id);
+    const newAssignees = assignees.filter((a) => a.id !== userId);
 
     setAssigneesMutation.mutate(
       { taskId, assigneeIds: newAssigneeIds },
       {
         onSuccess: () => {
-          onAssigneesChange?.(newAssignees)
+          onAssigneesChange?.(newAssignees);
         },
       }
-    )
-  }
+    );
+  };
 
-  const isMutating = setAssigneesMutation.isPending
+  const isMutating = setAssigneesMutation.isPending;
 
   return (
     <div ref={containerRef} className="relative">
@@ -159,9 +159,7 @@ export function AssigneeSelector({
           assignees.map((user) => (
             <div key={user.id} className="flex items-center gap-2 group">
               <UserAvatar user={user} />
-              <span className="text-sm text-foreground flex-1">
-                {user.name ?? user.username}
-              </span>
+              <span className="text-sm text-foreground flex-1">{user.name ?? user.username}</span>
               {!disabled && (
                 <button
                   onClick={() => handleRemoveAssignee(user.id)}
@@ -205,7 +203,7 @@ export function AssigneeSelector({
           ) : members && members.length > 0 ? (
             <div className="p-1">
               {members.map((member) => {
-                const isAssigned = assigneeIds.has(member.id)
+                const isAssigned = assigneeIds.has(member.id);
                 return (
                   <button
                     key={member.id}
@@ -219,9 +217,7 @@ export function AssigneeSelector({
                     }
                     disabled={isMutating}
                     className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-left text-sm transition-colors ${
-                      isAssigned
-                        ? 'bg-blue-50 dark:bg-blue-900/30'
-                        : 'hover:bg-accent'
+                      isAssigned ? 'bg-blue-50 dark:bg-blue-900/30' : 'hover:bg-accent'
                     }`}
                   >
                     <UserAvatar
@@ -244,7 +240,7 @@ export function AssigneeSelector({
                     </div>
                     {isAssigned && <Check className="w-4 h-4 text-blue-500 flex-shrink-0" />}
                   </button>
-                )
+                );
               })}
             </div>
           ) : (
@@ -255,7 +251,7 @@ export function AssigneeSelector({
         </div>
       )}
     </div>
-  )
+  );
 }
 
-export default AssigneeSelector
+export default AssigneeSelector;

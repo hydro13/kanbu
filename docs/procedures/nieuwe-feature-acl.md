@@ -22,12 +22,12 @@ visible to users.
 
 Features have one of the following scopes:
 
-| Scope | Count | Examples |
-|-------|--------|-------------|
-| `dashboard` | 4 | overview, my-tasks, my-subtasks, my-workspaces |
-| `profile` | 16 | summary, time-tracking, last-logins, sessions, edit-profile, notifications, api-tokens, etc. |
-| `admin` | 9 | users, create-user, acl, permission-tree, invites, workspaces, settings-general, etc. |
-| `project` | 11 | board, list, calendar, timeline, sprints, milestones, analytics, members, settings, etc. |
+| Scope       | Count | Examples                                                                                     |
+| ----------- | ----- | -------------------------------------------------------------------------------------------- |
+| `dashboard` | 4     | overview, my-tasks, my-subtasks, my-workspaces                                               |
+| `profile`   | 16    | summary, time-tracking, last-logins, sessions, edit-profile, notifications, api-tokens, etc. |
+| `admin`     | 9     | users, create-user, acl, permission-tree, invites, workspaces, settings-general, etc.        |
+| `project`   | 11    | board, list, calendar, timeline, sprints, milestones, analytics, members, settings, etc.     |
 
 **Total: 40 features in the system**
 
@@ -44,13 +44,13 @@ const ADMIN_FEATURES: FeatureDefinition[] = [
   // ... existing features
   {
     scope: 'admin',
-    slug: 'audit-log',           // Unique identifier
-    name: 'Audit Log',           // Display name
+    slug: 'audit-log', // Unique identifier
+    name: 'Audit Log', // Display name
     description: 'View system audit log',
-    icon: 'log',                 // Icon identifier
-    sortOrder: 60,               // Order in menu
+    icon: 'log', // Icon identifier
+    sortOrder: 60, // Order in menu
   },
-]
+];
 ```
 
 ### Example: Dashboard Feature
@@ -66,7 +66,7 @@ const DASHBOARD_FEATURES: FeatureDefinition[] = [
     icon: 'calendar',
     sortOrder: 50,
   },
-]
+];
 ```
 
 ### Example: Project Feature
@@ -82,7 +82,7 @@ const PROJECT_FEATURES: FeatureDefinition[] = [
     icon: 'document',
     sortOrder: 300,
   },
-]
+];
 ```
 
 ## Step 3: Run the Seed
@@ -93,6 +93,7 @@ pnpm tsx prisma/seed-features.ts
 ```
 
 You should see output like:
+
 ```
 Seeding features...
 
@@ -111,7 +112,7 @@ The `ProjectSidebar` already uses ACL checks. Just add the menu item:
 ```typescript
 // In apps/web/src/components/layout/ProjectSidebar.tsx
 function getNavSections(workspaceSlug: string, projectIdentifier: string): NavSection[] {
-  const basePath = `/workspace/${workspaceSlug}/project/${projectIdentifier}`
+  const basePath = `/workspace/${workspaceSlug}/project/${projectIdentifier}`;
   return [
     // ...
     {
@@ -121,7 +122,7 @@ function getNavSections(workspaceSlug: string, projectIdentifier: string): NavSe
         { label: 'Wiki', path: `${basePath}/wiki`, icon: WikiIcon, slug: 'wiki' },
       ],
     },
-  ]
+  ];
 }
 ```
 
@@ -131,27 +132,25 @@ To update the AdminSidebar with ACL checks:
 
 ```typescript
 // In apps/web/src/components/admin/AdminSidebar.tsx
-import { useAdminFeatureAccess, type AdminFeatureSlug } from '@/hooks/useFeatureAccess'
+import { useAdminFeatureAccess, type AdminFeatureSlug } from '@/hooks/useFeatureAccess';
 
 export function AdminSidebar({ collapsed = false }: AdminSidebarProps) {
-  const { canSeeFeature, isLoading } = useAdminFeatureAccess()
+  const { canSeeFeature, isLoading } = useAdminFeatureAccess();
 
   // Add slug to nav items
   interface NavItem {
-    label: string
-    path: string
-    icon: React.ComponentType<{ className?: string }>
-    slug: AdminFeatureSlug
+    label: string;
+    path: string;
+    icon: React.ComponentType<{ className?: string }>;
+    slug: AdminFeatureSlug;
   }
 
   const navItems: NavItem[] = [
     { label: 'Audit Log', path: '/admin/audit', icon: LogIcon, slug: 'audit-log' },
-  ]
+  ];
 
   // Filter based on ACL
-  const filteredItems = navItems.filter(item =>
-    isLoading || canSeeFeature(item.slug)
-  )
+  const filteredItems = navItems.filter((item) => isLoading || canSeeFeature(item.slug));
 
   // ... render filteredItems
 }
@@ -161,7 +160,7 @@ export function AdminSidebar({ collapsed = false }: AdminSidebarProps) {
 
 ```typescript
 // In apps/web/src/components/dashboard/DashboardSidebar.tsx
-import { useDashboardFeatureAccess, type DashboardFeatureSlug } from '@/hooks/useFeatureAccess'
+import { useDashboardFeatureAccess, type DashboardFeatureSlug } from '@/hooks/useFeatureAccess';
 
 // Same pattern as AdminSidebar
 ```
@@ -188,15 +187,22 @@ export type AdminFeatureSlug =
   | 'settings-general'
   | 'settings-security'
   | 'backup'
-  | 'audit-log'  // New feature
+  | 'audit-log'; // New feature
 
 // Update the feature categories (determines which permission is needed)
-const ADMIN_READ_FEATURES: AdminFeatureSlug[] = ['users', 'workspaces', 'audit-log']
-const ADMIN_EXECUTE_FEATURES: AdminFeatureSlug[] = ['create-user', 'invites']
-const ADMIN_PERMISSIONS_FEATURES: AdminFeatureSlug[] = ['acl', 'permission-tree', 'settings-general', 'settings-security', 'backup']
+const ADMIN_READ_FEATURES: AdminFeatureSlug[] = ['users', 'workspaces', 'audit-log'];
+const ADMIN_EXECUTE_FEATURES: AdminFeatureSlug[] = ['create-user', 'invites'];
+const ADMIN_PERMISSIONS_FEATURES: AdminFeatureSlug[] = [
+  'acl',
+  'permission-tree',
+  'settings-general',
+  'settings-security',
+  'backup',
+];
 ```
 
 **Note:** The feature categories determine which ACL permission level is needed:
+
 - `READ_FEATURES`: Basic access (canRead)
 - `EXECUTE_FEATURES`: Advanced features (canExecute)
 - `PERMISSIONS_FEATURES`: Management features (canManagePermissions)
@@ -221,12 +227,12 @@ This is by design: fail-safe security. To activate a feature:
 
 ## Common Mistakes
 
-| Mistake | Consequence | Solution |
-|------|--------|-----------|
-| Seed not executed | Feature not in database | Run `pnpm tsx prisma/seed-features.ts` |
-| Slug mismatch | Feature not found | Ensure slug in seed and sidebar are identical |
-| Type not updated | TypeScript errors | Update the type definitions |
-| ACL not granted | Feature invisible | Grant permissions in ACL Manager |
+| Mistake           | Consequence             | Solution                                      |
+| ----------------- | ----------------------- | --------------------------------------------- |
+| Seed not executed | Feature not in database | Run `pnpm tsx prisma/seed-features.ts`        |
+| Slug mismatch     | Feature not found       | Ensure slug in seed and sidebar are identical |
+| Type not updated  | TypeScript errors       | Update the type definitions                   |
+| ACL not granted   | Feature invisible       | Grant permissions in ACL Manager              |
 
 ## Related Documentation
 

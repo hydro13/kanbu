@@ -128,7 +128,8 @@ export function useRealtimeSync({
 
       // Invalidate specific task query
       void queryClient.invalidateQueries({
-        predicate: (query) => matchesQueryKey(query, 'task', 'get', (input) => input?.taskId === payload.taskId),
+        predicate: (query) =>
+          matchesQueryKey(query, 'task', 'get', (input) => input?.taskId === payload.taskId),
       });
 
       // Invalidate task list
@@ -235,12 +236,14 @@ export function useRealtimeSync({
 
       // Invalidate comment list for this task
       void queryClient.invalidateQueries({
-        predicate: (query) => matchesQueryKey(query, 'comment', 'list', (input) => input?.taskId === payload.taskId),
+        predicate: (query) =>
+          matchesQueryKey(query, 'comment', 'list', (input) => input?.taskId === payload.taskId),
       });
 
       // Also invalidate task to update comment count
       void queryClient.invalidateQueries({
-        predicate: (query) => matchesQueryKey(query, 'task', 'get', (input) => input?.taskId === payload.taskId),
+        predicate: (query) =>
+          matchesQueryKey(query, 'task', 'get', (input) => input?.taskId === payload.taskId),
       });
     },
     [queryClient, shouldProcess]
@@ -253,7 +256,8 @@ export function useRealtimeSync({
 
       // Invalidate comment list for this task
       void queryClient.invalidateQueries({
-        predicate: (query) => matchesQueryKey(query, 'comment', 'list', (input) => input?.taskId === payload.taskId),
+        predicate: (query) =>
+          matchesQueryKey(query, 'comment', 'list', (input) => input?.taskId === payload.taskId),
       });
     },
     [queryClient, shouldProcess]
@@ -266,12 +270,14 @@ export function useRealtimeSync({
 
       // Invalidate comment list for this task
       void queryClient.invalidateQueries({
-        predicate: (query) => matchesQueryKey(query, 'comment', 'list', (input) => input?.taskId === payload.taskId),
+        predicate: (query) =>
+          matchesQueryKey(query, 'comment', 'list', (input) => input?.taskId === payload.taskId),
       });
 
       // Also invalidate task to update comment count
       void queryClient.invalidateQueries({
-        predicate: (query) => matchesQueryKey(query, 'task', 'get', (input) => input?.taskId === payload.taskId),
+        predicate: (query) =>
+          matchesQueryKey(query, 'task', 'get', (input) => input?.taskId === payload.taskId),
       });
     },
     [queryClient, shouldProcess]
@@ -284,12 +290,14 @@ export function useRealtimeSync({
 
       // Invalidate subtask list for this task
       void queryClient.invalidateQueries({
-        predicate: (query) => matchesQueryKey(query, 'subtask', 'list', (input) => input?.taskId === payload.taskId),
+        predicate: (query) =>
+          matchesQueryKey(query, 'subtask', 'list', (input) => input?.taskId === payload.taskId),
       });
 
       // Also invalidate task to update subtask count and progress
       void queryClient.invalidateQueries({
-        predicate: (query) => matchesQueryKey(query, 'task', 'get', (input) => input?.taskId === payload.taskId),
+        predicate: (query) =>
+          matchesQueryKey(query, 'task', 'get', (input) => input?.taskId === payload.taskId),
       });
 
       // Invalidate task list for progress update
@@ -307,12 +315,14 @@ export function useRealtimeSync({
 
       // Invalidate subtask list for this task
       void queryClient.invalidateQueries({
-        predicate: (query) => matchesQueryKey(query, 'subtask', 'list', (input) => input?.taskId === payload.taskId),
+        predicate: (query) =>
+          matchesQueryKey(query, 'subtask', 'list', (input) => input?.taskId === payload.taskId),
       });
 
       // Also invalidate task to update progress
       void queryClient.invalidateQueries({
-        predicate: (query) => matchesQueryKey(query, 'task', 'get', (input) => input?.taskId === payload.taskId),
+        predicate: (query) =>
+          matchesQueryKey(query, 'task', 'get', (input) => input?.taskId === payload.taskId),
       });
 
       // Invalidate task list for progress update
@@ -330,12 +340,14 @@ export function useRealtimeSync({
 
       // Invalidate subtask list for this task
       void queryClient.invalidateQueries({
-        predicate: (query) => matchesQueryKey(query, 'subtask', 'list', (input) => input?.taskId === payload.taskId),
+        predicate: (query) =>
+          matchesQueryKey(query, 'subtask', 'list', (input) => input?.taskId === payload.taskId),
       });
 
       // Also invalidate task to update subtask count and progress
       void queryClient.invalidateQueries({
-        predicate: (query) => matchesQueryKey(query, 'task', 'get', (input) => input?.taskId === payload.taskId),
+        predicate: (query) =>
+          matchesQueryKey(query, 'task', 'get', (input) => input?.taskId === payload.taskId),
       });
 
       // Invalidate task list for progress update
@@ -353,12 +365,14 @@ export function useRealtimeSync({
 
       // Invalidate tag list for this task
       void queryClient.invalidateQueries({
-        predicate: (query) => matchesQueryKey(query, 'tag', 'getTaskTags', (input) => input?.taskId === payload.taskId),
+        predicate: (query) =>
+          matchesQueryKey(query, 'tag', 'getTaskTags', (input) => input?.taskId === payload.taskId),
       });
 
       // Also invalidate task to update tags display
       void queryClient.invalidateQueries({
-        predicate: (query) => matchesQueryKey(query, 'task', 'get', (input) => input?.taskId === payload.taskId),
+        predicate: (query) =>
+          matchesQueryKey(query, 'task', 'get', (input) => input?.taskId === payload.taskId),
       });
 
       // Invalidate task list for tags display
@@ -376,12 +390,14 @@ export function useRealtimeSync({
 
       // Invalidate tag list for this task
       void queryClient.invalidateQueries({
-        predicate: (query) => matchesQueryKey(query, 'tag', 'getTaskTags', (input) => input?.taskId === payload.taskId),
+        predicate: (query) =>
+          matchesQueryKey(query, 'tag', 'getTaskTags', (input) => input?.taskId === payload.taskId),
       });
 
       // Also invalidate task to update tags display
       void queryClient.invalidateQueries({
-        predicate: (query) => matchesQueryKey(query, 'task', 'get', (input) => input?.taskId === payload.taskId),
+        predicate: (query) =>
+          matchesQueryKey(query, 'task', 'get', (input) => input?.taskId === payload.taskId),
       });
 
       // Invalidate task list for tags display

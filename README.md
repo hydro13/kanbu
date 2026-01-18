@@ -22,19 +22,20 @@ Most project management tools are either **too simple** (Trello) or **too comple
 
 Kanbu is different:
 
-| Problem | Kanbu Solution |
-|---------|----------------|
+| Problem                                                      | Kanbu Solution                                                       |
+| ------------------------------------------------------------ | -------------------------------------------------------------------- |
 | "I need enterprise permissions but Trello doesn't have them" | **NTFS-style ACL** with inheritance, deny rules, and security groups |
-| "I want AI to help but it can't access my tasks" | **141 MCP tools** - Claude Code works directly in your board |
-| "GitHub issues and my PM tool are never in sync" | **Bi-directional GitHub sync** with webhook integration |
-| "I want to self-host but lose features" | Community edition has MORE features than most paid tools |
-| "My team speaks different languages" | Each user talks to their own AI assistant in their own language |
+| "I want AI to help but it can't access my tasks"             | **141 MCP tools** - Claude Code works directly in your board         |
+| "GitHub issues and my PM tool are never in sync"             | **Bi-directional GitHub sync** with webhook integration              |
+| "I want to self-host but lose features"                      | Community edition has MORE features than most paid tools             |
+| "My team speaks different languages"                         | Each user talks to their own AI assistant in their own language      |
 
 ---
 
 ## Key Features
 
 ### 🎯 Project Management
+
 - **Kanban boards** with drag-and-drop, swimlanes, and WIP limits
 - **Multiple views**: Board, List, Calendar, Timeline
 - **Sprints & Milestones** with burndown charts
@@ -44,6 +45,7 @@ Kanbu is different:
 <img width="2300" height="1407" alt="Kanbu Timeline" src="https://github.com/user-attachments/assets/c301f168-2e77-4b44-9c3a-45c4a38f2167" />
 
 ### 🔐 Enterprise Security (NTFS-Style ACL)
+
 Kanbu implements a robust permission system inspired by Windows (NTFS) and Active Directory.
 
 - **Granular permissions**: Bitmask-based control (Read, Write, Execute, Delete, Permissions).
@@ -53,26 +55,27 @@ Kanbu implements a robust permission system inspired by Windows (NTFS) and Activ
 
 **Permission Bitmask:**
 
-| Bit | Permission | Value | Description |
-|-----|------------|-------|-------------|
-| R | Read | 1 | View resource |
-| W | Write | 2 | Modify resource |
-| X | Execute | 4 | Perform actions (reserved) |
-| D | Delete | 8 | Remove resource |
-| P | Permissions | 16 | Manage ACL entries |
+| Bit | Permission  | Value | Description                |
+| --- | ----------- | ----- | -------------------------- |
+| R   | Read        | 1     | View resource              |
+| W   | Write       | 2     | Modify resource            |
+| X   | Execute     | 4     | Perform actions (reserved) |
+| D   | Delete      | 8     | Remove resource            |
+| P   | Permissions | 16    | Manage ACL entries         |
 
 **Role Mapping:**
 
-| Role | Workspace ACL | Project ACL |
-|------|---------------|-------------|
-| OWNER | FULL_CONTROL (31) | FULL_CONTROL (31) |
-| ADMIN | FULL_CONTROL (31) | - |
-| MANAGER | - | EDITOR (15) |
-| MEMBER | CONTRIBUTOR (7) | CONTRIBUTOR (7) |
-| VIEWER | READ_ONLY (1) | READ_ONLY (1) |
+| Role    | Workspace ACL     | Project ACL       |
+| ------- | ----------------- | ----------------- |
+| OWNER   | FULL_CONTROL (31) | FULL_CONTROL (31) |
+| ADMIN   | FULL_CONTROL (31) | -                 |
+| MANAGER | -                 | EDITOR (15)       |
+| MEMBER  | CONTRIBUTOR (7)   | CONTRIBUTOR (7)   |
+| VIEWER  | READ_ONLY (1)     | READ_ONLY (1)     |
 
 ### 🤖 Built-in Graphiti Knowledge Engine
-Kanbu includes **Kanbu Graphiti**, a self-hosted knowledge graph engine (Python/FastAPI) that runs locally alongside the app. 
+
+Kanbu includes **Kanbu Graphiti**, a self-hosted knowledge graph engine (Python/FastAPI) that runs locally alongside the app.
 
 - **No external dependencies**: You do not need to sign up for any third-party Graph Service. It runs on your own hardware using FalkorDB.
 - **Fact Extraction**: Automatically builds a knowledge graph from your wiki pages.
@@ -80,6 +83,7 @@ Kanbu includes **Kanbu Graphiti**, a self-hosted knowledge graph engine (Python/
 - **Contradiction Detection**: Flags conflicting information across your documentation.
 
 ### 🔌 AI Integration (Claude Code)
+
 Connect Claude Code to manage your Kanbu projects with **141 available tools**.
 **Status: Production Ready (Hardened)**
 
@@ -96,6 +100,7 @@ Connect Claude Code to manage your Kanbu projects with **141 available tools**.
 | **13-16** | Hardening & Audit | 14 | Rate limiting, Audit logging (via metadata) |
 
 ### 🐙 GitHub Integration
+
 - **Bi-directional sync**: Issues, PRs, commits, milestones
 - **Auto-link commits**: Reference tasks in commit messages
 - **Sync logs**: Complete visibility into what synced and when
@@ -106,14 +111,14 @@ Connect Claude Code to manage your Kanbu projects with **141 available tools**.
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|------------|
-| Frontend | React 18, TypeScript, Vite, Tailwind CSS, Shadcn/ui |
-| State | Redux Toolkit, TanStack Query |
-| Backend | Node.js 22, Fastify, tRPC v10, Socket.io |
-| Database | PostgreSQL 15, Prisma ORM |
+| Layer      | Technology                                           |
+| ---------- | ---------------------------------------------------- |
+| Frontend   | React 18, TypeScript, Vite, Tailwind CSS, Shadcn/ui  |
+| State      | Redux Toolkit, TanStack Query                        |
+| Backend    | Node.js 22, Fastify, tRPC v10, Socket.io             |
+| Database   | PostgreSQL 15, Prisma ORM                            |
 | AI / Graph | Kanbu Graphiti (Python/FastAPI), FalkorDB (Graph DB) |
-| Monorepo | pnpm workspaces, Turborepo |
+| Monorepo   | pnpm workspaces, Turborepo                           |
 
 ---
 

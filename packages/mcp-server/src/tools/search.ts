@@ -13,33 +13,33 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { z } from 'zod'
-import { requireAuth, client, success, truncate } from '../tools.js'
+import { z } from 'zod';
+import { requireAuth, client, success, truncate } from '../tools.js';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface SearchTaskResult {
-  id: number
-  title: string
-  reference: string
-  priority: string
-  isActive: boolean
-  dateDue: string | null
-  column: { id: number; title: string } | null
-  assignees: Array<{ id: number; username: string; name: string }>
-  tags: Array<{ id: number; name: string; color: string }>
+  id: number;
+  title: string;
+  reference: string;
+  priority: string;
+  isActive: boolean;
+  dateDue: string | null;
+  column: { id: number; title: string } | null;
+  assignees: Array<{ id: number; username: string; name: string }>;
+  tags: Array<{ id: number; name: string; color: string }>;
 }
 
 interface GlobalSearchResult {
-  type: 'task' | 'comment' | 'wiki'
-  id: number
-  title: string
-  snippet: string
-  taskId?: number
-  taskTitle?: string
-  updatedAt: string
+  type: 'task' | 'comment' | 'wiki';
+  id: number;
+  title: string;
+  snippet: string;
+  taskId?: number;
+  taskTitle?: string;
+  updatedAt: string;
 }
 
 // =============================================================================
@@ -51,7 +51,7 @@ export const SearchTasksSchema = z.object({
   query: z.string().describe('Search query (searches in title, reference, description)'),
   includeCompleted: z.boolean().optional().describe('Include completed tasks'),
   limit: z.number().optional().describe('Maximum results (default: 20)'),
-})
+});
 
 export const SearchGlobalSchema = z.object({
   projectId: z.number().describe('Project ID to search in'),
@@ -61,7 +61,7 @@ export const SearchGlobalSchema = z.object({
     .optional()
     .describe('Entity types to search (default: all)'),
   limit: z.number().optional().describe('Maximum results (default: 20)'),
-})
+});
 
 // =============================================================================
 // Tool Definitions
@@ -70,8 +70,7 @@ export const SearchGlobalSchema = z.object({
 export const searchToolDefinitions = [
   {
     name: 'kanbu_search_tasks',
-    description:
-      'Search for tasks in a project. Searches in title, reference, and description.',
+    description: 'Search for tasks in a project. Searches in title, reference, and description.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -124,7 +123,7 @@ export const searchToolDefinitions = [
       required: ['projectId', 'query'],
     },
   },
-]
+];
 
 // =============================================================================
 // Tool Handlers
@@ -134,8 +133,8 @@ export const searchToolDefinitions = [
  * Search tasks in a project
  */
 export async function handleSearchTasks(args: unknown) {
-  const input = SearchTasksSchema.parse(args)
-  const config = requireAuth()
+  const input = SearchTasksSchema.parse(args);
+  const config = requireAuth();
 
   const results = await client.call<SearchTaskResult[]>(
     config.kanbuUrl,
@@ -147,41 +146,39 @@ export async function handleSearchTasks(args: unknown) {
       includeCompleted: input.includeCompleted ?? false,
       limit: input.limit ?? 20,
     }
-  )
+  );
 
   if (results.length === 0) {
-    return success(`No tasks found matching "${input.query}"`)
+    return success(`No tasks found matching "${input.query}"`);
   }
 
-  const lines: string[] = [`Search results for "${input.query}" (${results.length}):`, '']
+  const lines: string[] = [`Search results for "${input.query}" (${results.length}):`, ''];
 
   results.forEach((task) => {
-    const status = task.isActive ? '' : ' [CLOSED]'
-    const priority = task.priority !== 'MEDIUM' ? ` [${task.priority}]` : ''
-    const column = task.column?.title || 'Unknown'
+    const status = task.isActive ? '' : ' [CLOSED]';
+    const priority = task.priority !== 'MEDIUM' ? ` [${task.priority}]` : '';
+    const column = task.column?.title || 'Unknown';
     const assignees =
-      task.assignees.length > 0
-        ? ` - ${task.assignees.map((a) => a.name).join(', ')}`
-        : ''
+      task.assignees.length > 0 ? ` - ${task.assignees.map((a) => a.name).join(', ')}` : '';
 
-    lines.push(`${task.reference}: ${task.title}${status}${priority}`)
-    lines.push(`  ID: ${task.id} | Column: ${column}${assignees}`)
+    lines.push(`${task.reference}: ${task.title}${status}${priority}`);
+    lines.push(`  ID: ${task.id} | Column: ${column}${assignees}`);
 
     if (task.tags.length > 0) {
-      lines.push(`  Tags: ${task.tags.map((t) => t.name).join(', ')}`)
+      lines.push(`  Tags: ${task.tags.map((t) => t.name).join(', ')}`);
     }
-    lines.push('')
-  })
+    lines.push('');
+  });
 
-  return success(lines.join('\n'))
+  return success(lines.join('\n'));
 }
 
 /**
  * Global search across tasks, comments, and wiki
  */
 export async function handleSearchGlobal(args: unknown) {
-  const input = SearchGlobalSchema.parse(args)
-  const config = requireAuth()
+  const input = SearchGlobalSchema.parse(args);
+  const config = requireAuth();
 
   const results = await client.call<GlobalSearchResult[]>(
     config.kanbuUrl,
@@ -193,47 +190,47 @@ export async function handleSearchGlobal(args: unknown) {
       entityTypes: input.types ?? ['task', 'comment', 'wiki'],
       limit: input.limit ?? 20,
     }
-  )
+  );
 
   if (results.length === 0) {
-    return success(`No results found for "${input.query}"`)
+    return success(`No results found for "${input.query}"`);
   }
 
-  const lines: string[] = [`Search results for "${input.query}" (${results.length}):`, '']
+  const lines: string[] = [`Search results for "${input.query}" (${results.length}):`, ''];
 
   // Group by type
   const byType = {
     task: results.filter((r) => r.type === 'task'),
     comment: results.filter((r) => r.type === 'comment'),
     wiki: results.filter((r) => r.type === 'wiki'),
-  }
+  };
 
   if (byType.task.length > 0) {
-    lines.push(`== Tasks (${byType.task.length}) ==`)
+    lines.push(`== Tasks (${byType.task.length}) ==`);
     byType.task.forEach((result) => {
-      lines.push(`  ${result.title}`)
-      lines.push(`    ${truncate(result.snippet, 100)}`)
-    })
-    lines.push('')
+      lines.push(`  ${result.title}`);
+      lines.push(`    ${truncate(result.snippet, 100)}`);
+    });
+    lines.push('');
   }
 
   if (byType.comment.length > 0) {
-    lines.push(`== Comments (${byType.comment.length}) ==`)
+    lines.push(`== Comments (${byType.comment.length}) ==`);
     byType.comment.forEach((result) => {
-      lines.push(`  ${result.title}`)
-      lines.push(`    ${truncate(result.snippet, 100)}`)
-    })
-    lines.push('')
+      lines.push(`  ${result.title}`);
+      lines.push(`    ${truncate(result.snippet, 100)}`);
+    });
+    lines.push('');
   }
 
   if (byType.wiki.length > 0) {
-    lines.push(`== Wiki Pages (${byType.wiki.length}) ==`)
+    lines.push(`== Wiki Pages (${byType.wiki.length}) ==`);
     byType.wiki.forEach((result) => {
-      lines.push(`  ${result.title}`)
-      lines.push(`    ${truncate(result.snippet, 100)}`)
-    })
-    lines.push('')
+      lines.push(`  ${result.title}`);
+      lines.push(`    ${truncate(result.snippet, 100)}`);
+    });
+    lines.push('');
   }
 
-  return success(lines.join('\n'))
+  return success(lines.join('\n'));
 }

@@ -14,22 +14,22 @@
  * =============================================================================
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { PrismaClient } from '@prisma/client'
-import { AclService, ACL_PRESETS } from '../aclService'
-import type { GitHubSyncSettings } from '@kanbu/shared'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { PrismaClient } from '@prisma/client';
+import { AclService, ACL_PRESETS } from '../aclService';
+import type { GitHubSyncSettings } from '@kanbu/shared';
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 
 describe('GitHub Project Procedures', () => {
-  let testUserId: number
-  let testWorkspaceId: number
-  let testProjectId: number
-  let testInstallationId: number
-  let aclService: AclService
+  let testUserId: number;
+  let testWorkspaceId: number;
+  let testProjectId: number;
+  let testInstallationId: number;
+  let aclService: AclService;
 
   beforeEach(async () => {
-    aclService = new AclService()
+    aclService = new AclService();
 
     // Create test user
     const testUser = await prisma.user.create({
@@ -39,8 +39,8 @@ describe('GitHub Project Procedures', () => {
         name: 'Test GitHub Project User',
         passwordHash: 'test',
       },
-    })
-    testUserId = testUser.id
+    });
+    testUserId = testUser.id;
 
     // Create test workspace
     const testWorkspace = await prisma.workspace.create({
@@ -48,8 +48,8 @@ describe('GitHub Project Procedures', () => {
         name: `Test GitHub Project Workspace ${Date.now()}`,
         slug: `test-ghp-ws-${Date.now()}`,
       },
-    })
-    testWorkspaceId = testWorkspace.id
+    });
+    testWorkspaceId = testWorkspace.id;
 
     // Create test project
     const testProject = await prisma.project.create({
@@ -58,8 +58,8 @@ describe('GitHub Project Procedures', () => {
         identifier: `TP${Date.now()}`.slice(-6).toUpperCase(),
         workspaceId: testWorkspaceId,
       },
-    })
-    testProjectId = testProject.id
+    });
+    testProjectId = testProject.id;
 
     // Create test GitHub installation
     const testInstallation = await prisma.gitHubInstallation.create({
@@ -72,8 +72,8 @@ describe('GitHub Project Procedures', () => {
         permissions: { contents: 'read', issues: 'write' },
         events: ['issues', 'pull_request'],
       },
-    })
-    testInstallationId = testInstallation.id
+    });
+    testInstallationId = testInstallation.id;
 
     // Grant project write permission to user
     await aclService.grantPermission({
@@ -82,26 +82,26 @@ describe('GitHub Project Procedures', () => {
       principalType: 'user',
       principalId: testUserId,
       permissions: ACL_PRESETS.FULL_CONTROL,
-    })
-  })
+    });
+  });
 
   afterEach(async () => {
     // Clean up in reverse order of creation
     await prisma.gitHubSyncLog.deleteMany({
       where: { repository: { projectId: testProjectId } },
-    })
-    await prisma.gitHubRepository.deleteMany({ where: { projectId: testProjectId } })
-    await prisma.gitHubInstallation.deleteMany({ where: { workspaceId: testWorkspaceId } })
+    });
+    await prisma.gitHubRepository.deleteMany({ where: { projectId: testProjectId } });
+    await prisma.gitHubInstallation.deleteMany({ where: { workspaceId: testWorkspaceId } });
     await prisma.aclEntry.deleteMany({
       where: {
         principalType: 'user',
         principalId: testUserId,
       },
-    })
-    await prisma.project.deleteMany({ where: { id: testProjectId } })
-    await prisma.workspace.deleteMany({ where: { id: testWorkspaceId } })
-    await prisma.user.deleteMany({ where: { id: testUserId } })
-  })
+    });
+    await prisma.project.deleteMany({ where: { id: testProjectId } });
+    await prisma.workspace.deleteMany({ where: { id: testWorkspaceId } });
+    await prisma.user.deleteMany({ where: { id: testUserId } });
+  });
 
   // ===========================================================================
   // Repository Linking Tests
@@ -109,7 +109,7 @@ describe('GitHub Project Procedures', () => {
 
   describe('Repository Linking', () => {
     it('should link a repository to a project', async () => {
-      const uniqueSuffix = Date.now()
+      const uniqueSuffix = Date.now();
       const repository = await prisma.gitHubRepository.create({
         data: {
           projectId: testProjectId,
@@ -123,16 +123,16 @@ describe('GitHub Project Procedures', () => {
           syncEnabled: true,
           syncSettings: {},
         },
-      })
+      });
 
-      expect(repository).toBeDefined()
-      expect(repository.projectId).toBe(testProjectId)
-      expect(repository.fullName).toBe(`test-org-${uniqueSuffix}/test-repo-${uniqueSuffix}`)
-      expect(repository.syncEnabled).toBe(true)
-    })
+      expect(repository).toBeDefined();
+      expect(repository.projectId).toBe(testProjectId);
+      expect(repository.fullName).toBe(`test-org-${uniqueSuffix}/test-repo-${uniqueSuffix}`);
+      expect(repository.syncEnabled).toBe(true);
+    });
 
     it('should allow multiple repositories per project (multi-repo support)', async () => {
-      const uniqueSuffix = Date.now()
+      const uniqueSuffix = Date.now();
       // Link first repository
       await prisma.gitHubRepository.create({
         data: {
@@ -147,7 +147,7 @@ describe('GitHub Project Procedures', () => {
           syncEnabled: true,
           syncSettings: {},
         },
-      })
+      });
 
       // Link second repository to same project - should succeed (multi-repo support)
       const secondRepo = await prisma.gitHubRepository.create({
@@ -163,11 +163,11 @@ describe('GitHub Project Procedures', () => {
           syncEnabled: true,
           syncSettings: {},
         },
-      })
+      });
 
-      expect(secondRepo).toBeDefined()
-      expect(secondRepo.projectId).toBe(testProjectId)
-    })
+      expect(secondRepo).toBeDefined();
+      expect(secondRepo.projectId).toBe(testProjectId);
+    });
 
     it('should enforce unique owner/name constraint', async () => {
       // Link repository to first project
@@ -184,7 +184,7 @@ describe('GitHub Project Procedures', () => {
           syncEnabled: true,
           syncSettings: {},
         },
-      })
+      });
 
       // Create another project
       const otherProject = await prisma.project.create({
@@ -193,7 +193,7 @@ describe('GitHub Project Procedures', () => {
           identifier: `OP${Date.now()}`.slice(-6).toUpperCase(),
           workspaceId: testWorkspaceId,
         },
-      })
+      });
 
       // Try to link same repository to different project - should fail
       await expect(
@@ -211,11 +211,11 @@ describe('GitHub Project Procedures', () => {
             syncSettings: {},
           },
         })
-      ).rejects.toThrow()
+      ).rejects.toThrow();
 
       // Clean up
-      await prisma.project.delete({ where: { id: otherProject.id } })
-    })
+      await prisma.project.delete({ where: { id: otherProject.id } });
+    });
 
     it('should unlink a repository from a project', async () => {
       const repository = await prisma.gitHubRepository.create({
@@ -231,18 +231,18 @@ describe('GitHub Project Procedures', () => {
           syncEnabled: true,
           syncSettings: {},
         },
-      })
+      });
 
       await prisma.gitHubRepository.delete({
         where: { id: repository.id },
-      })
+      });
 
       const deleted = await prisma.gitHubRepository.findUnique({
         where: { id: repository.id },
-      })
+      });
 
-      expect(deleted).toBeNull()
-    })
+      expect(deleted).toBeNull();
+    });
 
     it('should get linked repository with installation info', async () => {
       await prisma.gitHubRepository.create({
@@ -258,7 +258,7 @@ describe('GitHub Project Procedures', () => {
           syncEnabled: true,
           syncSettings: {},
         },
-      })
+      });
 
       const repository = await prisma.gitHubRepository.findFirst({
         where: { projectId: testProjectId },
@@ -271,14 +271,14 @@ describe('GitHub Project Procedures', () => {
             },
           },
         },
-      })
+      });
 
-      expect(repository).toBeDefined()
-      expect(repository!.installation!.accountLogin).toBe('test-org')
-      expect(repository!.defaultBranch).toBe('develop')
-      expect(repository!.isPrivate).toBe(true)
-    })
-  })
+      expect(repository).toBeDefined();
+      expect(repository!.installation!.accountLogin).toBe('test-org');
+      expect(repository!.defaultBranch).toBe('develop');
+      expect(repository!.isPrivate).toBe(true);
+    });
+  });
 
   // ===========================================================================
   // Sync Settings Tests
@@ -299,17 +299,17 @@ describe('GitHub Project Procedures', () => {
           syncEnabled: true,
           syncSettings: {},
         },
-      })
+      });
 
-      expect(repository.syncEnabled).toBe(true)
+      expect(repository.syncEnabled).toBe(true);
 
       const updated = await prisma.gitHubRepository.update({
         where: { id: repository.id },
         data: { syncEnabled: false },
-      })
+      });
 
-      expect(updated.syncEnabled).toBe(false)
-    })
+      expect(updated.syncEnabled).toBe(false);
+    });
 
     it('should update sync settings JSON', async () => {
       const repository = await prisma.gitHubRepository.create({
@@ -325,7 +325,7 @@ describe('GitHub Project Procedures', () => {
           syncEnabled: true,
           syncSettings: {},
         },
-      })
+      });
 
       const newSettings: GitHubSyncSettings = {
         issues: {
@@ -342,19 +342,19 @@ describe('GitHub Project Procedures', () => {
           autoLink: true,
           pattern: 'KANBU-\\d+',
         },
-      }
+      };
 
       const updated = await prisma.gitHubRepository.update({
         where: { id: repository.id },
         data: { syncSettings: newSettings as object },
-      })
+      });
 
-      const settings = updated.syncSettings as GitHubSyncSettings
-      expect(settings.issues?.enabled).toBe(true)
-      expect(settings.issues?.direction).toBe('bidirectional')
-      expect(settings.pullRequests?.autoLink).toBe(true)
-      expect(settings.commits?.pattern).toBe('KANBU-\\d+')
-    })
+      const settings = updated.syncSettings as GitHubSyncSettings;
+      expect(settings.issues?.enabled).toBe(true);
+      expect(settings.issues?.direction).toBe('bidirectional');
+      expect(settings.pullRequests?.autoLink).toBe(true);
+      expect(settings.commits?.pattern).toBe('KANBU-\\d+');
+    });
 
     it('should validate sync settings structure', () => {
       const validSettings: GitHubSyncSettings = {
@@ -362,19 +362,19 @@ describe('GitHub Project Procedures', () => {
           enabled: true,
           direction: 'bidirectional',
         },
-      }
+      };
 
-      expect(validSettings.issues?.enabled).toBe(true)
+      expect(validSettings.issues?.enabled).toBe(true);
       expect(['kanbu_to_github', 'github_to_kanbu', 'bidirectional']).toContain(
         validSettings.issues?.direction
-      )
-    })
+      );
+    });
 
     it('should handle partial sync settings update', async () => {
       const initialSettings: GitHubSyncSettings = {
         issues: { enabled: true, direction: 'bidirectional' },
         pullRequests: { enabled: false, autoLink: false },
-      }
+      };
 
       const repository = await prisma.gitHubRepository.create({
         data: {
@@ -389,32 +389,32 @@ describe('GitHub Project Procedures', () => {
           syncEnabled: true,
           syncSettings: initialSettings as object,
         },
-      })
+      });
 
       // Update only pullRequests settings
       const updatedSettings: GitHubSyncSettings = {
         ...(repository.syncSettings as GitHubSyncSettings),
         pullRequests: { enabled: true, autoLink: true },
-      }
+      };
 
       const updated = await prisma.gitHubRepository.update({
         where: { id: repository.id },
         data: { syncSettings: updatedSettings as object },
-      })
+      });
 
-      const settings = updated.syncSettings as GitHubSyncSettings
-      expect(settings.issues?.enabled).toBe(true) // Preserved
-      expect(settings.pullRequests?.enabled).toBe(true) // Updated
-      expect(settings.pullRequests?.autoLink).toBe(true) // Updated
-    })
-  })
+      const settings = updated.syncSettings as GitHubSyncSettings;
+      expect(settings.issues?.enabled).toBe(true); // Preserved
+      expect(settings.pullRequests?.enabled).toBe(true); // Updated
+      expect(settings.pullRequests?.autoLink).toBe(true); // Updated
+    });
+  });
 
   // ===========================================================================
   // Sync Log Tests
   // ===========================================================================
 
   describe('Sync Logs', () => {
-    let testRepositoryId: number
+    let testRepositoryId: number;
 
     beforeEach(async () => {
       const repository = await prisma.gitHubRepository.create({
@@ -430,9 +430,9 @@ describe('GitHub Project Procedures', () => {
           syncEnabled: true,
           syncSettings: {},
         },
-      })
-      testRepositoryId = repository.id
-    })
+      });
+      testRepositoryId = repository.id;
+    });
 
     it('should create sync log entry', async () => {
       const log = await prisma.gitHubSyncLog.create({
@@ -445,13 +445,13 @@ describe('GitHub Project Procedures', () => {
           status: 'success',
           details: { issueTitle: 'Test Issue' },
         },
-      })
+      });
 
-      expect(log).toBeDefined()
-      expect(log.action).toBe('issue_synced')
-      expect(log.direction).toBe('github_to_kanbu')
-      expect(log.status).toBe('success')
-    })
+      expect(log).toBeDefined();
+      expect(log.action).toBe('issue_synced');
+      expect(log.direction).toBe('github_to_kanbu');
+      expect(log.status).toBe('success');
+    });
 
     it('should log failed sync with error message', async () => {
       const log = await prisma.gitHubSyncLog.create({
@@ -465,15 +465,15 @@ describe('GitHub Project Procedures', () => {
           errorMessage: 'GitHub API rate limit exceeded',
           details: { remainingRateLimit: 0 },
         },
-      })
+      });
 
-      expect(log.status).toBe('failed')
-      expect(log.errorMessage).toBe('GitHub API rate limit exceeded')
-    })
+      expect(log.status).toBe('failed');
+      expect(log.errorMessage).toBe('GitHub API rate limit exceeded');
+    });
 
     it('should list sync logs ordered by createdAt desc', async () => {
-      const now = new Date()
-      const earlierTime = new Date(now.getTime() - 1000) // 1 second earlier
+      const now = new Date();
+      const earlierTime = new Date(now.getTime() - 1000); // 1 second earlier
 
       await prisma.gitHubSyncLog.createMany({
         data: [
@@ -496,17 +496,17 @@ describe('GitHub Project Procedures', () => {
             createdAt: now,
           },
         ],
-      })
+      });
 
       const logs = await prisma.gitHubSyncLog.findMany({
         where: { repositoryId: testRepositoryId },
         orderBy: { createdAt: 'desc' },
-      })
+      });
 
-      expect(logs.length).toBe(2)
+      expect(logs.length).toBe(2);
       // Most recent should be first
-      expect(logs[0]!.action).toBe('second_action')
-    })
+      expect(logs[0]!.action).toBe('second_action');
+    });
 
     it('should count sync logs correctly', async () => {
       await prisma.gitHubSyncLog.createMany({
@@ -536,14 +536,14 @@ describe('GitHub Project Procedures', () => {
             details: {},
           },
         ],
-      })
+      });
 
       const total = await prisma.gitHubSyncLog.count({
         where: { repositoryId: testRepositoryId },
-      })
+      });
 
-      expect(total).toBe(3)
-    })
+      expect(total).toBe(3);
+    });
 
     it('should cascade delete logs when repository is deleted', async () => {
       await prisma.gitHubSyncLog.create({
@@ -555,21 +555,21 @@ describe('GitHub Project Procedures', () => {
           status: 'success',
           details: {},
         },
-      })
+      });
 
       // Delete repository
       await prisma.gitHubRepository.delete({
         where: { id: testRepositoryId },
-      })
+      });
 
       // Logs should be deleted
       const logs = await prisma.gitHubSyncLog.findMany({
         where: { repositoryId: testRepositoryId },
-      })
+      });
 
-      expect(logs.length).toBe(0)
-    })
-  })
+      expect(logs.length).toBe(0);
+    });
+  });
 
   // ===========================================================================
   // Access Control Tests
@@ -582,10 +582,10 @@ describe('GitHub Project Procedures', () => {
         'project',
         testProjectId,
         ACL_PRESETS.EDITOR // WRITE permission
-      )
+      );
 
-      expect(hasPermission).toBe(true)
-    })
+      expect(hasPermission).toBe(true);
+    });
 
     it('should deny user without project permission', async () => {
       // Create user without permissions
@@ -596,20 +596,20 @@ describe('GitHub Project Procedures', () => {
           name: 'No Permission User',
           passwordHash: 'test',
         },
-      })
+      });
 
       const hasPermission = await aclService.hasPermission(
         nonPermUser.id,
         'project',
         testProjectId,
         ACL_PRESETS.EDITOR
-      )
+      );
 
-      expect(hasPermission).toBe(false)
+      expect(hasPermission).toBe(false);
 
       // Clean up
-      await prisma.user.delete({ where: { id: nonPermUser.id } })
-    })
+      await prisma.user.delete({ where: { id: nonPermUser.id } });
+    });
 
     it('should enforce read permission for viewing linked repo', async () => {
       const hasReadPermission = await aclService.hasPermission(
@@ -617,11 +617,11 @@ describe('GitHub Project Procedures', () => {
         'project',
         testProjectId,
         ACL_PRESETS.READ_ONLY
-      )
+      );
 
-      expect(hasReadPermission).toBe(true)
-    })
-  })
+      expect(hasReadPermission).toBe(true);
+    });
+  });
 
   // ===========================================================================
   // Sync Status Tests
@@ -643,19 +643,19 @@ describe('GitHub Project Procedures', () => {
           syncSettings: {},
           lastSyncAt: null,
         },
-      })
+      });
 
-      expect(repository.lastSyncAt).toBeNull()
+      expect(repository.lastSyncAt).toBeNull();
 
-      const now = new Date()
+      const now = new Date();
       const updated = await prisma.gitHubRepository.update({
         where: { id: repository.id },
         data: { lastSyncAt: now },
-      })
+      });
 
-      expect(updated.lastSyncAt).toBeDefined()
-      expect(updated.lastSyncAt!.getTime()).toBeCloseTo(now.getTime(), -3) // Within 1 second
-    })
+      expect(updated.lastSyncAt).toBeDefined();
+      expect(updated.lastSyncAt!.getTime()).toBeCloseTo(now.getTime(), -3); // Within 1 second
+    });
 
     it('should count related entities', async () => {
       const repository = await prisma.gitHubRepository.create({
@@ -671,7 +671,7 @@ describe('GitHub Project Procedures', () => {
           syncEnabled: true,
           syncSettings: {},
         },
-      })
+      });
 
       // Create some issues
       await prisma.gitHubIssue.createMany({
@@ -691,7 +691,7 @@ describe('GitHub Project Procedures', () => {
             state: 'closed',
           },
         ],
-      })
+      });
 
       // Create a PR
       await prisma.gitHubPullRequest.create({
@@ -705,7 +705,7 @@ describe('GitHub Project Procedures', () => {
           baseBranch: 'main',
           authorLogin: 'test-user',
         },
-      })
+      });
 
       // Query with counts
       const repoWithCounts = await prisma.gitHubRepository.findUnique({
@@ -720,18 +720,18 @@ describe('GitHub Project Procedures', () => {
             },
           },
         },
-      })
+      });
 
-      expect(repoWithCounts!._count.issues).toBe(2)
-      expect(repoWithCounts!._count.pullRequests).toBe(1)
-      expect(repoWithCounts!._count.commits).toBe(0)
-      expect(repoWithCounts!._count.syncLogs).toBe(0)
+      expect(repoWithCounts!._count.issues).toBe(2);
+      expect(repoWithCounts!._count.pullRequests).toBe(1);
+      expect(repoWithCounts!._count.commits).toBe(0);
+      expect(repoWithCounts!._count.syncLogs).toBe(0);
 
       // Clean up
-      await prisma.gitHubPullRequest.deleteMany({ where: { repositoryId: repository.id } })
-      await prisma.gitHubIssue.deleteMany({ where: { repositoryId: repository.id } })
-    })
-  })
+      await prisma.gitHubPullRequest.deleteMany({ where: { repositoryId: repository.id } });
+      await prisma.gitHubIssue.deleteMany({ where: { repositoryId: repository.id } });
+    });
+  });
 
   // ===========================================================================
   // Installation Validation Tests
@@ -745,7 +745,7 @@ describe('GitHub Project Procedures', () => {
           name: `Other WS ${Date.now()}`,
           slug: `other-ws-${Date.now()}`,
         },
-      })
+      });
 
       const otherInstallation = await prisma.gitHubInstallation.create({
         data: {
@@ -757,34 +757,34 @@ describe('GitHub Project Procedures', () => {
           permissions: {},
           events: [],
         },
-      })
+      });
 
       // Check if installation is in same workspace as project
       const project = await prisma.project.findUnique({
         where: { id: testProjectId },
         select: { workspaceId: true },
-      })
+      });
 
       const installationInSameWorkspace = await prisma.gitHubInstallation.findFirst({
         where: {
           id: otherInstallation.id,
           workspaceId: project!.workspaceId,
         },
-      })
+      });
 
       // Should be null because installation is in different workspace
-      expect(installationInSameWorkspace).toBeNull()
+      expect(installationInSameWorkspace).toBeNull();
 
       // Clean up
-      await prisma.gitHubInstallation.delete({ where: { id: otherInstallation.id } })
-      await prisma.workspace.delete({ where: { id: otherWorkspace.id } })
-    })
+      await prisma.gitHubInstallation.delete({ where: { id: otherInstallation.id } });
+      await prisma.workspace.delete({ where: { id: otherWorkspace.id } });
+    });
 
     it('should list available installations for workspace', async () => {
       const project = await prisma.project.findUnique({
         where: { id: testProjectId },
         select: { workspaceId: true },
-      })
+      });
 
       const installations = await prisma.gitHubInstallation.findMany({
         where: {
@@ -796,10 +796,10 @@ describe('GitHub Project Procedures', () => {
           accountLogin: true,
           accountType: true,
         },
-      })
+      });
 
-      expect(installations.length).toBeGreaterThan(0)
-      expect(installations[0]!.accountLogin).toBe('test-org')
-    })
-  })
-})
+      expect(installations.length).toBeGreaterThan(0);
+      expect(installations[0]!.accountLogin).toBe('test-org');
+    });
+  });
+});

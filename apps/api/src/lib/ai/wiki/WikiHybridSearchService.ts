@@ -20,14 +20,11 @@
  * =============================================================================
  */
 
-import type { PrismaClient } from '@prisma/client'
-import { WikiBm25Service, type Bm25SearchResult } from './WikiBm25Service'
-import { WikiEmbeddingService, type SemanticSearchResult } from './WikiEmbeddingService'
-import {
-  WikiEdgeEmbeddingService,
-  type EdgeSearchResult,
-} from './WikiEdgeEmbeddingService'
-import { type WikiContext } from './WikiAiService'
+import type { PrismaClient } from '@prisma/client';
+import { WikiBm25Service, type Bm25SearchResult } from './WikiBm25Service';
+import { WikiEmbeddingService, type SemanticSearchResult } from './WikiEmbeddingService';
+import { WikiEdgeEmbeddingService, type EdgeSearchResult } from './WikiEdgeEmbeddingService';
+import { type WikiContext } from './WikiAiService';
 
 // =============================================================================
 // Types
@@ -38,25 +35,25 @@ import { type WikiContext } from './WikiAiService'
  */
 export interface HybridSearchOptions {
   /** Workspace ID (required) */
-  workspaceId: number
+  workspaceId: number;
   /** Project ID (optional, for project-specific search) */
-  projectId?: number
+  projectId?: number;
   /** Maximum results to return (default: 20) */
-  limit?: number
+  limit?: number;
   /** Enable BM25 keyword search (default: true) */
-  useBm25?: boolean
+  useBm25?: boolean;
   /** Enable semantic vector search (default: true) */
-  useVector?: boolean
+  useVector?: boolean;
   /** Enable edge/relationship search (default: true) */
-  useEdge?: boolean
+  useEdge?: boolean;
   /** RRF smoothing factor k (default: 60) */
-  rrfK?: number
+  rrfK?: number;
   /** Weight for BM25 results (default: 1.0) */
-  bm25Weight?: number
+  bm25Weight?: number;
   /** Weight for vector results (default: 1.0) */
-  vectorWeight?: number
+  vectorWeight?: number;
   /** Weight for edge results (default: 0.5) */
-  edgeWeight?: number
+  edgeWeight?: number;
 }
 
 /**
@@ -64,39 +61,39 @@ export interface HybridSearchOptions {
  */
 export interface HybridSearchResult {
   /** Page ID */
-  pageId: number
+  pageId: number;
   /** Page title */
-  title: string
+  title: string;
   /** Page slug (if available) */
-  slug?: string
+  slug?: string;
   /** Combined RRF score */
-  score: number
+  score: number;
   /** Source types that matched this result */
-  sources: Array<'bm25' | 'vector' | 'edge'>
+  sources: Array<'bm25' | 'vector' | 'edge'>;
   /** Individual scores per source */
   sourceScores: {
-    bm25?: number
-    vector?: number
-    edge?: number
-  }
+    bm25?: number;
+    vector?: number;
+    edge?: number;
+  };
   /** BM25 headline with highlights (if available) */
-  headline?: string
+  headline?: string;
   /** Matching edge facts (if available) */
-  edgeFacts?: string[]
+  edgeFacts?: string[];
 }
 
 /**
  * Internal page entry for RRF calculation
  */
 interface PageEntry {
-  pageId: number
-  title: string
-  slug?: string
-  rrfScore: number
-  sources: Set<'bm25' | 'vector' | 'edge'>
-  sourceScores: { bm25?: number; vector?: number; edge?: number }
-  headline?: string
-  edgeFacts: string[]
+  pageId: number;
+  title: string;
+  slug?: string;
+  rrfScore: number;
+  sources: Set<'bm25' | 'vector' | 'edge'>;
+  sourceScores: { bm25?: number; vector?: number; edge?: number };
+  headline?: string;
+  edgeFacts: string[];
 }
 
 // =============================================================================
@@ -149,44 +146,44 @@ export class WikiHybridSearchService {
       bm25Weight = 1.0,
       vectorWeight = 1.0,
       edgeWeight = 0.5,
-    } = options
+    } = options;
 
     // Validate input
     if (!query || query.trim().length === 0) {
-      return []
+      return [];
     }
 
     // Check feature flag for BM25 disable
-    const bm25Enabled = useBm25 && process.env.DISABLE_BM25_SEARCH !== 'true'
+    const bm25Enabled = useBm25 && process.env.DISABLE_BM25_SEARCH !== 'true';
 
     // If only vector is enabled and BM25 is disabled, use vector-only search
     if (!bm25Enabled && !useEdge && useVector) {
-      return this.vectorOnlySearch(query, options)
+      return this.vectorOnlySearch(query, options);
     }
 
     // Build WikiContext for embedding services
-    const context: WikiContext = { workspaceId, projectId }
+    const context: WikiContext = { workspaceId, projectId };
 
     // Collect results from all enabled sources in parallel
-    const resultPromises: Promise<void>[] = []
-    let bm25Results: Bm25SearchResult[] = []
-    let vectorResults: SemanticSearchResult[] = []
-    let edgeResults: EdgeSearchResult[] = []
+    const resultPromises: Promise<void>[] = [];
+    let bm25Results: Bm25SearchResult[] = [];
+    let vectorResults: SemanticSearchResult[] = [];
+    let edgeResults: EdgeSearchResult[] = [];
 
     // Fetch more results than needed for better RRF fusion
-    const fetchLimit = limit * 2
+    const fetchLimit = limit * 2;
 
     if (bm25Enabled) {
       resultPromises.push(
         this.bm25Service
           .search(query, { workspaceId, projectId, limit: fetchLimit })
           .then((r) => {
-            bm25Results = r
+            bm25Results = r;
           })
           .catch((err) => {
-            console.error('[WikiHybridSearchService] BM25 search failed:', err)
+            console.error('[WikiHybridSearchService] BM25 search failed:', err);
           })
-      )
+      );
     }
 
     if (useVector) {
@@ -194,12 +191,12 @@ export class WikiHybridSearchService {
         this.embeddingService
           .semanticSearch(context, query, { limit: fetchLimit })
           .then((r) => {
-            vectorResults = r
+            vectorResults = r;
           })
           .catch((err) => {
-            console.error('[WikiHybridSearchService] Vector search failed:', err)
+            console.error('[WikiHybridSearchService] Vector search failed:', err);
           })
-      )
+      );
     }
 
     if (useEdge) {
@@ -207,16 +204,16 @@ export class WikiHybridSearchService {
         this.edgeService
           .edgeSemanticSearch(context, query, { limit: fetchLimit })
           .then((r) => {
-            edgeResults = r
+            edgeResults = r;
           })
           .catch((err) => {
-            console.error('[WikiHybridSearchService] Edge search failed:', err)
+            console.error('[WikiHybridSearchService] Edge search failed:', err);
           })
-      )
+      );
     }
 
     // Wait for all searches to complete
-    await Promise.all(resultPromises)
+    await Promise.all(resultPromises);
 
     // Apply RRF fusion
     return this.rrfFusion(bm25Results, vectorResults, edgeResults, {
@@ -225,7 +222,7 @@ export class WikiHybridSearchService {
       vectorWeight,
       edgeWeight,
       limit,
-    })
+    });
   }
 
   // ===========================================================================
@@ -250,17 +247,17 @@ export class WikiHybridSearchService {
     vectorResults: SemanticSearchResult[],
     edgeResults: EdgeSearchResult[],
     options: {
-      rrfK: number
-      bm25Weight: number
-      vectorWeight: number
-      edgeWeight: number
-      limit: number
+      rrfK: number;
+      bm25Weight: number;
+      vectorWeight: number;
+      edgeWeight: number;
+      limit: number;
     }
   ): HybridSearchResult[] {
-    const { rrfK, bm25Weight, vectorWeight, edgeWeight, limit } = options
+    const { rrfK, bm25Weight, vectorWeight, edgeWeight, limit } = options;
 
     // Map to track scores per page
-    const pageScores = new Map<number, PageEntry>()
+    const pageScores = new Map<number, PageEntry>();
 
     // Helper to get or create page entry
     const getPageEntry = (pageId: number, title: string, slug?: string): PageEntry => {
@@ -273,46 +270,46 @@ export class WikiHybridSearchService {
           sources: new Set(),
           sourceScores: {},
           edgeFacts: [],
-        })
+        });
       }
-      const entry = pageScores.get(pageId)!
+      const entry = pageScores.get(pageId)!;
       // Update title/slug if we have better info
-      if (title && title !== 'Unknown') entry.title = title
-      if (slug) entry.slug = slug
-      return entry
-    }
+      if (title && title !== 'Unknown') entry.title = title;
+      if (slug) entry.slug = slug;
+      return entry;
+    };
 
     // Process BM25 results
     bm25Results.forEach((result, index) => {
-      const rank = index + 1
-      const rrfContribution = bm25Weight / (rrfK + rank)
+      const rank = index + 1;
+      const rrfContribution = bm25Weight / (rrfK + rank);
 
-      const entry = getPageEntry(result.pageId, result.title, result.slug)
-      entry.rrfScore += rrfContribution
-      entry.sources.add('bm25')
-      entry.sourceScores.bm25 = result.rank
-      if (result.headline) entry.headline = result.headline
-    })
+      const entry = getPageEntry(result.pageId, result.title, result.slug);
+      entry.rrfScore += rrfContribution;
+      entry.sources.add('bm25');
+      entry.sourceScores.bm25 = result.rank;
+      if (result.headline) entry.headline = result.headline;
+    });
 
     // Process vector results
     vectorResults.forEach((result, index) => {
-      const rank = index + 1
-      const rrfContribution = vectorWeight / (rrfK + rank)
+      const rank = index + 1;
+      const rrfContribution = vectorWeight / (rrfK + rank);
 
-      const entry = getPageEntry(result.pageId, result.title)
-      entry.rrfScore += rrfContribution
-      entry.sources.add('vector')
-      entry.sourceScores.vector = result.score
-    })
+      const entry = getPageEntry(result.pageId, result.title);
+      entry.rrfScore += rrfContribution;
+      entry.sources.add('vector');
+      entry.sourceScores.vector = result.score;
+    });
 
     // Process edge results (group by page first)
-    const edgesByPage = new Map<number, EdgeSearchResult[]>()
+    const edgesByPage = new Map<number, EdgeSearchResult[]>();
     edgeResults.forEach((result) => {
       if (!edgesByPage.has(result.pageId)) {
-        edgesByPage.set(result.pageId, [])
+        edgesByPage.set(result.pageId, []);
       }
-      edgesByPage.get(result.pageId)!.push(result)
-    })
+      edgesByPage.get(result.pageId)!.push(result);
+    });
 
     // Rank pages by best edge score, then apply RRF
     const pagesByEdgeScore = Array.from(edgesByPage.entries())
@@ -321,20 +318,20 @@ export class WikiHybridSearchService {
         bestScore: Math.max(...edges.map((e) => e.score)),
         edges,
       }))
-      .sort((a, b) => b.bestScore - a.bestScore)
+      .sort((a, b) => b.bestScore - a.bestScore);
 
     pagesByEdgeScore.forEach((item, index) => {
-      const rank = index + 1
-      const rrfContribution = edgeWeight / (rrfK + rank)
+      const rank = index + 1;
+      const rrfContribution = edgeWeight / (rrfK + rank);
 
       // Edge results don't have title/slug, use placeholder
-      const entry = getPageEntry(item.pageId, 'Unknown')
-      entry.rrfScore += rrfContribution
-      entry.sources.add('edge')
-      entry.sourceScores.edge = item.bestScore
+      const entry = getPageEntry(item.pageId, 'Unknown');
+      entry.rrfScore += rrfContribution;
+      entry.sources.add('edge');
+      entry.sourceScores.edge = item.bestScore;
       // Collect top 3 edge facts
-      entry.edgeFacts = item.edges.map((e) => e.fact).slice(0, 3)
-    })
+      entry.edgeFacts = item.edges.map((e) => e.fact).slice(0, 3);
+    });
 
     // Convert to array, sort by RRF score, and limit
     return Array.from(pageScores.values())
@@ -349,7 +346,7 @@ export class WikiHybridSearchService {
         sourceScores: entry.sourceScores,
         headline: entry.headline,
         edgeFacts: entry.edgeFacts.length > 0 ? entry.edgeFacts : undefined,
-      }))
+      }));
   }
 
   /**
@@ -359,11 +356,11 @@ export class WikiHybridSearchService {
     query: string,
     options: HybridSearchOptions
   ): Promise<HybridSearchResult[]> {
-    const { workspaceId, projectId, limit = 20 } = options
-    const context: WikiContext = { workspaceId, projectId }
+    const { workspaceId, projectId, limit = 20 } = options;
+    const context: WikiContext = { workspaceId, projectId };
 
     try {
-      const results = await this.embeddingService.semanticSearch(context, query, { limit })
+      const results = await this.embeddingService.semanticSearch(context, query, { limit });
 
       return results.map((r) => ({
         pageId: r.pageId,
@@ -371,10 +368,10 @@ export class WikiHybridSearchService {
         score: r.score,
         sources: ['vector'] as Array<'bm25' | 'vector' | 'edge'>,
         sourceScores: { vector: r.score },
-      }))
+      }));
     } catch (error) {
-      console.error('[WikiHybridSearchService] Vector-only search failed:', error)
-      return []
+      console.error('[WikiHybridSearchService] Vector-only search failed:', error);
+      return [];
     }
   }
 }
@@ -391,6 +388,6 @@ export function createWikiHybridSearchService(
   embeddingService: WikiEmbeddingService,
   edgeService: WikiEdgeEmbeddingService
 ): WikiHybridSearchService {
-  const bm25Service = new WikiBm25Service(prisma)
-  return new WikiHybridSearchService(bm25Service, embeddingService, edgeService)
+  const bm25Service = new WikiBm25Service(prisma);
+  return new WikiHybridSearchService(bm25Service, embeddingService, edgeService);
 }

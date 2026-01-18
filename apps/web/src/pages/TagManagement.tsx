@@ -22,26 +22,20 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { ProjectLayout } from '@/components/layout/ProjectLayout'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from '@/components/ui/card'
-import { trpc } from '@/lib/trpc'
-import { Tag, Pencil, Trash2, Plus, X, Check, Loader2 } from 'lucide-react'
+import { useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { ProjectLayout } from '@/components/layout/ProjectLayout';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { trpc } from '@/lib/trpc';
+import { Tag, Pencil, Trash2, Plus, X, Check, Loader2 } from 'lucide-react';
 
 // =============================================================================
 // Constants
 // =============================================================================
 
-const DEFAULT_COLOR = '#EF4444' // Red
+const DEFAULT_COLOR = '#EF4444'; // Red
 
 const PRESET_COLORS = [
   DEFAULT_COLOR,
@@ -53,97 +47,94 @@ const PRESET_COLORS = [
   '#8B5CF6', // Purple
   '#EC4899', // Pink
   '#6B7280', // Gray
-]
+];
 
 // =============================================================================
 // Component
 // =============================================================================
 
 export function TagManagementPage() {
-  const { projectIdentifier } = useParams<{ projectIdentifier: string }>()
-  const navigate = useNavigate()
-  const utils = trpc.useUtils()
+  const { projectIdentifier } = useParams<{ projectIdentifier: string }>();
+  const navigate = useNavigate();
+  const utils = trpc.useUtils();
 
   // State
-  const [isCreating, setIsCreating] = useState(false)
-  const [newTagName, setNewTagName] = useState('')
-  const [newTagColor, setNewTagColor] = useState(DEFAULT_COLOR)
-  const [editingTagId, setEditingTagId] = useState<number | null>(null)
-  const [editTagName, setEditTagName] = useState('')
-  const [editTagColor, setEditTagColor] = useState('')
+  const [isCreating, setIsCreating] = useState(false);
+  const [newTagName, setNewTagName] = useState('');
+  const [newTagColor, setNewTagColor] = useState(DEFAULT_COLOR);
+  const [editingTagId, setEditingTagId] = useState<number | null>(null);
+  const [editTagName, setEditTagName] = useState('');
+  const [editTagColor, setEditTagColor] = useState('');
 
   // Fetch project by identifier (SEO-friendly URL)
   const projectQuery = trpc.project.getByIdentifier.useQuery(
     { identifier: projectIdentifier! },
     { enabled: !!projectIdentifier }
-  )
+  );
 
   // Get project ID from fetched data
-  const projectId = projectQuery.data?.id ?? 0
+  const projectId = projectQuery.data?.id ?? 0;
 
-  const tagsQuery = trpc.tag.list.useQuery(
-    { projectId },
-    { enabled: projectId > 0 }
-  )
+  const tagsQuery = trpc.tag.list.useQuery({ projectId }, { enabled: projectId > 0 });
 
   // Mutations
   const createTagMutation = trpc.tag.create.useMutation({
     onSuccess: () => {
-      utils.tag.list.invalidate({ projectId })
-      setNewTagName('')
-      setNewTagColor(DEFAULT_COLOR)
-      setIsCreating(false)
+      utils.tag.list.invalidate({ projectId });
+      setNewTagName('');
+      setNewTagColor(DEFAULT_COLOR);
+      setIsCreating(false);
     },
-  })
+  });
 
   const updateTagMutation = trpc.tag.update.useMutation({
     onSuccess: () => {
-      utils.tag.list.invalidate({ projectId })
-      setEditingTagId(null)
+      utils.tag.list.invalidate({ projectId });
+      setEditingTagId(null);
     },
-  })
+  });
 
   const deleteTagMutation = trpc.tag.delete.useMutation({
     onSuccess: () => {
-      utils.tag.list.invalidate({ projectId })
+      utils.tag.list.invalidate({ projectId });
     },
-  })
+  });
 
   // Handlers
   const handleCreateTag = () => {
-    if (!newTagName.trim()) return
+    if (!newTagName.trim()) return;
     createTagMutation.mutate({
       projectId,
       name: newTagName.trim(),
       color: newTagColor,
-    })
-  }
+    });
+  };
 
   const handleStartEdit = (tag: { id: number; name: string; color: string | null }) => {
-    setEditingTagId(tag.id)
-    setEditTagName(tag.name)
-    setEditTagColor(tag.color ?? DEFAULT_COLOR)
-  }
+    setEditingTagId(tag.id);
+    setEditTagName(tag.name);
+    setEditTagColor(tag.color ?? DEFAULT_COLOR);
+  };
 
   const handleSaveEdit = () => {
-    if (!editingTagId || !editTagName.trim()) return
+    if (!editingTagId || !editTagName.trim()) return;
     updateTagMutation.mutate({
       tagId: editingTagId,
       name: editTagName.trim(),
       color: editTagColor,
-    })
-  }
+    });
+  };
 
   const handleCancelEdit = () => {
-    setEditingTagId(null)
-    setEditTagName('')
-    setEditTagColor('')
-  }
+    setEditingTagId(null);
+    setEditTagName('');
+    setEditTagColor('');
+  };
 
   const handleDeleteTag = (tagId: number, tagName: string) => {
-    if (!confirm(`Delete tag "${tagName}"? This will remove it from all tasks.`)) return
-    deleteTagMutation.mutate({ tagId })
-  }
+    if (!confirm(`Delete tag "${tagName}"? This will remove it from all tasks.`)) return;
+    deleteTagMutation.mutate({ tagId });
+  };
 
   // Loading state
   if (projectQuery.isLoading) {
@@ -154,7 +145,7 @@ export function TagManagementPage() {
           <p className="text-muted-foreground mt-2">Loading...</p>
         </div>
       </ProjectLayout>
-    )
+    );
   }
 
   if (!projectQuery.data) {
@@ -164,12 +155,12 @@ export function TagManagementPage() {
           <p className="text-muted-foreground">Project not found</p>
         </div>
       </ProjectLayout>
-    )
+    );
   }
 
-  const project = projectQuery.data
-  const tags = tagsQuery.data ?? []
-  const isManager = project.userRole === 'OWNER' || project.userRole === 'MANAGER'
+  const project = projectQuery.data;
+  const tags = tagsQuery.data ?? [];
+  const isManager = project.userRole === 'OWNER' || project.userRole === 'MANAGER';
 
   return (
     <ProjectLayout>
@@ -181,9 +172,7 @@ export function TagManagementPage() {
               <Tag className="w-8 h-8" />
               Tag Management
             </h1>
-            <p className="text-muted-foreground">
-              Manage tags for {project.name}
-            </p>
+            <p className="text-muted-foreground">Manage tags for {project.name}</p>
           </div>
           <Button variant="outline" onClick={() => navigate(`/project/${projectId}`)}>
             Back to Project
@@ -239,8 +228,8 @@ export function TagManagementPage() {
                           onChange={(e) => setEditTagName(e.target.value)}
                           className="flex-1"
                           onKeyDown={(e) => {
-                            if (e.key === 'Enter') handleSaveEdit()
-                            if (e.key === 'Escape') handleCancelEdit()
+                            if (e.key === 'Enter') handleSaveEdit();
+                            if (e.key === 'Escape') handleCancelEdit();
                           }}
                           autoFocus
                         />
@@ -250,7 +239,9 @@ export function TagManagementPage() {
                               key={color}
                               onClick={() => setEditTagColor(color)}
                               className={`w-5 h-5 rounded-full transition-transform ${
-                                editTagColor === color ? 'ring-2 ring-offset-1 ring-blue-500 scale-110' : ''
+                                editTagColor === color
+                                  ? 'ring-2 ring-offset-1 ring-blue-500 scale-110'
+                                  : ''
                               }`}
                               style={{ backgroundColor: color }}
                             />
@@ -287,7 +278,9 @@ export function TagManagementPage() {
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => handleStartEdit({ id: tag.id, name: tag.name, color: tag.color })}
+                              onClick={() =>
+                                handleStartEdit({ id: tag.id, name: tag.name, color: tag.color })
+                              }
                             >
                               <Pencil className="w-4 h-4" />
                             </Button>
@@ -324,8 +317,8 @@ export function TagManagementPage() {
                       placeholder="Tag name"
                       className="flex-1"
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter') handleCreateTag()
-                        if (e.key === 'Escape') setIsCreating(false)
+                        if (e.key === 'Enter') handleCreateTag();
+                        if (e.key === 'Escape') setIsCreating(false);
                       }}
                       autoFocus
                     />
@@ -335,7 +328,9 @@ export function TagManagementPage() {
                           key={color}
                           onClick={() => setNewTagColor(color)}
                           className={`w-5 h-5 rounded-full transition-transform ${
-                            newTagColor === color ? 'ring-2 ring-offset-1 ring-blue-500 scale-110' : ''
+                            newTagColor === color
+                              ? 'ring-2 ring-offset-1 ring-blue-500 scale-110'
+                              : ''
                           }`}
                           style={{ backgroundColor: color }}
                         />
@@ -377,21 +372,22 @@ export function TagManagementPage() {
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground space-y-2">
             <p>
-              Tags help you organize and categorize tasks. You can assign multiple tags to a single task.
+              Tags help you organize and categorize tasks. You can assign multiple tags to a single
+              task.
             </p>
             <p>
-              Use tags for things like: feature areas, priorities, task types (bug, feature, refactor),
-              or any other grouping that makes sense for your project.
+              Use tags for things like: feature areas, priorities, task types (bug, feature,
+              refactor), or any other grouping that makes sense for your project.
             </p>
           </CardContent>
         </Card>
       </div>
     </ProjectLayout>
-  )
+  );
 }
 
 // =============================================================================
 // Exports
 // =============================================================================
 
-export default TagManagementPage
+export default TagManagementPage;

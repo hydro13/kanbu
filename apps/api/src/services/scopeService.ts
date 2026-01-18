@@ -19,41 +19,41 @@
  * =============================================================================
  */
 
-import { prisma } from '../lib/prisma'
-import { aclService, ACL_PERMISSIONS } from './aclService'
+import { prisma } from '../lib/prisma';
+import { aclService, ACL_PERMISSIONS } from './aclService';
 
 // =============================================================================
 // Types
 // =============================================================================
 
-export type ScopeLevel = 'system' | 'workspace' | 'project' | 'none'
+export type ScopeLevel = 'system' | 'workspace' | 'project' | 'none';
 
 export interface UserScope {
   /** The highest scope level this user has */
-  level: ScopeLevel
+  level: ScopeLevel;
 
   /** Workspace IDs the user has access to */
-  workspaceIds: number[]
+  workspaceIds: number[];
 
   /** Project IDs the user has access to */
-  projectIds: number[]
+  projectIds: number[];
 
   /** Permission flags for common operations */
   permissions: {
     /** Can manage users (create, edit, delete) */
-    canManageUsers: boolean
+    canManageUsers: boolean;
     /** Can manage security groups */
-    canManageGroups: boolean
+    canManageGroups: boolean;
     /** Can manage workspaces */
-    canManageWorkspaces: boolean
+    canManageWorkspaces: boolean;
     /** Can access admin panel at all */
-    canAccessAdminPanel: boolean
+    canAccessAdminPanel: boolean;
     /** Can manage ACL entries */
-    canManageAcl: boolean
-  }
+    canManageAcl: boolean;
+  };
 
   /** Is this user a Domain Admin (full system access) */
-  isDomainAdmin: boolean
+  isDomainAdmin: boolean;
 }
 
 // =============================================================================
@@ -70,23 +70,23 @@ export class ScopeService {
    */
   async getUserScope(userId: number): Promise<UserScope> {
     // 1. Check if user is a Domain Admin (has system-level access)
-    const isDomainAdmin = await this.isDomainAdmin(userId)
+    const isDomainAdmin = await this.isDomainAdmin(userId);
 
     if (isDomainAdmin) {
       // Domain Admins have full access to everything
       const allWorkspaces = await prisma.workspace.findMany({
         where: { isActive: true },
         select: { id: true },
-      })
+      });
       const allProjects = await prisma.project.findMany({
         where: { isActive: true },
         select: { id: true },
-      })
+      });
 
       return {
         level: 'system',
-        workspaceIds: allWorkspaces.map(w => w.id),
-        projectIds: allProjects.map(p => p.id),
+        workspaceIds: allWorkspaces.map((w) => w.id),
+        projectIds: allProjects.map((p) => p.id),
         permissions: {
           canManageUsers: true,
           canManageGroups: true,
@@ -95,25 +95,25 @@ export class ScopeService {
           canManageAcl: true,
         },
         isDomainAdmin: true,
-      }
+      };
     }
 
     // 2. Get workspaces user has access to via ACL
-    const accessibleWorkspaceIds = await this.getAccessibleWorkspaceIds(userId)
+    const accessibleWorkspaceIds = await this.getAccessibleWorkspaceIds(userId);
 
     // 3. Get projects user has access to via ACL
-    const accessibleProjectIds = await this.getAccessibleProjectIds(userId, accessibleWorkspaceIds)
+    const accessibleProjectIds = await this.getAccessibleProjectIds(userId, accessibleWorkspaceIds);
 
     // 4. Determine scope level based on what access they have
-    let level: ScopeLevel = 'none'
+    let level: ScopeLevel = 'none';
     if (accessibleWorkspaceIds.length > 0) {
-      level = 'workspace'
+      level = 'workspace';
     } else if (accessibleProjectIds.length > 0) {
-      level = 'project'
+      level = 'project';
     }
 
     // 5. Check permission flags
-    const permissions = await this.checkPermissionFlags(userId, accessibleWorkspaceIds)
+    const permissions = await this.checkPermissionFlags(userId, accessibleWorkspaceIds);
 
     return {
       level,
@@ -121,7 +121,7 @@ export class ScopeService {
       projectIds: accessibleProjectIds,
       permissions,
       isDomainAdmin: false,
-    }
+    };
   }
 
   /**
@@ -133,16 +133,21 @@ export class ScopeService {
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { role: true },
-    })
+    });
 
     if (user?.role === 'ADMIN') {
-      return true
+      return true;
     }
 
     // Check if user has READ access on root (via ACL)
-    const hasRootAccess = await aclService.hasPermission(userId, 'root', null, ACL_PERMISSIONS.READ)
+    const hasRootAccess = await aclService.hasPermission(
+      userId,
+      'root',
+      null,
+      ACL_PERMISSIONS.READ
+    );
 
-    return hasRootAccess
+    return hasRootAccess;
   }
 
   /**
@@ -151,41 +156,49 @@ export class ScopeService {
    */
   private async getAccessibleWorkspaceIds(userId: number): Promise<number[]> {
     // Get all ACL entries for this user on workspaces
-    const userAclEntries = await aclService.getUserAclEntries(userId)
+    const userAclEntries = await aclService.getUserAclEntries(userId);
 
     // Filter for workspace entries with READ permission
-    const workspaceIds = new Set<number>()
+    const workspaceIds = new Set<number>();
 
     for (const entry of userAclEntries) {
       if (entry.resourceType === 'workspace' && entry.resourceId !== null) {
         // Check if this entry grants READ access
         if (!entry.deny && (entry.permissions & ACL_PERMISSIONS.READ) !== 0) {
-          workspaceIds.add(entry.resourceId)
+          workspaceIds.add(entry.resourceId);
         }
       }
     }
 
     // Also check if user has READ on "all workspaces" (resourceId = null)
-    const hasAllWorkspacesAccess = await aclService.hasPermission(userId, 'workspace', null, ACL_PERMISSIONS.READ)
+    const hasAllWorkspacesAccess = await aclService.hasPermission(
+      userId,
+      'workspace',
+      null,
+      ACL_PERMISSIONS.READ
+    );
 
     if (hasAllWorkspacesAccess) {
       // User has access to all workspaces
       const allWorkspaces = await prisma.workspace.findMany({
         where: { isActive: true },
         select: { id: true },
-      })
-      return allWorkspaces.map(w => w.id)
+      });
+      return allWorkspaces.map((w) => w.id);
     }
 
-    return Array.from(workspaceIds)
+    return Array.from(workspaceIds);
   }
 
   /**
    * Get all project IDs a user has access to.
    * This includes projects in accessible workspaces AND directly assigned projects.
    */
-  private async getAccessibleProjectIds(userId: number, accessibleWorkspaceIds: number[]): Promise<number[]> {
-    const projectIds = new Set<number>()
+  private async getAccessibleProjectIds(
+    userId: number,
+    accessibleWorkspaceIds: number[]
+  ): Promise<number[]> {
+    const projectIds = new Set<number>();
 
     // 1. Get all projects in accessible workspaces
     if (accessibleWorkspaceIds.length > 0) {
@@ -195,22 +208,22 @@ export class ScopeService {
           workspaceId: { in: accessibleWorkspaceIds },
         },
         select: { id: true },
-      })
-      workspaceProjects.forEach(p => projectIds.add(p.id))
+      });
+      workspaceProjects.forEach((p) => projectIds.add(p.id));
     }
 
     // 2. Get directly assigned projects (via ACL)
-    const userAclEntries = await aclService.getUserAclEntries(userId)
+    const userAclEntries = await aclService.getUserAclEntries(userId);
 
     for (const entry of userAclEntries) {
       if (entry.resourceType === 'project' && entry.resourceId !== null) {
         if (!entry.deny && (entry.permissions & ACL_PERMISSIONS.READ) !== 0) {
-          projectIds.add(entry.resourceId)
+          projectIds.add(entry.resourceId);
         }
       }
     }
 
-    return Array.from(projectIds)
+    return Array.from(projectIds);
   }
 
   /**
@@ -219,35 +232,43 @@ export class ScopeService {
    * SECURITY: Admin panel access requires explicit admin-level permissions.
    * Having READ access on a workspace does NOT grant admin panel access.
    */
-  private async checkPermissionFlags(userId: number, accessibleWorkspaceIds: number[]): Promise<UserScope['permissions']> {
+  private async checkPermissionFlags(
+    userId: number,
+    accessibleWorkspaceIds: number[]
+  ): Promise<UserScope['permissions']> {
     // Check system-level permissions
     const [canManageUsers, canManageGroups, canManageAcl] = await Promise.all([
       aclService.hasPermission(userId, 'system', null, ACL_PERMISSIONS.WRITE),
       aclService.hasPermission(userId, 'system', null, ACL_PERMISSIONS.WRITE),
       aclService.hasPermission(userId, 'system', null, ACL_PERMISSIONS.PERMISSIONS),
-    ])
+    ]);
 
     // Can manage workspaces if they have WRITE on any workspace
-    let canManageWorkspaces = false
+    let canManageWorkspaces = false;
     for (const wsId of accessibleWorkspaceIds) {
       if (await aclService.hasPermission(userId, 'workspace', wsId, ACL_PERMISSIONS.WRITE)) {
-        canManageWorkspaces = true
-        break
+        canManageWorkspaces = true;
+        break;
       }
     }
 
     // Check if user is a workspace admin (has PERMISSIONS on any workspace)
     // This is required for admin panel access - just having READ is NOT enough
-    let isWorkspaceAdmin = false
+    let isWorkspaceAdmin = false;
     for (const wsId of accessibleWorkspaceIds) {
       if (await aclService.hasPermission(userId, 'workspace', wsId, ACL_PERMISSIONS.PERMISSIONS)) {
-        isWorkspaceAdmin = true
-        break
+        isWorkspaceAdmin = true;
+        break;
       }
     }
 
     // Check if user has explicit admin-level ACL access
-    const hasAdminAccess = await aclService.hasPermission(userId, 'admin', null, ACL_PERMISSIONS.READ)
+    const hasAdminAccess = await aclService.hasPermission(
+      userId,
+      'admin',
+      null,
+      ACL_PERMISSIONS.READ
+    );
 
     // SECURITY FIX: Admin panel access requires explicit admin permissions
     // Just having READ on a workspace does NOT grant admin panel access!
@@ -255,11 +276,8 @@ export class ScopeService {
     // 1. Explicit ACL on 'admin' resource, OR
     // 2. PERMISSIONS (P) bit on a workspace (workspace admin), OR
     // 3. System-level management permissions
-    const canAccessAdminPanel = hasAdminAccess ||
-                                isWorkspaceAdmin ||
-                                canManageUsers ||
-                                canManageGroups ||
-                                canManageAcl
+    const canAccessAdminPanel =
+      hasAdminAccess || isWorkspaceAdmin || canManageUsers || canManageGroups || canManageAcl;
 
     return {
       canManageUsers,
@@ -267,7 +285,7 @@ export class ScopeService {
       canManageWorkspaces,
       canAccessAdminPanel,
       canManageAcl,
-    }
+    };
   }
 
   // ===========================================================================
@@ -281,15 +299,15 @@ export class ScopeService {
    * - Others: Only themselves
    */
   async getUsersInScope(userId: number): Promise<number[]> {
-    const scope = await this.getUserScope(userId)
+    const scope = await this.getUserScope(userId);
 
     if (scope.isDomainAdmin) {
       // Return all active users
       const users = await prisma.user.findMany({
         where: { isActive: true },
         select: { id: true },
-      })
-      return users.map(u => u.id)
+      });
+      return users.map((u) => u.id);
     }
 
     if (scope.workspaceIds.length > 0) {
@@ -302,16 +320,16 @@ export class ScopeService {
         },
         select: { principalId: true },
         distinct: ['principalId'],
-      })
+      });
 
-      const userIds = new Set(userIdsInWorkspaces.map(e => e.principalId))
-      userIds.add(userId) // Always include self
+      const userIds = new Set(userIdsInWorkspaces.map((e) => e.principalId));
+      userIds.add(userId); // Always include self
 
-      return Array.from(userIds)
+      return Array.from(userIds);
     }
 
     // Only return self
-    return [userId]
+    return [userId];
   }
 
   /**
@@ -321,23 +339,23 @@ export class ScopeService {
    * - Others: Groups they are a member of
    */
   async getGroupsInScope(userId: number): Promise<number[]> {
-    const scope = await this.getUserScope(userId)
+    const scope = await this.getUserScope(userId);
 
     if (scope.isDomainAdmin) {
       // Return all active groups
       const groups = await prisma.group.findMany({
         where: { isActive: true },
         select: { id: true },
-      })
-      return groups.map(g => g.id)
+      });
+      return groups.map((g) => g.id);
     }
 
     // Get groups user is a member of
     const memberGroups = await prisma.groupMember.findMany({
       where: { userId },
       select: { groupId: true },
-    })
-    const groupIds = new Set(memberGroups.map(m => m.groupId))
+    });
+    const groupIds = new Set(memberGroups.map((m) => m.groupId));
 
     // If user has workspace access, also include system groups (workspaceId = null)
     if (scope.workspaceIds.length > 0) {
@@ -347,31 +365,31 @@ export class ScopeService {
           workspaceId: null,
         },
         select: { id: true },
-      })
-      systemGroups.forEach(g => groupIds.add(g.id))
+      });
+      systemGroups.forEach((g) => groupIds.add(g.id));
     }
 
-    return Array.from(groupIds)
+    return Array.from(groupIds);
   }
 
   /**
    * Get workspaces visible to a given user.
    */
   async getWorkspacesInScope(userId: number): Promise<number[]> {
-    const scope = await this.getUserScope(userId)
-    return scope.workspaceIds
+    const scope = await this.getUserScope(userId);
+    return scope.workspaceIds;
   }
 
   /**
    * Get projects visible to a given user, optionally filtered by workspace.
    */
   async getProjectsInScope(userId: number, workspaceId?: number): Promise<number[]> {
-    const scope = await this.getUserScope(userId)
+    const scope = await this.getUserScope(userId);
 
     if (workspaceId) {
       // Filter to specific workspace
       if (!scope.workspaceIds.includes(workspaceId)) {
-        return [] // User doesn't have access to this workspace
+        return []; // User doesn't have access to this workspace
       }
 
       const projects = await prisma.project.findMany({
@@ -381,11 +399,11 @@ export class ScopeService {
           id: { in: scope.projectIds },
         },
         select: { id: true },
-      })
-      return projects.map(p => p.id)
+      });
+      return projects.map((p) => p.id);
     }
 
-    return scope.projectIds
+    return scope.projectIds;
   }
 
   // ===========================================================================
@@ -396,42 +414,42 @@ export class ScopeService {
    * Check if a user can access a specific workspace.
    */
   async canAccessWorkspace(userId: number, workspaceId: number): Promise<boolean> {
-    const scope = await this.getUserScope(userId)
-    return scope.isDomainAdmin || scope.workspaceIds.includes(workspaceId)
+    const scope = await this.getUserScope(userId);
+    return scope.isDomainAdmin || scope.workspaceIds.includes(workspaceId);
   }
 
   /**
    * Check if a user can access a specific project.
    */
   async canAccessProject(userId: number, projectId: number): Promise<boolean> {
-    const scope = await this.getUserScope(userId)
-    return scope.isDomainAdmin || scope.projectIds.includes(projectId)
+    const scope = await this.getUserScope(userId);
+    return scope.isDomainAdmin || scope.projectIds.includes(projectId);
   }
 
   /**
    * Get a Prisma where clause for filtering workspaces by scope.
    */
   async getWorkspaceWhereClause(userId: number): Promise<{ id?: { in: number[] } }> {
-    const scope = await this.getUserScope(userId)
+    const scope = await this.getUserScope(userId);
 
     if (scope.isDomainAdmin) {
-      return {} // No filter for Domain Admins
+      return {}; // No filter for Domain Admins
     }
 
-    return { id: { in: scope.workspaceIds } }
+    return { id: { in: scope.workspaceIds } };
   }
 
   /**
    * Get a Prisma where clause for filtering projects by scope.
    */
   async getProjectWhereClause(userId: number): Promise<{ id?: { in: number[] } }> {
-    const scope = await this.getUserScope(userId)
+    const scope = await this.getUserScope(userId);
 
     if (scope.isDomainAdmin) {
-      return {} // No filter for Domain Admins
+      return {}; // No filter for Domain Admins
     }
 
-    return { id: { in: scope.projectIds } }
+    return { id: { in: scope.projectIds } };
   }
 }
 
@@ -439,4 +457,4 @@ export class ScopeService {
 // Singleton Export
 // =============================================================================
 
-export const scopeService = new ScopeService()
+export const scopeService = new ScopeService();

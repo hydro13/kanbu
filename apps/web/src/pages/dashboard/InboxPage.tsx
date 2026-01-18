@@ -12,12 +12,12 @@
  * ===================================================================
  */
 
-import { Link } from 'react-router-dom'
-import { DashboardLayout } from '@/components/dashboard'
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { trpc } from '@/lib/trpc'
-import { cn } from '@/lib/utils'
+import { Link } from 'react-router-dom';
+import { DashboardLayout } from '@/components/dashboard';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { trpc } from '@/lib/trpc';
+import { cn } from '@/lib/utils';
 import {
   Bell,
   CheckCircle2,
@@ -29,21 +29,21 @@ import {
   Rocket,
   CheckCheck,
   Trash2,
-} from 'lucide-react'
+} from 'lucide-react';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface NotificationItem {
-  id: number
-  type: string
-  title: string
-  content: string | null
-  data: Record<string, unknown>
-  isRead: boolean
-  createdAt: string
-  link?: string
+  id: number;
+  type: string;
+  title: string;
+  content: string | null;
+  data: Record<string, unknown>;
+  isRead: boolean;
+  createdAt: string;
+  link?: string;
 }
 
 // =============================================================================
@@ -54,87 +54,87 @@ function getNotificationIcon(type: string) {
   switch (type) {
     case 'task_assigned':
     case 'subtask_assigned':
-      return <UserPlus className="h-5 w-5 text-blue-500" />
+      return <UserPlus className="h-5 w-5 text-blue-500" />;
     case 'task_completed':
     case 'subtask_completed':
-      return <CheckCircle2 className="h-5 w-5 text-green-500" />
+      return <CheckCircle2 className="h-5 w-5 text-green-500" />;
     case 'task_overdue':
-      return <AlertTriangle className="h-5 w-5 text-red-500" />
+      return <AlertTriangle className="h-5 w-5 text-red-500" />;
     case 'task_due_soon':
-      return <Clock className="h-5 w-5 text-amber-500" />
+      return <Clock className="h-5 w-5 text-amber-500" />;
     case 'comment_added':
     case 'comment_mentioned':
-      return <MessageSquare className="h-5 w-5 text-purple-500" />
+      return <MessageSquare className="h-5 w-5 text-purple-500" />;
     case 'workflow_failed':
     case 'check_run_failed':
     case 'deployment_failed':
-      return <GitBranch className="h-5 w-5 text-red-500" />
+      return <GitBranch className="h-5 w-5 text-red-500" />;
     case 'workflow_succeeded':
     case 'check_run_succeeded':
-      return <GitBranch className="h-5 w-5 text-green-500" />
+      return <GitBranch className="h-5 w-5 text-green-500" />;
     case 'deployment_succeeded':
-      return <Rocket className="h-5 w-5 text-green-500" />
+      return <Rocket className="h-5 w-5 text-green-500" />;
     case 'deployment_pending':
-      return <Rocket className="h-5 w-5 text-amber-500" />
+      return <Rocket className="h-5 w-5 text-amber-500" />;
     case 'project_invited':
     case 'project_role_changed':
-      return <UserPlus className="h-5 w-5 text-indigo-500" />
+      return <UserPlus className="h-5 w-5 text-indigo-500" />;
     default:
-      return <Bell className="h-5 w-5 text-gray-500" />
+      return <Bell className="h-5 w-5 text-gray-500" />;
   }
 }
 
 function formatRelativeTime(dateString: string): string {
-  const date = new Date(dateString)
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffMins = Math.floor(diffMs / (1000 * 60))
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-  if (diffMins < 1) return 'Just now'
-  if (diffMins < 60) return `${diffMins}m ago`
-  if (diffHours < 24) return `${diffHours}h ago`
-  if (diffDays === 1) return 'Yesterday'
-  if (diffDays < 7) return `${diffDays}d ago`
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays < 7) return `${diffDays}d ago`;
 
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
 function groupNotificationsByDate(notifications: NotificationItem[]) {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const yesterday = new Date(today)
-  yesterday.setDate(yesterday.getDate() - 1)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
 
   const groups: { label: string; items: NotificationItem[] }[] = [
     { label: 'Today', items: [] },
     { label: 'Yesterday', items: [] },
     { label: 'Older', items: [] },
-  ]
+  ];
 
   for (const notification of notifications) {
-    const date = new Date(notification.createdAt)
-    date.setHours(0, 0, 0, 0)
+    const date = new Date(notification.createdAt);
+    date.setHours(0, 0, 0, 0);
 
     if (date.getTime() === today.getTime()) {
-      groups[0]!.items.push(notification)
+      groups[0]!.items.push(notification);
     } else if (date.getTime() === yesterday.getTime()) {
-      groups[1]!.items.push(notification)
+      groups[1]!.items.push(notification);
     } else {
-      groups[2]!.items.push(notification)
+      groups[2]!.items.push(notification);
     }
   }
 
-  return groups.filter((g) => g.items.length > 0)
+  return groups.filter((g) => g.items.length > 0);
 }
 
 function getProjectInfo(data: Record<string, unknown>): string | null {
-  const projectName = data.projectName as string | undefined
-  const workspaceName = data.workspaceName as string | undefined
-  if (projectName && workspaceName) return `${projectName} • ${workspaceName}`
-  if (projectName) return projectName
-  return null
+  const projectName = data.projectName as string | undefined;
+  const workspaceName = data.workspaceName as string | undefined;
+  if (projectName && workspaceName) return `${projectName} • ${workspaceName}`;
+  if (projectName) return projectName;
+  return null;
 }
 
 // =============================================================================
@@ -142,53 +142,53 @@ function getProjectInfo(data: Record<string, unknown>): string | null {
 // =============================================================================
 
 export function InboxPage() {
-  const utils = trpc.useUtils()
+  const utils = trpc.useUtils();
 
   // Fetch notifications
   const notificationsQuery = trpc.notification.list.useQuery({
     limit: 50,
     offset: 0,
-  })
-  const notifications = (notificationsQuery.data ?? []) as NotificationItem[]
-  const unreadCountQuery = trpc.notification.getUnreadCount.useQuery()
+  });
+  const notifications = (notificationsQuery.data ?? []) as NotificationItem[];
+  const unreadCountQuery = trpc.notification.getUnreadCount.useQuery();
 
   // Mutations
   const markRead = trpc.notification.markRead.useMutation({
     onSuccess: () => {
-      utils.notification.list.invalidate()
-      utils.notification.getUnreadCount.invalidate()
+      utils.notification.list.invalidate();
+      utils.notification.getUnreadCount.invalidate();
     },
-  })
+  });
 
   const markAllRead = trpc.notification.markAllRead.useMutation({
     onSuccess: () => {
-      utils.notification.list.invalidate()
-      utils.notification.getUnreadCount.invalidate()
+      utils.notification.list.invalidate();
+      utils.notification.getUnreadCount.invalidate();
     },
-  })
+  });
 
   const deleteNotification = trpc.notification.delete.useMutation({
     onSuccess: () => {
-      utils.notification.list.invalidate()
-      utils.notification.getUnreadCount.invalidate()
+      utils.notification.list.invalidate();
+      utils.notification.getUnreadCount.invalidate();
     },
-  })
+  });
 
   const deleteAllRead = trpc.notification.deleteAllRead.useMutation({
     onSuccess: () => {
-      utils.notification.list.invalidate()
-      utils.notification.getUnreadCount.invalidate()
+      utils.notification.list.invalidate();
+      utils.notification.getUnreadCount.invalidate();
     },
-  })
+  });
 
-  const groupedNotifications = groupNotificationsByDate(notifications)
-  const unreadCount = unreadCountQuery.data?.count ?? 0
+  const groupedNotifications = groupNotificationsByDate(notifications);
+  const unreadCount = unreadCountQuery.data?.count ?? 0;
 
   const handleNotificationClick = (notification: NotificationItem) => {
     if (!notification.isRead) {
-      markRead.mutate({ notificationIds: [notification.id] })
+      markRead.mutate({ notificationIds: [notification.id] });
     }
-  }
+  };
 
   return (
     <DashboardLayout>
@@ -236,9 +236,7 @@ export function InboxPage() {
         {notificationsQuery.isLoading ? (
           <Card>
             <CardContent className="py-8">
-              <p className="text-center text-muted-foreground">
-                Loading notifications...
-              </p>
+              <p className="text-center text-muted-foreground">Loading notifications...</p>
             </CardContent>
           </Card>
         ) : notifications.length === 0 ? (
@@ -247,9 +245,7 @@ export function InboxPage() {
               <div className="text-center">
                 <Bell className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
                 <h3 className="text-lg font-medium mb-1">All caught up!</h3>
-                <p className="text-muted-foreground">
-                  You have no notifications at the moment.
-                </p>
+                <p className="text-muted-foreground">You have no notifications at the moment.</p>
               </div>
             </CardContent>
           </Card>
@@ -263,16 +259,11 @@ export function InboxPage() {
                 <Card>
                   <CardContent className="p-0 divide-y">
                     {group.items.map((notification) => {
-                      const projectInfo = getProjectInfo(notification.data)
+                      const projectInfo = getProjectInfo(notification.data);
 
                       const contentElement = (
                         <>
-                          <p
-                            className={cn(
-                              'text-sm',
-                              !notification.isRead && 'font-medium'
-                            )}
-                          >
+                          <p className={cn('text-sm', !notification.isRead && 'font-medium')}>
                             {notification.title}
                           </p>
                           {notification.content && (
@@ -281,12 +272,10 @@ export function InboxPage() {
                             </p>
                           )}
                           {projectInfo && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {projectInfo}
-                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">{projectInfo}</p>
                           )}
                         </>
-                      )
+                      );
 
                       return (
                         <div
@@ -336,11 +325,11 @@ export function InboxPage() {
                               size="icon"
                               className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
                               onClick={(e) => {
-                                e.preventDefault()
-                                e.stopPropagation()
+                                e.preventDefault();
+                                e.stopPropagation();
                                 deleteNotification.mutate({
                                   notificationId: notification.id,
-                                })
+                                });
                               }}
                               disabled={deleteNotification.isPending}
                             >
@@ -348,7 +337,7 @@ export function InboxPage() {
                             </Button>
                           </div>
                         </div>
-                      )
+                      );
                     })}
                   </CardContent>
                 </Card>
@@ -358,7 +347,7 @@ export function InboxPage() {
         )}
       </div>
     </DashboardLayout>
-  )
+  );
 }
 
-export default InboxPage
+export default InboxPage;

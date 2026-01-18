@@ -10,11 +10,11 @@
 
 This document describes the **historical** color issues identified during the design audit. **All mentioned issues have been resolved** in Design System v2.0.0 implementation.
 
-| Issue | Status | Solution |
-|-------|--------|----------|
-| Hardcoded colors (75%) | ✅ Resolved | 100% migrated to design tokens |
-| Inconsistent priority colors | ✅ Resolved | Semantic tokens: `--priority-*` |
-| Missing tokens | ✅ Resolved | success, warning, error, info added |
+| Issue                        | Status      | Solution                            |
+| ---------------------------- | ----------- | ----------------------------------- |
+| Hardcoded colors (75%)       | ✅ Resolved | 100% migrated to design tokens      |
+| Inconsistent priority colors | ✅ Resolved | Semantic tokens: `--priority-*`     |
+| Missing tokens               | ✅ Resolved | success, warning, error, info added |
 
 ---
 
@@ -22,18 +22,18 @@ This document describes the **historical** color issues identified during the de
 
 ### Statistics (BEFORE migration)
 
-| Type | Count | Percentage |
-|------|-------|------------|
-| Hardcoded Tailwind bg-colors | 1,443 | ~64% |
-| Hardcoded Tailwind text-colors | 2,405 | ~75% |
-| Design system colors | 804 | ~25% |
+| Type                           | Count | Percentage |
+| ------------------------------ | ----- | ---------- |
+| Hardcoded Tailwind bg-colors   | 1,443 | ~64%       |
+| Hardcoded Tailwind text-colors | 2,405 | ~75%       |
+| Design system colors           | 804   | ~25%       |
 
 ### Statistics (AFTER migration - Phase 2)
 
-| Type | Count | Percentage |
-|------|-------|------------|
-| Hardcoded Tailwind colors | 0 | 0% |
-| Design system colors | 100% | 100% |
+| Type                      | Count | Percentage |
+| ------------------------- | ----- | ---------- |
+| Hardcoded Tailwind colors | 0     | 0%         |
+| Design system colors      | 100%  | 100%       |
 
 ---
 
@@ -42,6 +42,7 @@ This document describes the **historical** color issues identified during the de
 ### Was The Problem
 
 Priority colors were defined in **4+ different locations** with **different values**:
+
 - FilterBar.tsx → `bg-orange-500` for HIGH
 - CalendarView.tsx → `bg-yellow-500` for HIGH
 - TimelineView.tsx → `bg-yellow-500` for HIGH
@@ -54,7 +55,7 @@ All priority colors are now centralized as semantic tokens in `globals.css`:
 /* Priority Colors (globals.css v2.0.0) */
 --priority-low: var(--color-gray-400);
 --priority-medium: var(--color-blue-500);
---priority-high: var(--color-orange-500);     /* Consistent ORANGE */
+--priority-high: var(--color-orange-500); /* Consistent ORANGE */
 --priority-urgent: var(--color-red-500);
 
 /* With light variants for backgrounds */
@@ -65,6 +66,7 @@ All priority colors are now centralized as semantic tokens in `globals.css`:
 ```
 
 All components now use the same source:
+
 - `lib/design-tokens.ts` for TypeScript constants
 - `globals.css` for CSS custom properties
 
@@ -75,6 +77,7 @@ All components now use the same source:
 ### Was The Problem
 
 The original design system was missing:
+
 - `--success` (for positive actions, completed states)
 - `--warning` (for high priority, deadlines)
 - `--info` (for informational messages)
@@ -118,6 +121,7 @@ Complete state color set in `globals.css`:
 ### 1. Primitive Color Tokens
 
 10 complete color scales (50-950):
+
 - Gray, Blue, Orange, Red, Green, Amber
 - **New:** Teal, Violet, Rose, Cyan
 
@@ -125,15 +129,15 @@ Complete state color set in `globals.css`:
 
 Meaningful color names that reference primitives:
 
-| Token | Light Mode | Dark Mode |
-|-------|------------|-----------|
-| `--background` | white | gray-950 |
-| `--foreground` | gray-900 | gray-50 |
-| `--surface-1` | white | gray-900 |
-| `--surface-2` | gray-50 | gray-800 |
-| `--surface-3` | gray-100 | gray-700 |
-| `--border` | gray-200 | gray-700 |
-| `--muted` | gray-100 | gray-800 |
+| Token          | Light Mode | Dark Mode |
+| -------------- | ---------- | --------- |
+| `--background` | white      | gray-950  |
+| `--foreground` | gray-900   | gray-50   |
+| `--surface-1`  | white      | gray-900  |
+| `--surface-2`  | gray-50    | gray-800  |
+| `--surface-3`  | gray-100   | gray-700  |
+| `--border`     | gray-200   | gray-700  |
+| `--muted`      | gray-100   | gray-800  |
 
 ### 3. Component Tokens
 
@@ -190,14 +194,14 @@ All colors are available via Tailwind classes:
 
 ## Reference: Key Files
 
-| File | Function |
-|------|----------|
-| `apps/web/src/styles/globals.css` | CSS custom properties (v2.0.0) |
-| `apps/web/src/lib/design-tokens.ts` | TypeScript token constants |
-| `apps/web/tailwind.config.js` | Tailwind integration |
-| `apps/web/src/styles/accents.css` | Accent color overrides |
+| File                                | Function                       |
+| ----------------------------------- | ------------------------------ |
+| `apps/web/src/styles/globals.css`   | CSS custom properties (v2.0.0) |
+| `apps/web/src/lib/design-tokens.ts` | TypeScript token constants     |
+| `apps/web/tailwind.config.js`       | Tailwind integration           |
+| `apps/web/src/styles/accents.css`   | Accent color overrides         |
 
 ---
 
-*Document version: 2.0.0*
-*Last updated: 2026-01-15*
+_Document version: 2.0.0_
+_Last updated: 2026-01-15_

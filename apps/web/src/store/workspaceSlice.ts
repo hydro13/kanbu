@@ -13,49 +13,49 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { createSlice, type PayloadAction } from '@reduxjs/toolkit'
+import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface Workspace {
-  id: number
-  name: string
-  slug: string
-  description: string | null
-  logoUrl: string | null
-  role: 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER'
-  memberCount: number
-  projectCount: number
-  createdAt: string
-  updatedAt: string
+  id: number;
+  name: string;
+  slug: string;
+  description: string | null;
+  logoUrl: string | null;
+  role: 'OWNER' | 'ADMIN' | 'MEMBER' | 'VIEWER';
+  memberCount: number;
+  projectCount: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface WorkspaceState {
-  currentWorkspace: Workspace | null
-  workspaces: Workspace[]
-  isLoading: boolean
-  error: string | null
+  currentWorkspace: Workspace | null;
+  workspaces: Workspace[];
+  isLoading: boolean;
+  error: string | null;
 }
 
 // =============================================================================
 // Local Storage
 // =============================================================================
 
-const WORKSPACE_KEY = 'kanbu_current_workspace'
+const WORKSPACE_KEY = 'kanbu_current_workspace';
 
 function loadCurrentWorkspaceId(): number | null {
   if (typeof window === 'undefined') {
-    return null
+    return null;
   }
 
-  const stored = localStorage.getItem(WORKSPACE_KEY)
+  const stored = localStorage.getItem(WORKSPACE_KEY);
   if (stored) {
-    const id = parseInt(stored, 10)
-    return isNaN(id) ? null : id
+    const id = parseInt(stored, 10);
+    return isNaN(id) ? null : id;
   }
-  return null
+  return null;
 }
 
 // =============================================================================
@@ -67,7 +67,7 @@ const initialState: WorkspaceState = {
   workspaces: [],
   isLoading: false,
   error: null,
-}
+};
 
 // =============================================================================
 // Slice
@@ -81,9 +81,9 @@ export const workspaceSlice = createSlice({
      * Set loading state
      */
     setLoading: (state, action: PayloadAction<boolean>) => {
-      state.isLoading = action.payload
+      state.isLoading = action.payload;
       if (action.payload) {
-        state.error = null
+        state.error = null;
       }
     },
 
@@ -91,31 +91,26 @@ export const workspaceSlice = createSlice({
      * Set error state
      */
     setError: (state, action: PayloadAction<string | null>) => {
-      state.error = action.payload
-      state.isLoading = false
+      state.error = action.payload;
+      state.isLoading = false;
     },
 
     /**
      * Set workspaces list
      */
     setWorkspaces: (state, action: PayloadAction<Workspace[]>) => {
-      state.workspaces = action.payload
-      state.isLoading = false
-      state.error = null
+      state.workspaces = action.payload;
+      state.isLoading = false;
+      state.error = null;
 
       // If no current workspace, select first one (or last selected)
       if (!state.currentWorkspace && action.payload.length > 0) {
-        const savedId = loadCurrentWorkspaceId()
-        const saved = savedId
-          ? action.payload.find((w) => w.id === savedId)
-          : null
-        state.currentWorkspace = saved || action.payload[0] || null
+        const savedId = loadCurrentWorkspaceId();
+        const saved = savedId ? action.payload.find((w) => w.id === savedId) : null;
+        state.currentWorkspace = saved || action.payload[0] || null;
 
         if (state.currentWorkspace) {
-          localStorage.setItem(
-            WORKSPACE_KEY,
-            state.currentWorkspace.id.toString()
-          )
+          localStorage.setItem(WORKSPACE_KEY, state.currentWorkspace.id.toString());
         }
       }
     },
@@ -124,12 +119,12 @@ export const workspaceSlice = createSlice({
      * Set current workspace
      */
     setCurrentWorkspace: (state, action: PayloadAction<Workspace | null>) => {
-      state.currentWorkspace = action.payload
+      state.currentWorkspace = action.payload;
 
       if (action.payload) {
-        localStorage.setItem(WORKSPACE_KEY, action.payload.id.toString())
+        localStorage.setItem(WORKSPACE_KEY, action.payload.id.toString());
       } else {
-        localStorage.removeItem(WORKSPACE_KEY)
+        localStorage.removeItem(WORKSPACE_KEY);
       }
     },
 
@@ -137,10 +132,10 @@ export const workspaceSlice = createSlice({
      * Select workspace by ID
      */
     selectWorkspace: (state, action: PayloadAction<number>) => {
-      const workspace = state.workspaces.find((w) => w.id === action.payload)
+      const workspace = state.workspaces.find((w) => w.id === action.payload);
       if (workspace) {
-        state.currentWorkspace = workspace
-        localStorage.setItem(WORKSPACE_KEY, workspace.id.toString())
+        state.currentWorkspace = workspace;
+        localStorage.setItem(WORKSPACE_KEY, workspace.id.toString());
       }
     },
 
@@ -148,11 +143,11 @@ export const workspaceSlice = createSlice({
      * Add a new workspace to the list
      */
     addWorkspace: (state, action: PayloadAction<Workspace>) => {
-      state.workspaces.push(action.payload)
+      state.workspaces.push(action.payload);
       // Auto-select if it's the only one
       if (state.workspaces.length === 1) {
-        state.currentWorkspace = action.payload
-        localStorage.setItem(WORKSPACE_KEY, action.payload.id.toString())
+        state.currentWorkspace = action.payload;
+        localStorage.setItem(WORKSPACE_KEY, action.payload.id.toString());
       }
     },
 
@@ -160,15 +155,15 @@ export const workspaceSlice = createSlice({
      * Update a workspace in the list
      */
     updateWorkspace: (state, action: PayloadAction<Partial<Workspace> & { id: number }>) => {
-      const index = state.workspaces.findIndex((w) => w.id === action.payload.id)
+      const index = state.workspaces.findIndex((w) => w.id === action.payload.id);
       if (index !== -1) {
         state.workspaces[index] = {
           ...state.workspaces[index]!,
           ...action.payload,
-        }
+        };
         // Update current if it's the same workspace
         if (state.currentWorkspace?.id === action.payload.id) {
-          state.currentWorkspace = state.workspaces[index]!
+          state.currentWorkspace = state.workspaces[index]!;
         }
       }
     },
@@ -177,14 +172,14 @@ export const workspaceSlice = createSlice({
      * Remove a workspace from the list
      */
     removeWorkspace: (state, action: PayloadAction<number>) => {
-      state.workspaces = state.workspaces.filter((w) => w.id !== action.payload)
+      state.workspaces = state.workspaces.filter((w) => w.id !== action.payload);
       // If current workspace was removed, select first available
       if (state.currentWorkspace?.id === action.payload) {
-        state.currentWorkspace = state.workspaces[0] || null
+        state.currentWorkspace = state.workspaces[0] || null;
         if (state.currentWorkspace) {
-          localStorage.setItem(WORKSPACE_KEY, state.currentWorkspace.id.toString())
+          localStorage.setItem(WORKSPACE_KEY, state.currentWorkspace.id.toString());
         } else {
-          localStorage.removeItem(WORKSPACE_KEY)
+          localStorage.removeItem(WORKSPACE_KEY);
         }
       }
     },
@@ -193,14 +188,14 @@ export const workspaceSlice = createSlice({
      * Clear all workspace state (on logout)
      */
     clearWorkspaces: (state) => {
-      state.currentWorkspace = null
-      state.workspaces = []
-      state.isLoading = false
-      state.error = null
-      localStorage.removeItem(WORKSPACE_KEY)
+      state.currentWorkspace = null;
+      state.workspaces = [];
+      state.isLoading = false;
+      state.error = null;
+      localStorage.removeItem(WORKSPACE_KEY);
     },
   },
-})
+});
 
 // =============================================================================
 // Actions & Selectors
@@ -216,18 +211,16 @@ export const {
   updateWorkspace,
   removeWorkspace,
   clearWorkspaces,
-} = workspaceSlice.actions
+} = workspaceSlice.actions;
 
 // Selectors
-export const selectWorkspaceState = (state: { workspace: WorkspaceState }) =>
-  state.workspace
+export const selectWorkspaceState = (state: { workspace: WorkspaceState }) => state.workspace;
 export const selectCurrentWorkspace = (state: { workspace: WorkspaceState }) =>
-  state.workspace.currentWorkspace
+  state.workspace.currentWorkspace;
 export const selectWorkspaces = (state: { workspace: WorkspaceState }) =>
-  state.workspace.workspaces
+  state.workspace.workspaces;
 export const selectWorkspaceLoading = (state: { workspace: WorkspaceState }) =>
-  state.workspace.isLoading
-export const selectWorkspaceError = (state: { workspace: WorkspaceState }) =>
-  state.workspace.error
+  state.workspace.isLoading;
+export const selectWorkspaceError = (state: { workspace: WorkspaceState }) => state.workspace.error;
 
-export default workspaceSlice.reducer
+export default workspaceSlice.reducer;

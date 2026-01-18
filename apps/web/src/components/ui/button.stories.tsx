@@ -10,9 +10,9 @@
  * ===================================================================
  */
 
-import type { Meta, StoryObj } from '@storybook/react-vite'
-import { Button } from './button'
-import { Plus, ChevronRight, Loader2, Settings, Trash } from 'lucide-react'
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import { Button } from './button';
+import { Plus, ChevronRight, Loader2, Settings, Trash } from 'lucide-react';
 
 const meta: Meta<typeof Button> = {
   title: 'UI/Button',
@@ -55,10 +55,10 @@ const meta: Meta<typeof Button> = {
       },
     },
   },
-}
+};
 
-export default meta
-type Story = StoryObj<typeof Button>
+export default meta;
+type Story = StoryObj<typeof Button>;
 
 // =============================================================================
 // Basic Variants
@@ -69,35 +69,35 @@ export const Default: Story = {
     children: 'Default Button',
     variant: 'default',
   },
-}
+};
 
 export const Secondary: Story = {
   args: {
     children: 'Secondary',
     variant: 'secondary',
   },
-}
+};
 
 export const Outline: Story = {
   args: {
     children: 'Outline',
     variant: 'outline',
   },
-}
+};
 
 export const Ghost: Story = {
   args: {
     children: 'Ghost',
     variant: 'ghost',
   },
-}
+};
 
 export const Link: Story = {
   args: {
     children: 'Link Button',
     variant: 'link',
   },
-}
+};
 
 // =============================================================================
 // Status Variants
@@ -115,7 +115,7 @@ export const Destructive: Story = {
       },
     },
   },
-}
+};
 
 export const Success: Story = {
   args: {
@@ -129,7 +129,7 @@ export const Success: Story = {
       },
     },
   },
-}
+};
 
 export const Warning: Story = {
   args: {
@@ -143,7 +143,7 @@ export const Warning: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Sizes
@@ -154,14 +154,14 @@ export const Small: Story = {
     children: 'Small',
     size: 'sm',
   },
-}
+};
 
 export const Large: Story = {
   args: {
     children: 'Large',
     size: 'lg',
   },
-}
+};
 
 export const IconButton: Story = {
   args: {
@@ -172,12 +172,11 @@ export const IconButton: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          'Icon-only buttons must have an aria-label for accessibility.',
+        story: 'Icon-only buttons must have an aria-label for accessibility.',
       },
     },
   },
-}
+};
 
 // =============================================================================
 // With Icons
@@ -190,7 +189,7 @@ export const WithIconLeft: Story = {
       Add Item
     </Button>
   ),
-}
+};
 
 export const WithIconRight: Story = {
   render: () => (
@@ -199,7 +198,7 @@ export const WithIconRight: Story = {
       <ChevronRight className="ml-2 h-4 w-4" />
     </Button>
   ),
-}
+};
 
 // =============================================================================
 // States
@@ -210,7 +209,7 @@ export const Disabled: Story = {
     children: 'Disabled',
     disabled: true,
   },
-}
+};
 
 export const Loading: Story = {
   render: () => (
@@ -226,7 +225,7 @@ export const Loading: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // All Variants Overview
@@ -252,7 +251,7 @@ export const AllVariants: Story = {
       },
     },
   },
-}
+};
 
 export const AllSizes: Story = {
   render: () => (
@@ -272,7 +271,7 @@ export const AllSizes: Story = {
       },
     },
   },
-}
+};
 
 export const DestructiveActions: Story = {
   render: () => (
@@ -287,9 +286,8 @@ export const DestructiveActions: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          'Example of destructive action pattern with cancel and delete buttons.',
+        story: 'Example of destructive action pattern with cancel and delete buttons.',
       },
     },
   },
-}
+};

@@ -5,44 +5,44 @@
  */
 
 // Fase 2 - Core Tools
-export * from './workspaces.js'
-export * from './projects.js'
-export * from './tasks.js'
+export * from './workspaces.js';
+export * from './projects.js';
+export * from './tasks.js';
 
 // Fase 3 - Subtasks & Comments
-export * from './subtasks.js'
-export * from './comments.js'
+export * from './subtasks.js';
+export * from './comments.js';
 
 // Fase 4 - Search & Activity
-export * from './search.js'
-export * from './activity.js'
+export * from './search.js';
+export * from './activity.js';
 
 // Fase 5 - Analytics & Insights
-export * from './analytics.js'
+export * from './analytics.js';
 
 // Fase 6 - User Management
-export * from './admin.js'
+export * from './admin.js';
 
 // Fase 7 - Groups Management
-export * from './groups.js'
+export * from './groups.js';
 
 // Fase 8 - ACL Manager
-export * from './acl.js'
+export * from './acl.js';
 
 // Fase 9 - Invites
-export * from './invites.js'
+export * from './invites.js';
 
 // Fase 10 - Audit Logs
-export * from './audit.js'
+export * from './audit.js';
 
 // Fase 11 - System Settings & Backup
-export * from './system.js'
+export * from './system.js';
 
 // Fase 12 - Profile Management
-export * from './profile.js'
+export * from './profile.js';
 
 // GitHub Connector - Fase 9
-export * from './github.js'
+export * from './github.js';
 
 // Phase 17 - Wiki Pages Management
-export * from './wiki.js'
+export * from './wiki.js';

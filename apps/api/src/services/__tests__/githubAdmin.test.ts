@@ -14,20 +14,20 @@
  * =============================================================================
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { PrismaClient } from '@prisma/client'
-import { AclService, ACL_PRESETS } from '../aclService'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { PrismaClient } from '@prisma/client';
+import { AclService, ACL_PRESETS } from '../aclService';
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 
 describe('GitHub Admin Procedures', () => {
-  let testUserId: number
-  let testWorkspaceId: number
-  let testGroupId: number
-  let aclService: AclService
+  let testUserId: number;
+  let testWorkspaceId: number;
+  let testGroupId: number;
+  let aclService: AclService;
 
   beforeEach(async () => {
-    aclService = new AclService()
+    aclService = new AclService();
 
     // Create test user
     const testUser = await prisma.user.create({
@@ -37,8 +37,8 @@ describe('GitHub Admin Procedures', () => {
         name: 'Test GitHub User',
         passwordHash: 'test',
       },
-    })
-    testUserId = testUser.id
+    });
+    testUserId = testUser.id;
 
     // Create test workspace
     const testWorkspace = await prisma.workspace.create({
@@ -46,11 +46,11 @@ describe('GitHub Admin Procedures', () => {
         name: `Test GitHub Workspace ${Date.now()}`,
         slug: `test-gh-ws-${Date.now()}`,
       },
-    })
-    testWorkspaceId = testWorkspace.id
+    });
+    testWorkspaceId = testWorkspace.id;
 
     // Create test group (Workspace Admin)
-    const groupTimestamp = Date.now()
+    const groupTimestamp = Date.now();
     const testGroup = await prisma.group.create({
       data: {
         name: `test-ws-admin-${groupTimestamp}`,
@@ -58,8 +58,8 @@ describe('GitHub Admin Procedures', () => {
         workspaceId: testWorkspaceId,
         type: 'WORKSPACE_ADMIN',
       },
-    })
-    testGroupId = testGroup.id
+    });
+    testGroupId = testGroup.id;
 
     // Add user to admin group
     await prisma.groupMember.create({
@@ -67,7 +67,7 @@ describe('GitHub Admin Procedures', () => {
         groupId: testGroupId,
         userId: testUserId,
       },
-    })
+    });
 
     // Grant workspace admin permission to user
     await aclService.grantPermission({
@@ -76,13 +76,13 @@ describe('GitHub Admin Procedures', () => {
       principalType: 'user',
       principalId: testUserId,
       permissions: ACL_PRESETS.FULL_CONTROL,
-    })
-  })
+    });
+  });
 
   afterEach(async () => {
     // Clean up in reverse order of creation
-    await prisma.gitHubUserMapping.deleteMany({ where: { workspaceId: testWorkspaceId } })
-    await prisma.gitHubInstallation.deleteMany({ where: { workspaceId: testWorkspaceId } })
+    await prisma.gitHubUserMapping.deleteMany({ where: { workspaceId: testWorkspaceId } });
+    await prisma.gitHubInstallation.deleteMany({ where: { workspaceId: testWorkspaceId } });
     await prisma.aclEntry.deleteMany({
       where: {
         OR: [
@@ -90,12 +90,12 @@ describe('GitHub Admin Procedures', () => {
           { principalType: 'group', principalId: testGroupId },
         ],
       },
-    })
-    await prisma.groupMember.deleteMany({ where: { groupId: testGroupId } })
-    await prisma.group.deleteMany({ where: { id: testGroupId } })
-    await prisma.workspace.deleteMany({ where: { id: testWorkspaceId } })
-    await prisma.user.deleteMany({ where: { id: testUserId } })
-  })
+    });
+    await prisma.groupMember.deleteMany({ where: { groupId: testGroupId } });
+    await prisma.group.deleteMany({ where: { id: testGroupId } });
+    await prisma.workspace.deleteMany({ where: { id: testWorkspaceId } });
+    await prisma.user.deleteMany({ where: { id: testUserId } });
+  });
 
   // ===========================================================================
   // User Mapping Tests
@@ -112,13 +112,13 @@ describe('GitHub Admin Procedures', () => {
           githubEmail: 'test@github.com',
           autoMatched: false,
         },
-      })
+      });
 
-      expect(mapping).toBeDefined()
-      expect(mapping.githubLogin).toBe('testoctocat')
-      expect(mapping.userId).toBe(testUserId)
-      expect(mapping.workspaceId).toBe(testWorkspaceId)
-    })
+      expect(mapping).toBeDefined();
+      expect(mapping.githubLogin).toBe('testoctocat');
+      expect(mapping.userId).toBe(testUserId);
+      expect(mapping.workspaceId).toBe(testWorkspaceId);
+    });
 
     it('should enforce unique workspaceId + userId constraint', async () => {
       // Create first mapping
@@ -129,7 +129,7 @@ describe('GitHub Admin Procedures', () => {
           githubLogin: 'octocat1',
           autoMatched: false,
         },
-      })
+      });
 
       // Try to create duplicate mapping - should fail
       await expect(
@@ -141,8 +141,8 @@ describe('GitHub Admin Procedures', () => {
             autoMatched: false,
           },
         })
-      ).rejects.toThrow()
-    })
+      ).rejects.toThrow();
+    });
 
     it('should enforce unique workspaceId + githubLogin constraint', async () => {
       // Create first mapping
@@ -153,7 +153,7 @@ describe('GitHub Admin Procedures', () => {
           githubLogin: 'octocat',
           autoMatched: false,
         },
-      })
+      });
 
       // Create another user
       const anotherUser = await prisma.user.create({
@@ -163,7 +163,7 @@ describe('GitHub Admin Procedures', () => {
           name: 'Another User',
           passwordHash: 'test',
         },
-      })
+      });
 
       // Try to create mapping with same GitHub login - should fail
       await expect(
@@ -175,11 +175,11 @@ describe('GitHub Admin Procedures', () => {
             autoMatched: false,
           },
         })
-      ).rejects.toThrow()
+      ).rejects.toThrow();
 
       // Clean up
-      await prisma.user.delete({ where: { id: anotherUser.id } })
-    })
+      await prisma.user.delete({ where: { id: anotherUser.id } });
+    });
 
     it('should update a user mapping', async () => {
       const mapping = await prisma.gitHubUserMapping.create({
@@ -189,7 +189,7 @@ describe('GitHub Admin Procedures', () => {
           githubLogin: 'oldlogin',
           autoMatched: false,
         },
-      })
+      });
 
       const updated = await prisma.gitHubUserMapping.update({
         where: { id: mapping.id },
@@ -197,11 +197,11 @@ describe('GitHub Admin Procedures', () => {
           githubLogin: 'newlogin',
           githubEmail: 'new@github.com',
         },
-      })
+      });
 
-      expect(updated.githubLogin).toBe('newlogin')
-      expect(updated.githubEmail).toBe('new@github.com')
-    })
+      expect(updated.githubLogin).toBe('newlogin');
+      expect(updated.githubEmail).toBe('new@github.com');
+    });
 
     it('should delete a user mapping', async () => {
       const mapping = await prisma.gitHubUserMapping.create({
@@ -211,18 +211,18 @@ describe('GitHub Admin Procedures', () => {
           githubLogin: 'todelete',
           autoMatched: false,
         },
-      })
+      });
 
       await prisma.gitHubUserMapping.delete({
         where: { id: mapping.id },
-      })
+      });
 
       const deleted = await prisma.gitHubUserMapping.findUnique({
         where: { id: mapping.id },
-      })
+      });
 
-      expect(deleted).toBeNull()
-    })
+      expect(deleted).toBeNull();
+    });
 
     it('should list user mappings with user info', async () => {
       await prisma.gitHubUserMapping.create({
@@ -232,7 +232,7 @@ describe('GitHub Admin Procedures', () => {
           githubLogin: 'testlogin',
           autoMatched: true,
         },
-      })
+      });
 
       const mappings = await prisma.gitHubUserMapping.findMany({
         where: { workspaceId: testWorkspaceId },
@@ -246,13 +246,13 @@ describe('GitHub Admin Procedures', () => {
             },
           },
         },
-      })
+      });
 
-      expect(mappings.length).toBe(1)
-      expect(mappings[0]!.user.name).toBe('Test GitHub User')
-      expect(mappings[0]!.autoMatched).toBe(true)
-    })
-  })
+      expect(mappings.length).toBe(1);
+      expect(mappings[0]!.user.name).toBe('Test GitHub User');
+      expect(mappings[0]!.autoMatched).toBe(true);
+    });
+  });
 
   // ===========================================================================
   // Installation Tests
@@ -270,16 +270,16 @@ describe('GitHub Admin Procedures', () => {
           permissions: { contents: 'read', issues: 'write' },
           events: ['issues', 'pull_request'],
         },
-      })
+      });
 
-      expect(installation).toBeDefined()
-      expect(installation.accountLogin).toBe('test-org')
-      expect(installation.accountType).toBe('organization')
-      expect(installation.installationId).toBe(BigInt(99999999))
-    })
+      expect(installation).toBeDefined();
+      expect(installation.accountLogin).toBe('test-org');
+      expect(installation.accountType).toBe('organization');
+      expect(installation.installationId).toBe(BigInt(99999999));
+    });
 
     it('should enforce unique installationId constraint', async () => {
-      const installationId = BigInt(88888888)
+      const installationId = BigInt(88888888);
 
       await prisma.gitHubInstallation.create({
         data: {
@@ -291,7 +291,7 @@ describe('GitHub Admin Procedures', () => {
           permissions: {},
           events: [],
         },
-      })
+      });
 
       // Create another workspace
       const anotherWorkspace = await prisma.workspace.create({
@@ -299,7 +299,7 @@ describe('GitHub Admin Procedures', () => {
           name: `Another WS ${Date.now()}`,
           slug: `another-ws-${Date.now()}`,
         },
-      })
+      });
 
       // Try to create with same installationId - should fail (globally unique)
       await expect(
@@ -314,11 +314,11 @@ describe('GitHub Admin Procedures', () => {
             events: [],
           },
         })
-      ).rejects.toThrow()
+      ).rejects.toThrow();
 
       // Clean up
-      await prisma.workspace.delete({ where: { id: anotherWorkspace.id } })
-    })
+      await prisma.workspace.delete({ where: { id: anotherWorkspace.id } });
+    });
 
     it('should list installations for workspace', async () => {
       await prisma.gitHubInstallation.create({
@@ -331,15 +331,15 @@ describe('GitHub Admin Procedures', () => {
           permissions: {},
           events: [],
         },
-      })
+      });
 
       const installations = await prisma.gitHubInstallation.findMany({
         where: { workspaceId: testWorkspaceId },
-      })
+      });
 
-      expect(installations.length).toBe(1)
-      expect(installations[0]!.accountLogin).toBe('personal-account')
-    })
+      expect(installations.length).toBe(1);
+      expect(installations[0]!.accountLogin).toBe('personal-account');
+    });
 
     it('should cascade delete when workspace is deleted', async () => {
       // Create a separate workspace for this test
@@ -348,7 +348,7 @@ describe('GitHub Admin Procedures', () => {
           name: `Temp WS ${Date.now()}`,
           slug: `temp-ws-${Date.now()}`,
         },
-      })
+      });
 
       await prisma.gitHubInstallation.create({
         data: {
@@ -360,19 +360,19 @@ describe('GitHub Admin Procedures', () => {
           permissions: {},
           events: [],
         },
-      })
+      });
 
       // Delete workspace
-      await prisma.workspace.delete({ where: { id: tempWorkspace.id } })
+      await prisma.workspace.delete({ where: { id: tempWorkspace.id } });
 
       // Installation should be gone
       const installations = await prisma.gitHubInstallation.findMany({
         where: { workspaceId: tempWorkspace.id },
-      })
+      });
 
-      expect(installations.length).toBe(0)
-    })
-  })
+      expect(installations.length).toBe(0);
+    });
+  });
 
   // ===========================================================================
   // Access Control Tests
@@ -385,10 +385,10 @@ describe('GitHub Admin Procedures', () => {
         'workspace',
         testWorkspaceId,
         ACL_PRESETS.FULL_CONTROL
-      )
+      );
 
-      expect(hasPermission).toBe(true)
-    })
+      expect(hasPermission).toBe(true);
+    });
 
     it('should deny access to user without permissions', async () => {
       // Create user without permissions
@@ -399,20 +399,20 @@ describe('GitHub Admin Procedures', () => {
           name: 'Non Admin User',
           passwordHash: 'test',
         },
-      })
+      });
 
       const hasPermission = await aclService.hasPermission(
         nonAdminUser.id,
         'workspace',
         testWorkspaceId,
         ACL_PRESETS.FULL_CONTROL
-      )
+      );
 
-      expect(hasPermission).toBe(false)
+      expect(hasPermission).toBe(false);
 
       // Clean up
-      await prisma.user.delete({ where: { id: nonAdminUser.id } })
-    })
+      await prisma.user.delete({ where: { id: nonAdminUser.id } });
+    });
 
     it('should check workspace-specific permissions', async () => {
       // Create another workspace where user has no permissions
@@ -421,7 +421,7 @@ describe('GitHub Admin Procedures', () => {
           name: `Other WS ${Date.now()}`,
           slug: `other-ws-${Date.now()}`,
         },
-      })
+      });
 
       // User should NOT have access to other workspace
       const hasOtherPermission = await aclService.hasPermission(
@@ -429,14 +429,14 @@ describe('GitHub Admin Procedures', () => {
         'workspace',
         otherWorkspace.id,
         ACL_PRESETS.FULL_CONTROL
-      )
+      );
 
-      expect(hasOtherPermission).toBe(false)
+      expect(hasOtherPermission).toBe(false);
 
       // Clean up
-      await prisma.workspace.delete({ where: { id: otherWorkspace.id } })
-    })
-  })
+      await prisma.workspace.delete({ where: { id: otherWorkspace.id } });
+    });
+  });
 
   // ===========================================================================
   // Overview Statistics Tests
@@ -465,14 +465,14 @@ describe('GitHub Admin Procedures', () => {
             events: [],
           },
         ],
-      })
+      });
 
       const count = await prisma.gitHubInstallation.count({
         where: { workspaceId: testWorkspaceId },
-      })
+      });
 
-      expect(count).toBe(2)
-    })
+      expect(count).toBe(2);
+    });
 
     it('should count user mappings correctly', async () => {
       // Create additional users for mapping
@@ -483,7 +483,7 @@ describe('GitHub Admin Procedures', () => {
           name: 'User 2',
           passwordHash: 'test',
         },
-      })
+      });
 
       await prisma.gitHubUserMapping.createMany({
         data: [
@@ -500,19 +500,19 @@ describe('GitHub Admin Procedures', () => {
             autoMatched: true,
           },
         ],
-      })
+      });
 
       const count = await prisma.gitHubUserMapping.count({
         where: { workspaceId: testWorkspaceId },
-      })
+      });
 
-      expect(count).toBe(2)
+      expect(count).toBe(2);
 
       // Clean up
-      await prisma.gitHubUserMapping.deleteMany({ where: { userId: user2.id } })
-      await prisma.user.delete({ where: { id: user2.id } })
-    })
-  })
+      await prisma.gitHubUserMapping.deleteMany({ where: { userId: user2.id } });
+      await prisma.user.delete({ where: { id: user2.id } });
+    });
+  });
 
   // ===========================================================================
   // Auto-Match Logic Tests
@@ -528,7 +528,7 @@ describe('GitHub Admin Procedures', () => {
           name: 'Auto Match 1',
           passwordHash: 'test',
         },
-      })
+      });
 
       const user2 = await prisma.user.create({
         data: {
@@ -537,7 +537,7 @@ describe('GitHub Admin Procedures', () => {
           name: 'Auto Match 2',
           passwordHash: 'test',
         },
-      })
+      });
 
       // Map only user1
       await prisma.gitHubUserMapping.create({
@@ -547,41 +547,41 @@ describe('GitHub Admin Procedures', () => {
           githubLogin: 'mapped-login',
           autoMatched: false,
         },
-      })
+      });
 
       // Get existing mappings
       const existingMappings = await prisma.gitHubUserMapping.findMany({
         where: { workspaceId: testWorkspaceId },
         select: { userId: true },
-      })
+      });
 
-      const mappedUserIds = existingMappings.map(m => m.userId)
+      const mappedUserIds = existingMappings.map((m) => m.userId);
 
       // User2 should not be in mapped list
-      expect(mappedUserIds).toContain(user1.id)
-      expect(mappedUserIds).not.toContain(user2.id)
+      expect(mappedUserIds).toContain(user1.id);
+      expect(mappedUserIds).not.toContain(user2.id);
 
       // Clean up
-      await prisma.gitHubUserMapping.deleteMany({ where: { userId: user1.id } })
-      await prisma.user.deleteMany({ where: { id: { in: [user1.id, user2.id] } } })
-    })
+      await prisma.gitHubUserMapping.deleteMany({ where: { userId: user1.id } });
+      await prisma.user.deleteMany({ where: { id: { in: [user1.id, user2.id] } } });
+    });
 
     it('should match users by email (case-insensitive)', () => {
-      const githubEmail = 'Test@GitHub.com'
-      const kanbuEmail = 'test@github.com'
+      const githubEmail = 'Test@GitHub.com';
+      const kanbuEmail = 'test@github.com';
 
-      const matches = githubEmail.toLowerCase() === kanbuEmail.toLowerCase()
-      expect(matches).toBe(true)
-    })
+      const matches = githubEmail.toLowerCase() === kanbuEmail.toLowerCase();
+      expect(matches).toBe(true);
+    });
 
     it('should match users by username', () => {
-      const githubLogin = 'RobinW'
-      const kanbuUsername = 'robinw'
+      const githubLogin = 'RobinW';
+      const kanbuUsername = 'robinw';
 
-      const matches = githubLogin.toLowerCase() === kanbuUsername.toLowerCase()
-      expect(matches).toBe(true)
-    })
-  })
+      const matches = githubLogin.toLowerCase() === kanbuUsername.toLowerCase();
+      expect(matches).toBe(true);
+    });
+  });
 
   // ===========================================================================
   // Suggest Mappings Tests
@@ -597,7 +597,7 @@ describe('GitHub Admin Procedures', () => {
           name: 'Mapped User',
           passwordHash: 'test',
         },
-      })
+      });
 
       const unmappedUser = await prisma.user.create({
         data: {
@@ -606,7 +606,7 @@ describe('GitHub Admin Procedures', () => {
           name: 'Unmapped User',
           passwordHash: 'test',
         },
-      })
+      });
 
       // Create mapping for one user
       await prisma.gitHubUserMapping.create({
@@ -616,15 +616,15 @@ describe('GitHub Admin Procedures', () => {
           githubLogin: 'already-mapped',
           autoMatched: false,
         },
-      })
+      });
 
       // Get suggestions (users without mappings)
       const mappedIds = await prisma.gitHubUserMapping.findMany({
         where: { workspaceId: testWorkspaceId },
         select: { userId: true },
-      })
+      });
 
-      const mappedUserIds = mappedIds.map(m => m.userId)
+      const mappedUserIds = mappedIds.map((m) => m.userId);
 
       const suggestions = await prisma.user.findMany({
         where: {
@@ -635,18 +635,18 @@ describe('GitHub Admin Procedures', () => {
           name: true,
           username: true,
         },
-      })
+      });
 
       // Unmapped user should be in suggestions
-      const unmappedInSuggestions = suggestions.some(s => s.id === unmappedUser.id)
-      const mappedInSuggestions = suggestions.some(s => s.id === mappedUser.id)
+      const unmappedInSuggestions = suggestions.some((s) => s.id === unmappedUser.id);
+      const mappedInSuggestions = suggestions.some((s) => s.id === mappedUser.id);
 
-      expect(unmappedInSuggestions).toBe(true)
-      expect(mappedInSuggestions).toBe(false)
+      expect(unmappedInSuggestions).toBe(true);
+      expect(mappedInSuggestions).toBe(false);
 
       // Clean up
-      await prisma.gitHubUserMapping.deleteMany({ where: { userId: mappedUser.id } })
-      await prisma.user.deleteMany({ where: { id: { in: [mappedUser.id, unmappedUser.id] } } })
-    })
-  })
-})
+      await prisma.gitHubUserMapping.deleteMany({ where: { userId: mappedUser.id } });
+      await prisma.user.deleteMany({ where: { id: { in: [mappedUser.id, unmappedUser.id] } } });
+    });
+  });
+});

@@ -19,9 +19,9 @@
 // =============================================================================
 
 export interface PriorityBadgeProps {
-  priority: number
-  showLow?: boolean // Show badge even for low priority (default: false)
-  size?: 'sm' | 'md' | 'lg'
+  priority: number;
+  showLow?: boolean; // Show badge even for low priority (default: false)
+  size?: 'sm' | 'md' | 'lg';
 }
 
 // =============================================================================
@@ -33,27 +33,27 @@ const PRIORITY_COLORS: Record<number, string> = {
   1: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
   2: 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300',
   3: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300',
-}
+};
 
 const PRIORITY_LABELS: Record<number, string> = {
   0: 'Low',
   1: 'Normal',
   2: 'High',
   3: 'Urgent',
-}
+};
 
 const PRIORITY_ICONS: Record<number, string> = {
   0: '○',
   1: '●',
   2: '▲',
   3: '⚠',
-}
+};
 
 const SIZE_CLASSES: Record<string, string> = {
   sm: 'px-1 py-0.5 text-xs',
   md: 'px-1.5 py-0.5 text-xs',
   lg: 'px-2 py-1 text-sm',
-}
+};
 
 // =============================================================================
 // Component
@@ -61,12 +61,12 @@ const SIZE_CLASSES: Record<string, string> = {
 
 export function PriorityBadge({ priority, showLow = false, size = 'md' }: PriorityBadgeProps) {
   // Don't show low priority unless explicitly requested
-  if (priority === 0 && !showLow) return null
+  if (priority === 0 && !showLow) return null;
 
-  const colorClass = PRIORITY_COLORS[priority] ?? PRIORITY_COLORS[0]
-  const label = PRIORITY_LABELS[priority] ?? 'Low'
-  const icon = PRIORITY_ICONS[priority] ?? '○'
-  const sizeClass = SIZE_CLASSES[size] ?? SIZE_CLASSES.md
+  const colorClass = PRIORITY_COLORS[priority] ?? PRIORITY_COLORS[0];
+  const label = PRIORITY_LABELS[priority] ?? 'Low';
+  const icon = PRIORITY_ICONS[priority] ?? '○';
+  const sizeClass = SIZE_CLASSES[size] ?? SIZE_CLASSES.md;
 
   return (
     <span
@@ -76,7 +76,7 @@ export function PriorityBadge({ priority, showLow = false, size = 'md' }: Priori
       <span className="opacity-75">{icon}</span>
       {label}
     </span>
-  )
+  );
 }
 
 // =============================================================================
@@ -84,11 +84,11 @@ export function PriorityBadge({ priority, showLow = false, size = 'md' }: Priori
 // =============================================================================
 
 export function getPriorityLabel(priority: number): string {
-  return PRIORITY_LABELS[priority] ?? 'Low'
+  return PRIORITY_LABELS[priority] ?? 'Low';
 }
 
 export function getPriorityColor(priority: number): string {
-  return PRIORITY_COLORS[priority] ?? PRIORITY_COLORS[0]!
+  return PRIORITY_COLORS[priority] ?? PRIORITY_COLORS[0]!;
 }
 
-export default PriorityBadge
+export default PriorityBadge;

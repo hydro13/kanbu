@@ -8,29 +8,29 @@
  * [16 bytes: IV][N bytes: encrypted data][16 bytes: auth tag]
  */
 
-import * as crypto from 'crypto'
-import * as fs from 'fs/promises'
+import * as crypto from 'crypto';
+import * as fs from 'fs/promises';
 
-const ALGORITHM = 'aes-256-gcm'
-const IV_LENGTH = 16
-const AUTH_TAG_LENGTH = 16
-const KEY_LENGTH = 32 // 256 bits
+const ALGORITHM = 'aes-256-gcm';
+const IV_LENGTH = 16;
+const AUTH_TAG_LENGTH = 16;
+const KEY_LENGTH = 32; // 256 bits
 
 export interface EncryptionResult {
-  encryptedPath: string
-  iv: string // hex encoded
-  authTag: string // hex encoded
+  encryptedPath: string;
+  iv: string; // hex encoded
+  authTag: string; // hex encoded
 }
 
 export interface DecryptionResult {
-  decryptedPath: string
+  decryptedPath: string;
 }
 
 /**
  * Check if encryption is enabled via environment variable
  */
 export function isEncryptionEnabled(): boolean {
-  return !!process.env.BACKUP_ENCRYPTION_KEY
+  return !!process.env.BACKUP_ENCRYPTION_KEY;
 }
 
 /**
@@ -41,20 +41,20 @@ export function isEncryptionEnabled(): boolean {
  * - Any other string - derived using PBKDF2
  */
 export function deriveKey(): Buffer {
-  const keyEnv = process.env.BACKUP_ENCRYPTION_KEY
+  const keyEnv = process.env.BACKUP_ENCRYPTION_KEY;
   if (!keyEnv) {
-    throw new Error('BACKUP_ENCRYPTION_KEY environment variable not set')
+    throw new Error('BACKUP_ENCRYPTION_KEY environment variable not set');
   }
 
   // If key is 64 hex chars (32 bytes), use directly
   if (/^[0-9a-fA-F]{64}$/.test(keyEnv)) {
-    return Buffer.from(keyEnv, 'hex')
+    return Buffer.from(keyEnv, 'hex');
   }
 
   // Otherwise, derive key using PBKDF2 with static salt
   // Salt is static because we need deterministic key derivation
-  const salt = Buffer.from('kanbu-backup-encryption-salt-v1')
-  return crypto.pbkdf2Sync(keyEnv, salt, 100000, KEY_LENGTH, 'sha256')
+  const salt = Buffer.from('kanbu-backup-encryption-salt-v1');
+  return crypto.pbkdf2Sync(keyEnv, salt, 100000, KEY_LENGTH, 'sha256');
 }
 
 /**
@@ -68,27 +68,27 @@ export async function encryptFile(
   inputPath: string,
   outputPath?: string
 ): Promise<EncryptionResult> {
-  const key = deriveKey()
-  const iv = crypto.randomBytes(IV_LENGTH)
+  const key = deriveKey();
+  const iv = crypto.randomBytes(IV_LENGTH);
 
-  const input = await fs.readFile(inputPath)
-  const cipher = crypto.createCipheriv(ALGORITHM, key, iv)
+  const input = await fs.readFile(inputPath);
+  const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
 
-  const encrypted = Buffer.concat([cipher.update(input), cipher.final()])
+  const encrypted = Buffer.concat([cipher.update(input), cipher.final()]);
 
-  const authTag = cipher.getAuthTag()
+  const authTag = cipher.getAuthTag();
 
   // File format: [IV][encrypted data][auth tag]
-  const output = Buffer.concat([iv, encrypted, authTag])
+  const output = Buffer.concat([iv, encrypted, authTag]);
 
-  const encryptedPath = outputPath || `${inputPath}.enc`
-  await fs.writeFile(encryptedPath, output)
+  const encryptedPath = outputPath || `${inputPath}.enc`;
+  await fs.writeFile(encryptedPath, output);
 
   return {
     encryptedPath,
     iv: iv.toString('hex'),
     authTag: authTag.toString('hex'),
-  }
+  };
 }
 
 /**
@@ -102,35 +102,35 @@ export async function decryptFile(
   inputPath: string,
   outputPath?: string
 ): Promise<DecryptionResult> {
-  const key = deriveKey()
-  const input = await fs.readFile(inputPath)
+  const key = deriveKey();
+  const input = await fs.readFile(inputPath);
 
   // Extract IV, encrypted data, and auth tag
-  const iv = input.subarray(0, IV_LENGTH)
-  const authTag = input.subarray(input.length - AUTH_TAG_LENGTH)
-  const encrypted = input.subarray(IV_LENGTH, input.length - AUTH_TAG_LENGTH)
+  const iv = input.subarray(0, IV_LENGTH);
+  const authTag = input.subarray(input.length - AUTH_TAG_LENGTH);
+  const encrypted = input.subarray(IV_LENGTH, input.length - AUTH_TAG_LENGTH);
 
-  const decipher = crypto.createDecipheriv(ALGORITHM, key, iv)
-  decipher.setAuthTag(authTag)
+  const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
+  decipher.setAuthTag(authTag);
 
-  const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()])
+  const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);
 
-  const decryptedPath = outputPath || inputPath.replace(/\.enc$/, '')
-  await fs.writeFile(decryptedPath, decrypted)
+  const decryptedPath = outputPath || inputPath.replace(/\.enc$/, '');
+  await fs.writeFile(decryptedPath, decrypted);
 
-  return { decryptedPath }
+  return { decryptedPath };
 }
 
 /**
  * Check if a filename indicates an encrypted file
  */
 export function isEncryptedFile(filename: string): boolean {
-  return filename.endsWith('.enc')
+  return filename.endsWith('.enc');
 }
 
 /**
  * Get encryption algorithm name for metadata
  */
 export function getEncryptionAlgorithm(): string {
-  return ALGORITHM
+  return ALGORITHM;
 }

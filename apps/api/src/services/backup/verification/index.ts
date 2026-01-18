@@ -7,39 +7,39 @@
  * Phase 4.4: Backup Verification
  */
 
-import { prisma } from '../../../lib/prisma'
-import { getBackupStorage } from '../storage'
-import { generateChecksum } from '../crypto/checksum'
-import { isEncryptedFile, decryptFile, isEncryptionEnabled } from '../crypto'
-import fs from 'fs/promises'
-import path from 'path'
-import os from 'os'
+import { prisma } from '../../../lib/prisma';
+import { getBackupStorage } from '../storage';
+import { generateChecksum } from '../crypto/checksum';
+import { isEncryptedFile, decryptFile, isEncryptionEnabled } from '../crypto';
+import fs from 'fs/promises';
+import path from 'path';
+import os from 'os';
 
 export interface VerificationResult {
-  filename: string
-  success: boolean
-  message: string
-  expectedChecksum?: string
-  actualChecksum?: string
-  verifiedAt: Date
+  filename: string;
+  success: boolean;
+  message: string;
+  expectedChecksum?: string;
+  actualChecksum?: string;
+  verifiedAt: Date;
 }
 
 export interface VerificationStats {
-  total: number
-  verified: number
-  pending: number
-  failed: number
-  noChecksum: number
+  total: number;
+  verified: number;
+  pending: number;
+  failed: number;
+  noChecksum: number;
 }
 
 export interface BatchVerificationResult {
-  results: VerificationResult[]
+  results: VerificationResult[];
   stats: {
-    total: number
-    success: number
-    failed: number
-    skipped: number
-  }
+    total: number;
+    success: number;
+    failed: number;
+    skipped: number;
+  };
 }
 
 export class VerificationService {
@@ -50,9 +50,9 @@ export class VerificationService {
    * Updates the verified/verifiedAt fields in the database.
    */
   async verifyBackup(filename: string): Promise<VerificationResult> {
-        const storage = getBackupStorage()
-    const now = new Date()
-    const tempFiles: string[] = []
+    const storage = getBackupStorage();
+    const now = new Date();
+    const tempFiles: string[] = [];
 
     try {
       // Get backup execution record
@@ -63,7 +63,7 @@ export class VerificationService {
           checksum: true,
           isEncrypted: true,
         },
-      })
+      });
 
       if (!execution) {
         return {
@@ -71,7 +71,7 @@ export class VerificationService {
           success: false,
           message: 'Backup execution record not found in database',
           verifiedAt: now,
-        }
+        };
       }
 
       if (!execution.checksum) {
@@ -81,11 +81,11 @@ export class VerificationService {
           success: false,
           message: 'No checksum stored for this backup - cannot verify integrity',
           verifiedAt: now,
-        }
+        };
       }
 
       // Check if file is encrypted and we can decrypt it
-      const isEncrypted = isEncryptedFile(filename)
+      const isEncrypted = isEncryptedFile(filename);
       if (isEncrypted && !isEncryptionEnabled()) {
         return {
           filename,
@@ -93,29 +93,29 @@ export class VerificationService {
           message: 'Backup is encrypted but BACKUP_ENCRYPTION_KEY is not set',
           expectedChecksum: execution.checksum,
           verifiedAt: now,
-        }
+        };
       }
 
       // Download the backup file
-      const backupData = await storage.download(filename)
-      const tempDir = os.tmpdir()
-      let currentPath = path.join(tempDir, filename)
-      await fs.writeFile(currentPath, backupData)
-      tempFiles.push(currentPath)
+      const backupData = await storage.download(filename);
+      const tempDir = os.tmpdir();
+      let currentPath = path.join(tempDir, filename);
+      await fs.writeFile(currentPath, backupData);
+      tempFiles.push(currentPath);
 
       // Decrypt if needed (checksum was generated BEFORE encryption)
       if (isEncrypted) {
-        const decryptedPath = currentPath.replace('.enc', '')
-        await decryptFile(currentPath, decryptedPath)
-        currentPath = decryptedPath
-        tempFiles.push(currentPath)
+        const decryptedPath = currentPath.replace('.enc', '');
+        await decryptFile(currentPath, decryptedPath);
+        currentPath = decryptedPath;
+        tempFiles.push(currentPath);
       }
 
       // Generate checksum of the file
-      const actualChecksum = await generateChecksum(currentPath)
+      const actualChecksum = await generateChecksum(currentPath);
 
       // Compare checksums
-      const isValid = actualChecksum.toLowerCase() === execution.checksum.toLowerCase()
+      const isValid = actualChecksum.toLowerCase() === execution.checksum.toLowerCase();
 
       // Update database record
       await prisma.backupExecution.update({
@@ -124,11 +124,11 @@ export class VerificationService {
           verified: isValid,
           verifiedAt: now,
         },
-      })
+      });
 
       // Cleanup temp files
       for (const file of tempFiles) {
-        await fs.unlink(file).catch(() => {})
+        await fs.unlink(file).catch(() => {});
       }
 
       if (isValid) {
@@ -139,7 +139,7 @@ export class VerificationService {
           expectedChecksum: execution.checksum,
           actualChecksum,
           verifiedAt: now,
-        }
+        };
       } else {
         return {
           filename,
@@ -148,21 +148,21 @@ export class VerificationService {
           expectedChecksum: execution.checksum,
           actualChecksum,
           verifiedAt: now,
-        }
+        };
       }
     } catch (error) {
       // Cleanup temp files on error
       for (const file of tempFiles) {
-        await fs.unlink(file).catch(() => {})
+        await fs.unlink(file).catch(() => {});
       }
 
-      const errorMessage = error instanceof Error ? error.message : String(error)
+      const errorMessage = error instanceof Error ? error.message : String(error);
       return {
         filename,
         success: false,
         message: `Verification failed: ${errorMessage}`,
         verifiedAt: now,
-      }
+      };
     }
   }
 
@@ -172,7 +172,6 @@ export class VerificationService {
    * Only verifies backups that have a stored checksum.
    */
   async verifyAllPending(): Promise<BatchVerificationResult> {
-    
     // Get all unverified backups with checksums
     const pendingBackups = await prisma.backupExecution.findMany({
       where: {
@@ -184,26 +183,26 @@ export class VerificationService {
         filename: true,
       },
       orderBy: { startedAt: 'desc' },
-    })
+    });
 
-    const results: VerificationResult[] = []
-    let success = 0
-    let failed = 0
-    let skipped = 0
+    const results: VerificationResult[] = [];
+    let success = 0;
+    let failed = 0;
+    let skipped = 0;
 
     for (const backup of pendingBackups) {
       if (!backup.filename) {
-        skipped++
-        continue
+        skipped++;
+        continue;
       }
 
-      const result = await this.verifyBackup(backup.filename)
-      results.push(result)
+      const result = await this.verifyBackup(backup.filename);
+      results.push(result);
 
       if (result.success) {
-        success++
+        success++;
       } else {
-        failed++
+        failed++;
       }
     }
 
@@ -215,14 +214,13 @@ export class VerificationService {
         failed,
         skipped,
       },
-    }
+    };
   }
 
   /**
    * Get verification statistics across all backups
    */
   async getVerificationStats(): Promise<VerificationStats> {
-    
     // Get all completed backup executions
     const backups = await prisma.backupExecution.findMany({
       where: { status: 'COMPLETED' },
@@ -230,23 +228,23 @@ export class VerificationService {
         checksum: true,
         verified: true,
       },
-    })
+    });
 
-    let total = backups.length
-    let verified = 0
-    let pending = 0
-    let failed = 0
-    let noChecksum = 0
+    const total = backups.length;
+    let verified = 0;
+    let pending = 0;
+    let failed = 0;
+    let noChecksum = 0;
 
     for (const backup of backups) {
       if (!backup.checksum) {
-        noChecksum++
+        noChecksum++;
       } else if (backup.verified === true) {
-        verified++
+        verified++;
       } else if (backup.verified === false) {
-        failed++
+        failed++;
       } else {
-        pending++
+        pending++;
       }
     }
 
@@ -256,7 +254,7 @@ export class VerificationService {
       pending,
       failed,
       noChecksum,
-    }
+    };
   }
 
   /**
@@ -266,35 +264,35 @@ export class VerificationService {
    * exists in storage and matches the expected size.
    */
   async quickCheck(filename: string): Promise<{
-    exists: boolean
-    sizeMatch: boolean
-    expectedSize?: number
-    actualSize?: number
+    exists: boolean;
+    sizeMatch: boolean;
+    expectedSize?: number;
+    actualSize?: number;
   }> {
-        const storage = getBackupStorage()
+    const storage = getBackupStorage();
 
     try {
       // Get expected size from database
       const execution = await prisma.backupExecution.findFirst({
         where: { filename },
         select: { fileSize: true },
-      })
+      });
 
       // Get actual file from storage
-      const backups = await storage.list('database')
-      const backup = backups.find(b => b.filename === filename)
+      const backups = await storage.list('database');
+      const backup = backups.find((b) => b.filename === filename);
 
       if (!backup) {
         // Try source backups
-        const sourceBackups = await storage.list('source')
-        const sourceBackup = sourceBackups.find(b => b.filename === filename)
+        const sourceBackups = await storage.list('source');
+        const sourceBackup = sourceBackups.find((b) => b.filename === filename);
 
         if (!sourceBackup) {
           return {
             exists: false,
             sizeMatch: false,
             expectedSize: execution?.fileSize ?? undefined,
-          }
+          };
         }
 
         return {
@@ -302,7 +300,7 @@ export class VerificationService {
           sizeMatch: execution?.fileSize === sourceBackup.size,
           expectedSize: execution?.fileSize ?? undefined,
           actualSize: sourceBackup.size,
-        }
+        };
       }
 
       return {
@@ -310,15 +308,15 @@ export class VerificationService {
         sizeMatch: execution?.fileSize === backup.size,
         expectedSize: execution?.fileSize ?? undefined,
         actualSize: backup.size,
-      }
-    } catch (error) {
+      };
+    } catch {
       return {
         exists: false,
         sizeMatch: false,
-      }
+      };
     }
   }
 }
 
 // Singleton export
-export const verificationService = new VerificationService()
+export const verificationService = new VerificationService();

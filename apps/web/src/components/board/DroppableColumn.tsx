@@ -14,22 +14,22 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useDroppable } from '@dnd-kit/core'
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
-import { ReactNode } from 'react'
-import { getColumnSwimlaneDroppableId, isWipLimitReached } from '@/lib/dnd-utils'
-import type { BoardTask } from './Board'
+import { useDroppable } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { ReactNode } from 'react';
+import { getColumnSwimlaneDroppableId, isWipLimitReached } from '@/lib/dnd-utils';
+import type { BoardTask } from './Board';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface DroppableColumnProps {
-  columnId: number
-  swimlaneId: number | null
-  tasks: BoardTask[]
-  taskLimit: number
-  children: ReactNode
+  columnId: number;
+  swimlaneId: number | null;
+  tasks: BoardTask[];
+  taskLimit: number;
+  children: ReactNode;
 }
 
 // =============================================================================
@@ -43,7 +43,7 @@ export function DroppableColumn({
   taskLimit,
   children,
 }: DroppableColumnProps) {
-  const droppableId = getColumnSwimlaneDroppableId(columnId, swimlaneId)
+  const droppableId = getColumnSwimlaneDroppableId(columnId, swimlaneId);
 
   const { isOver, setNodeRef } = useDroppable({
     id: droppableId,
@@ -52,28 +52,28 @@ export function DroppableColumn({
       columnId,
       swimlaneId,
     },
-  })
+  });
 
   // Check WIP limit
-  const wipLimitReached = isWipLimitReached(tasks.length, taskLimit)
-  const taskIds = tasks.map((t) => t.id)
+  const wipLimitReached = isWipLimitReached(tasks.length, taskLimit);
+  const taskIds = tasks.map((t) => t.id);
 
   // Determine styling based on drag state
   const getDropZoneClasses = () => {
-    const classes = ['min-h-[100px]', 'rounded-md', 'transition-colors', 'duration-200']
+    const classes = ['min-h-[100px]', 'rounded-md', 'transition-colors', 'duration-200'];
 
     if (isOver) {
       if (wipLimitReached) {
         // Visual feedback: can't drop here (WIP limit)
-        classes.push('bg-red-50', 'dark:bg-red-900/20', 'ring-2', 'ring-red-400')
+        classes.push('bg-red-50', 'dark:bg-red-900/20', 'ring-2', 'ring-red-400');
       } else {
         // Visual feedback: valid drop target
-        classes.push('bg-blue-50', 'dark:bg-blue-900/20', 'ring-2', 'ring-blue-400')
+        classes.push('bg-blue-50', 'dark:bg-blue-900/20', 'ring-2', 'ring-blue-400');
       }
     }
 
-    return classes.join(' ')
-  }
+    return classes.join(' ');
+  };
 
   return (
     <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
@@ -95,7 +95,7 @@ export function DroppableColumn({
         )}
       </div>
     </SortableContext>
-  )
+  );
 }
 
-export default DroppableColumn
+export default DroppableColumn;

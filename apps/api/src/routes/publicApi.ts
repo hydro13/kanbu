@@ -14,55 +14,51 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
-import { prisma } from '../lib/prisma'
-import { hashApiKey, type ApiPermission } from '../trpc/procedures/apiKey'
-import { permissionService } from '../services/permissions'
-import { scopeService } from '../services/scopeService'
+import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { prisma } from '../lib/prisma';
+import { hashApiKey, type ApiPermission } from '../trpc/procedures/apiKey';
+import { permissionService } from '../services/permissions';
+import { scopeService } from '../services/scopeService';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface ApiKeyContext {
-  userId: number
-  keyId: number
-  permissions: ApiPermission[]
-  rateLimit: number
+  userId: number;
+  keyId: number;
+  permissions: ApiPermission[];
+  rateLimit: number;
 }
-
 
 // =============================================================================
 // Rate Limiting
 // =============================================================================
 
-import { rateLimitService } from '../services/rateLimitService'
+import { rateLimitService } from '../services/rateLimitService';
 
-// Helper wrappers to match existing internal API signature if needed, 
-// or we can replace calls directly. 
+// Helper wrappers to match existing internal API signature if needed,
+// or we can replace calls directly.
 // Replacing direct implementation with service calls.
-
 
 // =============================================================================
 // API Key Authentication
 // =============================================================================
 
-async function authenticateApiKey(
-  request: FastifyRequest
-): Promise<ApiKeyContext | null> {
-  const authHeader = request.headers.authorization
+async function authenticateApiKey(request: FastifyRequest): Promise<ApiKeyContext | null> {
+  const authHeader = request.headers.authorization;
 
   if (!authHeader?.startsWith('Bearer ')) {
-    return null
+    return null;
   }
 
-  const key = authHeader.substring(7)
+  const key = authHeader.substring(7);
 
   if (!key.startsWith('kb_')) {
-    return null
+    return null;
   }
 
-  const keyHash = hashApiKey(key)
+  const keyHash = hashApiKey(key);
 
   const apiKey = await prisma.apiKey.findFirst({
     where: {
@@ -72,15 +68,15 @@ async function authenticateApiKey(
     include: {
       user: { select: { id: true, isActive: true } },
     },
-  })
+  });
 
   if (!apiKey || !apiKey.user.isActive) {
-    return null
+    return null;
   }
 
   // Check expiration
   if (apiKey.expiresAt && apiKey.expiresAt < new Date()) {
-    return null
+    return null;
   }
 
   // Update last used timestamp (fire and forget)
@@ -91,74 +87,65 @@ async function authenticateApiKey(
     })
     .catch(() => {
       // Ignore errors
-    })
+    });
 
   return {
     userId: apiKey.userId,
     keyId: apiKey.id,
     permissions: apiKey.permissions as ApiPermission[],
     rateLimit: apiKey.rateLimit,
-  }
+  };
 }
 
-function hasPermission(
-  context: ApiKeyContext,
-  required: ApiPermission
-): boolean {
-  return context.permissions.includes(required)
+function hasPermission(context: ApiKeyContext, required: ApiPermission): boolean {
+  return context.permissions.includes(required);
 }
 
 // =============================================================================
 // Route Handlers
 // =============================================================================
 
-export async function registerPublicApiRoutes(
-  server: FastifyInstance
-): Promise<void> {
+export async function registerPublicApiRoutes(server: FastifyInstance): Promise<void> {
   // Middleware to authenticate API key and check rate limit
-  server.addHook(
-    'onRequest',
-    async (request: FastifyRequest, reply: FastifyReply) => {
-      // Only apply to /api/v1 routes
-      if (!request.url.startsWith('/api/v1')) {
-        return
-      }
-
-      const context = await authenticateApiKey(request)
-
-      if (!context) {
-        reply.status(401).send({
-          error: 'Unauthorized',
-          message: 'Invalid or missing API key',
-        })
-        return
-      }
-
-      // Check rate limit
-      // Key format: "apikey:123" to distinguish from other types
-      const rateLimitKey = `apikey:${context.keyId}`
-
-      if (!rateLimitService.check(rateLimitKey, context.rateLimit)) {
-        const headers = rateLimitService.getHeaders(rateLimitKey, context.rateLimit)
-        reply
-          .status(429)
-          .headers(headers)
-          .send({
-            error: 'Too Many Requests',
-            message: `Rate limit exceeded. Try again in ${headers['X-RateLimit-Reset']} seconds.`,
-          })
-        return
-      }
-
-      // Add rate limit headers to response
-      const headers = rateLimitService.getHeaders(rateLimitKey, context.rateLimit)
-      reply.headers(headers)
-
-        // Store context for route handlers
-        ; (request as unknown as { apiContext: ApiKeyContext }).apiContext =
-          context
+  server.addHook('onRequest', async (request: FastifyRequest, reply: FastifyReply) => {
+    // Only apply to /api/v1 routes
+    if (!request.url.startsWith('/api/v1')) {
+      return;
     }
-  )
+
+    const context = await authenticateApiKey(request);
+
+    if (!context) {
+      reply.status(401).send({
+        error: 'Unauthorized',
+        message: 'Invalid or missing API key',
+      });
+      return;
+    }
+
+    // Check rate limit
+    // Key format: "apikey:123" to distinguish from other types
+    const rateLimitKey = `apikey:${context.keyId}`;
+
+    if (!rateLimitService.check(rateLimitKey, context.rateLimit)) {
+      const headers = rateLimitService.getHeaders(rateLimitKey, context.rateLimit);
+      reply
+        .status(429)
+        .headers(headers)
+        .send({
+          error: 'Too Many Requests',
+          message: `Rate limit exceeded. Try again in ${headers['X-RateLimit-Reset']} seconds.`,
+        });
+      return;
+    }
+
+    // Add rate limit headers to response
+    const headers = rateLimitService.getHeaders(rateLimitKey, context.rateLimit);
+    reply.headers(headers);
+
+    // Store context for route handlers
+    (request as unknown as { apiContext: ApiKeyContext }).apiContext = context;
+  });
 
   // ==========================================================================
   // API Info
@@ -180,22 +167,22 @@ export async function registerPublicApiRoutes(
         'GET /api/v1/tasks/:taskId/comments',
         'POST /api/v1/tasks/:taskId/comments',
       ],
-    }
-  })
+    };
+  });
 
   // ==========================================================================
   // Projects
   // ==========================================================================
 
   server.get('/api/v1/projects', async (request) => {
-    const ctx = (request as unknown as { apiContext: ApiKeyContext }).apiContext
+    const ctx = (request as unknown as { apiContext: ApiKeyContext }).apiContext;
 
     if (!hasPermission(ctx, 'projects:read')) {
-      return { error: 'Forbidden', message: 'Missing projects:read permission' }
+      return { error: 'Forbidden', message: 'Missing projects:read permission' };
     }
 
     // Get accessible project IDs via ACL/scope system
-    const scope = await scopeService.getUserScope(ctx.userId)
+    const scope = await scopeService.getUserScope(ctx.userId);
     const projects = await prisma.project.findMany({
       where: {
         id: { in: scope.projectIds },
@@ -211,33 +198,28 @@ export async function registerPublicApiRoutes(
         updatedAt: true,
         _count: { select: { tasks: true } },
       },
-    })
+    });
 
-    return { projects }
-  })
+    return { projects };
+  });
 
   server.get<{ Params: { projectId: string } }>(
     '/api/v1/projects/:projectId',
     async (request, reply) => {
-      const ctx = (request as unknown as { apiContext: ApiKeyContext })
-        .apiContext
-      const projectId = parseInt(request.params.projectId, 10)
+      const ctx = (request as unknown as { apiContext: ApiKeyContext }).apiContext;
+      const projectId = parseInt(request.params.projectId, 10);
 
       if (!hasPermission(ctx, 'projects:read')) {
-        return reply
-          .status(403)
-          .send({
-            error: 'Forbidden',
-            message: 'Missing projects:read permission',
-          })
+        return reply.status(403).send({
+          error: 'Forbidden',
+          message: 'Missing projects:read permission',
+        });
       }
 
       // Check access via ACL system
-      const hasAccess = await permissionService.canAccessProject(ctx.userId, projectId)
+      const hasAccess = await permissionService.canAccessProject(ctx.userId, projectId);
       if (!hasAccess) {
-        return reply
-          .status(404)
-          .send({ error: 'Not Found', message: 'Project not found' })
+        return reply.status(404).send({ error: 'Not Found', message: 'Project not found' });
       }
 
       const project = await prisma.project.findUnique({
@@ -247,17 +229,15 @@ export async function registerPublicApiRoutes(
           swimlanes: { orderBy: { position: 'asc' } },
           _count: { select: { tasks: true } },
         },
-      })
+      });
 
       if (!project) {
-        return reply
-          .status(404)
-          .send({ error: 'Not Found', message: 'Project not found' })
+        return reply.status(404).send({ error: 'Not Found', message: 'Project not found' });
       }
 
-      return { project }
+      return { project };
     }
-  )
+  );
 
   // ==========================================================================
   // Tasks
@@ -266,23 +246,20 @@ export async function registerPublicApiRoutes(
   server.get<{ Params: { projectId: string }; Querystring: { status?: string } }>(
     '/api/v1/projects/:projectId/tasks',
     async (request, reply) => {
-      const ctx = (request as unknown as { apiContext: ApiKeyContext })
-        .apiContext
-      const projectId = parseInt(request.params.projectId, 10)
-      const status = request.query.status
+      const ctx = (request as unknown as { apiContext: ApiKeyContext }).apiContext;
+      const projectId = parseInt(request.params.projectId, 10);
+      const status = request.query.status;
 
       if (!hasPermission(ctx, 'tasks:read')) {
         return reply
           .status(403)
-          .send({ error: 'Forbidden', message: 'Missing tasks:read permission' })
+          .send({ error: 'Forbidden', message: 'Missing tasks:read permission' });
       }
 
       // Verify project access via ACL system
-      const hasAccess = await permissionService.canAccessProject(ctx.userId, projectId)
+      const hasAccess = await permissionService.canAccessProject(ctx.userId, projectId);
       if (!hasAccess) {
-        return reply
-          .status(404)
-          .send({ error: 'Not Found', message: 'Project not found' })
+        return reply.status(404).send({ error: 'Not Found', message: 'Project not found' });
       }
 
       const tasks = await prisma.task.findMany({
@@ -299,98 +276,86 @@ export async function registerPublicApiRoutes(
           tags: { include: { tag: true } },
         },
         orderBy: { createdAt: 'desc' },
-      })
+      });
 
-      return { tasks }
+      return { tasks };
     }
-  )
+  );
 
-  server.get<{ Params: { taskId: string } }>(
-    '/api/v1/tasks/:taskId',
-    async (request, reply) => {
-      const ctx = (request as unknown as { apiContext: ApiKeyContext })
-        .apiContext
-      const taskId = parseInt(request.params.taskId, 10)
+  server.get<{ Params: { taskId: string } }>('/api/v1/tasks/:taskId', async (request, reply) => {
+    const ctx = (request as unknown as { apiContext: ApiKeyContext }).apiContext;
+    const taskId = parseInt(request.params.taskId, 10);
 
-      if (!hasPermission(ctx, 'tasks:read')) {
-        return reply
-          .status(403)
-          .send({ error: 'Forbidden', message: 'Missing tasks:read permission' })
-      }
+    if (!hasPermission(ctx, 'tasks:read')) {
+      return reply
+        .status(403)
+        .send({ error: 'Forbidden', message: 'Missing tasks:read permission' });
+    }
 
-      const task = await prisma.task.findUnique({
-        where: { id: taskId },
-        include: {
-          project: { select: { id: true, name: true } },
-          column: { select: { id: true, title: true } },
-          swimlane: { select: { id: true, name: true } },
-          creator: { select: { id: true, username: true, name: true } },
-          assignees: {
-            include: { user: { select: { id: true, username: true, name: true } } },
-          },
-          subtasks: true,
-          tags: { include: { tag: true } },
+    const task = await prisma.task.findUnique({
+      where: { id: taskId },
+      include: {
+        project: { select: { id: true, name: true } },
+        column: { select: { id: true, title: true } },
+        swimlane: { select: { id: true, name: true } },
+        creator: { select: { id: true, username: true, name: true } },
+        assignees: {
+          include: { user: { select: { id: true, username: true, name: true } } },
         },
-      })
+        subtasks: true,
+        tags: { include: { tag: true } },
+      },
+    });
 
-      if (!task) {
-        return reply
-          .status(404)
-          .send({ error: 'Not Found', message: 'Task not found' })
-      }
-
-      // Verify project access via ACL system
-      const hasAccess = await permissionService.canAccessProject(ctx.userId, task.projectId)
-      if (!hasAccess) {
-        return reply
-          .status(404)
-          .send({ error: 'Not Found', message: 'Task not found' })
-      }
-
-      return { task }
+    if (!task) {
+      return reply.status(404).send({ error: 'Not Found', message: 'Task not found' });
     }
-  )
+
+    // Verify project access via ACL system
+    const hasAccess = await permissionService.canAccessProject(ctx.userId, task.projectId);
+    if (!hasAccess) {
+      return reply.status(404).send({ error: 'Not Found', message: 'Task not found' });
+    }
+
+    return { task };
+  });
 
   server.post<{
     Body: {
-      projectId: number
-      title: string
-      description?: string
-      columnId?: number
-      priority?: number
-    }
+      projectId: number;
+      title: string;
+      description?: string;
+      columnId?: number;
+      priority?: number;
+    };
   }>('/api/v1/tasks', async (request, reply) => {
-    const ctx = (request as unknown as { apiContext: ApiKeyContext }).apiContext
-    const { projectId, title, description, columnId, priority } = request.body
+    const ctx = (request as unknown as { apiContext: ApiKeyContext }).apiContext;
+    const { projectId, title, description, columnId, priority } = request.body;
 
     if (!hasPermission(ctx, 'tasks:write')) {
       return reply
         .status(403)
-        .send({ error: 'Forbidden', message: 'Missing tasks:write permission' })
+        .send({ error: 'Forbidden', message: 'Missing tasks:write permission' });
     }
 
     // Verify project access via ACL system
-    const hasAccess = await permissionService.canAccessProject(ctx.userId, projectId)
+    const hasAccess = await permissionService.canAccessProject(ctx.userId, projectId);
     if (!hasAccess) {
-      return reply
-        .status(404)
-        .send({ error: 'Not Found', message: 'Project not found' })
+      return reply.status(404).send({ error: 'Not Found', message: 'Project not found' });
     }
 
     // Get default column if not specified
-    let targetColumnId = columnId
+    let targetColumnId = columnId;
     if (!targetColumnId) {
       const firstColumn = await prisma.column.findFirst({
         where: { projectId },
         orderBy: { position: 'asc' },
-      })
-      targetColumnId = firstColumn?.id
+      });
+      targetColumnId = firstColumn?.id;
     }
 
     if (!targetColumnId) {
-      return reply
-        .status(400)
-        .send({ error: 'Bad Request', message: 'No column available' })
+      return reply.status(400).send({ error: 'Bad Request', message: 'No column available' });
     }
 
     const task = await prisma.task.create({
@@ -405,47 +370,43 @@ export async function registerPublicApiRoutes(
       include: {
         column: { select: { id: true, title: true } },
       },
-    })
+    });
 
-    return reply.status(201).send({ task })
-  })
+    return reply.status(201).send({ task });
+  });
 
   server.patch<{
-    Params: { taskId: string }
+    Params: { taskId: string };
     Body: {
-      title?: string
-      description?: string
-      columnId?: number
-      priority?: number
-      isActive?: boolean
-    }
+      title?: string;
+      description?: string;
+      columnId?: number;
+      priority?: number;
+      isActive?: boolean;
+    };
   }>('/api/v1/tasks/:taskId', async (request, reply) => {
-    const ctx = (request as unknown as { apiContext: ApiKeyContext }).apiContext
-    const taskId = parseInt(request.params.taskId, 10)
-    const updates = request.body
+    const ctx = (request as unknown as { apiContext: ApiKeyContext }).apiContext;
+    const taskId = parseInt(request.params.taskId, 10);
+    const updates = request.body;
 
     if (!hasPermission(ctx, 'tasks:write')) {
       return reply
         .status(403)
-        .send({ error: 'Forbidden', message: 'Missing tasks:write permission' })
+        .send({ error: 'Forbidden', message: 'Missing tasks:write permission' });
     }
 
     const task = await prisma.task.findUnique({
       where: { id: taskId },
-    })
+    });
 
     if (!task) {
-      return reply
-        .status(404)
-        .send({ error: 'Not Found', message: 'Task not found' })
+      return reply.status(404).send({ error: 'Not Found', message: 'Task not found' });
     }
 
     // Verify project access via ACL system
-    const hasAccess = await permissionService.canAccessProject(ctx.userId, task.projectId)
+    const hasAccess = await permissionService.canAccessProject(ctx.userId, task.projectId);
     if (!hasAccess) {
-      return reply
-        .status(404)
-        .send({ error: 'Not Found', message: 'Task not found' })
+      return reply.status(404).send({ error: 'Not Found', message: 'Task not found' });
     }
 
     const updated = await prisma.task.update({
@@ -465,47 +426,39 @@ export async function registerPublicApiRoutes(
       include: {
         column: { select: { id: true, title: true } },
       },
-    })
+    });
 
-    return { task: updated }
-  })
+    return { task: updated };
+  });
 
-  server.delete<{ Params: { taskId: string } }>(
-    '/api/v1/tasks/:taskId',
-    async (request, reply) => {
-      const ctx = (request as unknown as { apiContext: ApiKeyContext })
-        .apiContext
-      const taskId = parseInt(request.params.taskId, 10)
+  server.delete<{ Params: { taskId: string } }>('/api/v1/tasks/:taskId', async (request, reply) => {
+    const ctx = (request as unknown as { apiContext: ApiKeyContext }).apiContext;
+    const taskId = parseInt(request.params.taskId, 10);
 
-      if (!hasPermission(ctx, 'tasks:write')) {
-        return reply
-          .status(403)
-          .send({ error: 'Forbidden', message: 'Missing tasks:write permission' })
-      }
-
-      const task = await prisma.task.findUnique({
-        where: { id: taskId },
-      })
-
-      if (!task) {
-        return reply
-          .status(404)
-          .send({ error: 'Not Found', message: 'Task not found' })
-      }
-
-      // Verify project access via ACL system
-      const hasAccess = await permissionService.canAccessProject(ctx.userId, task.projectId)
-      if (!hasAccess) {
-        return reply
-          .status(404)
-          .send({ error: 'Not Found', message: 'Task not found' })
-      }
-
-      await prisma.task.delete({ where: { id: taskId } })
-
-      return reply.status(204).send()
+    if (!hasPermission(ctx, 'tasks:write')) {
+      return reply
+        .status(403)
+        .send({ error: 'Forbidden', message: 'Missing tasks:write permission' });
     }
-  )
+
+    const task = await prisma.task.findUnique({
+      where: { id: taskId },
+    });
+
+    if (!task) {
+      return reply.status(404).send({ error: 'Not Found', message: 'Task not found' });
+    }
+
+    // Verify project access via ACL system
+    const hasAccess = await permissionService.canAccessProject(ctx.userId, task.projectId);
+    if (!hasAccess) {
+      return reply.status(404).send({ error: 'Not Found', message: 'Task not found' });
+    }
+
+    await prisma.task.delete({ where: { id: taskId } });
+
+    return reply.status(204).send();
+  });
 
   // ==========================================================================
   // Comments
@@ -514,35 +467,28 @@ export async function registerPublicApiRoutes(
   server.get<{ Params: { taskId: string } }>(
     '/api/v1/tasks/:taskId/comments',
     async (request, reply) => {
-      const ctx = (request as unknown as { apiContext: ApiKeyContext })
-        .apiContext
-      const taskId = parseInt(request.params.taskId, 10)
+      const ctx = (request as unknown as { apiContext: ApiKeyContext }).apiContext;
+      const taskId = parseInt(request.params.taskId, 10);
 
       if (!hasPermission(ctx, 'comments:read')) {
-        return reply
-          .status(403)
-          .send({
-            error: 'Forbidden',
-            message: 'Missing comments:read permission',
-          })
+        return reply.status(403).send({
+          error: 'Forbidden',
+          message: 'Missing comments:read permission',
+        });
       }
 
       const task = await prisma.task.findUnique({
         where: { id: taskId },
-      })
+      });
 
       if (!task) {
-        return reply
-          .status(404)
-          .send({ error: 'Not Found', message: 'Task not found' })
+        return reply.status(404).send({ error: 'Not Found', message: 'Task not found' });
       }
 
       // Verify project access via ACL system
-      const hasAccess = await permissionService.canAccessProject(ctx.userId, task.projectId)
+      const hasAccess = await permissionService.canAccessProject(ctx.userId, task.projectId);
       if (!hasAccess) {
-        return reply
-          .status(404)
-          .send({ error: 'Not Found', message: 'Task not found' })
+        return reply.status(404).send({ error: 'Not Found', message: 'Task not found' });
       }
 
       const comments = await prisma.comment.findMany({
@@ -551,45 +497,38 @@ export async function registerPublicApiRoutes(
           user: { select: { id: true, username: true, name: true } },
         },
         orderBy: { createdAt: 'asc' },
-      })
+      });
 
-      return { comments }
+      return { comments };
     }
-  )
+  );
 
   server.post<{ Params: { taskId: string }; Body: { content: string } }>(
     '/api/v1/tasks/:taskId/comments',
     async (request, reply) => {
-      const ctx = (request as unknown as { apiContext: ApiKeyContext })
-        .apiContext
-      const taskId = parseInt(request.params.taskId, 10)
-      const { content } = request.body
+      const ctx = (request as unknown as { apiContext: ApiKeyContext }).apiContext;
+      const taskId = parseInt(request.params.taskId, 10);
+      const { content } = request.body;
 
       if (!hasPermission(ctx, 'comments:write')) {
-        return reply
-          .status(403)
-          .send({
-            error: 'Forbidden',
-            message: 'Missing comments:write permission',
-          })
+        return reply.status(403).send({
+          error: 'Forbidden',
+          message: 'Missing comments:write permission',
+        });
       }
 
       const task = await prisma.task.findUnique({
         where: { id: taskId },
-      })
+      });
 
       if (!task) {
-        return reply
-          .status(404)
-          .send({ error: 'Not Found', message: 'Task not found' })
+        return reply.status(404).send({ error: 'Not Found', message: 'Task not found' });
       }
 
       // Verify project access via ACL system
-      const hasAccess = await permissionService.canAccessProject(ctx.userId, task.projectId)
+      const hasAccess = await permissionService.canAccessProject(ctx.userId, task.projectId);
       if (!hasAccess) {
-        return reply
-          .status(404)
-          .send({ error: 'Not Found', message: 'Task not found' })
+        return reply.status(404).send({ error: 'Not Found', message: 'Task not found' });
       }
 
       const comment = await prisma.comment.create({
@@ -601,9 +540,9 @@ export async function registerPublicApiRoutes(
         include: {
           user: { select: { id: true, username: true, name: true } },
         },
-      })
+      });
 
-      return reply.status(201).send({ comment })
+      return reply.status(201).send({ comment });
     }
-  )
+  );
 }

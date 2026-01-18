@@ -203,44 +203,45 @@ import { TRPCError } from '@trpc/server';
 
 export const assistantRouter = router({
   // Generate a new setup code
-  generateSetupCode: protectedProcedure
-    .mutation(async ({ ctx }) => {
-      // Invalidate any existing unused codes for this user
-      await ctx.db.assistantSetupCode.updateMany({
-        where: {
-          userId: ctx.user.id,
-          consumedAt: null,
-        },
-        data: {
-          consumedAt: new Date(), // Mark as "cancelled"
-        },
-      });
+  generateSetupCode: protectedProcedure.mutation(async ({ ctx }) => {
+    // Invalidate any existing unused codes for this user
+    await ctx.db.assistantSetupCode.updateMany({
+      where: {
+        userId: ctx.user.id,
+        consumedAt: null,
+      },
+      data: {
+        consumedAt: new Date(), // Mark as "cancelled"
+      },
+    });
 
-      // Generate new code
-      const code = generateSetupCode(); // KNB-XXXX-XXXX
-      const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+    // Generate new code
+    const code = generateSetupCode(); // KNB-XXXX-XXXX
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
 
-      await ctx.db.assistantSetupCode.create({
-        data: {
-          userId: ctx.user.id,
-          code,
-          expiresAt,
-        },
-      });
-
-      return {
+    await ctx.db.assistantSetupCode.create({
+      data: {
+        userId: ctx.user.id,
         code,
         expiresAt,
-      };
-    }),
+      },
+    });
+
+    return {
+      code,
+      expiresAt,
+    };
+  }),
 
   // Exchange setup code for permanent token
   exchangeSetupCode: publicProcedure
-    .input(z.object({
-      code: z.string().regex(/^KNB-[A-Z0-9]{4}-[A-Z0-9]{4}$/),
-      machineId: z.string().min(1),
-      machineName: z.string().optional(),
-    }))
+    .input(
+      z.object({
+        code: z.string().regex(/^KNB-[A-Z0-9]{4}-[A-Z0-9]{4}$/),
+        machineId: z.string().min(1),
+        machineName: z.string().optional(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Find the setup code
       const setupCode = await ctx.db.assistantSetupCode.findUnique({
@@ -353,25 +354,24 @@ export const assistantRouter = router({
     }),
 
   // Get list of connected machines
-  getBindings: protectedProcedure
-    .query(async ({ ctx }) => {
-      const bindings = await ctx.db.assistantBinding.findMany({
-        where: {
-          userId: ctx.user.id,
-          revokedAt: null,
-        },
-        select: {
-          id: true,
-          machineId: true,
-          machineName: true,
-          createdAt: true,
-          lastUsedAt: true,
-        },
-        orderBy: { lastUsedAt: 'desc' },
-      });
+  getBindings: protectedProcedure.query(async ({ ctx }) => {
+    const bindings = await ctx.db.assistantBinding.findMany({
+      where: {
+        userId: ctx.user.id,
+        revokedAt: null,
+      },
+      select: {
+        id: true,
+        machineId: true,
+        machineName: true,
+        createdAt: true,
+        lastUsedAt: true,
+      },
+      orderBy: { lastUsedAt: 'desc' },
+    });
 
-      return bindings;
-    }),
+    return bindings;
+  }),
 
   // Disconnect a machine
   revokeBinding: protectedProcedure
@@ -474,7 +474,7 @@ export const assistantRouter = router({
 // apps/api/src/utils/crypto.ts (actual implementation)
 
 import { randomBytes, createHash } from 'crypto';
-import argon2 from 'argon2';  // Project uses argon2, not bcrypt
+import argon2 from 'argon2'; // Project uses argon2, not bcrypt
 
 const SETUP_CODE_PREFIX = 'KNB';
 const TOKEN_PREFIX = 'ast_';
@@ -919,38 +919,38 @@ export function AssistantSection() {
 
 ### Setup Code
 
-| Property | Value | Rationale |
-|----------|-------|-----------|
-| Format | `KNB-XXXX-XXXX` | Easy to read aloud, no ambiguous chars |
-| Entropy | ~20 bits | Sufficient for 5-min window |
-| TTL | 5 minutes | Short enough to prevent sharing |
-| One-time use | Yes | Cannot be reused after consumption |
-| Rate limit | 5/hour | Prevents brute force |
+| Property     | Value           | Rationale                              |
+| ------------ | --------------- | -------------------------------------- |
+| Format       | `KNB-XXXX-XXXX` | Easy to read aloud, no ambiguous chars |
+| Entropy      | ~20 bits        | Sufficient for 5-min window            |
+| TTL          | 5 minutes       | Short enough to prevent sharing        |
+| One-time use | Yes             | Cannot be reused after consumption     |
+| Rate limit   | 5/hour          | Prevents brute force                   |
 
 ### Permanent Token
 
-| Property | Value | Rationale |
-|----------|-------|-----------|
-| Entropy | 256 bits | Cryptographically secure |
-| Storage | argon2 hash | Secure even if DB leaked |
-| Visibility | Never shown | User never sees it |
-| Local storage | `~/.config/kanbu/` with 0600 | Only owner can read |
+| Property      | Value                        | Rationale                |
+| ------------- | ---------------------------- | ------------------------ |
+| Entropy       | 256 bits                     | Cryptographically secure |
+| Storage       | argon2 hash                  | Secure even if DB leaked |
+| Visibility    | Never shown                  | User never sees it       |
+| Local storage | `~/.config/kanbu/` with 0600 | Only owner can read      |
 
 ### Machine Binding
 
-| Property | Value | Rationale |
-|----------|-------|-----------|
-| ID generation | SHA256(hostname+user) | Unique per machine |
-| Portability | None | Token only works on bound machine |
-| Multi-machine | Allowed | Each machine gets own token |
-| Revocation | Per machine | Fine-grained control |
+| Property      | Value                 | Rationale                         |
+| ------------- | --------------------- | --------------------------------- |
+| ID generation | SHA256(hostname+user) | Unique per machine                |
+| Portability   | None                  | Token only works on bound machine |
+| Multi-machine | Allowed               | Each machine gets own token       |
+| Revocation    | Per machine           | Fine-grained control              |
 
 ## Changelog
 
-| Date | Change |
-|------|--------|
+| Date       | Change                                                               |
+| ---------- | -------------------------------------------------------------------- |
 | 2026-01-09 | **Phase 1 Implemented** - Updated with actual implementation details |
-| 2026-01-09 | Token storage changed to `~/.config/kanbu/mcp.json` |
-| 2026-01-09 | bcrypt replaced with argon2 (consistent with project) |
-| 2026-01-09 | Plan rewritten for one-time setup code pairing |
-| 2026-01-09 | Initial technical design |
+| 2026-01-09 | Token storage changed to `~/.config/kanbu/mcp.json`                  |
+| 2026-01-09 | bcrypt replaced with argon2 (consistent with project)                |
+| 2026-01-09 | Plan rewritten for one-time setup code pairing                       |
+| 2026-01-09 | Initial technical design                                             |

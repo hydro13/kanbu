@@ -10,11 +10,11 @@
  * Task: 262 - Workspace Settings consolidatie
  */
 
-import { useState, useRef, useEffect } from 'react'
-import { useNavigate, useParams, Link } from 'react-router-dom'
-import { AdminLayout } from '@/components/admin'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { useState, useRef, useEffect } from 'react';
+import { useNavigate, useParams, Link } from 'react-router-dom';
+import { AdminLayout } from '@/components/admin';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Card,
   CardHeader,
@@ -22,8 +22,8 @@ import {
   CardDescription,
   CardContent,
   CardFooter,
-} from '@/components/ui/card'
-import { trpc, getMediaUrl } from '@/lib/trpc'
+} from '@/components/ui/card';
+import { trpc, getMediaUrl } from '@/lib/trpc';
 import {
   MemberFilters,
   filterAndSortMembers,
@@ -31,16 +31,16 @@ import {
   getTotalPages,
   type MemberFiltersState,
   type PaginationState,
-} from '@/components/workspace/MemberFilters'
-import { CanDoIfDomainAdmin } from '@/components/CanDo'
+} from '@/components/workspace/MemberFilters';
+import { CanDoIfDomainAdmin } from '@/components/CanDo';
 
 // =============================================================================
 // Constants
 // =============================================================================
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
-const DEFAULT_PAGE_SIZE = 10
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+const DEFAULT_PAGE_SIZE = 10;
 
 // =============================================================================
 // Types
@@ -50,15 +50,15 @@ const DEFAULT_PAGE_SIZE = 10
 function getRoleBadgeStyle(role: string): string {
   switch (role) {
     case 'SYSTEM':
-      return 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 font-medium'
+      return 'bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 font-medium';
     case 'ADMIN':
-      return 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300'
+      return 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300';
     case 'MEMBER':
-      return 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300'
+      return 'bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300';
     case 'VIEWER':
-      return 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+      return 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300';
     default:
-      return 'text-muted-foreground'
+      return 'text-muted-foreground';
   }
 }
 
@@ -68,34 +68,78 @@ function getRoleBadgeStyle(role: string): string {
 
 function BuildingIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+      />
     </svg>
-  )
+  );
 }
 
 function UploadIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+      />
     </svg>
-  )
+  );
 }
 
 function TrashIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+      />
     </svg>
-  )
+  );
 }
 
 function ArrowLeftIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M10 19l-7-7m0 0l7-7m-7 7h18"
+      />
     </svg>
-  )
+  );
 }
 
 // =============================================================================
@@ -103,24 +147,25 @@ function ArrowLeftIcon({ className }: { className?: string }) {
 // =============================================================================
 
 export function WorkspaceEditPage() {
-  const navigate = useNavigate()
-  const { id } = useParams<{ id: string }>()
-  const workspaceId = parseInt(id || '0', 10)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
+  const workspaceId = parseInt(id || '0', 10);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form states
-  const [name, setName] = useState('')
-  const [description, setDescription] = useState('')
-  const [isActive, setIsActive] = useState(true)
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [isActive, setIsActive] = useState(true);
 
   // Logo states
-  const [logoPreview, setLogoPreview] = useState<string | null>(null)
-  const [selectedLogo, setSelectedLogo] = useState<{ base64: string; mimeType: string } | null>(null)
-  const [currentLogoUrl, setCurrentLogoUrl] = useState<string | null>(null)
-  const [logoTimestamp, setLogoTimestamp] = useState(Date.now())
-  const [logoError, setLogoError] = useState<string | null>(null)
-  const [logoSuccess, setLogoSuccess] = useState<string | null>(null)
-
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [selectedLogo, setSelectedLogo] = useState<{ base64: string; mimeType: string } | null>(
+    null
+  );
+  const [currentLogoUrl, setCurrentLogoUrl] = useState<string | null>(null);
+  const [logoTimestamp, setLogoTimestamp] = useState(Date.now());
+  const [logoError, setLogoError] = useState<string | null>(null);
+  const [logoSuccess, setLogoSuccess] = useState<string | null>(null);
 
   // Member filters and pagination state
   const [memberFilters, setMemberFilters] = useState<MemberFiltersState>({
@@ -128,124 +173,124 @@ export function WorkspaceEditPage() {
     role: 'ALL',
     sortField: 'name',
     sortOrder: 'asc',
-  })
+  });
   const [memberPagination, setMemberPagination] = useState<PaginationState>({
     page: 1,
     pageSize: DEFAULT_PAGE_SIZE,
-  })
+  });
 
   // Status messages
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
-  const utils = trpc.useUtils()
+  const utils = trpc.useUtils();
 
   // Fetch workspace data
   const { data: workspace, isLoading: loadingWorkspace } = trpc.workspace.get.useQuery(
     { workspaceId },
     { enabled: workspaceId > 0 }
-  )
+  );
 
   // Set form values when workspace is loaded
   useEffect(() => {
     if (workspace) {
-      setName(workspace.name)
-      setDescription(workspace.description || '')
-      setIsActive(workspace.isActive)
+      setName(workspace.name);
+      setDescription(workspace.description || '');
+      setIsActive(workspace.isActive);
       if (workspace.logoUrl) {
-        setCurrentLogoUrl(workspace.logoUrl)
+        setCurrentLogoUrl(workspace.logoUrl);
       }
     }
-  }, [workspace])
+  }, [workspace]);
 
   // Queries
   const membersQuery = trpc.workspace.getMembers.useQuery(
     { workspaceId },
     { enabled: workspaceId > 0 }
-  )
+  );
 
   // Mutations
   const updateMutation = trpc.workspace.update.useMutation({
     onSuccess: () => {
-      utils.workspace.get.invalidate({ workspaceId })
-      utils.admin.listAllWorkspaces.invalidate()
-      setSuccess('Workspace updated successfully')
-      setTimeout(() => setSuccess(null), 3000)
+      utils.workspace.get.invalidate({ workspaceId });
+      utils.admin.listAllWorkspaces.invalidate();
+      setSuccess('Workspace updated successfully');
+      setTimeout(() => setSuccess(null), 3000);
     },
     onError: (err: { message: string }) => {
-      setError(err.message)
+      setError(err.message);
     },
-  })
+  });
 
   const deleteMutation = trpc.workspace.delete.useMutation({
     onSuccess: () => {
-      navigate('/admin/workspaces')
+      navigate('/admin/workspaces');
     },
     onError: (err: { message: string }) => {
-      setError(err.message)
+      setError(err.message);
     },
-  })
+  });
 
   const uploadLogoMutation = trpc.workspace.uploadLogo.useMutation({
     onSuccess: (data) => {
-      utils.workspace.get.invalidate({ workspaceId })
-      utils.admin.listAllWorkspaces.invalidate()
-      setCurrentLogoUrl(data.logoUrl)
-      setLogoTimestamp(Date.now())
-      setLogoPreview(null)
-      setSelectedLogo(null)
-      setLogoSuccess('Logo uploaded successfully')
-      setTimeout(() => setLogoSuccess(null), 3000)
+      utils.workspace.get.invalidate({ workspaceId });
+      utils.admin.listAllWorkspaces.invalidate();
+      setCurrentLogoUrl(data.logoUrl);
+      setLogoTimestamp(Date.now());
+      setLogoPreview(null);
+      setSelectedLogo(null);
+      setLogoSuccess('Logo uploaded successfully');
+      setTimeout(() => setLogoSuccess(null), 3000);
     },
     onError: (err: { message: string }) => {
-      setLogoError(err.message)
+      setLogoError(err.message);
     },
-  })
+  });
 
   const removeLogoMutation = trpc.workspace.removeLogo.useMutation({
     onSuccess: () => {
-      utils.workspace.get.invalidate({ workspaceId })
-      utils.admin.listAllWorkspaces.invalidate()
-      setCurrentLogoUrl(null)
-      setLogoSuccess('Logo removed successfully')
-      setTimeout(() => setLogoSuccess(null), 3000)
+      utils.workspace.get.invalidate({ workspaceId });
+      utils.admin.listAllWorkspaces.invalidate();
+      setCurrentLogoUrl(null);
+      setLogoSuccess('Logo removed successfully');
+      setTimeout(() => setLogoSuccess(null), 3000);
     },
     onError: (err: { message: string }) => {
-      setLogoError(err.message)
+      setLogoError(err.message);
     },
-  })
+  });
 
   // Handlers
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-    setLogoError(null)
+    setLogoError(null);
 
     if (!ALLOWED_TYPES.includes(file.type)) {
-      setLogoError('Please select a valid image file (JPEG, PNG, GIF, or WebP)')
-      return
+      setLogoError('Please select a valid image file (JPEG, PNG, GIF, or WebP)');
+      return;
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      setLogoError('File size must be less than 5MB')
-      return
+      setLogoError('File size must be less than 5MB');
+      return;
     }
 
-    const reader = new FileReader()
+    const reader = new FileReader();
     reader.onload = (event) => {
-      const result = event.target?.result as string
-      const base64 = result.split(',')[1]
+      const result = event.target?.result as string;
+      const base64 = result.split(',')[1];
       if (base64) {
-        setLogoPreview(result)
+        setLogoPreview(result);
         setSelectedLogo({
           base64,
           mimeType: file.type,
-        })
+        });
       }
-    }
-    reader.readAsDataURL(file)
-  }
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleUploadLogo = () => {
     if (selectedLogo) {
@@ -253,51 +298,54 @@ export function WorkspaceEditPage() {
         workspaceId,
         base64: selectedLogo.base64,
         mimeType: selectedLogo.mimeType as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp',
-      })
+      });
     }
-  }
+  };
 
   const handleRemoveLogo = () => {
     if (currentLogoUrl) {
-      removeLogoMutation.mutate({ workspaceId })
+      removeLogoMutation.mutate({ workspaceId });
     }
-    setLogoPreview(null)
-    setSelectedLogo(null)
+    setLogoPreview(null);
+    setSelectedLogo(null);
     if (fileInputRef.current) {
-      fileInputRef.current.value = ''
+      fileInputRef.current.value = '';
     }
-  }
+  };
 
   const handleCancelLogoChange = () => {
-    setLogoPreview(null)
-    setSelectedLogo(null)
+    setLogoPreview(null);
+    setSelectedLogo(null);
     if (fileInputRef.current) {
-      fileInputRef.current.value = ''
+      fileInputRef.current.value = '';
     }
-  }
+  };
 
   const handleUpdateWorkspace = () => {
     updateMutation.mutate({
       workspaceId,
       name,
       description: description || undefined,
-    })
-  }
+    });
+  };
 
   const handleToggleActive = () => {
-    const newStatus = !isActive
-    setIsActive(newStatus)
+    const newStatus = !isActive;
+    setIsActive(newStatus);
     updateMutation.mutate({
       workspaceId,
       isActive: newStatus,
-    })
-  }
+    });
+  };
 
   const handleDeleteWorkspace = () => {
-    if (!workspace) return
-    if (!confirm(`Are you sure you want to delete "${workspace.name}"? This action cannot be undone.`)) return
-    deleteMutation.mutate({ workspaceId })
-  }
+    if (!workspace) return;
+    if (
+      !confirm(`Are you sure you want to delete "${workspace.name}"? This action cannot be undone.`)
+    )
+      return;
+    deleteMutation.mutate({ workspaceId });
+  };
 
   // Loading state
   if (loadingWorkspace) {
@@ -305,7 +353,7 @@ export function WorkspaceEditPage() {
       <AdminLayout title="Edit Workspace" description="Loading...">
         <div className="text-center py-12 text-gray-500">Loading workspace...</div>
       </AdminLayout>
-    )
+    );
   }
 
   // Not found state
@@ -322,14 +370,11 @@ export function WorkspaceEditPage() {
           </button>
         </div>
       </AdminLayout>
-    )
+    );
   }
 
   return (
-    <AdminLayout
-      title="Workspace Settings"
-      description={`Manage: ${workspace.name}`}
-    >
+    <AdminLayout title="Workspace Settings" description={`Manage: ${workspace.name}`}>
       <div className="max-w-4xl space-y-6">
         {/* Back Link */}
         <Link
@@ -387,9 +432,7 @@ export function WorkspaceEditPage() {
                 <p className="text-sm text-muted-foreground mb-3">
                   Upload a logo (JPEG, PNG, GIF, WebP - max 5MB)
                 </p>
-                {logoError && (
-                  <p className="text-sm text-destructive mb-2">{logoError}</p>
-                )}
+                {logoError && <p className="text-sm text-destructive mb-2">{logoError}</p>}
                 {logoSuccess && (
                   <p className="text-sm text-green-600 dark:text-green-400 mb-2">{logoSuccess}</p>
                 )}
@@ -469,10 +512,7 @@ export function WorkspaceEditPage() {
             </div>
           </CardContent>
           <CardFooter>
-            <Button
-              onClick={handleUpdateWorkspace}
-              disabled={updateMutation.isPending}
-            >
+            <Button onClick={handleUpdateWorkspace} disabled={updateMutation.isPending}>
               {updateMutation.isPending ? 'Saving...' : 'Save Changes'}
             </Button>
           </CardFooter>
@@ -528,8 +568,8 @@ export function WorkspaceEditPage() {
                   <MemberFilters
                     filters={memberFilters}
                     onFiltersChange={(newFilters) => {
-                      setMemberFilters(newFilters)
-                      setMemberPagination({ ...memberPagination, page: 1 })
+                      setMemberFilters(newFilters);
+                      setMemberPagination({ ...memberPagination, page: 1 });
                     }}
                     totalCount={membersQuery.data?.length ?? 0}
                     filteredCount={
@@ -541,10 +581,13 @@ export function WorkspaceEditPage() {
                 {/* Member List */}
                 <div className="space-y-3">
                   {(() => {
-                    const allMembers = membersQuery.data ?? []
-                    const filteredMembers = filterAndSortMembers(allMembers, memberFilters)
-                    const paginatedMembers = paginateMembers(filteredMembers, memberPagination)
-                    const totalPages = getTotalPages(filteredMembers.length, memberPagination.pageSize)
+                    const allMembers = membersQuery.data ?? [];
+                    const filteredMembers = filterAndSortMembers(allMembers, memberFilters);
+                    const paginatedMembers = paginateMembers(filteredMembers, memberPagination);
+                    const totalPages = getTotalPages(
+                      filteredMembers.length,
+                      memberPagination.pageSize
+                    );
 
                     if (paginatedMembers.length === 0) {
                       return (
@@ -553,7 +596,7 @@ export function WorkspaceEditPage() {
                             ? 'No members yet'
                             : 'No members match your filters'}
                         </p>
-                      )
+                      );
                     }
 
                     return (
@@ -567,7 +610,9 @@ export function WorkspaceEditPage() {
                               <p className="font-medium">{member.name}</p>
                               <p className="text-sm text-muted-foreground">{member.email}</p>
                             </div>
-                            <span className={`text-sm px-2 py-1 rounded ${getRoleBadgeStyle(member.role)}`}>
+                            <span
+                              className={`text-sm px-2 py-1 rounded ${getRoleBadgeStyle(member.role)}`}
+                            >
                               {member.role === 'SYSTEM' ? 'System' : member.role}
                             </span>
                           </div>
@@ -583,10 +628,12 @@ export function WorkspaceEditPage() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => setMemberPagination({
-                                  ...memberPagination,
-                                  page: memberPagination.page - 1,
-                                })}
+                                onClick={() =>
+                                  setMemberPagination({
+                                    ...memberPagination,
+                                    page: memberPagination.page - 1,
+                                  })
+                                }
                                 disabled={memberPagination.page <= 1}
                               >
                                 Previous
@@ -594,10 +641,12 @@ export function WorkspaceEditPage() {
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => setMemberPagination({
-                                  ...memberPagination,
-                                  page: memberPagination.page + 1,
-                                })}
+                                onClick={() =>
+                                  setMemberPagination({
+                                    ...memberPagination,
+                                    page: memberPagination.page + 1,
+                                  })
+                                }
                                 disabled={memberPagination.page >= totalPages}
                               >
                                 Next
@@ -606,7 +655,7 @@ export function WorkspaceEditPage() {
                           </div>
                         )}
                       </>
-                    )
+                    );
                   })()}
                 </div>
               </>
@@ -645,13 +694,15 @@ export function WorkspaceEditPage() {
               <div>
                 <dt className="text-muted-foreground">Last Updated</dt>
                 <dd>
-                  {workspace.updatedAt ? new Date(workspace.updatedAt).toLocaleDateString('nl-NL', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  }) : '-'}
+                  {workspace.updatedAt
+                    ? new Date(workspace.updatedAt).toLocaleDateString('nl-NL', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })
+                    : '-'}
                 </dd>
               </div>
             </dl>
@@ -686,7 +737,7 @@ export function WorkspaceEditPage() {
         </CanDoIfDomainAdmin>
       </div>
     </AdminLayout>
-  )
+  );
 }
 
-export default WorkspaceEditPage
+export default WorkspaceEditPage;

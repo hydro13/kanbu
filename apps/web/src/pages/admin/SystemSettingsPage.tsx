@@ -16,9 +16,9 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState, useEffect } from 'react'
-import { AdminLayout } from '@/components/admin'
-import { trpc } from '@/lib/trpc'
+import { useState, useEffect } from 'react';
+import { AdminLayout } from '@/components/admin';
+import { trpc } from '@/lib/trpc';
 
 // =============================================================================
 // Icons
@@ -26,26 +26,54 @@ import { trpc } from '@/lib/trpc'
 
 function SaveIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"
+      />
     </svg>
-  )
+  );
 }
 
 function PlusIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
     </svg>
-  )
+  );
 }
 
 function TrashIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+      />
     </svg>
-  )
+  );
 }
 
 // =============================================================================
@@ -53,12 +81,12 @@ function TrashIcon({ className }: { className?: string }) {
 // =============================================================================
 
 interface SettingDefinition {
-  key: string
-  label: string
-  description: string
-  type: 'text' | 'boolean' | 'number' | 'textarea'
-  default: string
-  category: 'general' | 'security' | 'email' | 'features'
+  key: string;
+  label: string;
+  description: string;
+  type: 'text' | 'boolean' | 'number' | 'textarea';
+  default: string;
+  category: 'general' | 'security' | 'email' | 'features';
 }
 
 const SETTING_DEFINITIONS: SettingDefinition[] = [
@@ -194,92 +222,93 @@ const SETTING_DEFINITIONS: SettingDefinition[] = [
     default: 'true',
     category: 'features',
   },
-]
+];
 
 // =============================================================================
 // Component
 // =============================================================================
 
 export function SystemSettingsPage() {
-  const [localSettings, setLocalSettings] = useState<Record<string, string>>({})
-  const [hasChanges, setHasChanges] = useState(false)
-  const [activeTab, setActiveTab] = useState<'general' | 'security' | 'email' | 'features'>('general')
-  const [showAddCustom, setShowAddCustom] = useState(false)
-  const [customKey, setCustomKey] = useState('')
-  const [customValue, setCustomValue] = useState('')
+  const [localSettings, setLocalSettings] = useState<Record<string, string>>({});
+  const [hasChanges, setHasChanges] = useState(false);
+  const [activeTab, setActiveTab] = useState<'general' | 'security' | 'email' | 'features'>(
+    'general'
+  );
+  const [showAddCustom, setShowAddCustom] = useState(false);
+  const [customKey, setCustomKey] = useState('');
+  const [customValue, setCustomValue] = useState('');
 
-  const utils = trpc.useUtils()
+  const utils = trpc.useUtils();
 
-  const { data, isLoading, error } = trpc.admin.getSettings.useQuery()
+  const { data, isLoading, error } = trpc.admin.getSettings.useQuery();
 
   const setSettingsMutation = trpc.admin.setSettings.useMutation({
     onSuccess: () => {
-      utils.admin.getSettings.invalidate()
-      setHasChanges(false)
+      utils.admin.getSettings.invalidate();
+      setHasChanges(false);
     },
-  })
+  });
 
   const deleteSettingMutation = trpc.admin.deleteSetting.useMutation({
     onSuccess: () => {
-      utils.admin.getSettings.invalidate()
+      utils.admin.getSettings.invalidate();
     },
-  })
+  });
 
   // Initialize local settings from server data
   useEffect(() => {
     if (data?.settings) {
-      const initial: Record<string, string> = {}
+      const initial: Record<string, string> = {};
       // Set defaults first
       for (const def of SETTING_DEFINITIONS) {
-        initial[def.key] = def.default
+        initial[def.key] = def.default;
       }
       // Override with server values
       for (const [key, value] of Object.entries(data.settings)) {
         if (value !== null) {
-          initial[key] = value
+          initial[key] = value;
         }
       }
-      setLocalSettings(initial)
+      setLocalSettings(initial);
     }
-  }, [data])
+  }, [data]);
 
   const handleChange = (key: string, value: string) => {
-    setLocalSettings(prev => ({ ...prev, [key]: value }))
-    setHasChanges(true)
-  }
+    setLocalSettings((prev) => ({ ...prev, [key]: value }));
+    setHasChanges(true);
+  };
 
   const handleSave = () => {
-    setSettingsMutation.mutate({ settings: localSettings })
-  }
+    setSettingsMutation.mutate({ settings: localSettings });
+  };
 
   const handleAddCustom = () => {
-    if (!customKey.trim()) return
-    setLocalSettings(prev => ({ ...prev, [customKey]: customValue }))
-    setHasChanges(true)
-    setCustomKey('')
-    setCustomValue('')
-    setShowAddCustom(false)
-  }
+    if (!customKey.trim()) return;
+    setLocalSettings((prev) => ({ ...prev, [customKey]: customValue }));
+    setHasChanges(true);
+    setCustomKey('');
+    setCustomValue('');
+    setShowAddCustom(false);
+  };
 
   const handleDeleteCustom = (key: string) => {
     if (confirm(`Delete setting "${key}"?`)) {
-      deleteSettingMutation.mutate({ key })
+      deleteSettingMutation.mutate({ key });
     }
-  }
+  };
 
   const tabs = [
     { id: 'general' as const, label: 'General' },
     { id: 'security' as const, label: 'Security' },
     { id: 'email' as const, label: 'Email' },
     { id: 'features' as const, label: 'Features' },
-  ]
+  ];
 
-  const filteredSettings = SETTING_DEFINITIONS.filter(s => s.category === activeTab)
+  const filteredSettings = SETTING_DEFINITIONS.filter((s) => s.category === activeTab);
 
   // Find custom settings (not in definitions)
-  const customSettings = data?.raw.filter(
-    s => !SETTING_DEFINITIONS.some(d => d.key === s.key)
-  ) || []
+  const customSettings =
+    data?.raw.filter((s) => !SETTING_DEFINITIONS.some((d) => d.key === s.key)) || [];
 
   const formatDate = (date: Date | string) => {
     return new Date(date).toLocaleString('nl-NL', {
@@ -288,20 +317,15 @@ export function SystemSettingsPage() {
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-    })
-  }
+    });
+  };
 
   return (
-    <AdminLayout
-      title="System Settings"
-      description="Configure application settings"
-    >
+    <AdminLayout title="System Settings" description="Configure application settings">
       {/* Save bar */}
       {hasChanges && (
         <div className="mb-6 flex items-center justify-between bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg px-4 py-3">
-          <span className="text-yellow-700 dark:text-yellow-300">
-            You have unsaved changes
-          </span>
+          <span className="text-yellow-700 dark:text-yellow-300">You have unsaved changes</span>
           <button
             onClick={handleSave}
             disabled={setSettingsMutation.isPending}
@@ -321,11 +345,7 @@ export function SystemSettingsPage() {
       )}
 
       {/* Loading state */}
-      {isLoading && (
-        <div className="text-center py-12 text-gray-500">
-          Loading settings...
-        </div>
-      )}
+      {isLoading && <div className="text-center py-12 text-gray-500">Loading settings...</div>}
 
       {/* Settings content */}
       {data && (
@@ -361,9 +381,7 @@ export function SystemSettingsPage() {
                     <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
                       {setting.description}
                     </p>
-                    <code className="text-xs text-gray-400 dark:text-gray-500">
-                      {setting.key}
-                    </code>
+                    <code className="text-xs text-gray-400 dark:text-gray-500">{setting.key}</code>
                   </div>
                   <div className="w-64">
                     {setting.type === 'boolean' ? (
@@ -371,7 +389,9 @@ export function SystemSettingsPage() {
                         <input
                           type="checkbox"
                           checked={localSettings[setting.key] === 'true'}
-                          onChange={(e) => handleChange(setting.key, e.target.checked ? 'true' : 'false')}
+                          onChange={(e) =>
+                            handleChange(setting.key, e.target.checked ? 'true' : 'false')
+                          }
                           className="sr-only peer"
                         />
                         <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
@@ -403,9 +423,7 @@ export function SystemSettingsPage() {
       {data && (
         <div className="mt-8">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-foreground">
-              Custom Settings
-            </h3>
+            <h3 className="text-lg font-semibold text-foreground">Custom Settings</h3>
             <button
               onClick={() => setShowAddCustom(true)}
               className="flex items-center gap-2 px-3 py-1.5 text-sm text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
@@ -454,9 +472,9 @@ export function SystemSettingsPage() {
                     </button>
                     <button
                       onClick={() => {
-                        setShowAddCustom(false)
-                        setCustomKey('')
-                        setCustomValue('')
+                        setShowAddCustom(false);
+                        setCustomKey('');
+                        setCustomValue('');
                       }}
                       className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-accent rounded-lg transition-colors"
                     >
@@ -471,9 +489,7 @@ export function SystemSettingsPage() {
                 <div key={setting.key} className="px-6 py-4">
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex-1">
-                      <code className="text-sm font-medium text-foreground">
-                        {setting.key}
-                      </code>
+                      <code className="text-sm font-medium text-foreground">{setting.key}</code>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                         Last changed: {formatDate(setting.changedAt)}
                       </p>
@@ -502,7 +518,7 @@ export function SystemSettingsPage() {
         </div>
       )}
     </AdminLayout>
-  )
+  );
 }
 
-export default SystemSettingsPage
+export default SystemSettingsPage;

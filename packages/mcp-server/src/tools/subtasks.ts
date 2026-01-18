@@ -13,28 +13,28 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { z } from 'zod'
-import { requireAuth, client, success } from '../tools.js'
+import { z } from 'zod';
+import { requireAuth, client, success } from '../tools.js';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface Subtask {
-  id: number
-  title: string
-  description: string | null
-  status: 'TODO' | 'IN_PROGRESS' | 'DONE'
-  position: number
-  timeEstimated: number
-  timeSpent: number
-  createdAt: string
-  updatedAt: string
+  id: number;
+  title: string;
+  description: string | null;
+  status: 'TODO' | 'IN_PROGRESS' | 'DONE';
+  position: number;
+  timeEstimated: number;
+  timeSpent: number;
+  createdAt: string;
+  updatedAt: string;
   assignee?: {
-    id: number
-    username: string
-    name: string
-  } | null
+    id: number;
+    username: string;
+    name: string;
+  } | null;
 }
 
 // =============================================================================
@@ -43,7 +43,7 @@ interface Subtask {
 
 export const ListSubtasksSchema = z.object({
   taskId: z.number().describe('Task ID to list subtasks for'),
-})
+});
 
 export const CreateSubtaskSchema = z.object({
   taskId: z.number().describe('Parent task ID'),
@@ -51,27 +51,24 @@ export const CreateSubtaskSchema = z.object({
   description: z.string().optional().describe('Subtask description'),
   assigneeId: z.number().optional().describe('User ID to assign'),
   timeEstimated: z.number().optional().describe('Estimated time in hours'),
-})
+});
 
 export const UpdateSubtaskSchema = z.object({
   subtaskId: z.number().describe('Subtask ID'),
   title: z.string().optional().describe('New title'),
   description: z.string().nullable().optional().describe('New description'),
-  status: z
-    .enum(['TODO', 'IN_PROGRESS', 'DONE'])
-    .optional()
-    .describe('New status'),
+  status: z.enum(['TODO', 'IN_PROGRESS', 'DONE']).optional().describe('New status'),
   assigneeId: z.number().nullable().optional().describe('New assignee ID'),
   timeEstimated: z.number().optional().describe('Estimated time in hours'),
-})
+});
 
 export const ToggleSubtaskSchema = z.object({
   subtaskId: z.number().describe('Subtask ID to toggle'),
-})
+});
 
 export const DeleteSubtaskSchema = z.object({
   subtaskId: z.number().describe('Subtask ID to delete'),
-})
+});
 
 // =============================================================================
 // Tool Definitions
@@ -185,7 +182,7 @@ export const subtaskToolDefinitions = [
       required: ['subtaskId'],
     },
   },
-]
+];
 
 // =============================================================================
 // Helpers
@@ -194,20 +191,20 @@ export const subtaskToolDefinitions = [
 function formatStatus(status: string): string {
   switch (status) {
     case 'TODO':
-      return '[ ]'
+      return '[ ]';
     case 'IN_PROGRESS':
-      return '[~]'
+      return '[~]';
     case 'DONE':
-      return '[x]'
+      return '[x]';
     default:
-      return '[ ]'
+      return '[ ]';
   }
 }
 
 function formatTime(hours: number): string {
-  if (hours === 0) return '-'
-  if (hours < 1) return `${Math.round(hours * 60)}m`
-  return `${hours}h`
+  if (hours === 0) return '-';
+  if (hours < 1) return `${Math.round(hours * 60)}m`;
+  return `${hours}h`;
 }
 
 // =============================================================================
@@ -218,44 +215,41 @@ function formatTime(hours: number): string {
  * List subtasks for a task
  */
 export async function handleListSubtasks(args: unknown) {
-  const { taskId } = ListSubtasksSchema.parse(args)
-  const config = requireAuth()
+  const { taskId } = ListSubtasksSchema.parse(args);
+  const config = requireAuth();
 
-  const subtasks = await client.call<Subtask[]>(
-    config.kanbuUrl,
-    config.token,
-    'subtask.list',
-    { taskId }
-  )
+  const subtasks = await client.call<Subtask[]>(config.kanbuUrl, config.token, 'subtask.list', {
+    taskId,
+  });
 
   if (subtasks.length === 0) {
-    return success('No subtasks found for this task.')
+    return success('No subtasks found for this task.');
   }
 
-  const done = subtasks.filter((s) => s.status === 'DONE').length
-  const lines: string[] = [`Subtasks (${done}/${subtasks.length} done):`, '']
+  const done = subtasks.filter((s) => s.status === 'DONE').length;
+  const lines: string[] = [`Subtasks (${done}/${subtasks.length} done):`, ''];
 
   subtasks.forEach((subtask) => {
-    const check = formatStatus(subtask.status)
-    const assignee = subtask.assignee ? ` @${subtask.assignee.name}` : ''
+    const check = formatStatus(subtask.status);
+    const assignee = subtask.assignee ? ` @${subtask.assignee.name}` : '';
     const time =
       subtask.timeEstimated > 0 || subtask.timeSpent > 0
         ? ` [${formatTime(subtask.timeSpent)}/${formatTime(subtask.timeEstimated)}]`
-        : ''
+        : '';
 
-    lines.push(`${check} ${subtask.title}${assignee}${time}`)
-    lines.push(`    ID: ${subtask.id}`)
-  })
+    lines.push(`${check} ${subtask.title}${assignee}${time}`);
+    lines.push(`    ID: ${subtask.id}`);
+  });
 
-  return success(lines.join('\n'))
+  return success(lines.join('\n'));
 }
 
 /**
  * Create a new subtask
  */
 export async function handleCreateSubtask(args: unknown) {
-  const input = CreateSubtaskSchema.parse(args)
-  const config = requireAuth()
+  const input = CreateSubtaskSchema.parse(args);
+  const config = requireAuth();
 
   const subtask = await client.call<Subtask>(
     config.kanbuUrl,
@@ -263,28 +257,28 @@ export async function handleCreateSubtask(args: unknown) {
     'subtask.create',
     input,
     'POST'
-  )
+  );
 
   const lines: string[] = [
     'Subtask created:',
     '',
     `${formatStatus(subtask.status)} ${subtask.title}`,
     `ID: ${subtask.id}`,
-  ]
+  ];
 
   if (subtask.timeEstimated > 0) {
-    lines.push(`Estimated: ${formatTime(subtask.timeEstimated)}`)
+    lines.push(`Estimated: ${formatTime(subtask.timeEstimated)}`);
   }
 
-  return success(lines.join('\n'))
+  return success(lines.join('\n'));
 }
 
 /**
  * Update a subtask
  */
 export async function handleUpdateSubtask(args: unknown) {
-  const input = UpdateSubtaskSchema.parse(args)
-  const config = requireAuth()
+  const input = UpdateSubtaskSchema.parse(args);
+  const config = requireAuth();
 
   const subtask = await client.call<Subtask>(
     config.kanbuUrl,
@@ -292,7 +286,7 @@ export async function handleUpdateSubtask(args: unknown) {
     'subtask.update',
     input,
     'POST'
-  )
+  );
 
   const lines: string[] = [
     'Subtask updated:',
@@ -300,28 +294,25 @@ export async function handleUpdateSubtask(args: unknown) {
     `${formatStatus(subtask.status)} ${subtask.title}`,
     `ID: ${subtask.id}`,
     `Status: ${subtask.status}`,
-  ]
+  ];
 
-  return success(lines.join('\n'))
+  return success(lines.join('\n'));
 }
 
 /**
  * Toggle subtask between TODO and DONE
  */
 export async function handleToggleSubtask(args: unknown) {
-  const { subtaskId } = ToggleSubtaskSchema.parse(args)
-  const config = requireAuth()
+  const { subtaskId } = ToggleSubtaskSchema.parse(args);
+  const config = requireAuth();
 
   // First get current status
-  const current = await client.call<Subtask>(
-    config.kanbuUrl,
-    config.token,
-    'subtask.get',
-    { subtaskId }
-  )
+  const current = await client.call<Subtask>(config.kanbuUrl, config.token, 'subtask.get', {
+    subtaskId,
+  });
 
   // Toggle status
-  const newStatus = current.status === 'DONE' ? 'TODO' : 'DONE'
+  const newStatus = current.status === 'DONE' ? 'TODO' : 'DONE';
 
   const subtask = await client.call<Subtask>(
     config.kanbuUrl,
@@ -329,32 +320,29 @@ export async function handleToggleSubtask(args: unknown) {
     'subtask.update',
     { subtaskId, status: newStatus },
     'POST'
-  )
+  );
 
-  const action = newStatus === 'DONE' ? 'completed' : 'reopened'
+  const action = newStatus === 'DONE' ? 'completed' : 'reopened';
 
   return success(
     `Subtask ${action}:
 
 ${formatStatus(subtask.status)} ${subtask.title}
 ID: ${subtask.id}`
-  )
+  );
 }
 
 /**
  * Delete a subtask
  */
 export async function handleDeleteSubtask(args: unknown) {
-  const { subtaskId } = DeleteSubtaskSchema.parse(args)
-  const config = requireAuth()
+  const { subtaskId } = DeleteSubtaskSchema.parse(args);
+  const config = requireAuth();
 
   // Get subtask info before deleting
-  const subtask = await client.call<Subtask>(
-    config.kanbuUrl,
-    config.token,
-    'subtask.get',
-    { subtaskId }
-  )
+  const subtask = await client.call<Subtask>(config.kanbuUrl, config.token, 'subtask.get', {
+    subtaskId,
+  });
 
   await client.call<{ success: boolean }>(
     config.kanbuUrl,
@@ -362,7 +350,7 @@ export async function handleDeleteSubtask(args: unknown) {
     'subtask.delete',
     { subtaskId },
     'POST'
-  )
+  );
 
-  return success(`Subtask deleted: "${subtask.title}" (ID: ${subtaskId})`)
+  return success(`Subtask deleted: "${subtask.title}" (ID: ${subtaskId})`);
 }

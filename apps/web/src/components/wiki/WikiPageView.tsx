@@ -30,25 +30,31 @@
  * ===================================================================
  */
 
-import { useState, useCallback, useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+} from '@/components/ui/dropdown-menu';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { RichTextEditor, type WikiPage as WikiPageForLink, type TaskResult, type MentionResult, type SignatureUser } from '@/components/editor'
+} from '@/components/ui/select';
+import {
+  RichTextEditor,
+  type WikiPage as WikiPageForLink,
+  type TaskResult,
+  type MentionResult,
+  type SignatureUser,
+} from '@/components/editor';
 import {
   Edit2,
   Eye,
@@ -65,84 +71,84 @@ import {
   Sparkles,
   FolderTree,
   Search,
-} from 'lucide-react'
-import { cn } from '@/lib/utils'
-import type { WikiPageStatus } from './WikiSidebar'
-import { BacklinksPanel } from './BacklinksPanel'
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import type { WikiPageStatus } from './WikiSidebar';
+import { BacklinksPanel } from './BacklinksPanel';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface WikiPage {
-  id: number
-  title: string
-  slug: string
-  content: string
-  contentJson: string | null
-  status: WikiPageStatus
-  sortOrder: number
-  parentId: number | null
-  createdAt: string
-  updatedAt: string
-  publishedAt: string | null
+  id: number;
+  title: string;
+  slug: string;
+  content: string;
+  contentJson: string | null;
+  status: WikiPageStatus;
+  sortOrder: number;
+  parentId: number | null;
+  createdAt: string;
+  updatedAt: string;
+  publishedAt: string | null;
   createdBy?: {
-    id: number
-    name: string
-  }
+    id: number;
+    name: string;
+  };
   updatedBy?: {
-    id: number
-    name: string
-  }
+    id: number;
+    name: string;
+  };
 }
 
 export interface WikiBreadcrumb {
-  id: number
-  title: string
-  slug: string
+  id: number;
+  title: string;
+  slug: string;
 }
 
 interface WikiPageViewProps {
   /** The wiki page to display */
-  page: WikiPage
+  page: WikiPage;
   /** Base path for wiki links */
-  basePath: string
+  basePath: string;
   /** Breadcrumb trail to this page */
-  breadcrumbs?: WikiBreadcrumb[]
+  breadcrumbs?: WikiBreadcrumb[];
   /** Whether the user can edit this page */
-  canEdit?: boolean
+  canEdit?: boolean;
   /** Callback when page is saved */
-  onSave?: (data: { title: string; content: string; contentJson: string }) => Promise<void>
+  onSave?: (data: { title: string; content: string; contentJson: string }) => Promise<void>;
   /** Callback when page status is changed */
-  onStatusChange?: (status: WikiPageStatus) => Promise<void>
+  onStatusChange?: (status: WikiPageStatus) => Promise<void>;
   /** Callback when page is deleted */
-  onDelete?: () => void
+  onDelete?: () => void;
   /** Callback when viewing version history */
-  onViewHistory?: () => void
+  onViewHistory?: () => void;
   /** Whether save is in progress */
-  isSaving?: boolean
+  isSaving?: boolean;
   /** Auto-save debounce delay in ms (0 to disable) */
-  autoSaveDelay?: number
+  autoSaveDelay?: number;
   /** Function to search wiki pages for [[ link autocomplete */
-  searchWikiPages?: (query: string) => Promise<WikiPageForLink[]>
+  searchWikiPages?: (query: string) => Promise<WikiPageForLink[]>;
   /** Static list of wiki pages (alternative to searchWikiPages) */
-  wikiPages?: WikiPageForLink[]
+  wikiPages?: WikiPageForLink[];
   /** Function to search tasks for # task ref autocomplete (only for project wikis) */
-  searchTasks?: (query: string) => Promise<TaskResult[]>
+  searchTasks?: (query: string) => Promise<TaskResult[]>;
   /** Function to search users for @ mention autocomplete */
-  searchUsers?: (query: string) => Promise<MentionResult[]>
+  searchUsers?: (query: string) => Promise<MentionResult[]>;
   /** Current user for &Sign signature shortcut */
-  currentUser?: SignatureUser
+  currentUser?: SignatureUser;
   /** Callback when "Ask Wiki" is triggered */
-  onAskWiki?: () => void
+  onAskWiki?: () => void;
   /** Callback when "Ask about this page" is triggered (with page context) */
-  onAskAboutPage?: (pageTitle: string, pageContent: string) => void
+  onAskAboutPage?: (pageTitle: string, pageContent: string) => void;
   /** Callback when "Fact Check" is triggered on selected text */
-  onFactCheck?: (selectedText: string) => void
+  onFactCheck?: (selectedText: string) => void;
   /** Available pages for parent selection (shown in edit mode) */
-  availablePages?: Array<{ id: number; title: string; parentId: number | null }>
+  availablePages?: Array<{ id: number; title: string; parentId: number | null }>;
   /** Callback when parent page is changed */
-  onParentChange?: (parentId: number | null) => Promise<void>
+  onParentChange?: (parentId: number | null) => Promise<void>;
 }
 
 // =============================================================================
@@ -153,27 +159,36 @@ function StatusBadge({ status }: { status: WikiPageStatus }) {
   switch (status) {
     case 'DRAFT':
       return (
-        <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800">
+        <Badge
+          variant="outline"
+          className="bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800"
+        >
           <FileText className="h-3 w-3 mr-1" />
           Draft
         </Badge>
-      )
+      );
     case 'PUBLISHED':
       return (
-        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800">
+        <Badge
+          variant="outline"
+          className="bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
+        >
           <Globe className="h-3 w-3 mr-1" />
           Published
         </Badge>
-      )
+      );
     case 'ARCHIVED':
       return (
-        <Badge variant="outline" className="bg-gray-50 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700">
+        <Badge
+          variant="outline"
+          className="bg-gray-50 text-gray-600 border-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-700"
+        >
           <Archive className="h-3 w-3 mr-1" />
           Archived
         </Badge>
-      )
+      );
     default:
-      return null
+      return null;
   }
 }
 
@@ -182,9 +197,9 @@ function StatusBadge({ status }: { status: WikiPageStatus }) {
 // =============================================================================
 
 interface BreadcrumbsProps {
-  basePath: string
-  breadcrumbs: WikiBreadcrumb[]
-  currentTitle: string
+  basePath: string;
+  breadcrumbs: WikiBreadcrumb[];
+  currentTitle: string;
 }
 
 function Breadcrumbs({ basePath, breadcrumbs, currentTitle }: BreadcrumbsProps) {
@@ -207,7 +222,7 @@ function Breadcrumbs({ basePath, breadcrumbs, currentTitle }: BreadcrumbsProps) 
       <ChevronRight className="h-3.5 w-3.5" />
       <span className="text-foreground font-medium">{currentTitle}</span>
     </nav>
-  )
+  );
 }
 
 // =============================================================================
@@ -236,107 +251,107 @@ export function WikiPageView({
   availablePages,
   onParentChange,
 }: WikiPageViewProps) {
-  const [isEditing, setIsEditing] = useState(false)
-  const [editedTitle, setEditedTitle] = useState(page.title)
-  const [editedContent, setEditedContent] = useState(page.content)
-  const [editedContentJson, setEditedContentJson] = useState(page.contentJson || '')
-  const [editedParentId, setEditedParentId] = useState<number | null>(page.parentId)
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedTitle, setEditedTitle] = useState(page.title);
+  const [editedContent, setEditedContent] = useState(page.content);
+  const [editedContentJson, setEditedContentJson] = useState(page.contentJson || '');
+  const [editedParentId, setEditedParentId] = useState<number | null>(page.parentId);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   // Context menu state
   const [contextMenu, setContextMenu] = useState<{
-    x: number
-    y: number
-    selectedText: string
-  } | null>(null)
-  const contentRef = useRef<HTMLDivElement>(null)
+    x: number;
+    y: number;
+    selectedText: string;
+  } | null>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
 
-  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null)
-  const lastSavedRef = useRef({ title: page.title, contentJson: page.contentJson })
+  const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSavedRef = useRef({ title: page.title, contentJson: page.contentJson });
 
   // Reset state when page changes
   useEffect(() => {
-    setEditedTitle(page.title)
-    setEditedContent(page.content)
-    setEditedContentJson(page.contentJson || '')
-    setEditedParentId(page.parentId)
-    setHasUnsavedChanges(false)
-    setIsEditing(false)
-    lastSavedRef.current = { title: page.title, contentJson: page.contentJson }
-  }, [page.id, page.parentId])
+    setEditedTitle(page.title);
+    setEditedContent(page.content);
+    setEditedContentJson(page.contentJson || '');
+    setEditedParentId(page.parentId);
+    setHasUnsavedChanges(false);
+    setIsEditing(false);
+    lastSavedRef.current = { title: page.title, contentJson: page.contentJson };
+  }, [page.id, page.parentId]);
 
   // Auto-save logic
   useEffect(() => {
-    if (!isEditing || !autoSaveDelay || !hasUnsavedChanges) return
+    if (!isEditing || !autoSaveDelay || !hasUnsavedChanges) return;
 
     if (autoSaveTimerRef.current) {
-      clearTimeout(autoSaveTimerRef.current)
+      clearTimeout(autoSaveTimerRef.current);
     }
 
     autoSaveTimerRef.current = setTimeout(() => {
-      handleSave()
-    }, autoSaveDelay)
+      handleSave();
+    }, autoSaveDelay);
 
     return () => {
       if (autoSaveTimerRef.current) {
-        clearTimeout(autoSaveTimerRef.current)
+        clearTimeout(autoSaveTimerRef.current);
       }
-    }
-  }, [editedTitle, editedContentJson, hasUnsavedChanges, isEditing, autoSaveDelay])
+    };
+  }, [editedTitle, editedContentJson, hasUnsavedChanges, isEditing, autoSaveDelay]);
 
   // Handle editor content change
   const handleEditorChange = useCallback(
     (_editorState: unknown, _editor: unknown, jsonString: string) => {
-      setEditedContentJson(jsonString)
+      setEditedContentJson(jsonString);
       // Extract plain text content for backwards compatibility
       try {
-        const parsed = JSON.parse(jsonString)
-        const text = extractPlainText(parsed)
-        setEditedContent(text)
+        const parsed = JSON.parse(jsonString);
+        const text = extractPlainText(parsed);
+        setEditedContent(text);
       } catch {
         // Keep existing content if parsing fails
       }
 
       // Check if content actually changed
       if (jsonString !== lastSavedRef.current.contentJson) {
-        setHasUnsavedChanges(true)
+        setHasUnsavedChanges(true);
       }
     },
     []
-  )
+  );
 
   // Handle title change
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setEditedTitle(e.target.value)
+    setEditedTitle(e.target.value);
     if (e.target.value !== lastSavedRef.current.title) {
-      setHasUnsavedChanges(true)
+      setHasUnsavedChanges(true);
     }
-  }
+  };
 
   // Handle parent change
   const handleParentChange = async (value: string) => {
-    const newParentId = value === 'none' ? null : parseInt(value)
-    setEditedParentId(newParentId)
+    const newParentId = value === 'none' ? null : parseInt(value);
+    setEditedParentId(newParentId);
     if (onParentChange) {
-      await onParentChange(newParentId)
+      await onParentChange(newParentId);
     }
-  }
+  };
 
   // Build page options for parent selector (excluding current page and its descendants)
   const buildParentOptions = () => {
-    if (!availablePages) return []
+    if (!availablePages) return [];
 
     // Get all descendant IDs to exclude (can't set a descendant as parent)
     const getDescendantIds = (pageId: number): number[] => {
-      const children = availablePages.filter((p) => p.parentId === pageId)
-      const descendantIds: number[] = []
+      const children = availablePages.filter((p) => p.parentId === pageId);
+      const descendantIds: number[] = [];
       for (const child of children) {
-        descendantIds.push(child.id)
-        descendantIds.push(...getDescendantIds(child.id))
+        descendantIds.push(child.id);
+        descendantIds.push(...getDescendantIds(child.id));
       }
-      return descendantIds
-    }
-    const excludeIds = new Set([page.id, ...getDescendantIds(page.id)])
+      return descendantIds;
+    };
+    const excludeIds = new Set([page.id, ...getDescendantIds(page.id)]);
 
     // Build hierarchical list
     const buildOptions = (
@@ -345,77 +360,80 @@ export function WikiPageView({
     ): Array<{ id: number; title: string; depth: number }> => {
       const children = availablePages.filter(
         (p) => p.parentId === parentId && !excludeIds.has(p.id)
-      )
-      const result: Array<{ id: number; title: string; depth: number }> = []
+      );
+      const result: Array<{ id: number; title: string; depth: number }> = [];
       for (const child of children) {
-        result.push({ id: child.id, title: child.title, depth })
-        result.push(...buildOptions(child.id, depth + 1))
+        result.push({ id: child.id, title: child.title, depth });
+        result.push(...buildOptions(child.id, depth + 1));
       }
-      return result
-    }
-    return buildOptions()
-  }
-  const parentOptions = buildParentOptions()
+      return result;
+    };
+    return buildOptions();
+  };
+  const parentOptions = buildParentOptions();
 
   // Save changes
   const handleSave = async () => {
-    if (!onSave || isSaving) return
+    if (!onSave || isSaving) return;
 
     await onSave({
       title: editedTitle,
       content: editedContent,
       contentJson: editedContentJson,
-    })
+    });
 
-    lastSavedRef.current = { title: editedTitle, contentJson: editedContentJson }
-    setHasUnsavedChanges(false)
-  }
+    lastSavedRef.current = { title: editedTitle, contentJson: editedContentJson };
+    setHasUnsavedChanges(false);
+  };
 
   // Cancel editing
   const handleCancelEdit = () => {
-    setEditedTitle(page.title)
-    setEditedContent(page.content)
-    setEditedContentJson(page.contentJson || '')
-    setHasUnsavedChanges(false)
-    setIsEditing(false)
-  }
+    setEditedTitle(page.title);
+    setEditedContent(page.content);
+    setEditedContentJson(page.contentJson || '');
+    setHasUnsavedChanges(false);
+    setIsEditing(false);
+  };
 
   // Enter edit mode
   const handleStartEdit = () => {
-    setIsEditing(true)
-  }
+    setIsEditing(true);
+  };
 
   // Exit edit mode (save first if needed)
   const handleExitEdit = async () => {
     if (hasUnsavedChanges && onSave) {
-      await handleSave()
+      await handleSave();
     }
-    setIsEditing(false)
-  }
+    setIsEditing(false);
+  };
 
   // Handle right-click context menu
-  const handleContextMenu = useCallback((e: React.MouseEvent) => {
-    // Show context menu if:
-    // - onFactCheck is available (works in both edit and view mode)
-    // - OR onAskAboutPage is available AND not editing
-    const canShowFactCheck = !!onFactCheck
-    const canShowAskAbout = !!onAskAboutPage && !isEditing
+  const handleContextMenu = useCallback(
+    (e: React.MouseEvent) => {
+      // Show context menu if:
+      // - onFactCheck is available (works in both edit and view mode)
+      // - OR onAskAboutPage is available AND not editing
+      const canShowFactCheck = !!onFactCheck;
+      const canShowAskAbout = !!onAskAboutPage && !isEditing;
 
-    if (!canShowFactCheck && !canShowAskAbout) return
+      if (!canShowFactCheck && !canShowAskAbout) return;
 
-    const selection = window.getSelection()
-    const selectedText = selection?.toString().trim()
+      const selection = window.getSelection();
+      const selectedText = selection?.toString().trim();
 
-    // Only show menu if there's selected text
-    if (selectedText && selectedText.length > 0) {
-      e.preventDefault()
-      setContextMenu({
-        x: e.clientX,
-        y: e.clientY,
-        selectedText,
-      })
-    }
-  }, [isEditing, onAskAboutPage, onFactCheck])
+      // Only show menu if there's selected text
+      if (selectedText && selectedText.length > 0) {
+        e.preventDefault();
+        setContextMenu({
+          x: e.clientX,
+          y: e.clientY,
+          selectedText,
+        });
+      }
+    },
+    [isEditing, onAskAboutPage, onFactCheck]
+  );
 
   // Handle context menu action - Ask about selection
   const handleAskAboutSelection = useCallback(() => {
@@ -423,35 +441,35 @@ export function WikiPageView({
       onAskAboutPage(
         `Geselecteerde tekst: "${contextMenu.selectedText}"`,
         contextMenu.selectedText
-      )
+      );
     }
-    setContextMenu(null)
-  }, [contextMenu, onAskAboutPage])
+    setContextMenu(null);
+  }, [contextMenu, onAskAboutPage]);
 
   // Handle context menu action - Fact Check
   const handleFactCheckSelection = useCallback(() => {
     if (contextMenu?.selectedText && onFactCheck) {
-      onFactCheck(contextMenu.selectedText)
+      onFactCheck(contextMenu.selectedText);
     }
-    setContextMenu(null)
-  }, [contextMenu, onFactCheck])
+    setContextMenu(null);
+  }, [contextMenu, onFactCheck]);
 
   // Close context menu on click outside
   useEffect(() => {
-    const handleClick = () => setContextMenu(null)
+    const handleClick = () => setContextMenu(null);
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setContextMenu(null)
-    }
+      if (e.key === 'Escape') setContextMenu(null);
+    };
 
     if (contextMenu) {
-      document.addEventListener('click', handleClick)
-      document.addEventListener('keydown', handleKeyDown)
+      document.addEventListener('click', handleClick);
+      document.addEventListener('keydown', handleKeyDown);
       return () => {
-        document.removeEventListener('click', handleClick)
-        document.removeEventListener('keydown', handleKeyDown)
-      }
+        document.removeEventListener('click', handleClick);
+        document.removeEventListener('keydown', handleKeyDown);
+      };
     }
-  }, [contextMenu])
+  }, [contextMenu]);
 
   return (
     <div className="flex flex-col h-full">
@@ -509,7 +527,9 @@ export function WikiPageView({
                   <SelectItem value="none">No parent (root page)</SelectItem>
                   {parentOptions.map((opt) => (
                     <SelectItem key={opt.id} value={opt.id.toString()}>
-                      {'—'.repeat(opt.depth)}{opt.depth > 0 ? ' ' : ''}{opt.title}
+                      {'—'.repeat(opt.depth)}
+                      {opt.depth > 0 ? ' ' : ''}
+                      {opt.title}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -527,20 +547,11 @@ export function WikiPageView({
                   {isSaving ? 'Saving...' : 'Unsaved changes'}
                 </span>
               )}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleCancelEdit}
-                disabled={isSaving}
-              >
+              <Button variant="outline" size="sm" onClick={handleCancelEdit} disabled={isSaving}>
                 <X className="h-4 w-4 mr-1" />
                 Cancel
               </Button>
-              <Button
-                size="sm"
-                onClick={handleExitEdit}
-                disabled={isSaving}
-              >
+              <Button size="sm" onClick={handleExitEdit} disabled={isSaving}>
                 <Eye className="h-4 w-4 mr-1" />
                 Done
               </Button>
@@ -642,14 +653,14 @@ export function WikiPageView({
         {/* Key excludes updatedAt to prevent editor remount on auto-save refetch */}
         <RichTextEditor
           key={`${page.id}-${isEditing}`}
-          initialContent={isEditing
-            ? editedContentJson || undefined
-            : page.contentJson || undefined}
+          initialContent={
+            isEditing ? editedContentJson || undefined : page.contentJson || undefined
+          }
           initialMarkdown={
             // Use markdown conversion when no Lexical JSON exists but plain text content does
-            (isEditing && !editedContentJson && page.content)
+            isEditing && !editedContentJson && page.content
               ? page.content
-              : (!isEditing && !page.contentJson && page.content)
+              : !isEditing && !page.contentJson && page.content
                 ? page.content
                 : undefined
           }
@@ -676,12 +687,7 @@ export function WikiPageView({
         />
 
         {/* Backlinks and Related Pages panel */}
-        {!isEditing && (
-          <BacklinksPanel
-            pageId={page.id}
-            basePath={basePath}
-          />
-        )}
+        {!isEditing && <BacklinksPanel pageId={page.id} basePath={basePath} />}
 
         {/* Context Menu for text selection */}
         {contextMenu && (
@@ -714,7 +720,7 @@ export function WikiPageView({
         )}
       </div>
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -722,55 +728,55 @@ export function WikiPageView({
 // =============================================================================
 
 function extractPlainText(node: Record<string, unknown>): string {
-  if (!node) return ''
+  if (!node) return '';
 
-  const parts: string[] = []
+  const parts: string[] = [];
 
   // Handle text nodes
   if (node.text && typeof node.text === 'string') {
-    parts.push(node.text)
+    parts.push(node.text);
   }
 
   // Handle wiki-link nodes - preserve [[...]] format for graph link extraction
   if (node.type === 'wiki-link') {
-    const displayText = node.displayText as string
+    const displayText = node.displayText as string;
     if (displayText) {
-      parts.push(`[[${displayText}]]`)
-      return parts.join(' ').trim()
+      parts.push(`[[${displayText}]]`);
+      return parts.join(' ').trim();
     }
   }
 
   // Handle mention nodes - preserve @format for entity extraction
   if (node.type === 'mention') {
-    const mentionName = node.mentionName as string
+    const mentionName = node.mentionName as string;
     if (mentionName) {
-      parts.push(`@${mentionName}`)
-      return parts.join(' ').trim()
+      parts.push(`@${mentionName}`);
+      return parts.join(' ').trim();
     }
   }
 
   // Handle task-ref nodes - preserve #format for task references
   if (node.type === 'task-ref') {
-    const taskRef = node.taskRef as string
+    const taskRef = node.taskRef as string;
     if (taskRef) {
-      parts.push(`#${taskRef}`)
-      return parts.join(' ').trim()
+      parts.push(`#${taskRef}`);
+      return parts.join(' ').trim();
     }
   }
 
   // Recursively handle children
   if (Array.isArray(node.children)) {
     for (const child of node.children) {
-      parts.push(extractPlainText(child as Record<string, unknown>))
+      parts.push(extractPlainText(child as Record<string, unknown>));
     }
   }
 
   // Handle root
   if (node.root && typeof node.root === 'object') {
-    parts.push(extractPlainText(node.root as Record<string, unknown>))
+    parts.push(extractPlainText(node.root as Record<string, unknown>));
   }
 
-  return parts.join(' ').trim()
+  return parts.join(' ').trim();
 }
 
-export default WikiPageView
+export default WikiPageView;

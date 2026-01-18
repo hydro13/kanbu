@@ -11,8 +11,8 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-export { SprintSelector } from './SprintSelector'
-export type { SprintSelectorProps } from './SprintSelector'
+export { SprintSelector } from './SprintSelector';
+export type { SprintSelectorProps } from './SprintSelector';
 
-export { BurndownChart } from './BurndownChart'
-export type { BurndownChartProps, BurndownDataPoint } from './BurndownChart'
+export { BurndownChart } from './BurndownChart';
+export type { BurndownChartProps, BurndownDataPoint } from './BurndownChart';

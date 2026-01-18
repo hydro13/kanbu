@@ -5,16 +5,10 @@
  */
 
 // Main service
-export { BackupService, backupService } from './backupService'
+export { BackupService, backupService } from './backupService';
 
 // Storage types and factory
-export type {
-  BackupStorage,
-  BackupFile,
-  BackupType,
-  BackupResult,
-  BackupConfig,
-} from './storage'
+export type { BackupStorage, BackupFile, BackupType, BackupResult, BackupConfig } from './storage';
 
 export {
   getBackupConfig,
@@ -24,7 +18,7 @@ export {
   resetBackupStorage,
   LocalStorageBackend,
   GDriveStorageBackend,
-} from './storage'
+} from './storage';
 
 // Container discovery / PostgreSQL backup
 export {
@@ -32,7 +26,7 @@ export {
   execPgDump,
   getPostgresBackupInfo,
   getPostgresContainerInfo, // Deprecated: use getPostgresBackupInfo
-} from './container/dockerDiscovery'
+} from './container/dockerDiscovery';
 
 // Scheduler (Phase 3)
 export {
@@ -50,13 +44,10 @@ export {
   type SchedulerMode,
   type RetentionPolicy,
   type RetentionResult,
-} from './scheduler'
+} from './scheduler';
 
 // Notifications (Phase 3)
-export {
-  backupNotificationService,
-  type WebhookPayload,
-} from './notifications'
+export { backupNotificationService, type WebhookPayload } from './notifications';
 
 // Restore (Phase 3)
 export {
@@ -64,7 +55,7 @@ export {
   type RestoreOptions,
   type RestoreResult,
   type RestoreValidation,
-} from './restore'
+} from './restore';
 
 // Crypto (Phase 4.1 + 4.4)
 export {
@@ -73,7 +64,7 @@ export {
   decryptFile,
   isEncryptedFile,
   getEncryptionAlgorithm,
-} from './crypto'
+} from './crypto';
 
 export {
   generateChecksum,
@@ -81,7 +72,7 @@ export {
   generateChecksumFromBuffer,
   isValidChecksum,
   getChecksumAlgorithm,
-} from './crypto/checksum'
+} from './crypto/checksum';
 
 // Verification (Phase 4.4)
 export {
@@ -89,4 +80,4 @@ export {
   type VerificationResult,
   type VerificationStats,
   type BatchVerificationResult,
-} from './verification'
+} from './verification';

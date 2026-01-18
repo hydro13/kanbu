@@ -21,18 +21,18 @@
  * Fase 14.3 - Provider Abstraction Layer
  */
 
-import { OpenAiCompatibleProvider } from './OpenAiCompatibleProvider'
+import { OpenAiCompatibleProvider } from './OpenAiCompatibleProvider';
 import {
   type AiProviderType,
   type AiCapability,
   type ProviderConfig,
   DEFAULT_MODELS,
   DEFAULT_URLS,
-} from './types'
+} from './types';
 
 export class LmStudioProvider extends OpenAiCompatibleProvider {
-  readonly type: AiProviderType = 'LM_STUDIO'
-  readonly capabilities: AiCapability[] = ['EMBEDDING', 'REASONING', 'VISION']
+  readonly type: AiProviderType = 'LM_STUDIO';
+  readonly capabilities: AiCapability[] = ['EMBEDDING', 'REASONING', 'VISION'];
 
   constructor(config?: Partial<ProviderConfig>) {
     super({
@@ -42,19 +42,19 @@ export class LmStudioProvider extends OpenAiCompatibleProvider {
       embeddingModel: config?.embeddingModel,
       reasoningModel: config?.reasoningModel,
       visionModel: config?.visionModel,
-    })
+    });
   }
 
   protected getDefaultEmbeddingModel(): string {
-    return DEFAULT_MODELS.LM_STUDIO.embedding
+    return DEFAULT_MODELS.LM_STUDIO.embedding;
   }
 
   protected getDefaultReasoningModel(): string {
-    return DEFAULT_MODELS.LM_STUDIO.reasoning
+    return DEFAULT_MODELS.LM_STUDIO.reasoning;
   }
 
   protected getDefaultVisionModel(): string {
-    return DEFAULT_MODELS.LM_STUDIO.vision
+    return DEFAULT_MODELS.LM_STUDIO.vision;
   }
 
   /**
@@ -63,12 +63,12 @@ export class LmStudioProvider extends OpenAiCompatibleProvider {
    */
   async getCurrentModel(): Promise<string | null> {
     try {
-      const models = await this.listModels()
+      const models = await this.listModels();
       // LM Studio returns the currently loaded model
-      const firstModel = models[0]
-      return firstModel ? firstModel.id : null
+      const firstModel = models[0];
+      return firstModel ? firstModel.id : null;
     } catch {
-      return null
+      return null;
     }
   }
 
@@ -78,10 +78,10 @@ export class LmStudioProvider extends OpenAiCompatibleProvider {
    */
   async isServerRunning(): Promise<boolean> {
     try {
-      const result = await this.testConnection()
-      return result.success
+      const result = await this.testConnection();
+      return result.success;
     } catch {
-      return false
+      return false;
     }
   }
 }
@@ -89,8 +89,6 @@ export class LmStudioProvider extends OpenAiCompatibleProvider {
 /**
  * Create an LM Studio provider instance
  */
-export function createLmStudioProvider(
-  config?: Partial<ProviderConfig>
-): LmStudioProvider {
-  return new LmStudioProvider(config)
+export function createLmStudioProvider(config?: Partial<ProviderConfig>): LmStudioProvider {
+  return new LmStudioProvider(config);
 }

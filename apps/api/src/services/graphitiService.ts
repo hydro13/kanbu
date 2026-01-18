@@ -22,14 +22,10 @@
  * ===================================================================
  */
 
-import Redis from 'ioredis'
-import type { PrismaClient } from '@prisma/client'
+import Redis from 'ioredis';
+import type { PrismaClient } from '@prisma/client';
 
-import {
-  getGraphitiClient,
-  GraphitiClient,
-  GraphitiClientError,
-} from '../lib/graphitiClient'
+import { getGraphitiClient, GraphitiClient, GraphitiClientError } from '../lib/graphitiClient';
 import {
   WikiAiService,
   getWikiAiService,
@@ -50,16 +46,16 @@ import {
   type NodeForEmbedding,
   type EmbeddableNodeType,
   type EntityNodeInfo,
-} from '../lib/ai/wiki'
+} from '../lib/ai/wiki';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface GraphitiConfig {
-  host: string
-  port: number
-  graphName: string
+  host: string;
+  port: number;
+  graphName: string;
   /**
    * Enable LLM-based date extraction for edges (Fase 16.2)
    * When enabled, extracts valid_at/invalid_at from wiki content using AI
@@ -67,7 +63,7 @@ export interface GraphitiConfig {
    * Can be disabled via DISABLE_DATE_EXTRACTION=true env var
    * @default true
    */
-  enableDateExtraction?: boolean
+  enableDateExtraction?: boolean;
   /**
    * Enable edge embedding generation (Fase 19.3)
    * When enabled, generates vector embeddings for edge facts during sync
@@ -75,7 +71,7 @@ export interface GraphitiConfig {
    * Can be disabled via DISABLE_EDGE_EMBEDDINGS=true env var
    * @default true
    */
-  enableEdgeEmbeddings?: boolean
+  enableEdgeEmbeddings?: boolean;
   /**
    * Enable node embedding generation (Fase 21.4)
    * When enabled, generates vector embeddings for entity names during sync
@@ -83,7 +79,7 @@ export interface GraphitiConfig {
    * Can be disabled via DISABLE_NODE_EMBEDDINGS=true env var
    * @default true
    */
-  enableNodeEmbeddings?: boolean
+  enableNodeEmbeddings?: boolean;
   /**
    * Enable reflexion extraction for missed entities (Fase 23.5)
    * When enabled, performs second-pass LLM call to detect missed entities
@@ -91,25 +87,25 @@ export interface GraphitiConfig {
    * Can be disabled via DISABLE_REFLEXION_EXTRACTION=true env var
    * @default true
    */
-  enableReflexionExtraction?: boolean
+  enableReflexionExtraction?: boolean;
 }
 
 export interface WikiEpisode {
-  pageId: number
-  title: string
-  slug: string
-  content: string
+  pageId: number;
+  title: string;
+  slug: string;
+  content: string;
   /**
    * Old content for diff-based extraction (Fase 17.3.1)
    * When provided, only extracts entities from changed/new parts
    * This reduces token usage from 600K+ to ~10K per edit
    */
-  oldContent?: string
-  workspaceId?: number
-  projectId?: number
-  groupId: string // wiki-ws-{id} or wiki-proj-{id}
-  userId: number
-  timestamp: Date
+  oldContent?: string;
+  workspaceId?: number;
+  projectId?: number;
+  groupId: string; // wiki-ws-{id} or wiki-proj-{id}
+  userId: number;
+  timestamp: Date;
 }
 
 /**
@@ -121,44 +117,44 @@ export interface SyncWikiPageOptions {
    * Enable entity deduplication during sync (default: true)
    * When enabled, detects duplicates using exact/fuzzy/embedding/LLM matching
    */
-  enableDedup?: boolean
+  enableDedup?: boolean;
   /**
    * Similarity threshold for fuzzy/embedding matching (default: 0.85)
    */
-  dedupThreshold?: number
+  dedupThreshold?: number;
   /**
    * Use LLM for unresolved duplicates (default: true)
    * Set to false to save API costs - only uses deterministic matching
    */
-  useLlm?: boolean
+  useLlm?: boolean;
   /**
    * Enable reflexion extraction for this sync (Fase 23.5)
    * When enabled, performs a second-pass LLM call to detect missed entities
    * Overrides global enableReflexionExtraction config if set
    * @default undefined (uses global config)
    */
-  enableReflexion?: boolean
+  enableReflexion?: boolean;
   /**
    * Enable reflexion for edges (default: false)
    * When enabled, also detects missed relationships
    * Only effective when enableReflexion is true
    * @default false
    */
-  enableEdgeReflexion?: boolean
+  enableEdgeReflexion?: boolean;
 }
 
 export interface GraphEntity {
-  id: string
-  name: string
-  type: 'WikiPage' | 'Concept' | 'Person' | 'Task' | 'Project'
-  properties: Record<string, unknown>
+  id: string;
+  name: string;
+  type: 'WikiPage' | 'Concept' | 'Person' | 'Task' | 'Project';
+  properties: Record<string, unknown>;
 }
 
 export interface GraphEdge {
-  source: string
-  target: string
-  type: string
-  properties: Record<string, unknown>
+  source: string;
+  target: string;
+  type: string;
+  properties: Record<string, unknown>;
 }
 
 /**
@@ -182,48 +178,48 @@ export interface GraphEdge {
  */
 export interface TemporalEdgeProperties {
   // Transaction time
-  created_at: string    // ISO timestamp - when edge was first created
-  expired_at?: string   // ISO timestamp - when edge was replaced/deleted
+  created_at: string; // ISO timestamp - when edge was first created
+  expired_at?: string; // ISO timestamp - when edge was replaced/deleted
 
   // Valid time
-  valid_at?: string     // ISO timestamp - when fact became true in real world
-  invalid_at?: string   // ISO timestamp - when fact stopped being true
+  valid_at?: string; // ISO timestamp - when fact became true in real world
+  invalid_at?: string; // ISO timestamp - when fact stopped being true
 
   // Fact description
-  fact?: string         // Human-readable description of the relationship
+  fact?: string; // Human-readable description of the relationship
 
   // Fase 19.2 - Edge embeddings
-  fact_embedding_id?: string   // Reference to Qdrant point ID
-  fact_embedding_at?: string   // ISO timestamp - when embedding was generated
+  fact_embedding_id?: string; // Reference to Qdrant point ID
+  fact_embedding_at?: string; // ISO timestamp - when embedding was generated
 
   // Legacy (kept for compatibility)
-  updatedAt: string     // ISO timestamp - last update time
+  updatedAt: string; // ISO timestamp - last update time
 }
 
 export interface SearchResult {
-  nodeId: string
-  name: string
-  type: string
-  score: number
-  pageId?: number
+  nodeId: string;
+  name: string;
+  type: string;
+  score: number;
+  pageId?: number;
 }
 
 /**
  * Temporal fact result from getFactsAsOf (Fase 16.4)
  */
 export interface TemporalFact {
-  sourceId: string
-  sourceName: string
-  sourceType: string
-  targetId: string
-  targetName: string
-  targetType: string
-  fact: string
-  edgeType: string
-  validAt: string | null
-  invalidAt: string | null
-  createdAt: string
-  pageId?: number
+  sourceId: string;
+  sourceName: string;
+  sourceType: string;
+  targetId: string;
+  targetName: string;
+  targetType: string;
+  fact: string;
+  edgeType: string;
+  validAt: string | null;
+  invalidAt: string | null;
+  createdAt: string;
+  pageId?: number;
 }
 
 /**
@@ -231,17 +227,17 @@ export interface TemporalFact {
  */
 export interface SyncWikiPageResult {
   /** Number of entities extracted */
-  entitiesExtracted: number
+  entitiesExtracted: number;
   /** Number of contradictions detected and resolved */
-  contradictionsResolved: number
+  contradictionsResolved: number;
   /** Audit entries for detected contradictions (for UI notification) */
-  contradictions: ContradictionAuditEntry[]
+  contradictions: ContradictionAuditEntry[];
   /** Fase 22.8.2: Number of duplicate entities found and marked */
-  duplicatesFound?: number
+  duplicatesFound?: number;
   /** Fase 23.5: Number of missed entities recovered via reflexion */
-  reflexionRecovered?: number
+  reflexionRecovered?: number;
   /** Fase 23.5: Number of reflexion passes executed (0 = disabled, 1 = normal) */
-  reflexionPasses?: number
+  reflexionPasses?: number;
 }
 
 // =============================================================================
@@ -249,40 +245,44 @@ export interface SyncWikiPageResult {
 // =============================================================================
 
 export class GraphitiService {
-  private redis: Redis
-  private graphName: string
-  private initialized: boolean = false
-  private pythonClient: GraphitiClient
-  private pythonServiceAvailable: boolean | null = null // null = unknown, check on first use
-  private wikiAiService: WikiAiService | null = null
-  private wikiEmbeddingService: WikiEmbeddingService | null = null
-  private wikiEdgeEmbeddingService: WikiEdgeEmbeddingService | null = null // Fase 19.3
-  private wikiNodeEmbeddingService: WikiNodeEmbeddingService | null = null // Fase 21.4
-  private prisma: PrismaClient | null = null
-  private enableDateExtraction: boolean = true // Fase 16.2
-  private enableEdgeEmbeddings: boolean = true // Fase 19.3
-  private enableNodeEmbeddings: boolean = true // Fase 21.4
-  private enableReflexionExtraction: boolean = true // Fase 23.5
+  private redis: Redis;
+  private graphName: string;
+  private initialized: boolean = false;
+  private pythonClient: GraphitiClient;
+  private pythonServiceAvailable: boolean | null = null; // null = unknown, check on first use
+  private wikiAiService: WikiAiService | null = null;
+  private wikiEmbeddingService: WikiEmbeddingService | null = null;
+  private wikiEdgeEmbeddingService: WikiEdgeEmbeddingService | null = null; // Fase 19.3
+  private wikiNodeEmbeddingService: WikiNodeEmbeddingService | null = null; // Fase 21.4
+  private prisma: PrismaClient | null = null;
+  private enableDateExtraction: boolean = true; // Fase 16.2
+  private enableEdgeEmbeddings: boolean = true; // Fase 19.3
+  private enableNodeEmbeddings: boolean = true; // Fase 21.4
+  private enableReflexionExtraction: boolean = true; // Fase 23.5
 
   constructor(config?: Partial<GraphitiConfig>, prisma?: PrismaClient) {
-    const host = config?.host ?? process.env.FALKORDB_HOST ?? 'localhost'
-    const port = config?.port ?? parseInt(process.env.FALKORDB_PORT ?? '6379')
-    this.graphName = config?.graphName ?? 'kanbu_wiki'
-    this.enableDateExtraction = config?.enableDateExtraction ?? (process.env.DISABLE_DATE_EXTRACTION !== 'true')
-    this.enableEdgeEmbeddings = config?.enableEdgeEmbeddings ?? (process.env.DISABLE_EDGE_EMBEDDINGS !== 'true')
-    this.enableNodeEmbeddings = config?.enableNodeEmbeddings ?? (process.env.DISABLE_NODE_EMBEDDINGS !== 'true')
-    this.enableReflexionExtraction = config?.enableReflexionExtraction ?? (process.env.DISABLE_REFLEXION_EXTRACTION !== 'true')
+    const host = config?.host ?? process.env.FALKORDB_HOST ?? 'localhost';
+    const port = config?.port ?? parseInt(process.env.FALKORDB_PORT ?? '6379');
+    this.graphName = config?.graphName ?? 'kanbu_wiki';
+    this.enableDateExtraction =
+      config?.enableDateExtraction ?? process.env.DISABLE_DATE_EXTRACTION !== 'true';
+    this.enableEdgeEmbeddings =
+      config?.enableEdgeEmbeddings ?? process.env.DISABLE_EDGE_EMBEDDINGS !== 'true';
+    this.enableNodeEmbeddings =
+      config?.enableNodeEmbeddings ?? process.env.DISABLE_NODE_EMBEDDINGS !== 'true';
+    this.enableReflexionExtraction =
+      config?.enableReflexionExtraction ?? process.env.DISABLE_REFLEXION_EXTRACTION !== 'true';
 
     // Initialize Python service client
-    this.pythonClient = getGraphitiClient()
+    this.pythonClient = getGraphitiClient();
 
     // Initialize WikiAiService, WikiEmbeddingService, WikiEdgeEmbeddingService, and WikiNodeEmbeddingService if Prisma is provided
     if (prisma) {
-      this.prisma = prisma
-      this.wikiAiService = getWikiAiService(prisma)
-      this.wikiEmbeddingService = getWikiEmbeddingService(prisma)
-      this.wikiEdgeEmbeddingService = getWikiEdgeEmbeddingService(prisma) // Fase 19.3
-      this.wikiNodeEmbeddingService = getWikiNodeEmbeddingService(prisma) // Fase 21.4
+      this.prisma = prisma;
+      this.wikiAiService = getWikiAiService(prisma);
+      this.wikiEmbeddingService = getWikiEmbeddingService(prisma);
+      this.wikiEdgeEmbeddingService = getWikiEdgeEmbeddingService(prisma); // Fase 19.3
+      this.wikiNodeEmbeddingService = getWikiNodeEmbeddingService(prisma); // Fase 21.4
     }
 
     this.redis = new Redis({
@@ -290,18 +290,18 @@ export class GraphitiService {
       port,
       maxRetriesPerRequest: 3,
       retryStrategy: (times) => {
-        if (times > 3) return null
-        return Math.min(times * 100, 3000)
+        if (times > 3) return null;
+        return Math.min(times * 100, 3000);
       },
-    })
+    });
 
     this.redis.on('error', (err) => {
-      console.error('[GraphitiService] Redis connection error:', err.message)
-    })
+      console.error('[GraphitiService] Redis connection error:', err.message);
+    });
 
     this.redis.on('connect', () => {
-      console.log('[GraphitiService] Connected to FalkorDB')
-    })
+      console.log('[GraphitiService] Connected to FalkorDB');
+    });
   }
 
   /**
@@ -309,11 +309,11 @@ export class GraphitiService {
    * Call this if Prisma wasn't passed to constructor
    */
   setPrisma(prisma: PrismaClient): void {
-    this.prisma = prisma
-    this.wikiAiService = getWikiAiService(prisma)
-    this.wikiEmbeddingService = getWikiEmbeddingService(prisma)
-    this.wikiEdgeEmbeddingService = getWikiEdgeEmbeddingService(prisma) // Fase 19.3
-    this.wikiNodeEmbeddingService = getWikiNodeEmbeddingService(prisma) // Fase 21.4
+    this.prisma = prisma;
+    this.wikiAiService = getWikiAiService(prisma);
+    this.wikiEmbeddingService = getWikiEmbeddingService(prisma);
+    this.wikiEdgeEmbeddingService = getWikiEdgeEmbeddingService(prisma); // Fase 19.3
+    this.wikiNodeEmbeddingService = getWikiNodeEmbeddingService(prisma); // Fase 21.4
   }
 
   // ===========================================================================
@@ -324,32 +324,35 @@ export class GraphitiService {
    * Check if the Python Graphiti service is available
    * Caches result for 60 seconds to avoid repeated health checks
    */
-  private lastPythonCheck: number = 0
-  private readonly PYTHON_CHECK_INTERVAL = 60000 // 60 seconds
+  private lastPythonCheck: number = 0;
+  private readonly PYTHON_CHECK_INTERVAL = 60000; // 60 seconds
 
   private async isPythonServiceAvailable(): Promise<boolean> {
-    const now = Date.now()
+    const now = Date.now();
 
     // Use cached result if recent
-    if (this.pythonServiceAvailable !== null && now - this.lastPythonCheck < this.PYTHON_CHECK_INTERVAL) {
-      return this.pythonServiceAvailable
+    if (
+      this.pythonServiceAvailable !== null &&
+      now - this.lastPythonCheck < this.PYTHON_CHECK_INTERVAL
+    ) {
+      return this.pythonServiceAvailable;
     }
 
     try {
-      this.pythonServiceAvailable = await this.pythonClient.isAvailable()
-      this.lastPythonCheck = now
+      this.pythonServiceAvailable = await this.pythonClient.isAvailable();
+      this.lastPythonCheck = now;
 
       if (this.pythonServiceAvailable) {
-        console.log('[GraphitiService] Python service available - using LLM extraction')
+        console.log('[GraphitiService] Python service available - using LLM extraction');
       } else {
-        console.log('[GraphitiService] Python service unavailable - using fallback')
+        console.log('[GraphitiService] Python service unavailable - using fallback');
       }
 
-      return this.pythonServiceAvailable
+      return this.pythonServiceAvailable;
     } catch {
-      this.pythonServiceAvailable = false
-      this.lastPythonCheck = now
-      return false
+      this.pythonServiceAvailable = false;
+      this.lastPythonCheck = now;
+      return false;
     }
   }
 
@@ -361,41 +364,41 @@ export class GraphitiService {
    * Initialize the graph with required indexes and constraints
    */
   async initialize(): Promise<void> {
-    if (this.initialized) return
+    if (this.initialized) return;
 
     try {
       // Create indexes for faster lookups
       // FalkorDB syntax: CREATE INDEX ON :Label(property)
       // Note: FalkorDB doesn't support IF NOT EXISTS, so we catch errors for existing indexes
-      await this.createIndexSafe('WikiPage', 'pageId')
-      await this.createIndexSafe('WikiPage', 'groupId')
-      await this.createIndexSafe('Concept', 'name')
-      await this.createIndexSafe('Person', 'name')
+      await this.createIndexSafe('WikiPage', 'pageId');
+      await this.createIndexSafe('WikiPage', 'groupId');
+      await this.createIndexSafe('Concept', 'name');
+      await this.createIndexSafe('Person', 'name');
 
       // Fase 22.8.3: Additional indexes for deduplication performance
       // UUID indexes for fast node lookups
-      await this.createIndexSafe('Concept', 'uuid')
-      await this.createIndexSafe('Person', 'uuid')
-      await this.createIndexSafe('Task', 'uuid')
-      await this.createIndexSafe('Project', 'uuid')
+      await this.createIndexSafe('Concept', 'uuid');
+      await this.createIndexSafe('Person', 'uuid');
+      await this.createIndexSafe('Task', 'uuid');
+      await this.createIndexSafe('Project', 'uuid');
       // GroupId indexes for multi-tenant filtering
-      await this.createIndexSafe('Concept', 'groupId')
-      await this.createIndexSafe('Person', 'groupId')
-      await this.createIndexSafe('Task', 'groupId')
-      await this.createIndexSafe('Project', 'groupId')
+      await this.createIndexSafe('Concept', 'groupId');
+      await this.createIndexSafe('Person', 'groupId');
+      await this.createIndexSafe('Task', 'groupId');
+      await this.createIndexSafe('Project', 'groupId');
       // Name indexes for entity lookups
-      await this.createIndexSafe('Task', 'name')
-      await this.createIndexSafe('Project', 'name')
+      await this.createIndexSafe('Task', 'name');
+      await this.createIndexSafe('Project', 'name');
 
       // Fase 24.2: Community Detection indexes
-      await this.createIndexSafe('Community', 'uuid')
-      await this.createIndexSafe('Community', 'groupId')
-      await this.createIndexSafe('Community', 'name')
+      await this.createIndexSafe('Community', 'uuid');
+      await this.createIndexSafe('Community', 'groupId');
+      await this.createIndexSafe('Community', 'name');
 
-      this.initialized = true
-      console.log('[GraphitiService] Graph initialized with dedup + community indexes')
+      this.initialized = true;
+      console.log('[GraphitiService] Graph initialized with dedup + community indexes');
     } catch (error) {
-      console.error('[GraphitiService] Failed to initialize graph:', error)
+      console.error('[GraphitiService] Failed to initialize graph:', error);
       // Don't throw - allow service to work even if indexes fail
     }
   }
@@ -406,12 +409,15 @@ export class GraphitiService {
    */
   private async createIndexSafe(label: string, property: string): Promise<void> {
     try {
-      await this.query(`CREATE INDEX ON :${label}(${property})`)
+      await this.query(`CREATE INDEX ON :${label}(${property})`);
     } catch (error) {
       // Ignore "Index already exists" errors
-      const errorStr = String(error)
+      const errorStr = String(error);
       if (!errorStr.includes('already indexed') && !errorStr.includes('Index already exists')) {
-        console.warn(`[GraphitiService] Index creation warning for ${label}.${property}:`, errorStr)
+        console.warn(
+          `[GraphitiService] Index creation warning for ${label}.${property}:`,
+          errorStr
+        );
       }
     }
   }
@@ -427,30 +433,33 @@ export class GraphitiService {
     try {
       // FalkorDB uses GRAPH.QUERY command
       // Format: GRAPH.QUERY graphName "CYPHER query" [params]
-      let queryString = cypher
+      let queryString = cypher;
 
       // Simple parameter substitution (FalkorDB style)
       if (params) {
         for (const [key, value] of Object.entries(params)) {
-          const replacement = typeof value === 'string'
-            ? `'${value.replace(/'/g, "\\'")}'`
-            : String(value)
-          queryString = queryString.replace(new RegExp(`\\$${key}\\b`, 'g'), replacement)
+          const replacement =
+            typeof value === 'string' ? `'${value.replace(/'/g, "\\'")}'` : String(value);
+          queryString = queryString.replace(new RegExp(`\\$${key}\\b`, 'g'), replacement);
         }
       }
 
-      const result = await this.redis.call('GRAPH.QUERY', this.graphName, queryString) as unknown[][]
+      const result = (await this.redis.call(
+        'GRAPH.QUERY',
+        this.graphName,
+        queryString
+      )) as unknown[][];
 
       // Parse FalkorDB result format
       if (Array.isArray(result) && result.length > 0) {
         // Result format: [headers, ...rows, metadata]
-        return result
+        return result;
       }
-      return []
+      return [];
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      console.error('[GraphitiService] Query error:', errorMessage)
-      throw error
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('[GraphitiService] Query error:', errorMessage);
+      throw error;
     }
   }
 
@@ -480,14 +489,14 @@ export class GraphitiService {
     episode: WikiEpisode,
     options?: SyncWikiPageOptions
   ): Promise<SyncWikiPageResult> {
-    const { pageId, title, content, groupId, timestamp, workspaceId } = episode
+    const { pageId, title, content, groupId, timestamp, workspaceId } = episode;
 
     // Default result (no contradictions)
     const emptyResult: SyncWikiPageResult = {
       entitiesExtracted: 0,
       contradictionsResolved: 0,
       contradictions: [],
-    }
+    };
 
     // Try Python service first (LLM-based entity extraction with Kanbu entity types)
     if (await this.isPythonServiceAvailable()) {
@@ -500,30 +509,36 @@ export class GraphitiService {
           group_id: groupId,
           reference_time: timestamp.toISOString(),
           use_kanbu_entities: true, // Fase 10: Use custom entity types
-        })
+        });
 
         // Log detailed extraction results
-        const entityTypes = result.entity_details?.map(e => e.entity_type).filter((v, i, a) => a.indexOf(v) === i).join(', ')
+        const entityTypes = result.entity_details
+          ?.map((e) => e.entity_type)
+          .filter((v, i, a) => a.indexOf(v) === i)
+          .join(', ');
         console.log(
           `[GraphitiService] Synced page ${pageId}: "${title}" via Python service - ` +
-          `${result.entities_extracted} entities (${entityTypes || 'none'}), ${result.relations_created} relations`
-        )
+            `${result.entities_extracted} entities (${entityTypes || 'none'}), ${result.relations_created} relations`
+        );
 
         // Also sync basic page metadata to FalkorDB for backlinks/queries
-        await this.syncPageMetadataFallback(episode)
+        await this.syncPageMetadataFallback(episode);
         // Python service doesn't support contradiction detection yet
-        return { ...emptyResult, entitiesExtracted: result.entities_extracted }
+        return { ...emptyResult, entitiesExtracted: result.entities_extracted };
       } catch (error) {
         if (error instanceof GraphitiClientError) {
           console.warn(
             `[GraphitiService] Python service error for page ${pageId}: ${error.message}, trying WikiAiService`
-          )
+          );
           // Mark service as unavailable to skip future checks temporarily
           if (error.isConnectionError() || error.isServerError()) {
-            this.pythonServiceAvailable = false
+            this.pythonServiceAvailable = false;
           }
         } else {
-          console.warn(`[GraphitiService] Unexpected error for page ${pageId}, trying WikiAiService:`, error)
+          console.warn(
+            `[GraphitiService] Unexpected error for page ${pageId}, trying WikiAiService:`,
+            error
+          );
         }
       }
     }
@@ -531,20 +546,20 @@ export class GraphitiService {
     // Try WikiAiService (Fase 15.1 - uses Fase 14 providers)
     if (this.wikiAiService && workspaceId) {
       try {
-        const aiResult = await this.syncWikiPageWithAiService(episode, options)
+        const aiResult = await this.syncWikiPageWithAiService(episode, options);
         if (aiResult) {
-          return aiResult // Successfully synced with WikiAiService, includes contradiction data
+          return aiResult; // Successfully synced with WikiAiService, includes contradiction data
         }
       } catch (error) {
         console.warn(
           `[GraphitiService] WikiAiService error for page ${pageId}: ${error instanceof Error ? error.message : 'Unknown error'}, using rules-based fallback`
-        )
+        );
       }
     }
 
     // Final fallback: Direct FalkorDB with rules-based extraction
-    await this.syncWikiPageFallback(episode)
-    return emptyResult
+    await this.syncWikiPageFallback(episode);
+    return emptyResult;
   }
 
   /**
@@ -562,95 +577,111 @@ export class GraphitiService {
     options?: SyncWikiPageOptions
   ): Promise<SyncWikiPageResult | null> {
     if (!this.wikiAiService || !episode.workspaceId || !this.prisma) {
-      return null
+      return null;
     }
 
     const context: WikiContext = {
       workspaceId: episode.workspaceId,
       projectId: episode.projectId,
-    }
+    };
 
     // Check if reasoning provider is available
-    const capabilities = await this.wikiAiService.getCapabilities(context)
+    const capabilities = await this.wikiAiService.getCapabilities(context);
     if (!capabilities.reasoning) {
-      console.log(`[GraphitiService] No reasoning provider configured for workspace ${episode.workspaceId}`)
-      return null
+      console.log(
+        `[GraphitiService] No reasoning provider configured for workspace ${episode.workspaceId}`
+      );
+      return null;
     }
 
-    await this.initialize()
+    await this.initialize();
 
-    const { pageId, title, content, oldContent, timestamp, userId, workspaceId, projectId, groupId } = episode
+    const {
+      pageId,
+      title,
+      content,
+      oldContent,
+      timestamp,
+      userId,
+      workspaceId,
+      projectId,
+      groupId,
+    } = episode;
 
     // Fase 17.3.1: Calculate diff for incremental extraction
-    const isUpdate = !!oldContent
-    const diffContent = this.calculateContentDiff(oldContent, content)
+    const isUpdate = !!oldContent;
+    const diffContent = this.calculateContentDiff(oldContent, content);
 
     // If nothing changed, skip expensive operations
     if (isUpdate && diffContent.length === 0) {
-      console.log(`[GraphitiService] Page ${pageId}: No content changes detected, skipping entity extraction`)
+      console.log(
+        `[GraphitiService] Page ${pageId}: No content changes detected, skipping entity extraction`
+      );
       return {
         entitiesExtracted: 0,
         contradictionsResolved: 0,
         contradictions: [],
-      }
+      };
     }
 
     // For updates: extract entities from diff only (new/changed content)
     // For creates: extract from full content
-    const contentToExtract = isUpdate ? diffContent : content
+    const contentToExtract = isUpdate ? diffContent : content;
 
     // Extract entities using WikiAiService (Fase 14 providers)
-    const extractionResult = await this.wikiAiService.extractEntities(
-      context,
-      contentToExtract,
-      ['WikiPage', 'Task', 'User', 'Project', 'Concept']
-    )
+    const extractionResult = await this.wikiAiService.extractEntities(context, contentToExtract, [
+      'WikiPage',
+      'Task',
+      'User',
+      'Project',
+      'Concept',
+    ]);
 
     // Log diff-based optimization
     if (isUpdate) {
       console.log(
         `[GraphitiService] Page ${pageId}: Diff-based extraction - ` +
-        `diff size: ${diffContent.length} chars (was ${content.length}), ` +
-        `${extractionResult.entities.length} entities in diff`
-      )
+          `diff size: ${diffContent.length} chars (was ${content.length}), ` +
+          `${extractionResult.entities.length} entities in diff`
+      );
     }
 
     // Fase 23.5: Reflexion extraction for missed entities
-    let reflexionRecovered = 0
-    let reflexionPasses = 0
+    let reflexionRecovered = 0;
+    let reflexionPasses = 0;
 
     // Determine if reflexion should run
-    const shouldRunReflexion = options?.enableReflexion ?? this.enableReflexionExtraction
-    const shouldRunEdgeReflexion = options?.enableEdgeReflexion ?? false
+    const shouldRunReflexion = options?.enableReflexion ?? this.enableReflexionExtraction;
+    const shouldRunEdgeReflexion = options?.enableEdgeReflexion ?? false;
 
     if (shouldRunReflexion && extractionResult.entities.length > 0) {
       try {
-        reflexionPasses = 1
-        const extractedEntityNames = extractionResult.entities.map((e) => e.name)
+        reflexionPasses = 1;
+        const extractedEntityNames = extractionResult.entities.map((e) => e.name);
 
         // Run node reflexion
         const nodeReflexion = await this.wikiAiService.extractNodesReflexion(
           context,
           contentToExtract,
           extractedEntityNames
-        )
+        );
 
         if (nodeReflexion.missedEntities.length > 0) {
           console.log(
             `[GraphitiService] Page ${pageId}: Reflexion found ${nodeReflexion.missedEntities.length} missed entities: ` +
-            `${nodeReflexion.missedEntities.map((e) => e.name).join(', ')}`
-          )
+              `${nodeReflexion.missedEntities.map((e) => e.name).join(', ')}`
+          );
 
           // Add missed entities to extraction result
           for (const missed of nodeReflexion.missedEntities) {
             // Determine entity type from suggested type or default to Concept
-            const entityType = missed.suggestedType || 'Concept'
+            const entityType = missed.suggestedType || 'Concept';
             extractionResult.entities.push({
               name: missed.name,
               type: entityType,
               confidence: 0.7, // Lower confidence for reflexion-recovered entities
-            })
-            reflexionRecovered++
+            });
+            reflexionRecovered++;
           }
         }
 
@@ -660,44 +691,44 @@ export class GraphitiService {
           // Keeping implementation simple for now - can be expanded later
           console.log(
             `[GraphitiService] Page ${pageId}: Edge reflexion enabled but not yet integrated into sync flow`
-          )
+          );
         }
       } catch (reflexionError) {
         // Don't fail the sync if reflexion fails - it's an enhancement, not critical
         console.warn(
           `[GraphitiService] Reflexion extraction failed for page ${pageId}: ` +
-          `${reflexionError instanceof Error ? reflexionError.message : 'Unknown error'}`
-        )
+            `${reflexionError instanceof Error ? reflexionError.message : 'Unknown error'}`
+        );
       }
     }
 
     // Sync page metadata to FalkorDB
-    await this.syncPageMetadataFallback(episode)
+    await this.syncPageMetadataFallback(episode);
 
     // Create entity nodes and relationships
     // Fase 17.4: Collect contradiction audit entries for UI notification
-    let datesExtracted = 0
-    let contradictionsResolved = 0
-    const contradictionAuditEntries: ContradictionAuditEntry[] = []
-    const auditService = getContradictionAuditService(this.prisma)
+    let datesExtracted = 0;
+    let contradictionsResolved = 0;
+    const contradictionAuditEntries: ContradictionAuditEntry[] = [];
+    const auditService = getContradictionAuditService(this.prisma);
 
     // Track new entities for logging
-    let newEntityCount = 0
-    let skippedEntityCount = 0
+    let newEntityCount = 0;
+    let skippedEntityCount = 0;
 
     // Fase 19.3: Collect edges for embedding generation
-    const edgesForEmbedding: EdgeForEmbedding[] = []
+    const edgesForEmbedding: EdgeForEmbedding[] = [];
 
     // Fase 21.4: Collect nodes for embedding generation (entity resolution)
-    const nodesForEmbedding: NodeForEmbedding[] = []
+    const nodesForEmbedding: NodeForEmbedding[] = [];
 
     for (const entity of extractionResult.entities) {
       // Map entity type to graph label
-      const graphType = this.mapEntityTypeToGraphLabel(entity.type)
+      const graphType = this.mapEntityTypeToGraphLabel(entity.type);
 
       // Fase 17.3.1: Check if this entity is new (not in old content)
       // Only run expensive LLM operations for new entities
-      const entityIsNew = this.isNewEntity(entity.name, oldContent)
+      const entityIsNew = this.isNewEntity(entity.name, oldContent);
 
       // Create/update entity node (always do this for lastSeen timestamp)
       // Fase 22: Include groupId for multi-tenancy and deduplication filtering
@@ -706,40 +737,42 @@ export class GraphitiService {
         SET e.lastSeen = '${timestamp.toISOString()}',
             e.confidence = ${entity.confidence},
             e.groupId = '${groupId}'
-      `)
+      `);
 
       // Fase 21.4: Collect node for embedding generation (skip WikiPage - they have page embeddings)
       if (this.enableNodeEmbeddings && graphType !== 'WikiPage') {
         // Generate a stable node ID based on groupId and name
-        const nodeId = `node-${groupId}-${graphType}-${entity.name}`.replace(/[^a-zA-Z0-9-]/g, '_')
+        const nodeId = `node-${groupId}-${graphType}-${entity.name}`.replace(/[^a-zA-Z0-9-]/g, '_');
         nodesForEmbedding.push({
           id: nodeId,
           name: entity.name,
           type: graphType as EmbeddableNodeType,
           groupId,
-        })
+        });
       }
 
       // Generate fact description
       // Fase 17.4: Use actual context from content for meaningful contradiction detection
       // Instead of generic "page mentions entity", extract the actual sentence about the entity
-      const contextContent = isUpdate ? diffContent : content
-      const entityContextFact = this.extractEntityContext(contextContent, entity.name, title, 2)
+      const contextContent = isUpdate ? diffContent : content;
+      const entityContextFact = this.extractEntityContext(contextContent, entity.name, title, 2);
 
       // For edge storage and date extraction, use full content context
       // This ensures we capture the actual semantic meaning for contradiction comparison
-      const mentionsFact = entityContextFact
+      const mentionsFact = entityContextFact;
 
       // Debug log: Show extracted fact for verification
-      console.log(`[GraphitiService] Entity "${entity.name}" fact: "${mentionsFact.substring(0, 100)}${mentionsFact.length > 100 ? '...' : ''}"`)
+      console.log(
+        `[GraphitiService] Entity "${entity.name}" fact: "${mentionsFact.substring(0, 100)}${mentionsFact.length > 100 ? '...' : ''}"`
+      );
 
       // Fase 16.2: Extract dates using LLM if enabled
       // OPTIMIZED: Only for NEW entities (Fase 17.3.1)
-      let validAt: Date | undefined
-      let invalidAt: Date | undefined
+      let validAt: Date | undefined;
+      let invalidAt: Date | undefined;
 
       if (this.enableDateExtraction && this.wikiAiService && entityIsNew) {
-        newEntityCount++
+        newEntityCount++;
         try {
           // contextContent already defined above for entity context extraction
           const dateResult = await this.wikiAiService.extractEdgeDates(
@@ -747,25 +780,25 @@ export class GraphitiService {
             mentionsFact,
             contextContent,
             timestamp
-          )
+          );
           if (dateResult.validAt) {
-            validAt = dateResult.validAt
+            validAt = dateResult.validAt;
           }
           if (dateResult.invalidAt) {
-            invalidAt = dateResult.invalidAt
+            invalidAt = dateResult.invalidAt;
           }
-          datesExtracted++
+          datesExtracted++;
 
           if (dateResult.reasoning) {
             console.log(
               `[GraphitiService] Date extraction for "${entity.name}": ${dateResult.reasoning}`
-            )
+            );
           }
         } catch (dateError) {
           console.warn(
             `[GraphitiService] Date extraction failed for "${entity.name}": ` +
-            `${dateError instanceof Error ? dateError.message : 'Unknown error'}`
-          )
+              `${dateError instanceof Error ? dateError.message : 'Unknown error'}`
+          );
         }
       }
 
@@ -776,17 +809,23 @@ export class GraphitiService {
       if (this.enableDateExtraction && this.wikiAiService) {
         try {
           // Get existing edges for this entity (excluding current page to avoid false positives)
-          const existingFacts = await this.getExistingEdgesForEntity(entity.name, graphType, pageId)
+          const existingFacts = await this.getExistingEdgesForEntity(
+            entity.name,
+            graphType,
+            pageId
+          );
 
           // Debug: Log existing facts found for contradiction comparison
           console.log(
             `[GraphitiService] Contradiction check for "${entity.name}": ` +
-            `${existingFacts.length} existing facts found from other pages`
-          )
+              `${existingFacts.length} existing facts found from other pages`
+          );
           if (existingFacts.length > 0) {
             existingFacts.forEach((f, i) => {
-              console.log(`  - Fact ${i + 1}: "${f.fact.substring(0, 80)}${f.fact.length > 80 ? '...' : ''}"`)
-            })
+              console.log(
+                `  - Fact ${i + 1}: "${f.fact.substring(0, 80)}${f.fact.length > 80 ? '...' : ''}"`
+              );
+            });
           }
 
           if (existingFacts.length > 0) {
@@ -795,38 +834,38 @@ export class GraphitiService {
               context,
               mentionsFact,
               existingFacts
-            )
+            );
 
             if (contradictionResult.contradictedFactIds.length > 0) {
               console.log(
                 `[GraphitiService] Contradictions detected for "${entity.name}": ` +
-                `${contradictionResult.contradictedFactIds.length} facts (${contradictionResult.reasoning})`
-              )
+                  `${contradictionResult.contradictedFactIds.length} facts (${contradictionResult.reasoning})`
+              );
 
               // Resolve contradictions by invalidating old edges
               const resolved = await this.resolveContradictions(
                 contradictionResult.contradictedFactIds,
                 validAt ?? timestamp
-              )
-              contradictionsResolved += resolved
+              );
+              contradictionsResolved += resolved;
 
               // Fase 17.4: Log to audit trail for UI notification
               if (resolved > 0) {
                 try {
                   // Build invalidated facts array for audit
                   const invalidatedFacts = contradictionResult.contradictedFactIds.map((id) => {
-                    const existingFact = existingFacts.find((f) => f.id === id)
+                    const existingFact = existingFacts.find((f) => f.id === id);
                     return {
                       id,
                       fact: existingFact?.fact ?? 'Unknown fact',
-                    }
-                  })
+                    };
+                  });
 
                   // Use defaults for category and confidence (basic detection doesn't provide these)
                   // Enhanced detection (Fase 17.2) would provide more detailed info
-                  const category = ContradictionCategory.FACTUAL // Default category
-                  const confidence = 0.85 // Default high confidence for auto-resolved contradictions
-                  const strategy = 'INVALIDATE_OLD' as const // Default strategy for auto-resolution
+                  const category = ContradictionCategory.FACTUAL; // Default category
+                  const confidence = 0.85; // Default high confidence for auto-resolved contradictions
+                  const strategy = 'INVALIDATE_OLD' as const; // Default strategy for auto-resolution
 
                   // Log to audit service
                   const auditEntry = await auditService.logContradictionResolution({
@@ -841,18 +880,18 @@ export class GraphitiService {
                     confidence,
                     category,
                     reasoning: contradictionResult.reasoning,
-                  })
+                  });
 
-                  contradictionAuditEntries.push(auditEntry)
+                  contradictionAuditEntries.push(auditEntry);
 
                   console.log(
                     `[GraphitiService] Logged contradiction audit entry ${auditEntry.id} for "${entity.name}"`
-                  )
+                  );
                 } catch (auditError) {
                   console.warn(
                     `[GraphitiService] Failed to log contradiction audit for "${entity.name}": ` +
-                    `${auditError instanceof Error ? auditError.message : 'Unknown error'}`
-                  )
+                      `${auditError instanceof Error ? auditError.message : 'Unknown error'}`
+                  );
                 }
               }
             }
@@ -860,15 +899,15 @@ export class GraphitiService {
         } catch (contradictionError) {
           console.warn(
             `[GraphitiService] Contradiction detection failed for "${entity.name}": ` +
-            `${contradictionError instanceof Error ? contradictionError.message : 'Unknown error'}`
-          )
+              `${contradictionError instanceof Error ? contradictionError.message : 'Unknown error'}`
+          );
         }
       }
 
       // Fase 17.3.1: Track skipped entities for date extraction only
       // (contradiction detection now runs for all entities in diff)
       if (!entityIsNew && this.enableDateExtraction) {
-        skippedEntityCount++
+        skippedEntityCount++;
       }
 
       // Create relationship from page to entity with temporal properties (Fase 16.1/16.2)
@@ -876,13 +915,13 @@ export class GraphitiService {
         fact: mentionsFact,
         validAt,
         invalidAt,
-      })
+      });
       await this.query(`
         MATCH (p:WikiPage {pageId: ${pageId}})
         MATCH (e:${graphType} {name: '${this.escapeString(entity.name)}'})
         MERGE (p)-[r:MENTIONS]->(e)
         SET ${temporalProps}
-      `)
+      `);
 
       // Fase 19.3: Collect edge for embedding generation
       if (this.enableEdgeEmbeddings && mentionsFact) {
@@ -895,21 +934,23 @@ export class GraphitiService {
           validAt: validAt?.toISOString(),
           invalidAt: invalidAt?.toISOString(),
           createdAt: timestamp.toISOString(),
-        })
+        });
       }
     }
 
     // Fase 17.3.1: Enhanced logging with optimization stats
-    const dateInfo = this.enableDateExtraction ? `, ${datesExtracted} dates extracted` : ''
-    const contradictionInfo = contradictionsResolved > 0 ? `, ${contradictionsResolved} contradictions resolved` : ''
+    const dateInfo = this.enableDateExtraction ? `, ${datesExtracted} dates extracted` : '';
+    const contradictionInfo =
+      contradictionsResolved > 0 ? `, ${contradictionsResolved} contradictions resolved` : '';
     // Note: skipped count is for date extraction only - contradiction detection runs for all entities
-    const optimizationInfo = isUpdate && skippedEntityCount > 0
-      ? ` (date extraction: ${newEntityCount} new, ${skippedEntityCount} existing)`
-      : ''
+    const optimizationInfo =
+      isUpdate && skippedEntityCount > 0
+        ? ` (date extraction: ${newEntityCount} new, ${skippedEntityCount} existing)`
+        : '';
     console.log(
       `[GraphitiService] Synced page ${pageId}: "${title}" via WikiAiService (${extractionResult.provider}) - ` +
-      `${extractionResult.entities.length} entities extracted${dateInfo}${contradictionInfo}${optimizationInfo}`
-    )
+        `${extractionResult.entities.length} entities extracted${dateInfo}${contradictionInfo}${optimizationInfo}`
+    );
 
     // Store embedding for semantic search (Fase 15.2)
     if (this.wikiEmbeddingService && capabilities.embedding) {
@@ -920,62 +961,72 @@ export class GraphitiService {
           title,
           content,
           episode.groupId
-        )
+        );
       } catch (embeddingError) {
         // Don't fail the sync if embedding storage fails
         console.warn(
           `[GraphitiService] Failed to store embedding for page ${pageId}: ` +
-          `${embeddingError instanceof Error ? embeddingError.message : 'Unknown error'}`
-        )
+            `${embeddingError instanceof Error ? embeddingError.message : 'Unknown error'}`
+        );
       }
     }
 
     // Fase 19.3: Generate edge embeddings for semantic search over relations
-    if (this.enableEdgeEmbeddings && this.wikiEdgeEmbeddingService && capabilities.embedding && edgesForEmbedding.length > 0) {
+    if (
+      this.enableEdgeEmbeddings &&
+      this.wikiEdgeEmbeddingService &&
+      capabilities.embedding &&
+      edgesForEmbedding.length > 0
+    ) {
       try {
         const edgeResult = await this.wikiEdgeEmbeddingService.generateAndStoreEdgeEmbeddings(
           context,
           pageId,
           edgesForEmbedding
-        )
+        );
         if (edgeResult.stored > 0 || edgeResult.skipped > 0) {
           console.log(
             `[GraphitiService] Edge embeddings for page ${pageId}: ${edgeResult.stored} stored, ${edgeResult.skipped} skipped`
-          )
+          );
         }
       } catch (edgeEmbeddingError) {
         // Don't fail the sync if edge embedding storage fails
         console.warn(
           `[GraphitiService] Failed to store edge embeddings for page ${pageId}: ` +
-          `${edgeEmbeddingError instanceof Error ? edgeEmbeddingError.message : 'Unknown error'}`
-        )
+            `${edgeEmbeddingError instanceof Error ? edgeEmbeddingError.message : 'Unknown error'}`
+        );
       }
     }
 
     // Fase 21.4: Generate node embeddings for entity resolution
-    if (this.enableNodeEmbeddings && this.wikiNodeEmbeddingService && capabilities.embedding && nodesForEmbedding.length > 0) {
+    if (
+      this.enableNodeEmbeddings &&
+      this.wikiNodeEmbeddingService &&
+      capabilities.embedding &&
+      nodesForEmbedding.length > 0
+    ) {
       try {
         const nodeResult = await this.wikiNodeEmbeddingService.generateAndStoreBatchNodeEmbeddings(
           context,
           nodesForEmbedding
-        )
+        );
         if (nodeResult.stored > 0 || nodeResult.skipped > 0) {
           console.log(
             `[GraphitiService] Node embeddings for page ${pageId}: ${nodeResult.stored} stored, ${nodeResult.skipped} skipped`
-          )
+          );
         }
       } catch (nodeEmbeddingError) {
         // Don't fail the sync if node embedding storage fails
         console.warn(
           `[GraphitiService] Failed to store node embeddings for page ${pageId}: ` +
-          `${nodeEmbeddingError instanceof Error ? nodeEmbeddingError.message : 'Unknown error'}`
-        )
+            `${nodeEmbeddingError instanceof Error ? nodeEmbeddingError.message : 'Unknown error'}`
+        );
       }
     }
 
     // Fase 22.8.2: Entity deduplication during sync
-    const enableDedup = options?.enableDedup ?? true
-    let duplicatesFound = 0
+    const enableDedup = options?.enableDedup ?? true;
+    let duplicatesFound = 0;
 
     if (enableDedup && extractionResult.entities.length > 0) {
       try {
@@ -988,22 +1039,22 @@ export class GraphitiService {
             useLlm: options?.useLlm ?? true,
             episodeContent: content,
           }
-        )
-        duplicatesFound = dedupResult.duplicatesFound
+        );
+        duplicatesFound = dedupResult.duplicatesFound;
 
         if (duplicatesFound > 0) {
           console.log(
             `[GraphitiService] Page ${pageId}: Found ${duplicatesFound} duplicate entities ` +
-            `(${dedupResult.exactMatches} exact, ${dedupResult.fuzzyMatches} fuzzy, ` +
-            `${dedupResult.embeddingMatches} embedding, ${dedupResult.llmMatches} LLM)`
-          )
+              `(${dedupResult.exactMatches} exact, ${dedupResult.fuzzyMatches} fuzzy, ` +
+              `${dedupResult.embeddingMatches} embedding, ${dedupResult.llmMatches} LLM)`
+          );
         }
       } catch (dedupError) {
         // Don't fail the sync if deduplication fails
         console.warn(
           `[GraphitiService] Deduplication failed for page ${pageId}: ` +
-          `${dedupError instanceof Error ? dedupError.message : 'Unknown error'}`
-        )
+            `${dedupError instanceof Error ? dedupError.message : 'Unknown error'}`
+        );
       }
     }
 
@@ -1015,7 +1066,7 @@ export class GraphitiService {
       duplicatesFound, // Fase 22.8.2
       reflexionRecovered, // Fase 23.5
       reflexionPasses, // Fase 23.5
-    }
+    };
   }
 
   /**
@@ -1023,14 +1074,14 @@ export class GraphitiService {
    */
   private mapEntityTypeToGraphLabel(type: string): string {
     const typeMap: Record<string, string> = {
-      'WikiPage': 'WikiPage',
-      'Task': 'Task',
-      'User': 'Person',
-      'Person': 'Person',
-      'Project': 'Project',
-      'Concept': 'Concept',
-    }
-    return typeMap[type] || 'Concept'
+      WikiPage: 'WikiPage',
+      Task: 'Task',
+      User: 'Person',
+      Person: 'Person',
+      Project: 'Project',
+      Concept: 'Concept',
+    };
+    return typeMap[type] || 'Concept';
   }
 
   /**
@@ -1047,16 +1098,16 @@ export class GraphitiService {
     context: WikiContext,
     groupId: string,
     options: {
-      threshold: number
-      useLlm: boolean
-      episodeContent: string
+      threshold: number;
+      useLlm: boolean;
+      episodeContent: string;
     }
   ): Promise<{
-    duplicatesFound: number
-    exactMatches: number
-    fuzzyMatches: number
-    embeddingMatches: number
-    llmMatches: number
+    duplicatesFound: number;
+    exactMatches: number;
+    fuzzyMatches: number;
+    embeddingMatches: number;
+    llmMatches: number;
   }> {
     const emptyResult = {
       duplicatesFound: 0,
@@ -1064,13 +1115,13 @@ export class GraphitiService {
       fuzzyMatches: 0,
       embeddingMatches: 0,
       llmMatches: 0,
-    }
+    };
 
     // Get deduplication service with required dependencies
     const dedupService = getWikiDeduplicationService(
       this.wikiNodeEmbeddingService ?? undefined,
       this.wikiAiService ?? undefined
-    )
+    );
 
     // Convert extracted entities to EntityNodeInfo format
     const extractedNodes: EntityNodeInfo[] = extractedEntities.map((entity, idx) => ({
@@ -1078,18 +1129,18 @@ export class GraphitiService {
       name: entity.name,
       type: this.mapEntityTypeToGraphLabel(entity.type),
       groupId,
-    }))
+    }));
 
     if (extractedNodes.length === 0) {
-      return emptyResult
+      return emptyResult;
     }
 
     // Fetch existing entities from FalkorDB for this group
-    const existingNodes = await this.getExistingEntitiesForDedup(groupId)
+    const existingNodes = await this.getExistingEntitiesForDedup(groupId);
 
     if (existingNodes.length === 0) {
       // No existing entities to compare against
-      return emptyResult
+      return emptyResult;
     }
 
     // Run deduplication
@@ -1104,13 +1155,17 @@ export class GraphitiService {
         embeddingThreshold: options.threshold,
       },
       options.episodeContent
-    )
+    );
 
     // Create IS_DUPLICATE_OF edges for found duplicates
     for (const pair of result.duplicatePairs) {
       // Get the internal ID from FalkorDB (temp UUIDs are for dedup only)
-      const sourceId = await this.getNodeIdByName(pair.sourceNode.name, pair.sourceNode.type, groupId)
-      if (!sourceId) continue
+      const sourceId = await this.getNodeIdByName(
+        pair.sourceNode.name,
+        pair.sourceNode.type,
+        groupId
+      );
+      if (!sourceId) continue;
 
       // targetNode.uuid is already the internal ID from getWorkspaceNodes
       await this.createDuplicateOfEdge(
@@ -1119,7 +1174,7 @@ export class GraphitiService {
         pair.confidence,
         pair.matchType as 'exact' | 'fuzzy' | 'llm' | 'embedding',
         null
-      )
+      );
     }
 
     return {
@@ -1128,75 +1183,79 @@ export class GraphitiService {
       fuzzyMatches: result.stats.fuzzyMatches,
       embeddingMatches: result.stats.embeddingMatches,
       llmMatches: result.stats.llmMatches,
-    }
+    };
   }
 
   /**
    * Fase 22.8.2: Get existing entities from FalkorDB for deduplication
    */
   private async getExistingEntitiesForDedup(groupId: string): Promise<EntityNodeInfo[]> {
-    await this.initialize()
+    await this.initialize();
 
-    const nodeTypes = ['Concept', 'Person', 'Task', 'Project']
-    const entities: EntityNodeInfo[] = []
+    const nodeTypes = ['Concept', 'Person', 'Task', 'Project'];
+    const entities: EntityNodeInfo[] = [];
 
     for (const nodeType of nodeTypes) {
       try {
-        const result = await this.query(`
+        const result = (await this.query(`
           MATCH (n:${nodeType})
           WHERE n.groupId = '${groupId}'
           RETURN n.uuid as uuid, n.name as name, '${nodeType}' as type, n.groupId as groupId
-        `) as unknown[][]
+        `)) as unknown[][];
 
         for (const row of result) {
           if (row && row.length >= 4) {
-            const [uuid, name, type, grpId] = row as [string, string, string, string]
+            const [uuid, name, type, grpId] = row as [string, string, string, string];
             if (uuid && name) {
-              entities.push({ uuid, name, type, groupId: grpId || groupId })
+              entities.push({ uuid, name, type, groupId: grpId || groupId });
             }
           }
         }
       } catch (error) {
-        console.warn(`[GraphitiService] Failed to fetch ${nodeType} entities for dedup:`, error)
+        console.warn(`[GraphitiService] Failed to fetch ${nodeType} entities for dedup:`, error);
       }
     }
 
-    return entities
+    return entities;
   }
 
   /**
    * Fase 22.8.2: Get node internal ID by name and type
    * Returns FalkorDB internal ID as string (since entity nodes may not have uuid property)
    */
-  private async getNodeIdByName(name: string, type: string, groupId: string): Promise<string | null> {
-    await this.initialize()
+  private async getNodeIdByName(
+    name: string,
+    type: string,
+    groupId: string
+  ): Promise<string | null> {
+    await this.initialize();
 
     try {
-      const result = await this.query(`
+      const result = (await this.query(`
         MATCH (n:${type} {name: '${this.escapeString(name)}', groupId: '${groupId}'})
         RETURN toString(ID(n)) as nodeId
         LIMIT 1
-      `) as unknown[][]
+      `)) as unknown[][];
 
       if (result && result.length > 0 && result[0] && result[0][0]) {
-        return result[0][0] as string
+        return result[0][0] as string;
       }
     } catch (error) {
-      console.warn(`[GraphitiService] Failed to get ID for ${type}:${name}:`, error)
+      console.warn(`[GraphitiService] Failed to get ID for ${type}:${name}:`, error);
     }
 
-    return null
+    return null;
   }
 
   /**
    * Fallback: Sync wiki page directly to FalkorDB with rules-based extraction
    */
   private async syncWikiPageFallback(episode: WikiEpisode): Promise<void> {
-    await this.initialize()
+    await this.initialize();
 
-    const { pageId, title, slug, content, groupId, userId, timestamp } = episode
-    const escapedTitle = this.escapeString(title)
-    const escapedSlug = this.escapeString(slug)
+    const { pageId, title, slug, content, groupId, userId, timestamp } = episode;
+    const escapedTitle = this.escapeString(title);
+    const escapedSlug = this.escapeString(slug);
 
     // First, try to find and update an existing node by title (from wiki link extraction)
     // Then fall back to creating/updating by pageId
@@ -1209,7 +1268,7 @@ export class GraphitiService {
           p.updatedBy = ${userId},
           p.updatedAt = '${timestamp.toISOString()}',
           p.contentLength = ${content.length}
-    `)
+    `);
 
     // Also update any title-only nodes to point to this pageId
     // This handles the case where [[Page Title]] was extracted before the page was synced
@@ -1221,62 +1280,64 @@ export class GraphitiService {
           titleNode.groupId = '${groupId}',
           titleNode.updatedBy = ${userId},
           titleNode.updatedAt = '${timestamp.toISOString()}'
-    `)
+    `);
 
     // Extract and link entities from content
-    const entities = this.extractEntities(content)
+    const entities = this.extractEntities(content);
 
     for (const entity of entities) {
       // Create entity node if not exists
       await this.query(`
         MERGE (e:${entity.type} {name: '${this.escapeString(entity.name)}'})
         SET e.lastSeen = '${timestamp.toISOString()}'
-      `)
+      `);
 
       // Create relationship from page to entity with temporal properties (Fase 16.1)
-      const mentionsFact = this.generateMentionsFact(title, entity.name, entity.type)
-      const temporalProps = this.generateTemporalEdgeProps(timestamp, { fact: mentionsFact })
+      const mentionsFact = this.generateMentionsFact(title, entity.name, entity.type);
+      const temporalProps = this.generateTemporalEdgeProps(timestamp, { fact: mentionsFact });
       await this.query(`
         MATCH (p:WikiPage {pageId: ${pageId}})
         MATCH (e:${entity.type} {name: '${this.escapeString(entity.name)}'})
         MERGE (p)-[r:MENTIONS]->(e)
         SET ${temporalProps}
-      `)
+      `);
     }
 
     // Extract and link wiki links
-    const wikiLinks = this.extractWikiLinks(content)
+    const wikiLinks = this.extractWikiLinks(content);
 
     for (const link of wikiLinks) {
       // Create placeholder for linked page (will be resolved when that page is synced)
       await this.query(`
         MERGE (target:WikiPage {title: '${this.escapeString(link)}'})
-      `)
+      `);
 
       // Create LINKS_TO relationship with temporal properties (Fase 16.1)
-      const linksToFact = this.generateLinksToFact(title, link)
-      const temporalProps = this.generateTemporalEdgeProps(timestamp, { fact: linksToFact })
+      const linksToFact = this.generateLinksToFact(title, link);
+      const temporalProps = this.generateTemporalEdgeProps(timestamp, { fact: linksToFact });
       await this.query(`
         MATCH (source:WikiPage {pageId: ${pageId}})
         MATCH (target:WikiPage {title: '${this.escapeString(link)}'})
         WHERE source <> target
         MERGE (source)-[r:LINKS_TO]->(target)
         SET ${temporalProps}
-      `)
+      `);
     }
 
-    console.log(`[GraphitiService] Synced page ${pageId}: "${title}" via fallback - ${entities.length} entities, ${wikiLinks.length} links`)
+    console.log(
+      `[GraphitiService] Synced page ${pageId}: "${title}" via fallback - ${entities.length} entities, ${wikiLinks.length} links`
+    );
   }
 
   /**
    * Sync only page metadata to FalkorDB (used alongside Python service)
    */
   private async syncPageMetadataFallback(episode: WikiEpisode): Promise<void> {
-    await this.initialize()
+    await this.initialize();
 
-    const { pageId, title, slug, content, groupId, userId, timestamp } = episode
-    const escapedTitle = this.escapeString(title)
-    const escapedSlug = this.escapeString(slug)
+    const { pageId, title, slug, content, groupId, userId, timestamp } = episode;
+    const escapedTitle = this.escapeString(title);
+    const escapedSlug = this.escapeString(slug);
 
     // Sync basic page node for backlinks/queries
     await this.query(`
@@ -1288,22 +1349,22 @@ export class GraphitiService {
           p.updatedBy = ${userId},
           p.updatedAt = '${timestamp.toISOString()}',
           p.contentLength = ${content.length}
-    `)
+    `);
 
     // Extract and sync wiki links for backlinks functionality with temporal properties (Fase 16.1)
-    const wikiLinks = this.extractWikiLinks(content)
+    const wikiLinks = this.extractWikiLinks(content);
     for (const link of wikiLinks) {
-      await this.query(`MERGE (target:WikiPage {title: '${this.escapeString(link)}'})`)
+      await this.query(`MERGE (target:WikiPage {title: '${this.escapeString(link)}'})`);
 
-      const linksToFact = this.generateLinksToFact(title, link)
-      const temporalProps = this.generateTemporalEdgeProps(timestamp, { fact: linksToFact })
+      const linksToFact = this.generateLinksToFact(title, link);
+      const temporalProps = this.generateTemporalEdgeProps(timestamp, { fact: linksToFact });
       await this.query(`
         MATCH (source:WikiPage {pageId: ${pageId}})
         MATCH (target:WikiPage {title: '${this.escapeString(link)}'})
         WHERE source <> target
         MERGE (source)-[r:LINKS_TO]->(target)
         SET ${temporalProps}
-      `)
+      `);
     }
   }
 
@@ -1311,15 +1372,15 @@ export class GraphitiService {
    * Delete a wiki page from the graph
    */
   async deleteWikiPage(pageId: number): Promise<void> {
-    await this.initialize()
+    await this.initialize();
 
     // Delete the page node and all its relationships
     await this.query(`
       MATCH (p:WikiPage {pageId: ${pageId}})
       DETACH DELETE p
-    `)
+    `);
 
-    console.log(`[GraphitiService] Deleted page ${pageId} from graph`)
+    console.log(`[GraphitiService] Deleted page ${pageId} from graph`);
   }
 
   // ===========================================================================
@@ -1331,15 +1392,15 @@ export class GraphitiService {
    * Matches by pageId OR by title (for wiki links that were created before the target page was synced)
    */
   async getBacklinks(pageId: number): Promise<{ pageId: number; title: string; slug: string }[]> {
-    await this.initialize()
+    await this.initialize();
 
     // First get the title of the target page
     const targetResult = await this.query(`
       MATCH (p:WikiPage {pageId: ${pageId}})
       RETURN p.title AS title
-    `)
-    const targetParsed = this.parseResults<{ title: string }>(targetResult, ['title'])
-    const targetTitle = targetParsed[0]?.title
+    `);
+    const targetParsed = this.parseResults<{ title: string }>(targetResult, ['title']);
+    const targetTitle = targetParsed[0]?.title;
 
     if (!targetTitle) {
       // Page not in graph yet, try matching by pageId only
@@ -1347,28 +1408,39 @@ export class GraphitiService {
         MATCH (source:WikiPage)-[:LINKS_TO]->(target:WikiPage {pageId: ${pageId}})
         WHERE source.pageId IS NOT NULL
         RETURN source.pageId AS pageId, source.title AS title, source.slug AS slug
-      `)
-      return this.parseResults<{ pageId: number; title: string; slug: string }>(result, ['pageId', 'title', 'slug'])
+      `);
+      return this.parseResults<{ pageId: number; title: string; slug: string }>(result, [
+        'pageId',
+        'title',
+        'slug',
+      ]);
     }
 
     // Find pages linking to this page by pageId OR by title
-    const escapedTitle = this.escapeString(targetTitle)
+    const escapedTitle = this.escapeString(targetTitle);
     const result = await this.query(`
       MATCH (source:WikiPage)-[:LINKS_TO]->(target:WikiPage)
       WHERE (target.pageId = ${pageId} OR target.title = '${escapedTitle}')
         AND source.pageId IS NOT NULL
         AND source.pageId <> ${pageId}
       RETURN DISTINCT source.pageId AS pageId, source.title AS title, source.slug AS slug
-    `)
+    `);
 
-    return this.parseResults<{ pageId: number; title: string; slug: string }>(result, ['pageId', 'title', 'slug'])
+    return this.parseResults<{ pageId: number; title: string; slug: string }>(result, [
+      'pageId',
+      'title',
+      'slug',
+    ]);
   }
 
   /**
    * Get pages related through shared entities
    */
-  async getRelatedPages(pageId: number, limit: number = 5): Promise<{ pageId: number; title: string; slug: string; sharedCount: number }[]> {
-    await this.initialize()
+  async getRelatedPages(
+    pageId: number,
+    limit: number = 5
+  ): Promise<{ pageId: number; title: string; slug: string; sharedCount: number }[]> {
+    await this.initialize();
 
     const result = await this.query(`
       MATCH (p1:WikiPage {pageId: ${pageId}})-[:MENTIONS]->(e)<-[:MENTIONS]-(p2:WikiPage)
@@ -1377,29 +1449,32 @@ export class GraphitiService {
       RETURN p2.pageId AS pageId, p2.title AS title, p2.slug AS slug, sharedCount
       ORDER BY sharedCount DESC
       LIMIT ${limit}
-    `)
+    `);
 
-    return this.parseResults<{ pageId: number; title: string; slug: string; sharedCount: number }>(result, ['pageId', 'title', 'slug', 'sharedCount'])
+    return this.parseResults<{ pageId: number; title: string; slug: string; sharedCount: number }>(
+      result,
+      ['pageId', 'title', 'slug', 'sharedCount']
+    );
   }
 
   /**
    * Get entities mentioned in a page
    */
   async getPageEntities(pageId: number): Promise<GraphEntity[]> {
-    await this.initialize()
+    await this.initialize();
 
     const result = await this.query(`
       MATCH (p:WikiPage {pageId: ${pageId}})-[:MENTIONS]->(e)
       RETURN e.name AS name, labels(e)[0] AS type
-    `)
+    `);
 
-    const parsed = this.parseResults<{ name: string; type: string }>(result, ['name', 'type'])
-    return parsed.map(row => ({
+    const parsed = this.parseResults<{ name: string; type: string }>(result, ['name', 'type']);
+    return parsed.map((row) => ({
       id: `${row.type}-${row.name}`,
       name: row.name,
       type: row.type as GraphEntity['type'],
       properties: {},
-    }))
+    }));
   }
 
   /**
@@ -1414,38 +1489,42 @@ export class GraphitiService {
           query,
           group_id: groupId,
           limit,
-        })
+        });
 
         // Map Python response to our SearchResult format
-        return response.results.map(r => ({
+        return response.results.map((r) => ({
           nodeId: r.uuid,
           name: r.name,
           type: r.result_type,
           score: r.score,
           pageId: r.metadata?.pageId as number | undefined,
-        }))
+        }));
       } catch (error) {
         if (error instanceof GraphitiClientError) {
-          console.warn(`[GraphitiService] Python search error: ${error.message}, using fallback`)
+          console.warn(`[GraphitiService] Python search error: ${error.message}, using fallback`);
         }
         // Fall through to fallback
       }
     }
 
     // Fallback: Direct FalkorDB text search
-    return this.searchFallback(query, groupId, limit)
+    return this.searchFallback(query, groupId, limit);
   }
 
   /**
    * Fallback: Direct FalkorDB text search
    */
-  private async searchFallback(query: string, groupId?: string, limit: number = 10): Promise<SearchResult[]> {
-    await this.initialize()
+  private async searchFallback(
+    query: string,
+    groupId?: string,
+    limit: number = 10
+  ): Promise<SearchResult[]> {
+    await this.initialize();
 
     // Search in page titles and entity names
-    const searchTerm = this.escapeString(query.toLowerCase())
+    const searchTerm = this.escapeString(query.toLowerCase());
 
-    const groupFilter = groupId ? `AND p.groupId = '${groupId}'` : ''
+    const groupFilter = groupId ? `AND p.groupId = '${groupId}'` : '';
 
     const result = await this.query(`
       MATCH (p:WikiPage)
@@ -1456,23 +1535,28 @@ export class GraphitiService {
       WHERE toLower(e.name) CONTAINS '${searchTerm}' ${groupFilter}
       RETURN p.pageId AS pageId, p.title AS name, 'WikiPage' AS type, 0.8 AS score
       LIMIT ${limit}
-    `)
+    `);
 
-    const parsed = this.parseResults<{ pageId: number; name: string; type: string; score: number }>(result, ['pageId', 'name', 'type', 'score'])
+    const parsed = this.parseResults<{ pageId: number; name: string; type: string; score: number }>(
+      result,
+      ['pageId', 'name', 'type', 'score']
+    );
 
     // Deduplicate by pageId
-    const seen = new Set<number>()
-    return parsed.filter(r => {
-      if (seen.has(r.pageId)) return false
-      seen.add(r.pageId)
-      return true
-    }).map(r => ({
-      nodeId: `page-${r.pageId}`,
-      name: r.name,
-      type: r.type,
-      score: r.score,
-      pageId: r.pageId,
-    }))
+    const seen = new Set<number>();
+    return parsed
+      .filter((r) => {
+        if (seen.has(r.pageId)) return false;
+        seen.add(r.pageId);
+        return true;
+      })
+      .map((r) => ({
+        nodeId: `page-${r.pageId}`,
+        name: r.name,
+        type: r.type,
+        score: r.score,
+        pageId: r.pageId,
+      }));
   }
 
   /**
@@ -1481,9 +1565,14 @@ export class GraphitiService {
    * Now with FalkorDB fallback using bi-temporal fields when Python service unavailable.
    * @see temporalSearchWithFallback for implementation details
    */
-  async temporalSearch(query: string, groupId: string, asOf: Date, limit: number = 10): Promise<SearchResult[]> {
+  async temporalSearch(
+    query: string,
+    groupId: string,
+    asOf: Date,
+    limit: number = 10
+  ): Promise<SearchResult[]> {
     // Delegate to the fallback-enabled method
-    return this.temporalSearchWithFallback(query, groupId, asOf, limit)
+    return this.temporalSearchWithFallback(query, groupId, asOf, limit);
   }
 
   // ===========================================================================
@@ -1503,14 +1592,14 @@ export class GraphitiService {
     query: string,
     workspaceId: number,
     options?: {
-      projectId?: number
-      groupId?: string
-      limit?: number
-      scoreThreshold?: number
+      projectId?: number;
+      groupId?: string;
+      limit?: number;
+      scoreThreshold?: number;
     }
   ): Promise<SemanticSearchResult[]> {
-    const limit = options?.limit ?? 10
-    const scoreThreshold = options?.scoreThreshold ?? 0.5
+    const limit = options?.limit ?? 10;
+    const scoreThreshold = options?.scoreThreshold ?? 0.5;
 
     // Try Python service first (has its own embedding pipeline)
     if (await this.isPythonServiceAvailable()) {
@@ -1519,17 +1608,19 @@ export class GraphitiService {
           query,
           group_id: options?.groupId,
           limit,
-        })
+        });
 
-        return response.results.map(r => ({
+        return response.results.map((r) => ({
           pageId: r.metadata?.pageId as number,
           title: r.name,
           score: r.score,
-          groupId: r.metadata?.groupId as string || '',
-        }))
+          groupId: (r.metadata?.groupId as string) || '',
+        }));
       } catch (error) {
         if (error instanceof GraphitiClientError) {
-          console.warn(`[GraphitiService] Python semantic search error: ${error.message}, trying WikiEmbeddingService`)
+          console.warn(
+            `[GraphitiService] Python semantic search error: ${error.message}, trying WikiEmbeddingService`
+          );
         }
       }
     }
@@ -1540,7 +1631,7 @@ export class GraphitiService {
         const context: WikiContext = {
           workspaceId,
           projectId: options?.projectId,
-        }
+        };
 
         return await this.wikiEmbeddingService.semanticSearch(context, query, {
           workspaceId,
@@ -1548,24 +1639,24 @@ export class GraphitiService {
           groupId: options?.groupId,
           limit,
           scoreThreshold,
-        })
+        });
       } catch (error) {
         console.warn(
           `[GraphitiService] WikiEmbeddingService search error: ${error instanceof Error ? error.message : 'Unknown'}, using text fallback`
-        )
+        );
       }
     }
 
     // Final fallback: text search in FalkorDB
-    const textResults = await this.searchFallback(query, options?.groupId, limit)
+    const textResults = await this.searchFallback(query, options?.groupId, limit);
     return textResults
-      .filter(r => r.pageId !== undefined)
-      .map(r => ({
+      .filter((r) => r.pageId !== undefined)
+      .map((r) => ({
         pageId: r.pageId!,
         title: r.name,
         score: r.score,
         groupId: '',
-      }))
+      }));
   }
 
   /**
@@ -1577,19 +1668,19 @@ export class GraphitiService {
     limit: number = 5
   ): Promise<SemanticSearchResult[]> {
     if (!this.wikiEmbeddingService) {
-      console.warn('[GraphitiService] WikiEmbeddingService not available for similar pages search')
-      return []
+      console.warn('[GraphitiService] WikiEmbeddingService not available for similar pages search');
+      return [];
     }
 
     try {
-      const context: WikiContext = { workspaceId }
-      return await this.wikiEmbeddingService.findSimilarPages(context, pageId, limit)
+      const context: WikiContext = { workspaceId };
+      return await this.wikiEmbeddingService.findSimilarPages(context, pageId, limit);
     } catch (error) {
       console.error(
         `[GraphitiService] Find similar pages failed:`,
         error instanceof Error ? error.message : error
-      )
-      return []
+      );
+      return [];
     }
   }
 
@@ -1598,10 +1689,10 @@ export class GraphitiService {
    */
   async getEmbeddingStats(): Promise<{ totalPages: number; collectionExists: boolean }> {
     if (!this.wikiEmbeddingService) {
-      return { totalPages: 0, collectionExists: false }
+      return { totalPages: 0, collectionExists: false };
     }
 
-    return this.wikiEmbeddingService.getStats()
+    return this.wikiEmbeddingService.getStats();
   }
 
   /**
@@ -1618,19 +1709,21 @@ export class GraphitiService {
     entityName: string,
     entityType: string,
     excludePageId?: number
-  ): Promise<Array<{
-    fact: string
-    pageId: number
-    pageTitle: string
-    pageSlug?: string
-    validAt: string | null
-    invalidAt: string | null
-  }>> {
-    await this.initialize()
+  ): Promise<
+    Array<{
+      fact: string;
+      pageId: number;
+      pageTitle: string;
+      pageSlug?: string;
+      validAt: string | null;
+      invalidAt: string | null;
+    }>
+  > {
+    await this.initialize();
 
     const whereClause = excludePageId
       ? `WHERE e.expired_at IS NULL AND p.pageId <> ${excludePageId}`
-      : `WHERE e.expired_at IS NULL`
+      : `WHERE e.expired_at IS NULL`;
 
     const result = await this.query(`
       MATCH (p:WikiPage)-[e:MENTIONS]->(target:${entityType} {name: '${this.escapeString(entityName)}'})
@@ -1643,27 +1736,27 @@ export class GraphitiService {
              e.invalid_at AS invalidAt
       ORDER BY e.created_at DESC
       LIMIT 20
-    `)
+    `);
 
     const parsed = this.parseResults<{
-      pageId: number
-      pageTitle: string
-      pageSlug: string | null
-      fact: string | null
-      validAt: string | null
-      invalidAt: string | null
-    }>(result, ['pageId', 'pageTitle', 'pageSlug', 'fact', 'validAt', 'invalidAt'])
+      pageId: number;
+      pageTitle: string;
+      pageSlug: string | null;
+      fact: string | null;
+      validAt: string | null;
+      invalidAt: string | null;
+    }>(result, ['pageId', 'pageTitle', 'pageSlug', 'fact', 'validAt', 'invalidAt']);
 
     return parsed
-      .filter(row => row.fact !== null)
-      .map(row => ({
+      .filter((row) => row.fact !== null)
+      .map((row) => ({
         fact: row.fact!,
         pageId: row.pageId,
         pageTitle: row.pageTitle || 'Unknown',
         pageSlug: row.pageSlug ?? undefined,
         validAt: row.validAt,
         invalidAt: row.invalidAt,
-      }))
+      }));
   }
 
   /**
@@ -1673,31 +1766,36 @@ export class GraphitiService {
    */
   async getGraph(groupId: string): Promise<{
     nodes: Array<{
-      id: string
-      label: string
-      type: 'WikiPage' | 'Concept' | 'Person' | 'Task'
-      pageId?: number
-      slug?: string
-      updatedAt?: string
+      id: string;
+      label: string;
+      type: 'WikiPage' | 'Concept' | 'Person' | 'Task';
+      pageId?: number;
+      slug?: string;
+      updatedAt?: string;
       /** FalkorDB internal ID for entity nodes (used for duplicate matching) */
-      uuid?: string
-    }>
+      uuid?: string;
+    }>;
     edges: Array<{
-      source: string
-      target: string
-      type: 'LINKS_TO' | 'MENTIONS'
-      updatedAt?: string
-    }>
+      source: string;
+      target: string;
+      type: 'LINKS_TO' | 'MENTIONS';
+      updatedAt?: string;
+    }>;
   }> {
-    await this.initialize()
+    await this.initialize();
 
     // Get all WikiPage nodes with timestamps
     const pagesResult = await this.query(`
       MATCH (p:WikiPage {groupId: '${groupId}'})
       WHERE p.pageId IS NOT NULL
       RETURN p.pageId AS pageId, p.title AS title, p.slug AS slug, p.updatedAt AS updatedAt
-    `)
-    const pages = this.parseResults<{ pageId: number; title: string; slug: string; updatedAt?: string }>(pagesResult, ['pageId', 'title', 'slug', 'updatedAt'])
+    `);
+    const pages = this.parseResults<{
+      pageId: number;
+      title: string;
+      slug: string;
+      updatedAt?: string;
+    }>(pagesResult, ['pageId', 'title', 'slug', 'updatedAt']);
 
     // Get all entities connected to pages in this group
     // Fase 22.9: Include FalkorDB internal ID (uuid) for duplicate matching
@@ -1705,35 +1803,46 @@ export class GraphitiService {
       MATCH (p:WikiPage {groupId: '${groupId}'})-[:MENTIONS]->(e)
       WHERE p.pageId IS NOT NULL
       RETURN DISTINCT toString(ID(e)) AS uuid, e.name AS name, labels(e)[0] AS type
-    `)
-    const entities = this.parseResults<{ uuid: string; name: string; type: string }>(entitiesResult, ['uuid', 'name', 'type'])
+    `);
+    const entities = this.parseResults<{ uuid: string; name: string; type: string }>(
+      entitiesResult,
+      ['uuid', 'name', 'type']
+    );
 
     // Get LINKS_TO edges between pages (with timestamps)
     const linksResult = await this.query(`
       MATCH (source:WikiPage {groupId: '${groupId}'})-[r:LINKS_TO]->(target:WikiPage)
       WHERE source.pageId IS NOT NULL AND target.pageId IS NOT NULL
       RETURN source.pageId AS sourceId, target.pageId AS targetId, r.updatedAt AS updatedAt
-    `)
-    const links = this.parseResults<{ sourceId: number; targetId: number; updatedAt?: string }>(linksResult, ['sourceId', 'targetId', 'updatedAt'])
+    `);
+    const links = this.parseResults<{ sourceId: number; targetId: number; updatedAt?: string }>(
+      linksResult,
+      ['sourceId', 'targetId', 'updatedAt']
+    );
 
     // Get MENTIONS edges (with timestamps)
     const mentionsResult = await this.query(`
       MATCH (p:WikiPage {groupId: '${groupId}'})-[r:MENTIONS]->(e)
       WHERE p.pageId IS NOT NULL
       RETURN p.pageId AS pageId, e.name AS entityName, labels(e)[0] AS entityType, r.updatedAt AS updatedAt
-    `)
-    const mentions = this.parseResults<{ pageId: number; entityName: string; entityType: string; updatedAt?: string }>(mentionsResult, ['pageId', 'entityName', 'entityType', 'updatedAt'])
+    `);
+    const mentions = this.parseResults<{
+      pageId: number;
+      entityName: string;
+      entityType: string;
+      updatedAt?: string;
+    }>(mentionsResult, ['pageId', 'entityName', 'entityType', 'updatedAt']);
 
     // Build nodes array
     const nodes: Array<{
-      id: string
-      label: string
-      type: 'WikiPage' | 'Concept' | 'Person' | 'Task'
-      pageId?: number
-      slug?: string
-      updatedAt?: string
-      uuid?: string
-    }> = []
+      id: string;
+      label: string;
+      type: 'WikiPage' | 'Concept' | 'Person' | 'Task';
+      pageId?: number;
+      slug?: string;
+      updatedAt?: string;
+      uuid?: string;
+    }> = [];
 
     // Add page nodes
     for (const page of pages) {
@@ -1744,28 +1853,28 @@ export class GraphitiService {
         pageId: page.pageId,
         slug: page.slug,
         updatedAt: page.updatedAt,
-      })
+      });
     }
 
     // Add entity nodes
     // Fase 22.9: Include uuid for duplicate matching
     for (const entity of entities) {
-      const nodeType = entity.type as 'Concept' | 'Person' | 'Task'
+      const nodeType = entity.type as 'Concept' | 'Person' | 'Task';
       nodes.push({
         id: `${entity.type.toLowerCase()}-${entity.name}`,
         label: entity.name,
         type: nodeType,
         uuid: entity.uuid, // FalkorDB internal ID for duplicate matching
-      })
+      });
     }
 
     // Build edges array
     const edges: Array<{
-      source: string
-      target: string
-      type: 'LINKS_TO' | 'MENTIONS'
-      updatedAt?: string
-    }> = []
+      source: string;
+      target: string;
+      type: 'LINKS_TO' | 'MENTIONS';
+      updatedAt?: string;
+    }> = [];
 
     // Add LINKS_TO edges
     for (const link of links) {
@@ -1774,7 +1883,7 @@ export class GraphitiService {
         target: `page-${link.targetId}`,
         type: 'LINKS_TO',
         updatedAt: link.updatedAt,
-      })
+      });
     }
 
     // Add MENTIONS edges
@@ -1784,34 +1893,40 @@ export class GraphitiService {
         target: `${mention.entityType.toLowerCase()}-${mention.entityName}`,
         type: 'MENTIONS',
         updatedAt: mention.updatedAt,
-      })
+      });
     }
 
-    return { nodes, edges }
+    return { nodes, edges };
   }
 
   /**
    * Get graph statistics
    */
-  async getStats(groupId?: string): Promise<{ pages: number; entities: number; relationships: number }> {
-    await this.initialize()
+  async getStats(
+    groupId?: string
+  ): Promise<{ pages: number; entities: number; relationships: number }> {
+    await this.initialize();
 
-    const groupFilter = groupId ? `{groupId: '${groupId}'}` : ''
+    const groupFilter = groupId ? `{groupId: '${groupId}'}` : '';
 
-    const pagesResult = await this.query(`MATCH (p:WikiPage ${groupFilter}) RETURN count(p) AS count`)
-    const entitiesResult = await this.query(`MATCH (e) WHERE NOT e:WikiPage RETURN count(e) AS count`)
-    const relsResult = await this.query(`MATCH ()-[r]->() RETURN count(r) AS count`)
+    const pagesResult = await this.query(
+      `MATCH (p:WikiPage ${groupFilter}) RETURN count(p) AS count`
+    );
+    const entitiesResult = await this.query(
+      `MATCH (e) WHERE NOT e:WikiPage RETURN count(e) AS count`
+    );
+    const relsResult = await this.query(`MATCH ()-[r]->() RETURN count(r) AS count`);
 
     const parseCount = (result: unknown[]): number => {
-      const parsed = this.parseResults<{ count: number }>(result, ['count'])
-      return parsed[0]?.count ?? 0
-    }
+      const parsed = this.parseResults<{ count: number }>(result, ['count']);
+      return parsed[0]?.count ?? 0;
+    };
 
     return {
       pages: parseCount(pagesResult),
       entities: parseCount(entitiesResult),
       relationships: parseCount(relsResult),
-    }
+    };
   }
 
   // ===========================================================================
@@ -1823,74 +1938,85 @@ export class GraphitiService {
    * TODO: Replace with LLM-based extraction for better results
    */
   private extractEntities(content: string): { name: string; type: GraphEntity['type'] }[] {
-    const entities: { name: string; type: GraphEntity['type'] }[] = []
-    const seen = new Set<string>()
+    const entities: { name: string; type: GraphEntity['type'] }[] = [];
+    const seen = new Set<string>();
 
     // Extract @mentions (Person)
-    const mentionRegex = /@(\w+)/g
-    let match: RegExpExecArray | null
+    const mentionRegex = /@(\w+)/g;
+    let match: RegExpExecArray | null;
     while ((match = mentionRegex.exec(content)) !== null) {
-      const name = match[1]
+      const name = match[1];
       if (name) {
-        const key = `Person:${name}`
+        const key = `Person:${name}`;
         if (!seen.has(key)) {
-          entities.push({ name, type: 'Person' })
-          seen.add(key)
+          entities.push({ name, type: 'Person' });
+          seen.add(key);
         }
       }
     }
 
     // Extract #task references (Task)
-    const taskRegex = /#([A-Z]+-\d+)/g
+    const taskRegex = /#([A-Z]+-\d+)/g;
     while ((match = taskRegex.exec(content)) !== null) {
-      const name = match[1]
+      const name = match[1];
       if (name) {
-        const key = `Task:${name}`
+        const key = `Task:${name}`;
         if (!seen.has(key)) {
-          entities.push({ name, type: 'Task' })
-          seen.add(key)
+          entities.push({ name, type: 'Task' });
+          seen.add(key);
         }
       }
     }
 
     // Extract capitalized terms as potential concepts (simplified)
     // This is a placeholder - should use LLM for better extraction
-    const conceptRegex = /\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/g
-    const skipWords = new Set(['The', 'This', 'That', 'What', 'When', 'Where', 'How', 'Why', 'If', 'Then'])
+    const conceptRegex = /\b([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\b/g;
+    const skipWords = new Set([
+      'The',
+      'This',
+      'That',
+      'What',
+      'When',
+      'Where',
+      'How',
+      'Why',
+      'If',
+      'Then',
+    ]);
     while ((match = conceptRegex.exec(content)) !== null) {
-      const name = match[1]
+      const name = match[1];
       if (name && name.length > 2 && !skipWords.has(name)) {
-        const key = `Concept:${name}`
+        const key = `Concept:${name}`;
         if (!seen.has(key)) {
-          entities.push({ name, type: 'Concept' })
-          seen.add(key)
+          entities.push({ name, type: 'Concept' });
+          seen.add(key);
         }
       }
     }
 
-    return entities.slice(0, 20) // Limit to avoid noise
+    return entities.slice(0, 20); // Limit to avoid noise
   }
 
   /**
    * Extract wiki links from content
    */
   private extractWikiLinks(content: string): string[] {
-    const links: string[] = []
-    const linkRegex = /\[\[([^\]]+)\]\]/g
-    let match: RegExpExecArray | null
+    const links: string[] = [];
+    const linkRegex = /\[\[([^\]]+)\]\]/g;
+    let match: RegExpExecArray | null;
 
     while ((match = linkRegex.exec(content)) !== null) {
-      const captured = match[1]
+      const captured = match[1];
       if (captured) {
-        const parts = captured.split('|')
-        const link = (parts[0] ?? '').trim() // Handle [[Page|Display Text]] format
+        const parts = captured.split('|');
+        const link = (parts[0] ?? '').trim(); // Handle [[Page|Display Text]] format
         if (link && !links.includes(link)) {
-          links.push(link)
+          links.push(link);
         }
       }
     }
 
-    return links
+    return links;
   }
 
   // ===========================================================================
@@ -1910,32 +2036,33 @@ export class GraphitiService {
   private calculateContentDiff(oldContent: string | undefined, newContent: string): string {
     if (!oldContent) {
       // No old content = everything is new (first save)
-      return newContent
+      return newContent;
     }
 
     // Normalize whitespace for comparison
-    const normalizeText = (text: string) => text.trim().toLowerCase()
+    const normalizeText = (text: string) => text.trim().toLowerCase();
 
     // Split into lines and create a set of old content lines
     const oldLines = new Set(
-      oldContent.split('\n')
-        .map(line => normalizeText(line))
-        .filter(line => line.length > 0)
-    )
+      oldContent
+        .split('\n')
+        .map((line) => normalizeText(line))
+        .filter((line) => line.length > 0)
+    );
 
     // Find lines that are new or changed
-    const newLines = newContent.split('\n').filter(line => {
-      const normalized = normalizeText(line)
-      return normalized.length > 0 && !oldLines.has(normalized)
-    })
+    const newLines = newContent.split('\n').filter((line) => {
+      const normalized = normalizeText(line);
+      return normalized.length > 0 && !oldLines.has(normalized);
+    });
 
     // If no new lines, return empty (nothing changed)
     if (newLines.length === 0) {
-      return ''
+      return '';
     }
 
     // Return the new/changed content
-    return newLines.join('\n')
+    return newLines.join('\n');
   }
 
   /**
@@ -1948,14 +2075,14 @@ export class GraphitiService {
   private isNewEntity(entityName: string, oldContent: string | undefined): boolean {
     if (!oldContent) {
       // No old content = all entities are new
-      return true
+      return true;
     }
 
     // Case-insensitive search for entity name in old content
-    const normalizedOld = oldContent.toLowerCase()
-    const normalizedName = entityName.toLowerCase()
+    const normalizedOld = oldContent.toLowerCase();
+    const normalizedName = entityName.toLowerCase();
 
-    return !normalizedOld.includes(normalizedName)
+    return !normalizedOld.includes(normalizedName);
   }
 
   /**
@@ -1968,55 +2095,53 @@ export class GraphitiService {
   private generateTemporalEdgeProps(
     timestamp: Date,
     options?: {
-      fact?: string
-      validAt?: Date
-      invalidAt?: Date
-      isUpdate?: boolean  // If true, don't set created_at
+      fact?: string;
+      validAt?: Date;
+      invalidAt?: Date;
+      isUpdate?: boolean; // If true, don't set created_at
     }
   ): string {
-    const now = new Date()
-    const isoTimestamp = timestamp.toISOString()
-    const isoNow = now.toISOString()
+    const now = new Date();
+    const isoTimestamp = timestamp.toISOString();
+    const isoNow = now.toISOString();
 
     // Build properties array
-    const props: string[] = [
-      `r.updatedAt = '${isoTimestamp}'`,
-    ]
+    const props: string[] = [`r.updatedAt = '${isoTimestamp}'`];
 
     // Transaction time: created_at (only on create, not update)
     if (!options?.isUpdate) {
-      props.push(`r.created_at = COALESCE(r.created_at, '${isoNow}')`)
+      props.push(`r.created_at = COALESCE(r.created_at, '${isoNow}')`);
     }
 
     // Valid time: valid_at defaults to timestamp if not specified
-    const validAt = options?.validAt ?? timestamp
-    props.push(`r.valid_at = COALESCE(r.valid_at, '${validAt.toISOString()}')`)
+    const validAt = options?.validAt ?? timestamp;
+    props.push(`r.valid_at = COALESCE(r.valid_at, '${validAt.toISOString()}')`);
 
     // Valid time: invalid_at only if explicitly specified
     if (options?.invalidAt) {
-      props.push(`r.invalid_at = '${options.invalidAt.toISOString()}'`)
+      props.push(`r.invalid_at = '${options.invalidAt.toISOString()}'`);
     }
 
     // Fact description if provided
     if (options?.fact) {
-      props.push(`r.fact = '${this.escapeString(options.fact)}'`)
+      props.push(`r.fact = '${this.escapeString(options.fact)}'`);
     }
 
-    return props.join(',\n            ')
+    return props.join(',\n            ');
   }
 
   /**
    * Generate a fact description for a MENTIONS edge
    */
   private generateMentionsFact(pageTitle: string, entityName: string, entityType: string): string {
-    return `"${pageTitle}" mentions ${entityType.toLowerCase()} "${entityName}"`
+    return `"${pageTitle}" mentions ${entityType.toLowerCase()} "${entityName}"`;
   }
 
   /**
    * Generate a fact description for a LINKS_TO edge
    */
   private generateLinksToFact(sourceTitle: string, targetTitle: string): string {
-    return `"${sourceTitle}" links to "${targetTitle}"`
+    return `"${sourceTitle}" links to "${targetTitle}"`;
   }
 
   /**
@@ -2041,61 +2166,61 @@ export class GraphitiService {
     maxSentences: number = 2
   ): string {
     // Normalize for case-insensitive search
-    const normalizedContent = content.toLowerCase()
-    const normalizedEntity = entityName.toLowerCase()
+    const normalizedContent = content.toLowerCase();
+    const normalizedEntity = entityName.toLowerCase();
 
     // Find position of entity mention
-    const entityIndex = normalizedContent.indexOf(normalizedEntity)
+    const entityIndex = normalizedContent.indexOf(normalizedEntity);
     if (entityIndex === -1) {
       // Entity not found in content, use fallback
-      return `"${pageTitle}" mentions "${entityName}"`
+      return `"${pageTitle}" mentions "${entityName}"`;
     }
 
     // Split content into sentences (simple approach)
     // Handle common sentence endings: . ! ? and newlines
-    const sentences = content.split(/(?<=[.!?])\s+|\n+/).filter(s => s.trim().length > 0)
+    const sentences = content.split(/(?<=[.!?])\s+|\n+/).filter((s) => s.trim().length > 0);
 
     // Find sentences that contain the entity (case-insensitive)
-    const relevantSentences: string[] = []
+    const relevantSentences: string[] = [];
     for (const sentence of sentences) {
       if (sentence.toLowerCase().includes(normalizedEntity)) {
-        relevantSentences.push(sentence.trim())
-        if (relevantSentences.length >= maxSentences) break
+        relevantSentences.push(sentence.trim());
+        if (relevantSentences.length >= maxSentences) break;
       }
     }
 
     if (relevantSentences.length === 0) {
       // No sentence found, extract context around mention
-      const start = Math.max(0, entityIndex - 50)
-      const end = Math.min(content.length, entityIndex + entityName.length + 100)
-      let context = content.substring(start, end).trim()
+      const start = Math.max(0, entityIndex - 50);
+      const end = Math.min(content.length, entityIndex + entityName.length + 100);
+      let context = content.substring(start, end).trim();
 
       // Clean up partial words at start/end
       if (start > 0) {
-        const firstSpace = context.indexOf(' ')
+        const firstSpace = context.indexOf(' ');
         if (firstSpace > 0 && firstSpace < 20) {
-          context = context.substring(firstSpace + 1)
+          context = context.substring(firstSpace + 1);
         }
       }
       if (end < content.length) {
-        const lastSpace = context.lastIndexOf(' ')
+        const lastSpace = context.lastIndexOf(' ');
         if (lastSpace > context.length - 20) {
-          context = context.substring(0, lastSpace)
+          context = context.substring(0, lastSpace);
         }
       }
 
-      return context || `"${pageTitle}" mentions "${entityName}"`
+      return context || `"${pageTitle}" mentions "${entityName}"`;
     }
 
     // Join relevant sentences
-    const contextFact = relevantSentences.join(' ')
+    const contextFact = relevantSentences.join(' ');
 
     // Truncate if too long (max 500 chars for fact description)
     if (contextFact.length > 500) {
-      return contextFact.substring(0, 497) + '...'
+      return contextFact.substring(0, 497) + '...';
     }
 
-    return contextFact
+    return contextFact;
   }
 
   /**
@@ -2119,7 +2244,7 @@ export class GraphitiService {
     // Build WHERE clause - always exclude expired edges, optionally exclude current page
     const whereClause = excludePageId
       ? `WHERE e.expired_at IS NULL AND p.pageId <> ${excludePageId}`
-      : `WHERE e.expired_at IS NULL`
+      : `WHERE e.expired_at IS NULL`;
 
     const result = await this.query(`
       MATCH (p:WikiPage)-[e:MENTIONS]->(target:${entityType} {name: '${this.escapeString(entityName)}'})
@@ -2130,46 +2255,46 @@ export class GraphitiService {
              e.invalid_at AS invalidAt,
              p.pageId AS pageId,
              p.title AS pageTitle
-    `)
+    `);
 
     const parsed = this.parseResults<{
-      edgeId: number | string
-      fact: string | null
-      validAt: string | null
-      invalidAt: string | null
-      pageId: number
-      pageTitle: string
-    }>(result, ['edgeId', 'fact', 'validAt', 'invalidAt', 'pageId', 'pageTitle'])
+      edgeId: number | string;
+      fact: string | null;
+      validAt: string | null;
+      invalidAt: string | null;
+      pageId: number;
+      pageTitle: string;
+    }>(result, ['edgeId', 'fact', 'validAt', 'invalidAt', 'pageId', 'pageTitle']);
 
     // Fase 17.4: Check if facts are in old generic format and need context extraction
-    const facts: ExistingFact[] = []
+    const facts: ExistingFact[] = [];
     for (const row of parsed) {
-      if (!row.fact) continue
+      if (!row.fact) continue;
 
-      let fact = row.fact
+      let fact = row.fact;
 
       // Detect old generic "mentions" format and extract actual context if needed
-      const isGenericFormat = fact.includes('" mentions ') && fact.includes(' "')
+      const isGenericFormat = fact.includes('" mentions ') && fact.includes(' "');
       if (isGenericFormat && this.prisma) {
         try {
           // Fetch page content from database to extract actual context
           const page = await this.prisma.wikiPage.findUnique({
             where: { id: row.pageId },
-            select: { content: true, title: true }
-          })
+            select: { content: true, title: true },
+          });
           if (page?.content) {
             const extractedContext = this.extractEntityContext(
               page.content,
               entityName,
               page.title ?? row.pageTitle,
               2
-            )
+            );
             // Only use extracted context if it's more meaningful than generic format
             if (!extractedContext.includes('" mentions "') && extractedContext.length > 10) {
-              fact = extractedContext
+              fact = extractedContext;
               console.log(
                 `[GraphitiService] Upgraded fact for "${entityName}" from page ${row.pageId}: "${fact.substring(0, 80)}..."`
-              )
+              );
             }
           }
         } catch (err) {
@@ -2177,7 +2302,7 @@ export class GraphitiService {
           console.warn(
             `[GraphitiService] Failed to extract context for "${entityName}" from page ${row.pageId}:`,
             err instanceof Error ? err.message : 'Unknown error'
-          )
+          );
         }
       }
 
@@ -2186,10 +2311,10 @@ export class GraphitiService {
         fact,
         validAt: row.validAt,
         invalidAt: row.invalidAt,
-      })
+      });
     }
 
-    return facts
+    return facts;
   }
 
   /**
@@ -2206,14 +2331,14 @@ export class GraphitiService {
     contradictedEdgeIds: string[],
     newFactValidAt: Date
   ): Promise<number> {
-    if (contradictedEdgeIds.length === 0) return 0
+    if (contradictedEdgeIds.length === 0) return 0;
 
-    const now = new Date()
-    let invalidatedCount = 0
+    const now = new Date();
+    let invalidatedCount = 0;
 
     for (const edgeId of contradictedEdgeIds) {
       // Extract numeric ID from "edge-{id}" format
-      const numericId = edgeId.replace('edge-', '')
+      const numericId = edgeId.replace('edge-', '');
 
       try {
         // Update the edge to mark it as invalidated
@@ -2223,39 +2348,42 @@ export class GraphitiService {
             AND e.expired_at IS NULL
           SET e.invalid_at = '${newFactValidAt.toISOString()}',
               e.expired_at = '${now.toISOString()}'
-        `)
-        invalidatedCount++
+        `);
+        invalidatedCount++;
       } catch (error) {
         console.warn(
           `[GraphitiService] Failed to invalidate edge ${edgeId}: ` +
-          `${error instanceof Error ? error.message : 'Unknown error'}`
-        )
+            `${error instanceof Error ? error.message : 'Unknown error'}`
+        );
       }
     }
 
-    return invalidatedCount
+    return invalidatedCount;
   }
 
   private escapeString(str: string): string {
-    return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"')
+    return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
   }
 
-  private parseResults<T extends Record<string, unknown>>(result: unknown[], columns: string[]): T[] {
-    if (!Array.isArray(result) || result.length < 2) return []
+  private parseResults<T extends Record<string, unknown>>(
+    result: unknown[],
+    columns: string[]
+  ): T[] {
+    if (!Array.isArray(result) || result.length < 2) return [];
 
     // FalkorDB result format: [headers, [row1, row2, ...], metadata]
     // The rows are nested in a single array at index 1
-    const rowsContainer = result[1]
-    if (!Array.isArray(rowsContainer)) return []
+    const rowsContainer = result[1];
+    if (!Array.isArray(rowsContainer)) return [];
 
-    return rowsContainer.map(row => {
-      if (!Array.isArray(row)) return {} as T
-      const obj: Record<string, unknown> = {}
+    return rowsContainer.map((row) => {
+      if (!Array.isArray(row)) return {} as T;
+      const obj: Record<string, unknown> = {};
       columns.forEach((col, i) => {
-        obj[col] = row[i]
-      })
-      return obj as T
-    })
+        obj[col] = row[i];
+      });
+      return obj as T;
+    });
   }
 
   // ===========================================================================
@@ -2274,9 +2402,9 @@ export class GraphitiService {
    * @param limit - Maximum number of facts to return
    */
   async getFactsAsOf(groupId: string, asOf: Date, limit: number = 100): Promise<TemporalFact[]> {
-    await this.initialize()
+    await this.initialize();
 
-    const asOfIso = asOf.toISOString()
+    const asOfIso = asOf.toISOString();
 
     // Query edges with bi-temporal filtering
     // - expired_at IS NULL: edge has not been replaced (transaction time)
@@ -2303,28 +2431,37 @@ export class GraphitiService {
         e.created_at AS createdAt
       ORDER BY e.valid_at DESC
       LIMIT ${limit}
-    `)
+    `);
 
     const parsed = this.parseResults<{
-      sourceId: number
-      sourceName: string
-      sourceType: string
-      pageId: number
-      targetId: number
-      targetName: string
-      targetType: string
-      fact: string | null
-      edgeType: string
-      validAt: string | null
-      invalidAt: string | null
-      createdAt: string | null
+      sourceId: number;
+      sourceName: string;
+      sourceType: string;
+      pageId: number;
+      targetId: number;
+      targetName: string;
+      targetType: string;
+      fact: string | null;
+      edgeType: string;
+      validAt: string | null;
+      invalidAt: string | null;
+      createdAt: string | null;
     }>(result, [
-      'sourceId', 'sourceName', 'sourceType', 'pageId',
-      'targetId', 'targetName', 'targetType',
-      'fact', 'edgeType', 'validAt', 'invalidAt', 'createdAt'
-    ])
+      'sourceId',
+      'sourceName',
+      'sourceType',
+      'pageId',
+      'targetId',
+      'targetName',
+      'targetType',
+      'fact',
+      'edgeType',
+      'validAt',
+      'invalidAt',
+      'createdAt',
+    ]);
 
-    return parsed.map(r => ({
+    return parsed.map((r) => ({
       sourceId: String(r.sourceId),
       sourceName: r.sourceName,
       sourceType: r.sourceType,
@@ -2337,7 +2474,7 @@ export class GraphitiService {
       invalidAt: r.invalidAt,
       createdAt: r.createdAt ?? new Date().toISOString(),
       pageId: r.pageId,
-    }))
+    }));
   }
 
   /**
@@ -2365,25 +2502,28 @@ export class GraphitiService {
           group_id: groupId,
           as_of: asOf.toISOString(),
           limit,
-        })
+        });
 
-        return response.results.map(r => ({
+        return response.results.map((r) => ({
           nodeId: r.uuid,
           name: r.name,
           type: r.result_type,
           score: r.score,
           pageId: r.metadata?.pageId as number | undefined,
-        }))
+        }));
       } catch (error) {
-        console.warn('[GraphitiService] Python temporal search failed, using FalkorDB fallback:', error)
+        console.warn(
+          '[GraphitiService] Python temporal search failed, using FalkorDB fallback:',
+          error
+        );
       }
     }
 
     // FalkorDB fallback: search with bi-temporal filtering
-    await this.initialize()
+    await this.initialize();
 
-    const asOfIso = asOf.toISOString()
-    const searchTerm = query.toLowerCase().replace(/'/g, "\\'")
+    const asOfIso = asOf.toISOString();
+    const searchTerm = query.toLowerCase().replace(/'/g, "\\'");
 
     // Search for entities matching the query with temporal constraints
     const result = await this.query(`
@@ -2403,15 +2543,15 @@ export class GraphitiService {
         p.pageId AS pageId,
         0.8 AS score
       LIMIT ${limit}
-    `)
+    `);
 
     const parsed = this.parseResults<{
-      nodeId: number
-      name: string
-      type: string
-      pageId: number
-      score: number
-    }>(result, ['nodeId', 'name', 'type', 'pageId', 'score'])
+      nodeId: number;
+      name: string;
+      type: string;
+      pageId: number;
+      score: number;
+    }>(result, ['nodeId', 'name', 'type', 'pageId', 'score']);
 
     // Also search for pages matching the query
     const pagesResult = await this.query(`
@@ -2425,38 +2565,36 @@ export class GraphitiService {
         p.pageId AS pageId,
         0.9 AS score
       LIMIT ${limit}
-    `)
+    `);
 
     const parsedPages = this.parseResults<{
-      nodeId: number
-      name: string
-      type: string
-      pageId: number
-      score: number
-    }>(pagesResult, ['nodeId', 'name', 'type', 'pageId', 'score'])
+      nodeId: number;
+      name: string;
+      type: string;
+      pageId: number;
+      score: number;
+    }>(pagesResult, ['nodeId', 'name', 'type', 'pageId', 'score']);
 
     // Combine and sort by score
     const combined = [
-      ...parsedPages.map(r => ({
+      ...parsedPages.map((r) => ({
         nodeId: `page-${r.nodeId}`,
         name: r.name,
         type: r.type,
         score: r.score,
         pageId: r.pageId,
       })),
-      ...parsed.map(r => ({
+      ...parsed.map((r) => ({
         nodeId: `${r.type.toLowerCase()}-${r.nodeId}`,
         name: r.name,
         type: r.type,
         score: r.score,
         pageId: r.pageId,
       })),
-    ]
+    ];
 
     // Sort by score descending and limit
-    return combined
-      .sort((a, b) => b.score - a.score)
-      .slice(0, limit)
+    return combined.sort((a, b) => b.score - a.score).slice(0, limit);
   }
 
   // ===========================================================================
@@ -2493,7 +2631,7 @@ export class GraphitiService {
           r.matchType = $matchType,
           r.detectedAt = $detectedAt,
           r.resolvedBy = $resolvedBy
-    `
+    `;
 
     await this.query(query, {
       sourceId,
@@ -2502,11 +2640,11 @@ export class GraphitiService {
       matchType,
       resolvedBy,
       detectedAt: new Date().toISOString(),
-    })
+    });
 
     console.log(
       `[GraphitiService] Created IS_DUPLICATE_OF: ${sourceId} -> ${targetId} (${matchType}, conf=${confidence})`
-    )
+    );
   }
 
   /**
@@ -2521,11 +2659,11 @@ export class GraphitiService {
       OPTIONAL MATCH (a)-[r1:IS_DUPLICATE_OF]->(b)
       OPTIONAL MATCH (b)-[r2:IS_DUPLICATE_OF]->(a)
       RETURN count(r1) + count(r2) as count
-    `
+    `;
 
-    const result = await this.query(query, { sourceId, targetId })
-    const parsed = this.parseResults<{ count: number }>(result, ['count'])
-    return (parsed[0]?.count || 0) > 0
+    const result = await this.query(query, { sourceId, targetId });
+    const parsed = this.parseResults<{ count: number }>(result, ['count']);
+    return (parsed[0]?.count || 0) > 0;
   }
 
   /**
@@ -2537,10 +2675,10 @@ export class GraphitiService {
       MATCH (source)-[r:IS_DUPLICATE_OF]->(target)
       WHERE ID(source) = toInteger($sourceId) AND ID(target) = toInteger($targetId)
       DELETE r
-    `
+    `;
 
-    await this.query(query, { sourceId, targetId })
-    console.log(`[GraphitiService] Removed IS_DUPLICATE_OF: ${sourceId} -> ${targetId}`)
+    await this.query(query, { sourceId, targetId });
+    console.log(`[GraphitiService] Removed IS_DUPLICATE_OF: ${sourceId} -> ${targetId}`);
   }
 
   /**
@@ -2551,22 +2689,24 @@ export class GraphitiService {
   async getWorkspaceDuplicates(
     groupId: string,
     nodeTypes: string[] = ['Concept', 'Person', 'Task', 'Project']
-  ): Promise<Array<{
-    sourceUuid: string
-    sourceName: string
-    sourceType: string
-    targetUuid: string
-    targetName: string
-    targetType: string
-    confidence: number
-    matchType: string
-    detectedAt: string | null
-    detectedBy: string | null
-  }>> {
-    await this.initialize()
+  ): Promise<
+    Array<{
+      sourceUuid: string;
+      sourceName: string;
+      sourceType: string;
+      targetUuid: string;
+      targetName: string;
+      targetType: string;
+      confidence: number;
+      matchType: string;
+      detectedAt: string | null;
+      detectedBy: string | null;
+    }>
+  > {
+    await this.initialize();
 
     // Build type filter
-    const typeConditions = nodeTypes.map((t) => `source:${t}`).join(' OR ')
+    const typeConditions = nodeTypes.map((t) => `source:${t}`).join(' OR ');
 
     const query = `
       MATCH (source)-[r:IS_DUPLICATE_OF]->(target)
@@ -2584,30 +2724,39 @@ export class GraphitiService {
         r.detectedAt as detectedAt,
         r.detectedBy as detectedBy
       ORDER BY source.name
-    `
+    `;
 
-    const result = await this.query(query, { groupId })
+    const result = await this.query(query, { groupId });
 
     const parsed = this.parseResults<{
-      sourceUuid: string
-      sourceName: string
-      sourceType: string
-      targetUuid: string
-      targetName: string
-      targetType: string
-      confidence: number
-      matchType: string
-      detectedAt: string | null
-      detectedBy: string | null
+      sourceUuid: string;
+      sourceName: string;
+      sourceType: string;
+      targetUuid: string;
+      targetName: string;
+      targetType: string;
+      confidence: number;
+      matchType: string;
+      detectedAt: string | null;
+      detectedBy: string | null;
     }>(result, [
-      'sourceUuid', 'sourceName', 'sourceType',
-      'targetUuid', 'targetName', 'targetType',
-      'confidence', 'matchType', 'detectedAt', 'detectedBy'
-    ])
+      'sourceUuid',
+      'sourceName',
+      'sourceType',
+      'targetUuid',
+      'targetName',
+      'targetType',
+      'confidence',
+      'matchType',
+      'detectedAt',
+      'detectedBy',
+    ]);
 
-    console.log(`[GraphitiService] getWorkspaceDuplicates: found ${parsed.length} pairs for groupId=${groupId}`)
+    console.log(
+      `[GraphitiService] getWorkspaceDuplicates: found ${parsed.length} pairs for groupId=${groupId}`
+    );
 
-    return parsed
+    return parsed;
   }
 
   /**
@@ -2615,7 +2764,11 @@ export class GraphitiService {
    * Returns both nodes that point TO this node and nodes this node points TO
    * Fase 22: Uses internal node IDs
    */
-  async getDuplicatesOf(nodeId: string): Promise<Array<{ uuid: string; name: string; type: string; direction: 'incoming' | 'outgoing' }>> {
+  async getDuplicatesOf(
+    nodeId: string
+  ): Promise<
+    Array<{ uuid: string; name: string; type: string; direction: 'incoming' | 'outgoing' }>
+  > {
     const query = `
       MATCH (source)-[r:IS_DUPLICATE_OF]->(target)
       WHERE ID(target) = toInteger($nodeId)
@@ -2624,15 +2777,20 @@ export class GraphitiService {
       MATCH (source)-[r:IS_DUPLICATE_OF]->(target)
       WHERE ID(source) = toInteger($nodeId)
       RETURN toString(ID(target)) as uuid, target.name as name, labels(target)[0] as type, 'outgoing' as direction
-    `
+    `;
 
-    const result = await this.query(query, { nodeId }) as Array<{ uuid: string; name: string; type: string; direction: string }>
+    const result = (await this.query(query, { nodeId })) as Array<{
+      uuid: string;
+      name: string;
+      type: string;
+      direction: string;
+    }>;
     return result.map((r) => ({
       uuid: r.uuid,
       name: r.name,
       type: r.type,
       direction: r.direction as 'incoming' | 'outgoing',
-    }))
+    }));
   }
 
   /**
@@ -2640,7 +2798,9 @@ export class GraphitiService {
    * Returns the node that has no outgoing IS_DUPLICATE_OF edge
    * Fase 22: Uses internal node IDs
    */
-  async getCanonicalNode(nodeId: string): Promise<{ uuid: string; name: string; type: string } | null> {
+  async getCanonicalNode(
+    nodeId: string
+  ): Promise<{ uuid: string; name: string; type: string } | null> {
     // Follow IS_DUPLICATE_OF edges until we find a node with no outgoing IS_DUPLICATE_OF
     const query = `
       MATCH (start)
@@ -2650,19 +2810,23 @@ export class GraphitiService {
       RETURN toString(ID(canonical)) as uuid, canonical.name as name, labels(canonical)[0] as type
       ORDER BY length(path) DESC
       LIMIT 1
-    `
+    `;
 
-    const result = await this.query(query, { nodeId }) as Array<{ uuid: string; name: string; type: string }>
-    if (result.length === 0) return null
+    const result = (await this.query(query, { nodeId })) as Array<{
+      uuid: string;
+      name: string;
+      type: string;
+    }>;
+    if (result.length === 0) return null;
 
-    const first = result[0]
-    if (!first) return null
+    const first = result[0];
+    if (!first) return null;
 
     return {
       uuid: first.uuid,
       name: first.name,
       type: first.type,
-    }
+    };
   }
 
   /**
@@ -2672,11 +2836,13 @@ export class GraphitiService {
   async getWorkspaceNodes(
     groupId: string,
     nodeTypes: string[] = ['Concept', 'Person', 'Task', 'Project']
-  ): Promise<Array<{ uuid: string; name: string; type: string; groupId: string; summary?: string }>> {
-    await this.initialize()
+  ): Promise<
+    Array<{ uuid: string; name: string; type: string; groupId: string; summary?: string }>
+  > {
+    await this.initialize();
 
     // Build type filter dynamically
-    const typeConditions = nodeTypes.map((t) => `n:${t}`).join(' OR ')
+    const typeConditions = nodeTypes.map((t) => `n:${t}`).join(' OR ');
 
     // Fase 22: Use FalkorDB internal ID as uuid since entity nodes don't have uuid property yet
     // The ID(n) function returns the internal graph database ID
@@ -2685,19 +2851,24 @@ export class GraphitiService {
       WHERE n.groupId = $groupId
       AND (${typeConditions})
       RETURN toString(ID(n)) as uuid, n.name as name, labels(n)[0] as type, n.groupId as groupId, n.summary as summary
-    `
+    `;
 
-    const result = await this.query(query, { groupId })
+    const result = await this.query(query, { groupId });
 
     // Parse FalkorDB result format using the helper
-    const parsed = this.parseResults<{ uuid: string; name: string; type: string; groupId: string; summary?: string }>(
-      result,
-      ['uuid', 'name', 'type', 'groupId', 'summary']
-    )
+    const parsed = this.parseResults<{
+      uuid: string;
+      name: string;
+      type: string;
+      groupId: string;
+      summary?: string;
+    }>(result, ['uuid', 'name', 'type', 'groupId', 'summary']);
 
-    console.log(`[GraphitiService] getWorkspaceNodes: found ${parsed.length} nodes for groupId=${groupId}`)
+    console.log(
+      `[GraphitiService] getWorkspaceNodes: found ${parsed.length} nodes for groupId=${groupId}`
+    );
 
-    return parsed
+    return parsed;
   }
 
   /**
@@ -2705,7 +2876,10 @@ export class GraphitiService {
    * Then mark the duplicate with IS_DUPLICATE_OF edge
    * Fase 22: Uses internal node IDs
    */
-  async mergeNodes(duplicateId: string, canonicalId: string): Promise<{ edgesTransferred: number }> {
+  async mergeNodes(
+    duplicateId: string,
+    canonicalId: string
+  ): Promise<{ edgesTransferred: number }> {
     // Transfer all incoming edges from duplicate to canonical
     const transferIncoming = `
       MATCH (other)-[r]->(duplicate), (canonical)
@@ -2715,7 +2889,7 @@ export class GraphitiService {
       SET newR = properties(r)
       DELETE r
       RETURN count(r) as count
-    `
+    `;
 
     // Transfer all outgoing edges from duplicate to canonical
     const transferOutgoing = `
@@ -2726,23 +2900,27 @@ export class GraphitiService {
       SET newR = properties(r)
       DELETE r
       RETURN count(r) as count
-    `
+    `;
 
     const [inResult, outResult] = await Promise.all([
-      this.query(transferIncoming, { duplicateId, canonicalId }) as Promise<Array<{ count: number }>>,
-      this.query(transferOutgoing, { duplicateId, canonicalId }) as Promise<Array<{ count: number }>>,
-    ])
+      this.query(transferIncoming, { duplicateId, canonicalId }) as Promise<
+        Array<{ count: number }>
+      >,
+      this.query(transferOutgoing, { duplicateId, canonicalId }) as Promise<
+        Array<{ count: number }>
+      >,
+    ]);
 
-    const edgesTransferred = (inResult[0]?.count || 0) + (outResult[0]?.count || 0)
+    const edgesTransferred = (inResult[0]?.count || 0) + (outResult[0]?.count || 0);
 
     // Create IS_DUPLICATE_OF edge
-    await this.createDuplicateOfEdge(duplicateId, canonicalId, 1.0, 'exact', null)
+    await this.createDuplicateOfEdge(duplicateId, canonicalId, 1.0, 'exact', null);
 
     console.log(
       `[GraphitiService] Merged ${duplicateId} -> ${canonicalId}, transferred ${edgesTransferred} edges`
-    )
+    );
 
-    return { edgesTransferred }
+    return { edgesTransferred };
   }
 
   /**
@@ -2754,10 +2932,10 @@ export class GraphitiService {
     groupId: string,
     limit: number = 10
   ): Promise<Array<{ uuid: string; name: string; type: string; similarity: number }>> {
-    await this.initialize()
+    await this.initialize();
 
     // Normalize name for comparison
-    const normalizedName = name.toLowerCase().trim()
+    const normalizedName = name.toLowerCase().trim();
 
     // Use property matching with CONTAINS for fuzzy match
     // Fase 22: Use FalkorDB internal ID as uuid since entity nodes don't have uuid property yet
@@ -2767,26 +2945,29 @@ export class GraphitiService {
       AND toLower(n.name) CONTAINS $normalizedName
       RETURN toString(ID(n)) as uuid, n.name as name, labels(n)[0] as type
       LIMIT $limit
-    `
+    `;
 
-    const result = await this.query(query, { groupId, normalizedName, limit })
+    const result = await this.query(query, { groupId, normalizedName, limit });
 
     // Parse FalkorDB result format using the helper
-    const parsed = this.parseResults<{ uuid: string; name: string; type: string }>(
-      result,
-      ['uuid', 'name', 'type']
-    )
+    const parsed = this.parseResults<{ uuid: string; name: string; type: string }>(result, [
+      'uuid',
+      'name',
+      'type',
+    ]);
 
     // Calculate simple similarity score based on string length ratio
     return parsed.map((r) => {
-      const similarity = Math.min(normalizedName.length, r.name?.length || 0) / Math.max(normalizedName.length, r.name?.length || 1)
+      const similarity =
+        Math.min(normalizedName.length, r.name?.length || 0) /
+        Math.max(normalizedName.length, r.name?.length || 1);
       return {
         uuid: r.uuid,
         name: r.name,
         type: r.type,
         similarity,
-      }
-    })
+      };
+    });
   }
 
   // ===========================================================================
@@ -2798,10 +2979,10 @@ export class GraphitiService {
    */
   async isConnected(): Promise<boolean> {
     try {
-      await this.redis.ping()
-      return true
+      await this.redis.ping();
+      return true;
     } catch {
-      return false
+      return false;
     }
   }
 
@@ -2809,7 +2990,7 @@ export class GraphitiService {
    * Close the connection
    */
   async close(): Promise<void> {
-    await this.redis.quit()
+    await this.redis.quit();
   }
 }
 
@@ -2817,7 +2998,7 @@ export class GraphitiService {
 // Singleton Instance
 // =============================================================================
 
-let graphitiInstance: GraphitiService | null = null
+let graphitiInstance: GraphitiService | null = null;
 
 /**
  * Get the GraphitiService singleton
@@ -2825,19 +3006,19 @@ let graphitiInstance: GraphitiService | null = null
  */
 export function getGraphitiService(prisma?: PrismaClient): GraphitiService {
   if (!graphitiInstance) {
-    graphitiInstance = new GraphitiService(undefined, prisma)
+    graphitiInstance = new GraphitiService(undefined, prisma);
   } else if (prisma && !graphitiInstance['prisma']) {
     // Set Prisma if not already set
-    graphitiInstance.setPrisma(prisma)
+    graphitiInstance.setPrisma(prisma);
   }
-  return graphitiInstance
+  return graphitiInstance;
 }
 
 /**
  * Reset the singleton (useful for testing)
  */
 export function resetGraphitiService(): void {
-  graphitiInstance = null
+  graphitiInstance = null;
 }
 
-export default GraphitiService
+export default GraphitiService;

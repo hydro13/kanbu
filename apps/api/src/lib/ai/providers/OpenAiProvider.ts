@@ -12,18 +12,18 @@
  * Fase 14.3 - Provider Abstraction Layer
  */
 
-import { OpenAiCompatibleProvider } from './OpenAiCompatibleProvider'
+import { OpenAiCompatibleProvider } from './OpenAiCompatibleProvider';
 import {
   type AiProviderType,
   type AiCapability,
   type ProviderConfig,
   DEFAULT_MODELS,
   DEFAULT_URLS,
-} from './types'
+} from './types';
 
 export class OpenAiProvider extends OpenAiCompatibleProvider {
-  readonly type: AiProviderType = 'OPENAI'
-  readonly capabilities: AiCapability[] = ['EMBEDDING', 'REASONING', 'VISION']
+  readonly type: AiProviderType = 'OPENAI';
+  readonly capabilities: AiCapability[] = ['EMBEDDING', 'REASONING', 'VISION'];
 
   constructor(config: Partial<ProviderConfig> & { apiKey: string }) {
     super({
@@ -36,19 +36,19 @@ export class OpenAiProvider extends OpenAiCompatibleProvider {
       visionModel: config.visionModel,
       maxRequestsPerMinute: config.maxRequestsPerMinute,
       maxTokensPerMinute: config.maxTokensPerMinute,
-    })
+    });
   }
 
   protected getDefaultEmbeddingModel(): string {
-    return DEFAULT_MODELS.OPENAI.embedding
+    return DEFAULT_MODELS.OPENAI.embedding;
   }
 
   protected getDefaultReasoningModel(): string {
-    return DEFAULT_MODELS.OPENAI.reasoning
+    return DEFAULT_MODELS.OPENAI.reasoning;
   }
 
   protected getDefaultVisionModel(): string {
-    return DEFAULT_MODELS.OPENAI.vision
+    return DEFAULT_MODELS.OPENAI.vision;
   }
 }
 
@@ -58,5 +58,5 @@ export class OpenAiProvider extends OpenAiCompatibleProvider {
 export function createOpenAiProvider(
   config: Partial<ProviderConfig> & { apiKey: string }
 ): OpenAiProvider {
-  return new OpenAiProvider(config)
+  return new OpenAiProvider(config);
 }

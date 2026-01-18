@@ -8,7 +8,7 @@
  * - API access
  */
 
-import { definePermissions } from '../registry'
+import { definePermissions } from '../registry';
 
 export const integrationsPermissions = definePermissions('integrations', {
   webhooks: {
@@ -89,7 +89,7 @@ export const integrationsPermissions = definePermissions('integrations', {
       },
     },
   },
-})
+});
 
 export const apiPermissions = definePermissions('api', {
   access: {
@@ -147,4 +147,4 @@ export const apiPermissions = definePermissions('api', {
       },
     },
   },
-})
+});

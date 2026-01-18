@@ -8,44 +8,44 @@
  * Task: USER-01 (Task 247), Task 264 - UX improvements
  */
 
-import { useState } from 'react'
-import { ProfileLayout } from '../../components/profile/ProfileLayout'
-import { Button } from '../../components/ui/button'
-import { trpc } from '../../lib/trpc'
+import { useState } from 'react';
+import { ProfileLayout } from '../../components/profile/ProfileLayout';
+import { Button } from '../../components/ui/button';
+import { trpc } from '../../lib/trpc';
 
 // =============================================================================
 // Component
 // =============================================================================
 
 export function PublicAccess() {
-  const [copied, setCopied] = useState<string | null>(null)
+  const [copied, setCopied] = useState<string | null>(null);
 
-  const utils = trpc.useUtils()
-  const { data: access, isLoading } = trpc.user.getPublicAccess.useQuery()
+  const utils = trpc.useUtils();
+  const { data: access, isLoading } = trpc.user.getPublicAccess.useQuery();
 
   const enableAccess = trpc.user.enablePublicAccess.useMutation({
     onSuccess: () => {
-      utils.user.getPublicAccess.invalidate()
+      utils.user.getPublicAccess.invalidate();
     },
-  })
+  });
 
   const disableAccess = trpc.user.disablePublicAccess.useMutation({
     onSuccess: () => {
-      utils.user.getPublicAccess.invalidate()
+      utils.user.getPublicAccess.invalidate();
     },
-  })
+  });
 
   const regenerateToken = trpc.user.regeneratePublicToken.useMutation({
     onSuccess: () => {
-      utils.user.getPublicAccess.invalidate()
+      utils.user.getPublicAccess.invalidate();
     },
-  })
+  });
 
   const copyToClipboard = async (text: string, id: string) => {
-    await navigator.clipboard.writeText(text)
-    setCopied(id)
-    setTimeout(() => setCopied(null), 2000)
-  }
+    await navigator.clipboard.writeText(text);
+    setCopied(id);
+    setTimeout(() => setCopied(null), 2000);
+  };
 
   if (isLoading) {
     return (
@@ -54,10 +54,10 @@ export function PublicAccess() {
           <p className="text-muted-foreground">Loading...</p>
         </div>
       </ProfileLayout>
-    )
+    );
   }
 
-  const baseUrl = window.location.origin
+  const baseUrl = window.location.origin;
 
   return (
     <ProfileLayout title="Public Access" description="Manage public RSS and iCal feeds">
@@ -66,20 +66,28 @@ export function PublicAccess() {
           <div>
             <h3 className="text-sm font-semibold text-foreground">Public Access</h3>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {access?.enabled ? 'Feeds are accessible via URLs below' : 'Get RSS and iCal feed URLs'}
+              {access?.enabled
+                ? 'Feeds are accessible via URLs below'
+                : 'Get RSS and iCal feed URLs'}
             </p>
           </div>
-          <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-            access?.enabled
-              ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-              : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
-          }`}>
+          <span
+            className={`px-2 py-0.5 rounded text-xs font-medium ${
+              access?.enabled
+                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
+            }`}
+          >
             {access?.enabled ? 'Enabled' : 'Disabled'}
           </span>
         </div>
         <div className="p-4">
           {!access?.enabled ? (
-            <Button size="sm" onClick={() => enableAccess.mutate()} disabled={enableAccess.isPending}>
+            <Button
+              size="sm"
+              onClick={() => enableAccess.mutate()}
+              disabled={enableAccess.isPending}
+            >
               {enableAccess.isPending ? 'Enabling...' : 'Enable Public Access'}
             </Button>
           ) : (
@@ -91,7 +99,14 @@ export function PublicAccess() {
                   <code className="flex-1 px-2 py-1 bg-muted rounded font-mono text-xs truncate">
                     {baseUrl}/api/feed/user/{access.token}
                   </code>
-                  <Button variant="ghost" size="sm" onClick={() => copyToClipboard(`${baseUrl}/api/feed/user/${access.token}`, 'rss')} className="h-7 px-2 text-xs">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() =>
+                      copyToClipboard(`${baseUrl}/api/feed/user/${access.token}`, 'rss')
+                    }
+                    className="h-7 px-2 text-xs"
+                  >
                     {copied === 'rss' ? 'Copied!' : 'Copy'}
                   </Button>
                 </div>
@@ -100,7 +115,14 @@ export function PublicAccess() {
                   <code className="flex-1 px-2 py-1 bg-muted rounded font-mono text-xs truncate">
                     {baseUrl}/api/ical/user/{access.token}
                   </code>
-                  <Button variant="ghost" size="sm" onClick={() => copyToClipboard(`${baseUrl}/api/ical/user/${access.token}`, 'ical')} className="h-7 px-2 text-xs">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() =>
+                      copyToClipboard(`${baseUrl}/api/ical/user/${access.token}`, 'ical')
+                    }
+                    className="h-7 px-2 text-xs"
+                  >
                     {copied === 'ical' ? 'Copied!' : 'Copy'}
                   </Button>
                 </div>
@@ -108,7 +130,12 @@ export function PublicAccess() {
 
               {/* Actions */}
               <div className="flex gap-2 pt-2 border-t border-gray-100 dark:border-gray-700">
-                <Button variant="outline" size="sm" onClick={() => regenerateToken.mutate()} disabled={regenerateToken.isPending}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => regenerateToken.mutate()}
+                  disabled={regenerateToken.isPending}
+                >
                   {regenerateToken.isPending ? '...' : 'Regenerate'}
                 </Button>
                 <Button
@@ -126,7 +153,7 @@ export function PublicAccess() {
         </div>
       </div>
     </ProfileLayout>
-  )
+  );
 }
 
-export default PublicAccess
+export default PublicAccess;

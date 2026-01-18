@@ -14,7 +14,7 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState } from 'react'
+import { useState } from 'react';
 import {
   ArrowRight,
   CheckSquare,
@@ -24,49 +24,49 @@ import {
   RotateCcw,
   XCircle,
   Filter,
-} from 'lucide-react'
-import { getMediaUrl } from '@/lib/trpc'
+} from 'lucide-react';
+import { getMediaUrl } from '@/lib/trpc';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface ActivityUser {
-  id: number
-  username: string
-  name: string | null
-  avatarUrl: string | null
+  id: number;
+  username: string;
+  name: string | null;
+  avatarUrl: string | null;
 }
 
 interface ActivityChange {
-  field: string
-  oldValue: unknown
-  newValue: unknown
+  field: string;
+  oldValue: unknown;
+  newValue: unknown;
 }
 
 interface ActivityData {
-  changes?: ActivityChange[]
+  changes?: ActivityChange[];
   metadata?: {
-    taskTitle?: string
-    taskId?: number
-    subtaskTitle?: string
-  }
+    taskTitle?: string;
+    taskId?: number;
+    subtaskTitle?: string;
+  };
 }
 
 export interface Activity {
-  id: number
-  eventType: string
-  entityType: string
-  entityId: number
-  changes: ActivityData
-  createdAt: string
-  user: ActivityUser | null
+  id: number;
+  eventType: string;
+  entityType: string;
+  entityId: number;
+  changes: ActivityData;
+  createdAt: string;
+  user: ActivityUser | null;
 }
 
 export interface ActivityTabProps {
-  taskId: number
-  activities: Activity[]
-  isLoading: boolean
+  taskId: number;
+  activities: Activity[];
+  isLoading: boolean;
 }
 
 // =============================================================================
@@ -78,88 +78,89 @@ const EVENT_TYPE_FILTERS = [
   { value: 'task', label: 'Task' },
   { value: 'subtask', label: 'Subtasks' },
   { value: 'comment', label: 'Comments' },
-]
+];
 
 // =============================================================================
 // Helper Functions
 // =============================================================================
 
 function formatTimestamp(dateString: string): string {
-  const date = new Date(dateString)
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffMins = Math.floor(diffMs / 60000)
-  const diffHours = Math.floor(diffMs / 3600000)
-  const diffDays = Math.floor(diffMs / 86400000)
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
 
-  if (diffMins < 1) return 'just now'
-  if (diffMins < 60) return `${diffMins}m ago`
-  if (diffHours < 24) return `${diffHours}h ago`
-  if (diffDays < 7) return `${diffDays}d ago`
+  if (diffMins < 1) return 'just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
 
   return date.toLocaleDateString(undefined, {
     month: 'short',
     day: 'numeric',
     year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined,
-  })
+  });
 }
 
 function getEventIcon(eventType: string) {
-  if (eventType.startsWith('task.moved')) return <ArrowRight className="w-4 h-4 text-blue-500" />
-  if (eventType.startsWith('task.updated')) return <Edit className="w-4 h-4 text-yellow-500" />
-  if (eventType.startsWith('task.created')) return <Plus className="w-4 h-4 text-green-500" />
-  if (eventType.startsWith('task.closed')) return <XCircle className="w-4 h-4 text-gray-500" />
-  if (eventType.startsWith('task.reopened')) return <RotateCcw className="w-4 h-4 text-purple-500" />
-  if (eventType.startsWith('subtask')) return <CheckSquare className="w-4 h-4 text-teal-500" />
-  if (eventType.startsWith('comment')) return <MessageSquare className="w-4 h-4 text-blue-400" />
-  return <Edit className="w-4 h-4 text-gray-400" />
+  if (eventType.startsWith('task.moved')) return <ArrowRight className="w-4 h-4 text-blue-500" />;
+  if (eventType.startsWith('task.updated')) return <Edit className="w-4 h-4 text-yellow-500" />;
+  if (eventType.startsWith('task.created')) return <Plus className="w-4 h-4 text-green-500" />;
+  if (eventType.startsWith('task.closed')) return <XCircle className="w-4 h-4 text-gray-500" />;
+  if (eventType.startsWith('task.reopened'))
+    return <RotateCcw className="w-4 h-4 text-purple-500" />;
+  if (eventType.startsWith('subtask')) return <CheckSquare className="w-4 h-4 text-teal-500" />;
+  if (eventType.startsWith('comment')) return <MessageSquare className="w-4 h-4 text-blue-400" />;
+  return <Edit className="w-4 h-4 text-gray-400" />;
 }
 
 function getEventDescription(activity: Activity): string {
-  const { eventType, changes } = activity
-  const metadata = changes?.metadata
+  const { eventType, changes } = activity;
+  const metadata = changes?.metadata;
 
   switch (eventType) {
     case 'task.created':
-      return 'created this task'
+      return 'created this task';
     case 'task.updated': {
-      const changeList = changes?.changes ?? []
-      if (changeList.length === 0) return 'updated this task'
-      const fields = changeList.map((c) => c.field).join(', ')
-      return `updated ${fields}`
+      const changeList = changes?.changes ?? [];
+      if (changeList.length === 0) return 'updated this task';
+      const fields = changeList.map((c) => c.field).join(', ');
+      return `updated ${fields}`;
     }
     case 'task.moved': {
-      const changeList = changes?.changes ?? []
-      const columnChange = changeList.find((c) => c.field === 'column')
+      const changeList = changes?.changes ?? [];
+      const columnChange = changeList.find((c) => c.field === 'column');
       if (columnChange) {
-        return `moved from ${columnChange.oldValue} to ${columnChange.newValue}`
+        return `moved from ${columnChange.oldValue} to ${columnChange.newValue}`;
       }
-      return 'moved this task'
+      return 'moved this task';
     }
     case 'task.closed':
-      return 'closed this task'
+      return 'closed this task';
     case 'task.reopened':
-      return 'reopened this task'
+      return 'reopened this task';
     case 'task.assigned':
-      return 'assigned someone to this task'
+      return 'assigned someone to this task';
     case 'task.unassigned':
-      return 'unassigned someone from this task'
+      return 'unassigned someone from this task';
     case 'subtask.created':
-      return `added subtask "${metadata?.subtaskTitle ?? 'untitled'}"`
+      return `added subtask "${metadata?.subtaskTitle ?? 'untitled'}"`;
     case 'subtask.completed':
-      return 'completed a subtask'
+      return 'completed a subtask';
     case 'subtask.updated':
-      return 'updated a subtask'
+      return 'updated a subtask';
     case 'subtask.deleted':
-      return 'deleted a subtask'
+      return 'deleted a subtask';
     case 'comment.created':
-      return 'added a comment'
+      return 'added a comment';
     case 'comment.updated':
-      return 'edited a comment'
+      return 'edited a comment';
     case 'comment.deleted':
-      return 'deleted a comment'
+      return 'deleted a comment';
     default:
-      return eventType.replace('.', ' ')
+      return eventType.replace('.', ' ');
   }
 }
 
@@ -168,7 +169,7 @@ function getEventDescription(activity: Activity): string {
 // =============================================================================
 
 function ActivityItem({ activity }: { activity: Activity }) {
-  const user = activity.user
+  const user = activity.user;
   const initials = user
     ? (user.name ?? user.username)
         .split(' ')
@@ -176,7 +177,7 @@ function ActivityItem({ activity }: { activity: Activity }) {
         .join('')
         .slice(0, 2)
         .toUpperCase()
-    : '?'
+    : '?';
 
   return (
     <div className="flex gap-3 py-3">
@@ -235,7 +236,7 @@ function ActivityItem({ activity }: { activity: Activity }) {
         )}
       </div>
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -243,11 +244,11 @@ function ActivityItem({ activity }: { activity: Activity }) {
 // =============================================================================
 
 export function ActivityTab({ taskId: _taskId, activities, isLoading }: ActivityTabProps) {
-  const [filter, setFilter] = useState('')
+  const [filter, setFilter] = useState('');
 
   const filteredActivities = filter
     ? activities.filter((a) => a.entityType === filter)
-    : activities
+    : activities;
 
   if (isLoading) {
     return (
@@ -262,7 +263,7 @@ export function ActivityTab({ taskId: _taskId, activities, isLoading }: Activity
           </div>
         ))}
       </div>
-    )
+    );
   }
 
   return (
@@ -300,7 +301,7 @@ export function ActivityTab({ taskId: _taskId, activities, isLoading }: Activity
         </div>
       )}
     </div>
-  )
+  );
 }
 
-export default ActivityTab
+export default ActivityTab;

@@ -14,8 +14,8 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { z } from 'zod'
-import { requireAuth, client, success, error } from '../tools.js'
+import { z } from 'zod';
+import { requireAuth, client, success, error } from '../tools.js';
 
 // =============================================================================
 // Types
@@ -23,114 +23,114 @@ import { requireAuth, client, success, error } from '../tools.js'
 
 interface GroupListResponse {
   groups: Array<{
-    id: number
-    name: string
-    displayName: string
-    description: string | null
-    type: 'SYSTEM' | 'WORKSPACE' | 'WORKSPACE_ADMIN' | 'PROJECT' | 'PROJECT_ADMIN' | 'CUSTOM'
-    workspaceId: number | null
-    projectId: number | null
-    source: string
-    isSystem: boolean
-    isSecurityGroup: boolean
-    isActive: boolean
-    createdAt: string
-    workspace: { id: number; name: string; slug: string } | null
-    project: { id: number; name: string; identifier: string } | null
-    memberCount: number
-    assignmentCount: number
-    canManage: boolean
-  }>
-  total: number
-  limit: number
-  offset: number
-  hasMore: boolean
+    id: number;
+    name: string;
+    displayName: string;
+    description: string | null;
+    type: 'SYSTEM' | 'WORKSPACE' | 'WORKSPACE_ADMIN' | 'PROJECT' | 'PROJECT_ADMIN' | 'CUSTOM';
+    workspaceId: number | null;
+    projectId: number | null;
+    source: string;
+    isSystem: boolean;
+    isSecurityGroup: boolean;
+    isActive: boolean;
+    createdAt: string;
+    workspace: { id: number; name: string; slug: string } | null;
+    project: { id: number; name: string; identifier: string } | null;
+    memberCount: number;
+    assignmentCount: number;
+    canManage: boolean;
+  }>;
+  total: number;
+  limit: number;
+  offset: number;
+  hasMore: boolean;
 }
 
 interface GroupDetailResponse {
-  id: number
-  name: string
-  displayName: string
-  description: string | null
-  type: string
-  workspaceId: number | null
-  projectId: number | null
-  externalId: string | null
-  source: string
-  isSystem: boolean
-  isSecurityGroup: boolean
-  isActive: boolean
-  createdAt: string
-  updatedAt: string
-  workspace: { id: number; name: string; slug: string } | null
-  project: { id: number; name: string; identifier: string } | null
-  memberCount: number
-  assignmentCount: number
-  canManage: boolean
+  id: number;
+  name: string;
+  displayName: string;
+  description: string | null;
+  type: string;
+  workspaceId: number | null;
+  projectId: number | null;
+  externalId: string | null;
+  source: string;
+  isSystem: boolean;
+  isSecurityGroup: boolean;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  workspace: { id: number; name: string; slug: string } | null;
+  project: { id: number; name: string; identifier: string } | null;
+  memberCount: number;
+  assignmentCount: number;
+  canManage: boolean;
 }
 
 interface MyGroupsResponse extends Array<{
-  groupId: number
-  groupName: string
-  groupDisplayName: string
-  groupType: string
-  addedAt: string
-  role: string | null
-}>{}
+  groupId: number;
+  groupName: string;
+  groupDisplayName: string;
+  groupType: string;
+  addedAt: string;
+  role: string | null;
+}> {}
 
 interface GroupMembersResponse {
   members: Array<{
-    id: number
+    id: number;
     user: {
-      id: number
-      username: string
-      name: string
-      email: string
-      avatarUrl: string | null
-      isActive: boolean
-    }
-    addedAt: string
-    addedBy: { id: number; name: string } | null
-    externalSync: boolean
-  }>
-  total: number
-  limit: number
-  offset: number
-  hasMore: boolean
-  canManage: boolean
+      id: number;
+      username: string;
+      name: string;
+      email: string;
+      avatarUrl: string | null;
+      isActive: boolean;
+    };
+    addedAt: string;
+    addedBy: { id: number; name: string } | null;
+    externalSync: boolean;
+  }>;
+  total: number;
+  limit: number;
+  offset: number;
+  hasMore: boolean;
+  canManage: boolean;
 }
 
 interface CreateGroupResponse {
-  id: number
-  name: string
-  displayName: string
-  type: string
-  createdAt: string
+  id: number;
+  name: string;
+  displayName: string;
+  type: string;
+  createdAt: string;
 }
 
 interface UpdateGroupResponse {
-  id: number
-  name: string
-  displayName: string
-  description: string | null
-  isActive: boolean
-  updatedAt: string
+  id: number;
+  name: string;
+  displayName: string;
+  description: string | null;
+  isActive: boolean;
+  updatedAt: string;
 }
 
 interface AddMemberResponse {
-  id: number
-  addedAt: string
+  id: number;
+  addedAt: string;
   user: {
-    id: number
-    username: string
-    name: string
-    email: string
-  }
+    id: number;
+    username: string;
+    name: string;
+    email: string;
+  };
 }
 
 interface SimpleResponse {
-  success: boolean
-  message?: string
+  success: boolean;
+  message?: string;
 }
 
 // =============================================================================
@@ -138,24 +138,26 @@ interface SimpleResponse {
 // =============================================================================
 
 export const ListGroupsSchema = z.object({
-  type: z.enum(['SYSTEM', 'WORKSPACE', 'WORKSPACE_ADMIN', 'PROJECT', 'PROJECT_ADMIN', 'CUSTOM']).optional()
+  type: z
+    .enum(['SYSTEM', 'WORKSPACE', 'WORKSPACE_ADMIN', 'PROJECT', 'PROJECT_ADMIN', 'CUSTOM'])
+    .optional()
     .describe('Filter by group type'),
   workspaceId: z.number().optional().describe('Filter by workspace'),
   projectId: z.number().optional().describe('Filter by project'),
   search: z.string().optional().describe('Search in name, displayName, description'),
   limit: z.number().optional().describe('Max results (default 50, max 100)'),
   offset: z.number().optional().describe('Pagination offset'),
-})
+});
 
 export const GetGroupSchema = z.object({
   groupId: z.number().describe('Group ID'),
-})
+});
 
 export const ListGroupMembersSchema = z.object({
   groupId: z.number().describe('Group ID'),
   limit: z.number().optional().describe('Max results (default 50)'),
   offset: z.number().optional().describe('Pagination offset'),
-})
+});
 
 export const CreateGroupSchema = z.object({
   name: z.string().describe('Group name (unique, 1-255 chars)'),
@@ -163,34 +165,34 @@ export const CreateGroupSchema = z.object({
   description: z.string().optional().describe('Description (max 1000 chars)'),
   workspaceId: z.number().optional().describe('Workspace ID (required for non-Domain-Admins)'),
   projectId: z.number().optional().describe('Project ID'),
-})
+});
 
 export const CreateSecurityGroupSchema = z.object({
   name: z.string().describe('Group name (unique, 1-255 chars)'),
   displayName: z.string().describe('Display name (1-255 chars)'),
   description: z.string().optional().describe('Description (max 1000 chars)'),
-})
+});
 
 export const UpdateGroupSchema = z.object({
   groupId: z.number().describe('Group ID'),
   displayName: z.string().optional().describe('New display name'),
   description: z.string().nullable().optional().describe('New description (or null to clear)'),
   isActive: z.boolean().optional().describe('Active status'),
-})
+});
 
 export const GroupIdSchema = z.object({
   groupId: z.number().describe('Group ID'),
-})
+});
 
 export const AddMemberSchema = z.object({
   groupId: z.number().describe('Group ID'),
   userId: z.number().describe('User ID to add'),
-})
+});
 
 export const RemoveMemberSchema = z.object({
   groupId: z.number().describe('Group ID'),
   userId: z.number().describe('User ID to remove'),
-})
+});
 
 // =============================================================================
 // Tool Definitions
@@ -313,7 +315,8 @@ export const groupToolDefinitions = [
   },
   {
     name: 'kanbu_create_security_group',
-    description: 'Create a new security group (Domain Admins only). Security groups can be assigned to multiple workspaces/projects via ACL.',
+    description:
+      'Create a new security group (Domain Admins only). Security groups can be assigned to multiple workspaces/projects via ACL.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -409,36 +412,36 @@ export const groupToolDefinitions = [
       required: ['groupId', 'userId'],
     },
   },
-]
+];
 
 // =============================================================================
 // Helpers
 // =============================================================================
 
 function formatDate(date: string | null): string {
-  if (!date) return 'Never'
+  if (!date) return 'Never';
   return new Date(date).toLocaleString('nl-NL', {
     dateStyle: 'short',
     timeStyle: 'short',
-  })
+  });
 }
 
 function groupTypeLabel(type: string): string {
   switch (type) {
     case 'SYSTEM':
-      return '[SYSTEM]'
+      return '[SYSTEM]';
     case 'WORKSPACE':
-      return '[WS-Members]'
+      return '[WS-Members]';
     case 'WORKSPACE_ADMIN':
-      return '[WS-Admin]'
+      return '[WS-Admin]';
     case 'PROJECT':
-      return '[Proj-Members]'
+      return '[Proj-Members]';
     case 'PROJECT_ADMIN':
-      return '[Proj-Admin]'
+      return '[Proj-Admin]';
     case 'CUSTOM':
-      return '[Custom]'
+      return '[Custom]';
     default:
-      return `[${type}]`
+      return `[${type}]`;
   }
 }
 
@@ -450,8 +453,8 @@ function groupTypeLabel(type: string): string {
  * List groups
  */
 export async function handleListGroups(args: unknown) {
-  const input = ListGroupsSchema.parse(args)
-  const config = requireAuth()
+  const input = ListGroupsSchema.parse(args);
+  const config = requireAuth();
 
   try {
     const result = await client.call<GroupListResponse>(
@@ -466,51 +469,54 @@ export async function handleListGroups(args: unknown) {
         limit: input.limit ?? 50,
         offset: input.offset ?? 0,
       }
-    )
+    );
 
     if (result.groups.length === 0) {
-      return success('No groups found matching the criteria.')
+      return success('No groups found matching the criteria.');
     }
 
     const lines: string[] = [
       `Groups (${result.offset + 1}-${result.offset + result.groups.length} of ${result.total})`,
       '',
-    ]
+    ];
 
     for (const group of result.groups) {
-      const typeLabel = groupTypeLabel(group.type)
-      const status = group.isActive ? '' : ' [INACTIVE]'
-      const secGroup = group.isSecurityGroup ? ' [SecurityGroup]' : ''
+      const typeLabel = groupTypeLabel(group.type);
+      const status = group.isActive ? '' : ' [INACTIVE]';
+      const secGroup = group.isSecurityGroup ? ' [SecurityGroup]' : '';
 
-      lines.push(`${typeLabel} #${group.id} ${group.displayName}${secGroup}${status}`)
-      lines.push(`   Name: ${group.name}`)
+      lines.push(`${typeLabel} #${group.id} ${group.displayName}${secGroup}${status}`);
+      lines.push(`   Name: ${group.name}`);
 
       if (group.workspace) {
-        lines.push(`   Workspace: ${group.workspace.name}`)
+        lines.push(`   Workspace: ${group.workspace.name}`);
       }
       if (group.project) {
-        lines.push(`   Project: ${group.project.name}`)
+        lines.push(`   Project: ${group.project.name}`);
       }
 
-      lines.push(`   Members: ${group.memberCount} | Can manage: ${group.canManage ? 'Yes' : 'No'}`)
+      lines.push(
+        `   Members: ${group.memberCount} | Can manage: ${group.canManage ? 'Yes' : 'No'}`
+      );
 
       if (group.description) {
-        const desc = group.description.length > 60
-          ? group.description.slice(0, 60) + '...'
-          : group.description
-        lines.push(`   "${desc}"`)
+        const desc =
+          group.description.length > 60
+            ? group.description.slice(0, 60) + '...'
+            : group.description;
+        lines.push(`   "${desc}"`);
       }
-      lines.push('')
+      lines.push('');
     }
 
     if (result.hasMore) {
-      lines.push(`... and ${result.total - result.offset - result.groups.length} more`)
-      lines.push(`Use offset=${result.offset + result.groups.length} to see next page`)
+      lines.push(`... and ${result.total - result.offset - result.groups.length} more`);
+      lines.push(`Use offset=${result.offset + result.groups.length} to see next page`);
     }
 
-    return success(lines.join('\n'))
+    return success(lines.join('\n'));
   } catch (err) {
-    return error(`Failed to list groups: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    return error(`Failed to list groups: ${err instanceof Error ? err.message : 'Unknown error'}`);
   }
 }
 
@@ -518,8 +524,8 @@ export async function handleListGroups(args: unknown) {
  * Get group details
  */
 export async function handleGetGroup(args: unknown) {
-  const input = GetGroupSchema.parse(args)
-  const config = requireAuth()
+  const input = GetGroupSchema.parse(args);
+  const config = requireAuth();
 
   try {
     const group = await client.call<GroupDetailResponse>(
@@ -527,7 +533,7 @@ export async function handleGetGroup(args: unknown) {
       config.token,
       'group.get',
       { groupId: input.groupId }
-    )
+    );
 
     const lines: string[] = [
       `Group: ${group.displayName}`,
@@ -539,44 +545,44 @@ export async function handleGetGroup(args: unknown) {
       `Status: ${group.isActive ? 'Active' : 'Inactive'}`,
       `System group: ${group.isSystem ? 'Yes' : 'No'}`,
       `Security group: ${group.isSecurityGroup ? 'Yes' : 'No'}`,
-    ]
+    ];
 
     if (group.description) {
-      lines.push('')
-      lines.push('== Description ==')
-      lines.push(group.description)
+      lines.push('');
+      lines.push('== Description ==');
+      lines.push(group.description);
     }
 
-    lines.push('')
-    lines.push('== Scope ==')
+    lines.push('');
+    lines.push('== Scope ==');
     if (group.workspace) {
-      lines.push(`Workspace: ${group.workspace.name} (${group.workspace.slug})`)
+      lines.push(`Workspace: ${group.workspace.name} (${group.workspace.slug})`);
     }
     if (group.project) {
-      lines.push(`Project: ${group.project.name} (${group.project.identifier})`)
+      lines.push(`Project: ${group.project.name} (${group.project.identifier})`);
     }
     if (!group.workspace && !group.project) {
-      lines.push('Scope: Global (no workspace/project binding)')
+      lines.push('Scope: Global (no workspace/project binding)');
     }
 
-    lines.push('')
-    lines.push('== Membership ==')
-    lines.push(`Members: ${group.memberCount}`)
-    lines.push(`Role assignments: ${group.assignmentCount}`)
-    lines.push(`Can manage: ${group.canManage ? 'Yes' : 'No'}`)
+    lines.push('');
+    lines.push('== Membership ==');
+    lines.push(`Members: ${group.memberCount}`);
+    lines.push(`Role assignments: ${group.assignmentCount}`);
+    lines.push(`Can manage: ${group.canManage ? 'Yes' : 'No'}`);
 
-    lines.push('')
-    lines.push('== Metadata ==')
-    lines.push(`Source: ${group.source}`)
+    lines.push('');
+    lines.push('== Metadata ==');
+    lines.push(`Source: ${group.source}`);
     if (group.externalId) {
-      lines.push(`External ID: ${group.externalId}`)
+      lines.push(`External ID: ${group.externalId}`);
     }
-    lines.push(`Created: ${formatDate(group.createdAt)}`)
-    lines.push(`Updated: ${formatDate(group.updatedAt)}`)
+    lines.push(`Created: ${formatDate(group.createdAt)}`);
+    lines.push(`Updated: ${formatDate(group.updatedAt)}`);
 
-    return success(lines.join('\n'))
+    return success(lines.join('\n'));
   } catch (err) {
-    return error(`Failed to get group: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    return error(`Failed to get group: ${err instanceof Error ? err.message : 'Unknown error'}`);
   }
 }
 
@@ -584,7 +590,7 @@ export async function handleGetGroup(args: unknown) {
  * Get my groups
  */
 export async function handleMyGroups(_args: unknown) {
-  const config = requireAuth()
+  const config = requireAuth();
 
   try {
     const groups = await client.call<MyGroupsResponse>(
@@ -592,28 +598,27 @@ export async function handleMyGroups(_args: unknown) {
       config.token,
       'group.myGroups',
       {}
-    )
+    );
 
     if (groups.length === 0) {
-      return success('You are not a member of any groups.')
+      return success('You are not a member of any groups.');
     }
 
-    const lines: string[] = [
-      `Your Groups (${groups.length})`,
-      '',
-    ]
+    const lines: string[] = [`Your Groups (${groups.length})`, ''];
 
     for (const group of groups) {
-      const typeLabel = groupTypeLabel(group.groupType)
-      lines.push(`${typeLabel} ${group.groupDisplayName}`)
-      lines.push(`   ID: ${group.groupId} | Name: ${group.groupName}`)
-      lines.push(`   Added: ${formatDate(group.addedAt)}`)
-      lines.push('')
+      const typeLabel = groupTypeLabel(group.groupType);
+      lines.push(`${typeLabel} ${group.groupDisplayName}`);
+      lines.push(`   ID: ${group.groupId} | Name: ${group.groupName}`);
+      lines.push(`   Added: ${formatDate(group.addedAt)}`);
+      lines.push('');
     }
 
-    return success(lines.join('\n'))
+    return success(lines.join('\n'));
   } catch (err) {
-    return error(`Failed to get your groups: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    return error(
+      `Failed to get your groups: ${err instanceof Error ? err.message : 'Unknown error'}`
+    );
   }
 }
 
@@ -621,8 +626,8 @@ export async function handleMyGroups(_args: unknown) {
  * List group members
  */
 export async function handleListGroupMembers(args: unknown) {
-  const input = ListGroupMembersSchema.parse(args)
-  const config = requireAuth()
+  const input = ListGroupMembersSchema.parse(args);
+  const config = requireAuth();
 
   try {
     const result = await client.call<GroupMembersResponse>(
@@ -634,36 +639,39 @@ export async function handleListGroupMembers(args: unknown) {
         limit: input.limit ?? 50,
         offset: input.offset ?? 0,
       }
-    )
+    );
 
     if (result.members.length === 0) {
-      return success('This group has no members.')
+      return success('This group has no members.');
     }
 
-    const lines: string[] = [
-      `Group Members (${result.members.length} of ${result.total})`,
-      '',
-    ]
+    const lines: string[] = [`Group Members (${result.members.length} of ${result.total})`, ''];
 
     for (const member of result.members) {
-      const status = member.user.isActive ? '' : ' [INACTIVE]'
-      const sync = member.externalSync ? ' [External sync]' : ''
+      const status = member.user.isActive ? '' : ' [INACTIVE]';
+      const sync = member.externalSync ? ' [External sync]' : '';
 
-      lines.push(`#${member.user.id} ${member.user.name} (@${member.user.username})${status}${sync}`)
-      lines.push(`   Email: ${member.user.email}`)
-      lines.push(`   Added: ${formatDate(member.addedAt)}${member.addedBy ? ` by ${member.addedBy.name}` : ''}`)
-      lines.push('')
+      lines.push(
+        `#${member.user.id} ${member.user.name} (@${member.user.username})${status}${sync}`
+      );
+      lines.push(`   Email: ${member.user.email}`);
+      lines.push(
+        `   Added: ${formatDate(member.addedAt)}${member.addedBy ? ` by ${member.addedBy.name}` : ''}`
+      );
+      lines.push('');
     }
 
     if (result.hasMore) {
-      lines.push(`... and ${result.total - result.members.length} more`)
+      lines.push(`... and ${result.total - result.members.length} more`);
     }
 
-    lines.push(`Can manage members: ${result.canManage ? 'Yes' : 'No'}`)
+    lines.push(`Can manage members: ${result.canManage ? 'Yes' : 'No'}`);
 
-    return success(lines.join('\n'))
+    return success(lines.join('\n'));
   } catch (err) {
-    return error(`Failed to list group members: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    return error(
+      `Failed to list group members: ${err instanceof Error ? err.message : 'Unknown error'}`
+    );
   }
 }
 
@@ -671,8 +679,8 @@ export async function handleListGroupMembers(args: unknown) {
  * Create a custom group
  */
 export async function handleCreateGroup(args: unknown) {
-  const input = CreateGroupSchema.parse(args)
-  const config = requireAuth()
+  const input = CreateGroupSchema.parse(args);
+  const config = requireAuth();
 
   try {
     const group = await client.call<CreateGroupResponse>(
@@ -687,18 +695,20 @@ export async function handleCreateGroup(args: unknown) {
         workspaceId: input.workspaceId,
         projectId: input.projectId,
       }
-    )
+    );
 
-    return success([
-      `Group created successfully!`,
-      '',
-      `ID: ${group.id}`,
-      `Name: ${group.name}`,
-      `Display Name: ${group.displayName}`,
-      `Type: ${group.type}`,
-    ].join('\n'))
+    return success(
+      [
+        `Group created successfully!`,
+        '',
+        `ID: ${group.id}`,
+        `Name: ${group.name}`,
+        `Display Name: ${group.displayName}`,
+        `Type: ${group.type}`,
+      ].join('\n')
+    );
   } catch (err) {
-    return error(`Failed to create group: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    return error(`Failed to create group: ${err instanceof Error ? err.message : 'Unknown error'}`);
   }
 }
 
@@ -706,8 +716,8 @@ export async function handleCreateGroup(args: unknown) {
  * Create a security group (Domain Admin only)
  */
 export async function handleCreateSecurityGroup(args: unknown) {
-  const input = CreateSecurityGroupSchema.parse(args)
-  const config = requireAuth()
+  const input = CreateSecurityGroupSchema.parse(args);
+  const config = requireAuth();
 
   try {
     const group = await client.call<CreateGroupResponse>(
@@ -719,21 +729,25 @@ export async function handleCreateSecurityGroup(args: unknown) {
         displayName: input.displayName,
         description: input.description,
       }
-    )
+    );
 
-    return success([
-      `Security group created successfully!`,
-      '',
-      `ID: ${group.id}`,
-      `Name: ${group.name}`,
-      `Display Name: ${group.displayName}`,
-      `Type: ${group.type} [Security Group]`,
-      '',
-      'This group has no workspace/project binding and can be assigned',
-      'to multiple resources via ACL entries.',
-    ].join('\n'))
+    return success(
+      [
+        `Security group created successfully!`,
+        '',
+        `ID: ${group.id}`,
+        `Name: ${group.name}`,
+        `Display Name: ${group.displayName}`,
+        `Type: ${group.type} [Security Group]`,
+        '',
+        'This group has no workspace/project binding and can be assigned',
+        'to multiple resources via ACL entries.',
+      ].join('\n')
+    );
   } catch (err) {
-    return error(`Failed to create security group: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    return error(
+      `Failed to create security group: ${err instanceof Error ? err.message : 'Unknown error'}`
+    );
   }
 }
 
@@ -741,8 +755,8 @@ export async function handleCreateSecurityGroup(args: unknown) {
  * Update a group
  */
 export async function handleUpdateGroup(args: unknown) {
-  const input = UpdateGroupSchema.parse(args)
-  const config = requireAuth()
+  const input = UpdateGroupSchema.parse(args);
+  const config = requireAuth();
 
   try {
     const group = await client.call<UpdateGroupResponse>(
@@ -750,18 +764,20 @@ export async function handleUpdateGroup(args: unknown) {
       config.token,
       'group.update',
       input
-    )
+    );
 
-    return success([
-      `Group #${group.id} updated successfully!`,
-      '',
-      `Name: ${group.name}`,
-      `Display Name: ${group.displayName}`,
-      `Description: ${group.description ?? '(none)'}`,
-      `Status: ${group.isActive ? 'Active' : 'Inactive'}`,
-    ].join('\n'))
+    return success(
+      [
+        `Group #${group.id} updated successfully!`,
+        '',
+        `Name: ${group.name}`,
+        `Display Name: ${group.displayName}`,
+        `Description: ${group.description ?? '(none)'}`,
+        `Status: ${group.isActive ? 'Active' : 'Inactive'}`,
+      ].join('\n')
+    );
   } catch (err) {
-    return error(`Failed to update group: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    return error(`Failed to update group: ${err instanceof Error ? err.message : 'Unknown error'}`);
   }
 }
 
@@ -769,20 +785,17 @@ export async function handleUpdateGroup(args: unknown) {
  * Delete a group
  */
 export async function handleDeleteGroup(args: unknown) {
-  const input = GroupIdSchema.parse(args)
-  const config = requireAuth()
+  const input = GroupIdSchema.parse(args);
+  const config = requireAuth();
 
   try {
-    await client.call<SimpleResponse>(
-      config.kanbuUrl,
-      config.token,
-      'group.delete',
-      { groupId: input.groupId }
-    )
+    await client.call<SimpleResponse>(config.kanbuUrl, config.token, 'group.delete', {
+      groupId: input.groupId,
+    });
 
-    return success(`Group #${input.groupId} deleted successfully.`)
+    return success(`Group #${input.groupId} deleted successfully.`);
   } catch (err) {
-    return error(`Failed to delete group: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    return error(`Failed to delete group: ${err instanceof Error ? err.message : 'Unknown error'}`);
   }
 }
 
@@ -790,8 +803,8 @@ export async function handleDeleteGroup(args: unknown) {
  * Add a member to a group
  */
 export async function handleAddGroupMember(args: unknown) {
-  const input = AddMemberSchema.parse(args)
-  const config = requireAuth()
+  const input = AddMemberSchema.parse(args);
+  const config = requireAuth();
 
   try {
     const result = await client.call<AddMemberResponse>(
@@ -799,17 +812,19 @@ export async function handleAddGroupMember(args: unknown) {
       config.token,
       'group.addMember',
       input
-    )
+    );
 
-    return success([
-      `User added to group successfully!`,
-      '',
-      `User: ${result.user.name} (@${result.user.username})`,
-      `Email: ${result.user.email}`,
-      `Added: ${formatDate(result.addedAt)}`,
-    ].join('\n'))
+    return success(
+      [
+        `User added to group successfully!`,
+        '',
+        `User: ${result.user.name} (@${result.user.username})`,
+        `Email: ${result.user.email}`,
+        `Added: ${formatDate(result.addedAt)}`,
+      ].join('\n')
+    );
   } catch (err) {
-    return error(`Failed to add member: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    return error(`Failed to add member: ${err instanceof Error ? err.message : 'Unknown error'}`);
   }
 }
 
@@ -817,19 +832,16 @@ export async function handleAddGroupMember(args: unknown) {
  * Remove a member from a group
  */
 export async function handleRemoveGroupMember(args: unknown) {
-  const input = RemoveMemberSchema.parse(args)
-  const config = requireAuth()
+  const input = RemoveMemberSchema.parse(args);
+  const config = requireAuth();
 
   try {
-    await client.call<SimpleResponse>(
-      config.kanbuUrl,
-      config.token,
-      'group.removeMember',
-      input
-    )
+    await client.call<SimpleResponse>(config.kanbuUrl, config.token, 'group.removeMember', input);
 
-    return success(`User #${input.userId} removed from group #${input.groupId} successfully.`)
+    return success(`User #${input.userId} removed from group #${input.groupId} successfully.`);
   } catch (err) {
-    return error(`Failed to remove member: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    return error(
+      `Failed to remove member: ${err instanceof Error ? err.message : 'Unknown error'}`
+    );
   }
 }

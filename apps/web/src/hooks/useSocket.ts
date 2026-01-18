@@ -51,7 +51,10 @@ export interface UseSocketOptions {
   onCursorMove?: (payload: CursorMovePayload) => void;
   onTypingStart?: (payload: TypingPayload) => void;
   onTypingStop?: (payload: TypingPayload) => void;
-  onPresenceJoined?: (payload: { user: { id: number; username: string }; roomName: string }) => void;
+  onPresenceJoined?: (payload: {
+    user: { id: number; username: string };
+    roomName: string;
+  }) => void;
   onPresenceLeft?: (payload: { user: { id: number; username: string }; roomName: string }) => void;
 }
 
@@ -63,10 +66,15 @@ export interface UseSocketOptions {
 export interface UseSocketReturn {
   socket: ReturnType<typeof useSocketContext>['socket'];
   isConnected: boolean;
-  sendCursorMove: (roomName: string, position: { x: number; y: number; viewportWidth: number; viewportHeight: number }) => void;
+  sendCursorMove: (
+    roomName: string,
+    position: { x: number; y: number; viewportWidth: number; viewportHeight: number }
+  ) => void;
   sendTypingStart: (taskId: number) => void;
   sendTypingStop: (taskId: number) => void;
-  getPresence: (roomName: string) => Promise<{ id: number; username: string; name: string | null }[]>;
+  getPresence: (
+    roomName: string
+  ) => Promise<{ id: number; username: string; name: string | null }[]>;
 }
 
 /**
@@ -256,7 +264,10 @@ export function useSocket(options: UseSocketOptions = {}): UseSocketReturn {
 
   // Send cursor position (throttled by caller)
   const sendCursorMove = useCallback(
-    (roomName: string, position: { x: number; y: number; viewportWidth: number; viewportHeight: number }) => {
+    (
+      roomName: string,
+      position: { x: number; y: number; viewportWidth: number; viewportHeight: number }
+    ) => {
       if (!socket || !isConnected) return;
       socket.emit('cursor:move', { roomName, position });
     },
@@ -289,9 +300,13 @@ export function useSocket(options: UseSocketOptions = {}): UseSocketReturn {
           resolve([]);
           return;
         }
-        socket.emit('presence:request', roomName, (users: { id: number; username: string; name: string | null }[]) => {
-          resolve(users);
-        });
+        socket.emit(
+          'presence:request',
+          roomName,
+          (users: { id: number; username: string; name: string | null }[]) => {
+            resolve(users);
+          }
+        );
       });
     },
     [socket, isConnected]

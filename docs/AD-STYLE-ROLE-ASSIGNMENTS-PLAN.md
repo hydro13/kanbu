@@ -7,6 +7,7 @@ Implement an Active Directory-like permission system with Security Groups, LDAP-
 ## Current Situation
 
 **What already exists:**
+
 - `Group` model with types: SYSTEM, WORKSPACE, WORKSPACE_ADMIN, PROJECT, CUSTOM
 - `GroupMember` for memberships
 - `GroupPermission` for fine-grained permissions (ALLOW/DENY)
@@ -17,6 +18,7 @@ Implement an Active Directory-like permission system with Security Groups, LDAP-
 **The Problem:**
 Groups have `workspaceId`/`projectId` directly on the model → 1:1 binding to objects.
 Cannot:
+
 - Create cross-workspace groups ("All Developers")
 - Assign one group to multiple workspaces
 - True Security Groups like in AD
@@ -24,10 +26,12 @@ Cannot:
 ## Solution: Two-Tier Group System
 
 ### Tier 1: Auto-Groups (existing, unchanged)
+
 - WORKSPACE, WORKSPACE_ADMIN, PROJECT types remain 1:1 bound
 - Automatically created on workspace/project creation
 
 ### Tier 2: Security Groups (new)
+
 - CUSTOM and SYSTEM types without object-binding
 - Get access via **Role Assignments**
 - Can get permissions on multiple objects
@@ -64,12 +68,14 @@ ALTER TABLE groups ADD COLUMN is_security_group BOOLEAN DEFAULT false;
 ## Files to Modify
 
 ### 1. Database Schema
+
 - `packages/shared/prisma/schema.prisma`
   - Add: RoleAssignment model
   - Add: isSecurityGroup field to Group
   - Add: AssignmentRole enum
 
 ### 2. Services
+
 - `apps/api/src/services/roleAssignments.ts` (NEW)
   - assignGroupToWorkspace()
   - assignGroupToProject()
@@ -88,6 +94,7 @@ ALTER TABLE groups ADD COLUMN is_security_group BOOLEAN DEFAULT false;
   - getUserWorkspaces() - include workspaces via role assignments
 
 ### 3. API Procedures
+
 - `apps/api/src/trpc/procedures/roleAssignment.ts` (NEW)
   - assign: Assign group to object with role
   - remove: Remove assignment
@@ -101,6 +108,7 @@ ALTER TABLE groups ADD COLUMN is_security_group BOOLEAN DEFAULT false;
   - getDirectoryTree: Tree structure for UI
 
 ### 4. Frontend
+
 - `apps/web/src/pages/admin/GroupListPage.tsx` (UPDATE)
   - "Create Security Group" button
   - Security Group badge
@@ -141,6 +149,7 @@ Rules:
 ## Implementation Order
 
 ### Sprint 1: Database + Core Services
+
 1. Update Prisma schema with RoleAssignment
 2. Run migration
 3. Create RoleAssignmentService
@@ -148,11 +157,13 @@ Rules:
 5. Update PermissionService for inheritance
 
 ### Sprint 2: API
+
 1. Create roleAssignment router
 2. Extend group router with security group procedures
 3. Testing
 
 ### Sprint 3: Frontend
+
 1. Update GroupListPage
 2. Add GroupEditPage Assignments tab
 3. Create AssignGroupDialog
@@ -178,6 +189,7 @@ Rules:
 **Every feature/action in Kanbu must register itself as a permission node.**
 
 This means:
+
 1. No code may perform an action without a permission check
 2. New features automatically become visible in the AD permission tree
 3. Central place for all permissions - no scattered checks throughout the code
@@ -343,7 +355,7 @@ Each module defines its permissions:
 ```typescript
 // apps/api/src/permissions/definitions/task.permissions.ts
 
-import { definePermissions } from '../registry'
+import { definePermissions } from '../registry';
 
 export const taskPermissions = definePermissions('task', {
   view: {
@@ -367,7 +379,7 @@ export const taskPermissions = definePermissions('task', {
       dueDate: { name: 'Change due date' },
       priority: { name: 'Change priority' },
       assignee: { name: 'Change assignee' },
-    }
+    },
   },
   delete: {
     name: 'Delete tasks',
@@ -380,9 +392,9 @@ export const taskPermissions = definePermissions('task', {
       open: { name: 'Re-open tasks', defaultFor: ['MEMBER', 'MANAGER', 'ADMIN', 'OWNER'] },
       close: { name: 'Close tasks', defaultFor: ['MEMBER', 'MANAGER', 'ADMIN', 'OWNER'] },
       done: { name: 'Mark as done', defaultFor: ['MEMBER', 'MANAGER', 'ADMIN', 'OWNER'] },
-    }
+    },
   },
-})
+});
 ```
 
 ### Automatic Registration
@@ -393,16 +405,16 @@ On server startup, all permissions are loaded and synchronized with the database
 // apps/api/src/permissions/registry.ts
 
 class PermissionRegistry {
-  private permissions: Map<string, PermissionDefinition> = new Map()
+  private permissions: Map<string, PermissionDefinition> = new Map();
 
   register(module: string, definitions: PermissionDefinitions) {
     for (const [key, def] of Object.entries(definitions)) {
-      const path = `${module}.${key}`
-      this.permissions.set(path, { ...def, path })
+      const path = `${module}.${key}`;
+      this.permissions.set(path, { ...def, path });
 
       // Register children recursively
       if (def.children) {
-        this.register(path, def.children)
+        this.register(path, def.children);
       }
     }
   }
@@ -417,7 +429,7 @@ class PermissionRegistry {
   }
 }
 
-export const permissionRegistry = new PermissionRegistry()
+export const permissionRegistry = new PermissionRegistry();
 ```
 
 ### Enforcement Pattern
@@ -430,18 +442,18 @@ Each API procedure uses a guard:
 export const taskRouter = router({
   create: protectedProcedure
     .input(createTaskSchema)
-    .use(requirePermission('task.create'))  // <-- Guard
+    .use(requirePermission('task.create')) // <-- Guard
     .mutation(async ({ ctx, input }) => {
       // Only runs if user has task.create permission
     }),
 
   updateStatus: protectedProcedure
     .input(updateStatusSchema)
-    .use(requirePermission('task.status.close'))  // <-- Specific sub-permission
+    .use(requirePermission('task.status.close')) // <-- Specific sub-permission
     .mutation(async ({ ctx, input }) => {
       // ...
     }),
-})
+});
 ```
 
 ### Frontend Integration
@@ -452,16 +464,16 @@ UI components hide/show based on permissions:
 // CanDo component - shows children only if user has permission
 <CanDo permission="task.create">
   <Button onClick={handleCreate}>New Task</Button>
-</CanDo>
+</CanDo>;
 
 // useCanDo hook - for conditional logic
-const canDelete = useCanDo('task.delete')
+const canDelete = useCanDo('task.delete');
 if (canDelete) {
   // show delete option in menu
 }
 
 // Bulk check
-const permissions = usePermissions(['task.create', 'task.edit', 'task.delete'])
+const permissions = usePermissions(['task.create', 'task.edit', 'task.delete']);
 ```
 
 ### Development Workflow
@@ -516,6 +528,7 @@ model Permission {
 ## Adjusted Implementation Order
 
 ### Sprint 1: Permission Registry Foundation
+
 1. PermissionRegistry class
 2. Permission definitions for core modules (task, project, workspace)
 3. Database sync mechanism
@@ -523,17 +536,20 @@ model Permission {
 5. Migrate existing permission checks
 
 ### Sprint 2: Role Assignments (original plan)
+
 1. RoleAssignment model
 2. Security Groups
 3. Inheritance logic
 
 ### Sprint 3: Frontend
+
 1. CanDo component
 2. useCanDo / usePermissions hooks
 3. Permission tree viewer in admin
 4. Group permission editor with tree
 
 ### Sprint 4: Remaining Modules
+
 1. Define permissions for all features
 2. Add guards to all procedures
 3. Add UI checks everywhere
@@ -682,30 +698,30 @@ Kanbu can function as an LDAP server itself for other applications:
 ```typescript
 // apps/api/src/ldap/server.ts
 
-import { createLDAPServer } from 'ldapjs'
+import { createLDAPServer } from 'ldapjs';
 
-const server = createLDAPServer()
+const server = createLDAPServer();
 
 server.bind('dc=kanbu,dc=local', async (req, res, next) => {
   // Authenticate against Kanbu user database
-})
+});
 
 server.search('dc=kanbu,dc=local', async (req, res, next) => {
   // Return users, groups, permissions as LDAP entries
-})
+});
 ```
 
 ### Mapping Table
 
-| Kanbu Concept | LDAP Equivalent | AD Equivalent |
-|---------------|-----------------|---------------|
-| Domain | DC=kanbu,DC=local | Forest Root |
-| Workspace | OU=Workspaces | Organizational Unit |
-| Project | OU=Projects | Organizational Unit |
-| Security Group | CN=GroupName,OU=Groups | Security Group |
-| User | CN=UserName,OU=Users | User Account |
-| Permission | kanbuPermission attribute | Custom schema extension |
-| Role Assignment | group membership + scope | Group membership |
+| Kanbu Concept   | LDAP Equivalent           | AD Equivalent           |
+| --------------- | ------------------------- | ----------------------- |
+| Domain          | DC=kanbu,DC=local         | Forest Root             |
+| Workspace       | OU=Workspaces             | Organizational Unit     |
+| Project         | OU=Projects               | Organizational Unit     |
+| Security Group  | CN=GroupName,OU=Groups    | Security Group          |
+| User            | CN=UserName,OU=Users      | User Account            |
+| Permission      | kanbuPermission attribute | Custom schema extension |
+| Role Assignment | group membership + scope  | Group membership        |
 
 ### Implementation Priority
 

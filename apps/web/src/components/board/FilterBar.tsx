@@ -14,53 +14,53 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState, useCallback } from 'react'
-import type { FilterState, QuickFilter, SavedFilter } from '@/hooks/useFilters'
+import { useState, useCallback } from 'react';
+import type { FilterState, QuickFilter, SavedFilter } from '@/hooks/useFilters';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface Tag {
-  id: number
-  name: string
-  color: string | null
+  id: number;
+  name: string;
+  color: string | null;
 }
 
 interface User {
-  id: number
-  username: string
-  name: string | null
-  avatarUrl: string | null
+  id: number;
+  username: string;
+  name: string | null;
+  avatarUrl: string | null;
 }
 
 interface Column {
-  id: number
-  title: string
+  id: number;
+  title: string;
 }
 
 interface FilterBarProps {
-  projectId: number
-  filters: FilterState
-  hasActiveFilters: boolean
-  activeFilterCount: number
-  onFilterChange: <K extends keyof FilterState>(key: K, value: FilterState[K]) => void
-  onFiltersChange: (filters: Partial<FilterState>) => void
-  onClearFilters: () => void
-  onToggleTag: (tagId: number) => void
+  projectId: number;
+  filters: FilterState;
+  hasActiveFilters: boolean;
+  activeFilterCount: number;
+  onFilterChange: <K extends keyof FilterState>(key: K, value: FilterState[K]) => void;
+  onFiltersChange: (filters: Partial<FilterState>) => void;
+  onClearFilters: () => void;
+  onToggleTag: (tagId: number) => void;
   // Data for dropdowns
-  tags: Tag[]
-  users: User[]
-  columns: Column[]
-  currentUserId?: number
+  tags: Tag[];
+  users: User[];
+  columns: Column[];
+  currentUserId?: number;
   // Quick filters
-  quickFilters?: QuickFilter[]
-  onApplyQuickFilter?: (filter: QuickFilter) => void
+  quickFilters?: QuickFilter[];
+  onApplyQuickFilter?: (filter: QuickFilter) => void;
   // Saved filters
-  savedFilters?: SavedFilter[]
-  onSaveFilter?: (name: string) => void
-  onLoadFilter?: (filter: SavedFilter) => void
-  onDeleteFilter?: (id: string) => void
+  savedFilters?: SavedFilter[];
+  onSaveFilter?: (name: string) => void;
+  onLoadFilter?: (filter: SavedFilter) => void;
+  onDeleteFilter?: (id: string) => void;
 }
 
 // =============================================================================
@@ -69,50 +69,101 @@ interface FilterBarProps {
 
 function FilterIcon({ className = 'h-5 w-5' }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+      />
     </svg>
-  )
+  );
 }
 
 function CheckIcon({ className = 'h-4 w-4' }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
     </svg>
-  )
+  );
 }
 
 function CloseIcon({ className = 'h-4 w-4' }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
     </svg>
-  )
+  );
 }
 
 function ChevronDownIcon({ className = 'h-4 w-4' }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
     </svg>
-  )
+  );
 }
 
 function BookmarkIcon({ className = 'h-4 w-4' }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+      />
     </svg>
-  )
+  );
 }
 
 function TrashIcon({ className = 'h-4 w-4' }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+      />
     </svg>
-  )
+  );
 }
 
 // =============================================================================
@@ -124,18 +175,18 @@ const priorityOptions = [
   { value: 1, label: 'Medium', color: 'bg-blue-500' },
   { value: 2, label: 'High', color: 'bg-orange-500' },
   { value: 3, label: 'Urgent', color: 'bg-red-500' },
-]
+];
 
 // =============================================================================
 // Dropdown Components
 // =============================================================================
 
 interface DropdownProps {
-  trigger: React.ReactNode
-  children: React.ReactNode
-  isOpen: boolean
-  onClose: () => void
-  align?: 'left' | 'right'
+  trigger: React.ReactNode;
+  children: React.ReactNode;
+  isOpen: boolean;
+  onClose: () => void;
+  align?: 'left' | 'right';
 }
 
 function Dropdown({ trigger, children, isOpen, onClose, align = 'left' }: DropdownProps) {
@@ -155,7 +206,7 @@ function Dropdown({ trigger, children, isOpen, onClose, align = 'left' }: Dropdo
         </>
       )}
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -163,11 +214,11 @@ function Dropdown({ trigger, children, isOpen, onClose, align = 'left' }: Dropdo
 // =============================================================================
 
 interface FilterButtonProps {
-  label: string
-  isActive: boolean
-  onClick: () => void
-  onClear?: () => void
-  children?: React.ReactNode
+  label: string;
+  isActive: boolean;
+  onClick: () => void;
+  onClear?: () => void;
+  children?: React.ReactNode;
 }
 
 function FilterButton({ label, isActive, onClick, onClear, children }: FilterButtonProps) {
@@ -188,8 +239,8 @@ function FilterButton({ label, isActive, onClick, onClear, children }: FilterBut
       {isActive && onClear && (
         <button
           onClick={(e) => {
-            e.stopPropagation()
-            onClear()
+            e.stopPropagation();
+            onClear();
           }}
           className="px-1.5 py-1.5 border-y border-r border-blue-300 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-r-md dark:border-blue-700 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50"
         >
@@ -200,7 +251,7 @@ function FilterButton({ label, isActive, onClick, onClear, children }: FilterBut
         <span className="w-0" /> // Placeholder for consistent spacing
       )}
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -226,35 +277,35 @@ export function FilterBar({
   onDeleteFilter,
 }: FilterBarProps) {
   // Dropdown states
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null)
-  const [saveFilterName, setSaveFilterName] = useState('')
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [saveFilterName, setSaveFilterName] = useState('');
 
-  const closeDropdown = useCallback(() => setOpenDropdown(null), [])
+  const closeDropdown = useCallback(() => setOpenDropdown(null), []);
   const toggleDropdown = useCallback((name: string) => {
-    setOpenDropdown((prev) => (prev === name ? null : name))
-  }, [])
+    setOpenDropdown((prev) => (prev === name ? null : name));
+  }, []);
 
   // Handle quick filter with current user
   const handleQuickFilter = useCallback(
     (qf: QuickFilter) => {
       if (qf.id === 'my-tasks' && currentUserId) {
-        onFilterChange('assigneeId', currentUserId)
+        onFilterChange('assigneeId', currentUserId);
       } else if (onApplyQuickFilter) {
-        onApplyQuickFilter(qf)
+        onApplyQuickFilter(qf);
       }
-      closeDropdown()
+      closeDropdown();
     },
     [currentUserId, onFilterChange, onApplyQuickFilter, closeDropdown]
-  )
+  );
 
   // Handle save filter
   const handleSaveFilter = useCallback(() => {
     if (saveFilterName.trim() && onSaveFilter) {
-      onSaveFilter(saveFilterName.trim())
-      setSaveFilterName('')
-      closeDropdown()
+      onSaveFilter(saveFilterName.trim());
+      setSaveFilterName('');
+      closeDropdown();
     }
-  }, [saveFilterName, onSaveFilter, closeDropdown])
+  }, [saveFilterName, onSaveFilter, closeDropdown]);
 
   return (
     <div className="flex items-center gap-2 px-4 py-2 bg-muted border-b border-gray-200 dark:border-gray-700 overflow-x-auto">
@@ -324,7 +375,7 @@ export function FilterBar({
             </div>
           ) : (
             tags.map((tag) => {
-              const isSelected = filters.tagIds.includes(tag.id)
+              const isSelected = filters.tagIds.includes(tag.id);
               return (
                 <button
                   key={tag.id}
@@ -338,11 +389,9 @@ export function FilterBar({
                   <span className="flex-1 text-left text-gray-700 dark:text-gray-300">
                     {tag.name}
                   </span>
-                  {isSelected && (
-                    <CheckIcon className="text-blue-600 dark:text-blue-400" />
-                  )}
+                  {isSelected && <CheckIcon className="text-blue-600 dark:text-blue-400" />}
                 </button>
-              )
+              );
             })
           )}
         </div>
@@ -372,8 +421,8 @@ export function FilterBar({
             <button
               key={priority.value}
               onClick={() => {
-                onFilterChange('priority', priority.value)
-                closeDropdown()
+                onFilterChange('priority', priority.value);
+                closeDropdown();
               }}
               className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent"
             >
@@ -413,8 +462,8 @@ export function FilterBar({
             <>
               <button
                 onClick={() => {
-                  onFilterChange('assigneeId', currentUserId)
-                  closeDropdown()
+                  onFilterChange('assigneeId', currentUserId);
+                  closeDropdown();
                 }}
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent"
               >
@@ -432,8 +481,8 @@ export function FilterBar({
             <button
               key={user.id}
               onClick={() => {
-                onFilterChange('assigneeId', user.id)
-                closeDropdown()
+                onFilterChange('assigneeId', user.id);
+                closeDropdown();
               }}
               className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent"
             >
@@ -484,8 +533,8 @@ export function FilterBar({
               <button
                 key={column.id}
                 onClick={() => {
-                  onFilterChange('columnId', column.id)
-                  closeDropdown()
+                  onFilterChange('columnId', column.id);
+                  closeDropdown();
                 }}
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-accent"
               >
@@ -511,8 +560,8 @@ export function FilterBar({
             isActive={!!filters.dueDateFrom || !!filters.dueDateTo}
             onClick={() => toggleDropdown('dueDate')}
             onClear={() => {
-              onFilterChange('dueDateFrom', null)
-              onFilterChange('dueDateTo', null)
+              onFilterChange('dueDateFrom', null);
+              onFilterChange('dueDateTo', null);
             }}
           />
         }
@@ -544,9 +593,9 @@ export function FilterBar({
           <div className="flex gap-1 flex-wrap">
             <button
               onClick={() => {
-                const today = new Date().toISOString().slice(0, 10)
-                onFilterChange('dueDateFrom', today)
-                onFilterChange('dueDateTo', today)
+                const today = new Date().toISOString().slice(0, 10);
+                onFilterChange('dueDateFrom', today);
+                onFilterChange('dueDateTo', today);
               }}
               className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded dark:bg-gray-700 dark:hover:bg-gray-600"
             >
@@ -554,11 +603,11 @@ export function FilterBar({
             </button>
             <button
               onClick={() => {
-                const today = new Date()
-                const weekEnd = new Date(today)
-                weekEnd.setDate(today.getDate() + 7)
-                onFilterChange('dueDateFrom', today.toISOString().slice(0, 10))
-                onFilterChange('dueDateTo', weekEnd.toISOString().slice(0, 10))
+                const today = new Date();
+                const weekEnd = new Date(today);
+                weekEnd.setDate(today.getDate() + 7);
+                onFilterChange('dueDateFrom', today.toISOString().slice(0, 10));
+                onFilterChange('dueDateTo', weekEnd.toISOString().slice(0, 10));
               }}
               className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded dark:bg-gray-700 dark:hover:bg-gray-600"
             >
@@ -566,9 +615,9 @@ export function FilterBar({
             </button>
             <button
               onClick={() => {
-                const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10)
-                onFilterChange('dueDateFrom', null)
-                onFilterChange('dueDateTo', yesterday)
+                const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+                onFilterChange('dueDateFrom', null);
+                onFilterChange('dueDateTo', yesterday);
               }}
               className="px-2 py-1 text-xs bg-red-100 hover:bg-red-200 text-red-700 rounded dark:bg-red-900/30 dark:hover:bg-red-900/50 dark:text-red-300"
             >
@@ -606,9 +655,7 @@ export function FilterBar({
             >
               <BookmarkIcon className="h-4 w-4" />
               Saved
-              {savedFilters.length > 0 && (
-                <span className="text-xs">({savedFilters.length})</span>
-              )}
+              {savedFilters.length > 0 && <span className="text-xs">({savedFilters.length})</span>}
             </button>
           }
         >
@@ -645,14 +692,11 @@ export function FilterBar({
               </div>
             ) : (
               savedFilters.map((sf) => (
-                <div
-                  key={sf.id}
-                  className="flex items-center gap-1 px-3 py-2 hover:bg-accent"
-                >
+                <div key={sf.id} className="flex items-center gap-1 px-3 py-2 hover:bg-accent">
                   <button
                     onClick={() => {
-                      onLoadFilter?.(sf)
-                      closeDropdown()
+                      onLoadFilter?.(sf);
+                      closeDropdown();
                     }}
                     className="flex-1 text-left text-sm text-gray-700 dark:text-gray-300"
                   >
@@ -682,7 +726,7 @@ export function FilterBar({
         </button>
       )}
     </div>
-  )
+  );
 }
 
-export default FilterBar
+export default FilterBar;

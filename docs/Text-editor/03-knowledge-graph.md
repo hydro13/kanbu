@@ -58,7 +58,7 @@ Interactive visualization of all pages and their connections:
 
 ```typescript
 interface GraphNode {
-  id: string;                      // "page:123" or "task:456"
+  id: string; // "page:123" or "task:456"
   type: 'page' | 'task' | 'user' | 'tag' | 'workspace' | 'project';
   label: string;
   metadata: {
@@ -77,23 +77,23 @@ interface GraphNode {
 ```typescript
 interface GraphEdge {
   id: string;
-  source: string;                  // Node ID
-  target: string;                  // Node ID
+  source: string; // Node ID
+  target: string; // Node ID
   type: EdgeType;
-  weight: number;                  // Strength of connection
+  weight: number; // Strength of connection
   metadata: {
     createdAt: Date;
-    context?: string;              // Where the link appears
+    context?: string; // Where the link appears
   };
 }
 
 type EdgeType =
-  | 'wiki-link'        // [[Page]] reference
-  | 'task-link'        // #TASK-123 reference
-  | 'mention'          // @user mention
-  | 'tag'              // Shared tag
-  | 'semantic'         // AI-detected similarity
-  | 'hierarchy'        // Parent/child relationship
+  | 'wiki-link' // [[Page]] reference
+  | 'task-link' // #TASK-123 reference
+  | 'mention' // @user mention
+  | 'tag' // Shared tag
+  | 'semantic' // AI-detected similarity
+  | 'hierarchy'; // Parent/child relationship
 ```
 
 ### Graph Storage
@@ -167,17 +167,13 @@ User Query
 ```typescript
 interface EmbeddingPipeline {
   // 1. Content preparation
-  prepareContent(page: WikiPage): string[];  // Split into chunks
+  prepareContent(page: WikiPage): string[]; // Split into chunks
 
   // 2. Generate embeddings
   generateEmbeddings(chunks: string[]): Promise<number[][]>;
 
   // 3. Store in vector DB
-  storeEmbeddings(
-    pageId: number,
-    chunks: string[],
-    embeddings: number[][]
-  ): Promise<void>;
+  storeEmbeddings(pageId: number, chunks: string[], embeddings: number[][]): Promise<void>;
 
   // 4. Search
   search(query: string, options: SearchOptions): Promise<SearchResult[]>;
@@ -188,7 +184,7 @@ interface SearchOptions {
   projectId?: number;
   tags?: string[];
   limit?: number;
-  threshold?: number;              // Similarity threshold
+  threshold?: number; // Similarity threshold
 }
 
 interface SearchResult {
@@ -196,7 +192,7 @@ interface SearchResult {
   page: WikiPage;
   chunk: string;
   score: number;
-  highlight: string;               // Highlighted match
+  highlight: string; // Highlighted match
 }
 ```
 
@@ -204,9 +200,9 @@ interface SearchResult {
 
 ```typescript
 const CHUNK_CONFIG = {
-  maxTokens: 512,                  // Max tokens per chunk
-  overlap: 50,                     // Overlap between chunks
-  separators: ['\n\n', '\n', '. ', ' '],  // Split priorities
+  maxTokens: 512, // Max tokens per chunk
+  overlap: 50, // Overlap between chunks
+  separators: ['\n\n', '\n', '. ', ' '], // Split priorities
 };
 
 function chunkContent(content: string): string[] {
@@ -256,7 +252,7 @@ When you type, the system suggests relevant links:
 ```typescript
 interface LinkSuggestion {
   page: WikiPage;
-  relevance: number;               // 0-1 score
+  relevance: number; // 0-1 score
   reason: 'semantic' | 'tag' | 'recent' | 'popular';
   preview: string;
 }
@@ -281,11 +277,7 @@ async function suggestLinks(
   const recentMatches = await getRecentPages(context.projectId);
 
   // 5. Combine and rank
-  return rankSuggestions([
-    ...semanticMatches,
-    ...tagMatches,
-    ...recentMatches,
-  ]);
+  return rankSuggestions([...semanticMatches, ...tagMatches, ...recentMatches]);
 }
 ```
 
@@ -303,8 +295,8 @@ async function suggestTags(content: string): Promise<TagSuggestion[]> {
 
   // 3. Suggest new tags if needed
   const newTagSuggestions = extractedTags
-    .filter(t => !existingTags.some(e => e.name === t))
-    .map(t => ({ name: t, isNew: true }));
+    .filter((t) => !existingTags.some((e) => e.name === t))
+    .map((t) => ({ name: t, isNew: true }));
 
   return [...existingTags, ...newTagSuggestions];
 }
@@ -316,9 +308,9 @@ Show related content at the bottom of each page:
 
 ```typescript
 interface RelatedContent {
-  pages: WikiPage[];               // Similar wiki pages
-  tasks: Task[];                   // Related tasks
-  discussions: Comment[];          // Related discussions
+  pages: WikiPage[]; // Similar wiki pages
+  tasks: Task[]; // Related tasks
+  discussions: Comment[]; // Related discussions
 }
 
 async function findRelatedContent(pageId: number): Promise<RelatedContent> {
@@ -354,15 +346,13 @@ Identify missing documentation:
 
 ```typescript
 interface KnowledgeGap {
-  topic: string;                   // What's missing
-  evidence: string[];              // Why we think it's missing
-  suggestedTitle: string;          // Suggested page title
-  relatedPages: WikiPage[];        // Related existing pages
+  topic: string; // What's missing
+  evidence: string[]; // Why we think it's missing
+  suggestedTitle: string; // Suggested page title
+  relatedPages: WikiPage[]; // Related existing pages
 }
 
-async function detectKnowledgeGaps(
-  workspaceId: number
-): Promise<KnowledgeGap[]> {
+async function detectKnowledgeGaps(workspaceId: number): Promise<KnowledgeGap[]> {
   // 1. Find broken links (pages that don't exist)
   const brokenLinks = await findBrokenLinks(workspaceId);
 
@@ -493,10 +483,7 @@ function GraphVisualization({
 ### 1. Question Answering
 
 ```typescript
-async function answerQuestion(
-  question: string,
-  context: WikiContext
-): Promise<Answer> {
+async function answerQuestion(question: string, context: WikiContext): Promise<Answer> {
   // 1. Search for relevant content
   const relevantChunks = await vectorSearch(question, {
     workspaceId: context.workspaceId,
@@ -504,9 +491,7 @@ async function answerQuestion(
   });
 
   // 2. Build context
-  const contextText = relevantChunks
-    .map(c => `[${c.page.title}]: ${c.chunk}`)
-    .join('\n\n');
+  const contextText = relevantChunks.map((c) => `[${c.page.title}]: ${c.chunk}`).join('\n\n');
 
   // 3. Generate answer with LLM
   const answer = await llm.complete({
@@ -523,7 +508,7 @@ Answer:`,
   // 4. Return with sources
   return {
     answer: answer.text,
-    sources: relevantChunks.map(c => ({
+    sources: relevantChunks.map((c) => ({
       page: c.page,
       relevantText: c.chunk,
     })),
@@ -575,21 +560,25 @@ interface WritingAssistant {
 ## Implementation Timeline
 
 ### Phase 1: Basic Graph
+
 - Link extraction and storage
 - Simple backlinks display
 - Basic graph visualization
 
 ### Phase 2: RAG Foundation
+
 - Embedding pipeline setup
 - Qdrant integration
 - Semantic search
 
 ### Phase 3: Smart Features
+
 - Link suggestions
 - Auto-tagging
 - Related content
 
 ### Phase 4: Advanced AI
+
 - Question answering
 - Writing assistance
 - Knowledge gap detection
@@ -603,19 +592,19 @@ interface WritingAssistant {
 const cacheConfig = {
   // L1: In-memory (per request)
   memory: {
-    ttl: 60,                       // 1 minute
-    maxSize: 1000,                 // Max entries
+    ttl: 60, // 1 minute
+    maxSize: 1000, // Max entries
   },
 
   // L2: Redis (shared)
   redis: {
-    ttl: 300,                      // 5 minutes
+    ttl: 300, // 5 minutes
     prefix: 'wiki:',
   },
 
   // L3: CDN (static content)
   cdn: {
-    ttl: 3600,                     // 1 hour
+    ttl: 3600, // 1 hour
     paths: ['/api/wiki/pages/*/rendered'],
   },
 };
@@ -631,9 +620,7 @@ async function updateEmbeddingsJob() {
 
   // 2. Process in batches
   for (const batch of chunk(updatedPages, 10)) {
-    await Promise.all(batch.map(page =>
-      embeddingPipeline.processPage(page)
-    ));
+    await Promise.all(batch.map((page) => embeddingPipeline.processPage(page)));
   }
 
   // 3. Clean up old embeddings

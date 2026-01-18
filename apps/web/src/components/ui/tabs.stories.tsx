@@ -10,13 +10,13 @@
  * ===================================================================
  */
 
-import type { Meta, StoryObj } from '@storybook/react-vite'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from './tabs'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './card'
-import { Button } from './button'
-import { Input } from './input'
-import { Label } from './label'
-import { User, Settings, Bell, CreditCard, FileText } from 'lucide-react'
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './tabs';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './card';
+import { Button } from './button';
+import { Input } from './input';
+import { Label } from './label';
+import { User, Settings, Bell, CreditCard, FileText } from 'lucide-react';
 
 const meta: Meta<typeof Tabs> = {
   title: 'UI/Tabs',
@@ -30,10 +30,10 @@ const meta: Meta<typeof Tabs> = {
       },
     },
   },
-}
+};
 
-export default meta
-type Story = StoryObj<typeof Tabs>
+export default meta;
+type Story = StoryObj<typeof Tabs>;
 
 // =============================================================================
 // Basic Variants
@@ -58,7 +58,7 @@ export const Default: Story = {
       </TabsContent>
     </Tabs>
   ),
-}
+};
 
 export const WithIcons: Story = {
   render: () => (
@@ -95,7 +95,7 @@ export const WithIcons: Story = {
       },
     },
   },
-}
+};
 
 export const IconsOnly: Story = {
   render: () => (
@@ -132,7 +132,7 @@ export const IconsOnly: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // States
@@ -166,7 +166,7 @@ export const WithDisabled: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // With Cards
@@ -213,9 +213,7 @@ export const WithCards: Story = {
             <CardDescription>Generate and download reports</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Export your data in various formats.
-            </p>
+            <p className="text-sm text-muted-foreground">Export your data in various formats.</p>
           </CardContent>
         </Card>
       </TabsContent>
@@ -228,7 +226,7 @@ export const WithCards: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Full Width
@@ -260,9 +258,7 @@ export const FullWidth: Story = {
             <CardTitle>Active Tasks</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Tasks that are currently in progress.
-            </p>
+            <p className="text-sm text-muted-foreground">Tasks that are currently in progress.</p>
           </CardContent>
         </Card>
       </TabsContent>
@@ -272,9 +268,7 @@ export const FullWidth: Story = {
             <CardTitle>Completed Tasks</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Tasks that have been finished.
-            </p>
+            <p className="text-sm text-muted-foreground">Tasks that have been finished.</p>
           </CardContent>
         </Card>
       </TabsContent>
@@ -287,7 +281,7 @@ export const FullWidth: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Complex Content
@@ -305,9 +299,7 @@ export const AccountSettings: Story = {
         <Card>
           <CardHeader>
             <CardTitle>General Settings</CardTitle>
-            <CardDescription>
-              Manage your account information and preferences
-            </CardDescription>
+            <CardDescription>Manage your account information and preferences</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -330,9 +322,7 @@ export const AccountSettings: Story = {
         <Card>
           <CardHeader>
             <CardTitle>Security Settings</CardTitle>
-            <CardDescription>
-              Manage your password and security preferences
-            </CardDescription>
+            <CardDescription>Manage your password and security preferences</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
@@ -355,9 +345,7 @@ export const AccountSettings: Story = {
         <Card>
           <CardHeader>
             <CardTitle>Billing Information</CardTitle>
-            <CardDescription>
-              Manage your payment method and billing details
-            </CardDescription>
+            <CardDescription>Manage your payment method and billing details</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="rounded-lg border p-4">
@@ -387,7 +375,7 @@ export const AccountSettings: Story = {
       },
     },
   },
-}
+};
 
 export const Documentation: Story = {
   render: () => (
@@ -405,14 +393,13 @@ export const Documentation: Story = {
         <div>
           <h3 className="text-lg font-semibold mb-2">Introduction</h3>
           <p className="text-sm text-muted-foreground">
-            Welcome to our component library. This documentation will help you get
-            started with building beautiful, accessible user interfaces.
+            Welcome to our component library. This documentation will help you get started with
+            building beautiful, accessible user interfaces.
           </p>
         </div>
         <div className="bg-muted rounded-lg p-4">
           <p className="text-sm">
-            Get started by installing the package and importing the components you
-            need.
+            Get started by installing the package and importing the components you need.
           </p>
         </div>
       </TabsContent>
@@ -422,9 +409,7 @@ export const Documentation: Story = {
           <p className="text-sm text-muted-foreground mb-4">
             Install the package using your preferred package manager.
           </p>
-          <div className="bg-muted rounded-lg p-4 font-mono text-sm">
-            npm install @company/ui
-          </div>
+          <div className="bg-muted rounded-lg p-4 font-mono text-sm">npm install @company/ui</div>
         </div>
       </TabsContent>
       <TabsContent value="usage" className="space-y-4">
@@ -455,7 +440,7 @@ export const Documentation: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Nested Tabs
@@ -511,9 +496,7 @@ export const NestedTabs: Story = {
             <CardDescription>Configure your preferences</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">
-              General settings go here.
-            </p>
+            <p className="text-sm text-muted-foreground">General settings go here.</p>
           </CardContent>
         </Card>
       </TabsContent>
@@ -526,4 +509,4 @@ export const NestedTabs: Story = {
       },
     },
   },
-}
+};

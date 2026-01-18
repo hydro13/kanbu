@@ -104,18 +104,18 @@ apps/web/src/
 
 ### 3.2 Implemented Token Categories
 
-| Category | Tokens | Description |
-|----------|--------|-------------|
+| Category         | Tokens        | Description                                                              |
+| ---------------- | ------------- | ------------------------------------------------------------------------ |
 | **Color Scales** | 10 × 19 = 190 | Gray, Blue, Orange, Red, Green, Amber, Teal, Violet, Rose, Cyan (50-950) |
-| **Typography** | 20+ | Font sizes, weights, line heights, letter spacing |
-| **Spacing** | 20+ | Space scale (0-20), component padding |
-| **Radius** | 10 | none, sm, default, md, lg, xl, 2xl, 3xl, full |
-| **Shadows** | 10 | xs, sm, default, md, lg, xl, 2xl, inner, none |
-| **Animation** | 14 | 8 durations + 6 easing functions |
-| **Z-Index** | 11 | base(0) → max(9999) |
-| **Focus** | 4 | ring-width, ring-offset, ring-color, ring-style |
-| **State Colors** | 12 | success, warning, error, info (+ foreground + muted) |
-| **Component** | 40+ | Badge, Avatar, Tooltip, Toast, Tabs, Dropdown, Modal, etc. |
+| **Typography**   | 20+           | Font sizes, weights, line heights, letter spacing                        |
+| **Spacing**      | 20+           | Space scale (0-20), component padding                                    |
+| **Radius**       | 10            | none, sm, default, md, lg, xl, 2xl, 3xl, full                            |
+| **Shadows**      | 10            | xs, sm, default, md, lg, xl, 2xl, inner, none                            |
+| **Animation**    | 14            | 8 durations + 6 easing functions                                         |
+| **Z-Index**      | 11            | base(0) → max(9999)                                                      |
+| **Focus**        | 4             | ring-width, ring-offset, ring-color, ring-style                          |
+| **State Colors** | 12            | success, warning, error, info (+ foreground + muted)                     |
+| **Component**    | 40+           | Badge, Avatar, Tooltip, Toast, Tabs, Dropdown, Modal, etc.               |
 
 ---
 
@@ -126,17 +126,17 @@ apps/web/src/
 ```typescript
 // contexts/ThemeContext.tsx
 
-export type ThemeMode = 'light' | 'dark' | 'system'
-export type AccentName = 'slate' | 'blue' | 'teal' | 'violet' | 'rose' | 'amber'
+export type ThemeMode = 'light' | 'dark' | 'system';
+export type AccentName = 'slate' | 'blue' | 'teal' | 'violet' | 'rose' | 'amber';
 
 interface ThemeContextValue {
-  theme: ThemeMode              // Current theme setting
-  resolvedTheme: 'light' | 'dark'  // Actual applied theme
-  setTheme: (theme: ThemeMode) => void
-  accent: AccentName            // Current accent color
-  setAccent: (accent: AccentName) => void
-  systemPrefersDark: boolean    // System preference
-  isSyncing: boolean            // Backend sync status
+  theme: ThemeMode; // Current theme setting
+  resolvedTheme: 'light' | 'dark'; // Actual applied theme
+  setTheme: (theme: ThemeMode) => void;
+  accent: AccentName; // Current accent color
+  setAccent: (accent: AccentName) => void;
+  systemPrefersDark: boolean; // System preference
+  isSyncing: boolean; // Backend sync status
 }
 ```
 
@@ -167,7 +167,7 @@ export const themeInitScript = `(function(){
   var d=t==='dark'||(t!=='light'&&window.matchMedia('(prefers-color-scheme: dark)').matches);
   if(d)document.documentElement.classList.add('dark');
   if(a)document.documentElement.setAttribute('data-accent',a);
-})();`
+})();`;
 ```
 
 ---
@@ -176,27 +176,27 @@ export const themeInitScript = `(function(){
 
 ### 5.1 Available Accents
 
-| Accent | Description | Light Primary | Dark Primary |
-|--------|-------------|---------------|--------------|
-| **Slate** | Neutral and professional | 215 25% 27% | 215 20% 65% |
-| **Blue** | Trust and reliability (default) | 221 83% 53% | 217 91% 60% |
-| **Teal** | Fresh and modern | 173 80% 32% | 172 66% 50% |
-| **Violet** | Creative and premium | 262 83% 58% | 263 70% 50% |
-| **Rose** | Bold and energetic | 347 77% 50% | 349 89% 60% |
-| **Amber** | Warm and friendly | 32 95% 44% | 38 92% 50% |
+| Accent     | Description                     | Light Primary | Dark Primary |
+| ---------- | ------------------------------- | ------------- | ------------ |
+| **Slate**  | Neutral and professional        | 215 25% 27%   | 215 20% 65%  |
+| **Blue**   | Trust and reliability (default) | 221 83% 53%   | 217 91% 60%  |
+| **Teal**   | Fresh and modern                | 173 80% 32%   | 172 66% 50%  |
+| **Violet** | Creative and premium            | 262 83% 58%   | 263 70% 50%  |
+| **Rose**   | Bold and energetic              | 347 77% 50%   | 349 89% 60%  |
+| **Amber**  | Warm and friendly               | 32 95% 44%    | 38 92% 50%   |
 
 ### 5.2 Accent Implementation
 
 ```css
 /* accents.css */
-[data-accent="blue"] {
+[data-accent='blue'] {
   --primary: 221 83% 53%;
   --primary-foreground: 0 0% 100%;
   --ring: 221 83% 53%;
 }
 
-[data-accent="blue"].dark,
-.dark[data-accent="blue"] {
+[data-accent='blue'].dark,
+.dark[data-accent='blue'] {
   --primary: 217 91% 60%;
   --primary-foreground: 0 0% 100%;
   --ring: 217 91% 60%;
@@ -243,15 +243,17 @@ module.exports = {
       colors: {
         // Primitive scales
         gray: { 50: 'hsl(var(--color-gray-50))', /* ... */ 950: 'hsl(var(--color-gray-950))' },
-        blue: { /* ... */ },
+        blue: {
+          /* ... */
+        },
         // ... 10 color scales total
 
         // Semantic colors
         surface: {
           DEFAULT: 'hsl(var(--surface-1))',
-          '1': 'hsl(var(--surface-1))',
-          '2': 'hsl(var(--surface-2))',
-          '3': 'hsl(var(--surface-3))',
+          1: 'hsl(var(--surface-1))',
+          2: 'hsl(var(--surface-2))',
+          3: 'hsl(var(--surface-3))',
         },
         success: {
           DEFAULT: 'hsl(var(--success))',
@@ -262,20 +264,20 @@ module.exports = {
       },
 
       zIndex: {
-        base: 'var(--z-base)',           // 0
-        dropdown: 'var(--z-dropdown)',   // 1000
-        modal: 'var(--z-modal)',         // 1400
-        toast: 'var(--z-toast)',         // 1600
-        tooltip: 'var(--z-tooltip)',     // 1700
-        max: 'var(--z-max)',             // 9999
+        base: 'var(--z-base)', // 0
+        dropdown: 'var(--z-dropdown)', // 1000
+        modal: 'var(--z-modal)', // 1400
+        toast: 'var(--z-toast)', // 1600
+        tooltip: 'var(--z-tooltip)', // 1700
+        max: 'var(--z-max)', // 9999
       },
 
       transitionDuration: {
-        instant: 'var(--duration-instant)',   // 0ms
-        fastest: 'var(--duration-fastest)',   // 50ms
-        fast: 'var(--duration-fast)',         // 150ms
-        normal: 'var(--duration-normal)',     // 200ms
-        slow: 'var(--duration-slow)',         // 300ms
+        instant: 'var(--duration-instant)', // 0ms
+        fastest: 'var(--duration-fastest)', // 50ms
+        fast: 'var(--duration-fast)', // 150ms
+        normal: 'var(--duration-normal)', // 200ms
+        slow: 'var(--duration-slow)', // 300ms
       },
 
       transitionTimingFunction: {
@@ -287,11 +289,11 @@ module.exports = {
         'fade-in': 'fade-in var(--duration-normal) var(--ease-out)',
         'slide-in-from-top': 'slide-in-from-top var(--duration-normal) var(--ease-out)',
         'scale-in': 'scale-in var(--duration-fast) var(--ease-out)',
-        'shimmer': 'shimmer 2s linear infinite',
+        shimmer: 'shimmer 2s linear infinite',
       },
     },
   },
-}
+};
 ```
 
 ---
@@ -345,12 +347,12 @@ module.exports = {
 ### 8.1 High Contrast Mode
 
 ```css
-[data-contrast="high"] {
+[data-contrast='high'] {
   --border: 214 32% 70%;
   --muted-foreground: 215 25% 35%;
 }
 
-[data-contrast="high"].dark {
+[data-contrast='high'].dark {
   --border: 215 20% 40%;
   --muted-foreground: 215 20% 75%;
 }
@@ -495,15 +497,15 @@ export function ThemeProviderWithAuth({ children }) {
 
 ### Potential Extensions
 
-| Feature | Status | Description |
-|---------|--------|-------------|
-| Custom Color Picker | Planned | Let users pick any primary color |
-| Density Settings | Planned | Compact/normal/spacious UI density |
-| Layout Preferences | Planned | Sidebar position, header style |
-| Theme Import/Export | Planned | Share themes between users |
-| Font Family Selection | Considered | Custom font choices |
+| Feature               | Status     | Description                        |
+| --------------------- | ---------- | ---------------------------------- |
+| Custom Color Picker   | Planned    | Let users pick any primary color   |
+| Density Settings      | Planned    | Compact/normal/spacious UI density |
+| Layout Preferences    | Planned    | Sidebar position, header style     |
+| Theme Import/Export   | Planned    | Share themes between users         |
+| Font Family Selection | Considered | Custom font choices                |
 
 ---
 
-*Document version: 2.0.0*
-*Last updated: 2026-01-15*
+_Document version: 2.0.0_
+_Last updated: 2026-01-15_

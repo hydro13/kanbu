@@ -42,10 +42,10 @@ Everything in Lexical is a Node. There are different base node types:
 ```typescript
 // Base nodes
 import {
-  RootNode,           // Container for everything
-  ParagraphNode,      // <p> element
-  TextNode,           // Text content
-  LineBreakNode,      // <br> element
+  RootNode, // Container for everything
+  ParagraphNode, // <p> element
+  TextNode, // Text content
+  LineBreakNode, // <br> element
 } from 'lexical';
 
 // Extended nodes (packages)
@@ -188,15 +188,7 @@ import LexicalErrorBoundary from '@lexical/react/LexicalErrorBoundary';
 const initialConfig = {
   namespace: 'KanbuEditor',
   theme: editorTheme,
-  nodes: [
-    HeadingNode,
-    ListNode,
-    ListItemNode,
-    QuoteNode,
-    CodeNode,
-    LinkNode,
-    WikiLinkNode,
-  ],
+  nodes: [HeadingNode, ListNode, ListItemNode, QuoteNode, CodeNode, LinkNode, WikiLinkNode],
   onError: (error: Error) => {
     console.error('Lexical error:', error);
   },
@@ -345,13 +337,14 @@ import { TRANSFORMERS } from '@lexical/markdown';
 ```
 
 Supported shortcuts:
+
 - `# ` → H1
 - `## ` → H2
 - `### ` → H3
 - `* ` or `- ` → Bullet list
 - `1. ` → Numbered list
 - `> ` → Quote
-- ``` ` ``` → Inline code
+- `` ` `` → Inline code
 - `**text**` → Bold
 - `*text*` → Italic
 - `~~text~~` → Strikethrough
@@ -367,9 +360,10 @@ Supported shortcuts:
 ```typescript
 // Debounced save
 const debouncedSave = useMemo(
-  () => debounce((content: string) => {
-    saveToServer(content);
-  }, 1000),
+  () =>
+    debounce((content: string) => {
+      saveToServer(content);
+    }, 1000),
   []
 );
 
@@ -405,6 +399,7 @@ Lexical has built-in accessibility:
 - Edge 90+
 
 Speech-to-text requires:
+
 - Chrome/Edge: Full support
 - Safari: webkit prefix
 - Firefox: Limited (behind flag)

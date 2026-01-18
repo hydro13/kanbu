@@ -13,23 +13,23 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import { WorkspaceLayout } from '@/components/layout/WorkspaceLayout'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card'
-import { ProjectCard } from '@/components/project/ProjectCard'
-import { useAppDispatch } from '@/store'
-import { setProjects, setLoading, setError } from '@/store/projectSlice'
-import { trpc, getMediaUrl } from '@/lib/trpc'
-import { lexicalToPlainText, isLexicalContent } from '@/components/editor'
+import { useState, useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { WorkspaceLayout } from '@/components/layout/WorkspaceLayout';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { ProjectCard } from '@/components/project/ProjectCard';
+import { useAppDispatch } from '@/store';
+import { setProjects, setLoading, setError } from '@/store/projectSlice';
+import { trpc, getMediaUrl } from '@/lib/trpc';
+import { lexicalToPlainText, isLexicalContent } from '@/components/editor';
 
 // =============================================================================
 // Types
 // =============================================================================
 
-type ViewMode = 'grid' | 'list'
+type ViewMode = 'grid' | 'list';
 
 // =============================================================================
 // Helper Functions
@@ -37,12 +37,12 @@ type ViewMode = 'grid' | 'list'
 
 /** Get plain text description for display (handles Lexical JSON) */
 function getPlainDescription(description: string | null): string {
-  if (!description) return 'No description'
+  if (!description) return 'No description';
   if (isLexicalContent(description)) {
-    const plainText = lexicalToPlainText(description).trim()
-    return plainText || 'No description'
+    const plainText = lexicalToPlainText(description).trim();
+    return plainText || 'No description';
   }
-  return description
+  return description;
 }
 
 // =============================================================================
@@ -50,20 +50,17 @@ function getPlainDescription(description: string | null): string {
 // =============================================================================
 
 export function WorkspacePage() {
-  const dispatch = useAppDispatch()
-  const { slug } = useParams<{ slug: string }>()
+  const dispatch = useAppDispatch();
+  const { slug } = useParams<{ slug: string }>();
 
-  const [viewMode, setViewMode] = useState<ViewMode>('grid')
-  const [showArchived, setShowArchived] = useState(false)
-  const [showCreateModal, setShowCreateModal] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
+  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [showArchived, setShowArchived] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Fetch workspace info by slug (SEO-friendly URL)
-  const workspaceQuery = trpc.workspace.getBySlug.useQuery(
-    { slug: slug! },
-    { enabled: !!slug }
-  )
-  const workspace = workspaceQuery.data
+  const workspaceQuery = trpc.workspace.getBySlug.useQuery({ slug: slug! }, { enabled: !!slug });
+  const workspace = workspaceQuery.data;
 
   // Fetch projects for this workspace (needs workspaceId from workspace query)
   const {
@@ -74,32 +71,32 @@ export function WorkspacePage() {
   } = trpc.project.list.useQuery(
     { workspaceId: workspace?.id ?? 0, includeArchived: showArchived },
     { enabled: !!workspace?.id }
-  )
+  );
 
   // Sync API data to Redux store
   useEffect(() => {
     if (isFetching) {
-      dispatch(setLoading(true))
+      dispatch(setLoading(true));
     } else if (error) {
-      dispatch(setError(error.message))
+      dispatch(setError(error.message));
     } else if (data) {
-      dispatch(setProjects(data))
+      dispatch(setProjects(data));
     }
-  }, [data, isFetching, error, dispatch])
+  }, [data, isFetching, error, dispatch]);
 
   // Use fetched data directly
-  const projects = data ?? []
+  const projects = data ?? [];
 
   // Filter projects by search query
   const filteredProjects = projects.filter((project) => {
-    if (!searchQuery) return true
-    const query = searchQuery.toLowerCase()
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
     return (
       project.name.toLowerCase().includes(query) ||
       project.identifier?.toLowerCase().includes(query) ||
       project.description?.toLowerCase().includes(query)
-    )
-  })
+    );
+  });
 
   // Loading state
   if (workspaceQuery.isLoading) {
@@ -112,7 +109,7 @@ export function WorkspacePage() {
           </div>
         </div>
       </WorkspaceLayout>
-    )
+    );
   }
 
   // Workspace not found
@@ -126,7 +123,7 @@ export function WorkspacePage() {
           </Link>
         </div>
       </WorkspaceLayout>
-    )
+    );
   }
 
   return (
@@ -147,10 +144,10 @@ export function WorkspacePage() {
               </div>
             )}
             <div>
-              <h1 className="text-page-title-lg tracking-tight text-foreground">{workspace.name}</h1>
-              <p className="text-muted-foreground">
-                {getPlainDescription(workspace.description)}
-              </p>
+              <h1 className="text-page-title-lg tracking-tight text-foreground">
+                {workspace.name}
+              </h1>
+              <p className="text-muted-foreground">{getPlainDescription(workspace.description)}</p>
             </div>
           </div>
           {workspace.role === 'ADMIN' && (
@@ -276,14 +273,14 @@ export function WorkspacePage() {
             workspaceId={workspace.id}
             onClose={() => setShowCreateModal(false)}
             onCreated={() => {
-              setShowCreateModal(false)
-              refetch()
+              setShowCreateModal(false);
+              refetch();
             }}
           />
         )}
       </div>
     </WorkspaceLayout>
-  )
+  );
 }
 
 // =============================================================================
@@ -291,31 +288,31 @@ export function WorkspacePage() {
 // =============================================================================
 
 interface CreateProjectModalProps {
-  workspaceId: number
-  onClose: () => void
-  onCreated: () => void
+  workspaceId: number;
+  onClose: () => void;
+  onCreated: () => void;
 }
 
 function CreateProjectModal({ workspaceId, onClose, onCreated }: CreateProjectModalProps) {
-  const [name, setName] = useState('')
-  const [identifier, setIdentifier] = useState('')
-  const [description, setDescription] = useState('')
+  const [name, setName] = useState('');
+  const [identifier, setIdentifier] = useState('');
+  const [description, setDescription] = useState('');
 
   const createMutation = trpc.project.create.useMutation({
     onSuccess: () => {
-      onCreated()
+      onCreated();
     },
-  })
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     createMutation.mutate({
       workspaceId,
       name,
       identifier: identifier || undefined,
       description: description || undefined,
-    })
-  }
+    });
+  };
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -371,7 +368,7 @@ function CreateProjectModal({ workspaceId, onClose, onCreated }: CreateProjectMo
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -392,7 +389,7 @@ function PlusIcon({ className }: { className?: string }) {
     >
       <path d="M12 5v14M5 12h14" />
     </svg>
-  )
+  );
 }
 
 function GridIcon({ className }: { className?: string }) {
@@ -412,7 +409,7 @@ function GridIcon({ className }: { className?: string }) {
       <rect x="14" y="14" width="7" height="7" />
       <rect x="3" y="14" width="7" height="7" />
     </svg>
-  )
+  );
 }
 
 function ListIcon({ className }: { className?: string }) {
@@ -434,7 +431,7 @@ function ListIcon({ className }: { className?: string }) {
       <line x1="3" y1="12" x2="3.01" y2="12" />
       <line x1="3" y1="18" x2="3.01" y2="18" />
     </svg>
-  )
+  );
 }
 
 function WorkspaceIcon({ className }: { className?: string }) {
@@ -451,11 +448,11 @@ function WorkspaceIcon({ className }: { className?: string }) {
     >
       <path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
     </svg>
-  )
+  );
 }
 
 // =============================================================================
 // Exports
 // =============================================================================
 
-export default WorkspacePage
+export default WorkspacePage;

@@ -19,6 +19,7 @@ npx tsx scripts/migrate-community-detection.ts --cleanup
 ```
 
 **Features:**
+
 - Validates Community node properties
 - Checks HAS_MEMBER relationships
 - Detects orphaned memberships
@@ -44,6 +45,7 @@ npx tsx scripts/migrate-node-embeddings.ts --workspace=1 --batch=50
 ```
 
 **Features:**
+
 - Reads all entity nodes from FalkorDB
 - Generates vector embeddings via WikiNodeEmbeddingService
 - Stores in Qdrant collection 'kanbu_node_embeddings'
@@ -62,6 +64,7 @@ npx tsx scripts/migrate-edge-embeddings.ts --workspace=1
 ```
 
 **Features:**
+
 - Processes MENTIONS and LINKS_TO edges
 - Stores edge embeddings in Qdrant
 - Supports incremental updates
@@ -78,6 +81,7 @@ npx tsx scripts/migrate-temporal-edges.ts
 ```
 
 **Features:**
+
 - Adds createdAt/updatedAt timestamps
 - Updates existing edges
 - Preserves edge weights
@@ -95,6 +99,7 @@ npx tsx scripts/migrate-groupid-fix.ts --fix
 ```
 
 **Features:**
+
 - Validates groupId format (wiki-ws-{id} or wiki-proj-{id})
 - Reports nodes with invalid groupIds
 - Optional fix mode
@@ -111,6 +116,7 @@ psql -U kanbu -d kanbu -f scripts/migrate-bm25-indexes.sql
 ```
 
 **Features:**
+
 - Creates GIN indexes for full-text search
 - Optimizes Wiki page queries
 - PostgreSQL-specific
@@ -121,18 +127,19 @@ psql -U kanbu -d kanbu -f scripts/migrate-bm25-indexes.sql
 
 Most TypeScript scripts support these options:
 
-| Option | Description |
-|--------|-------------|
-| `--dry-run` | Show what would be done without making changes |
-| `--verbose` | Show detailed progress and debug info |
-| `--workspace=<id>` | Target specific workspace (default: 1) |
-| `--batch=<size>` | Batch size for processing (default: 50) |
+| Option             | Description                                    |
+| ------------------ | ---------------------------------------------- |
+| `--dry-run`        | Show what would be done without making changes |
+| `--verbose`        | Show detailed progress and debug info          |
+| `--workspace=<id>` | Target specific workspace (default: 1)         |
+| `--batch=<size>`   | Batch size for processing (default: 50)        |
 
 ## Running Scripts
 
 ### Prerequisites
 
 All scripts require:
+
 - Node.js 22.x
 - pnpm package manager
 - Running FalkorDB (Redis) on localhost:6379
@@ -205,6 +212,7 @@ npx tsx scripts/your-script.ts --dry-run --verbose
 ```
 
 Verify:
+
 - Connection handling
 - Error messages
 - Output formatting
@@ -215,12 +223,14 @@ Verify:
 ### Connection Errors
 
 **FalkorDB connection refused:**
+
 ```bash
 # Start FalkorDB container
 sudo docker compose up -d postgres
 ```
 
 **Qdrant not available:**
+
 ```bash
 # Check Qdrant container
 sudo docker ps | grep qdrant
@@ -232,6 +242,7 @@ sudo docker compose up -d qdrant
 ### Permission Errors
 
 Scripts need access to:
+
 - FalkorDB/Redis (port 6379)
 - Qdrant (port 6333)
 - PostgreSQL (port 5432)
@@ -251,6 +262,7 @@ This is normal for fresh installations. Graphs are created automatically when fi
 ### Development Environment
 
 Run scripts manually as needed:
+
 ```bash
 npm run migrate:communities
 npm run migrate:embeddings

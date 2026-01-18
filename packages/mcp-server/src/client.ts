@@ -13,39 +13,39 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { logger } from './logger.js'
+import { logger } from './logger.js';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface ExchangeResult {
-  token: string
+  token: string;
   user: {
-    id: number
-    email: string
-    name: string
-    role: string
-  }
+    id: number;
+    email: string;
+    name: string;
+    role: string;
+  };
 }
 
 export interface UserInfo {
-  userId: number
-  email: string
-  name: string
-  role: string
-  machineId: string
-  machineName: string | null
+  userId: number;
+  email: string;
+  name: string;
+  role: string;
+  machineId: string;
+  machineName: string | null;
 }
 
 interface TrpcResponse<T> {
   result?: {
-    data: T
-  }
+    data: T;
+  };
   error?: {
-    message: string
-    code: string
-  }
+    message: string;
+    code: string;
+  };
 }
 
 // =============================================================================
@@ -62,7 +62,7 @@ export class KanbuClient {
     machineId: string,
     machineName: string
   ): Promise<ExchangeResult> {
-    const url = `${baseUrl}/trpc/assistant.exchangeSetupCode`
+    const url = `${baseUrl}/trpc/assistant.exchangeSetupCode`;
 
     const response = await fetch(url, {
       method: 'POST',
@@ -74,24 +74,24 @@ export class KanbuClient {
         machineId,
         machineName,
       }),
-    })
+    });
 
     if (!response.ok) {
-      const text = await response.text()
-      throw new Error(`Failed to exchange setup code: ${response.status} ${text}`)
+      const text = await response.text();
+      throw new Error(`Failed to exchange setup code: ${response.status} ${text}`);
     }
 
-    const data = (await response.json()) as TrpcResponse<ExchangeResult>
+    const data = (await response.json()) as TrpcResponse<ExchangeResult>;
 
     if (data.error) {
-      throw new Error(data.error.message || 'Failed to exchange setup code')
+      throw new Error(data.error.message || 'Failed to exchange setup code');
     }
 
     if (!data.result?.data) {
-      throw new Error('Invalid response from server')
+      throw new Error('Invalid response from server');
     }
 
-    return data.result.data
+    return data.result.data;
   }
 
   /**
@@ -100,30 +100,30 @@ export class KanbuClient {
   async validateToken(baseUrl: string, token: string): Promise<UserInfo> {
     const url = `${baseUrl}/trpc/assistant.validateToken?input=${encodeURIComponent(
       JSON.stringify({ token })
-    )}`
+    )}`;
 
     const response = await fetch(url, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
       },
-    })
+    });
 
     if (!response.ok) {
-      throw new Error(`Token validation failed: ${response.status}`)
+      throw new Error(`Token validation failed: ${response.status}`);
     }
 
-    const data = (await response.json()) as TrpcResponse<UserInfo>
+    const data = (await response.json()) as TrpcResponse<UserInfo>;
 
     if (data.error) {
-      throw new Error(data.error.message || 'Token validation failed')
+      throw new Error(data.error.message || 'Token validation failed');
     }
 
     if (!data.result?.data) {
-      throw new Error('Invalid response from server')
+      throw new Error('Invalid response from server');
     }
 
-    return data.result.data
+    return data.result.data;
   }
 
   /**
@@ -136,19 +136,19 @@ export class KanbuClient {
     input?: unknown,
     method: 'GET' | 'POST' = 'GET'
   ): Promise<T> {
-    let url = `${baseUrl}/trpc/${procedure}`
+    let url = `${baseUrl}/trpc/${procedure}`;
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
-    }
+    };
 
-    let body: string | undefined
+    let body: string | undefined;
 
     if (method === 'GET' && input) {
-      url += `?input=${encodeURIComponent(JSON.stringify(input))}`
+      url += `?input=${encodeURIComponent(JSON.stringify(input))}`;
     } else if (method === 'POST' && input) {
-      body = JSON.stringify(input)
+      body = JSON.stringify(input);
     }
 
     return this.retry(async () => {
@@ -156,26 +156,29 @@ export class KanbuClient {
         method,
         headers,
         body,
-      })
+      });
 
       if (!response.ok) {
-        const text = await response.text()
-        logger.error({ url, status: response.status, method, error: text }, 'Kanbu API call failed')
-        throw new Error(`API call failed: ${response.status} ${text}`)
+        const text = await response.text();
+        logger.error(
+          { url, status: response.status, method, error: text },
+          'Kanbu API call failed'
+        );
+        throw new Error(`API call failed: ${response.status} ${text}`);
       }
 
-      const data = (await response.json()) as TrpcResponse<T>
+      const data = (await response.json()) as TrpcResponse<T>;
 
       if (data.error) {
-        throw new Error(data.error.message || 'API call failed')
+        throw new Error(data.error.message || 'API call failed');
       }
 
       if (!data.result?.data) {
-        throw new Error('Invalid response from server')
+        throw new Error('Invalid response from server');
       }
 
-      return data.result.data
-    })
+      return data.result.data;
+    });
   }
 
   /**
@@ -186,13 +189,13 @@ export class KanbuClient {
     maxRetries: number = 3,
     baseDelay: number = 1000
   ): Promise<T> {
-    let lastError: unknown
+    let lastError: unknown;
 
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
-        return await operation()
+        return await operation();
       } catch (error) {
-        lastError = error
+        lastError = error;
         const isRetryable =
           error instanceof Error &&
           (error.message.includes('500') ||
@@ -200,21 +203,25 @@ export class KanbuClient {
             error.message.includes('503') ||
             error.message.includes('504') ||
             error.message.includes('fetch failed') ||
-            error.message.includes('ECONNREFUSED'))
+            error.message.includes('ECONNREFUSED'));
 
         if (!isRetryable || attempt === maxRetries - 1) {
-          throw error
+          throw error;
         }
 
-        const delay = baseDelay * Math.pow(2, attempt)
+        const delay = baseDelay * Math.pow(2, attempt);
         logger.warn(
-          { error: error instanceof Error ? error.message : 'Unknown', attempt: attempt + 1, delay },
+          {
+            error: error instanceof Error ? error.message : 'Unknown',
+            attempt: attempt + 1,
+            delay,
+          },
           'Retrying API call'
-        )
-        await new Promise((resolve) => setTimeout(resolve, delay))
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
 
-    throw lastError
+    throw lastError;
   }
 }

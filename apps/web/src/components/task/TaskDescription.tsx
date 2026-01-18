@@ -18,34 +18,39 @@
  * ===================================================================
  */
 
-import { useState, useCallback, useEffect, useRef } from 'react'
-import { Pencil, Check, X, AlertCircle, Save } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { RichTextEditor, getDisplayContent, isLexicalContent, lexicalToPlainText } from '@/components/editor'
-import type { EditorState, LexicalEditor } from 'lexical'
-import type { EditingUser } from '@/hooks/useEditingPresence'
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { Pencil, Check, X, AlertCircle, Save } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import {
+  RichTextEditor,
+  getDisplayContent,
+  isLexicalContent,
+  lexicalToPlainText,
+} from '@/components/editor';
+import type { EditorState, LexicalEditor } from 'lexical';
+import type { EditingUser } from '@/hooks/useEditingPresence';
 
 // =============================================================================
 // Constants
 // =============================================================================
 
 /** Auto-save interval to prevent data loss */
-const AUTO_SAVE_INTERVAL_MS = 30 * 1000 // 30 seconds
+const AUTO_SAVE_INTERVAL_MS = 30 * 1000; // 30 seconds
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface TaskDescriptionProps {
-  description: string
-  onUpdate: (description: string) => Promise<void>
-  isUpdating: boolean
+  description: string;
+  onUpdate: (description: string) => Promise<void>;
+  isUpdating: boolean;
   /** User currently editing this field (if any) */
-  editingUser?: EditingUser
+  editingUser?: EditingUser;
   /** Called when user starts editing */
-  onEditStart?: () => void
+  onEditStart?: () => void;
   /** Called when user stops editing */
-  onEditStop?: () => void
+  onEditStop?: () => void;
 }
 
 // =============================================================================
@@ -60,123 +65,110 @@ export function TaskDescription({
   onEditStart,
   onEditStop,
 }: TaskDescriptionProps) {
-  const [isEditing, setIsEditing] = useState(false)
-  const [editedContent, setEditedContent] = useState('')
-  const [lastSavedContent, setLastSavedContent] = useState('')
-  const [lastAutoSaveTime, setLastAutoSaveTime] = useState<Date | null>(null)
-  const [editorKey, setEditorKey] = useState(0)
-  const hasUnsavedChanges = useRef(false)
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedContent, setEditedContent] = useState('');
+  const [lastSavedContent, setLastSavedContent] = useState('');
+  const [lastAutoSaveTime, setLastAutoSaveTime] = useState<Date | null>(null);
+  const [editorKey, setEditorKey] = useState(0);
+  const hasUnsavedChanges = useRef(false);
 
   // Initialize content when description prop changes or editing starts
   useEffect(() => {
     if (!isEditing) {
-      const displayContent = getDisplayContent(description)
-      setEditedContent(displayContent)
-      setLastSavedContent(displayContent)
+      const displayContent = getDisplayContent(description);
+      setEditedContent(displayContent);
+      setLastSavedContent(displayContent);
     }
-  }, [description, isEditing])
+  }, [description, isEditing]);
 
   // Notify when editing state changes
   useEffect(() => {
     if (isEditing) {
-      onEditStart?.()
+      onEditStart?.();
     } else {
-      onEditStop?.()
+      onEditStop?.();
     }
-  }, [isEditing, onEditStart, onEditStop])
+  }, [isEditing, onEditStart, onEditStop]);
 
   // Auto-save while editing to prevent data loss on crash
   useEffect(() => {
-    if (!isEditing) return
+    if (!isEditing) return;
 
     const interval = setInterval(async () => {
       // Only auto-save if there are unsaved changes
       if (hasUnsavedChanges.current && !isUpdating) {
-        console.log('[TaskDescription] Auto-saving...')
+        console.log('[TaskDescription] Auto-saving...');
         try {
-          await onUpdate(editedContent)
-          setLastSavedContent(editedContent)
-          setLastAutoSaveTime(new Date())
-          hasUnsavedChanges.current = false
+          await onUpdate(editedContent);
+          setLastSavedContent(editedContent);
+          setLastAutoSaveTime(new Date());
+          hasUnsavedChanges.current = false;
         } catch (error) {
-          console.error('[TaskDescription] Auto-save failed:', error)
+          console.error('[TaskDescription] Auto-save failed:', error);
         }
       }
-    }, AUTO_SAVE_INTERVAL_MS)
+    }, AUTO_SAVE_INTERVAL_MS);
 
-    return () => clearInterval(interval)
-  }, [isEditing, editedContent, isUpdating, onUpdate])
+    return () => clearInterval(interval);
+  }, [isEditing, editedContent, isUpdating, onUpdate]);
 
   // Handle editor content changes
   const handleEditorChange = useCallback(
     (_editorState: EditorState, _editor: LexicalEditor, jsonString: string) => {
-      setEditedContent(jsonString)
-      hasUnsavedChanges.current = jsonString !== lastSavedContent
+      setEditedContent(jsonString);
+      hasUnsavedChanges.current = jsonString !== lastSavedContent;
     },
     [lastSavedContent]
-  )
+  );
 
   const handleStartEditing = useCallback(() => {
     // Don't allow editing if someone else is editing
-    if (editingUser) return
-    setEditorKey((k) => k + 1) // Force re-mount for clean editor state
-    setIsEditing(true)
-  }, [editingUser])
+    if (editingUser) return;
+    setEditorKey((k) => k + 1); // Force re-mount for clean editor state
+    setIsEditing(true);
+  }, [editingUser]);
 
   const handleSave = useCallback(async () => {
     if (editedContent !== lastSavedContent) {
-      await onUpdate(editedContent)
-      setLastSavedContent(editedContent)
-      hasUnsavedChanges.current = false
+      await onUpdate(editedContent);
+      setLastSavedContent(editedContent);
+      hasUnsavedChanges.current = false;
     }
-    setLastAutoSaveTime(null)
-    setIsEditing(false)
-  }, [editedContent, lastSavedContent, onUpdate])
+    setLastAutoSaveTime(null);
+    setIsEditing(false);
+  }, [editedContent, lastSavedContent, onUpdate]);
 
   const handleCancel = useCallback(() => {
-    setEditedContent(getDisplayContent(description))
-    hasUnsavedChanges.current = false
-    setIsEditing(false)
-  }, [description])
+    setEditedContent(getDisplayContent(description));
+    hasUnsavedChanges.current = false;
+    setIsEditing(false);
+  }, [description]);
 
   // Editing user display name
-  const editorDisplayName = editingUser
-    ? editingUser.name || editingUser.username
-    : null
+  const editorDisplayName = editingUser ? editingUser.name || editingUser.username : null;
 
   // Check if content is empty
   const isContentEmpty = useCallback(() => {
-    if (!description) return true
-    if (!isLexicalContent(description)) return !description.trim()
-    const plainText = lexicalToPlainText(description)
-    return !plainText.trim()
-  }, [description])
+    if (!description) return true;
+    if (!isLexicalContent(description)) return !description.trim();
+    const plainText = lexicalToPlainText(description);
+    return !plainText.trim();
+  }, [description]);
 
   // Someone else is editing - show locked state
-  const isLockedByOther = !!editingUser
+  const isLockedByOther = !!editingUser;
 
   if (isEditing) {
     return (
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            Description
-          </h3>
+          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Description</h3>
           <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={handleCancel}
-              disabled={isUpdating}
-            >
+            <Button size="sm" variant="ghost" onClick={handleCancel} disabled={isUpdating}>
               <X className="h-4 w-4 mr-1" />
               Cancel
             </Button>
-            <Button
-              size="sm"
-              onClick={handleSave}
-              disabled={isUpdating}
-            >
+            <Button size="sm" onClick={handleSave} disabled={isUpdating}>
               <Check className="h-4 w-4 mr-1" />
               Save
             </Button>
@@ -210,15 +202,13 @@ export function TaskDescription({
           )}
         </div>
       </div>
-    )
+    );
   }
 
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-          Description
-        </h3>
+        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Description</h3>
         <div className="relative group">
           <Button
             size="sm"
@@ -252,7 +242,9 @@ export function TaskDescription({
               : 'bg-gray-50 dark:bg-gray-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-750'
           }`}
           onClick={handleStartEditing}
-          title={isLockedByOther ? `${editorDisplayName} is currently editing this field` : undefined}
+          title={
+            isLockedByOther ? `${editorDisplayName} is currently editing this field` : undefined
+          }
         >
           {/* Editing indicator banner */}
           {isLockedByOther && (
@@ -285,7 +277,9 @@ export function TaskDescription({
               : 'text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800 border-input cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-750'
           }`}
           onClick={handleStartEditing}
-          title={isLockedByOther ? `${editorDisplayName} is currently editing this field` : undefined}
+          title={
+            isLockedByOther ? `${editorDisplayName} is currently editing this field` : undefined
+          }
         >
           {isLockedByOther ? (
             <div className="flex items-center gap-2">
@@ -298,7 +292,7 @@ export function TaskDescription({
         </div>
       )}
     </div>
-  )
+  );
 }
 
-export default TaskDescription
+export default TaskDescription;

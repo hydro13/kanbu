@@ -39,17 +39,13 @@ export interface CursorPosition {
 /**
  * Initialize Socket.io server and attach to Fastify
  */
-export async function initializeSocketServer(
-  fastify: FastifyInstance
-): Promise<SocketServer> {
+export async function initializeSocketServer(fastify: FastifyInstance): Promise<SocketServer> {
   // Create Socket.io server
   const io = new SocketServer(fastify.server, {
     cors: {
-      origin: process.env.SOCKET_CORS_ORIGIN?.split(',') ?? (
-        process.env.NODE_ENV === 'production'
-          ? ['http://localhost:5173']
-          : true // Allow all origins in development
-      ),
+      origin:
+        process.env.SOCKET_CORS_ORIGIN?.split(',') ??
+        (process.env.NODE_ENV === 'production' ? ['http://localhost:5173'] : true), // Allow all origins in development
       credentials: true,
     },
     // Connection settings
@@ -89,9 +85,7 @@ export async function initializeSocketServer(
     const authSocket = socket as AuthenticatedSocket;
     const user = authSocket.data.user;
 
-    console.log(
-      `[Socket.io] User connected: ${user.username} (${user.id}) - Socket: ${socket.id}`
-    );
+    console.log(`[Socket.io] User connected: ${user.username} (${user.id}) - Socket: ${socket.id}`);
 
     // Register room handlers (join/leave)
     registerRoomHandlers(io, authSocket);
@@ -112,16 +106,24 @@ export async function initializeSocketServer(
     });
 
     // Handle presence request (get users in room)
-    socket.on('presence:request', async (roomName: string, callback: (users: unknown[]) => void) => {
-      console.log(`[Socket.io] presence:request from ${user.username} for room ${roomName}`);
-      const users = await getRoomUsers(io, roomName);
-      console.log(`[Socket.io] Returning ${users.length} users for ${roomName}:`, users.map(u => u.username));
-      if (callback) {
-        callback(users);
-      } else {
-        console.warn(`[Socket.io] No callback provided for presence:request from ${user.username}`);
+    socket.on(
+      'presence:request',
+      async (roomName: string, callback: (users: unknown[]) => void) => {
+        console.log(`[Socket.io] presence:request from ${user.username} for room ${roomName}`);
+        const users = await getRoomUsers(io, roomName);
+        console.log(
+          `[Socket.io] Returning ${users.length} users for ${roomName}:`,
+          users.map((u) => u.username)
+        );
+        if (callback) {
+          callback(users);
+        } else {
+          console.warn(
+            `[Socket.io] No callback provided for presence:request from ${user.username}`
+          );
+        }
       }
-    });
+    );
 
     // Handle typing indicators
     socket.on('typing:start', (taskId: number) => {
@@ -266,11 +268,13 @@ export async function initializeSocketServer(
 
   // Log server stats periodically
   setInterval(() => {
-    io.fetchSockets().then((sockets) => {
-      if (sockets.length > 0) {
-        console.log(`[Socket.io] Active connections: ${sockets.length}`);
-      }
-    }).catch(() => {});
+    io.fetchSockets()
+      .then((sockets) => {
+        if (sockets.length > 0) {
+          console.log(`[Socket.io] Active connections: ${sockets.length}`);
+        }
+      })
+      .catch(() => {});
   }, 60000); // Every minute
 
   console.log('[Socket.io] Server initialized');

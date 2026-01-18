@@ -14,68 +14,68 @@
  * =============================================================================
  */
 
-import { prisma } from '../../lib/prisma'
+import { prisma } from '../../lib/prisma';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface DateRange {
-  from: Date
-  to: Date
+  from: Date;
+  to: Date;
 }
 
 export interface CycleTimeStats {
-  averageDays: number
-  medianDays: number
-  minDays: number
-  maxDays: number
-  totalCompleted: number
+  averageDays: number;
+  medianDays: number;
+  minDays: number;
+  maxDays: number;
+  totalCompleted: number;
   byWeek: Array<{
-    weekStart: Date
-    averageDays: number
-    count: number
-  }>
+    weekStart: Date;
+    averageDays: number;
+    count: number;
+  }>;
 }
 
 export interface LeadTimeByColumn {
-  columnName: string
-  averageHours: number
-  medianHours: number
-  taskCount: number
+  columnName: string;
+  averageHours: number;
+  medianHours: number;
+  taskCount: number;
 }
 
 export interface ReviewTimeStats {
-  averageHoursToFirstReview: number
-  averageHoursToApproval: number
-  averageReviewsPerPR: number
-  averageCommentsPerReview: number
-  totalPRsReviewed: number
+  averageHoursToFirstReview: number;
+  averageHoursToApproval: number;
+  averageReviewsPerPR: number;
+  averageCommentsPerReview: number;
+  totalPRsReviewed: number;
 }
 
 export interface ContributorStats {
-  login: string
-  commits: number
-  prsOpened: number
-  prsMerged: number
-  reviewsGiven: number
-  commentsGiven: number
-  issuesLinked: number
+  login: string;
+  commits: number;
+  prsOpened: number;
+  prsMerged: number;
+  reviewsGiven: number;
+  commentsGiven: number;
+  issuesLinked: number;
 }
 
 export interface ThroughputStats {
-  period: string
-  periodStart: Date
-  tasksCompleted: number
-  prsMerged: number
-  issuesClosed: number
+  period: string;
+  periodStart: Date;
+  tasksCompleted: number;
+  prsMerged: number;
+  issuesClosed: number;
 }
 
 export interface ProjectAnalytics {
-  cycleTime: CycleTimeStats
-  reviewTime: ReviewTimeStats
-  contributors: ContributorStats[]
-  throughput: ThroughputStats[]
+  cycleTime: CycleTimeStats;
+  reviewTime: ReviewTimeStats;
+  contributors: ContributorStats[];
+  throughput: ThroughputStats[];
 }
 
 // =============================================================================
@@ -83,29 +83,27 @@ export interface ProjectAnalytics {
 // =============================================================================
 
 function calculateMedian(values: number[]): number {
-  if (values.length === 0) return 0
-  const sorted = [...values].sort((a, b) => a - b)
-  const mid = Math.floor(sorted.length / 2)
-  return sorted.length % 2 !== 0
-    ? sorted[mid]!
-    : (sorted[mid - 1]! + sorted[mid]!) / 2
+  if (values.length === 0) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 !== 0 ? sorted[mid]! : (sorted[mid - 1]! + sorted[mid]!) / 2;
 }
 
 function daysBetween(start: Date, end: Date): number {
-  return (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)
+  return (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
 }
 
 function hoursBetween(start: Date, end: Date): number {
-  return (end.getTime() - start.getTime()) / (1000 * 60 * 60)
+  return (end.getTime() - start.getTime()) / (1000 * 60 * 60);
 }
 
 function getWeekStart(date: Date): Date {
-  const d = new Date(date)
-  const day = d.getDay()
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1) // Monday
-  d.setDate(diff)
-  d.setHours(0, 0, 0, 0)
-  return d
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Monday
+  d.setDate(diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
 }
 
 // =============================================================================
@@ -122,7 +120,7 @@ export async function getCycleTimeStats(
 ): Promise<CycleTimeStats> {
   const repo = await prisma.gitHubRepository.findFirst({
     where: { projectId },
-  })
+  });
 
   if (!repo) {
     return {
@@ -132,7 +130,7 @@ export async function getCycleTimeStats(
       maxDays: 0,
       totalCompleted: 0,
       byWeek: [],
-    }
+    };
   }
 
   // Get all merged PRs with linked tasks
@@ -140,9 +138,7 @@ export async function getCycleTimeStats(
     where: {
       repositoryId: repo.id,
       state: 'merged',
-      mergedAt: dateRange
-        ? { gte: dateRange.from, lte: dateRange.to }
-        : undefined,
+      mergedAt: dateRange ? { gte: dateRange.from, lte: dateRange.to } : undefined,
       taskId: { not: null },
     },
     include: {
@@ -152,7 +148,7 @@ export async function getCycleTimeStats(
         },
       },
     },
-  })
+  });
 
   if (mergedPRs.length === 0) {
     return {
@@ -162,17 +158,17 @@ export async function getCycleTimeStats(
       maxDays: 0,
       totalCompleted: 0,
       byWeek: [],
-    }
+    };
   }
 
   // Calculate cycle times
-  const cycleTimes: Array<{ days: number; mergedAt: Date }> = []
+  const cycleTimes: Array<{ days: number; mergedAt: Date }> = [];
 
   for (const pr of mergedPRs) {
     if (pr.task && pr.mergedAt) {
-      const days = daysBetween(pr.task.createdAt, pr.mergedAt)
+      const days = daysBetween(pr.task.createdAt, pr.mergedAt);
       if (days >= 0) {
-        cycleTimes.push({ days, mergedAt: pr.mergedAt })
+        cycleTimes.push({ days, mergedAt: pr.mergedAt });
       }
     }
   }
@@ -185,24 +181,24 @@ export async function getCycleTimeStats(
       maxDays: 0,
       totalCompleted: 0,
       byWeek: [],
-    }
+    };
   }
 
-  const dayValues = cycleTimes.map((ct) => ct.days)
-  const averageDays = dayValues.reduce((a, b) => a + b, 0) / dayValues.length
-  const medianDays = calculateMedian(dayValues)
-  const minDays = Math.min(...dayValues)
-  const maxDays = Math.max(...dayValues)
+  const dayValues = cycleTimes.map((ct) => ct.days);
+  const averageDays = dayValues.reduce((a, b) => a + b, 0) / dayValues.length;
+  const medianDays = calculateMedian(dayValues);
+  const minDays = Math.min(...dayValues);
+  const maxDays = Math.max(...dayValues);
 
   // Group by week
-  const byWeekMap = new Map<string, { total: number; count: number }>()
+  const byWeekMap = new Map<string, { total: number; count: number }>();
   for (const ct of cycleTimes) {
-    const weekStart = getWeekStart(ct.mergedAt)
-    const key = weekStart.toISOString()
-    const existing = byWeekMap.get(key) ?? { total: 0, count: 0 }
-    existing.total += ct.days
-    existing.count += 1
-    byWeekMap.set(key, existing)
+    const weekStart = getWeekStart(ct.mergedAt);
+    const key = weekStart.toISOString();
+    const existing = byWeekMap.get(key) ?? { total: 0, count: 0 };
+    existing.total += ct.days;
+    existing.count += 1;
+    byWeekMap.set(key, existing);
   }
 
   const byWeek = Array.from(byWeekMap.entries())
@@ -211,7 +207,7 @@ export async function getCycleTimeStats(
       averageDays: value.total / value.count,
       count: value.count,
     }))
-    .sort((a, b) => a.weekStart.getTime() - b.weekStart.getTime())
+    .sort((a, b) => a.weekStart.getTime() - b.weekStart.getTime());
 
   return {
     averageDays: Math.round(averageDays * 10) / 10,
@@ -220,7 +216,7 @@ export async function getCycleTimeStats(
     maxDays: Math.round(maxDays * 10) / 10,
     totalCompleted: cycleTimes.length,
     byWeek,
-  }
+  };
 }
 
 // =============================================================================
@@ -236,7 +232,7 @@ export async function getReviewTimeStats(
 ): Promise<ReviewTimeStats> {
   const repo = await prisma.gitHubRepository.findFirst({
     where: { projectId },
-  })
+  });
 
   if (!repo) {
     return {
@@ -245,16 +241,14 @@ export async function getReviewTimeStats(
       averageReviewsPerPR: 0,
       averageCommentsPerReview: 0,
       totalPRsReviewed: 0,
-    }
+    };
   }
 
   // Get PRs with reviews
   const prsWithReviews = await prisma.gitHubPullRequest.findMany({
     where: {
       repositoryId: repo.id,
-      createdAt: dateRange
-        ? { gte: dateRange.from, lte: dateRange.to }
-        : undefined,
+      createdAt: dateRange ? { gte: dateRange.from, lte: dateRange.to } : undefined,
     },
     include: {
       reviews: {
@@ -264,7 +258,7 @@ export async function getReviewTimeStats(
         },
       },
     },
-  })
+  });
 
   if (prsWithReviews.length === 0) {
     return {
@@ -273,42 +267,42 @@ export async function getReviewTimeStats(
       averageReviewsPerPR: 0,
       averageCommentsPerReview: 0,
       totalPRsReviewed: 0,
-    }
+    };
   }
 
-  const hoursToFirstReview: number[] = []
-  const hoursToApproval: number[] = []
-  let totalReviews = 0
-  let totalComments = 0
-  let prsWithReviewCount = 0
+  const hoursToFirstReview: number[] = [];
+  const hoursToApproval: number[] = [];
+  let totalReviews = 0;
+  let totalComments = 0;
+  let prsWithReviewCount = 0;
 
   for (const pr of prsWithReviews) {
-    if (pr.reviews.length === 0) continue
+    if (pr.reviews.length === 0) continue;
 
-    prsWithReviewCount++
-    totalReviews += pr.reviews.length
+    prsWithReviewCount++;
+    totalReviews += pr.reviews.length;
 
     // Time to first review
-    const firstReview = pr.reviews[0]
+    const firstReview = pr.reviews[0];
     if (firstReview?.submittedAt) {
-      const hours = hoursBetween(pr.createdAt, firstReview.submittedAt)
+      const hours = hoursBetween(pr.createdAt, firstReview.submittedAt);
       if (hours >= 0) {
-        hoursToFirstReview.push(hours)
+        hoursToFirstReview.push(hours);
       }
     }
 
     // Time to approval
-    const approvalReview = pr.reviews.find((r) => r.state === 'APPROVED')
+    const approvalReview = pr.reviews.find((r) => r.state === 'APPROVED');
     if (approvalReview?.submittedAt) {
-      const hours = hoursBetween(pr.createdAt, approvalReview.submittedAt)
+      const hours = hoursBetween(pr.createdAt, approvalReview.submittedAt);
       if (hours >= 0) {
-        hoursToApproval.push(hours)
+        hoursToApproval.push(hours);
       }
     }
 
     // Count comments
     for (const review of pr.reviews) {
-      totalComments += review.comments.length
+      totalComments += review.comments.length;
     }
   }
 
@@ -316,29 +310,20 @@ export async function getReviewTimeStats(
     averageHoursToFirstReview:
       hoursToFirstReview.length > 0
         ? Math.round(
-            (hoursToFirstReview.reduce((a, b) => a + b, 0) /
-              hoursToFirstReview.length) *
-              10
+            (hoursToFirstReview.reduce((a, b) => a + b, 0) / hoursToFirstReview.length) * 10
           ) / 10
         : 0,
     averageHoursToApproval:
       hoursToApproval.length > 0
-        ? Math.round(
-            (hoursToApproval.reduce((a, b) => a + b, 0) /
-              hoursToApproval.length) *
-              10
-          ) / 10
+        ? Math.round((hoursToApproval.reduce((a, b) => a + b, 0) / hoursToApproval.length) * 10) /
+          10
         : 0,
     averageReviewsPerPR:
-      prsWithReviewCount > 0
-        ? Math.round((totalReviews / prsWithReviewCount) * 10) / 10
-        : 0,
+      prsWithReviewCount > 0 ? Math.round((totalReviews / prsWithReviewCount) * 10) / 10 : 0,
     averageCommentsPerReview:
-      totalReviews > 0
-        ? Math.round((totalComments / totalReviews) * 10) / 10
-        : 0,
+      totalReviews > 0 ? Math.round((totalComments / totalReviews) * 10) / 10 : 0,
     totalPRsReviewed: prsWithReviewCount,
-  }
+  };
 }
 
 // =============================================================================
@@ -354,15 +339,13 @@ export async function getContributorStats(
 ): Promise<ContributorStats[]> {
   const repo = await prisma.gitHubRepository.findFirst({
     where: { projectId },
-  })
+  });
 
   if (!repo) {
-    return []
+    return [];
   }
 
-  const dateFilter = dateRange
-    ? { gte: dateRange.from, lte: dateRange.to }
-    : undefined
+  const dateFilter = dateRange ? { gte: dateRange.from, lte: dateRange.to } : undefined;
 
   // Get commits by author
   const commits = await prisma.gitHubCommit.groupBy({
@@ -373,7 +356,7 @@ export async function getContributorStats(
       authorLogin: { not: null },
     },
     _count: { id: true },
-  })
+  });
 
   // Get PRs opened by author
   const prsOpened = await prisma.gitHubPullRequest.groupBy({
@@ -383,7 +366,7 @@ export async function getContributorStats(
       createdAt: dateFilter,
     },
     _count: { id: true },
-  })
+  });
 
   // Get PRs merged by author
   const prsMerged = await prisma.gitHubPullRequest.groupBy({
@@ -394,7 +377,7 @@ export async function getContributorStats(
       mergedAt: dateFilter,
     },
     _count: { id: true },
-  })
+  });
 
   // Get reviews by author
   const reviews = await prisma.gitHubReview.groupBy({
@@ -406,7 +389,7 @@ export async function getContributorStats(
       submittedAt: dateFilter,
     },
     _count: { id: true },
-  })
+  });
 
   // Get review comments by author
   const comments = await prisma.gitHubReviewComment.groupBy({
@@ -420,13 +403,13 @@ export async function getContributorStats(
       createdAt: dateFilter,
     },
     _count: { id: true },
-  })
+  });
 
   // Combine all stats
-  const statsMap = new Map<string, ContributorStats>()
+  const statsMap = new Map<string, ContributorStats>();
 
   const getOrCreate = (login: string): ContributorStats => {
-    let stats = statsMap.get(login)
+    let stats = statsMap.get(login);
     if (!stats) {
       stats = {
         login,
@@ -436,42 +419,40 @@ export async function getContributorStats(
         reviewsGiven: 0,
         commentsGiven: 0,
         issuesLinked: 0,
-      }
-      statsMap.set(login, stats)
+      };
+      statsMap.set(login, stats);
     }
-    return stats
-  }
+    return stats;
+  };
 
   for (const c of commits) {
     if (c.authorLogin) {
-      getOrCreate(c.authorLogin).commits = c._count.id
+      getOrCreate(c.authorLogin).commits = c._count.id;
     }
   }
 
   for (const p of prsOpened) {
-    getOrCreate(p.authorLogin).prsOpened = p._count.id
+    getOrCreate(p.authorLogin).prsOpened = p._count.id;
   }
 
   for (const p of prsMerged) {
-    getOrCreate(p.authorLogin).prsMerged = p._count.id
+    getOrCreate(p.authorLogin).prsMerged = p._count.id;
   }
 
   for (const r of reviews) {
-    getOrCreate(r.authorLogin).reviewsGiven = r._count.id
+    getOrCreate(r.authorLogin).reviewsGiven = r._count.id;
   }
 
   for (const c of comments) {
-    getOrCreate(c.authorLogin).commentsGiven = c._count.id
+    getOrCreate(c.authorLogin).commentsGiven = c._count.id;
   }
 
   // Sort by total activity
   return Array.from(statsMap.values()).sort((a, b) => {
-    const aTotal =
-      a.commits + a.prsOpened + a.prsMerged + a.reviewsGiven + a.commentsGiven
-    const bTotal =
-      b.commits + b.prsOpened + b.prsMerged + b.reviewsGiven + b.commentsGiven
-    return bTotal - aTotal
-  })
+    const aTotal = a.commits + a.prsOpened + a.prsMerged + a.reviewsGiven + a.commentsGiven;
+    const bTotal = b.commits + b.prsOpened + b.prsMerged + b.reviewsGiven + b.commentsGiven;
+    return bTotal - aTotal;
+  });
 }
 
 // =============================================================================
@@ -488,23 +469,23 @@ export async function getThroughputStats(
 ): Promise<ThroughputStats[]> {
   const repo = await prisma.gitHubRepository.findFirst({
     where: { projectId },
-  })
+  });
 
   if (!repo) {
-    return []
+    return [];
   }
 
   // Default to last 12 weeks/months if no range specified
-  const now = new Date()
-  const defaultFrom = new Date(now)
+  const now = new Date();
+  const defaultFrom = new Date(now);
   if (periodType === 'week') {
-    defaultFrom.setDate(defaultFrom.getDate() - 84) // 12 weeks
+    defaultFrom.setDate(defaultFrom.getDate() - 84); // 12 weeks
   } else {
-    defaultFrom.setMonth(defaultFrom.getMonth() - 12)
+    defaultFrom.setMonth(defaultFrom.getMonth() - 12);
   }
 
-  const from = dateRange?.from ?? defaultFrom
-  const to = dateRange?.to ?? now
+  const from = dateRange?.from ?? defaultFrom;
+  const to = dateRange?.to ?? now;
 
   // Get merged PRs
   const mergedPRs = await prisma.gitHubPullRequest.findMany({
@@ -517,7 +498,7 @@ export async function getThroughputStats(
       mergedAt: true,
       taskId: true,
     },
-  })
+  });
 
   // Get closed issues
   const closedIssues = await prisma.gitHubIssue.findMany({
@@ -529,48 +510,48 @@ export async function getThroughputStats(
     select: {
       updatedAt: true,
     },
-  })
+  });
 
   // Group by period
   const getPeriodKey = (date: Date): string => {
     if (periodType === 'week') {
-      const weekStart = getWeekStart(date)
-      return weekStart.toISOString().split('T')[0]!
+      const weekStart = getWeekStart(date);
+      return weekStart.toISOString().split('T')[0]!;
     } else {
-      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-01`
+      return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-01`;
     }
-  }
+  };
 
   const statsMap = new Map<
     string,
     { tasksCompleted: number; prsMerged: number; issuesClosed: number }
-  >()
+  >();
 
   for (const pr of mergedPRs) {
     if (pr.mergedAt) {
-      const key = getPeriodKey(pr.mergedAt)
+      const key = getPeriodKey(pr.mergedAt);
       const existing = statsMap.get(key) ?? {
         tasksCompleted: 0,
         prsMerged: 0,
         issuesClosed: 0,
-      }
-      existing.prsMerged++
+      };
+      existing.prsMerged++;
       if (pr.taskId) {
-        existing.tasksCompleted++
+        existing.tasksCompleted++;
       }
-      statsMap.set(key, existing)
+      statsMap.set(key, existing);
     }
   }
 
   for (const issue of closedIssues) {
-    const key = getPeriodKey(issue.updatedAt)
+    const key = getPeriodKey(issue.updatedAt);
     const existing = statsMap.get(key) ?? {
       tasksCompleted: 0,
       prsMerged: 0,
       issuesClosed: 0,
-    }
-    existing.issuesClosed++
-    statsMap.set(key, existing)
+    };
+    existing.issuesClosed++;
+    statsMap.set(key, existing);
   }
 
   return Array.from(statsMap.entries())
@@ -579,7 +560,7 @@ export async function getThroughputStats(
       periodStart: new Date(key),
       ...value,
     }))
-    .sort((a, b) => a.periodStart.getTime() - b.periodStart.getTime())
+    .sort((a, b) => a.periodStart.getTime() - b.periodStart.getTime());
 }
 
 // =============================================================================
@@ -598,14 +579,14 @@ export async function getProjectAnalytics(
     getReviewTimeStats(projectId, dateRange),
     getContributorStats(projectId, dateRange),
     getThroughputStats(projectId, 'week', dateRange),
-  ])
+  ]);
 
   return {
     cycleTime,
     reviewTime,
     contributors,
     throughput,
-  }
+  };
 }
 
 // =============================================================================
@@ -618,4 +599,4 @@ export const analyticsService = {
   getContributorStats,
   getThroughputStats,
   getProjectAnalytics,
-}
+};

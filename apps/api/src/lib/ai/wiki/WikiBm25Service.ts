@@ -20,7 +20,7 @@
  * =============================================================================
  */
 
-import type { PrismaClient } from '@prisma/client'
+import type { PrismaClient } from '@prisma/client';
 
 // =============================================================================
 // Types
@@ -29,24 +29,24 @@ import type { PrismaClient } from '@prisma/client'
 /**
  * Supported search languages for PostgreSQL FTS
  */
-export type SearchLanguage = 'english' | 'dutch' | 'german' | 'simple'
+export type SearchLanguage = 'english' | 'dutch' | 'german' | 'simple';
 
 /**
  * Options for BM25/FTS search
  */
 export interface Bm25SearchOptions {
   /** Workspace ID (for workspace wiki search) */
-  workspaceId?: number
+  workspaceId?: number;
   /** Project ID (for project wiki search) */
-  projectId?: number
+  projectId?: number;
   /** Maximum results to return (default: 20) */
-  limit?: number
+  limit?: number;
   /** Minimum rank score 0-1 (default: 0.001) */
-  minRank?: number
+  minRank?: number;
   /** Search language (default: 'english') */
-  language?: SearchLanguage
+  language?: SearchLanguage;
   /** Include archived pages (default: false) */
-  includeArchived?: boolean
+  includeArchived?: boolean;
 }
 
 /**
@@ -54,28 +54,28 @@ export interface Bm25SearchOptions {
  */
 export interface Bm25SearchResult {
   /** Page ID */
-  pageId: number
+  pageId: number;
   /** Page title */
-  title: string
+  title: string;
   /** Page slug */
-  slug: string
+  slug: string;
   /** BM25/TF-IDF rank score (0-1 normalized) */
-  rank: number
+  rank: number;
   /** Matched headline with <mark> highlights */
-  headline?: string
+  headline?: string;
   /** Source: 'workspace' or 'project' */
-  source: 'workspace' | 'project'
+  source: 'workspace' | 'project';
 }
 
 /**
  * Raw result from PostgreSQL FTS query
  */
 interface RawFtsResult {
-  id: number
-  title: string
-  slug: string
-  rank: number
-  headline: string | null
+  id: number;
+  title: string;
+  slug: string;
+  rank: number;
+  headline: string | null;
 }
 
 // =============================================================================
@@ -116,24 +116,24 @@ export class WikiBm25Service {
       minRank = 0.001,
       language = 'english',
       includeArchived = false,
-    } = options
+    } = options;
 
     // Validate input
     if (!query || query.trim().length === 0) {
-      return []
+      return [];
     }
 
     if (!workspaceId && !projectId) {
-      throw new Error('Either workspaceId or projectId must be provided')
+      throw new Error('Either workspaceId or projectId must be provided');
     }
 
     // Convert query to tsquery format
-    const tsquery = this.buildTsQuery(query)
+    const tsquery = this.buildTsQuery(query);
     if (!tsquery) {
-      return []
+      return [];
     }
 
-    const results: Bm25SearchResult[] = []
+    const results: Bm25SearchResult[] = [];
 
     // Search workspace wiki pages
     if (workspaceId) {
@@ -144,8 +144,8 @@ export class WikiBm25Service {
         limit,
         minRank,
         includeArchived
-      )
-      results.push(...workspaceResults)
+      );
+      results.push(...workspaceResults);
     }
 
     // Search project wiki pages
@@ -157,12 +157,12 @@ export class WikiBm25Service {
         limit,
         minRank,
         includeArchived
-      )
-      results.push(...projectResults)
+      );
+      results.push(...projectResults);
     }
 
     // Sort by rank descending and limit total results
-    return results.sort((a, b) => b.rank - a.rank).slice(0, limit)
+    return results.sort((a, b) => b.rank - a.rank).slice(0, limit);
   }
 
   /**
@@ -172,16 +172,12 @@ export class WikiBm25Service {
    * const suggestions = await bm25Service.getSuggestions('kan', 1)
    * // Returns: ['kanban', 'kanbu']
    */
-  async getSuggestions(
-    prefix: string,
-    workspaceId: number,
-    limit: number = 5
-  ): Promise<string[]> {
+  async getSuggestions(prefix: string, workspaceId: number, limit: number = 5): Promise<string[]> {
     if (!prefix || prefix.length < 2) {
-      return []
+      return [];
     }
 
-    const loweredPrefix = prefix.toLowerCase()
+    const loweredPrefix = prefix.toLowerCase();
 
     try {
       const results = await this.prisma.$queryRaw<Array<{ word: string }>>`
@@ -192,12 +188,12 @@ export class WikiBm25Service {
           AND status != 'ARCHIVED'
         HAVING unnest(string_to_array(lower(title), ' ')) LIKE ${loweredPrefix + '%'}
         LIMIT ${limit}
-      `
+      `;
 
-      return results.map((r) => r.word).filter((w) => w.length > 1)
+      return results.map((r) => r.word).filter((w) => w.length > 1);
     } catch (error) {
-      console.error('[WikiBm25Service] getSuggestions failed:', error)
-      return []
+      console.error('[WikiBm25Service] getSuggestions failed:', error);
+      return [];
     }
   }
 
@@ -212,10 +208,10 @@ export class WikiBm25Service {
         FROM workspace_wiki_pages
         WHERE workspace_id = ${workspaceId}
           AND search_vector IS NOT NULL
-      `
-      return Number(result[0]?.count ?? 0) > 0
+      `;
+      return Number(result[0]?.count ?? 0) > 0;
     } catch {
-      return false
+      return false;
     }
   }
 
@@ -233,21 +229,21 @@ export class WikiBm25Service {
    */
   buildTsQuery(query: string): string {
     // Remove special PostgreSQL tsquery characters
-    const escaped = query.replace(/[&|!():*<>']/g, ' ')
+    const escaped = query.replace(/[&|!():*<>']/g, ' ');
 
     // Split into words and filter empty
     const words = escaped
       .trim()
       .split(/\s+/)
-      .filter((w) => w.length > 0)
+      .filter((w) => w.length > 0);
 
     if (words.length === 0) {
-      return ''
+      return '';
     }
 
     // Build query with prefix matching: word1:* & word2:*
     // This allows partial word matching
-    return words.map((w) => `${w}:*`).join(' & ')
+    return words.map((w) => `${w}:*`).join(' & ');
   }
 
   /**
@@ -263,7 +259,7 @@ export class WikiBm25Service {
   ): Promise<Bm25SearchResult[]> {
     try {
       // Build status filter
-      const statusCondition = includeArchived ? '' : `AND status != 'ARCHIVED'`
+      const statusCondition = includeArchived ? '' : `AND status != 'ARCHIVED'`;
 
       // Execute raw SQL query for full-text search
       // Note: Language must be cast to regconfig for PostgreSQL FTS functions
@@ -287,7 +283,7 @@ export class WikiBm25Service {
         tsquery,
         workspaceId,
         limit
-      )
+      );
 
       return results
         .filter((r) => r.rank >= minRank)
@@ -298,10 +294,10 @@ export class WikiBm25Service {
           rank: r.rank,
           headline: r.headline ?? undefined,
           source: 'workspace' as const,
-        }))
+        }));
     } catch (error) {
-      console.error('[WikiBm25Service] searchWorkspaceWiki failed:', error)
-      return []
+      console.error('[WikiBm25Service] searchWorkspaceWiki failed:', error);
+      return [];
     }
   }
 
@@ -318,7 +314,7 @@ export class WikiBm25Service {
   ): Promise<Bm25SearchResult[]> {
     try {
       // Build status filter
-      const statusCondition = includeArchived ? '' : `AND status != 'ARCHIVED'`
+      const statusCondition = includeArchived ? '' : `AND status != 'ARCHIVED'`;
 
       // Execute raw SQL query for full-text search
       // Note: Language must be cast to regconfig for PostgreSQL FTS functions
@@ -342,7 +338,7 @@ export class WikiBm25Service {
         tsquery,
         projectId,
         limit
-      )
+      );
 
       return results
         .filter((r) => r.rank >= minRank)
@@ -353,10 +349,10 @@ export class WikiBm25Service {
           rank: r.rank,
           headline: r.headline ?? undefined,
           source: 'project' as const,
-        }))
+        }));
     } catch (error) {
-      console.error('[WikiBm25Service] searchProjectWiki failed:', error)
-      return []
+      console.error('[WikiBm25Service] searchProjectWiki failed:', error);
+      return [];
     }
   }
 }
@@ -365,21 +361,21 @@ export class WikiBm25Service {
 // Factory Function
 // =============================================================================
 
-let bm25ServiceInstance: WikiBm25Service | null = null
+let bm25ServiceInstance: WikiBm25Service | null = null;
 
 /**
  * Get or create WikiBm25Service singleton instance
  */
 export function getWikiBm25Service(prisma: PrismaClient): WikiBm25Service {
   if (!bm25ServiceInstance) {
-    bm25ServiceInstance = new WikiBm25Service(prisma)
+    bm25ServiceInstance = new WikiBm25Service(prisma);
   }
-  return bm25ServiceInstance
+  return bm25ServiceInstance;
 }
 
 /**
  * Reset the singleton instance (useful for testing)
  */
 export function resetWikiBm25Service(): void {
-  bm25ServiceInstance = null
+  bm25ServiceInstance = null;
 }

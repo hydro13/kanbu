@@ -140,14 +140,14 @@ export function WidthToggle({ className = '' }: WidthToggleProps) {
           {/* Current state indicator */}
           <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-foreground">
-                Page Width
-              </span>
-              <span className={`text-xs px-2 py-0.5 rounded-full ${
-                isFullWidth
-                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
-                  : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
-              }`}>
+              <span className="text-sm font-medium text-foreground">Page Width</span>
+              <span
+                className={`text-xs px-2 py-0.5 rounded-full ${
+                  isFullWidth
+                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300'
+                    : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400'
+                }`}
+              >
                 {isFullWidth ? 'Full' : 'Normal'}
               </span>
             </div>
@@ -162,9 +162,10 @@ export function WidthToggle({ className = '' }: WidthToggleProps) {
               }}
               className={`
                 w-full flex items-center gap-2 px-2 py-2 rounded-md text-sm transition-colors
-                ${isPinned
-                  ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
-                  : 'text-gray-600 dark:text-gray-400 hover:bg-accent'
+                ${
+                  isPinned
+                    ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20'
+                    : 'text-gray-600 dark:text-gray-400 hover:bg-accent'
                 }
               `}
             >

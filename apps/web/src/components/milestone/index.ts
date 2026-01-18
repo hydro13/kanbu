@@ -11,7 +11,7 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-export { MilestoneCard } from './MilestoneCard'
-export type { MilestoneCardProps } from './MilestoneCard'
-export { MilestoneSelector } from './MilestoneSelector'
-export type { MilestoneSelectorProps } from './MilestoneSelector'
+export { MilestoneCard } from './MilestoneCard';
+export type { MilestoneCardProps } from './MilestoneCard';
+export { MilestoneSelector } from './MilestoneSelector';
+export type { MilestoneSelectorProps } from './MilestoneSelector';

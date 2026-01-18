@@ -13,23 +13,23 @@
  * ===================================================================
  */
 
-import { Link } from 'react-router-dom'
-import { Github, Settings, RefreshCw, CheckCircle2, XCircle, Star } from 'lucide-react'
-import { Card, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
-import { trpc } from '@/lib/trpc'
-import type { Project } from '@/store/projectSlice'
-import { ProjectContextMenu, useContextMenu } from './ProjectContextMenu'
+import { Link } from 'react-router-dom';
+import { Github, Settings, RefreshCw, CheckCircle2, XCircle, Star } from 'lucide-react';
+import { Card, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { trpc } from '@/lib/trpc';
+import type { Project } from '@/store/projectSlice';
+import { ProjectContextMenu, useContextMenu } from './ProjectContextMenu';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface ProjectCardProps {
-  project: Project
-  workspaceSlug: string
-  className?: string
+  project: Project;
+  workspaceSlug: string;
+  className?: string;
 }
 
 // =============================================================================
@@ -37,89 +37,87 @@ interface ProjectCardProps {
 // =============================================================================
 
 function formatDate(dateString: string | null): string {
-  if (!dateString) return ''
-  const date = new Date(dateString)
+  if (!dateString) return '';
+  const date = new Date(dateString);
   return date.toLocaleDateString('nl-NL', {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
-  })
+  });
 }
 
 function getRoleBadgeColor(role: Project['userRole']): string {
   switch (role) {
     case 'OWNER':
-      return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300'
+      return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300';
     case 'MANAGER':
-      return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300'
+      return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300';
     case 'MEMBER':
-      return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+      return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300';
     case 'VIEWER':
-      return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
+      return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
     default:
-      return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300'
+      return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
   }
 }
 
-type SyncStatus = 'synced' | 'stale' | 'disabled' | 'never'
+type SyncStatus = 'synced' | 'stale' | 'disabled' | 'never';
 
 function getGitHubSyncStatus(project: Project): SyncStatus {
-  if (!project.hasGitHub || !project.github?.primaryRepo) return 'never'
+  if (!project.hasGitHub || !project.github?.primaryRepo) return 'never';
 
-  const { syncEnabled, lastSyncAt } = project.github.primaryRepo
+  const { syncEnabled, lastSyncAt } = project.github.primaryRepo;
 
-  if (!syncEnabled) return 'disabled'
-  if (!lastSyncAt) return 'never'
+  if (!syncEnabled) return 'disabled';
+  if (!lastSyncAt) return 'never';
 
   // Consider sync stale if older than 24 hours
-  const lastSync = new Date(lastSyncAt)
-  const hoursSinceSync = (Date.now() - lastSync.getTime()) / (1000 * 60 * 60)
+  const lastSync = new Date(lastSyncAt);
+  const hoursSinceSync = (Date.now() - lastSync.getTime()) / (1000 * 60 * 60);
 
-  return hoursSinceSync > 24 ? 'stale' : 'synced'
+  return hoursSinceSync > 24 ? 'stale' : 'synced';
 }
 
 function formatSyncTime(lastSyncAt: string | null): string {
-  if (!lastSyncAt) return 'Never synced'
+  if (!lastSyncAt) return 'Never synced';
 
-  const lastSync = new Date(lastSyncAt)
-  const now = new Date()
-  const diffMs = now.getTime() - lastSync.getTime()
-  const diffMins = Math.floor(diffMs / (1000 * 60))
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+  const lastSync = new Date(lastSyncAt);
+  const now = new Date();
+  const diffMs = now.getTime() - lastSync.getTime();
+  const diffMins = Math.floor(diffMs / (1000 * 60));
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-  if (diffMins < 1) return 'Just now'
-  if (diffMins < 60) return `${diffMins}m ago`
-  if (diffHours < 24) return `${diffHours}h ago`
-  return `${diffDays}d ago`
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  return `${diffDays}d ago`;
 }
 
 function getGitHubTooltip(project: Project, syncStatus: SyncStatus): string {
-  if (!project.github?.primaryRepo) return 'GitHub linked'
+  if (!project.github?.primaryRepo) return 'GitHub linked';
 
-  const repoName = project.github.primaryRepo.fullName
-  let statusText = ''
+  const repoName = project.github.primaryRepo.fullName;
+  let statusText = '';
 
   switch (syncStatus) {
     case 'synced':
-      statusText = `Synced ${formatSyncTime(project.github.primaryRepo.lastSyncAt)}`
-      break
+      statusText = `Synced ${formatSyncTime(project.github.primaryRepo.lastSyncAt)}`;
+      break;
     case 'stale':
-      statusText = `Last sync: ${formatSyncTime(project.github.primaryRepo.lastSyncAt)}`
-      break
+      statusText = `Last sync: ${formatSyncTime(project.github.primaryRepo.lastSyncAt)}`;
+      break;
     case 'disabled':
-      statusText = 'Sync disabled'
-      break
+      statusText = 'Sync disabled';
+      break;
     case 'never':
-      statusText = 'Never synced'
-      break
+      statusText = 'Never synced';
+      break;
   }
 
-  const moreRepos = project.github.repoCount > 1
-    ? ` (+${project.github.repoCount - 1} more)`
-    : ''
+  const moreRepos = project.github.repoCount > 1 ? ` (+${project.github.repoCount - 1} more)` : '';
 
-  return `${repoName}${moreRepos}\n${statusText}`
+  return `${repoName}${moreRepos}\n${statusText}`;
 }
 
 // =============================================================================
@@ -127,40 +125,40 @@ function getGitHubTooltip(project: Project, syncStatus: SyncStatus): string {
 // =============================================================================
 
 export function ProjectCard({ project, workspaceSlug, className }: ProjectCardProps) {
-  const syncStatus = getGitHubSyncStatus(project)
-  const canEdit = project.userRole === 'OWNER' || project.userRole === 'MANAGER'
-  const canDelete = project.userRole === 'OWNER'
-  const utils = trpc.useUtils()
+  const syncStatus = getGitHubSyncStatus(project);
+  const canEdit = project.userRole === 'OWNER' || project.userRole === 'MANAGER';
+  const canDelete = project.userRole === 'OWNER';
+  const utils = trpc.useUtils();
 
   // Context menu state
-  const contextMenu = useContextMenu()
+  const contextMenu = useContextMenu();
 
   // Favorite state
   const { data: isFavorite = false } = trpc.favorite.isFavorite.useQuery(
     { projectId: project.id },
     { staleTime: 30000 }
-  )
+  );
 
   const toggleFavorite = trpc.favorite.toggle.useMutation({
     onSuccess: () => {
-      utils.favorite.list.invalidate()
-      utils.favorite.isFavorite.invalidate({ projectId: project.id })
+      utils.favorite.list.invalidate();
+      utils.favorite.isFavorite.invalidate({ projectId: project.id });
     },
-  })
+  });
 
   // Get sync status icon and color
   const getSyncStatusIcon = () => {
     switch (syncStatus) {
       case 'synced':
-        return <CheckCircle2 className="h-3 w-3 text-green-500" />
+        return <CheckCircle2 className="h-3 w-3 text-green-500" />;
       case 'stale':
-        return <RefreshCw className="h-3 w-3 text-yellow-500" />
+        return <RefreshCw className="h-3 w-3 text-yellow-500" />;
       case 'disabled':
-        return <XCircle className="h-3 w-3 text-gray-400" />
+        return <XCircle className="h-3 w-3 text-gray-400" />;
       default:
-        return null
+        return null;
     }
-  }
+  };
 
   return (
     <div className="relative group" onContextMenu={contextMenu.open}>
@@ -176,9 +174,7 @@ export function ProjectCard({ project, workspaceSlug, className }: ProjectCardPr
             {/* Row 1: Header - Name, identifier, and role badge */}
             <div className="flex items-start justify-between gap-4 mb-3">
               <div className="flex items-center gap-3">
-                <CardTitle className="text-lg font-semibold">
-                  {project.name}
-                </CardTitle>
+                <CardTitle className="text-lg font-semibold">{project.name}</CardTitle>
                 {project.identifier && (
                   <span className="text-xs font-mono text-muted-foreground bg-muted px-2 py-1 rounded">
                     {project.identifier}
@@ -248,9 +244,9 @@ export function ProjectCard({ project, workspaceSlug, className }: ProjectCardPr
             isFavorite && 'opacity-100'
           )}
           onClick={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            toggleFavorite.mutate({ projectId: project.id })
+            e.preventDefault();
+            e.stopPropagation();
+            toggleFavorite.mutate({ projectId: project.id });
           }}
           disabled={toggleFavorite.isPending}
           title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
@@ -299,7 +295,7 @@ export function ProjectCard({ project, workspaceSlug, className }: ProjectCardPr
         onClose={contextMenu.close}
       />
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -321,7 +317,7 @@ function TaskIcon({ className }: { className?: string }) {
       <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
       <path d="m9 12 2 2 4-4" />
     </svg>
-  )
+  );
 }
 
 function UsersIcon({ className }: { className?: string }) {
@@ -341,11 +337,11 @@ function UsersIcon({ className }: { className?: string }) {
       <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
       <path d="M16 3.13a4 4 0 0 1 0 7.75" />
     </svg>
-  )
+  );
 }
 
 // =============================================================================
 // Exports
 // =============================================================================
 
-export default ProjectCard
+export default ProjectCard;

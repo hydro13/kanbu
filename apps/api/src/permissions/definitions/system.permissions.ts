@@ -8,7 +8,7 @@
  * - Audit logs
  */
 
-import { definePermissions } from '../registry'
+import { definePermissions } from '../registry';
 
 export const systemPermissions = definePermissions('system', {
   admin: {
@@ -124,4 +124,4 @@ export const systemPermissions = definePermissions('system', {
       },
     },
   },
-})
+});

@@ -17,9 +17,9 @@
  * ===================================================================
  */
 
-import { useState, useCallback, useMemo, useRef } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { ProjectLayout } from '@/components/layout/ProjectLayout'
+import { useState, useCallback, useMemo, useRef } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { ProjectLayout } from '@/components/layout/ProjectLayout';
 import {
   WikiSidebar,
   WikiPageView,
@@ -32,11 +32,11 @@ import {
   type WikiPageStatus,
   type WikiBreadcrumb,
   type WikiPageForSearch,
-} from '@/components/wiki'
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+} from '@/components/wiki';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Dialog,
   DialogContent,
@@ -44,72 +44,77 @@ import {
   DialogTitle,
   DialogFooter,
   DialogDescription,
-} from '@/components/ui/dialog'
+} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { RichTextEditor, type WikiPage as WikiPageForLink, type TaskResult, type MentionResult } from '@/components/editor'
-import { trpc } from '@/lib/trpc'
-import { useAppSelector } from '@/store'
-import { selectUser } from '@/store/authSlice'
-import { useWikiBackgroundIndexing } from '@/hooks/useWikiBackgroundIndexing'
-import { BookOpen, Plus, ArrowLeft } from 'lucide-react'
-import { Link } from 'react-router-dom'
+} from '@/components/ui/select';
+import {
+  RichTextEditor,
+  type WikiPage as WikiPageForLink,
+  type TaskResult,
+  type MentionResult,
+} from '@/components/editor';
+import { trpc } from '@/lib/trpc';
+import { useAppSelector } from '@/store';
+import { selectUser } from '@/store/authSlice';
+import { useWikiBackgroundIndexing } from '@/hooks/useWikiBackgroundIndexing';
+import { BookOpen, Plus, ArrowLeft } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface PageFromApi {
-  id: number
-  title: string
-  slug: string
-  status: WikiPageStatus
-  sortOrder: number
-  parentId: number | null
-  createdAt: string
-  updatedAt: string
-  childCount: number
-  versionCount?: number
+  id: number;
+  title: string;
+  slug: string;
+  status: WikiPageStatus;
+  sortOrder: number;
+  parentId: number | null;
+  createdAt: string;
+  updatedAt: string;
+  childCount: number;
+  versionCount?: number;
 }
 
 interface FullPageFromApi {
-  id: number
-  title: string
-  slug: string
-  content: string
-  contentJson: unknown
-  status: WikiPageStatus
-  sortOrder: number
-  parentId: number | null
-  createdAt: string
-  updatedAt: string
-  publishedAt: string | null
+  id: number;
+  title: string;
+  slug: string;
+  content: string;
+  contentJson: unknown;
+  status: WikiPageStatus;
+  sortOrder: number;
+  parentId: number | null;
+  createdAt: string;
+  updatedAt: string;
+  publishedAt: string | null;
   project: {
-    id: number
-    name: string
-    prefix: string
+    id: number;
+    name: string;
+    prefix: string;
     workspace: {
-      id: number
-      name: string
-      slug: string
-    }
-  }
+      id: number;
+      name: string;
+      slug: string;
+    };
+  };
   parent: {
-    id: number
-    title: string
-    slug: string
-  } | null
+    id: number;
+    title: string;
+    slug: string;
+  } | null;
   children: {
-    id: number
-    title: string
-    slug: string
-  }[]
-  versionCount: number
+    id: number;
+    title: string;
+    slug: string;
+  }[];
+  versionCount: number;
 }
 
 // =============================================================================
@@ -118,24 +123,24 @@ interface FullPageFromApi {
 
 export function ProjectWikiPage() {
   const { workspaceSlug, projectIdentifier, pageSlug } = useParams<{
-    workspaceSlug: string
-    projectIdentifier: string
-    pageSlug?: string
-  }>()
-  const navigate = useNavigate()
+    workspaceSlug: string;
+    projectIdentifier: string;
+    pageSlug?: string;
+  }>();
+  const navigate = useNavigate();
 
-  const [showCreateModal, setShowCreateModal] = useState(false)
-  const [createParentId, setCreateParentId] = useState<number | undefined>()
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [showVersionHistory, setShowVersionHistory] = useState(false)
-  const [showSearchDialog, setShowSearchDialog] = useState(false)
-  const [showGraphView, setShowGraphView] = useState(false)
-  const [graphFullscreen, setGraphFullscreen] = useState(false)
-  const [showAskWiki, setShowAskWiki] = useState(false)
-  const [askWikiInitialQuery, setAskWikiInitialQuery] = useState<string | undefined>()
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createParentId, setCreateParentId] = useState<number | undefined>();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showVersionHistory, setShowVersionHistory] = useState(false);
+  const [showSearchDialog, setShowSearchDialog] = useState(false);
+  const [showGraphView, setShowGraphView] = useState(false);
+  const [graphFullscreen, setGraphFullscreen] = useState(false);
+  const [showAskWiki, setShowAskWiki] = useState(false);
+  const [askWikiInitialQuery, setAskWikiInitialQuery] = useState<string | undefined>();
 
-  const utils = trpc.useUtils()
-  const user = useAppSelector(selectUser)
+  const utils = trpc.useUtils();
+  const user = useAppSelector(selectUser);
 
   // Current user for signature feature
   const currentUser = user
@@ -145,15 +150,15 @@ export function ProjectWikiPage() {
         name: user.name ?? null,
         avatarUrl: user.avatarUrl,
       }
-    : undefined
+    : undefined;
 
   // Fetch project by identifier
   const projectQuery = trpc.project.getByIdentifier.useQuery(
     { identifier: projectIdentifier! },
     { enabled: !!projectIdentifier }
-  )
-  const project = projectQuery.data
-  const workspaceId = project?.workspace?.id
+  );
+  const project = projectQuery.data;
+  const workspaceId = project?.workspace?.id;
 
   // Background indexing - runs during idle time
   useWikiBackgroundIndexing({
@@ -162,38 +167,38 @@ export function ProjectWikiPage() {
     enabled: !!workspaceId && !!project?.id,
     idleThreshold: 30_000, // 30 seconds
     cooldown: 5 * 60 * 1000, // 5 minutes
-  })
+  });
 
   // Fetch wiki pages list
   const pagesQuery = trpc.projectWiki.list.useQuery(
     { projectId: project?.id ?? 0, includeUnpublished: true },
     { enabled: !!project?.id }
-  )
-  const pages = (pagesQuery.data ?? []) as PageFromApi[]
+  );
+  const pages = (pagesQuery.data ?? []) as PageFromApi[];
 
   // Fetch current page if pageSlug is provided
   const currentPageQuery = trpc.projectWiki.getBySlug.useQuery(
     { projectId: project?.id ?? 0, slug: pageSlug! },
     { enabled: !!project?.id && !!pageSlug }
-  )
-  const currentPage = currentPageQuery.data as FullPageFromApi | undefined
+  );
+  const currentPage = currentPageQuery.data as FullPageFromApi | undefined;
 
   // Update mutation
   const updateMutation = trpc.projectWiki.update.useMutation({
     onSuccess: () => {
-      utils.projectWiki.list.invalidate()
-      utils.projectWiki.getBySlug.invalidate()
+      utils.projectWiki.list.invalidate();
+      utils.projectWiki.getBySlug.invalidate();
     },
-  })
+  });
 
   // Delete mutation
   const deleteMutation = trpc.projectWiki.delete.useMutation({
     onSuccess: () => {
-      utils.projectWiki.list.invalidate()
-      setShowDeleteConfirm(false)
-      navigate(`/workspace/${workspaceSlug}/project/${projectIdentifier}/wiki`)
+      utils.projectWiki.list.invalidate();
+      setShowDeleteConfirm(false);
+      navigate(`/workspace/${workspaceSlug}/project/${projectIdentifier}/wiki`);
     },
-  })
+  });
 
   // Convert pages to WikiPageNode format
   const pageNodes: WikiPageNode[] = useMemo(
@@ -209,32 +214,32 @@ export function ProjectWikiPage() {
         updatedAt: p.updatedAt,
       })),
     [pages]
-  )
+  );
 
   // Build breadcrumbs for current page
   const breadcrumbs: WikiBreadcrumb[] = useMemo(() => {
-    if (!currentPage || !currentPage.parentId) return []
+    if (!currentPage || !currentPage.parentId) return [];
 
-    const trail: WikiBreadcrumb[] = []
-    let parentId: number | null = currentPage.parentId
+    const trail: WikiBreadcrumb[] = [];
+    let parentId: number | null = currentPage.parentId;
 
     // Walk up the tree
     while (parentId) {
-      const parent = pages.find((p) => p.id === parentId)
+      const parent = pages.find((p) => p.id === parentId);
       if (parent) {
         trail.unshift({
           id: parent.id,
           title: parent.title,
           slug: parent.slug,
-        })
-        parentId = parent.parentId
+        });
+        parentId = parent.parentId;
       } else {
-        break
+        break;
       }
     }
 
-    return trail
-  }, [currentPage, pages])
+    return trail;
+  }, [currentPage, pages]);
 
   // Convert pages to WikiPageForLink format for wiki link autocomplete
   const wikiPagesForLinks: WikiPageForLink[] = useMemo(
@@ -248,24 +253,28 @@ export function ProjectWikiPage() {
           exists: true,
         })),
     [pages]
-  )
+  );
 
   // Priority number to string conversion
   const priorityToString = (priority: number): TaskResult['priority'] => {
     switch (priority) {
-      case 1: return 'MEDIUM'
-      case 2: return 'HIGH'
-      case 3: return 'URGENT'
-      default: return 'LOW'
+      case 1:
+        return 'MEDIUM';
+      case 2:
+        return 'HIGH';
+      case 3:
+        return 'URGENT';
+      default:
+        return 'LOW';
     }
-  }
+  };
 
   // Search tasks function for #task-ref autocomplete
   // Searches within this project
   const searchTasks = useCallback(
     async (query: string): Promise<TaskResult[]> => {
       if (!project?.id || query.length < 1) {
-        return []
+        return [];
       }
 
       try {
@@ -274,7 +283,7 @@ export function ProjectWikiPage() {
           query,
           limit: 10,
           includeCompleted: false,
-        })
+        });
 
         return results.map((task) => ({
           id: task.id,
@@ -283,21 +292,21 @@ export function ProjectWikiPage() {
           priority: priorityToString(task.priority),
           isActive: task.isActive,
           column: task.column ? { title: task.column.title } : undefined,
-        }))
+        }));
       } catch (error) {
-        console.error('Task search failed:', error)
-        return []
+        console.error('Task search failed:', error);
+        return [];
       }
     },
     [project?.id, utils.client]
-  )
+  );
 
   // Search users function for @mention autocomplete
   // Searches across all members in the workspace
   const searchUsers = useCallback(
     async (query: string): Promise<MentionResult[]> => {
       if (!workspaceId) {
-        return []
+        return [];
       }
 
       try {
@@ -305,31 +314,31 @@ export function ProjectWikiPage() {
           workspaceId,
           query,
           limit: 10,
-        })
+        });
 
         return results.map((u) => ({
           id: u.id,
           username: u.username,
           name: u.name,
           avatarUrl: u.avatarUrl,
-        }))
+        }));
       } catch (error) {
-        console.error('User search failed:', error)
-        return []
+        console.error('User search failed:', error);
+        return [];
       }
     },
     [workspaceId, utils.client]
-  )
+  );
 
   // Memoize the page object to prevent unnecessary re-renders during auto-save
-  const currentPageRef = useRef(currentPage)
+  const currentPageRef = useRef(currentPage);
   if (currentPage && (!currentPageRef.current || currentPageRef.current.id !== currentPage.id)) {
-    currentPageRef.current = currentPage
+    currentPageRef.current = currentPage;
   }
 
   const pageForView = useMemo(() => {
-    const cp = currentPage
-    if (!cp) return null
+    const cp = currentPage;
+    if (!cp) return null;
     return {
       id: cp.id,
       title: cp.title,
@@ -339,117 +348,133 @@ export function ProjectWikiPage() {
         typeof cp.contentJson === 'string'
           ? cp.contentJson
           : cp.contentJson
-          ? JSON.stringify(cp.contentJson)
-          : null,
+            ? JSON.stringify(cp.contentJson)
+            : null,
       status: cp.status,
       sortOrder: cp.sortOrder,
       parentId: cp.parentId,
       createdAt: cp.createdAt,
       updatedAt: cp.updatedAt,
       publishedAt: cp.publishedAt,
-    }
-  }, [currentPage?.id, currentPage?.title, currentPage?.slug, currentPage?.content,
-      currentPage?.contentJson, currentPage?.status, currentPage?.sortOrder,
-      currentPage?.parentId, currentPage?.createdAt, currentPage?.updatedAt,
-      currentPage?.publishedAt])
+    };
+  }, [
+    currentPage?.id,
+    currentPage?.title,
+    currentPage?.slug,
+    currentPage?.content,
+    currentPage?.contentJson,
+    currentPage?.status,
+    currentPage?.sortOrder,
+    currentPage?.parentId,
+    currentPage?.createdAt,
+    currentPage?.updatedAt,
+    currentPage?.publishedAt,
+  ]);
 
   // Handlers
   const handleCreatePage = useCallback((parentId?: number) => {
-    setCreateParentId(parentId)
-    setShowCreateModal(true)
-  }, [])
+    setCreateParentId(parentId);
+    setShowCreateModal(true);
+  }, []);
 
   const handleSavePage = useCallback(
     async (data: { title: string; content: string; contentJson: string }) => {
-      if (!currentPage) return
+      if (!currentPage) return;
 
       await updateMutation.mutateAsync({
         id: currentPage.id,
         title: data.title,
         content: data.content,
         contentJson: data.contentJson ? JSON.parse(data.contentJson) : null,
-      })
+      });
     },
     [currentPage, updateMutation]
-  )
+  );
 
   const handleStatusChange = useCallback(
     async (status: WikiPageStatus) => {
-      if (!currentPage) return
+      if (!currentPage) return;
 
       await updateMutation.mutateAsync({
         id: currentPage.id,
         status,
-      })
+      });
     },
     [currentPage, updateMutation]
-  )
+  );
 
   const handleParentChange = useCallback(
     async (parentId: number | null) => {
-      if (!currentPage) return
+      if (!currentPage) return;
 
       await updateMutation.mutateAsync({
         id: currentPage.id,
         parentId,
-      })
+      });
     },
     [currentPage, updateMutation]
-  )
+  );
 
   const handleDelete = useCallback(async () => {
-    if (!currentPage) return
-    await deleteMutation.mutateAsync({ id: currentPage.id })
-  }, [currentPage, deleteMutation])
+    if (!currentPage) return;
+    await deleteMutation.mutateAsync({ id: currentPage.id });
+  }, [currentPage, deleteMutation]);
 
   const handleSearch = useCallback(() => {
-    setShowSearchDialog(true)
-  }, [])
+    setShowSearchDialog(true);
+  }, []);
 
   // Handler: Show a page in the graph view (from search results)
-  const handleShowInGraph = useCallback((pageId: number) => {
-    if (!showGraphView) {
-      setShowGraphView(true)
-    }
-    console.log(`[ProjectWiki] Show in graph: pageId=${pageId}`)
-  }, [showGraphView])
+  const handleShowInGraph = useCallback(
+    (pageId: number) => {
+      if (!showGraphView) {
+        setShowGraphView(true);
+      }
+      console.log(`[ProjectWiki] Show in graph: pageId=${pageId}`);
+    },
+    [showGraphView]
+  );
 
   // Handler: Open Ask Wiki with context about a graph node
   const handleAskAboutNode = useCallback((nodeLabel: string, nodeType: string) => {
-    const query = nodeType === 'page'
-      ? `Tell me more about "${nodeLabel}"`
-      : `What does "${nodeLabel}" mean in the context of this wiki?`
-    setAskWikiInitialQuery(query)
-    setShowAskWiki(true)
-  }, [])
+    const query =
+      nodeType === 'page'
+        ? `Tell me more about "${nodeLabel}"`
+        : `What does "${nodeLabel}" mean in the context of this wiki?`;
+    setAskWikiInitialQuery(query);
+    setShowAskWiki(true);
+  }, []);
 
   // Handler: Open Ask Wiki dialog
   const handleOpenAskWiki = useCallback(() => {
-    setAskWikiInitialQuery(undefined)
-    setShowAskWiki(true)
-  }, [])
+    setAskWikiInitialQuery(undefined);
+    setShowAskWiki(true);
+  }, []);
 
   // Handler: Open Ask Wiki with page context
   const handleAskAboutPage = useCallback((pageTitle: string, _pageContent: string) => {
-    const query = `Explain what "${pageTitle}" means and how it relates to other topics.`
-    setAskWikiInitialQuery(query)
-    setShowAskWiki(true)
-  }, [])
+    const query = `Explain what "${pageTitle}" means and how it relates to other topics.`;
+    setAskWikiInitialQuery(query);
+    setShowAskWiki(true);
+  }, []);
 
-  const basePath = `/workspace/${workspaceSlug}/project/${projectIdentifier}/wiki`
+  const basePath = `/workspace/${workspaceSlug}/project/${projectIdentifier}/wiki`;
 
   // Handler: Navigate to page from Ask Wiki sources
-  const handleNavigateToPage = useCallback((_pageId: number, pageSlugParam: string) => {
-    navigate(`${basePath}/${pageSlugParam}`)
-  }, [navigate, basePath])
+  const handleNavigateToPage = useCallback(
+    (_pageId: number, pageSlugParam: string) => {
+      navigate(`${basePath}/${pageSlugParam}`);
+    },
+    [navigate, basePath]
+  );
 
   // Handler: Close Ask Wiki and clear initial query
   const handleCloseAskWiki = useCallback(() => {
-    setShowAskWiki(false)
-    setAskWikiInitialQuery(undefined)
-  }, [])
+    setShowAskWiki(false);
+    setAskWikiInitialQuery(undefined);
+  }, []);
 
-  const isLoading = projectQuery.isLoading || pagesQuery.isLoading
+  const isLoading = projectQuery.isLoading || pagesQuery.isLoading;
 
   // Loading state
   if (isLoading) {
@@ -463,7 +488,7 @@ export function ProjectWikiPage() {
           </div>
         </div>
       </ProjectLayout>
-    )
+    );
   }
 
   // Project not found
@@ -472,13 +497,16 @@ export function ProjectWikiPage() {
       <ProjectLayout>
         <div className="flex flex-col items-center justify-center h-64">
           <p className="text-muted-foreground mb-4">Project not found</p>
-          <Link to={`/workspace/${workspaceSlug}`} className="text-primary hover:underline flex items-center gap-2">
+          <Link
+            to={`/workspace/${workspaceSlug}`}
+            className="text-primary hover:underline flex items-center gap-2"
+          >
             <ArrowLeft className="h-4 w-4" />
             Back to Workspace
           </Link>
         </div>
       </ProjectLayout>
-    )
+    );
   }
 
   return (
@@ -525,7 +553,11 @@ export function ProjectWikiPage() {
               currentUser={currentUser}
               onAskWiki={handleOpenAskWiki}
               onAskAboutPage={handleAskAboutPage}
-              availablePages={pages.map((p) => ({ id: p.id, title: p.title, parentId: p.parentId }))}
+              availablePages={pages.map((p) => ({
+                id: p.id,
+                title: p.title,
+                parentId: p.parentId,
+              }))}
               onParentChange={handleParentChange}
             />
           ) : pageSlug && currentPageQuery.isLoading ? (
@@ -571,14 +603,14 @@ export function ProjectWikiPage() {
           parentId={createParentId}
           pages={pages}
           onClose={() => {
-            setShowCreateModal(false)
-            setCreateParentId(undefined)
+            setShowCreateModal(false);
+            setCreateParentId(undefined);
           }}
           onCreated={(newSlug) => {
-            setShowCreateModal(false)
-            setCreateParentId(undefined)
-            pagesQuery.refetch()
-            navigate(`${basePath}/${newSlug}`)
+            setShowCreateModal(false);
+            setCreateParentId(undefined);
+            pagesQuery.refetch();
+            navigate(`${basePath}/${newSlug}`);
           }}
         />
       )}
@@ -623,8 +655,8 @@ export function ProjectWikiPage() {
           open={showVersionHistory}
           onClose={() => setShowVersionHistory(false)}
           onRestored={() => {
-            currentPageQuery.refetch()
-            pagesQuery.refetch()
+            currentPageQuery.refetch();
+            pagesQuery.refetch();
           }}
           // TODO: Add wikiType="project" and projectId props once WikiVersionHistory is updated
         />
@@ -675,7 +707,7 @@ export function ProjectWikiPage() {
         </>
       )}
     </ProjectLayout>
-  )
+  );
 }
 
 // =============================================================================
@@ -683,18 +715,18 @@ export function ProjectWikiPage() {
 // =============================================================================
 
 interface ProjectWikiHomeProps {
-  project: { id: number; name: string; identifier: string }
-  pages: PageFromApi[]
-  basePath: string
-  onCreatePage: () => void
+  project: { id: number; name: string; identifier: string };
+  pages: PageFromApi[];
+  basePath: string;
+  onCreatePage: () => void;
 }
 
 function ProjectWikiHome({ project, pages, basePath, onCreatePage }: ProjectWikiHomeProps) {
-  const publishedCount = pages.filter((p) => p.status === 'PUBLISHED').length
-  const draftCount = pages.filter((p) => p.status === 'DRAFT').length
+  const publishedCount = pages.filter((p) => p.status === 'PUBLISHED').length;
+  const draftCount = pages.filter((p) => p.status === 'DRAFT').length;
   const recentPages = [...pages]
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-    .slice(0, 5)
+    .slice(0, 5);
 
   return (
     <div className="max-w-3xl">
@@ -789,7 +821,7 @@ function ProjectWikiHome({ project, pages, basePath, onCreatePage }: ProjectWiki
         </div>
       )}
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -797,11 +829,11 @@ function ProjectWikiHome({ project, pages, basePath, onCreatePage }: ProjectWiki
 // =============================================================================
 
 interface CreateProjectWikiPageModalProps {
-  projectId: number
-  parentId?: number
-  pages: PageFromApi[]
-  onClose: () => void
-  onCreated: (slug: string) => void
+  projectId: number;
+  parentId?: number;
+  pages: PageFromApi[];
+  onClose: () => void;
+  onCreated: (slug: string) => void;
 }
 
 function CreateProjectWikiPageModal({
@@ -811,28 +843,28 @@ function CreateProjectWikiPageModal({
   onClose,
   onCreated,
 }: CreateProjectWikiPageModalProps) {
-  const [title, setTitle] = useState('')
-  const [status, setStatus] = useState<WikiPageStatus>('DRAFT')
-  const [selectedParentId, setSelectedParentId] = useState<number | null>(parentId ?? null)
-  const [contentJson, setContentJson] = useState('')
+  const [title, setTitle] = useState('');
+  const [status, setStatus] = useState<WikiPageStatus>('DRAFT');
+  const [selectedParentId, setSelectedParentId] = useState<number | null>(parentId ?? null);
+  const [contentJson, setContentJson] = useState('');
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const createMutation = trpc.projectWiki.create.useMutation({
     onSuccess: (result: any) => {
-      onCreated(result.slug)
+      onCreated(result.slug);
     },
-  })
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!title.trim()) return
+    e.preventDefault();
+    if (!title.trim()) return;
 
     // Extract plain text from Lexical JSON for backwards compat
-    let content = ''
+    let content = '';
     if (contentJson) {
       try {
-        const parsed = JSON.parse(contentJson)
-        content = extractPlainText(parsed)
+        const parsed = JSON.parse(contentJson);
+        content = extractPlainText(parsed);
       } catch {
         // Keep empty
       }
@@ -845,8 +877,8 @@ function CreateProjectWikiPageModal({
       content,
       contentJson: contentJson ? JSON.parse(contentJson) : undefined,
       status,
-    })
-  }
+    });
+  };
 
   // Build indented page list for parent selection (showing hierarchy)
   const buildPageOptions = (
@@ -854,15 +886,15 @@ function CreateProjectWikiPageModal({
     parentId: number | null = null,
     depth: number = 0
   ): Array<{ id: number; title: string; depth: number }> => {
-    const children = allPages.filter((p) => p.parentId === parentId)
-    const result: Array<{ id: number; title: string; depth: number }> = []
+    const children = allPages.filter((p) => p.parentId === parentId);
+    const result: Array<{ id: number; title: string; depth: number }> = [];
     for (const child of children) {
-      result.push({ id: child.id, title: child.title, depth })
-      result.push(...buildPageOptions(allPages, child.id, depth + 1))
+      result.push({ id: child.id, title: child.title, depth });
+      result.push(...buildPageOptions(allPages, child.id, depth + 1));
     }
-    return result
-  }
-  const pageOptions = buildPageOptions(pages)
+    return result;
+  };
+  const pageOptions = buildPageOptions(pages);
 
   return (
     <Dialog open onOpenChange={onClose}>
@@ -901,7 +933,9 @@ function CreateProjectWikiPageModal({
               <Label htmlFor="parent">Parent Page (optional)</Label>
               <Select
                 value={selectedParentId?.toString() ?? 'none'}
-                onValueChange={(v: string) => setSelectedParentId(v === 'none' ? null : parseInt(v))}
+                onValueChange={(v: string) =>
+                  setSelectedParentId(v === 'none' ? null : parseInt(v))
+                }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select parent page..." />
@@ -910,7 +944,9 @@ function CreateProjectWikiPageModal({
                   <SelectItem value="none">No parent (root page)</SelectItem>
                   {pageOptions.map((page) => (
                     <SelectItem key={page.id} value={page.id.toString()}>
-                      {'—'.repeat(page.depth)}{page.depth > 0 ? ' ' : ''}{page.title}
+                      {'—'.repeat(page.depth)}
+                      {page.depth > 0 ? ' ' : ''}
+                      {page.title}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -940,7 +976,7 @@ function CreateProjectWikiPageModal({
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
 
 // =============================================================================
@@ -948,21 +984,21 @@ function CreateProjectWikiPageModal({
 // =============================================================================
 
 function extractPlainText(node: Record<string, unknown>): string {
-  if (!node) return ''
+  if (!node) return '';
 
-  const parts: string[] = []
+  const parts: string[] = [];
 
   if (node.text && typeof node.text === 'string') {
-    parts.push(node.text)
+    parts.push(node.text);
   }
 
   if (Array.isArray(node.children)) {
     for (const child of node.children) {
-      parts.push(extractPlainText(child as Record<string, unknown>))
+      parts.push(extractPlainText(child as Record<string, unknown>));
     }
   }
 
-  return parts.join(' ')
+  return parts.join(' ');
 }
 
-export default ProjectWikiPage
+export default ProjectWikiPage;

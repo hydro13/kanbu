@@ -13,28 +13,28 @@
  * ===================================================================
  */
 
-import { useState, useRef, useEffect } from 'react'
-import { trpc } from '../../lib/trpc'
-import { ChevronDown, Bell, BellOff, Clock, X, Loader2, Check } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react';
+import { trpc } from '../../lib/trpc';
+import { ChevronDown, Bell, BellOff, Clock, X, Loader2, Check } from 'lucide-react';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface ReminderSelectorProps {
-  taskId: number
-  currentDueDate: Date | string | null
-  currentReminder: Date | string | null
-  onReminderChange?: (reminderAt: Date | null) => void
-  disabled?: boolean
+  taskId: number;
+  currentDueDate: Date | string | null;
+  currentReminder: Date | string | null;
+  onReminderChange?: (reminderAt: Date | null) => void;
+  disabled?: boolean;
 }
 
-type ReminderPreset = 'none' | '15min' | '1hour' | '1day' | '1week' | 'custom'
+type ReminderPreset = 'none' | '15min' | '1hour' | '1day' | '1week' | 'custom';
 
 interface PresetOption {
-  value: ReminderPreset
-  label: string
-  description: string
+  value: ReminderPreset;
+  label: string;
+  description: string;
 }
 
 // =============================================================================
@@ -48,17 +48,14 @@ const PRESET_OPTIONS: PresetOption[] = [
   { value: '1day', label: '1 day before', description: 'Plan ahead' },
   { value: '1week', label: '1 week before', description: 'Early warning' },
   { value: 'custom', label: 'Custom time', description: 'Set specific datetime' },
-]
+];
 
 // =============================================================================
 // Helper Functions
 // =============================================================================
 
-function formatReminderDisplay(
-  reminderAt: Date | null,
-  dueDate: Date | null
-): string {
-  if (!reminderAt) return 'No reminder'
+function formatReminderDisplay(reminderAt: Date | null, dueDate: Date | null): string {
+  if (!reminderAt) return 'No reminder';
 
   if (!dueDate) {
     return reminderAt.toLocaleString(undefined, {
@@ -66,31 +63,28 @@ function formatReminderDisplay(
       day: 'numeric',
       hour: 'numeric',
       minute: '2-digit',
-    })
+    });
   }
 
-  const diffMs = dueDate.getTime() - reminderAt.getTime()
-  const diffMinutes = Math.round(diffMs / (1000 * 60))
-  const diffHours = Math.round(diffMs / (1000 * 60 * 60))
-  const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24))
+  const diffMs = dueDate.getTime() - reminderAt.getTime();
+  const diffMinutes = Math.round(diffMs / (1000 * 60));
+  const diffHours = Math.round(diffMs / (1000 * 60 * 60));
+  const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
 
   if (diffMinutes < 60) {
-    return `${diffMinutes} min before`
+    return `${diffMinutes} min before`;
   }
   if (diffHours < 24) {
-    return `${diffHours} hour${diffHours !== 1 ? 's' : ''} before`
+    return `${diffHours} hour${diffHours !== 1 ? 's' : ''} before`;
   }
-  return `${diffDays} day${diffDays !== 1 ? 's' : ''} before`
+  return `${diffDays} day${diffDays !== 1 ? 's' : ''} before`;
 }
 
-function getPresetFromReminder(
-  reminderAt: Date | null,
-  dueDate: Date | null
-): ReminderPreset {
-  if (!reminderAt) return 'none'
-  if (!dueDate) return 'custom'
+function getPresetFromReminder(reminderAt: Date | null, dueDate: Date | null): ReminderPreset {
+  if (!reminderAt) return 'none';
+  if (!dueDate) return 'custom';
 
-  const diffMs = dueDate.getTime() - reminderAt.getTime()
+  const diffMs = dueDate.getTime() - reminderAt.getTime();
 
   // Check with 5% tolerance
   const presetMs: Record<ReminderPreset, number> = {
@@ -100,26 +94,26 @@ function getPresetFromReminder(
     '1day': 24 * 60 * 60 * 1000,
     '1week': 7 * 24 * 60 * 60 * 1000,
     custom: 0,
-  }
+  };
 
   for (const [preset, ms] of Object.entries(presetMs)) {
-    if (ms === 0) continue
-    const tolerance = ms * 0.05
+    if (ms === 0) continue;
+    const tolerance = ms * 0.05;
     if (Math.abs(diffMs - ms) <= tolerance) {
-      return preset as ReminderPreset
+      return preset as ReminderPreset;
     }
   }
 
-  return 'custom'
+  return 'custom';
 }
 
 function formatDateTimeForInput(date: Date): string {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  const hours = String(date.getHours()).padStart(2, '0')
-  const minutes = String(date.getMinutes()).padStart(2, '0')
-  return `${year}-${month}-${day}T${hours}:${minutes}`
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
 // =============================================================================
@@ -133,67 +127,67 @@ export function ReminderSelector({
   onReminderChange,
   disabled = false,
 }: ReminderSelectorProps) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [customDateTime, setCustomDateTime] = useState('')
-  const containerRef = useRef<HTMLDivElement>(null)
+  const [isOpen, setIsOpen] = useState(false);
+  const [customDateTime, setCustomDateTime] = useState('');
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Parse dates
   const parsedDueDate = currentDueDate
     ? typeof currentDueDate === 'string'
       ? new Date(currentDueDate)
       : currentDueDate
-    : null
+    : null;
 
   const parsedReminder = currentReminder
     ? typeof currentReminder === 'string'
       ? new Date(currentReminder)
       : currentReminder
-    : null
+    : null;
 
-  const currentPreset = getPresetFromReminder(parsedReminder, parsedDueDate)
+  const currentPreset = getPresetFromReminder(parsedReminder, parsedDueDate);
 
   // Initialize custom datetime when opening
   useEffect(() => {
     if (isOpen) {
       if (parsedReminder) {
-        setCustomDateTime(formatDateTimeForInput(parsedReminder))
+        setCustomDateTime(formatDateTimeForInput(parsedReminder));
       } else if (parsedDueDate) {
         // Default to 1 hour before due date
-        const defaultReminder = new Date(parsedDueDate.getTime() - 60 * 60 * 1000)
-        setCustomDateTime(formatDateTimeForInput(defaultReminder))
+        const defaultReminder = new Date(parsedDueDate.getTime() - 60 * 60 * 1000);
+        setCustomDateTime(formatDateTimeForInput(defaultReminder));
       }
     }
-  }, [isOpen, parsedReminder, parsedDueDate])
+  }, [isOpen, parsedReminder, parsedDueDate]);
 
   // Mutations
-  const utils = trpc.useUtils()
+  const utils = trpc.useUtils();
 
   const setReminderMutation = trpc.task.setReminder.useMutation({
     onSuccess: (result) => {
-      utils.task.get.invalidate({ taskId })
-      onReminderChange?.(result.reminderAt ? new Date(result.reminderAt) : null)
-      setIsOpen(false)
+      utils.task.get.invalidate({ taskId });
+      onReminderChange?.(result.reminderAt ? new Date(result.reminderAt) : null);
+      setIsOpen(false);
     },
-  })
+  });
 
   // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false)
+        setIsOpen(false);
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handlePresetSelect = (preset: ReminderPreset) => {
-    if (disabled) return
+    if (disabled) return;
 
     if (preset === 'custom') {
       // Don't submit yet, show custom input
-      return
+      return;
     }
 
     if (preset === 'none') {
@@ -201,40 +195,40 @@ export function ReminderSelector({
         taskId,
         reminderAt: null,
         preset: 'none',
-      })
+      });
     } else {
       if (!parsedDueDate) {
         // Can't set preset reminder without due date
-        return
+        return;
       }
       setReminderMutation.mutate({
         taskId,
         reminderAt: null,
         preset,
-      })
+      });
     }
-  }
+  };
 
   const handleCustomReminder = () => {
-    if (!customDateTime) return
+    if (!customDateTime) return;
 
     setReminderMutation.mutate({
       taskId,
       reminderAt: new Date(customDateTime).toISOString(),
       preset: 'custom',
-    })
-  }
+    });
+  };
 
   const handleClearReminder = () => {
     setReminderMutation.mutate({
       taskId,
       reminderAt: null,
       preset: 'none',
-    })
-  }
+    });
+  };
 
-  const isMutating = setReminderMutation.isPending
-  const hasNoDueDate = !parsedDueDate
+  const isMutating = setReminderMutation.isPending;
+  const hasNoDueDate = !parsedDueDate;
 
   return (
     <div ref={containerRef} className="relative">
@@ -265,8 +259,8 @@ export function ReminderSelector({
         ) : parsedReminder ? (
           <button
             onClick={(e) => {
-              e.stopPropagation()
-              handleClearReminder()
+              e.stopPropagation();
+              handleClearReminder();
             }}
             className="p-0.5 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
             title="Clear reminder"
@@ -293,8 +287,8 @@ export function ReminderSelector({
           {/* Preset Options */}
           <div className="p-2 space-y-1">
             {PRESET_OPTIONS.filter((opt) => opt.value !== 'custom').map((option) => {
-              const isSelected = currentPreset === option.value
-              const isDisabled = option.value !== 'none' && hasNoDueDate
+              const isSelected = currentPreset === option.value;
+              const isDisabled = option.value !== 'none' && hasNoDueDate;
 
               return (
                 <button
@@ -320,7 +314,7 @@ export function ReminderSelector({
                   </div>
                   {isSelected && <Check className="w-4 h-4 text-blue-500" />}
                 </button>
-              )
+              );
             })}
           </div>
 
@@ -348,7 +342,11 @@ export function ReminderSelector({
               disabled={!customDateTime || isMutating}
               className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {isMutating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Bell className="w-4 h-4" />}
+              {isMutating ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Bell className="w-4 h-4" />
+              )}
               Set reminder
             </button>
           </div>
@@ -370,7 +368,7 @@ export function ReminderSelector({
         </div>
       )}
     </div>
-  )
+  );
 }
 
-export default ReminderSelector
+export default ReminderSelector;

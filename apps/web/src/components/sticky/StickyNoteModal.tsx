@@ -17,20 +17,20 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState, useEffect, useCallback } from 'react'
-import { trpc } from '@/lib/trpc'
-import { RichTextEditor, getDisplayContent, isLexicalContent } from '@/components/editor'
-import type { EditorState, LexicalEditor } from 'lexical'
-import type { StickyNoteData, StickyNoteColor, StickyVisibility } from './StickyNote'
+import { useState, useEffect, useCallback } from 'react';
+import { trpc } from '@/lib/trpc';
+import { RichTextEditor, getDisplayContent, isLexicalContent } from '@/components/editor';
+import type { EditorState, LexicalEditor } from 'lexical';
+import type { StickyNoteData, StickyNoteColor, StickyVisibility } from './StickyNote';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface StickyNoteModalProps {
-  isOpen: boolean
-  onClose: () => void
-  note?: StickyNoteData | null // null = create mode, StickyNoteData = edit mode
+  isOpen: boolean;
+  onClose: () => void;
+  note?: StickyNoteData | null; // null = create mode, StickyNoteData = edit mode
 }
 
 // =============================================================================
@@ -44,7 +44,7 @@ const colorOptions: Array<{ value: StickyNoteColor; label: string; className: st
   { value: 'GREEN', label: 'Green', className: 'bg-green-300 dark:bg-green-600' },
   { value: 'PURPLE', label: 'Purple', className: 'bg-purple-300 dark:bg-purple-600' },
   { value: 'ORANGE', label: 'Orange', className: 'bg-orange-300 dark:bg-orange-600' },
-]
+];
 
 // =============================================================================
 // Icons
@@ -52,10 +52,16 @@ const colorOptions: Array<{ value: StickyNoteColor; label: string; className: st
 
 function CloseIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
     </svg>
-  )
+  );
 }
 
 // =============================================================================
@@ -63,86 +69,86 @@ function CloseIcon({ className }: { className?: string }) {
 // =============================================================================
 
 export function StickyNoteModal({ isOpen, onClose, note }: StickyNoteModalProps) {
-  const [title, setTitle] = useState('')
-  const [content, setContent] = useState('')
-  const [color, setColor] = useState<StickyNoteColor>('YELLOW')
-  const [visibility, setVisibility] = useState<StickyVisibility>('PRIVATE')
-  const [isPinned, setIsPinned] = useState(false)
-  const [editorKey, setEditorKey] = useState(0) // Force re-mount of editor
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [color, setColor] = useState<StickyNoteColor>('YELLOW');
+  const [visibility, setVisibility] = useState<StickyVisibility>('PRIVATE');
+  const [isPinned, setIsPinned] = useState(false);
+  const [editorKey, setEditorKey] = useState(0); // Force re-mount of editor
 
-  const utils = trpc.useUtils()
+  const utils = trpc.useUtils();
 
   const createMutation = trpc.stickyNote.create.useMutation({
     onSuccess: () => {
-      utils.stickyNote.list.invalidate()
-      onClose()
+      utils.stickyNote.list.invalidate();
+      onClose();
     },
-  })
+  });
 
   const updateMutation = trpc.stickyNote.update.useMutation({
     onSuccess: () => {
-      utils.stickyNote.list.invalidate()
-      onClose()
+      utils.stickyNote.list.invalidate();
+      onClose();
     },
-  })
+  });
 
   // Reset form when modal opens/closes or note changes
   useEffect(() => {
     if (isOpen && note) {
-      setTitle(note.title || '')
-      setContent(getDisplayContent(note.content))
-      setColor(note.color)
-      setVisibility(note.visibility)
-      setIsPinned(note.isPinned)
-      setEditorKey((k) => k + 1) // Force re-mount to load content
+      setTitle(note.title || '');
+      setContent(getDisplayContent(note.content));
+      setColor(note.color);
+      setVisibility(note.visibility);
+      setIsPinned(note.isPinned);
+      setEditorKey((k) => k + 1); // Force re-mount to load content
     } else if (isOpen) {
-      setTitle('')
-      setContent('')
-      setColor('YELLOW')
-      setVisibility('PRIVATE')
-      setIsPinned(false)
-      setEditorKey((k) => k + 1) // Force re-mount for clean editor
+      setTitle('');
+      setContent('');
+      setColor('YELLOW');
+      setVisibility('PRIVATE');
+      setIsPinned(false);
+      setEditorKey((k) => k + 1); // Force re-mount for clean editor
     }
-  }, [isOpen, note])
+  }, [isOpen, note]);
 
   // Handle editor content changes
   const handleEditorChange = useCallback(
     (_editorState: EditorState, _editor: LexicalEditor, jsonString: string) => {
-      setContent(jsonString)
+      setContent(jsonString);
     },
     []
-  )
+  );
 
   // Check if content is empty (for validation)
   const isContentEmpty = useCallback(() => {
-    if (!content) return true
-    if (!isLexicalContent(content)) return !content.trim()
+    if (!content) return true;
+    if (!isLexicalContent(content)) return !content.trim();
 
     try {
-      const parsed = JSON.parse(content)
-      const root = parsed?.root
-      if (!root?.children?.length) return true
+      const parsed = JSON.parse(content);
+      const root = parsed?.root;
+      if (!root?.children?.length) return true;
 
       // Check if there's any actual text content
       const hasContent = root.children.some((child: Record<string, unknown>) => {
         if (child.type === 'paragraph' || child.type === 'heading') {
           return (child.children as Array<Record<string, unknown>>)?.some(
             (c: Record<string, unknown>) => c.type === 'text' && (c.text as string)?.trim()
-          )
+          );
         }
         // Any other node type (list, quote, image, etc.) counts as content
-        return child.type !== 'paragraph' || (child.children as Array<unknown>)?.length > 0
-      })
-      return !hasContent
+        return child.type !== 'paragraph' || (child.children as Array<unknown>)?.length > 0;
+      });
+      return !hasContent;
     } catch {
-      return !content.trim()
+      return !content.trim();
     }
-  }, [content])
+  }, [content]);
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
-    if (isContentEmpty()) return
+    if (isContentEmpty()) return;
 
     if (note) {
       updateMutation.mutate({
@@ -152,7 +158,7 @@ export function StickyNoteModal({ isOpen, onClose, note }: StickyNoteModalProps)
         color,
         visibility,
         isPinned,
-      })
+      });
     } else {
       createMutation.mutate({
         title: title || undefined,
@@ -160,21 +166,18 @@ export function StickyNoteModal({ isOpen, onClose, note }: StickyNoteModalProps)
         color,
         visibility,
         isPinned,
-      })
+      });
     }
-  }
+  };
 
-  const isLoading = createMutation.isPending || updateMutation.isPending
+  const isLoading = createMutation.isPending || updateMutation.isPending;
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/50"
-        onClick={onClose}
-      />
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
 
       {/* Modal */}
       <div className="relative bg-card rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-auto">
@@ -183,10 +186,7 @@ export function StickyNoteModal({ isOpen, onClose, note }: StickyNoteModalProps)
           <h2 className="text-lg font-semibold text-foreground">
             {note ? 'Edit Sticky Note' : 'New Sticky Note'}
           </h2>
-          <button
-            onClick={onClose}
-            className="p-1 rounded hover:bg-accent transition-colors"
-          >
+          <button onClick={onClose} className="p-1 rounded hover:bg-accent transition-colors">
             <CloseIcon className="h-5 w-5 text-gray-500" />
           </button>
         </div>
@@ -236,7 +236,9 @@ export function StickyNoteModal({ isOpen, onClose, note }: StickyNoteModalProps)
                   type="button"
                   onClick={() => setColor(opt.value)}
                   className={`w-8 h-8 rounded-full ${opt.className} transition-transform ${
-                    color === opt.value ? 'ring-2 ring-offset-2 ring-blue-500 scale-110' : 'hover:scale-105'
+                    color === opt.value
+                      ? 'ring-2 ring-offset-2 ring-blue-500 scale-110'
+                      : 'hover:scale-105'
                   }`}
                   title={opt.label}
                 />
@@ -309,7 +311,7 @@ export function StickyNoteModal({ isOpen, onClose, note }: StickyNoteModalProps)
         </form>
       </div>
     </div>
-  )
+  );
 }
 
-export default StickyNoteModal
+export default StickyNoteModal;

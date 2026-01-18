@@ -1,7 +1,9 @@
 # GitHub Integration - Implementation Plan
 
 ## Version: 1.1.0
+
 ## Date: 2026-01-10
+
 ## Status: In Progress
 
 ---
@@ -13,6 +15,7 @@
 Build a **complete 1-to-1 replica** of GitHub Projects within Kanbu.
 
 Everything you can do on GitHub must also be possible in Kanbu:
+
 - Same layouts (Board, List, Table)
 - Same keyboard shortcuts
 - Same drag & drop
@@ -59,26 +62,26 @@ Workspace
 
 ### What Works (GitHub Module)
 
-| Feature | Status | Notes |
-|---------|--------|----------|
-| Repo linking | ✅ Works | Via GitHub App installation |
-| Issues sync (import) | ✅ Works | Bulk import + webhooks |
-| Issue comments sync | ✅ Works | Including images |
-| Milestones sync (import) | ✅ Works | Bulk import + webhooks |
-| PRs sync | ✅ Works | Read-only in Kanbu |
-| Commits sync | ✅ Works | Read-only in Kanbu |
-| Webhooks receive | ✅ Works | Real-time updates |
-| GitHub Integration page | ✅ Works | Shows all data |
+| Feature                  | Status   | Notes                       |
+| ------------------------ | -------- | --------------------------- |
+| Repo linking             | ✅ Works | Via GitHub App installation |
+| Issues sync (import)     | ✅ Works | Bulk import + webhooks      |
+| Issue comments sync      | ✅ Works | Including images            |
+| Milestones sync (import) | ✅ Works | Bulk import + webhooks      |
+| PRs sync                 | ✅ Works | Read-only in Kanbu          |
+| Commits sync             | ✅ Works | Read-only in Kanbu          |
+| Webhooks receive         | ✅ Works | Real-time updates           |
+| GitHub Integration page  | ✅ Works | Shows all data              |
 
 ### What's Missing (GitHub Module)
 
-| Feature | Status | Priority |
-|---------|--------|----------|
-| GitHub projects in workspace list | ❌ Missing | HIGH |
-| Full GitHub project UI (board view) | ❌ Missing | HIGH |
-| Kanbu → GitHub sync (bi-directional) | ❌ Missing | HIGH |
-| Visual separation (icons, colors) | ❌ Missing | MEDIUM |
-| Project Groups (combine both types) | ❌ Missing | MEDIUM |
+| Feature                              | Status     | Priority |
+| ------------------------------------ | ---------- | -------- |
+| GitHub projects in workspace list    | ❌ Missing | HIGH     |
+| Full GitHub project UI (board view)  | ❌ Missing | HIGH     |
+| Kanbu → GitHub sync (bi-directional) | ❌ Missing | HIGH     |
+| Visual separation (icons, colors)    | ❌ Missing | MEDIUM   |
+| Project Groups (combine both types)  | ❌ Missing | MEDIUM   |
 
 ---
 
@@ -110,6 +113,7 @@ Workspace "My Company"
 #### Database Considerations
 
 Option A: `GitHubRepository` gets direct `workspaceId`:
+
 ```prisma
 model GitHubRepository {
   // Existing fields...
@@ -119,6 +123,7 @@ model GitHubRepository {
 ```
 
 Option B: Via existing Project link (current situation):
+
 - `GitHubRepository` → `Project` → `Workspace`
 - Disadvantage: dependent on internal project
 
@@ -152,6 +157,7 @@ Option B: Via existing Project link (current situation):
 #### Issues as Cards
 
 GitHub issues are shown in columns:
+
 - Column determination via **labels** (e.g. `status:todo`, `status:in-progress`)
 - Or via **milestone** grouping
 - Or via **assignee** grouping
@@ -172,14 +178,14 @@ GitHub issues are shown in columns:
 
 #### What Synchronizes
 
-| Action in Kanbu | Action to GitHub |
-|-----------------|------------------|
-| Change issue title | `PATCH /issues/:number` |
-| Change issue body | `PATCH /issues/:number` |
-| Close issue | `PATCH /issues/:number {state: 'closed'}` |
-| Move issue (label) | `PUT /issues/:number/labels` |
-| Add comment | `POST /issues/:number/comments` |
-| Change milestone | `PATCH /milestones/:number` |
+| Action in Kanbu    | Action to GitHub                          |
+| ------------------ | ----------------------------------------- |
+| Change issue title | `PATCH /issues/:number`                   |
+| Change issue body  | `PATCH /issues/:number`                   |
+| Close issue        | `PATCH /issues/:number {state: 'closed'}` |
+| Move issue (label) | `PUT /issues/:number/labels`              |
+| Add comment        | `POST /issues/:number/comments`           |
+| Change milestone   | `PATCH /milestones/:number`               |
 
 #### Sync Logic
 
@@ -188,17 +194,17 @@ GitHub issues are shown in columns:
 async function syncIssueToGitHub(issueId: number, changes: Partial<GitHubIssue>) {
   const issue = await prisma.gitHubIssue.findUnique({
     where: { id: issueId },
-    include: { repository: { include: { installation: true } } }
-  })
+    include: { repository: { include: { installation: true } } },
+  });
 
-  const octokit = await getInstallationOctokit(issue.repository.installation.installationId)
+  const octokit = await getInstallationOctokit(issue.repository.installation.installationId);
 
   await octokit.issues.update({
     owner: issue.repository.owner,
     repo: issue.repository.name,
     issue_number: issue.issueNumber,
-    ...mapChangesToGitHub(changes)
-  })
+    ...mapChangesToGitHub(changes),
+  });
 
   // Log sync
   await prisma.gitHubSyncLog.create({
@@ -208,16 +214,16 @@ async function syncIssueToGitHub(issueId: number, changes: Partial<GitHubIssue>)
       direction: 'kanbu_to_github',
       entityType: 'issue',
       entityId: issue.id,
-      status: 'success'
-    }
-  })
+      status: 'success',
+    },
+  });
 }
 ```
 
 #### To Do
 
 - [ ] Sync service for Kanbu → GitHub
-- [ ] Trigger on changes in GitHub* tables
+- [ ] Trigger on changes in GitHub\* tables
 - [ ] Conflict detection (timestamp check)
 - [ ] Retry mechanism on failures
 
@@ -233,13 +239,11 @@ function ProjectCard({ project }) {
   return (
     <Card>
       <CardHeader>
-        {project.githubRepositoryId && (
-          <GitHubIcon className="w-4 h-4 text-gray-500" />
-        )}
+        {project.githubRepositoryId && <GitHubIcon className="w-4 h-4 text-gray-500" />}
         <span>{project.name}</span>
       </CardHeader>
     </Card>
-  )
+  );
 }
 ```
 
@@ -248,7 +252,7 @@ function ProjectCard({ project }) {
 ```tsx
 // SyncStatus.tsx
 function SyncStatus({ entityType, entityId }) {
-  const { data: syncInfo } = trpc.sync.getStatus.useQuery({ entityType, entityId })
+  const { data: syncInfo } = trpc.sync.getStatus.useQuery({ entityType, entityId });
 
   return (
     <Badge variant={syncInfo.status}>
@@ -257,7 +261,7 @@ function SyncStatus({ entityType, entityId }) {
       {syncInfo.status === 'error' && <AlertIcon />}
       Last sync: {formatDate(syncInfo.lastSyncAt)}
     </Badge>
-  )
+  );
 }
 ```
 
@@ -283,6 +287,7 @@ CREATE INDEX "GitHubRepository_workspaceId_idx" ON "GitHubRepository"("workspace
 ### Database Approach
 
 The GitHub module uses the existing `GitHub*` tables:
+
 - `GitHubRepository`
 - `GitHubIssue`
 - `GitHubMilestone`
@@ -320,6 +325,7 @@ The UI is completely built around these tables for 1-to-1 feature parity with Gi
 ## Rollback Plan
 
 In case of problems:
+
 1. Disable bi-directional sync (feature flag)
 2. Fallback to read-only mode (GitHub → Kanbu only)
 3. Data is safe in both systems

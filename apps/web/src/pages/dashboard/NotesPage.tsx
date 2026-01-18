@@ -12,8 +12,8 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { DashboardLayout } from '@/components/dashboard'
-import { StickyNoteList } from '@/components/sticky'
+import { DashboardLayout } from '@/components/dashboard';
+import { StickyNoteList } from '@/components/sticky';
 
 // =============================================================================
 // Component
@@ -26,16 +26,14 @@ export function NotesPage() {
         {/* Header */}
         <div>
           <h1 className="text-page-title-lg tracking-tight text-foreground">Notes</h1>
-          <p className="text-muted-foreground">
-            Your personal sticky notes
-          </p>
+          <p className="text-muted-foreground">Your personal sticky notes</p>
         </div>
 
         {/* Notes List */}
         <StickyNoteList />
       </div>
     </DashboardLayout>
-  )
+  );
 }
 
-export default NotesPage
+export default NotesPage;

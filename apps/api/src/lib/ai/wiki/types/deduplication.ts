@@ -20,17 +20,17 @@
  */
 export interface EntityNodeInfo {
   /** Unique identifier (FalkorDB UUID) */
-  uuid: string
+  uuid: string;
   /** Display name of the entity */
-  name: string
+  name: string;
   /** Node type (Person, Concept, Task, Project, etc.) */
-  type: string
+  type: string;
   /** Workspace/project grouping ID */
-  groupId: string
+  groupId: string;
   /** Optional summary/description */
-  summary?: string
+  summary?: string;
   /** Optional additional attributes */
-  attributes?: Record<string, unknown>
+  attributes?: Record<string, unknown>;
 }
 
 // ===========================================================================
@@ -40,7 +40,7 @@ export interface EntityNodeInfo {
 /**
  * How the duplicate match was determined
  */
-export type DuplicateMatchType = 'exact' | 'fuzzy' | 'llm' | 'embedding'
+export type DuplicateMatchType = 'exact' | 'fuzzy' | 'llm' | 'embedding';
 
 /**
  * Represents a potential duplicate node pair
@@ -48,44 +48,44 @@ export type DuplicateMatchType = 'exact' | 'fuzzy' | 'llm' | 'embedding'
 export interface DuplicateCandidate {
   /** The new/extracted node that might be a duplicate */
   sourceNode: {
-    uuid: string
-    name: string
-    type: string
-    groupId: string
-  }
+    uuid: string;
+    name: string;
+    type: string;
+    groupId: string;
+  };
   /** The existing node that might be the canonical version */
   targetNode: {
-    uuid: string
-    name: string
-    type: string
-    groupId: string
-  }
+    uuid: string;
+    name: string;
+    type: string;
+    groupId: string;
+  };
   /** How the match was determined */
-  matchType: DuplicateMatchType
+  matchType: DuplicateMatchType;
   /** Confidence score 0.0 - 1.0 */
-  confidence: number
+  confidence: number;
   /** Similarity metrics */
   metrics: {
-    jaccardSimilarity?: number
-    cosineSimilarity?: number
-    normalizedEditDistance?: number
-  }
+    jaccardSimilarity?: number;
+    cosineSimilarity?: number;
+    normalizedEditDistance?: number;
+  };
 }
 
 /**
  * Resolution decision for a duplicate pair
  */
 export interface DuplicateResolution {
-  sourceUuid: string
-  targetUuid: string
-  action: 'merge' | 'keep_both' | 'defer'
+  sourceUuid: string;
+  targetUuid: string;
+  action: 'merge' | 'keep_both' | 'defer';
   /** UUID of the canonical node (winner) */
-  canonicalUuid: string
+  canonicalUuid: string;
   /** Reason for the decision */
-  reason: string
+  reason: string;
   /** User who made the decision (null for auto) */
-  resolvedBy: string | null
-  resolvedAt: Date
+  resolvedBy: string | null;
+  resolvedAt: Date;
 }
 
 // ===========================================================================
@@ -100,15 +100,15 @@ export interface DuplicateResolution {
  */
 export interface DedupCandidateIndexes {
   /** All existing nodes in the workspace */
-  existingNodes: EntityNodeInfo[]
+  existingNodes: EntityNodeInfo[];
   /** UUID -> Node lookup */
-  nodesByUuid: Map<string, EntityNodeInfo>
+  nodesByUuid: Map<string, EntityNodeInfo>;
   /** Normalized name -> Nodes with that name */
-  normalizedExisting: Map<string, EntityNodeInfo[]>
+  normalizedExisting: Map<string, EntityNodeInfo[]>;
   /** UUID -> Shingles for fuzzy matching */
-  shinglesByNode: Map<string, Set<string>>
+  shinglesByNode: Map<string, Set<string>>;
   /** LSH band key -> UUIDs that hash to that band */
-  lshBuckets: Map<string, string[]>
+  lshBuckets: Map<string, string[]>;
 }
 
 /**
@@ -117,13 +117,13 @@ export interface DedupCandidateIndexes {
  */
 export interface DedupResolutionState {
   /** Resolved nodes (null if not yet resolved) */
-  resolvedNodes: (EntityNodeInfo | null)[]
+  resolvedNodes: (EntityNodeInfo | null)[];
   /** Extracted UUID -> Resolved UUID mapping */
-  uuidMap: Map<string, string>
+  uuidMap: Map<string, string>;
   /** Indices of nodes that need LLM resolution */
-  unresolvedIndices: number[]
+  unresolvedIndices: number[];
   /** Detected duplicate pairs */
-  duplicatePairs: DuplicateCandidate[]
+  duplicatePairs: DuplicateCandidate[];
 }
 
 // ===========================================================================
@@ -135,20 +135,20 @@ export interface DedupResolutionState {
  */
 export interface NodeDuplicateResponse {
   /** ID from the input (0-indexed) */
-  id: number
+  id: number;
   /** Index of duplicate in existing nodes (-1 if no duplicate) */
-  duplicateIdx: number
+  duplicateIdx: number;
   /** Best name for the entity */
-  name: string
+  name: string;
   /** All duplicate indices (sorted) */
-  duplicates: number[]
+  duplicates: number[];
 }
 
 /**
  * LLM response for batch node deduplication
  */
 export interface NodeResolutionsResponse {
-  entityResolutions: NodeDuplicateResponse[]
+  entityResolutions: NodeDuplicateResponse[];
 }
 
 /**
@@ -156,11 +156,11 @@ export interface NodeResolutionsResponse {
  */
 export interface EdgeDuplicateResponse {
   /** Indices of duplicate facts in existing edges */
-  duplicateFacts: number[]
+  duplicateFacts: number[];
   /** Indices of contradicted facts in existing edges */
-  contradictedFacts: number[]
+  contradictedFacts: number[];
   /** Edge type classification */
-  factType: string
+  factType: string;
 }
 
 // ===========================================================================
@@ -175,13 +175,13 @@ export interface EdgeDuplicateResponse {
  */
 export interface DuplicateOfEdgeProps {
   /** Match confidence (0.0 - 1.0) */
-  confidence: number
+  confidence: number;
   /** How the match was determined */
-  matchType: DuplicateMatchType
+  matchType: DuplicateMatchType;
   /** When the duplicate was detected */
-  detectedAt: Date
+  detectedAt: Date;
   /** User who resolved (null = auto-detected) */
-  resolvedBy: string | null
+  resolvedBy: string | null;
 }
 
 // ===========================================================================
@@ -193,21 +193,21 @@ export interface DuplicateOfEdgeProps {
  */
 export interface DeduplicationOptions {
   /** Workspace ID for scoping */
-  workspaceId: number
+  workspaceId: number;
   /** Optional project ID for scoping */
-  projectId?: number
+  projectId?: number;
   /** Episode/page content for LLM context */
-  episodeContent?: string
+  episodeContent?: string;
   /** Previous episodes for LLM context */
-  previousEpisodes?: string[]
+  previousEpisodes?: string[];
   /** Use LLM for unresolved nodes (default: true) */
-  useLlm?: boolean
+  useLlm?: boolean;
   /** Use embedding similarity (default: true) */
-  useEmbeddings?: boolean
+  useEmbeddings?: boolean;
   /** Embedding similarity threshold (default: 0.85) */
-  embeddingThreshold?: number
+  embeddingThreshold?: number;
   /** Fuzzy match Jaccard threshold (default: 0.9) */
-  fuzzyThreshold?: number
+  fuzzyThreshold?: number;
 }
 
 /**
@@ -215,20 +215,20 @@ export interface DeduplicationOptions {
  */
 export interface DeduplicationResult {
   /** Resolved nodes with canonical UUIDs */
-  resolvedNodes: EntityNodeInfo[]
+  resolvedNodes: EntityNodeInfo[];
   /** Mapping: extracted UUID -> canonical UUID */
-  uuidMap: Map<string, string>
+  uuidMap: Map<string, string>;
   /** Detected duplicate pairs */
-  duplicatePairs: DuplicateCandidate[]
+  duplicatePairs: DuplicateCandidate[];
   /** Statistics */
   stats: {
-    totalExtracted: number
-    exactMatches: number
-    fuzzyMatches: number
-    embeddingMatches: number
-    llmMatches: number
-    newNodes: number
-  }
+    totalExtracted: number;
+    exactMatches: number;
+    fuzzyMatches: number;
+    embeddingMatches: number;
+    llmMatches: number;
+    newNodes: number;
+  };
 }
 
 /**
@@ -236,15 +236,15 @@ export interface DeduplicationResult {
  */
 export interface BatchDeduplicationOptions {
   /** Workspace ID */
-  workspaceId: number
+  workspaceId: number;
   /** Similarity threshold (default: 0.85) */
-  threshold?: number
+  threshold?: number;
   /** Only report, don't create edges */
-  dryRun?: boolean
+  dryRun?: boolean;
   /** Maximum pairs to return */
-  limit?: number
+  limit?: number;
   /** Node types to include */
-  nodeTypes?: string[]
+  nodeTypes?: string[];
 }
 
 /**
@@ -252,15 +252,15 @@ export interface BatchDeduplicationOptions {
  */
 export interface BatchDeduplicationResult {
   /** Detected duplicate pairs */
-  duplicates: DuplicateCandidate[]
+  duplicates: DuplicateCandidate[];
   /** Total nodes scanned */
-  totalNodes: number
+  totalNodes: number;
   /** Number of duplicates found */
-  duplicateCount: number
+  duplicateCount: number;
   /** Number of IS_DUPLICATE_OF edges created (if not dry run) */
-  edgesCreated: number
+  edgesCreated: number;
   /** Execution mode */
-  dryRun: boolean
+  dryRun: boolean;
 }
 
 // ===========================================================================
@@ -288,4 +288,4 @@ export const DEDUP_CONSTANTS = {
   EMBEDDING_THRESHOLD: 0.85,
   /** LLM confidence for dedup decisions */
   LLM_CONFIDENCE: 0.8,
-} as const
+} as const;

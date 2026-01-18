@@ -13,12 +13,12 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState } from 'react'
-import { trpc } from '@/lib/trpc'
-import { useAppSelector } from '@/store'
-import { selectUser } from '@/store/authSlice'
-import { StickyNote, type StickyNoteData } from './StickyNote'
-import { StickyNoteModal } from './StickyNoteModal'
+import { useState } from 'react';
+import { trpc } from '@/lib/trpc';
+import { useAppSelector } from '@/store';
+import { selectUser } from '@/store/authSlice';
+import { StickyNote, type StickyNoteData } from './StickyNote';
+import { StickyNoteModal } from './StickyNoteModal';
 
 // =============================================================================
 // Icons
@@ -26,18 +26,35 @@ import { StickyNoteModal } from './StickyNoteModal'
 
 function PlusIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
     </svg>
-  )
+  );
 }
 
 function NoteIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+      />
     </svg>
-  )
+  );
 }
 
 // =============================================================================
@@ -45,33 +62,33 @@ function NoteIcon({ className }: { className?: string }) {
 // =============================================================================
 
 interface StickyNoteListProps {
-  className?: string
+  className?: string;
 }
 
 export function StickyNoteList({ className }: StickyNoteListProps) {
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [editingNote, setEditingNote] = useState<StickyNoteData | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingNote, setEditingNote] = useState<StickyNoteData | null>(null);
 
-  const user = useAppSelector(selectUser)
+  const user = useAppSelector(selectUser);
   const notesQuery = trpc.stickyNote.list.useQuery({
     includePublic: true,
     limit: 50,
-  })
+  });
 
   const handleEdit = (note: StickyNoteData) => {
-    setEditingNote(note)
-    setIsModalOpen(true)
-  }
+    setEditingNote(note);
+    setIsModalOpen(true);
+  };
 
   const handleCloseModal = () => {
-    setIsModalOpen(false)
-    setEditingNote(null)
-  }
+    setIsModalOpen(false);
+    setEditingNote(null);
+  };
 
   const handleCreate = () => {
-    setEditingNote(null)
-    setIsModalOpen(true)
-  }
+    setEditingNote(null);
+    setIsModalOpen(true);
+  };
 
   if (notesQuery.isLoading) {
     return (
@@ -80,7 +97,7 @@ export function StickyNoteList({ className }: StickyNoteListProps) {
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
         </div>
       </div>
-    )
+    );
   }
 
   if (notesQuery.error) {
@@ -96,10 +113,10 @@ export function StickyNoteList({ className }: StickyNoteListProps) {
           </button>
         </div>
       </div>
-    )
+    );
   }
 
-  const notes = notesQuery.data?.notes ?? []
+  const notes = notesQuery.data?.notes ?? [];
 
   return (
     <div className={`${className}`}>
@@ -123,10 +140,7 @@ export function StickyNoteList({ className }: StickyNoteListProps) {
         <div className="flex flex-col items-center justify-center h-48 text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
           <NoteIcon className="h-12 w-12 mb-3 opacity-50" />
           <p className="text-center">No sticky notes yet</p>
-          <button
-            onClick={handleCreate}
-            className="mt-3 text-sm text-blue-500 hover:underline"
-          >
+          <button onClick={handleCreate} className="mt-3 text-sm text-blue-500 hover:underline">
             Create your first note
           </button>
         </div>
@@ -144,13 +158,9 @@ export function StickyNoteList({ className }: StickyNoteListProps) {
       )}
 
       {/* Modal */}
-      <StickyNoteModal
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-        note={editingNote}
-      />
+      <StickyNoteModal isOpen={isModalOpen} onClose={handleCloseModal} note={editingNote} />
     </div>
-  )
+  );
 }
 
-export default StickyNoteList
+export default StickyNoteList;

@@ -76,11 +76,36 @@ export const BLOCKED_MIME_TYPES: string[] = [
  * Blocked file extensions (security)
  */
 export const BLOCKED_EXTENSIONS: string[] = [
-  '.exe', '.bat', '.cmd', '.com', '.msi', '.scr', '.pif',
-  '.vbs', '.vbe', '.js', '.jse', '.ws', '.wsf', '.wsc', '.wsh',
-  '.ps1', '.ps1xml', '.ps2', '.ps2xml', '.psc1', '.psc2',
-  '.msc', '.msp', '.cpl', '.hta', '.jar',
-  '.sh', '.bash', '.zsh', '.fish',
+  '.exe',
+  '.bat',
+  '.cmd',
+  '.com',
+  '.msi',
+  '.scr',
+  '.pif',
+  '.vbs',
+  '.vbe',
+  '.js',
+  '.jse',
+  '.ws',
+  '.wsf',
+  '.wsc',
+  '.wsh',
+  '.ps1',
+  '.ps1xml',
+  '.ps2',
+  '.ps2xml',
+  '.psc1',
+  '.psc2',
+  '.msc',
+  '.msp',
+  '.cpl',
+  '.hta',
+  '.jar',
+  '.sh',
+  '.bash',
+  '.zsh',
+  '.fish',
 ];
 
 /**
@@ -119,10 +144,10 @@ export interface StoredFile {
 
 export interface StorageConfig {
   type: 'local' | 's3';
-  basePath?: string;  // For local storage
-  bucket?: string;    // For S3
-  region?: string;    // For S3
-  endpoint?: string;  // For S3-compatible (MinIO, etc.)
+  basePath?: string; // For local storage
+  bucket?: string; // For S3
+  region?: string; // For S3
+  endpoint?: string; // For S3-compatible (MinIO, etc.)
 }
 
 // =============================================================================
@@ -169,8 +194,9 @@ export function isBlockedMimeType(mimeType: string): boolean {
  * Check if a MIME type is an image
  */
 export function isImageMimeType(mimeType: string): boolean {
-  return IMAGE_MIME_TYPES.includes(mimeType.toLowerCase()) ||
-         mimeType.toLowerCase().startsWith('image/');
+  return (
+    IMAGE_MIME_TYPES.includes(mimeType.toLowerCase()) || mimeType.toLowerCase().startsWith('image/')
+  );
 }
 
 /**
@@ -228,8 +254,8 @@ export function sanitizeFilename(filename: string): string {
   // Keep only alphanumeric, dots, underscores, and hyphens
   return filename
     .replace(/[^a-zA-Z0-9.\-_]/g, '_')
-    .replace(/\.{2,}/g, '.')  // Prevent directory traversal
-    .substring(0, 255);  // Limit length
+    .replace(/\.{2,}/g, '.') // Prevent directory traversal
+    .substring(0, 255); // Limit length
 }
 
 // =============================================================================

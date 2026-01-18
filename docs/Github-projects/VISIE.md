@@ -1,7 +1,9 @@
 # GitHub Integration Vision
 
 ## Version: 1.0.0
+
 ## Date: 2026-01-10
+
 ## Author: Robin Waslander
 
 ---
@@ -25,22 +27,26 @@ Kanbu is a project management application that can work completely standalone, b
 ## Why Bi-directional Sync?
 
 ### 1. No Vendor Lock-in
+
 - All data is ALSO in GitHub
 - Stop using Kanbu? Your project lives on in GitHub
 - Users dare to start more easily - no risk
 
 ### 2. Flexible Access
+
 - **External contributor** → only GitHub access needed
 - **Freelancer** → works via GitHub issues
 - **Core team** → Kanbu for the rich experience
 - Everyone sees the same data
 
 ### 3. Open Source Projects
+
 - Public repo = community contributes via GitHub
 - Maintainers manage via Kanbu (better tools)
 - Community doesn't need to know Kanbu
 
 ### 4. Credibility
+
 - Developers trust GitHub
 - "It syncs with GitHub" = instant credibility
 - Kanbu adds value, doesn't replace
@@ -55,18 +61,18 @@ Kanbu is a project management application that can work completely standalone, b
 
 Everything GitHub Projects can do, the Kanbu GitHub Module must also be able to do:
 
-| Feature | Status |
-|---------|--------|
-| Board view (Kanban) | 🔲 To build |
-| List view | 🔲 To build |
-| Table view | 🔲 To build |
-| Issues CRUD | ✅ Sync works |
-| Milestones CRUD | ✅ Sync works |
-| Labels & filters | 🔲 To build |
-| Keyboard shortcuts | 🔲 To build |
-| Drag & drop | 🔲 To build |
-| Bulk actions | 🔲 To build |
-| Search | 🔲 To build |
+| Feature             | Status        |
+| ------------------- | ------------- |
+| Board view (Kanban) | 🔲 To build   |
+| List view           | 🔲 To build   |
+| Table view          | 🔲 To build   |
+| Issues CRUD         | ✅ Sync works |
+| Milestones CRUD     | ✅ Sync works |
+| Labels & filters    | 🔲 To build   |
+| Keyboard shortcuts  | 🔲 To build   |
+| Drag & drop         | 🔲 To build   |
+| Bulk actions        | 🔲 To build   |
+| Search              | 🔲 To build   |
 
 **Why 1-to-1 first? (Three Benefits)**
 
@@ -92,11 +98,11 @@ Everything GitHub Projects can do, the Kanbu GitHub Module must also be able to 
 1. **Internal Projects Module** - existing Kanbu projects
 2. **GitHub Projects Module** - 1-to-1 with GitHub Projects
 
-| Aspect | Internal Module | GitHub Module |
-|--------|----------------|---------------|
-| Structure | Kanbu's own design | 1-to-1 with GitHub |
-| Sync | No external sync | Bi-directional |
-| Focus | Can evolve freely | Feature parity first |
+| Aspect    | Internal Module    | GitHub Module        |
+| --------- | ------------------ | -------------------- |
+| Structure | Kanbu's own design | 1-to-1 with GitHub   |
+| Sync      | No external sync   | Bi-directional       |
+| Focus     | Can evolve freely  | Feature parity first |
 
 ### Workspace Structure
 
@@ -165,29 +171,36 @@ The UI and logic are completely built around these tables.
 ## What Kanbu Adds (GitHub doesn't have this)
 
 ### 1. Workspaces
+
 GitHub doesn't know workspaces. You have organizations and repositories, but no overarching structure.
 
 **Kanbu:**
+
 - A workspace can contain multiple projects
 - Mix of GitHub AND internal projects
 - Centralized user management
 
 ### 2. Project Groups
+
 Group related projects together.
 
 **Kanbu:**
+
 - Combine statistics across multiple projects
 - See total velocity, burndown, etc.
 - Visualize cross-project dependencies
 
 ### 3. Cross-Project Dependencies
+
 A task in GitHub project A can depend on a task in internal project B.
 
 **In GitHub:** You only see project A and "has a dependency"
 **In Kanbu:** You see BOTH projects and the complete dependency chain
 
 ### 4. The Big Picture
+
 GitHub shows you one repo/project at a time. Kanbu shows:
+
 - Portfolio overview
 - Resource allocation across projects
 - Combined reports
@@ -199,16 +212,16 @@ GitHub shows you one repo/project at a time. Kanbu shows:
 
 ### Entities that Synchronize
 
-| GitHub | Kanbu | Sync Direction |
-|--------|-------|---------------|
-| Repository | Project | GitHub → Kanbu (when linking) |
-| Issue | Task | Bi-directional |
-| Milestone | Milestone | Bi-directional |
-| Pull Request | PR (read-only in Kanbu) | GitHub → Kanbu |
-| Commit | Commit (read-only in Kanbu) | GitHub → Kanbu |
-| Comment | Comment | Bi-directional |
-| Label | Tag | Bi-directional |
-| Release | Release | Bi-directional |
+| GitHub       | Kanbu                       | Sync Direction                |
+| ------------ | --------------------------- | ----------------------------- |
+| Repository   | Project                     | GitHub → Kanbu (when linking) |
+| Issue        | Task                        | Bi-directional                |
+| Milestone    | Milestone                   | Bi-directional                |
+| Pull Request | PR (read-only in Kanbu)     | GitHub → Kanbu                |
+| Commit       | Commit (read-only in Kanbu) | GitHub → Kanbu                |
+| Comment      | Comment                     | Bi-directional                |
+| Label        | Tag                         | Bi-directional                |
+| Release      | Release                     | Bi-directional                |
 
 ### What Does NOT Sync (Kanbu-only)
 
@@ -221,6 +234,7 @@ GitHub shows you one repo/project at a time. Kanbu shows:
 ### Conflict Resolution
 
 In case of simultaneous changes:
+
 1. **Timestamp comparison** - most recent wins
 2. **Optional: Merge** - for text fields (descriptions, comments)
 3. **Audit log** - all changes are logged
@@ -276,14 +290,17 @@ In case of simultaneous changes:
 ## Future Extensions
 
 ### Phase 2: GitHub Projects (Boards)
+
 - Sync with GitHub's own Project boards
 - Column mapping (To Do → Backlog, etc.)
 
 ### Phase 3: GitHub Actions Integration
+
 - See CI/CD status in Kanbu
 - Trigger workflows from Kanbu
 
 ### Phase 4: Multi-Provider
+
 - GitLab support
 - Bitbucket support
 - Azure DevOps support
@@ -300,10 +317,12 @@ Kanbu is the **orchestration layer** on top of GitHub (and other providers). It 
 4. **Better UI/UX** - for project management
 
 The bi-directional sync ensures that:
+
 - Data is never lost (GitHub backup)
 - Everyone can work where they want
 - No vendor lock-in
 - Instant adoption possible
 
 **The business case:**
+
 > GitHub + Kanbu = better than both separately. Your data, your choice where you work.

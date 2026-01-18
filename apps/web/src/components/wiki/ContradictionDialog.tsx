@@ -10,8 +10,8 @@
  * - Reviewing auto-resolved contradictions before confirming
  */
 
-import { useState } from 'react'
-import { format } from 'date-fns'
+import { useState } from 'react';
+import { format } from 'date-fns';
 import {
   Dialog,
   DialogContent,
@@ -19,10 +19,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   AlertTriangle,
   ArrowRight,
@@ -34,13 +34,13 @@ import {
   Merge,
   Clock,
   User,
-} from 'lucide-react'
-import { cn } from '@/lib/utils'
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
 import {
   ContradictionCategory,
   ResolutionStrategy,
   type ContradictionData,
-} from './ContradictionToast'
+} from './ContradictionToast';
 
 // =============================================================================
 // Types
@@ -51,39 +51,39 @@ import {
  */
 export interface ContradictionDetailData extends ContradictionData {
   /** Unique identifier for the contradiction */
-  id?: number
+  id?: number;
   /** When the contradiction was detected */
-  detectedAt?: Date
+  detectedAt?: Date;
   /** User who triggered the contradiction */
   triggeredBy?: {
-    id: number
-    name: string
-  }
+    id: number;
+    name: string;
+  };
   /** Reasoning for the contradiction */
-  reasoning?: string
+  reasoning?: string;
   /** Whether the contradiction can still be reverted */
-  canRevert?: boolean
+  canRevert?: boolean;
   /** When the revert window expires */
-  revertExpiresAt?: Date
+  revertExpiresAt?: Date;
 }
 
 export interface ContradictionDialogProps {
   /** Whether the dialog is open */
-  open: boolean
+  open: boolean;
   /** Callback when dialog is closed */
-  onOpenChange: (open: boolean) => void
+  onOpenChange: (open: boolean) => void;
   /** The contradiction to display */
-  contradiction: ContradictionDetailData | null
+  contradiction: ContradictionDetailData | null;
   /** Whether resolution options should be shown (for ASK_USER strategy) */
-  showResolutionOptions?: boolean
+  showResolutionOptions?: boolean;
   /** Callback when user selects a resolution */
-  onResolve?: (strategy: ResolutionStrategy) => Promise<void>
+  onResolve?: (strategy: ResolutionStrategy) => Promise<void>;
   /** Callback when user reverts a resolution */
-  onRevert?: () => Promise<void>
+  onRevert?: () => Promise<void>;
   /** Callback to view full audit history */
-  onViewHistory?: () => void
+  onViewHistory?: () => void;
   /** Whether an action is in progress */
-  isLoading?: boolean
+  isLoading?: boolean;
 }
 
 // =============================================================================
@@ -99,24 +99,24 @@ function getCategoryInfo(category: ContradictionCategory): { label: string; desc
       return {
         label: 'Factual',
         description: 'Two mutually exclusive facts about the same subject',
-      }
+      };
     case ContradictionCategory.ATTRIBUTE:
       return {
         label: 'Attribute',
         description: 'Different values for the same attribute',
-      }
+      };
     case ContradictionCategory.TEMPORAL:
       return {
         label: 'Temporal',
         description: 'Overlapping time periods for exclusive facts',
-      }
+      };
     case ContradictionCategory.SEMANTIC:
       return {
         label: 'Semantic',
         description: 'Meaning contradiction between statements',
-      }
+      };
     default:
-      return { label: 'Unknown', description: '' }
+      return { label: 'Unknown', description: '' };
   }
 }
 
@@ -126,15 +126,15 @@ function getCategoryInfo(category: ContradictionCategory): { label: string; desc
 function getCategoryBadgeClass(category: ContradictionCategory): string {
   switch (category) {
     case ContradictionCategory.FACTUAL:
-      return 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800'
+      return 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800';
     case ContradictionCategory.ATTRIBUTE:
-      return 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800'
+      return 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800';
     case ContradictionCategory.TEMPORAL:
-      return 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800'
+      return 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800';
     case ContradictionCategory.SEMANTIC:
-      return 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800'
+      return 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800';
     default:
-      return ''
+      return '';
   }
 }
 
@@ -142,9 +142,9 @@ function getCategoryBadgeClass(category: ContradictionCategory): string {
  * Get confidence level styling
  */
 function getConfidenceClass(confidence: number): string {
-  if (confidence >= 0.9) return 'text-green-600 dark:text-green-400'
-  if (confidence >= 0.7) return 'text-amber-600 dark:text-amber-400'
-  return 'text-red-600 dark:text-red-400'
+  if (confidence >= 0.9) return 'text-green-600 dark:text-green-400';
+  if (confidence >= 0.7) return 'text-amber-600 dark:text-amber-400';
+  return 'text-red-600 dark:text-red-400';
 }
 
 // =============================================================================
@@ -152,10 +152,10 @@ function getConfidenceClass(confidence: number): string {
 // =============================================================================
 
 interface FactCardProps {
-  title: string
-  fact: string
-  isInvalidated?: boolean
-  isNew?: boolean
+  title: string;
+  fact: string;
+  isInvalidated?: boolean;
+  isNew?: boolean;
 }
 
 function FactCard({ title, fact, isInvalidated, isNew }: FactCardProps) {
@@ -175,27 +175,20 @@ function FactCard({ title, fact, isInvalidated, isNew }: FactCardProps) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <p
-          className={cn(
-            'text-sm',
-            isInvalidated && 'line-through opacity-60'
-          )}
-        >
-          {fact}
-        </p>
+        <p className={cn('text-sm', isInvalidated && 'line-through opacity-60')}>{fact}</p>
       </CardContent>
     </Card>
-  )
+  );
 }
 
 interface ResolutionButtonProps {
-  strategy: ResolutionStrategy
-  label: string
-  description: string
-  icon: React.ReactNode
-  onClick: () => void
-  disabled?: boolean
-  variant?: 'default' | 'outline' | 'destructive'
+  strategy: ResolutionStrategy;
+  label: string;
+  description: string;
+  icon: React.ReactNode;
+  onClick: () => void;
+  disabled?: boolean;
+  variant?: 'default' | 'outline' | 'destructive';
 }
 
 function ResolutionButton({
@@ -217,11 +210,9 @@ function ResolutionButton({
         {icon}
         {label}
       </span>
-      <span className="text-xs font-normal text-muted-foreground text-left">
-        {description}
-      </span>
+      <span className="text-xs font-normal text-muted-foreground text-left">{description}</span>
     </Button>
-  )
+  );
 }
 
 // =============================================================================
@@ -238,28 +229,28 @@ export function ContradictionDialog({
   onViewHistory,
   isLoading = false,
 }: ContradictionDialogProps) {
-  const [selectedStrategy, setSelectedStrategy] = useState<ResolutionStrategy | null>(null)
+  const [selectedStrategy, setSelectedStrategy] = useState<ResolutionStrategy | null>(null);
 
-  if (!contradiction) return null
+  if (!contradiction) return null;
 
-  const categoryInfo = getCategoryInfo(contradiction.category)
-  const confidencePercent = Math.round(contradiction.confidence * 100)
-  const isAutoResolved = contradiction.strategy !== ResolutionStrategy.ASK_USER
-  const canRevert = contradiction.canRevert ?? (contradiction.auditId !== undefined)
+  const categoryInfo = getCategoryInfo(contradiction.category);
+  const confidencePercent = Math.round(contradiction.confidence * 100);
+  const isAutoResolved = contradiction.strategy !== ResolutionStrategy.ASK_USER;
+  const canRevert = contradiction.canRevert ?? contradiction.auditId !== undefined;
 
   const handleResolve = async (strategy: ResolutionStrategy) => {
-    if (!onResolve) return
-    setSelectedStrategy(strategy)
-    await onResolve(strategy)
-    setSelectedStrategy(null)
-    onOpenChange(false)
-  }
+    if (!onResolve) return;
+    setSelectedStrategy(strategy);
+    await onResolve(strategy);
+    setSelectedStrategy(null);
+    onOpenChange(false);
+  };
 
   const handleRevert = async () => {
-    if (!onRevert) return
-    await onRevert()
-    onOpenChange(false)
-  }
+    if (!onRevert) return;
+    await onRevert();
+    onOpenChange(false);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -299,16 +290,16 @@ export function ContradictionDialog({
         </div>
 
         {/* Category Description */}
-        <p className="text-sm text-muted-foreground">
-          {categoryInfo.description}
-        </p>
+        <p className="text-sm text-muted-foreground">{categoryInfo.description}</p>
 
         {/* Fact Comparison */}
         <div className="flex flex-col sm:flex-row gap-4">
           <FactCard
             title="Old Fact"
             fact={contradiction.invalidatedFact}
-            isInvalidated={isAutoResolved && contradiction.strategy === ResolutionStrategy.INVALIDATE_OLD}
+            isInvalidated={
+              isAutoResolved && contradiction.strategy === ResolutionStrategy.INVALIDATE_OLD
+            }
           />
           <div className="flex items-center justify-center">
             <GitCompare className="h-6 w-6 text-muted-foreground rotate-90 sm:rotate-0" />
@@ -317,7 +308,9 @@ export function ContradictionDialog({
             title="New Fact"
             fact={contradiction.newFact}
             isNew={isAutoResolved && contradiction.strategy === ResolutionStrategy.INVALIDATE_OLD}
-            isInvalidated={isAutoResolved && contradiction.strategy === ResolutionStrategy.INVALIDATE_NEW}
+            isInvalidated={
+              isAutoResolved && contradiction.strategy === ResolutionStrategy.INVALIDATE_NEW
+            }
           />
         </div>
 
@@ -385,9 +378,7 @@ export function ContradictionDialog({
               {contradiction.strategy === ResolutionStrategy.KEEP_BOTH && (
                 <>Both facts were kept as non-contradictory.</>
               )}
-              {contradiction.strategy === ResolutionStrategy.MERGE && (
-                <>The facts were merged.</>
-              )}
+              {contradiction.strategy === ResolutionStrategy.MERGE && <>The facts were merged.</>}
             </p>
             {contradiction.revertExpiresAt && (
               <p className="text-xs text-muted-foreground mt-1">
@@ -399,21 +390,13 @@ export function ContradictionDialog({
 
         <DialogFooter className="flex-col sm:flex-row gap-2">
           {onViewHistory && (
-            <Button
-              variant="outline"
-              onClick={onViewHistory}
-              disabled={isLoading}
-            >
+            <Button variant="outline" onClick={onViewHistory} disabled={isLoading}>
               <History className="h-4 w-4 mr-2" />
               View History
             </Button>
           )}
           {!showResolutionOptions && canRevert && onRevert && (
-            <Button
-              variant="outline"
-              onClick={handleRevert}
-              disabled={isLoading}
-            >
+            <Button variant="outline" onClick={handleRevert} disabled={isLoading}>
               <Undo2 className="h-4 w-4 mr-2" />
               Undo Resolution
             </Button>
@@ -428,5 +411,5 @@ export function ContradictionDialog({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

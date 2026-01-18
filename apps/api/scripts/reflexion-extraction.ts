@@ -18,29 +18,29 @@
  * @date 2026-01-14
  */
 
-import * as dotenv from 'dotenv'
-dotenv.config()
+import * as dotenv from 'dotenv';
+dotenv.config();
 
-import { prisma } from '../src/lib/prisma'
-import { getWikiAiService } from '../src/lib/ai/wiki'
-import { getGraphitiService } from '../src/services/graphitiService'
+import { prisma } from '../src/lib/prisma';
+import { getWikiAiService } from '../src/lib/ai/wiki';
+import { getGraphitiService } from '../src/services/graphitiService';
 
 // ============================================================================
 // CLI Argument Parsing
 // ============================================================================
 
 interface Options {
-  workspace?: number
-  project?: number
-  limit: number
-  dryRun: boolean
-  verbose: boolean
-  skipResync: boolean
-  help: boolean
+  workspace?: number;
+  project?: number;
+  limit: number;
+  dryRun: boolean;
+  verbose: boolean;
+  skipResync: boolean;
+  help: boolean;
 }
 
 function parseArgs(): Options {
-  const args = process.argv.slice(2)
+  const args = process.argv.slice(2);
   const options: Options = {
     workspace: undefined,
     project: undefined,
@@ -49,46 +49,46 @@ function parseArgs(): Options {
     verbose: false,
     skipResync: false,
     help: false,
-  }
+  };
 
   for (let i = 0; i < args.length; i++) {
-    const arg = args[i]
+    const arg = args[i];
 
     switch (arg) {
       case '-w':
       case '--workspace':
-        options.workspace = parseInt(args[++i], 10)
-        break
+        options.workspace = parseInt(args[++i], 10);
+        break;
       case '-p':
       case '--project':
-        options.project = parseInt(args[++i], 10)
-        break
+        options.project = parseInt(args[++i], 10);
+        break;
       case '-l':
       case '--limit':
-        options.limit = parseInt(args[++i], 10)
-        break
+        options.limit = parseInt(args[++i], 10);
+        break;
       case '-d':
       case '--dry-run':
-        options.dryRun = true
-        break
+        options.dryRun = true;
+        break;
       case '-v':
       case '--verbose':
-        options.verbose = true
-        break
+        options.verbose = true;
+        break;
       case '--skip-resync':
-        options.skipResync = true
-        break
+        options.skipResync = true;
+        break;
       case '-h':
       case '--help':
-        options.help = true
-        break
+        options.help = true;
+        break;
       default:
-        console.error(`Unknown option: ${arg}`)
-        process.exit(1)
+        console.error(`Unknown option: ${arg}`);
+        process.exit(1);
     }
   }
 
-  return options
+  return options;
 }
 
 function showHelp(): void {
@@ -118,7 +118,7 @@ Examples:
   pnpm tsx scripts/reflexion-extraction.ts --workspace 1 --project 5
   pnpm tsx scripts/reflexion-extraction.ts --workspace 1 --dry-run
   pnpm tsx scripts/reflexion-extraction.ts --workspace 1 --limit 10 --verbose
-`)
+`);
 }
 
 // ============================================================================
@@ -126,11 +126,11 @@ Examples:
 // ============================================================================
 
 interface Stats {
-  pagesProcessed: number
-  pagesWithMissed: number
-  totalMissedEntities: number
-  errors: number
-  resynced: number
+  pagesProcessed: number;
+  pagesWithMissed: number;
+  totalMissedEntities: number;
+  errors: number;
+  resynced: number;
 }
 
 // ============================================================================
@@ -138,58 +138,58 @@ interface Stats {
 // ============================================================================
 
 async function main() {
-  const opts = parseArgs()
+  const opts = parseArgs();
 
   if (opts.help) {
-    showHelp()
-    process.exit(0)
+    showHelp();
+    process.exit(0);
   }
 
   if (!opts.workspace) {
-    console.error('Error: --workspace is required')
-    console.error('Run with --help for usage information')
-    process.exit(1)
+    console.error('Error: --workspace is required');
+    console.error('Run with --help for usage information');
+    process.exit(1);
   }
 
-  console.log('\n' + '='.repeat(60))
-  console.log('  Reflexion Extraction Script')
-  console.log('='.repeat(60))
-  console.log(`  Workspace ID: ${opts.workspace}`)
-  if (opts.project) console.log(`  Project ID:   ${opts.project}`)
-  console.log(`  Page Limit:   ${opts.limit}`)
-  console.log(`  Mode:         ${opts.dryRun ? 'DRY RUN (no changes)' : 'LIVE'}`)
-  if (opts.skipResync) console.log(`  Skip Resync:  Yes (analysis only)`)
-  console.log('='.repeat(60) + '\n')
+  console.log('\n' + '='.repeat(60));
+  console.log('  Reflexion Extraction Script');
+  console.log('='.repeat(60));
+  console.log(`  Workspace ID: ${opts.workspace}`);
+  if (opts.project) console.log(`  Project ID:   ${opts.project}`);
+  console.log(`  Page Limit:   ${opts.limit}`);
+  console.log(`  Mode:         ${opts.dryRun ? 'DRY RUN (no changes)' : 'LIVE'}`);
+  if (opts.skipResync) console.log(`  Skip Resync:  Yes (analysis only)`);
+  console.log('='.repeat(60) + '\n');
 
   // Verify workspace exists
   const workspace = await prisma.workspace.findUnique({
     where: { id: opts.workspace },
-  })
+  });
 
   if (!workspace) {
-    console.error(`Error: Workspace ${opts.workspace} not found`)
-    process.exit(1)
+    console.error(`Error: Workspace ${opts.workspace} not found`);
+    process.exit(1);
   }
 
-  console.log(`Workspace: ${workspace.name}\n`)
+  console.log(`Workspace: ${workspace.name}\n`);
 
   // Initialize services
-  const wikiAiService = getWikiAiService(prisma)
-  const graphitiService = getGraphitiService(prisma)
+  const wikiAiService = getWikiAiService(prisma);
+  const graphitiService = getGraphitiService(prisma);
 
   // Check if AI service is available
   const capabilities = await wikiAiService.getCapabilities({
     workspaceId: opts.workspace,
     projectId: opts.project,
-  })
+  });
 
   if (!capabilities.reasoning) {
-    console.error('Error: No AI provider with reasoning capability available')
-    console.error('Please configure an AI provider for this workspace first')
-    process.exit(1)
+    console.error('Error: No AI provider with reasoning capability available');
+    console.error('Please configure an AI provider for this workspace first');
+    process.exit(1);
   }
 
-  console.log(`AI Provider: ${capabilities.provider || 'default'}\n`)
+  console.log(`AI Provider: ${capabilities.provider || 'default'}\n`);
 
   // Fetch wiki pages
   const pages = await prisma.wikiPage.findMany({
@@ -209,15 +209,15 @@ async function main() {
       projectId: true,
       createdBy: true,
     },
-  })
+  });
 
   if (pages.length === 0) {
-    console.log('No wiki pages found matching the criteria')
-    process.exit(0)
+    console.log('No wiki pages found matching the criteria');
+    process.exit(0);
   }
 
-  console.log(`Found ${pages.length} page(s) to analyze\n`)
-  console.log('-'.repeat(60))
+  console.log(`Found ${pages.length} page(s) to analyze\n`);
+  console.log('-'.repeat(60));
 
   const stats: Stats = {
     pagesProcessed: 0,
@@ -225,34 +225,34 @@ async function main() {
     totalMissedEntities: 0,
     errors: 0,
     resynced: 0,
-  }
+  };
 
   // Process each page
   for (const page of pages) {
-    stats.pagesProcessed++
+    stats.pagesProcessed++;
 
     if (opts.verbose) {
-      console.log(`\n[${stats.pagesProcessed}/${pages.length}] Processing: ${page.title}`)
+      console.log(`\n[${stats.pagesProcessed}/${pages.length}] Processing: ${page.title}`);
     }
 
     try {
       // Get current extracted entities from the graph
-      const currentEntities = await graphitiService.getPageEntities(page.id)
-      const entityNames = currentEntities.map((e) => e.name)
+      const currentEntities = await graphitiService.getPageEntities(page.id);
+      const entityNames = currentEntities.map((e) => e.name);
 
       if (opts.verbose) {
-        console.log(`  Current entities: ${entityNames.length}`)
+        console.log(`  Current entities: ${entityNames.length}`);
         if (entityNames.length > 0 && entityNames.length <= 10) {
-          console.log(`    ${entityNames.join(', ')}`)
+          console.log(`    ${entityNames.join(', ')}`);
         }
       }
 
       // Skip pages with no content
       if (!page.content || page.content.trim().length === 0) {
         if (opts.verbose) {
-          console.log('  Skipping: empty content')
+          console.log('  Skipping: empty content');
         }
-        continue
+        continue;
       }
 
       // Run reflexion extraction
@@ -263,26 +263,26 @@ async function main() {
         },
         page.content,
         entityNames
-      )
+      );
 
       if (result.missedEntities.length > 0) {
-        stats.pagesWithMissed++
-        stats.totalMissedEntities += result.missedEntities.length
+        stats.pagesWithMissed++;
+        stats.totalMissedEntities += result.missedEntities.length;
 
-        console.log(`\n  ${page.title}`)
-        console.log(`  Missed entities: ${result.missedEntities.length}`)
+        console.log(`\n  ${page.title}`);
+        console.log(`  Missed entities: ${result.missedEntities.length}`);
 
         for (const missed of result.missedEntities) {
-          const typeInfo = missed.suggestedType ? ` (${missed.suggestedType})` : ''
-          console.log(`    - ${missed.name}${typeInfo}`)
+          const typeInfo = missed.suggestedType ? ` (${missed.suggestedType})` : '';
+          console.log(`    - ${missed.name}${typeInfo}`);
 
           if (opts.verbose && missed.reason) {
-            console.log(`      Reason: ${missed.reason}`)
+            console.log(`      Reason: ${missed.reason}`);
           }
         }
 
         if (opts.verbose && result.reasoning) {
-          console.log(`  Analysis: ${result.reasoning}`)
+          console.log(`  Analysis: ${result.reasoning}`);
         }
 
         // Re-sync page with reflexion enabled (unless dry-run or skip-resync)
@@ -290,7 +290,7 @@ async function main() {
           try {
             const groupId = page.projectId
               ? `wiki-proj-${page.projectId}`
-              : `wiki-ws-${page.workspaceId}`
+              : `wiki-ws-${page.workspaceId}`;
 
             await graphitiService.syncWikiPage(
               {
@@ -307,61 +307,61 @@ async function main() {
               {
                 enableReflexion: true,
               }
-            )
+            );
 
-            stats.resynced++
-            console.log(`    Re-synced with missed entities`)
+            stats.resynced++;
+            console.log(`    Re-synced with missed entities`);
           } catch (syncError) {
             console.error(
               `    Failed to re-sync: ${syncError instanceof Error ? syncError.message : 'Unknown error'}`
-            )
-            stats.errors++
+            );
+            stats.errors++;
           }
         }
       } else if (opts.verbose) {
-        console.log('  No missed entities found')
+        console.log('  No missed entities found');
       }
     } catch (err) {
-      stats.errors++
+      stats.errors++;
       console.error(
         `\n  Error processing ${page.title}: ${err instanceof Error ? err.message : 'Unknown error'}`
-      )
+      );
 
       if (opts.verbose && err instanceof Error && err.stack) {
-        console.error(`  Stack: ${err.stack.split('\n')[1]}`)
+        console.error(`  Stack: ${err.stack.split('\n')[1]}`);
       }
     }
   }
 
   // Print summary
-  console.log('\n' + '='.repeat(60))
-  console.log('  Summary')
-  console.log('='.repeat(60))
-  console.log(`  Pages processed:           ${stats.pagesProcessed}`)
-  console.log(`  Pages with missed entities: ${stats.pagesWithMissed}`)
-  console.log(`  Total missed entities:     ${stats.totalMissedEntities}`)
+  console.log('\n' + '='.repeat(60));
+  console.log('  Summary');
+  console.log('='.repeat(60));
+  console.log(`  Pages processed:           ${stats.pagesProcessed}`);
+  console.log(`  Pages with missed entities: ${stats.pagesWithMissed}`);
+  console.log(`  Total missed entities:     ${stats.totalMissedEntities}`);
   if (!opts.dryRun && !opts.skipResync) {
-    console.log(`  Pages re-synced:           ${stats.resynced}`)
+    console.log(`  Pages re-synced:           ${stats.resynced}`);
   }
   if (stats.errors > 0) {
-    console.log(`  Errors:                    ${stats.errors}`)
+    console.log(`  Errors:                    ${stats.errors}`);
   }
-  console.log(`  Mode:                      ${opts.dryRun ? 'DRY RUN (no changes made)' : 'LIVE'}`)
-  console.log('='.repeat(60) + '\n')
+  console.log(`  Mode:                      ${opts.dryRun ? 'DRY RUN (no changes made)' : 'LIVE'}`);
+  console.log('='.repeat(60) + '\n');
 
   // Exit with error code if there were errors
   if (stats.errors > 0) {
-    console.log(`Completed with ${stats.errors} error(s)`)
+    console.log(`Completed with ${stats.errors} error(s)`);
   }
 }
 
 main()
   .then(() => {
-    prisma.$disconnect()
-    process.exit(0)
+    prisma.$disconnect();
+    process.exit(0);
   })
   .catch((err) => {
-    console.error('\nFatal error:', err)
-    prisma.$disconnect()
-    process.exit(1)
-  })
+    console.error('\nFatal error:', err);
+    prisma.$disconnect();
+    process.exit(1);
+  });

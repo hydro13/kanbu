@@ -41,9 +41,9 @@
  * ===================================================================
  */
 
-import { useState, useCallback, useMemo, useRef } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
-import { WorkspaceLayout } from '@/components/layout/WorkspaceLayout'
+import { useState, useCallback, useMemo, useRef } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { WorkspaceLayout } from '@/components/layout/WorkspaceLayout';
 import {
   WikiSidebar,
   WikiPageView,
@@ -58,12 +58,17 @@ import {
   type ContradictionCategory,
   type ResolutionStrategy,
   type FactCheckResult,
-} from '@/components/wiki'
-import type { WikiPageNode, WikiPageStatus, WikiBreadcrumb, WikiPageForSearch } from '@/components/wiki'
-import { Card, CardContent } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+} from '@/components/wiki';
+import type {
+  WikiPageNode,
+  WikiPageStatus,
+  WikiBreadcrumb,
+  WikiPageForSearch,
+} from '@/components/wiki';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Dialog,
   DialogContent,
@@ -71,67 +76,72 @@ import {
   DialogTitle,
   DialogFooter,
   DialogDescription,
-} from '@/components/ui/dialog'
+} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { RichTextEditor, type WikiPage as WikiPageForLink, type TaskResult, type MentionResult } from '@/components/editor'
-import { trpc } from '@/lib/trpc'
-import { useAppSelector } from '@/store'
-import { selectUser } from '@/store/authSlice'
-import { useWikiBackgroundIndexing } from '@/hooks/useWikiBackgroundIndexing'
-import { BookOpen, Plus, ArrowLeft } from 'lucide-react'
-import { Link } from 'react-router-dom'
+} from '@/components/ui/select';
+import {
+  RichTextEditor,
+  type WikiPage as WikiPageForLink,
+  type TaskResult,
+  type MentionResult,
+} from '@/components/editor';
+import { trpc } from '@/lib/trpc';
+import { useAppSelector } from '@/store';
+import { selectUser } from '@/store/authSlice';
+import { useWikiBackgroundIndexing } from '@/hooks/useWikiBackgroundIndexing';
+import { BookOpen, Plus, ArrowLeft } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface PageFromApi {
-  id: number
-  title: string
-  slug: string
-  status: WikiPageStatus
-  sortOrder: number
-  parentId: number | null
-  createdAt: string
-  updatedAt: string
-  childCount: number
-  versionCount?: number
+  id: number;
+  title: string;
+  slug: string;
+  status: WikiPageStatus;
+  sortOrder: number;
+  parentId: number | null;
+  createdAt: string;
+  updatedAt: string;
+  childCount: number;
+  versionCount?: number;
 }
 
 interface FullPageFromApi {
-  id: number
-  title: string
-  slug: string
-  content: string
-  contentJson: unknown
-  status: WikiPageStatus
-  sortOrder: number
-  parentId: number | null
-  createdAt: string
-  updatedAt: string
-  publishedAt: string | null
+  id: number;
+  title: string;
+  slug: string;
+  content: string;
+  contentJson: unknown;
+  status: WikiPageStatus;
+  sortOrder: number;
+  parentId: number | null;
+  createdAt: string;
+  updatedAt: string;
+  publishedAt: string | null;
   workspace: {
-    id: number
-    name: string
-    slug: string
-  }
+    id: number;
+    name: string;
+    slug: string;
+  };
   parent: {
-    id: number
-    title: string
-    slug: string
-  } | null
+    id: number;
+    title: string;
+    slug: string;
+  } | null;
   children: {
-    id: number
-    title: string
-    slug: string
-  }[]
-  versionCount: number
+    id: number;
+    title: string;
+    slug: string;
+  }[];
+  versionCount: number;
 }
 
 // =============================================================================
@@ -139,26 +149,26 @@ interface FullPageFromApi {
 // =============================================================================
 
 export function WorkspaceWikiPage() {
-  const { slug, pageSlug } = useParams<{ slug: string; pageSlug?: string }>()
-  const navigate = useNavigate()
+  const { slug, pageSlug } = useParams<{ slug: string; pageSlug?: string }>();
+  const navigate = useNavigate();
 
-  const [showCreateModal, setShowCreateModal] = useState(false)
-  const [createParentId, setCreateParentId] = useState<number | undefined>()
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [showVersionHistory, setShowVersionHistory] = useState(false)
-  const [showSearchDialog, setShowSearchDialog] = useState(false)
-  const [showGraphView, setShowGraphView] = useState(false)
-  const [graphFullscreen, setGraphFullscreen] = useState(false)
-  const [showTemporalSearch, setShowTemporalSearch] = useState(false)
-  const [showAskWiki, setShowAskWiki] = useState(false)
-  const [askWikiInitialQuery, setAskWikiInitialQuery] = useState<string | undefined>()
-  const [showFactCheck, setShowFactCheck] = useState(false)
-  const [factCheckText, setFactCheckText] = useState('')
-  const [factCheckResult, setFactCheckResult] = useState<FactCheckResult | null>(null)
-  const [factCheckError, setFactCheckError] = useState<string | undefined>()
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [createParentId, setCreateParentId] = useState<number | undefined>();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showVersionHistory, setShowVersionHistory] = useState(false);
+  const [showSearchDialog, setShowSearchDialog] = useState(false);
+  const [showGraphView, setShowGraphView] = useState(false);
+  const [graphFullscreen, setGraphFullscreen] = useState(false);
+  const [showTemporalSearch, setShowTemporalSearch] = useState(false);
+  const [showAskWiki, setShowAskWiki] = useState(false);
+  const [askWikiInitialQuery, setAskWikiInitialQuery] = useState<string | undefined>();
+  const [showFactCheck, setShowFactCheck] = useState(false);
+  const [factCheckText, setFactCheckText] = useState('');
+  const [factCheckResult, setFactCheckResult] = useState<FactCheckResult | null>(null);
+  const [factCheckError, setFactCheckError] = useState<string | undefined>();
 
-  const utils = trpc.useUtils()
-  const user = useAppSelector(selectUser)
+  const utils = trpc.useUtils();
+  const user = useAppSelector(selectUser);
 
   // Current user for signature feature
   const currentUser = user
@@ -168,14 +178,11 @@ export function WorkspaceWikiPage() {
         name: user.name ?? null,
         avatarUrl: user.avatarUrl,
       }
-    : undefined
+    : undefined;
 
   // Fetch workspace
-  const workspaceQuery = trpc.workspace.getBySlug.useQuery(
-    { slug: slug! },
-    { enabled: !!slug }
-  )
-  const workspace = workspaceQuery.data
+  const workspaceQuery = trpc.workspace.getBySlug.useQuery({ slug: slug! }, { enabled: !!slug });
+  const workspace = workspaceQuery.data;
 
   // Background indexing - runs during idle time (Fase 15.5)
   useWikiBackgroundIndexing({
@@ -183,33 +190,33 @@ export function WorkspaceWikiPage() {
     enabled: !!workspace?.id,
     idleThreshold: 30_000, // 30 seconds
     cooldown: 5 * 60 * 1000, // 5 minutes
-  })
+  });
 
   // Fetch wiki pages list
   const pagesQuery = trpc.workspaceWiki.list.useQuery(
     { workspaceId: workspace?.id ?? 0, includeUnpublished: true },
     { enabled: !!workspace?.id }
-  )
-  const pages = (pagesQuery.data ?? []) as PageFromApi[]
+  );
+  const pages = (pagesQuery.data ?? []) as PageFromApi[];
 
   // Fetch current page if pageSlug is provided
   const currentPageQuery = trpc.workspaceWiki.getBySlug.useQuery(
     { workspaceId: workspace?.id ?? 0, slug: pageSlug! },
     { enabled: !!workspace?.id && !!pageSlug }
-  )
-  const currentPage = currentPageQuery.data as FullPageFromApi | undefined
+  );
+  const currentPage = currentPageQuery.data as FullPageFromApi | undefined;
 
   // Update mutation - Fase 17.4: Now handles contradiction data
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const updateMutation = trpc.workspaceWiki.update.useMutation({
     onSuccess: (result: any) => {
-      utils.workspaceWiki.list.invalidate()
-      utils.workspaceWiki.getBySlug.invalidate()
+      utils.workspaceWiki.list.invalidate();
+      utils.workspaceWiki.getBySlug.invalidate();
 
       // Fase 17.4: Show toast if contradictions were resolved
       if (result.contradictions && result.contradictions.length > 0) {
         // Show toast for the first contradiction (batch handled by showBatchContradictionToasts)
-        const firstContradiction = result.contradictions[0]
+        const firstContradiction = result.contradictions[0];
         if (firstContradiction) {
           showContradictionToast({
             contradiction: {
@@ -222,38 +229,38 @@ export function WorkspaceWikiPage() {
             },
             onViewDetails: () => {
               // TODO: Open ContradictionDialog with details
-              console.log('[Wiki] View contradiction details:', firstContradiction.id)
+              console.log('[Wiki] View contradiction details:', firstContradiction.id);
             },
             onUndo: () => {
               // TODO: Call revert mutation
-              console.log('[Wiki] Undo contradiction:', firstContradiction.id)
+              console.log('[Wiki] Undo contradiction:', firstContradiction.id);
             },
-          })
+          });
         }
       }
     },
-  })
+  });
 
   // Delete mutation
   const deleteMutation = trpc.workspaceWiki.delete.useMutation({
     onSuccess: () => {
-      utils.workspaceWiki.list.invalidate()
-      setShowDeleteConfirm(false)
-      navigate(`/workspace/${slug}/wiki`)
+      utils.workspaceWiki.list.invalidate();
+      setShowDeleteConfirm(false);
+      navigate(`/workspace/${slug}/wiki`);
     },
-  })
+  });
 
   // Fact check mutation (Fase 17.5)
   const factCheckMutation = trpc.wikiAi.factCheck.useMutation({
     onSuccess: (result) => {
-      setFactCheckResult(result)
-      setFactCheckError(undefined)
+      setFactCheckResult(result);
+      setFactCheckError(undefined);
     },
     onError: (error) => {
-      setFactCheckError(error.message)
-      setFactCheckResult(null)
+      setFactCheckError(error.message);
+      setFactCheckResult(null);
     },
-  })
+  });
 
   // Convert pages to WikiPageNode format
   const pageNodes: WikiPageNode[] = useMemo(
@@ -269,32 +276,32 @@ export function WorkspaceWikiPage() {
         updatedAt: p.updatedAt,
       })),
     [pages]
-  )
+  );
 
   // Build breadcrumbs for current page
   const breadcrumbs: WikiBreadcrumb[] = useMemo(() => {
-    if (!currentPage || !currentPage.parentId) return []
+    if (!currentPage || !currentPage.parentId) return [];
 
-    const trail: WikiBreadcrumb[] = []
-    let parentId: number | null = currentPage.parentId
+    const trail: WikiBreadcrumb[] = [];
+    let parentId: number | null = currentPage.parentId;
 
     // Walk up the tree
     while (parentId) {
-      const parent = pages.find((p) => p.id === parentId)
+      const parent = pages.find((p) => p.id === parentId);
       if (parent) {
         trail.unshift({
           id: parent.id,
           title: parent.title,
           slug: parent.slug,
-        })
-        parentId = parent.parentId
+        });
+        parentId = parent.parentId;
       } else {
-        break
+        break;
       }
     }
 
-    return trail
-  }, [currentPage, pages])
+    return trail;
+  }, [currentPage, pages]);
 
   // Convert pages to WikiPageForLink format for wiki link autocomplete
   const wikiPagesForLinks: WikiPageForLink[] = useMemo(
@@ -308,24 +315,28 @@ export function WorkspaceWikiPage() {
           exists: true,
         })),
     [pages]
-  )
+  );
 
   // Priority number to string conversion
   const priorityToString = (priority: number): TaskResult['priority'] => {
     switch (priority) {
-      case 1: return 'MEDIUM'
-      case 2: return 'HIGH'
-      case 3: return 'URGENT'
-      default: return 'LOW'
+      case 1:
+        return 'MEDIUM';
+      case 2:
+        return 'HIGH';
+      case 3:
+        return 'URGENT';
+      default:
+        return 'LOW';
     }
-  }
+  };
 
   // Search tasks function for #task-ref autocomplete
   // Searches across all projects in this workspace
   const searchTasks = useCallback(
     async (query: string): Promise<TaskResult[]> => {
       if (!workspace?.id || query.length < 1) {
-        return []
+        return [];
       }
 
       try {
@@ -334,7 +345,7 @@ export function WorkspaceWikiPage() {
           query,
           limit: 10,
           includeCompleted: false,
-        })
+        });
 
         return results.map((task) => ({
           id: task.id,
@@ -343,21 +354,21 @@ export function WorkspaceWikiPage() {
           priority: priorityToString(task.priority),
           isActive: task.isActive,
           column: task.column ? { title: task.column.title } : undefined,
-        }))
+        }));
       } catch (error) {
-        console.error('Task search failed:', error)
-        return []
+        console.error('Task search failed:', error);
+        return [];
       }
     },
     [workspace?.id, utils.client]
-  )
+  );
 
   // Search users function for @mention autocomplete
   // Searches across all members in this workspace
   const searchUsers = useCallback(
     async (query: string): Promise<MentionResult[]> => {
       if (!workspace?.id) {
-        return []
+        return [];
       }
 
       try {
@@ -365,32 +376,32 @@ export function WorkspaceWikiPage() {
           workspaceId: workspace.id,
           query,
           limit: 10,
-        })
+        });
 
         return results.map((user) => ({
           id: user.id,
           username: user.username,
           name: user.name,
           avatarUrl: user.avatarUrl,
-        }))
+        }));
       } catch (error) {
-        console.error('User search failed:', error)
-        return []
+        console.error('User search failed:', error);
+        return [];
       }
     },
     [workspace?.id, utils.client]
-  )
+  );
 
   // Memoize the page object to prevent unnecessary re-renders during auto-save
   // Only update when page.id changes (not on every refetch)
-  const currentPageRef = useRef(currentPage)
+  const currentPageRef = useRef(currentPage);
   if (currentPage && (!currentPageRef.current || currentPageRef.current.id !== currentPage.id)) {
-    currentPageRef.current = currentPage
+    currentPageRef.current = currentPage;
   }
 
   const pageForView = useMemo(() => {
-    const cp = currentPage
-    if (!cp) return null
+    const cp = currentPage;
+    if (!cp) return null;
     return {
       id: cp.id,
       title: cp.title,
@@ -400,135 +411,154 @@ export function WorkspaceWikiPage() {
         typeof cp.contentJson === 'string'
           ? cp.contentJson
           : cp.contentJson
-          ? JSON.stringify(cp.contentJson)
-          : null,
+            ? JSON.stringify(cp.contentJson)
+            : null,
       status: cp.status,
       sortOrder: cp.sortOrder,
       parentId: cp.parentId,
       createdAt: cp.createdAt,
       updatedAt: cp.updatedAt,
       publishedAt: cp.publishedAt,
-    }
-  }, [currentPage?.id, currentPage?.title, currentPage?.slug, currentPage?.content,
-      currentPage?.contentJson, currentPage?.status, currentPage?.sortOrder,
-      currentPage?.parentId, currentPage?.createdAt, currentPage?.updatedAt,
-      currentPage?.publishedAt])
+    };
+  }, [
+    currentPage?.id,
+    currentPage?.title,
+    currentPage?.slug,
+    currentPage?.content,
+    currentPage?.contentJson,
+    currentPage?.status,
+    currentPage?.sortOrder,
+    currentPage?.parentId,
+    currentPage?.createdAt,
+    currentPage?.updatedAt,
+    currentPage?.publishedAt,
+  ]);
 
   // Handlers
   const handleCreatePage = useCallback((parentId?: number) => {
-    setCreateParentId(parentId)
-    setShowCreateModal(true)
-  }, [])
+    setCreateParentId(parentId);
+    setShowCreateModal(true);
+  }, []);
 
   const handleSavePage = useCallback(
     async (data: { title: string; content: string; contentJson: string }) => {
-      if (!currentPage) return
+      if (!currentPage) return;
 
       await updateMutation.mutateAsync({
         id: currentPage.id,
         title: data.title,
         content: data.content,
         contentJson: data.contentJson ? JSON.parse(data.contentJson) : null,
-      })
+      });
     },
     [currentPage, updateMutation]
-  )
+  );
 
   const handleStatusChange = useCallback(
     async (status: WikiPageStatus) => {
-      if (!currentPage) return
+      if (!currentPage) return;
 
       await updateMutation.mutateAsync({
         id: currentPage.id,
         status,
-      })
+      });
     },
     [currentPage, updateMutation]
-  )
+  );
 
   const handleParentChange = useCallback(
     async (parentId: number | null) => {
-      if (!currentPage) return
+      if (!currentPage) return;
 
       await updateMutation.mutateAsync({
         id: currentPage.id,
         parentId,
-      })
+      });
     },
     [currentPage, updateMutation]
-  )
+  );
 
   const handleDelete = useCallback(async () => {
-    if (!currentPage) return
-    await deleteMutation.mutateAsync({ id: currentPage.id })
-  }, [currentPage, deleteMutation])
+    if (!currentPage) return;
+    await deleteMutation.mutateAsync({ id: currentPage.id });
+  }, [currentPage, deleteMutation]);
 
   const handleSearch = useCallback(() => {
-    setShowSearchDialog(true)
-  }, [])
+    setShowSearchDialog(true);
+  }, []);
 
   // Handler: Show a page in the graph view (from search results)
-  const handleShowInGraph = useCallback((pageId: number) => {
-    // Enable graph view if not already shown
-    if (!showGraphView) {
-      setShowGraphView(true)
-    }
-    // TODO: Focus on the specific node - requires WikiGraphView enhancement
-    console.log(`[WikiPage] Show in graph: pageId=${pageId}`)
-  }, [showGraphView])
+  const handleShowInGraph = useCallback(
+    (pageId: number) => {
+      // Enable graph view if not already shown
+      if (!showGraphView) {
+        setShowGraphView(true);
+      }
+      // TODO: Focus on the specific node - requires WikiGraphView enhancement
+      console.log(`[WikiPage] Show in graph: pageId=${pageId}`);
+    },
+    [showGraphView]
+  );
 
   // Handler: Open Ask Wiki with context about a graph node
   const handleAskAboutNode = useCallback((nodeLabel: string, nodeType: string) => {
-    const query = nodeType === 'page'
-      ? `Vertel me meer over "${nodeLabel}"`
-      : `Wat betekent "${nodeLabel}" in de context van onze wiki?`
-    setAskWikiInitialQuery(query)
-    setShowAskWiki(true)
-  }, [])
+    const query =
+      nodeType === 'page'
+        ? `Vertel me meer over "${nodeLabel}"`
+        : `Wat betekent "${nodeLabel}" in de context van onze wiki?`;
+    setAskWikiInitialQuery(query);
+    setShowAskWiki(true);
+  }, []);
 
   // Handler: Open Ask Wiki dialog
   const handleOpenAskWiki = useCallback(() => {
-    setAskWikiInitialQuery(undefined) // Clear any previous query
-    setShowAskWiki(true)
-  }, [])
+    setAskWikiInitialQuery(undefined); // Clear any previous query
+    setShowAskWiki(true);
+  }, []);
 
   // Handler: Open Ask Wiki with page context
   const handleAskAboutPage = useCallback((pageTitle: string, _pageContent: string) => {
-    const query = `Leg uit wat "${pageTitle}" betekent en hoe het samenhangt met andere onderwerpen.`
-    setAskWikiInitialQuery(query)
-    setShowAskWiki(true)
-  }, [])
+    const query = `Leg uit wat "${pageTitle}" betekent en hoe het samenhangt met andere onderwerpen.`;
+    setAskWikiInitialQuery(query);
+    setShowAskWiki(true);
+  }, []);
 
-  const basePath = `/workspace/${slug}/wiki`
+  const basePath = `/workspace/${slug}/wiki`;
 
   // Handler: Navigate to page from Ask Wiki sources
-  const handleNavigateToPage = useCallback((_pageId: number, pageSlugParam: string) => {
-    navigate(`${basePath}/${pageSlugParam}`)
-    // Dialog will close itself after calling this
-  }, [navigate, basePath])
+  const handleNavigateToPage = useCallback(
+    (_pageId: number, pageSlugParam: string) => {
+      navigate(`${basePath}/${pageSlugParam}`);
+      // Dialog will close itself after calling this
+    },
+    [navigate, basePath]
+  );
 
   // Handler: Close Ask Wiki and clear initial query
   const handleCloseAskWiki = useCallback(() => {
-    setShowAskWiki(false)
-    setAskWikiInitialQuery(undefined)
-  }, [])
+    setShowAskWiki(false);
+    setAskWikiInitialQuery(undefined);
+  }, []);
 
   // Handler: Fact Check selected text (Fase 17.5)
-  const handleFactCheck = useCallback((selectedText: string) => {
-    if (!workspace?.id) return
+  const handleFactCheck = useCallback(
+    (selectedText: string) => {
+      if (!workspace?.id) return;
 
-    setFactCheckText(selectedText)
-    setFactCheckResult(null)
-    setFactCheckError(undefined)
-    setShowFactCheck(true)
+      setFactCheckText(selectedText);
+      setFactCheckResult(null);
+      setFactCheckError(undefined);
+      setShowFactCheck(true);
 
-    factCheckMutation.mutate({
-      workspaceId: workspace.id,
-      selectedText,
-      currentPageId: currentPage?.id,
-    })
-  }, [workspace?.id, currentPage?.id, factCheckMutation])
-  const isLoading = workspaceQuery.isLoading || pagesQuery.isLoading
+      factCheckMutation.mutate({
+        workspaceId: workspace.id,
+        selectedText,
+        currentPageId: currentPage?.id,
+      });
+    },
+    [workspace?.id, currentPage?.id, factCheckMutation]
+  );
+  const isLoading = workspaceQuery.isLoading || pagesQuery.isLoading;
 
   // Loading state
   if (isLoading) {
@@ -542,7 +572,7 @@ export function WorkspaceWikiPage() {
           </div>
         </div>
       </WorkspaceLayout>
-    )
+    );
   }
 
   // Workspace not found
@@ -557,7 +587,7 @@ export function WorkspaceWikiPage() {
           </Link>
         </div>
       </WorkspaceLayout>
-    )
+    );
   }
 
   return (
@@ -605,7 +635,11 @@ export function WorkspaceWikiPage() {
               onAskWiki={handleOpenAskWiki}
               onAskAboutPage={handleAskAboutPage}
               onFactCheck={handleFactCheck}
-              availablePages={pages.map((p) => ({ id: p.id, title: p.title, parentId: p.parentId }))}
+              availablePages={pages.map((p) => ({
+                id: p.id,
+                title: p.title,
+                parentId: p.parentId,
+              }))}
               onParentChange={handleParentChange}
             />
           ) : pageSlug && currentPageQuery.isLoading ? (
@@ -634,11 +668,7 @@ export function WorkspaceWikiPage() {
             </div>
           ) : (
             /* Wiki Home */
-            <WikiHome
-              workspace={workspace}
-              pages={pages}
-              onCreatePage={() => handleCreatePage()}
-            />
+            <WikiHome workspace={workspace} pages={pages} onCreatePage={() => handleCreatePage()} />
           )}
         </div>
       </div>
@@ -650,14 +680,14 @@ export function WorkspaceWikiPage() {
           parentId={createParentId}
           pages={pages}
           onClose={() => {
-            setShowCreateModal(false)
-            setCreateParentId(undefined)
+            setShowCreateModal(false);
+            setCreateParentId(undefined);
           }}
           onCreated={(newSlug) => {
-            setShowCreateModal(false)
-            setCreateParentId(undefined)
-            pagesQuery.refetch()
-            navigate(`${basePath}/${newSlug}`)
+            setShowCreateModal(false);
+            setCreateParentId(undefined);
+            pagesQuery.refetch();
+            navigate(`${basePath}/${newSlug}`);
           }}
         />
       )}
@@ -700,8 +730,8 @@ export function WorkspaceWikiPage() {
           open={showVersionHistory}
           onClose={() => setShowVersionHistory(false)}
           onRestored={() => {
-            currentPageQuery.refetch()
-            pagesQuery.refetch()
+            currentPageQuery.refetch();
+            pagesQuery.refetch();
           }}
         />
       )}
@@ -740,9 +770,9 @@ export function WorkspaceWikiPage() {
           onResultSelect={(result) => {
             // If result has a pageId, navigate to it
             if (result.pageId) {
-              const page = pages.find((p) => p.id === result.pageId)
+              const page = pages.find((p) => p.id === result.pageId);
               if (page) {
-                navigate(`${basePath}/${page.slug}`)
+                navigate(`${basePath}/${page.slug}`);
               }
             }
           }}
@@ -776,7 +806,7 @@ export function WorkspaceWikiPage() {
         wikiBasePath={basePath}
       />
     </WorkspaceLayout>
-  )
+  );
 }
 
 // =============================================================================
@@ -784,17 +814,17 @@ export function WorkspaceWikiPage() {
 // =============================================================================
 
 interface WikiHomeProps {
-  workspace: { id: number; name: string; slug: string }
-  pages: PageFromApi[]
-  onCreatePage: () => void
+  workspace: { id: number; name: string; slug: string };
+  pages: PageFromApi[];
+  onCreatePage: () => void;
 }
 
 function WikiHome({ workspace, pages, onCreatePage }: WikiHomeProps) {
-  const publishedCount = pages.filter((p) => p.status === 'PUBLISHED').length
-  const draftCount = pages.filter((p) => p.status === 'DRAFT').length
+  const publishedCount = pages.filter((p) => p.status === 'PUBLISHED').length;
+  const draftCount = pages.filter((p) => p.status === 'DRAFT').length;
   const recentPages = [...pages]
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
-    .slice(0, 5)
+    .slice(0, 5);
 
   return (
     <div className="max-w-3xl">
@@ -889,7 +919,7 @@ function WikiHome({ workspace, pages, onCreatePage }: WikiHomeProps) {
         </div>
       )}
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -897,11 +927,11 @@ function WikiHome({ workspace, pages, onCreatePage }: WikiHomeProps) {
 // =============================================================================
 
 interface CreateWikiPageModalProps {
-  workspaceId: number
-  parentId?: number
-  pages: PageFromApi[]
-  onClose: () => void
-  onCreated: (slug: string) => void
+  workspaceId: number;
+  parentId?: number;
+  pages: PageFromApi[];
+  onClose: () => void;
+  onCreated: (slug: string) => void;
 }
 
 function CreateWikiPageModal({
@@ -911,20 +941,20 @@ function CreateWikiPageModal({
   onClose,
   onCreated,
 }: CreateWikiPageModalProps) {
-  const [title, setTitle] = useState('')
-  const [status, setStatus] = useState<WikiPageStatus>('DRAFT')
-  const [selectedParentId, setSelectedParentId] = useState<number | null>(parentId ?? null)
-  const [contentJson, setContentJson] = useState('')
+  const [title, setTitle] = useState('');
+  const [status, setStatus] = useState<WikiPageStatus>('DRAFT');
+  const [selectedParentId, setSelectedParentId] = useState<number | null>(parentId ?? null);
+  const [contentJson, setContentJson] = useState('');
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const createMutation = trpc.workspaceWiki.create.useMutation({
     onSuccess: (result: any) => {
       // Fase 17.4: API now returns { page, contradictions }
-      onCreated(result.page.slug)
+      onCreated(result.page.slug);
 
       // Show toast if contradictions were resolved during create (rare but possible)
       if (result.contradictions && result.contradictions.length > 0) {
-        const firstContradiction = result.contradictions[0]
+        const firstContradiction = result.contradictions[0];
         if (firstContradiction) {
           showContradictionToast({
             contradiction: {
@@ -935,22 +965,22 @@ function CreateWikiPageModal({
               strategy: firstContradiction.strategy as ResolutionStrategy,
               auditId: firstContradiction.id,
             },
-          })
+          });
         }
       }
     },
-  })
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!title.trim()) return
+    e.preventDefault();
+    if (!title.trim()) return;
 
     // Extract plain text from Lexical JSON for backwards compat
-    let content = ''
+    let content = '';
     if (contentJson) {
       try {
-        const parsed = JSON.parse(contentJson)
-        content = extractPlainText(parsed)
+        const parsed = JSON.parse(contentJson);
+        content = extractPlainText(parsed);
       } catch {
         // Keep empty
       }
@@ -963,8 +993,8 @@ function CreateWikiPageModal({
       content,
       contentJson: contentJson ? JSON.parse(contentJson) : undefined,
       status,
-    })
-  }
+    });
+  };
 
   // Build indented page list for parent selection (showing hierarchy)
   const buildPageOptions = (
@@ -972,15 +1002,15 @@ function CreateWikiPageModal({
     parentId: number | null = null,
     depth: number = 0
   ): Array<{ id: number; title: string; depth: number }> => {
-    const children = allPages.filter((p) => p.parentId === parentId)
-    const result: Array<{ id: number; title: string; depth: number }> = []
+    const children = allPages.filter((p) => p.parentId === parentId);
+    const result: Array<{ id: number; title: string; depth: number }> = [];
     for (const child of children) {
-      result.push({ id: child.id, title: child.title, depth })
-      result.push(...buildPageOptions(allPages, child.id, depth + 1))
+      result.push({ id: child.id, title: child.title, depth });
+      result.push(...buildPageOptions(allPages, child.id, depth + 1));
     }
-    return result
-  }
-  const pageOptions = buildPageOptions(pages)
+    return result;
+  };
+  const pageOptions = buildPageOptions(pages);
 
   return (
     <Dialog open onOpenChange={onClose}>
@@ -1019,7 +1049,9 @@ function CreateWikiPageModal({
               <Label htmlFor="parent">Parent Page (optional)</Label>
               <Select
                 value={selectedParentId?.toString() ?? 'none'}
-                onValueChange={(v: string) => setSelectedParentId(v === 'none' ? null : parseInt(v))}
+                onValueChange={(v: string) =>
+                  setSelectedParentId(v === 'none' ? null : parseInt(v))
+                }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select parent page..." />
@@ -1028,7 +1060,9 @@ function CreateWikiPageModal({
                   <SelectItem value="none">No parent (root page)</SelectItem>
                   {pageOptions.map((page) => (
                     <SelectItem key={page.id} value={page.id.toString()}>
-                      {'—'.repeat(page.depth)}{page.depth > 0 ? ' ' : ''}{page.title}
+                      {'—'.repeat(page.depth)}
+                      {page.depth > 0 ? ' ' : ''}
+                      {page.title}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -1058,7 +1092,7 @@ function CreateWikiPageModal({
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
 
 // =============================================================================
@@ -1066,25 +1100,25 @@ function CreateWikiPageModal({
 // =============================================================================
 
 function extractPlainText(node: Record<string, unknown>): string {
-  if (!node) return ''
+  if (!node) return '';
 
-  const parts: string[] = []
+  const parts: string[] = [];
 
   if (node.text && typeof node.text === 'string') {
-    parts.push(node.text)
+    parts.push(node.text);
   }
 
   if (Array.isArray(node.children)) {
     for (const child of node.children) {
-      parts.push(extractPlainText(child as Record<string, unknown>))
+      parts.push(extractPlainText(child as Record<string, unknown>));
     }
   }
 
   if (node.root && typeof node.root === 'object') {
-    parts.push(extractPlainText(node.root as Record<string, unknown>))
+    parts.push(extractPlainText(node.root as Record<string, unknown>));
   }
 
-  return parts.join(' ').trim()
+  return parts.join(' ').trim();
 }
 
-export default WorkspaceWikiPage
+export default WorkspaceWikiPage;

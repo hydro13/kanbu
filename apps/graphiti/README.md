@@ -52,35 +52,43 @@ uvicorn src.api.main:app --reload --port 8000
 
 ## Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `FALKORDB_URI` | FalkorDB connection URI | `redis://localhost:6379` |
-| `OPENAI_API_KEY` | OpenAI API key for LLM/embeddings | - |
-| `EMBEDDING_PROVIDER` | Embedding provider (openai/voyage) | `openai` |
-| `EMBEDDING_MODEL` | Embedding model name | `text-embedding-3-small` |
+| Variable             | Description                        | Default                  |
+| -------------------- | ---------------------------------- | ------------------------ |
+| `FALKORDB_URI`       | FalkorDB connection URI            | `redis://localhost:6379` |
+| `OPENAI_API_KEY`     | OpenAI API key for LLM/embeddings  | -                        |
+| `EMBEDDING_PROVIDER` | Embedding provider (openai/voyage) | `openai`                 |
+| `EMBEDDING_MODEL`    | Embedding model name               | `text-embedding-3-small` |
 
 ## API Endpoints
 
 ### POST /episodes
+
 Add a wiki page as an episode to the knowledge graph.
 
 ### POST /episodes/list
+
 List episodes for a group.
 
 ### DELETE /episodes/{uuid}
+
 Delete an episode.
 
 ### POST /search
+
 Search the knowledge graph.
 
 ### POST /search/temporal
+
 Temporal search - "What did we know at time X?"
 
 ### POST /graph
+
 Get graph data for visualization.
 
 ### GET /health
+
 Health check endpoint.
 
 ### GET /stats
+
 Get graph statistics.

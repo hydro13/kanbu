@@ -12,8 +12,8 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-export { DashboardOverview } from './DashboardOverview'
-export { MyTasks } from './MyTasks'
-export { MySubtasks } from './MySubtasks'
-export { NotesPage } from './NotesPage'
-export { InboxPage } from './InboxPage'
+export { DashboardOverview } from './DashboardOverview';
+export { MyTasks } from './MyTasks';
+export { MySubtasks } from './MySubtasks';
+export { NotesPage } from './NotesPage';
+export { InboxPage } from './InboxPage';

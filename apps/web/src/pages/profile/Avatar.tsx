@@ -8,114 +8,116 @@
  * Task: USER-01 (Task 247), Task 264 - UX improvements
  */
 
-import { useState, useRef } from 'react'
-import { ProfileLayout } from '../../components/profile/ProfileLayout'
-import { Button } from '../../components/ui/button'
-import { trpc } from '../../lib/trpc'
-import { useAppDispatch } from '../../store'
-import { updateUser } from '../../store/authSlice'
+import { useState, useRef } from 'react';
+import { ProfileLayout } from '../../components/profile/ProfileLayout';
+import { Button } from '../../components/ui/button';
+import { trpc } from '../../lib/trpc';
+import { useAppDispatch } from '../../store';
+import { updateUser } from '../../store/authSlice';
 
 // =============================================================================
 // Constants
 // =============================================================================
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
 // =============================================================================
 // Component
 // =============================================================================
 
 export function Avatar() {
-  const [preview, setPreview] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [selectedFile, setSelectedFile] = useState<{ base64: string; mimeType: string } | null>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const dispatch = useAppDispatch()
+  const [preview, setPreview] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<{ base64: string; mimeType: string } | null>(
+    null
+  );
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const dispatch = useAppDispatch();
 
-  const utils = trpc.useUtils()
-  const { data: profile, isLoading } = trpc.user.getProfile.useQuery()
+  const utils = trpc.useUtils();
+  const { data: profile, isLoading } = trpc.user.getProfile.useQuery();
 
   const uploadAvatar = trpc.user.uploadAvatar.useMutation({
     onSuccess: (data) => {
-      utils.user.getProfile.invalidate()
+      utils.user.getProfile.invalidate();
       // Update Redux store so header avatar updates immediately
-      dispatch(updateUser({ avatarUrl: data.avatarUrl }))
-      setPreview(null)
-      setSelectedFile(null)
-      setError(null)
+      dispatch(updateUser({ avatarUrl: data.avatarUrl }));
+      setPreview(null);
+      setSelectedFile(null);
+      setError(null);
     },
     onError: (err) => {
-      setError(err.message)
+      setError(err.message);
     },
-  })
+  });
 
   const removeAvatar = trpc.user.removeAvatar.useMutation({
     onSuccess: () => {
-      utils.user.getProfile.invalidate()
+      utils.user.getProfile.invalidate();
       // Update Redux store to remove avatar
-      dispatch(updateUser({ avatarUrl: null }))
+      dispatch(updateUser({ avatarUrl: null }));
     },
-  })
+  });
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-    setError(null)
+    setError(null);
 
     // Validate file type
     if (!ALLOWED_TYPES.includes(file.type)) {
-      setError('Please select a valid image file (JPEG, PNG, GIF, or WebP)')
-      return
+      setError('Please select a valid image file (JPEG, PNG, GIF, or WebP)');
+      return;
     }
 
     // Validate file size
     if (file.size > MAX_FILE_SIZE) {
-      setError('File size must be less than 5MB')
-      return
+      setError('File size must be less than 5MB');
+      return;
     }
 
     // Read file as base64
-    const reader = new FileReader()
+    const reader = new FileReader();
     reader.onload = (event) => {
-      const result = event.target?.result as string
+      const result = event.target?.result as string;
       // Remove data URL prefix to get pure base64
-      const base64 = result.split(',')[1]
+      const base64 = result.split(',')[1];
       if (base64) {
-        setPreview(result)
+        setPreview(result);
         setSelectedFile({
           base64,
           mimeType: file.type as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp',
-        })
+        });
       }
-    }
-    reader.readAsDataURL(file)
-  }
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleUpload = () => {
     if (selectedFile) {
       uploadAvatar.mutate({
         base64: selectedFile.base64,
         mimeType: selectedFile.mimeType as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp',
-      })
+      });
     }
-  }
+  };
 
   const handleRemove = () => {
-    removeAvatar.mutate()
-    setPreview(null)
-    setSelectedFile(null)
-  }
+    removeAvatar.mutate();
+    setPreview(null);
+    setSelectedFile(null);
+  };
 
   const handleCancel = () => {
-    setPreview(null)
-    setSelectedFile(null)
-    setError(null)
+    setPreview(null);
+    setSelectedFile(null);
+    setError(null);
     if (fileInputRef.current) {
-      fileInputRef.current.value = ''
+      fileInputRef.current.value = '';
     }
-  }
+  };
 
   if (isLoading) {
     return (
@@ -124,11 +126,11 @@ export function Avatar() {
           <p className="text-muted-foreground">Loading...</p>
         </div>
       </ProfileLayout>
-    )
+    );
   }
 
-  const currentAvatar = profile?.avatarUrl
-  const displayImage = preview || currentAvatar
+  const currentAvatar = profile?.avatarUrl;
+  const displayImage = preview || currentAvatar;
 
   return (
     <ProfileLayout title="Avatar" description="Manage your profile picture">
@@ -150,7 +152,9 @@ export function Avatar() {
                 />
               ) : (
                 <div className="w-24 h-24 rounded-full bg-blue-500 flex items-center justify-center text-white text-3xl font-bold border-2 border-gray-200 dark:border-gray-700">
-                  {profile?.name?.charAt(0)?.toUpperCase() || profile?.username?.charAt(0)?.toUpperCase() || '?'}
+                  {profile?.name?.charAt(0)?.toUpperCase() ||
+                    profile?.username?.charAt(0)?.toUpperCase() ||
+                    '?'}
                 </div>
               )}
             </div>
@@ -170,10 +174,7 @@ export function Avatar() {
               <div className="flex gap-2">
                 {!preview ? (
                   <>
-                    <Button
-                      size="sm"
-                      onClick={() => fileInputRef.current?.click()}
-                    >
+                    <Button size="sm" onClick={() => fileInputRef.current?.click()}>
                       {currentAvatar ? 'Change' : 'Upload'}
                     </Button>
                     {currentAvatar && (
@@ -190,11 +191,7 @@ export function Avatar() {
                   </>
                 ) : (
                   <>
-                    <Button
-                      size="sm"
-                      onClick={handleUpload}
-                      disabled={uploadAvatar.isPending}
-                    >
+                    <Button size="sm" onClick={handleUpload} disabled={uploadAvatar.isPending}>
                       {uploadAvatar.isPending ? 'Saving...' : 'Save'}
                     </Button>
                     <Button
@@ -210,12 +207,8 @@ export function Avatar() {
               </div>
 
               {/* Status Messages */}
-              {preview && (
-                <p className="text-xs text-muted-foreground">Preview - not saved yet</p>
-              )}
-              {error && (
-                <p className="text-xs text-red-600 dark:text-red-400">{error}</p>
-              )}
+              {preview && <p className="text-xs text-muted-foreground">Preview - not saved yet</p>}
+              {error && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
               {uploadAvatar.isSuccess && (
                 <p className="text-xs text-green-600 dark:text-green-400">Avatar uploaded!</p>
               )}
@@ -224,7 +217,7 @@ export function Avatar() {
         </div>
       </div>
     </ProfileLayout>
-  )
+  );
 }
 
-export default Avatar
+export default Avatar;

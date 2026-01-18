@@ -14,52 +14,52 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useMemo, useCallback } from 'react'
-import { trpc } from '@/lib/trpc'
+import { useMemo, useCallback } from 'react';
+import { trpc } from '@/lib/trpc';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface UseBoardOptions {
-  projectId: number
-  enabled?: boolean
+  projectId: number;
+  enabled?: boolean;
 }
 
 // Column type from API
 export interface BoardColumn {
-  id: number
-  title: string
-  description: string | null
-  position: number
-  taskLimit: number
-  isCollapsed: boolean
-  showClosed: boolean
+  id: number;
+  title: string;
+  description: string | null;
+  position: number;
+  taskLimit: number;
+  isCollapsed: boolean;
+  showClosed: boolean;
 }
 
 // Swimlane type from API
 export interface BoardSwimlane {
-  id: number
-  name: string
-  description: string | null
-  position: number
+  id: number;
+  name: string;
+  description: string | null;
+  position: number;
 }
 
 export interface UseBoardReturn {
   // Data
-  project: ReturnType<typeof trpc.project.get.useQuery>['data']
-  tasks: ReturnType<typeof trpc.task.list.useQuery>['data']
-  columns: BoardColumn[]
-  swimlanes: BoardSwimlane[]
+  project: ReturnType<typeof trpc.project.get.useQuery>['data'];
+  tasks: ReturnType<typeof trpc.task.list.useQuery>['data'];
+  columns: BoardColumn[];
+  swimlanes: BoardSwimlane[];
 
   // State
-  isLoading: boolean
-  isError: boolean
-  error: unknown
+  isLoading: boolean;
+  isError: boolean;
+  error: unknown;
 
   // Actions
-  refetch: () => void
-  invalidate: () => void
+  refetch: () => void;
+  invalidate: () => void;
 }
 
 // =============================================================================
@@ -67,7 +67,7 @@ export interface UseBoardReturn {
 // =============================================================================
 
 export function useBoard({ projectId, enabled = true }: UseBoardOptions): UseBoardReturn {
-  const utils = trpc.useUtils()
+  const utils = trpc.useUtils();
 
   // Fetch project details (includes columns and swimlanes)
   const projectQuery = trpc.project.get.useQuery(
@@ -76,7 +76,7 @@ export function useBoard({ projectId, enabled = true }: UseBoardOptions): UseBoa
       enabled: enabled && projectId > 0,
       staleTime: 5 * 60 * 1000, // 5 minutes
     }
-  )
+  );
 
   // Fetch tasks for the project
   const tasksQuery = trpc.task.list.useQuery(
@@ -85,35 +85,35 @@ export function useBoard({ projectId, enabled = true }: UseBoardOptions): UseBoa
       enabled: enabled && projectId > 0,
       staleTime: 30 * 1000, // 30 seconds - tasks change more frequently
     }
-  )
+  );
 
   // Combined loading state
-  const isLoading = projectQuery.isLoading || tasksQuery.isLoading
+  const isLoading = projectQuery.isLoading || tasksQuery.isLoading;
 
   // Combined error state
-  const isError = projectQuery.isError || tasksQuery.isError
-  const error = projectQuery.error ?? tasksQuery.error ?? null
+  const isError = projectQuery.isError || tasksQuery.isError;
+  const error = projectQuery.error ?? tasksQuery.error ?? null;
 
   // Extract columns and swimlanes
   const columns = useMemo(() => {
-    return projectQuery.data?.columns ?? []
-  }, [projectQuery.data])
+    return projectQuery.data?.columns ?? [];
+  }, [projectQuery.data]);
 
   const swimlanes = useMemo(() => {
-    return projectQuery.data?.swimlanes ?? []
-  }, [projectQuery.data])
+    return projectQuery.data?.swimlanes ?? [];
+  }, [projectQuery.data]);
 
   // Refetch both queries
   const refetch = useCallback(() => {
-    projectQuery.refetch()
-    tasksQuery.refetch()
-  }, [projectQuery, tasksQuery])
+    projectQuery.refetch();
+    tasksQuery.refetch();
+  }, [projectQuery, tasksQuery]);
 
   // Invalidate cache (for after mutations)
   const invalidate = useCallback(() => {
-    utils.project.get.invalidate({ projectId })
-    utils.task.list.invalidate({ projectId })
-  }, [utils, projectId])
+    utils.project.get.invalidate({ projectId });
+    utils.task.list.invalidate({ projectId });
+  }, [utils, projectId]);
 
   return {
     project: projectQuery.data,
@@ -125,7 +125,7 @@ export function useBoard({ projectId, enabled = true }: UseBoardOptions): UseBoa
     error,
     refetch,
     invalidate,
-  }
+  };
 }
 
 // =============================================================================
@@ -137,12 +137,12 @@ export function useBoard({ projectId, enabled = true }: UseBoardOptions): UseBoa
  * Prepared for optimistic updates
  */
 export function useMoveTask(projectId: number) {
-  const utils = trpc.useUtils()
+  const utils = trpc.useUtils();
 
   const mutation = trpc.task.move.useMutation({
     onSuccess: () => {
       // Invalidate task list to refresh
-      utils.task.list.invalidate({ projectId })
+      utils.task.list.invalidate({ projectId });
     },
     // TODO: Add optimistic updates
     // onMutate: async (newData) => {
@@ -155,69 +155,69 @@ export function useMoveTask(projectId: number) {
     //   // Rollback on error
     //   utils.task.list.setData({ projectId }, context?.previousTasks)
     // },
-  })
+  });
 
-  return mutation
+  return mutation;
 }
 
 /**
  * Hook for creating a new task
  */
 export function useCreateTask(projectId: number) {
-  const utils = trpc.useUtils()
+  const utils = trpc.useUtils();
 
   const mutation = trpc.task.create.useMutation({
     onSuccess: () => {
-      utils.task.list.invalidate({ projectId })
+      utils.task.list.invalidate({ projectId });
     },
-  })
+  });
 
-  return mutation
+  return mutation;
 }
 
 /**
  * Hook for updating a task
  */
 export function useUpdateTask(projectId: number) {
-  const utils = trpc.useUtils()
+  const utils = trpc.useUtils();
 
   const mutation = trpc.task.update.useMutation({
     onSuccess: () => {
-      utils.task.list.invalidate({ projectId })
+      utils.task.list.invalidate({ projectId });
     },
-  })
+  });
 
-  return mutation
+  return mutation;
 }
 
 /**
  * Hook for closing a task
  */
 export function useCloseTask(projectId: number) {
-  const utils = trpc.useUtils()
+  const utils = trpc.useUtils();
 
   const mutation = trpc.task.close.useMutation({
     onSuccess: () => {
-      utils.task.list.invalidate({ projectId })
+      utils.task.list.invalidate({ projectId });
     },
-  })
+  });
 
-  return mutation
+  return mutation;
 }
 
 /**
  * Hook for reopening a task
  */
 export function useReopenTask(projectId: number) {
-  const utils = trpc.useUtils()
+  const utils = trpc.useUtils();
 
   const mutation = trpc.task.reopen.useMutation({
     onSuccess: () => {
-      utils.task.list.invalidate({ projectId })
+      utils.task.list.invalidate({ projectId });
     },
-  })
+  });
 
-  return mutation
+  return mutation;
 }
 
-export default useBoard
+export default useBoard;

@@ -120,9 +120,7 @@ export async function createContext({ req, res }: CreateContextOptions) {
   // If no JWT or API key auth, try assistant token (ast_ prefix)
   let assistantContext: AssistantContext | null = null;
   if (!user && authHeader) {
-    const assistantToken = authHeader.startsWith('Bearer ast_')
-      ? authHeader.slice(7)
-      : null;
+    const assistantToken = authHeader.startsWith('Bearer ast_') ? authHeader.slice(7) : null;
 
     if (assistantToken) {
       const tokenPrefix = assistantToken.substring(0, 12);
@@ -164,12 +162,14 @@ export async function createContext({ req, res }: CreateContextOptions) {
           };
 
           // Update last used timestamp (fire and forget)
-          prisma.assistantBinding.update({
-            where: { id: binding.id },
-            data: { lastUsedAt: new Date() },
-          }).catch(() => {
-            // Ignore errors - this is just for tracking
-          });
+          prisma.assistantBinding
+            .update({
+              where: { id: binding.id },
+              data: { lastUsedAt: new Date() },
+            })
+            .catch(() => {
+              // Ignore errors - this is just for tracking
+            });
         }
       }
     }

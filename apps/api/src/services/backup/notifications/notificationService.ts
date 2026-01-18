@@ -6,59 +6,56 @@
  * - Webhook notifications for external integrations
  */
 
-import { createHmac } from 'crypto'
-import { prisma } from '../../../lib/prisma'
-import type { BackupNotificationConfig } from '@prisma/client'
-import {
-  createNotification,
-  type NotificationData,
-} from '../../../lib/notificationService'
+import { createHmac } from 'crypto';
+import { prisma } from '../../../lib/prisma';
+import type { BackupNotificationConfig } from '@prisma/client';
+import { createNotification, type NotificationData } from '../../../lib/notificationService';
 
 export interface WebhookPayload {
-  event: 'backup.completed' | 'backup.failed' | 'restore.completed' | 'restore.failed'
-  timestamp: string
+  event: 'backup.completed' | 'backup.failed' | 'restore.completed' | 'restore.failed';
+  timestamp: string;
   execution: {
-    id: number
-    type: string
-    trigger: string
-    status: string
-    filename: string | null
-    fileSize: number | null
-    durationMs: number | null
-    errorMessage: string | null
+    id: number;
+    type: string;
+    trigger: string;
+    status: string;
+    filename: string | null;
+    fileSize: number | null;
+    durationMs: number | null;
+    errorMessage: string | null;
     // Phase 4.1 + 4.4: Encryption and verification
-    isEncrypted?: boolean
-    checksum?: string | null
-  }
+    isEncrypted?: boolean;
+    checksum?: string | null;
+  };
   schedule?: {
-    id: number
-    name: string
-  } | null
+    id: number;
+    name: string;
+  } | null;
 }
 
 /** Input for notifyBackupResult - simplified interface */
 export interface BackupResultNotification {
-  success: boolean
-  type: 'database' | 'source'
-  filename?: string
-  fileSize?: number
-  durationMs?: number
-  error?: string
-  trigger?: 'scheduled' | 'manual' | 'external'
-  scheduleName?: string
+  success: boolean;
+  type: 'database' | 'source';
+  filename?: string;
+  fileSize?: number;
+  durationMs?: number;
+  error?: string;
+  trigger?: 'scheduled' | 'manual' | 'external';
+  scheduleName?: string;
   // Phase 4.1 + 4.4: Encryption and verification
-  isEncrypted?: boolean
-  checksum?: string
+  isEncrypted?: boolean;
+  checksum?: string;
 }
 
 /** Input for notifyRestoreResult */
 export interface RestoreResultNotification {
-  success: boolean
-  filename: string
-  message: string
-  durationMs: number
-  preRestoreBackup?: string
-  error?: string
+  success: boolean;
+  filename: string;
+  message: string;
+  durationMs: number;
+  preRestoreBackup?: string;
+  error?: string;
 }
 
 export class BackupNotificationService {
@@ -66,25 +63,25 @@ export class BackupNotificationService {
    * Get notification config (singleton)
    */
   async getConfig(): Promise<BackupNotificationConfig | null> {
-    return prisma.backupNotificationConfig.findFirst()
+    return prisma.backupNotificationConfig.findFirst();
   }
 
   /**
    * Update or create notification config
    */
   async updateConfig(data: {
-    notifyOnSuccess?: boolean
-    notifyOnFailure?: boolean
-    webhookUrl?: string | null
-    webhookSecret?: string | null
+    notifyOnSuccess?: boolean;
+    notifyOnFailure?: boolean;
+    webhookUrl?: string | null;
+    webhookSecret?: string | null;
   }): Promise<BackupNotificationConfig> {
-    const existing = await this.getConfig()
+    const existing = await this.getConfig();
 
     if (existing) {
       return prisma.backupNotificationConfig.update({
         where: { id: existing.id },
         data,
-      })
+      });
     }
 
     return prisma.backupNotificationConfig.create({
@@ -94,25 +91,25 @@ export class BackupNotificationService {
         webhookUrl: data.webhookUrl ?? null,
         webhookSecret: data.webhookSecret ?? null,
       },
-    })
+    });
   }
 
   /**
    * Notify about backup result (simplified interface)
    */
   async notifyBackupResult(data: BackupResultNotification): Promise<void> {
-    const config = await this.getConfig()
-    if (!config) return
+    const config = await this.getConfig();
+    if (!config) return;
 
-    const shouldNotify = data.success ? config.notifyOnSuccess : config.notifyOnFailure
-    if (!shouldNotify) return
+    const shouldNotify = data.success ? config.notifyOnSuccess : config.notifyOnFailure;
+    if (!shouldNotify) return;
 
     // Send in-app notifications to admins
-    await this.sendBackupInAppNotification(data)
+    await this.sendBackupInAppNotification(data);
 
     // Send webhook if configured
     if (config.webhookUrl) {
-      await this.sendBackupWebhook(config, data)
+      await this.sendBackupWebhook(config, data);
     }
   }
 
@@ -120,18 +117,18 @@ export class BackupNotificationService {
    * Notify about restore result (simplified interface)
    */
   async notifyRestoreResult(data: RestoreResultNotification): Promise<void> {
-    const config = await this.getConfig()
-    if (!config) return
+    const config = await this.getConfig();
+    if (!config) return;
 
-    const shouldNotify = data.success ? config.notifyOnSuccess : config.notifyOnFailure
-    if (!shouldNotify) return
+    const shouldNotify = data.success ? config.notifyOnSuccess : config.notifyOnFailure;
+    if (!shouldNotify) return;
 
     // Send in-app notifications to admins
-    await this.sendRestoreInAppNotification(data)
+    await this.sendRestoreInAppNotification(data);
 
     // Send webhook if configured
     if (config.webhookUrl) {
-      await this.sendRestoreWebhookSimple(config, data)
+      await this.sendRestoreWebhookSimple(config, data);
     }
   }
 
@@ -147,11 +144,11 @@ export class BackupNotificationService {
           isActive: true,
         },
         select: { id: true },
-      })
+      });
 
-      if (admins.length === 0) return
+      if (admins.length === 0) return;
 
-      const notificationType = data.success ? 'backup_completed' : 'backup_failed'
+      const notificationType = data.success ? 'backup_completed' : 'backup_failed';
       const notificationData: NotificationData = {
         backupType: data.type,
         backupFilename: data.filename,
@@ -159,28 +156,26 @@ export class BackupNotificationService {
         backupDuration: data.durationMs,
         backupError: data.error,
         link: '/admin/backup',
-      }
+      };
 
-      const typeLabel = data.type === 'database' ? 'Database' : 'Source'
+      const typeLabel = data.type === 'database' ? 'Database' : 'Source';
 
       // Create notification for each admin
       for (const admin of admins) {
         await createNotification(prisma, {
           userId: admin.id,
           type: notificationType,
-          title: data.success
-            ? `${typeLabel} backup completed`
-            : `${typeLabel} backup failed`,
+          title: data.success ? `${typeLabel} backup completed` : `${typeLabel} backup failed`,
           content: data.success
             ? `${data.filename ?? 'Backup'} created successfully`
-            : data.error ?? 'An error occurred',
+            : (data.error ?? 'An error occurred'),
           data: notificationData,
-        })
+        });
       }
 
-      console.log(`[BackupNotification] Sent in-app notifications to ${admins.length} admin(s)`)
+      console.log(`[BackupNotification] Sent in-app notifications to ${admins.length} admin(s)`);
     } catch (error) {
-      console.error('[BackupNotification] Failed to send in-app notification:', error)
+      console.error('[BackupNotification] Failed to send in-app notification:', error);
     }
   }
 
@@ -195,18 +190,18 @@ export class BackupNotificationService {
           isActive: true,
         },
         select: { id: true },
-      })
+      });
 
-      if (admins.length === 0) return
+      if (admins.length === 0) return;
 
-      const notificationType = data.success ? 'restore_completed' : 'restore_failed'
+      const notificationType = data.success ? 'restore_completed' : 'restore_failed';
       const notificationData: NotificationData = {
         backupType: 'database',
         backupFilename: data.filename,
         backupDuration: data.durationMs,
         backupError: data.error,
         link: '/admin/backup',
-      }
+      };
 
       for (const admin of admins) {
         await createNotification(prisma, {
@@ -215,14 +210,14 @@ export class BackupNotificationService {
           title: data.success ? 'Database restore completed' : 'Database restore failed',
           content: data.success
             ? `Restored from ${data.filename}`
-            : data.error ?? 'An error occurred',
+            : (data.error ?? 'An error occurred'),
           data: notificationData,
-        })
+        });
       }
 
-      console.log(`[BackupNotification] Sent restore notifications to ${admins.length} admin(s)`)
+      console.log(`[BackupNotification] Sent restore notifications to ${admins.length} admin(s)`);
     } catch (error) {
-      console.error('[BackupNotification] Failed to send restore notification:', error)
+      console.error('[BackupNotification] Failed to send restore notification:', error);
     }
   }
 
@@ -233,7 +228,7 @@ export class BackupNotificationService {
     config: BackupNotificationConfig,
     data: BackupResultNotification
   ): Promise<void> {
-    if (!config.webhookUrl) return
+    if (!config.webhookUrl) return;
 
     const payload: WebhookPayload = {
       event: data.success ? 'backup.completed' : 'backup.failed',
@@ -251,9 +246,9 @@ export class BackupNotificationService {
         checksum: data.checksum ?? null,
       },
       schedule: data.scheduleName ? { id: 0, name: data.scheduleName } : null,
-    }
+    };
 
-    await this.deliverWebhook(config.webhookUrl, payload, config.webhookSecret)
+    await this.deliverWebhook(config.webhookUrl, payload, config.webhookSecret);
   }
 
   /**
@@ -263,7 +258,7 @@ export class BackupNotificationService {
     config: BackupNotificationConfig,
     data: RestoreResultNotification
   ): Promise<void> {
-    if (!config.webhookUrl) return
+    if (!config.webhookUrl) return;
 
     const payload: WebhookPayload = {
       event: data.success ? 'restore.completed' : 'restore.failed',
@@ -278,9 +273,9 @@ export class BackupNotificationService {
         durationMs: data.durationMs,
         errorMessage: data.error ?? null,
       },
-    }
+    };
 
-    await this.deliverWebhook(config.webhookUrl, payload, config.webhookSecret)
+    await this.deliverWebhook(config.webhookUrl, payload, config.webhookSecret);
   }
 
   /**
@@ -292,33 +287,33 @@ export class BackupNotificationService {
     secret: string | null
   ): Promise<void> {
     try {
-      const body = JSON.stringify(payload)
+      const body = JSON.stringify(payload);
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
         'User-Agent': 'Kanbu-Backup/1.0',
-      }
+      };
 
       // Add signature if secret is configured
       if (secret) {
-        const signature = this.signPayload(body, secret)
-        headers['X-Kanbu-Signature'] = signature
+        const signature = this.signPayload(body, secret);
+        headers['X-Kanbu-Signature'] = signature;
       }
 
       const response = await fetch(url, {
         method: 'POST',
         headers,
         body,
-      })
+      });
 
       if (!response.ok) {
         console.error(
           `[BackupNotification] Webhook failed: ${response.status} ${response.statusText}`
-        )
+        );
       } else {
-        console.log(`[BackupNotification] Webhook delivered to ${url}`)
+        console.log(`[BackupNotification] Webhook delivered to ${url}`);
       }
     } catch (error) {
-      console.error('[BackupNotification] Webhook delivery failed:', error)
+      console.error('[BackupNotification] Webhook delivery failed:', error);
     }
   }
 
@@ -326,19 +321,19 @@ export class BackupNotificationService {
    * Sign payload with HMAC-SHA256
    */
   private signPayload(payload: string, secret: string): string {
-    const hmac = createHmac('sha256', secret)
-    hmac.update(payload)
-    return `sha256=${hmac.digest('hex')}`
+    const hmac = createHmac('sha256', secret);
+    hmac.update(payload);
+    return `sha256=${hmac.digest('hex')}`;
   }
 
   /**
    * Test webhook delivery
    */
   async testWebhook(): Promise<{ success: boolean; message: string }> {
-    const config = await this.getConfig()
+    const config = await this.getConfig();
 
     if (!config?.webhookUrl) {
-      return { success: false, message: 'No webhook URL configured' }
+      return { success: false, message: 'No webhook URL configured' };
     }
 
     const testPayload: WebhookPayload = {
@@ -354,40 +349,40 @@ export class BackupNotificationService {
         durationMs: 1000,
         errorMessage: null,
       },
-    }
+    };
 
     try {
-      const body = JSON.stringify(testPayload)
+      const body = JSON.stringify(testPayload);
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
         'User-Agent': 'Kanbu-Backup/1.0',
         'X-Kanbu-Test': 'true',
-      }
+      };
 
       if (config.webhookSecret) {
-        headers['X-Kanbu-Signature'] = this.signPayload(body, config.webhookSecret)
+        headers['X-Kanbu-Signature'] = this.signPayload(body, config.webhookSecret);
       }
 
       const response = await fetch(config.webhookUrl, {
         method: 'POST',
         headers,
         body,
-      })
+      });
 
       if (response.ok) {
-        return { success: true, message: `Webhook delivered successfully (${response.status})` }
+        return { success: true, message: `Webhook delivered successfully (${response.status})` };
       } else {
         return {
           success: false,
           message: `Webhook failed: ${response.status} ${response.statusText}`,
-        }
+        };
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error)
-      return { success: false, message: `Webhook delivery failed: ${message}` }
+      const message = error instanceof Error ? error.message : String(error);
+      return { success: false, message: `Webhook delivery failed: ${message}` };
     }
   }
 }
 
 // Singleton export
-export const backupNotificationService = new BackupNotificationService()
+export const backupNotificationService = new BackupNotificationService();

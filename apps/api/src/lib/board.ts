@@ -13,24 +13,24 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { TRPCError } from '@trpc/server'
-import { prisma } from './prisma'
+import { TRPCError } from '@trpc/server';
+import { prisma } from './prisma';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface PositionedItem {
-  id: number
-  position: number
+  id: number;
+  position: number;
 }
 
 export interface WIPValidation {
-  columnId: number
-  taskLimit: number
-  currentCount: number
-  isOverLimit: boolean
-  canAddTask: boolean
+  columnId: number;
+  taskLimit: number;
+  currentCount: number;
+  isOverLimit: boolean;
+  canAddTask: boolean;
 }
 
 // =============================================================================
@@ -46,9 +46,9 @@ export interface WIPValidation {
  * @throws TRPCError NOT_FOUND if column doesn't exist
  */
 export async function validateColumnDelete(columnId: number): Promise<{
-  canDelete: boolean
-  taskCount: number
-  columnTitle: string
+  canDelete: boolean;
+  taskCount: number;
+  columnTitle: string;
 }> {
   const column = await prisma.column.findUnique({
     where: { id: columnId },
@@ -58,20 +58,20 @@ export async function validateColumnDelete(columnId: number): Promise<{
         select: { tasks: true },
       },
     },
-  })
+  });
 
   if (!column) {
     throw new TRPCError({
       code: 'NOT_FOUND',
       message: 'Column not found',
-    })
+    });
   }
 
   return {
     canDelete: column._count.tasks === 0,
     taskCount: column._count.tasks,
     columnTitle: column.title,
-  }
+  };
 }
 
 /**
@@ -95,19 +95,19 @@ export async function checkWIPLimit(columnId: number): Promise<WIPValidation> {
         },
       },
     },
-  })
+  });
 
   if (!column) {
     throw new TRPCError({
       code: 'NOT_FOUND',
       message: 'Column not found',
-    })
+    });
   }
 
-  const currentCount = column._count.tasks
-  const hasLimit = column.taskLimit > 0
-  const isOverLimit = hasLimit && currentCount >= column.taskLimit
-  const canAddTask = !hasLimit || currentCount < column.taskLimit
+  const currentCount = column._count.tasks;
+  const hasLimit = column.taskLimit > 0;
+  const isOverLimit = hasLimit && currentCount >= column.taskLimit;
+  const canAddTask = !hasLimit || currentCount < column.taskLimit;
 
   return {
     columnId,
@@ -115,7 +115,7 @@ export async function checkWIPLimit(columnId: number): Promise<WIPValidation> {
     currentCount,
     isOverLimit,
     canAddTask,
-  }
+  };
 }
 
 // =============================================================================
@@ -131,9 +131,9 @@ export async function checkWIPLimit(columnId: number): Promise<WIPValidation> {
  * @throws TRPCError NOT_FOUND if swimlane doesn't exist
  */
 export async function validateSwimlaneDelete(swimlaneId: number): Promise<{
-  canDelete: boolean
-  taskCount: number
-  swimlaneName: string
+  canDelete: boolean;
+  taskCount: number;
+  swimlaneName: string;
 }> {
   const swimlane = await prisma.swimlane.findUnique({
     where: { id: swimlaneId },
@@ -143,20 +143,20 @@ export async function validateSwimlaneDelete(swimlaneId: number): Promise<{
         select: { tasks: true },
       },
     },
-  })
+  });
 
   if (!swimlane) {
     throw new TRPCError({
       code: 'NOT_FOUND',
       message: 'Swimlane not found',
-    })
+    });
   }
 
   return {
     canDelete: swimlane._count.tasks === 0,
     taskCount: swimlane._count.tasks,
     swimlaneName: swimlane.name,
-  }
+  };
 }
 
 // =============================================================================
@@ -178,29 +178,29 @@ export function calculateNewPositions<T extends PositionedItem>(
   newPosition: number
 ): Array<{ id: number; position: number }> {
   // Sort items by current position
-  const sortedItems = [...items].sort((a, b) => a.position - b.position)
+  const sortedItems = [...items].sort((a, b) => a.position - b.position);
 
   // Find the item being moved
-  const itemIndex = sortedItems.findIndex((item) => item.id === itemId)
+  const itemIndex = sortedItems.findIndex((item) => item.id === itemId);
   if (itemIndex === -1) {
-    return sortedItems.map((item, idx) => ({ id: item.id, position: idx + 1 }))
+    return sortedItems.map((item, idx) => ({ id: item.id, position: idx + 1 }));
   }
 
   // Remove item from current position (we know it exists because itemIndex !== -1)
-  const removedItems = sortedItems.splice(itemIndex, 1)
-  const movedItem = removedItems[0]!
+  const removedItems = sortedItems.splice(itemIndex, 1);
+  const movedItem = removedItems[0]!;
 
   // Clamp new position to valid range
-  const clampedPosition = Math.max(0, Math.min(newPosition - 1, sortedItems.length))
+  const clampedPosition = Math.max(0, Math.min(newPosition - 1, sortedItems.length));
 
   // Insert at new position
-  sortedItems.splice(clampedPosition, 0, movedItem)
+  sortedItems.splice(clampedPosition, 0, movedItem);
 
   // Return with sequential positions starting at 1
   return sortedItems.map((item, idx) => ({
     id: item.id,
     position: idx + 1,
-  }))
+  }));
 }
 
 /**
@@ -220,7 +220,7 @@ export async function applyColumnPositions(
         data: { position: update.position },
       })
     )
-  )
+  );
 }
 
 /**
@@ -240,7 +240,7 @@ export async function applySwimlanePositions(
         data: { position: update.position },
       })
     )
-  )
+  );
 }
 
 /**
@@ -254,9 +254,9 @@ export async function getNextColumnPosition(projectId: number): Promise<number> 
     where: { projectId },
     orderBy: { position: 'desc' },
     select: { position: true },
-  })
+  });
 
-  return (maxColumn?.position ?? 0) + 1
+  return (maxColumn?.position ?? 0) + 1;
 }
 
 /**
@@ -270,7 +270,7 @@ export async function getNextSwimlanePosition(projectId: number): Promise<number
     where: { projectId },
     orderBy: { position: 'desc' },
     select: { position: true },
-  })
+  });
 
-  return (maxSwimlane?.position ?? 0) + 1
+  return (maxSwimlane?.position ?? 0) + 1;
 }

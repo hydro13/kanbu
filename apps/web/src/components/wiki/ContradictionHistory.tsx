@@ -7,26 +7,26 @@
  * Supports filtering by page, user, category, and date range.
  */
 
-import { useState, useMemo } from 'react'
-import { formatDistanceToNow } from 'date-fns'
+import { useState, useMemo } from 'react';
+import { formatDistanceToNow } from 'date-fns';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { ScrollArea } from '@/components/ui/scroll-area'
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { Input } from '@/components/ui/input'
+} from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import {
   AlertTriangle,
   ArrowRight,
@@ -39,9 +39,9 @@ import {
   Undo2,
   User,
   X,
-} from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { ContradictionCategory, ResolutionStrategy } from './ContradictionToast'
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { ContradictionCategory, ResolutionStrategy } from './ContradictionToast';
 
 // =============================================================================
 // Types
@@ -51,52 +51,52 @@ import { ContradictionCategory, ResolutionStrategy } from './ContradictionToast'
  * Audit entry for display in history
  */
 export interface ContradictionAuditEntry {
-  id: number
-  workspaceId: number
-  projectId: number | null
-  wikiPageId: number
-  wikiPageTitle?: string
-  userId: number
-  userName?: string
-  newFactId: string
-  newFact: string
+  id: number;
+  workspaceId: number;
+  projectId: number | null;
+  wikiPageId: number;
+  wikiPageTitle?: string;
+  userId: number;
+  userName?: string;
+  newFactId: string;
+  newFact: string;
   invalidatedFacts: Array<{
-    id: string
-    fact: string
-  }>
-  strategy: ResolutionStrategy
-  confidence: number
-  category: ContradictionCategory
-  reasoning: string | null
-  createdAt: Date
-  revertedAt: Date | null
-  revertedBy: number | null
-  revertedByName?: string
-  revertExpiresAt: Date
-  canRevert: boolean
+    id: string;
+    fact: string;
+  }>;
+  strategy: ResolutionStrategy;
+  confidence: number;
+  category: ContradictionCategory;
+  reasoning: string | null;
+  createdAt: Date;
+  revertedAt: Date | null;
+  revertedBy: number | null;
+  revertedByName?: string;
+  revertExpiresAt: Date;
+  canRevert: boolean;
 }
 
 export interface ContradictionHistoryProps {
   /** Whether the dialog is open */
-  open: boolean
+  open: boolean;
   /** Callback when dialog is closed */
-  onOpenChange: (open: boolean) => void
+  onOpenChange: (open: boolean) => void;
   /** List of audit entries to display */
-  entries: ContradictionAuditEntry[]
+  entries: ContradictionAuditEntry[];
   /** Whether data is loading */
-  isLoading?: boolean
+  isLoading?: boolean;
   /** Callback when user wants to revert an entry */
-  onRevert?: (entry: ContradictionAuditEntry) => Promise<void>
+  onRevert?: (entry: ContradictionAuditEntry) => Promise<void>;
   /** Callback when user clicks on an entry to view details */
-  onViewDetails?: (entry: ContradictionAuditEntry) => void
+  onViewDetails?: (entry: ContradictionAuditEntry) => void;
   /** Available wiki pages for filtering */
-  wikiPages?: Array<{ id: number; title: string }>
+  wikiPages?: Array<{ id: number; title: string }>;
   /** Available users for filtering */
-  users?: Array<{ id: number; name: string }>
+  users?: Array<{ id: number; name: string }>;
   /** Title for the dialog */
-  title?: string
+  title?: string;
   /** Description for the dialog */
-  description?: string
+  description?: string;
 }
 
 // =============================================================================
@@ -106,64 +106,64 @@ export interface ContradictionHistoryProps {
 function getCategoryLabel(category: ContradictionCategory): string {
   switch (category) {
     case ContradictionCategory.FACTUAL:
-      return 'Factual'
+      return 'Factual';
     case ContradictionCategory.ATTRIBUTE:
-      return 'Attribute'
+      return 'Attribute';
     case ContradictionCategory.TEMPORAL:
-      return 'Temporal'
+      return 'Temporal';
     case ContradictionCategory.SEMANTIC:
-      return 'Semantic'
+      return 'Semantic';
     default:
-      return 'Unknown'
+      return 'Unknown';
   }
 }
 
 function getCategoryBadgeClass(category: ContradictionCategory): string {
   switch (category) {
     case ContradictionCategory.FACTUAL:
-      return 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800'
+      return 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800';
     case ContradictionCategory.ATTRIBUTE:
-      return 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800'
+      return 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800';
     case ContradictionCategory.TEMPORAL:
-      return 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800'
+      return 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800';
     case ContradictionCategory.SEMANTIC:
-      return 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800'
+      return 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800';
     default:
-      return ''
+      return '';
   }
 }
 
 function getStrategyIcon(strategy: ResolutionStrategy): React.ReactNode {
   switch (strategy) {
     case ResolutionStrategy.INVALIDATE_OLD:
-      return <ArrowRight className="h-4 w-4" />
+      return <ArrowRight className="h-4 w-4" />;
     case ResolutionStrategy.INVALIDATE_NEW:
-      return <Undo2 className="h-4 w-4" />
+      return <Undo2 className="h-4 w-4" />;
     case ResolutionStrategy.KEEP_BOTH:
-      return <Check className="h-4 w-4" />
+      return <Check className="h-4 w-4" />;
     case ResolutionStrategy.MERGE:
-      return <Merge className="h-4 w-4" />
+      return <Merge className="h-4 w-4" />;
     case ResolutionStrategy.ASK_USER:
-      return <AlertTriangle className="h-4 w-4" />
+      return <AlertTriangle className="h-4 w-4" />;
     default:
-      return null
+      return null;
   }
 }
 
 function getStrategyLabel(strategy: ResolutionStrategy): string {
   switch (strategy) {
     case ResolutionStrategy.INVALIDATE_OLD:
-      return 'Kept new fact'
+      return 'Kept new fact';
     case ResolutionStrategy.INVALIDATE_NEW:
-      return 'Kept old fact'
+      return 'Kept old fact';
     case ResolutionStrategy.KEEP_BOTH:
-      return 'Kept both facts'
+      return 'Kept both facts';
     case ResolutionStrategy.MERGE:
-      return 'Merged facts'
+      return 'Merged facts';
     case ResolutionStrategy.ASK_USER:
-      return 'Pending decision'
+      return 'Pending decision';
     default:
-      return 'Unknown'
+      return 'Unknown';
   }
 }
 
@@ -172,16 +172,16 @@ function getStrategyLabel(strategy: ResolutionStrategy): string {
 // =============================================================================
 
 interface TimelineEntryProps {
-  entry: ContradictionAuditEntry
-  onRevert?: (entry: ContradictionAuditEntry) => void
-  onViewDetails?: (entry: ContradictionAuditEntry) => void
-  isReverting?: boolean
+  entry: ContradictionAuditEntry;
+  onRevert?: (entry: ContradictionAuditEntry) => void;
+  onViewDetails?: (entry: ContradictionAuditEntry) => void;
+  isReverting?: boolean;
 }
 
 function TimelineEntry({ entry, onRevert, onViewDetails, isReverting }: TimelineEntryProps) {
-  const isReverted = entry.revertedAt !== null
-  const canRevert = entry.canRevert && !isReverted
-  const confidencePercent = Math.round(entry.confidence * 100)
+  const isReverted = entry.revertedAt !== null;
+  const canRevert = entry.canRevert && !isReverted;
+  const confidencePercent = Math.round(entry.confidence * 100);
 
   return (
     <div
@@ -194,9 +194,7 @@ function TimelineEntry({ entry, onRevert, onViewDetails, isReverting }: Timeline
       <div
         className={cn(
           'absolute -left-[9px] top-0 h-4 w-4 rounded-full border-2 bg-background',
-          isReverted
-            ? 'border-muted'
-            : 'border-amber-500'
+          isReverted ? 'border-muted' : 'border-amber-500'
         )}
       >
         {isReverted && <X className="h-2 w-2 text-muted-foreground absolute top-0.5 left-0.5" />}
@@ -213,9 +211,7 @@ function TimelineEntry({ entry, onRevert, onViewDetails, isReverting }: Timeline
             {getStrategyIcon(entry.strategy)}
             {getStrategyLabel(entry.strategy)}
           </span>
-          <span className="text-xs text-muted-foreground">
-            ({confidencePercent}%)
-          </span>
+          <span className="text-xs text-muted-foreground">({confidencePercent}%)</span>
         </div>
 
         {/* Facts */}
@@ -245,9 +241,7 @@ function TimelineEntry({ entry, onRevert, onViewDetails, isReverting }: Timeline
             </span>
           )}
           {entry.wikiPageTitle && (
-            <span className="truncate max-w-[200px]">
-              in "{entry.wikiPageTitle}"
-            </span>
+            <span className="truncate max-w-[200px]">in "{entry.wikiPageTitle}"</span>
           )}
         </div>
 
@@ -286,7 +280,7 @@ function TimelineEntry({ entry, onRevert, onViewDetails, isReverting }: Timeline
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -305,52 +299,52 @@ export function ContradictionHistory({
   title = 'Contradiction History',
   description = 'View and manage past contradiction resolutions',
 }: ContradictionHistoryProps) {
-  const [revertingId, setRevertingId] = useState<number | null>(null)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [categoryFilter, setCategoryFilter] = useState<string>('all')
-  const [pageFilter, setPageFilter] = useState<string>('all')
-  const [userFilter, setUserFilter] = useState<string>('all')
-  const [showReverted, setShowReverted] = useState(false)
+  const [revertingId, setRevertingId] = useState<number | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [pageFilter, setPageFilter] = useState<string>('all');
+  const [userFilter, setUserFilter] = useState<string>('all');
+  const [showReverted, setShowReverted] = useState(false);
 
   // Filter entries
   const filteredEntries = useMemo(() => {
     return entries.filter((entry) => {
       // Search query
       if (searchQuery) {
-        const query = searchQuery.toLowerCase()
+        const query = searchQuery.toLowerCase();
         const matchesFact =
           entry.newFact.toLowerCase().includes(query) ||
-          entry.invalidatedFacts.some((f) => f.fact.toLowerCase().includes(query))
-        const matchesPage = entry.wikiPageTitle?.toLowerCase().includes(query)
-        const matchesUser = entry.userName?.toLowerCase().includes(query)
-        if (!matchesFact && !matchesPage && !matchesUser) return false
+          entry.invalidatedFacts.some((f) => f.fact.toLowerCase().includes(query));
+        const matchesPage = entry.wikiPageTitle?.toLowerCase().includes(query);
+        const matchesUser = entry.userName?.toLowerCase().includes(query);
+        if (!matchesFact && !matchesPage && !matchesUser) return false;
       }
 
       // Category filter
-      if (categoryFilter !== 'all' && entry.category !== categoryFilter) return false
+      if (categoryFilter !== 'all' && entry.category !== categoryFilter) return false;
 
       // Page filter
-      if (pageFilter !== 'all' && entry.wikiPageId !== parseInt(pageFilter)) return false
+      if (pageFilter !== 'all' && entry.wikiPageId !== parseInt(pageFilter)) return false;
 
       // User filter
-      if (userFilter !== 'all' && entry.userId !== parseInt(userFilter)) return false
+      if (userFilter !== 'all' && entry.userId !== parseInt(userFilter)) return false;
 
       // Show reverted
-      if (!showReverted && entry.revertedAt !== null) return false
+      if (!showReverted && entry.revertedAt !== null) return false;
 
-      return true
-    })
-  }, [entries, searchQuery, categoryFilter, pageFilter, userFilter, showReverted])
+      return true;
+    });
+  }, [entries, searchQuery, categoryFilter, pageFilter, userFilter, showReverted]);
 
   const handleRevert = async (entry: ContradictionAuditEntry) => {
-    if (!onRevert) return
-    setRevertingId(entry.id)
+    if (!onRevert) return;
+    setRevertingId(entry.id);
     try {
-      await onRevert(entry)
+      await onRevert(entry);
     } finally {
-      setRevertingId(null)
+      setRevertingId(null);
     }
-  }
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -447,14 +441,17 @@ export function ContradictionHistory({
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
               <History className="h-12 w-12 mb-4 opacity-50" />
               <p>No contradiction resolutions found</p>
-              {(searchQuery || categoryFilter !== 'all' || pageFilter !== 'all' || userFilter !== 'all') && (
+              {(searchQuery ||
+                categoryFilter !== 'all' ||
+                pageFilter !== 'all' ||
+                userFilter !== 'all') && (
                 <Button
                   variant="link"
                   onClick={() => {
-                    setSearchQuery('')
-                    setCategoryFilter('all')
-                    setPageFilter('all')
-                    setUserFilter('all')
+                    setSearchQuery('');
+                    setCategoryFilter('all');
+                    setPageFilter('all');
+                    setUserFilter('all');
                   }}
                   className="mt-2"
                 >
@@ -488,5 +485,5 @@ export function ContradictionHistory({
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

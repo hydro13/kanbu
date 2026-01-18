@@ -13,20 +13,20 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback } from 'react';
 
 // =============================================================================
 // Types
 // =============================================================================
 
-export type ViewType = 'board' | 'list' | 'calendar' | 'timeline'
+export type ViewType = 'board' | 'list' | 'calendar' | 'timeline';
 
 interface ViewPreferences {
-  [projectId: number]: ViewType
+  [projectId: number]: ViewType;
 }
 
-const STORAGE_KEY = 'kanbu-view-preferences'
-const DEFAULT_VIEW: ViewType = 'board'
+const STORAGE_KEY = 'kanbu-view-preferences';
+const DEFAULT_VIEW: ViewType = 'board';
 
 // =============================================================================
 // Helper Functions
@@ -34,21 +34,21 @@ const DEFAULT_VIEW: ViewType = 'board'
 
 function loadPreferences(): ViewPreferences {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY)
+    const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
-      return JSON.parse(stored)
+      return JSON.parse(stored);
     }
   } catch (e) {
-    console.error('Failed to load view preferences:', e)
+    console.error('Failed to load view preferences:', e);
   }
-  return {}
+  return {};
 }
 
 function savePreferences(prefs: ViewPreferences): void {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs))
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
   } catch (e) {
-    console.error('Failed to save view preferences:', e)
+    console.error('Failed to save view preferences:', e);
   }
 }
 
@@ -58,45 +58,45 @@ function savePreferences(prefs: ViewPreferences): void {
 
 export interface UseViewPreferenceResult {
   /** Current view type for this project */
-  view: ViewType
+  view: ViewType;
   /** Set the view type and persist it */
-  setView: (view: ViewType) => void
+  setView: (view: ViewType) => void;
   /** All available view types */
-  viewTypes: readonly ViewType[]
+  viewTypes: readonly ViewType[];
   /** Check if a view is the current view */
-  isCurrentView: (view: ViewType) => boolean
+  isCurrentView: (view: ViewType) => boolean;
 }
 
 export function useViewPreference(projectId: number): UseViewPreferenceResult {
-  const [preferences, setPreferences] = useState<ViewPreferences>(() => loadPreferences())
+  const [preferences, setPreferences] = useState<ViewPreferences>(() => loadPreferences());
 
   // Get current view for this project
-  const view = preferences[projectId] ?? DEFAULT_VIEW
+  const view = preferences[projectId] ?? DEFAULT_VIEW;
 
   // Set view and persist
   const setView = useCallback(
     (newView: ViewType) => {
       setPreferences((prev) => {
-        const next = { ...prev, [projectId]: newView }
-        savePreferences(next)
-        return next
-      })
+        const next = { ...prev, [projectId]: newView };
+        savePreferences(next);
+        return next;
+      });
     },
     [projectId]
-  )
+  );
 
   // Check if a view is current
-  const isCurrentView = useCallback((v: ViewType) => v === view, [view])
+  const isCurrentView = useCallback((v: ViewType) => v === view, [view]);
 
   // Available view types
-  const viewTypes = ['board', 'list', 'calendar', 'timeline'] as const
+  const viewTypes = ['board', 'list', 'calendar', 'timeline'] as const;
 
   return {
     view,
     setView,
     viewTypes,
     isCurrentView,
-  }
+  };
 }
 
 // =============================================================================
@@ -106,23 +106,23 @@ export function useViewPreference(projectId: number): UseViewPreferenceResult {
 export function getViewPath(projectId: number, view: ViewType): string {
   switch (view) {
     case 'board':
-      return `/project/${projectId}/board`
+      return `/project/${projectId}/board`;
     case 'list':
-      return `/project/${projectId}/list`
+      return `/project/${projectId}/list`;
     case 'calendar':
-      return `/project/${projectId}/calendar`
+      return `/project/${projectId}/calendar`;
     case 'timeline':
-      return `/project/${projectId}/timeline`
+      return `/project/${projectId}/timeline`;
     default:
-      return `/project/${projectId}/board`
+      return `/project/${projectId}/board`;
   }
 }
 
 export function getViewFromPath(path: string): ViewType {
-  if (path.includes('/list')) return 'list'
-  if (path.includes('/calendar')) return 'calendar'
-  if (path.includes('/timeline')) return 'timeline'
-  return 'board'
+  if (path.includes('/list')) return 'list';
+  if (path.includes('/calendar')) return 'calendar';
+  if (path.includes('/timeline')) return 'timeline';
+  return 'board';
 }
 
-export default useViewPreference
+export default useViewPreference;

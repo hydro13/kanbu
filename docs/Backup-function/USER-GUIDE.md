@@ -87,19 +87,19 @@ BACKUP_ENCRYPTION_KEY=your-secret-key-here
 
 ### Environment Variables
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `BACKUP_STORAGE` | Yes | `local` | Storage backend: `local` or `gdrive` |
-| `BACKUP_LOCAL_PATH` | If local | `/data/backups` | Path for local storage |
-| `BACKUP_GDRIVE_PATH` | If gdrive | - | Path to mounted Google Drive |
-| `BACKUP_PG_MODE` | No | `auto` | Backup mode: `auto`, `direct`, or `docker` |
-| `POSTGRES_CONTAINER` | No | `kanbu-postgres` | PostgreSQL container name (docker mode) |
-| `POSTGRES_CONTAINER_PATTERN` | No | `postgres-` | Pattern for container discovery (docker mode) |
-| `KANBU_SOURCE_PATH` | No | `/app` | Path to Kanbu source code |
-| `BACKUP_ENCRYPTION_KEY` | No | - | Enables AES-256-GCM encryption |
-| `BACKUP_SCHEDULER_MODE` | No | `internal` | Scheduler mode: `internal`, `external`, or `both` |
-| `BACKUP_TRIGGER_API_KEY` | No | - | API key for external triggers |
-| `BACKUP_CRON_TIMEZONE` | No | `UTC` | Timezone for cron expressions |
+| Variable                     | Required  | Default          | Description                                       |
+| ---------------------------- | --------- | ---------------- | ------------------------------------------------- |
+| `BACKUP_STORAGE`             | Yes       | `local`          | Storage backend: `local` or `gdrive`              |
+| `BACKUP_LOCAL_PATH`          | If local  | `/data/backups`  | Path for local storage                            |
+| `BACKUP_GDRIVE_PATH`         | If gdrive | -                | Path to mounted Google Drive                      |
+| `BACKUP_PG_MODE`             | No        | `auto`           | Backup mode: `auto`, `direct`, or `docker`        |
+| `POSTGRES_CONTAINER`         | No        | `kanbu-postgres` | PostgreSQL container name (docker mode)           |
+| `POSTGRES_CONTAINER_PATTERN` | No        | `postgres-`      | Pattern for container discovery (docker mode)     |
+| `KANBU_SOURCE_PATH`          | No        | `/app`           | Path to Kanbu source code                         |
+| `BACKUP_ENCRYPTION_KEY`      | No        | -                | Enables AES-256-GCM encryption                    |
+| `BACKUP_SCHEDULER_MODE`      | No        | `internal`       | Scheduler mode: `internal`, `external`, or `both` |
+| `BACKUP_TRIGGER_API_KEY`     | No        | -                | API key for external triggers                     |
+| `BACKUP_CRON_TIMEZONE`       | No        | `UTC`            | Timezone for cron expressions                     |
 
 ### Example Configurations
 
@@ -142,17 +142,19 @@ Creates a complete PostgreSQL dump of the Kanbu database.
 
 The system supports two modes for database backups:
 
-| Mode | How it works | Best for |
-|------|--------------|----------|
-| **Direct** | `pg_dump` via network using `DATABASE_URL` | Containerized deployments (Coolify, Kubernetes) |
-| **Docker** | `docker exec pg_dump` in postgres container | Development, Docker socket access |
+| Mode       | How it works                                | Best for                                        |
+| ---------- | ------------------------------------------- | ----------------------------------------------- |
+| **Direct** | `pg_dump` via network using `DATABASE_URL`  | Containerized deployments (Coolify, Kubernetes) |
+| **Docker** | `docker exec pg_dump` in postgres container | Development, Docker socket access               |
 
 Set `BACKUP_PG_MODE` to control the mode:
+
 - `auto` (default): Tries direct first, falls back to docker
 - `direct`: Force direct mode (requires `DATABASE_URL`)
 - `docker`: Force docker mode (requires Docker socket access)
 
 **Process:**
+
 1. `pg_dump` exports all tables and data (direct or docker mode)
 2. gzip compresses the output (~90% reduction)
 3. SHA-256 checksum is generated
@@ -160,12 +162,14 @@ Set `BACKUP_PG_MODE` to control the mode:
 5. Stored with timestamp: `kanbu_backup_2026-01-18T10-30-00.sql.gz[.enc]`
 
 **What's Included:**
+
 - All tables (users, workspaces, projects, tasks, etc.)
 - Sequences and indexes
 - Foreign key relationships
 - Custom types and enums
 
 **What's NOT Included:**
+
 - Uploaded files (attachments)
 - External service credentials
 - Environment variables
@@ -175,6 +179,7 @@ Set `BACKUP_PG_MODE` to control the mode:
 Creates a complete archive of the Kanbu application.
 
 **Process:**
+
 1. `tar` creates an archive
 2. gzip compresses the output
 3. SHA-256 checksum is generated
@@ -182,12 +187,14 @@ Creates a complete archive of the Kanbu application.
 5. Stored with timestamp: `kanbu_source_2026-01-18T10-30-00.tar.gz[.enc]`
 
 **What's Included:**
+
 - All source code
 - Configuration files
 - Prisma schema
 - Package manifests
 
 **Automatically Excluded:**
+
 - `node_modules/`
 - `.git/`
 - `dist/`
@@ -211,6 +218,7 @@ BACKUP_LOCAL_PATH=/data/backups
 ```
 
 **Directory Structure:**
+
 ```
 /data/backups/
 ├── kanbu_backup_2026-01-18T02-00-00.sql.gz.enc
@@ -220,6 +228,7 @@ BACKUP_LOCAL_PATH=/data/backups
 ```
 
 **Best Practices:**
+
 - Mount a persistent volume to `/data/backups`
 - Set up off-site replication (rsync, rclone, etc.)
 - Monitor disk space usage
@@ -234,6 +243,7 @@ BACKUP_GDRIVE_PATH=/home/user/GoogleDrive/kanbu-backups
 ```
 
 **Prerequisites:**
+
 1. Install rclone: `sudo apt install rclone`
 2. Configure Google Drive: `rclone config`
 3. Mount: `rclone mount gdrive: /path/to/mount --daemon`
@@ -250,34 +260,34 @@ BACKUP_GDRIVE_PATH=/home/user/GoogleDrive/kanbu-backups
 2. Click **Add Schedule**
 3. Fill in the form:
 
-| Field | Description | Example |
-|-------|-------------|---------|
-| Name | Descriptive name | "Daily Database Backup" |
-| Type | Database or Source | Database |
-| Cron Expression | Standard cron format | `0 2 * * *` |
-| Enabled | Toggle on/off | Yes |
-| Retention Days | Max age in days | 30 |
-| Keep Daily | Daily backups to keep | 7 |
-| Keep Weekly | Weekly backups (Sundays) | 4 |
-| Keep Monthly | Monthly backups (1st) | 3 |
+| Field           | Description              | Example                 |
+| --------------- | ------------------------ | ----------------------- |
+| Name            | Descriptive name         | "Daily Database Backup" |
+| Type            | Database or Source       | Database                |
+| Cron Expression | Standard cron format     | `0 2 * * *`             |
+| Enabled         | Toggle on/off            | Yes                     |
+| Retention Days  | Max age in days          | 30                      |
+| Keep Daily      | Daily backups to keep    | 7                       |
+| Keep Weekly     | Weekly backups (Sundays) | 4                       |
+| Keep Monthly    | Monthly backups (1st)    | 3                       |
 
 ### Common Cron Expressions
 
-| Schedule | Cron Expression |
-|----------|-----------------|
-| Daily at 2:00 AM | `0 2 * * *` |
-| Twice daily (2 AM & 2 PM) | `0 2,14 * * *` |
-| Weekly on Sunday at 3:00 AM | `0 3 * * 0` |
-| Monthly on 1st at 4:00 AM | `0 4 1 * *` |
-| Every 6 hours | `0 */6 * * *` |
+| Schedule                    | Cron Expression |
+| --------------------------- | --------------- |
+| Daily at 2:00 AM            | `0 2 * * *`     |
+| Twice daily (2 AM & 2 PM)   | `0 2,14 * * *`  |
+| Weekly on Sunday at 3:00 AM | `0 3 * * 0`     |
+| Monthly on 1st at 4:00 AM   | `0 4 1 * *`     |
+| Every 6 hours               | `0 */6 * * *`   |
 
 ### Scheduler Modes
 
-| Mode | Description | Use Case |
-|------|-------------|----------|
+| Mode       | Description              | Use Case                     |
+| ---------- | ------------------------ | ---------------------------- |
 | `internal` | Node-cron in API process | Self-hosted, single instance |
-| `external` | HTTP trigger only | SaaS, AWS Lambda, serverless |
-| `both` | Both active | Maximum flexibility |
+| `external` | HTTP trigger only        | SaaS, AWS Lambda, serverless |
+| `both`     | Both active              | Maximum flexibility          |
 
 ---
 
@@ -306,6 +316,7 @@ Keep Monthly: 3
 ```
 
 This keeps:
+
 - All backups from the last 7 days
 - Sunday backups from the last 4 weeks
 - 1st-of-month backups from the last 3 months
@@ -341,11 +352,13 @@ BACKUP_ENCRYPTION_KEY=my-super-secure-passphrase-2026
 **Key Derivation:** PBKDF2 with 100,000 iterations (if passphrase)
 
 **File Format:**
+
 ```
 [16 bytes: IV][N bytes: encrypted data][16 bytes: auth tag]
 ```
 
 **Pipeline:**
+
 1. Backup is compressed (gzip)
 2. SHA-256 checksum generated (before encryption)
 3. AES-256-GCM encrypts the file
@@ -360,10 +373,10 @@ BACKUP_ENCRYPTION_KEY=my-super-secure-passphrase-2026
 
 ### Encrypted vs Unencrypted Filenames
 
-| Type | Unencrypted | Encrypted |
-|------|-------------|-----------|
+| Type     | Unencrypted             | Encrypted                   |
+| -------- | ----------------------- | --------------------------- |
 | Database | `kanbu_backup_*.sql.gz` | `kanbu_backup_*.sql.gz.enc` |
-| Source | `kanbu_source_*.tar.gz` | `kanbu_source_*.tar.gz.enc` |
+| Source   | `kanbu_source_*.tar.gz` | `kanbu_source_*.tar.gz.enc` |
 
 ---
 
@@ -381,12 +394,12 @@ Every backup includes a SHA-256 checksum generated **before** encryption. This e
 
 In the Backup page, you'll see verification status:
 
-| Status | Icon | Meaning |
-|--------|------|---------|
-| Verified | Green checkmark | Checksum matches, backup is valid |
-| Pending | Yellow dot | Not yet verified |
-| Failed | Red X | Checksum mismatch - backup may be corrupted |
-| No Checksum | Gray | Legacy backup without stored checksum |
+| Status      | Icon            | Meaning                                     |
+| ----------- | --------------- | ------------------------------------------- |
+| Verified    | Green checkmark | Checksum matches, backup is valid           |
+| Pending     | Yellow dot      | Not yet verified                            |
+| Failed      | Red X           | Checksum mismatch - backup may be corrupted |
+| No Checksum | Gray            | Legacy backup without stored checksum       |
 
 ### Manual Verification
 
@@ -404,6 +417,7 @@ Click **Verify All Pending** to verify all unverified backups at once.
 ### Verification Stats Card
 
 The UI shows:
+
 - **Total:** All completed backups
 - **Verified:** Passed verification
 - **Pending:** Awaiting verification
@@ -449,12 +463,12 @@ The UI shows:
 Webhooks include an `X-Kanbu-Signature` header with HMAC-SHA256 signature:
 
 ```javascript
-const crypto = require('crypto')
-const signature = req.headers['x-kanbu-signature']
+const crypto = require('crypto');
+const signature = req.headers['x-kanbu-signature'];
 const expected = crypto
   .createHmac('sha256', webhookSecret)
   .update(JSON.stringify(req.body))
-  .digest('hex')
+  .digest('hex');
 
 if (signature === expected) {
   // Valid webhook
@@ -502,12 +516,12 @@ Click **Test Webhook** to send a test payload and verify your endpoint.
 
 ### Restore Errors
 
-| Error | Cause | Solution |
-|-------|-------|----------|
-| "Encryption key not set" | `BACKUP_ENCRYPTION_KEY` missing | Add the key to `.env` |
-| "Checksum mismatch" | File corrupted or tampered | Try a different backup |
-| "PostgreSQL container not found" | Docker not running | Start Docker/containers |
-| "Backup file not found" | Storage issue | Check storage accessibility |
+| Error                            | Cause                           | Solution                    |
+| -------------------------------- | ------------------------------- | --------------------------- |
+| "Encryption key not set"         | `BACKUP_ENCRYPTION_KEY` missing | Add the key to `.env`       |
+| "Checksum mismatch"              | File corrupted or tampered      | Try a different backup      |
+| "PostgreSQL container not found" | Docker not running              | Start Docker/containers     |
+| "Backup file not found"          | Storage issue                   | Check storage accessibility |
 
 ### Manual Restore
 
@@ -546,7 +560,7 @@ Content-Type: application/json
 ### Example: AWS Lambda Trigger
 
 ```javascript
-const https = require('https')
+const https = require('https');
 
 exports.handler = async (event) => {
   const options = {
@@ -555,21 +569,21 @@ exports.handler = async (event) => {
     path: '/api/backup/trigger',
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${process.env.BACKUP_API_KEY}`,
-      'Content-Type': 'application/json'
-    }
-  }
+      Authorization: `Bearer ${process.env.BACKUP_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+  };
 
-  const postData = JSON.stringify({ type: 'database' })
+  const postData = JSON.stringify({ type: 'database' });
 
   return new Promise((resolve, reject) => {
     const req = https.request(options, (res) => {
-      resolve({ statusCode: res.statusCode })
-    })
-    req.write(postData)
-    req.end()
-  })
-}
+      resolve({ statusCode: res.statusCode });
+    });
+    req.write(postData);
+    req.end();
+  });
+};
 ```
 
 ### Example: Kubernetes CronJob
@@ -580,31 +594,31 @@ kind: CronJob
 metadata:
   name: kanbu-backup
 spec:
-  schedule: "0 2 * * *"
+  schedule: '0 2 * * *'
   jobTemplate:
     spec:
       template:
         spec:
           containers:
-          - name: trigger
-            image: curlimages/curl:latest
-            command:
-            - curl
-            - -X
-            - POST
-            - -H
-            - "Authorization: Bearer $(BACKUP_API_KEY)"
-            - -H
-            - "Content-Type: application/json"
-            - -d
-            - '{"type":"database"}'
-            - https://kanbu.example.com/api/backup/trigger
-            env:
-            - name: BACKUP_API_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: kanbu-secrets
-                  key: backup-api-key
+            - name: trigger
+              image: curlimages/curl:latest
+              command:
+                - curl
+                - -X
+                - POST
+                - -H
+                - 'Authorization: Bearer $(BACKUP_API_KEY)'
+                - -H
+                - 'Content-Type: application/json'
+                - -d
+                - '{"type":"database"}'
+                - https://kanbu.example.com/api/backup/trigger
+              env:
+                - name: BACKUP_API_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: kanbu-secrets
+                      key: backup-api-key
           restartPolicy: Never
 ```
 
@@ -619,6 +633,7 @@ spec:
 **Cause:** Backup directory doesn't exist or lacks permissions.
 
 **Solution:**
+
 ```bash
 # Check path exists
 ls -la /data/backups
@@ -635,6 +650,7 @@ chown -R 1000:1000 /data/backups
 **Cause:** Neither direct nor docker mode is available.
 
 **Solution for containerized deployments (Coolify):**
+
 ```bash
 # Use direct mode (recommended) - requires DATABASE_URL
 # The API container includes postgresql-client automatically
@@ -645,6 +661,7 @@ echo $DATABASE_URL
 ```
 
 **Solution for development (Docker mode):**
+
 ```bash
 # Find the actual container name
 docker ps | grep postgres
@@ -662,6 +679,7 @@ POSTGRES_CONTAINER_PATTERN=postgres-
 **Cause:** Trying to restore/verify an encrypted backup without the key.
 
 **Solution:**
+
 1. Find the original encryption key
 2. Add to `.env`: `BACKUP_ENCRYPTION_KEY=your-key`
 3. Restart the API server
@@ -671,6 +689,7 @@ POSTGRES_CONTAINER_PATTERN=postgres-
 **Cause:** Backup file is corrupted or was modified.
 
 **Solution:**
+
 1. Try a different backup if available
 2. Check storage for issues
 3. If all backups fail, contact support
@@ -680,6 +699,7 @@ POSTGRES_CONTAINER_PATTERN=postgres-
 **Cause:** Scheduler not started or wrong mode.
 
 **Solution:**
+
 ```bash
 # Check scheduler status in UI (Admin → Backup → System Status)
 
@@ -693,16 +713,19 @@ docker logs kanbu-api | grep -i scheduler
 ### Logs and Debugging
 
 **API Logs:**
+
 ```bash
 docker logs kanbu-api -f --tail 100
 ```
 
 **Backup-specific logs:**
+
 ```bash
 docker logs kanbu-api 2>&1 | grep -E '\[Backup\]|\[Restore\]|\[Scheduler\]'
 ```
 
 **Execution History:**
+
 - Go to **Admin → Backup → Execution History**
 - Review status, duration, and error messages
 

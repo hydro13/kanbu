@@ -14,39 +14,39 @@
  * - Database Restore: Restore from backup with safety checks
  */
 
-import { useState } from 'react'
-import { AdminLayout } from '../../components/admin/AdminLayout'
-import { Button } from '../../components/ui/button'
-import { trpc } from '../../lib/trpc'
+import { useState } from 'react';
+import { AdminLayout } from '../../components/admin/AdminLayout';
+import { Button } from '../../components/ui/button';
+import { trpc } from '../../lib/trpc';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface LastDbBackupInfo {
-  timestamp: string
-  fileName: string
-  fileSizeKB?: number
-  totalBackups: number
+  timestamp: string;
+  fileName: string;
+  fileSizeKB?: number;
+  totalBackups: number;
 }
 
 interface LastSourceBackupInfo {
-  timestamp: string
-  fileName: string
-  fileSizeMB?: number
-  totalBackups: number
-  instructions?: string[]
+  timestamp: string;
+  fileName: string;
+  fileSizeMB?: number;
+  totalBackups: number;
+  instructions?: string[];
 }
 
 interface ScheduleFormData {
-  name: string
-  type: 'DATABASE' | 'SOURCE'
-  cronExpression: string
-  enabled: boolean
-  retentionDays: number
-  keepDaily: number
-  keepWeekly: number
-  keepMonthly: number
+  name: string;
+  type: 'DATABASE' | 'SOURCE';
+  cronExpression: string;
+  enabled: boolean;
+  retentionDays: number;
+  keepDaily: number;
+  keepWeekly: number;
+  keepMonthly: number;
 }
 
 // =============================================================================
@@ -54,9 +54,9 @@ interface ScheduleFormData {
 // =============================================================================
 
 function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function formatDate(date: Date): string {
@@ -66,39 +66,39 @@ function formatDate(date: Date): string {
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-  }).format(date)
+  }).format(date);
 }
 
 function formatDuration(ms: number | null): string {
-  if (!ms) return '-'
-  if (ms < 1000) return `${ms}ms`
-  if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`
-  return `${Math.floor(ms / 60000)}m ${Math.floor((ms % 60000) / 1000)}s`
+  if (!ms) return '-';
+  if (ms < 1000) return `${ms}ms`;
+  if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
+  return `${Math.floor(ms / 60000)}m ${Math.floor((ms % 60000) / 1000)}s`;
 }
 
 function getStatusColor(status: string): string {
   switch (status) {
     case 'COMPLETED':
-      return 'bg-success'
+      return 'bg-success';
     case 'RUNNING':
-      return 'bg-warning'
+      return 'bg-warning';
     case 'FAILED':
-      return 'bg-error'
+      return 'bg-error';
     default:
-      return 'bg-muted'
+      return 'bg-muted';
   }
 }
 
 function getTriggerLabel(trigger: string): string {
   switch (trigger) {
     case 'SCHEDULED':
-      return 'Scheduled'
+      return 'Scheduled';
     case 'MANUAL':
-      return 'Manual'
+      return 'Manual';
     case 'EXTERNAL':
-      return 'External'
+      return 'External';
     default:
-      return trigger
+      return trigger;
   }
 }
 
@@ -110,9 +110,13 @@ function Spinner({ className = 'h-4 w-4' }: { className?: string }) {
   return (
     <svg className={`animate-spin ${className}`} fill="none" viewBox="0 0 24 24">
       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+      <path
+        className="opacity-75"
+        fill="currentColor"
+        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+      />
     </svg>
-  )
+  );
 }
 
 // =============================================================================
@@ -120,11 +124,11 @@ function Spinner({ className = 'h-4 w-4' }: { className?: string }) {
 // =============================================================================
 
 export function BackupPage() {
-  const [lastDbBackup, setLastDbBackup] = useState<LastDbBackupInfo | null>(null)
-  const [lastSourceBackup, setLastSourceBackup] = useState<LastSourceBackupInfo | null>(null)
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
-  const [showScheduleForm, setShowScheduleForm] = useState(false)
-  const [editingSchedule, setEditingSchedule] = useState<number | null>(null)
+  const [lastDbBackup, setLastDbBackup] = useState<LastDbBackupInfo | null>(null);
+  const [lastSourceBackup, setLastSourceBackup] = useState<LastSourceBackupInfo | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [showScheduleForm, setShowScheduleForm] = useState(false);
+  const [editingSchedule, setEditingSchedule] = useState<number | null>(null);
   const [scheduleForm, setScheduleForm] = useState<ScheduleFormData>({
     name: '',
     type: 'DATABASE',
@@ -134,19 +138,19 @@ export function BackupPage() {
     keepDaily: 7,
     keepWeekly: 4,
     keepMonthly: 3,
-  })
-  const [restoreConfirm, setRestoreConfirm] = useState<string | null>(null)
-  const [restoreStep, setRestoreStep] = useState<'select' | 'confirm' | 'warning'>('select')
+  });
+  const [restoreConfirm, setRestoreConfirm] = useState<string | null>(null);
+  const [restoreStep, setRestoreStep] = useState<'select' | 'confirm' | 'warning'>('select');
 
   // Queries
-  const backupStatus = trpc.admin.getBackupStatus.useQuery()
-  const backupList = trpc.admin.listBackups.useQuery()
-  const schedulerStatus = trpc.admin.getSchedulerStatus.useQuery()
-  const scheduleList = trpc.admin.listBackupSchedules.useQuery()
-  const executionHistory = trpc.admin.getExecutionHistory.useQuery({ limit: 20 })
-  const notificationConfig = trpc.admin.getNotificationConfig.useQuery()
-  const restorableBackups = trpc.admin.getRestorableBackups.useQuery()
-  const verificationStats = trpc.admin.getVerificationStats.useQuery()
+  const backupStatus = trpc.admin.getBackupStatus.useQuery();
+  const backupList = trpc.admin.listBackups.useQuery();
+  const schedulerStatus = trpc.admin.getSchedulerStatus.useQuery();
+  const scheduleList = trpc.admin.listBackupSchedules.useQuery();
+  const executionHistory = trpc.admin.getExecutionHistory.useQuery({ limit: 20 });
+  const notificationConfig = trpc.admin.getNotificationConfig.useQuery();
+  const restorableBackups = trpc.admin.getRestorableBackups.useQuery();
+  const verificationStats = trpc.admin.getVerificationStats.useQuery();
 
   // Mutations
   const createBackup = trpc.admin.createBackup.useMutation({
@@ -156,12 +160,12 @@ export function BackupPage() {
         fileName: data.fileName,
         fileSizeKB: data.fileSizeKB,
         totalBackups: data.totalBackups,
-      })
-      backupList.refetch()
-      backupStatus.refetch()
-      executionHistory.refetch()
+      });
+      backupList.refetch();
+      backupStatus.refetch();
+      executionHistory.refetch();
     },
-  })
+  });
 
   const createSourceBackup = trpc.admin.createSourceBackup.useMutation({
     onSuccess: (data) => {
@@ -171,46 +175,46 @@ export function BackupPage() {
         fileSizeMB: data.fileSizeMB,
         totalBackups: data.totalBackups,
         instructions: data.instructions,
-      })
-      backupList.refetch()
-      backupStatus.refetch()
-      executionHistory.refetch()
+      });
+      backupList.refetch();
+      backupStatus.refetch();
+      executionHistory.refetch();
     },
-  })
+  });
 
   const deleteBackup = trpc.admin.deleteBackup.useMutation({
     onSuccess: () => {
-      setDeleteConfirm(null)
-      backupList.refetch()
-      backupStatus.refetch()
+      setDeleteConfirm(null);
+      backupList.refetch();
+      backupStatus.refetch();
     },
-  })
+  });
 
   const downloadBackup = trpc.admin.downloadBackup.useMutation({
     onSuccess: (data) => {
-      const byteCharacters = atob(data.data)
-      const byteNumbers = new Array(byteCharacters.length)
+      const byteCharacters = atob(data.data);
+      const byteNumbers = new Array(byteCharacters.length);
       for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i)
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
       }
-      const byteArray = new Uint8Array(byteNumbers)
-      const blob = new Blob([byteArray], { type: 'application/octet-stream' })
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'application/octet-stream' });
 
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = data.filename
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = data.filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
     },
-  })
+  });
 
   // Schedule mutations
   const createSchedule = trpc.admin.createBackupSchedule.useMutation({
     onSuccess: () => {
-      setShowScheduleForm(false)
+      setShowScheduleForm(false);
       setScheduleForm({
         name: '',
         type: 'DATABASE',
@@ -220,105 +224,105 @@ export function BackupPage() {
         keepDaily: 7,
         keepWeekly: 4,
         keepMonthly: 3,
-      })
-      scheduleList.refetch()
-      schedulerStatus.refetch()
+      });
+      scheduleList.refetch();
+      schedulerStatus.refetch();
     },
-  })
+  });
 
   const updateSchedule = trpc.admin.updateBackupSchedule.useMutation({
     onSuccess: () => {
-      setEditingSchedule(null)
-      setShowScheduleForm(false)
-      scheduleList.refetch()
-      schedulerStatus.refetch()
+      setEditingSchedule(null);
+      setShowScheduleForm(false);
+      scheduleList.refetch();
+      schedulerStatus.refetch();
     },
-  })
+  });
 
   const deleteSchedule = trpc.admin.deleteBackupSchedule.useMutation({
     onSuccess: () => {
-      scheduleList.refetch()
-      schedulerStatus.refetch()
+      scheduleList.refetch();
+      schedulerStatus.refetch();
     },
-  })
+  });
 
   const runScheduleNow = trpc.admin.runScheduleNow.useMutation({
     onSuccess: () => {
-      executionHistory.refetch()
-      scheduleList.refetch()
+      executionHistory.refetch();
+      scheduleList.refetch();
     },
-  })
+  });
 
   // Notification mutations
   const updateNotifications = trpc.admin.updateNotificationConfig.useMutation({
     onSuccess: () => {
-      notificationConfig.refetch()
+      notificationConfig.refetch();
     },
-  })
+  });
 
-  const testWebhook = trpc.admin.testWebhook.useMutation()
+  const testWebhook = trpc.admin.testWebhook.useMutation();
 
   // Restore mutations
-  const validateRestore = trpc.admin.validateRestore.useMutation()
+  const validateRestore = trpc.admin.validateRestore.useMutation();
   const restoreDatabase = trpc.admin.restoreDatabase.useMutation({
     onSuccess: () => {
-      setRestoreConfirm(null)
-      setRestoreStep('select')
-      executionHistory.refetch()
+      setRestoreConfirm(null);
+      setRestoreStep('select');
+      executionHistory.refetch();
     },
-  })
+  });
 
   // Verification mutations (Phase 4.4)
   const verifyBackup = trpc.admin.verifyBackup.useMutation({
     onSuccess: () => {
-      verificationStats.refetch()
-      executionHistory.refetch()
+      verificationStats.refetch();
+      executionHistory.refetch();
     },
-  })
+  });
   const verifyAllBackups = trpc.admin.verifyAllBackups.useMutation({
     onSuccess: () => {
-      verificationStats.refetch()
-      executionHistory.refetch()
+      verificationStats.refetch();
+      executionHistory.refetch();
     },
-  })
+  });
 
   // Handlers
   const handleDownload = (filename: string) => {
-    downloadBackup.mutate({ filename })
-  }
+    downloadBackup.mutate({ filename });
+  };
 
   const handleDelete = (filename: string) => {
     if (deleteConfirm === filename) {
-      deleteBackup.mutate({ filename })
+      deleteBackup.mutate({ filename });
     } else {
-      setDeleteConfirm(filename)
-      setTimeout(() => setDeleteConfirm(null), 3000)
+      setDeleteConfirm(filename);
+      setTimeout(() => setDeleteConfirm(null), 3000);
     }
-  }
+  };
 
   const handleScheduleSubmit = () => {
     if (editingSchedule) {
       updateSchedule.mutate({
         id: editingSchedule,
         ...scheduleForm,
-      })
+      });
     } else {
-      createSchedule.mutate(scheduleForm)
+      createSchedule.mutate(scheduleForm);
     }
-  }
+  };
 
   const handleEditSchedule = (schedule: {
-    id: number
-    name: string
-    type: string
-    cronExpression: string
-    enabled: boolean
-    retentionDays: number
-    keepDaily: number
-    keepWeekly: number
-    keepMonthly: number
+    id: number;
+    name: string;
+    type: string;
+    cronExpression: string;
+    enabled: boolean;
+    retentionDays: number;
+    keepDaily: number;
+    keepWeekly: number;
+    keepMonthly: number;
   }) => {
-    setEditingSchedule(schedule.id)
+    setEditingSchedule(schedule.id);
     setScheduleForm({
       name: schedule.name,
       type: schedule.type as 'DATABASE' | 'SOURCE',
@@ -328,23 +332,23 @@ export function BackupPage() {
       keepDaily: schedule.keepDaily,
       keepWeekly: schedule.keepWeekly,
       keepMonthly: schedule.keepMonthly,
-    })
-    setShowScheduleForm(true)
-  }
+    });
+    setShowScheduleForm(true);
+  };
 
   const handleRestoreClick = async (filename: string) => {
-    setRestoreConfirm(filename)
-    setRestoreStep('confirm')
-    validateRestore.mutate({ filename })
-  }
+    setRestoreConfirm(filename);
+    setRestoreStep('confirm');
+    validateRestore.mutate({ filename });
+  };
 
   const handleRestoreConfirm = () => {
     if (restoreConfirm && restoreStep === 'warning') {
-      restoreDatabase.mutate({ filename: restoreConfirm, createPreRestoreBackup: true })
+      restoreDatabase.mutate({ filename: restoreConfirm, createPreRestoreBackup: true });
     } else if (restoreStep === 'confirm') {
-      setRestoreStep('warning')
+      setRestoreStep('warning');
     }
-  }
+  };
 
   return (
     <AdminLayout title="Backup" description="Database and source code backup management">
@@ -370,45 +374,70 @@ export function BackupPage() {
             ) : backupStatus.data ? (
               <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
                 <div>
-                  <div className="text-xs text-muted-foreground uppercase tracking-wider">Storage</div>
+                  <div className="text-xs text-muted-foreground uppercase tracking-wider">
+                    Storage
+                  </div>
                   <div className="text-sm font-medium mt-1 flex items-center gap-2">
-                    <span className={`w-2 h-2 rounded-full ${backupStatus.data.storageAccessible ? 'bg-success' : 'bg-error'}`} />
+                    <span
+                      className={`w-2 h-2 rounded-full ${backupStatus.data.storageAccessible ? 'bg-success' : 'bg-error'}`}
+                    />
                     {backupStatus.data.storageType}
                   </div>
                 </div>
                 <div>
                   <div className="text-xs text-muted-foreground uppercase tracking-wider">Path</div>
-                  <div className="text-sm font-mono mt-1 truncate" title={backupStatus.data.storagePath}>
+                  <div
+                    className="text-sm font-mono mt-1 truncate"
+                    title={backupStatus.data.storagePath}
+                  >
                     {backupStatus.data.storagePath}
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs text-muted-foreground uppercase tracking-wider">PostgreSQL</div>
+                  <div className="text-xs text-muted-foreground uppercase tracking-wider">
+                    PostgreSQL
+                  </div>
                   <div className="text-sm font-medium mt-1 flex items-center gap-2">
-                    <span className={`w-2 h-2 rounded-full ${backupStatus.data.postgres?.available ? 'bg-success' : 'bg-error'}`} />
+                    <span
+                      className={`w-2 h-2 rounded-full ${backupStatus.data.postgres?.available ? 'bg-success' : 'bg-error'}`}
+                    />
                     {backupStatus.data.postgres?.available
                       ? `${backupStatus.data.postgres.mode} mode`
                       : 'Not available'}
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs text-muted-foreground uppercase tracking-wider">Scheduler</div>
+                  <div className="text-xs text-muted-foreground uppercase tracking-wider">
+                    Scheduler
+                  </div>
                   <div className="text-sm font-medium mt-1 flex items-center gap-2">
-                    <span className={`w-2 h-2 rounded-full ${schedulerStatus.data?.isRunning ? 'bg-success' : 'bg-muted'}`} />
-                    {schedulerStatus.data?.mode || 'loading...'} ({schedulerStatus.data?.activeJobs || 0} jobs)
+                    <span
+                      className={`w-2 h-2 rounded-full ${schedulerStatus.data?.isRunning ? 'bg-success' : 'bg-muted'}`}
+                    />
+                    {schedulerStatus.data?.mode || 'loading...'} (
+                    {schedulerStatus.data?.activeJobs || 0} jobs)
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs text-muted-foreground uppercase tracking-wider">Encryption</div>
+                  <div className="text-xs text-muted-foreground uppercase tracking-wider">
+                    Encryption
+                  </div>
                   <div className="text-sm font-medium mt-1 flex items-center gap-2">
-                    <span className={`w-2 h-2 rounded-full ${backupStatus.data.encryption?.enabled ? 'bg-success' : 'bg-muted'}`} />
-                    {backupStatus.data.encryption?.enabled ? backupStatus.data.encryption.algorithm : 'Disabled'}
+                    <span
+                      className={`w-2 h-2 rounded-full ${backupStatus.data.encryption?.enabled ? 'bg-success' : 'bg-muted'}`}
+                    />
+                    {backupStatus.data.encryption?.enabled
+                      ? backupStatus.data.encryption.algorithm
+                      : 'Disabled'}
                   </div>
                 </div>
                 <div>
-                  <div className="text-xs text-muted-foreground uppercase tracking-wider">Total Backups</div>
+                  <div className="text-xs text-muted-foreground uppercase tracking-wider">
+                    Total Backups
+                  </div>
                   <div className="text-sm font-medium mt-1">
-                    {backupStatus.data.backupCounts.database} db, {backupStatus.data.backupCounts.source} src
+                    {backupStatus.data.backupCounts.database} db,{' '}
+                    {backupStatus.data.backupCounts.source} src
                   </div>
                 </div>
               </div>
@@ -429,14 +458,16 @@ export function BackupPage() {
               size="sm"
               variant="outline"
               onClick={() => verifyAllBackups.mutate()}
-              disabled={verifyAllBackups.isPending || (verificationStats.data?.pending === 0)}
+              disabled={verifyAllBackups.isPending || verificationStats.data?.pending === 0}
             >
               {verifyAllBackups.isPending ? (
                 <>
                   <Spinner className="h-4 w-4 mr-2" />
                   Verifying...
                 </>
-              ) : `Verify All Pending (${verificationStats.data?.pending || 0})`}
+              ) : (
+                `Verify All Pending (${verificationStats.data?.pending || 0})`
+              )}
             </Button>
           </div>
           <div className="p-4">
@@ -448,30 +479,49 @@ export function BackupPage() {
             ) : verificationStats.data ? (
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 <div>
-                  <div className="text-xs text-muted-foreground uppercase tracking-wider">Total</div>
+                  <div className="text-xs text-muted-foreground uppercase tracking-wider">
+                    Total
+                  </div>
                   <div className="text-lg font-semibold mt-1">{verificationStats.data.total}</div>
                 </div>
                 <div>
-                  <div className="text-xs text-muted-foreground uppercase tracking-wider">Verified</div>
-                  <div className="text-lg font-semibold mt-1 text-success">{verificationStats.data.verified}</div>
+                  <div className="text-xs text-muted-foreground uppercase tracking-wider">
+                    Verified
+                  </div>
+                  <div className="text-lg font-semibold mt-1 text-success">
+                    {verificationStats.data.verified}
+                  </div>
                 </div>
                 <div>
-                  <div className="text-xs text-muted-foreground uppercase tracking-wider">Pending</div>
-                  <div className="text-lg font-semibold mt-1 text-warning">{verificationStats.data.pending}</div>
+                  <div className="text-xs text-muted-foreground uppercase tracking-wider">
+                    Pending
+                  </div>
+                  <div className="text-lg font-semibold mt-1 text-warning">
+                    {verificationStats.data.pending}
+                  </div>
                 </div>
                 <div>
-                  <div className="text-xs text-muted-foreground uppercase tracking-wider">Failed</div>
-                  <div className="text-lg font-semibold mt-1 text-destructive">{verificationStats.data.failed}</div>
+                  <div className="text-xs text-muted-foreground uppercase tracking-wider">
+                    Failed
+                  </div>
+                  <div className="text-lg font-semibold mt-1 text-destructive">
+                    {verificationStats.data.failed}
+                  </div>
                 </div>
                 <div>
-                  <div className="text-xs text-muted-foreground uppercase tracking-wider">No Checksum</div>
-                  <div className="text-lg font-semibold mt-1 text-muted-foreground">{verificationStats.data.noChecksum}</div>
+                  <div className="text-xs text-muted-foreground uppercase tracking-wider">
+                    No Checksum
+                  </div>
+                  <div className="text-lg font-semibold mt-1 text-muted-foreground">
+                    {verificationStats.data.noChecksum}
+                  </div>
                 </div>
               </div>
             ) : null}
             {verifyAllBackups.isSuccess && (
               <div className="mt-3 text-sm text-success">
-                Batch verification complete: {verifyAllBackups.data.stats.success} passed, {verifyAllBackups.data.stats.failed} failed
+                Batch verification complete: {verifyAllBackups.data.stats.success} passed,{' '}
+                {verifyAllBackups.data.stats.failed} failed
               </div>
             )}
             {verifyAllBackups.isError && (
@@ -492,7 +542,7 @@ export function BackupPage() {
             <Button
               size="sm"
               onClick={() => {
-                setEditingSchedule(null)
+                setEditingSchedule(null);
                 setScheduleForm({
                   name: '',
                   type: 'DATABASE',
@@ -502,8 +552,8 @@ export function BackupPage() {
                   keepDaily: 7,
                   keepWeekly: 4,
                   keepMonthly: 3,
-                })
-                setShowScheduleForm(!showScheduleForm)
+                });
+                setShowScheduleForm(!showScheduleForm);
               }}
             >
               {showScheduleForm ? 'Cancel' : 'New Schedule'}
@@ -531,7 +581,12 @@ export function BackupPage() {
                     <label className="block text-xs font-medium mb-1">Type</label>
                     <select
                       value={scheduleForm.type}
-                      onChange={(e) => setScheduleForm({ ...scheduleForm, type: e.target.value as 'DATABASE' | 'SOURCE' })}
+                      onChange={(e) =>
+                        setScheduleForm({
+                          ...scheduleForm,
+                          type: e.target.value as 'DATABASE' | 'SOURCE',
+                        })
+                      }
                       disabled={!!editingSchedule}
                       className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background"
                     >
@@ -544,11 +599,15 @@ export function BackupPage() {
                     <input
                       type="text"
                       value={scheduleForm.cronExpression}
-                      onChange={(e) => setScheduleForm({ ...scheduleForm, cronExpression: e.target.value })}
+                      onChange={(e) =>
+                        setScheduleForm({ ...scheduleForm, cronExpression: e.target.value })
+                      }
                       placeholder="0 2 * * *"
                       className="w-full px-3 py-2 text-sm font-mono border border-border rounded-lg bg-background"
                     />
-                    <p className="text-xs text-muted-foreground mt-1">e.g., "0 2 * * *" = daily at 02:00</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      e.g., "0 2 * * *" = daily at 02:00
+                    </p>
                   </div>
                   <div>
                     <label className="block text-xs font-medium mb-1">Enabled</label>
@@ -556,7 +615,9 @@ export function BackupPage() {
                       <input
                         type="checkbox"
                         checked={scheduleForm.enabled}
-                        onChange={(e) => setScheduleForm({ ...scheduleForm, enabled: e.target.checked })}
+                        onChange={(e) =>
+                          setScheduleForm({ ...scheduleForm, enabled: e.target.checked })
+                        }
                         className="rounded border-border"
                       />
                       <span className="text-sm">Active</span>
@@ -570,34 +631,60 @@ export function BackupPage() {
                         <input
                           type="number"
                           value={scheduleForm.retentionDays}
-                          onChange={(e) => setScheduleForm({ ...scheduleForm, retentionDays: parseInt(e.target.value) || 30 })}
+                          onChange={(e) =>
+                            setScheduleForm({
+                              ...scheduleForm,
+                              retentionDays: parseInt(e.target.value) || 30,
+                            })
+                          }
                           className="w-full px-2 py-1 text-sm border border-border rounded bg-background"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-muted-foreground mb-1">Keep Daily</label>
+                        <label className="block text-xs text-muted-foreground mb-1">
+                          Keep Daily
+                        </label>
                         <input
                           type="number"
                           value={scheduleForm.keepDaily}
-                          onChange={(e) => setScheduleForm({ ...scheduleForm, keepDaily: parseInt(e.target.value) || 7 })}
+                          onChange={(e) =>
+                            setScheduleForm({
+                              ...scheduleForm,
+                              keepDaily: parseInt(e.target.value) || 7,
+                            })
+                          }
                           className="w-full px-2 py-1 text-sm border border-border rounded bg-background"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-muted-foreground mb-1">Keep Weekly</label>
+                        <label className="block text-xs text-muted-foreground mb-1">
+                          Keep Weekly
+                        </label>
                         <input
                           type="number"
                           value={scheduleForm.keepWeekly}
-                          onChange={(e) => setScheduleForm({ ...scheduleForm, keepWeekly: parseInt(e.target.value) || 4 })}
+                          onChange={(e) =>
+                            setScheduleForm({
+                              ...scheduleForm,
+                              keepWeekly: parseInt(e.target.value) || 4,
+                            })
+                          }
                           className="w-full px-2 py-1 text-sm border border-border rounded bg-background"
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-muted-foreground mb-1">Keep Monthly</label>
+                        <label className="block text-xs text-muted-foreground mb-1">
+                          Keep Monthly
+                        </label>
                         <input
                           type="number"
                           value={scheduleForm.keepMonthly}
-                          onChange={(e) => setScheduleForm({ ...scheduleForm, keepMonthly: parseInt(e.target.value) || 3 })}
+                          onChange={(e) =>
+                            setScheduleForm({
+                              ...scheduleForm,
+                              keepMonthly: parseInt(e.target.value) || 3,
+                            })
+                          }
                           className="w-full px-2 py-1 text-sm border border-border rounded bg-background"
                         />
                       </div>
@@ -607,14 +694,20 @@ export function BackupPage() {
                 <div className="flex gap-2 mt-4">
                   <Button
                     onClick={handleScheduleSubmit}
-                    disabled={createSchedule.isPending || updateSchedule.isPending || !scheduleForm.name}
+                    disabled={
+                      createSchedule.isPending || updateSchedule.isPending || !scheduleForm.name
+                    }
                   >
                     {createSchedule.isPending || updateSchedule.isPending ? (
                       <>
                         <Spinner className="h-4 w-4 mr-2" />
                         Saving...
                       </>
-                    ) : editingSchedule ? 'Update Schedule' : 'Create Schedule'}
+                    ) : editingSchedule ? (
+                      'Update Schedule'
+                    ) : (
+                      'Create Schedule'
+                    )}
                   </Button>
                   <Button variant="ghost" onClick={() => setShowScheduleForm(false)}>
                     Cancel
@@ -652,7 +745,9 @@ export function BackupPage() {
                       <tr key={schedule.id} className="hover:bg-muted/30">
                         <td className="px-3 py-2 font-medium">{schedule.name}</td>
                         <td className="px-3 py-2">
-                          <span className={`px-2 py-0.5 rounded text-xs ${schedule.type === 'DATABASE' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'}`}>
+                          <span
+                            className={`px-2 py-0.5 rounded text-xs ${schedule.type === 'DATABASE' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'}`}
+                          >
                             {schedule.type}
                           </span>
                         </td>
@@ -661,8 +756,12 @@ export function BackupPage() {
                           {schedule.nextRunAt ? formatDate(new Date(schedule.nextRunAt)) : '-'}
                         </td>
                         <td className="px-3 py-2">
-                          <span className={`flex items-center gap-1.5 ${schedule.enabled ? 'text-success' : 'text-muted-foreground'}`}>
-                            <span className={`w-2 h-2 rounded-full ${schedule.enabled ? 'bg-success' : 'bg-muted'}`} />
+                          <span
+                            className={`flex items-center gap-1.5 ${schedule.enabled ? 'text-success' : 'text-muted-foreground'}`}
+                          >
+                            <span
+                              className={`w-2 h-2 rounded-full ${schedule.enabled ? 'bg-success' : 'bg-muted'}`}
+                            />
                             {schedule.enabled ? 'Active' : 'Paused'}
                           </span>
                         </td>
@@ -674,11 +773,18 @@ export function BackupPage() {
                               onClick={() => runScheduleNow.mutate({ id: schedule.id })}
                               disabled={runScheduleNow.isPending}
                             >
-                              {runScheduleNow.isPending && runScheduleNow.variables?.id === schedule.id ? (
+                              {runScheduleNow.isPending &&
+                              runScheduleNow.variables?.id === schedule.id ? (
                                 <Spinner className="h-3 w-3" />
-                              ) : 'Run'}
+                              ) : (
+                                'Run'
+                              )}
                             </Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleEditSchedule(schedule)}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditSchedule(schedule)}
+                            >
                               Edit
                             </Button>
                             <Button
@@ -698,7 +804,9 @@ export function BackupPage() {
                 </table>
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">No schedules configured yet. Create one to automate your backups.</p>
+              <p className="text-sm text-muted-foreground">
+                No schedules configured yet. Create one to automate your backups.
+              </p>
             )}
           </div>
         </div>
@@ -715,10 +823,7 @@ export function BackupPage() {
             </div>
             <div className="p-4">
               <div className="flex items-center gap-3">
-                <Button
-                  onClick={() => createBackup.mutate()}
-                  disabled={createBackup.isPending}
-                >
+                <Button onClick={() => createBackup.mutate()} disabled={createBackup.isPending}>
                   {createBackup.isPending ? (
                     <>
                       <Spinner className="h-4 w-4 mr-2" />
@@ -730,15 +835,11 @@ export function BackupPage() {
                 </Button>
 
                 {createBackup.isSuccess && (
-                  <span className="text-sm text-success">
-                    {lastDbBackup?.fileName}
-                  </span>
+                  <span className="text-sm text-success">{lastDbBackup?.fileName}</span>
                 )}
 
                 {createBackup.isError && (
-                  <span className="text-sm text-destructive">
-                    {createBackup.error.message}
-                  </span>
+                  <span className="text-sm text-destructive">{createBackup.error.message}</span>
                 )}
               </div>
             </div>
@@ -770,9 +871,7 @@ export function BackupPage() {
                 </Button>
 
                 {createSourceBackup.isSuccess && (
-                  <span className="text-sm text-success">
-                    {lastSourceBackup?.fileName}
-                  </span>
+                  <span className="text-sm text-success">{lastSourceBackup?.fileName}</span>
                 )}
 
                 {createSourceBackup.isError && (
@@ -817,19 +916,26 @@ export function BackupPage() {
                       <tr key={exec.id} className="hover:bg-muted/30">
                         <td className="px-3 py-2">{formatDate(new Date(exec.startedAt))}</td>
                         <td className="px-3 py-2">
-                          <span className={`px-2 py-0.5 rounded text-xs ${exec.type === 'DATABASE' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'}`}>
+                          <span
+                            className={`px-2 py-0.5 rounded text-xs ${exec.type === 'DATABASE' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' : 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'}`}
+                          >
                             {exec.type}
                           </span>
                         </td>
                         <td className="px-3 py-2">{getTriggerLabel(exec.trigger)}</td>
                         <td className="px-3 py-2">
                           <span className="flex items-center gap-1.5">
-                            <span className={`w-2 h-2 rounded-full ${getStatusColor(exec.status)}`} />
+                            <span
+                              className={`w-2 h-2 rounded-full ${getStatusColor(exec.status)}`}
+                            />
                             {exec.status}
                           </span>
                         </td>
                         <td className="px-3 py-2">{formatDuration(exec.durationMs)}</td>
-                        <td className="px-3 py-2 font-mono text-xs truncate max-w-[200px]" title={exec.filename || exec.errorMessage || undefined}>
+                        <td
+                          className="px-3 py-2 font-mono text-xs truncate max-w-[200px]"
+                          title={exec.filename || exec.errorMessage || undefined}
+                        >
                           {exec.filename || exec.errorMessage || '-'}
                         </td>
                       </tr>
@@ -864,7 +970,9 @@ export function BackupPage() {
                     <input
                       type="checkbox"
                       checked={notificationConfig.data?.notifyOnSuccess ?? false}
-                      onChange={(e) => updateNotifications.mutate({ notifyOnSuccess: e.target.checked })}
+                      onChange={(e) =>
+                        updateNotifications.mutate({ notifyOnSuccess: e.target.checked })
+                      }
                       disabled={updateNotifications.isPending}
                       className="rounded border-border"
                     />
@@ -874,7 +982,9 @@ export function BackupPage() {
                     <input
                       type="checkbox"
                       checked={notificationConfig.data?.notifyOnFailure ?? true}
-                      onChange={(e) => updateNotifications.mutate({ notifyOnFailure: e.target.checked })}
+                      onChange={(e) =>
+                        updateNotifications.mutate({ notifyOnFailure: e.target.checked })
+                      }
                       disabled={updateNotifications.isPending}
                       className="rounded border-border"
                     />
@@ -888,7 +998,9 @@ export function BackupPage() {
                     <input
                       type="url"
                       value={notificationConfig.data?.webhookUrl || ''}
-                      onChange={(e) => updateNotifications.mutate({ webhookUrl: e.target.value || null })}
+                      onChange={(e) =>
+                        updateNotifications.mutate({ webhookUrl: e.target.value || null })
+                      }
                       placeholder="https://example.com/webhook"
                       className="flex-1 px-3 py-2 text-sm border border-border rounded-lg bg-background"
                     />
@@ -901,18 +1013,24 @@ export function BackupPage() {
                     </Button>
                   </div>
                   {testWebhook.isSuccess && (
-                    <p className={`text-xs mt-1 ${testWebhook.data.success ? 'text-success' : 'text-destructive'}`}>
+                    <p
+                      className={`text-xs mt-1 ${testWebhook.data.success ? 'text-success' : 'text-destructive'}`}
+                    >
                       {testWebhook.data.message}
                     </p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium mb-1">Webhook Secret (optional)</label>
+                  <label className="block text-xs font-medium mb-1">
+                    Webhook Secret (optional)
+                  </label>
                   <input
                     type="password"
                     value={notificationConfig.data?.webhookSecret || ''}
-                    onChange={(e) => updateNotifications.mutate({ webhookSecret: e.target.value || null })}
+                    onChange={(e) =>
+                      updateNotifications.mutate({ webhookSecret: e.target.value || null })
+                    }
                     placeholder="Used for HMAC-SHA256 signature"
                     className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background"
                   />
@@ -929,8 +1047,18 @@ export function BackupPage() {
         <div className="bg-card rounded-card border border-border border-warning/50">
           <div className="px-4 py-3 border-b border-border bg-warning/5">
             <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
-              <svg className="w-4 h-4 text-warning" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              <svg
+                className="w-4 h-4 text-warning"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
               </svg>
               Database Restore
             </h3>
@@ -953,7 +1081,10 @@ export function BackupPage() {
                 </h4>
                 <p className="text-sm text-muted-foreground mb-3">
                   {restoreStep === 'confirm' ? (
-                    <>You are about to restore from <code className="bg-muted px-1 rounded">{restoreConfirm}</code>.</>
+                    <>
+                      You are about to restore from{' '}
+                      <code className="bg-muted px-1 rounded">{restoreConfirm}</code>.
+                    </>
                   ) : (
                     <span className="text-destructive font-medium">
                       This action cannot be undone. All current data will be replaced.
@@ -965,7 +1096,9 @@ export function BackupPage() {
                   <div className="text-sm space-y-1 mb-3">
                     <p>File size: {formatFileSize(validateRestore.data.fileSize)}</p>
                     {validateRestore.data.warnings.length > 0 && (
-                      <p className="text-warning">Warnings: {validateRestore.data.warnings.join(', ')}</p>
+                      <p className="text-warning">
+                        Warnings: {validateRestore.data.warnings.join(', ')}
+                      </p>
                     )}
                   </div>
                 )}
@@ -981,9 +1114,19 @@ export function BackupPage() {
                         <Spinner className="h-4 w-4 mr-2" />
                         Restoring...
                       </>
-                    ) : restoreStep === 'warning' ? 'Yes, Restore Now' : 'Continue'}
+                    ) : restoreStep === 'warning' ? (
+                      'Yes, Restore Now'
+                    ) : (
+                      'Continue'
+                    )}
                   </Button>
-                  <Button variant="ghost" onClick={() => { setRestoreConfirm(null); setRestoreStep('select'); }}>
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setRestoreConfirm(null);
+                      setRestoreStep('select');
+                    }}
+                  >
                     Cancel
                   </Button>
                 </div>
@@ -1037,7 +1180,9 @@ export function BackupPage() {
                     </table>
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground">No database backups available for restore.</p>
+                  <p className="text-sm text-muted-foreground">
+                    No database backups available for restore.
+                  </p>
                 )}
               </>
             )}
@@ -1079,8 +1224,18 @@ export function BackupPage() {
                           <td className="px-3 py-2">
                             {backup.isEncrypted ? (
                               <span className="flex items-center gap-1 text-success">
-                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                <svg
+                                  className="w-4 h-4"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                                  />
                                 </svg>
                                 Yes
                               </span>
@@ -1097,9 +1252,12 @@ export function BackupPage() {
                                 disabled={verifyBackup.isPending}
                                 title="Verify backup integrity"
                               >
-                                {verifyBackup.isPending && verifyBackup.variables?.filename === backup.filename ? (
+                                {verifyBackup.isPending &&
+                                verifyBackup.variables?.filename === backup.filename ? (
                                   <Spinner className="h-4 w-4" />
-                                ) : 'Verify'}
+                                ) : (
+                                  'Verify'
+                                )}
                               </Button>
                               <Button
                                 variant="ghost"
@@ -1107,16 +1265,23 @@ export function BackupPage() {
                                 onClick={() => handleDownload(backup.filename)}
                                 disabled={downloadBackup.isPending}
                               >
-                                {downloadBackup.isPending && downloadBackup.variables?.filename === backup.filename ? (
+                                {downloadBackup.isPending &&
+                                downloadBackup.variables?.filename === backup.filename ? (
                                   <Spinner className="h-4 w-4" />
-                                ) : 'Download'}
+                                ) : (
+                                  'Download'
+                                )}
                               </Button>
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleDelete(backup.filename)}
                                 disabled={deleteBackup.isPending}
-                                className={deleteConfirm === backup.filename ? 'text-destructive hover:text-destructive/80' : ''}
+                                className={
+                                  deleteConfirm === backup.filename
+                                    ? 'text-destructive hover:text-destructive/80'
+                                    : ''
+                                }
                               >
                                 {deleteConfirm === backup.filename ? 'Confirm?' : 'Delete'}
                               </Button>
@@ -1156,8 +1321,18 @@ export function BackupPage() {
                           <td className="px-3 py-2">
                             {backup.isEncrypted ? (
                               <span className="inline-flex items-center gap-1 text-xs text-success">
-                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                <svg
+                                  className="w-3.5 h-3.5"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                                  />
                                 </svg>
                                 Yes
                               </span>
@@ -1173,16 +1348,23 @@ export function BackupPage() {
                                 onClick={() => handleDownload(backup.filename)}
                                 disabled={downloadBackup.isPending}
                               >
-                                {downloadBackup.isPending && downloadBackup.variables?.filename === backup.filename ? (
+                                {downloadBackup.isPending &&
+                                downloadBackup.variables?.filename === backup.filename ? (
                                   <Spinner className="h-4 w-4" />
-                                ) : 'Download'}
+                                ) : (
+                                  'Download'
+                                )}
                               </Button>
                               <Button
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => handleDelete(backup.filename)}
                                 disabled={deleteBackup.isPending}
-                                className={deleteConfirm === backup.filename ? 'text-destructive hover:text-destructive/80' : ''}
+                                className={
+                                  deleteConfirm === backup.filename
+                                    ? 'text-destructive hover:text-destructive/80'
+                                    : ''
+                                }
                               >
                                 {deleteConfirm === backup.filename ? 'Confirm?' : 'Delete'}
                               </Button>
@@ -1196,7 +1378,7 @@ export function BackupPage() {
               </div>
             )}
 
-            {(!backupList.data?.database?.length && !backupList.data?.source?.length) && (
+            {!backupList.data?.database?.length && !backupList.data?.source?.length && (
               <p className="text-sm text-muted-foreground">No backup files found.</p>
             )}
           </div>
@@ -1205,22 +1387,35 @@ export function BackupPage() {
         {/* Info Card */}
         <div className="bg-info/10 rounded-lg border border-info/30 p-4">
           <div className="flex gap-3">
-            <svg className="w-5 h-5 text-info flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg
+              className="w-5 h-5 text-info flex-shrink-0 mt-0.5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
             <div className="text-sm text-foreground">
               <p className="font-medium">Backup Information</p>
               <p className="mt-1 text-muted-foreground">
-                Backups are stored at <code className="bg-info/20 text-info px-1 rounded">{backupStatus.data?.storagePath || 'loading...'}</code>.
-                Scheduled backups run according to their cron expressions in the configured timezone.
-                For a full restore, you need both a database backup and a source backup.
+                Backups are stored at{' '}
+                <code className="bg-info/20 text-info px-1 rounded">
+                  {backupStatus.data?.storagePath || 'loading...'}
+                </code>
+                . Scheduled backups run according to their cron expressions in the configured
+                timezone. For a full restore, you need both a database backup and a source backup.
               </p>
             </div>
           </div>
         </div>
       </div>
     </AdminLayout>
-  )
+  );
 }
 
-export default BackupPage
+export default BackupPage;

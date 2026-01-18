@@ -23,7 +23,7 @@ export {
   type WorkspaceAccess,
   type ProjectAccess,
   type UserWithRole,
-} from './permissions'
+} from './permissions';
 
 // Group Permission Service - AD-style group-based authorization
 export {
@@ -34,7 +34,7 @@ export {
   type GroupProjectAccess,
   type PermissionCheck,
   type EffectivePermission,
-} from './groupPermissions'
+} from './groupPermissions';
 
 // ACL Service - Filesystem-style Access Control Lists (NTFS/AD compatible)
 export {
@@ -46,15 +46,10 @@ export {
   type AclPrincipalType,
   type AclCheckResult,
   type AclEntry,
-} from './aclService'
+} from './aclService';
 
 // Scope Service - User scope determination for data access filtering
-export {
-  ScopeService,
-  scopeService,
-  type ScopeLevel,
-  type UserScope,
-} from './scopeService'
+export { ScopeService, scopeService, type ScopeLevel, type UserScope } from './scopeService';
 
 // Audit Service - Security event logging for compliance and troubleshooting
 export {
@@ -66,14 +61,10 @@ export {
   type AuditAction,
   type AuditLogParams,
   type AuditLogEntry,
-} from './auditService'
+} from './auditService';
 
 // API Key Service - Authentication & Scoped Access Control (Fase 9.6)
-export {
-  apiKeyService,
-  type ApiKeyContext,
-  type ApiKeyUsageParams,
-} from './apiKeyService'
+export { apiKeyService, type ApiKeyContext, type ApiKeyUsageParams } from './apiKeyService';
 
 // GitHub Service - GitHub App Integration (Fase 2)
 export {
@@ -82,7 +73,7 @@ export {
   getInstallationUrl,
   type GitHubConfig,
   type InstallationInfo,
-} from './github'
+} from './github';
 
 // Backup Service - Database and source code backups (Phase 1-4)
 export {
@@ -123,4 +114,4 @@ export {
   type VerificationResult,
   type VerificationStats,
   type BatchVerificationResult,
-} from './backup'
+} from './backup';

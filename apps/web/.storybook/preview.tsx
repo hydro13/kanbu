@@ -10,10 +10,10 @@
  * ===================================================================
  */
 
-import type { Preview, ReactRenderer } from '@storybook/react-vite'
-import { withThemeByClassName } from '@storybook/addon-themes'
-import '../src/styles/globals.css'
-import '../src/styles/accents.css'
+import type { Preview, ReactRenderer } from '@storybook/react-vite';
+import { withThemeByClassName } from '@storybook/addon-themes';
+import '../src/styles/globals.css';
+import '../src/styles/accents.css';
 
 const preview: Preview = {
   parameters: {
@@ -66,6 +66,6 @@ const preview: Preview = {
       },
     },
   },
-}
+};
 
-export default preview
+export default preview;

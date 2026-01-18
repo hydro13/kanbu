@@ -24,12 +24,12 @@
  * =============================================================================
  */
 
-import { TRPCError } from '@trpc/server'
-import { middleware } from '../trpc/router'
-import { prisma } from '../lib/prisma'
-import { groupPermissionService } from '../services/groupPermissions'
-import { permissionRegistry } from './registry'
-import type { PermissionCheckResult } from './types'
+import { TRPCError } from '@trpc/server';
+import { middleware } from '../trpc/router';
+import { prisma } from '../lib/prisma';
+import { groupPermissionService } from '../services/groupPermissions';
+import { permissionRegistry } from './registry';
+import type { PermissionCheckResult } from './types';
 
 // =============================================================================
 // Types
@@ -37,25 +37,25 @@ import type { PermissionCheckResult } from './types'
 
 interface MiddlewareContext {
   user: {
-    id: number
-    email: string
-    username: string
-    role: string
-  }
+    id: number;
+    email: string;
+    username: string;
+    role: string;
+  };
 }
 
 interface PermissionOptions {
   /** Permission path to check, e.g., "task.create" */
-  permission: string
+  permission: string;
 
   /** Optional: Get workspaceId from input */
-  getWorkspaceId?: (input: unknown) => number | undefined
+  getWorkspaceId?: (input: unknown) => number | undefined;
 
   /** Optional: Get projectId from input */
-  getProjectId?: (input: unknown) => number | undefined
+  getProjectId?: (input: unknown) => number | undefined;
 
   /** If true, don't throw error, just set ctx.hasPermission */
-  soft?: boolean
+  soft?: boolean;
 }
 
 // =============================================================================
@@ -72,23 +72,23 @@ async function checkPermission(
 ): Promise<PermissionCheckResult> {
   // 1. Check if permission exists in registry
   if (!permissionRegistry.has(permissionPath)) {
-    console.warn(`[Permission] Unknown permission path: ${permissionPath}`)
-    return { allowed: false, reason: 'NOT_GRANTED' }
+    console.warn(`[Permission] Unknown permission path: ${permissionPath}`);
+    return { allowed: false, reason: 'NOT_GRANTED' };
   }
 
   // 2. Domain Admins bypass all permission checks
-  const isDomainAdmin = await groupPermissionService.isDomainAdmin(userId)
+  const isDomainAdmin = await groupPermissionService.isDomainAdmin(userId);
   if (isDomainAdmin) {
-    return { allowed: true, reason: 'ALLOW', grantedBy: 'Domain Admins' }
+    return { allowed: true, reason: 'ALLOW', grantedBy: 'Domain Admins' };
   }
 
   // 3. Check if user has system.admin permission (Super Admin)
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { role: true },
-  })
+  });
   if (user?.role === 'ADMIN') {
-    return { allowed: true, reason: 'ALLOW', grantedBy: 'Super Admin' }
+    return { allowed: true, reason: 'ALLOW', grantedBy: 'Super Admin' };
   }
 
   // 4. Check group-based permissions
@@ -97,9 +97,9 @@ async function checkPermission(
     permissionPath,
     context.workspaceId,
     context.projectId
-  )
+  );
   if (hasPermission) {
-    return { allowed: true, reason: 'ALLOW', grantedBy: 'Group permission' }
+    return { allowed: true, reason: 'ALLOW', grantedBy: 'Group permission' };
   }
 
   // 5. Check if permission is denied explicitly
@@ -108,13 +108,13 @@ async function checkPermission(
     permissionPath,
     context.workspaceId,
     context.projectId
-  )
+  );
   if (effectivePermission?.allowed === false && effectivePermission.reason === 'DENY') {
-    return { allowed: false, reason: 'DENY', grantedBy: effectivePermission.grantedBy }
+    return { allowed: false, reason: 'DENY', grantedBy: effectivePermission.grantedBy };
   }
 
   // 6. Default: not granted
-  return { allowed: false, reason: 'NOT_GRANTED' }
+  return { allowed: false, reason: 'NOT_GRANTED' };
 }
 
 // =============================================================================
@@ -132,22 +132,22 @@ export function requirePermission(
   options?: Omit<PermissionOptions, 'permission'>
 ) {
   return middleware(async ({ ctx, next, input }) => {
-    const user = (ctx as MiddlewareContext).user
+    const user = (ctx as MiddlewareContext).user;
     if (!user) {
       throw new TRPCError({
         code: 'UNAUTHORIZED',
         message: 'Authentication required',
-      })
+      });
     }
 
     // Extract context from input if provided
-    const workspaceId = options?.getWorkspaceId?.(input)
-    const projectId = options?.getProjectId?.(input)
+    const workspaceId = options?.getWorkspaceId?.(input);
+    const projectId = options?.getProjectId?.(input);
 
     const result = await checkPermission(user.id, permission, {
       workspaceId,
       projectId,
-    })
+    });
 
     if (!result.allowed) {
       if (options?.soft) {
@@ -158,13 +158,13 @@ export function requirePermission(
             permissionCheck: result,
             hasPermission: false,
           },
-        })
+        });
       }
 
       throw new TRPCError({
         code: 'FORBIDDEN',
         message: `Permission denied: ${permission}`,
-      })
+      });
     }
 
     return next({
@@ -173,8 +173,8 @@ export function requirePermission(
         permissionCheck: result,
         hasPermission: true,
       },
-    })
-  })
+    });
+  });
 }
 
 /**
@@ -183,16 +183,13 @@ export function requirePermission(
  * @param permission - Permission path
  * @param workspaceIdPath - Path to workspaceId in input, e.g., "workspaceId"
  */
-export function requireWorkspacePermission(
-  permission: string,
-  workspaceIdPath = 'workspaceId'
-) {
+export function requireWorkspacePermission(permission: string, workspaceIdPath = 'workspaceId') {
   return requirePermission(permission, {
     getWorkspaceId: (input) => {
-      const inp = input as Record<string, unknown>
-      return inp[workspaceIdPath] as number | undefined
+      const inp = input as Record<string, unknown>;
+      return inp[workspaceIdPath] as number | undefined;
     },
-  })
+  });
 }
 
 /**
@@ -201,16 +198,13 @@ export function requireWorkspacePermission(
  * @param permission - Permission path
  * @param projectIdPath - Path to projectId in input, e.g., "projectId"
  */
-export function requireProjectPermission(
-  permission: string,
-  projectIdPath = 'projectId'
-) {
+export function requireProjectPermission(permission: string, projectIdPath = 'projectId') {
   return requirePermission(permission, {
     getProjectId: (input) => {
-      const inp = input as Record<string, unknown>
-      return inp[projectIdPath] as number | undefined
+      const inp = input as Record<string, unknown>;
+      return inp[projectIdPath] as number | undefined;
     },
-  })
+  });
 }
 
 /**
@@ -218,7 +212,7 @@ export function requireProjectPermission(
  * Useful for creating reusable permission checks.
  */
 export function createPermissionMiddleware(options: PermissionOptions) {
-  return requirePermission(options.permission, options)
+  return requirePermission(options.permission, options);
 }
 
 // =============================================================================
@@ -234,8 +228,8 @@ export async function canDo(
   permission: string,
   context?: { workspaceId?: number; projectId?: number }
 ): Promise<boolean> {
-  const result = await checkPermission(userId, permission, context ?? {})
-  return result.allowed
+  const result = await checkPermission(userId, permission, context ?? {});
+  return result.allowed;
 }
 
 /**
@@ -247,13 +241,13 @@ export async function canDoMany(
   permissions: string[],
   context?: { workspaceId?: number; projectId?: number }
 ): Promise<Record<string, boolean>> {
-  const results: Record<string, boolean> = {}
+  const results: Record<string, boolean> = {};
 
   await Promise.all(
     permissions.map(async (permission) => {
-      results[permission] = await canDo(userId, permission, context)
+      results[permission] = await canDo(userId, permission, context);
     })
-  )
+  );
 
-  return results
+  return results;
 }

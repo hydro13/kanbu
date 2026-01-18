@@ -22,10 +22,10 @@
  * ===================================================================
  */
 
-import { useState, useMemo } from 'react'
-import { Link } from 'react-router-dom'
-import { Button } from '@/components/ui/button'
-import { ScrollArea } from '@/components/ui/scroll-area'
+import { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   ChevronRight,
   FileText,
@@ -35,58 +35,58 @@ import {
   Clock,
   Sparkles,
   GitMerge,
-} from 'lucide-react'
-import { WikiDuplicateManager } from './WikiDuplicateManager'
-import { cn } from '@/lib/utils'
+} from 'lucide-react';
+import { WikiDuplicateManager } from './WikiDuplicateManager';
+import { cn } from '@/lib/utils';
 
 // =============================================================================
 // Types
 // =============================================================================
 
-export type WikiPageStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'
+export type WikiPageStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
 
 export interface WikiPageNode {
-  id: number
-  title: string
-  slug: string
-  status: WikiPageStatus
-  sortOrder: number
-  parentId: number | null
-  childCount: number
-  updatedAt: string
+  id: number;
+  title: string;
+  slug: string;
+  status: WikiPageStatus;
+  sortOrder: number;
+  parentId: number | null;
+  childCount: number;
+  updatedAt: string;
 }
 
 interface WikiSidebarProps {
   /** List of all wiki pages */
-  pages: WikiPageNode[]
+  pages: WikiPageNode[];
   /** Base path for wiki links (e.g., /workspace/slug/wiki) */
-  basePath: string
+  basePath: string;
   /** Currently active page slug */
-  activeSlug?: string
+  activeSlug?: string;
   /** Whether to show unpublished pages */
-  showUnpublished?: boolean
+  showUnpublished?: boolean;
   /** Callback when "New Page" is clicked */
-  onCreatePage?: (parentId?: number) => void
+  onCreatePage?: (parentId?: number) => void;
   /** Callback when search is triggered */
-  onSearch?: () => void
+  onSearch?: () => void;
   /** Callback when graph view is triggered */
-  onShowGraph?: () => void
+  onShowGraph?: () => void;
   /** Whether graph view is currently shown */
-  graphViewActive?: boolean
+  graphViewActive?: boolean;
   /** Callback when temporal search is triggered */
-  onTemporalSearch?: () => void
+  onTemporalSearch?: () => void;
   /** Callback when Ask Wiki is triggered */
-  onAskWiki?: () => void
+  onAskWiki?: () => void;
   /** Whether Ask Wiki dialog is currently shown */
-  askWikiActive?: boolean
+  askWikiActive?: boolean;
   /** Wiki type for display */
-  wikiType?: 'workspace' | 'project'
+  wikiType?: 'workspace' | 'project';
   /** Wiki title to display */
-  title?: string
+  title?: string;
   /** Workspace ID for duplicate detection (required for Fase 22 features) */
-  workspaceId?: number
+  workspaceId?: number;
   /** Project ID for duplicate detection scope */
-  projectId?: number
+  projectId?: number;
 }
 
 // =============================================================================
@@ -98,28 +98,26 @@ function buildTree(
   showUnpublished: boolean
 ): { rootPages: WikiPageNode[]; childrenMap: Map<number, WikiPageNode[]> } {
   // Filter pages based on visibility
-  const visiblePages = showUnpublished
-    ? pages
-    : pages.filter((p) => p.status === 'PUBLISHED')
+  const visiblePages = showUnpublished ? pages : pages.filter((p) => p.status === 'PUBLISHED');
 
   // Sort by sortOrder
-  const sortedPages = [...visiblePages].sort((a, b) => a.sortOrder - b.sortOrder)
+  const sortedPages = [...visiblePages].sort((a, b) => a.sortOrder - b.sortOrder);
 
   // Build children map
-  const childrenMap = new Map<number, WikiPageNode[]>()
-  const rootPages: WikiPageNode[] = []
+  const childrenMap = new Map<number, WikiPageNode[]>();
+  const rootPages: WikiPageNode[] = [];
 
   for (const page of sortedPages) {
     if (page.parentId === null) {
-      rootPages.push(page)
+      rootPages.push(page);
     } else {
-      const siblings = childrenMap.get(page.parentId) || []
-      siblings.push(page)
-      childrenMap.set(page.parentId, siblings)
+      const siblings = childrenMap.get(page.parentId) || [];
+      siblings.push(page);
+      childrenMap.set(page.parentId, siblings);
     }
   }
 
-  return { rootPages, childrenMap }
+  return { rootPages, childrenMap };
 }
 
 // =============================================================================
@@ -127,14 +125,14 @@ function buildTree(
 // =============================================================================
 
 interface WikiTreeNodeProps {
-  page: WikiPageNode
-  basePath: string
-  activeSlug?: string
-  childrenMap: Map<number, WikiPageNode[]>
-  depth: number
-  onCreatePage?: (parentId?: number) => void
-  expandedIds: Set<number>
-  toggleExpanded: (id: number) => void
+  page: WikiPageNode;
+  basePath: string;
+  activeSlug?: string;
+  childrenMap: Map<number, WikiPageNode[]>;
+  depth: number;
+  onCreatePage?: (parentId?: number) => void;
+  expandedIds: Set<number>;
+  toggleExpanded: (id: number) => void;
 }
 
 function WikiTreeNode({
@@ -147,10 +145,10 @@ function WikiTreeNode({
   expandedIds,
   toggleExpanded,
 }: WikiTreeNodeProps) {
-  const children = childrenMap.get(page.id) || []
-  const hasChildren = children.length > 0
-  const isExpanded = expandedIds.has(page.id)
-  const isActive = activeSlug === page.slug
+  const children = childrenMap.get(page.id) || [];
+  const hasChildren = children.length > 0;
+  const isExpanded = expandedIds.has(page.id);
+  const isActive = activeSlug === page.slug;
 
   return (
     <div>
@@ -162,7 +160,10 @@ function WikiTreeNode({
       >
         {/* Indent guides (VSCode-style vertical lines) */}
         {depth > 0 && (
-          <div className="absolute left-0 top-0 bottom-0 flex" style={{ width: `${depth * 8 + 4}px` }}>
+          <div
+            className="absolute left-0 top-0 bottom-0 flex"
+            style={{ width: `${depth * 8 + 4}px` }}
+          >
             {Array.from({ length: depth }).map((_, i) => (
               <div
                 key={i}
@@ -222,8 +223,8 @@ function WikiTreeNode({
         {onCreatePage && (
           <button
             onClick={(e) => {
-              e.preventDefault()
-              onCreatePage(page.id)
+              e.preventDefault();
+              onCreatePage(page.id);
             }}
             className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-accent transition-opacity flex-shrink-0"
             title="Add subpage"
@@ -252,7 +253,7 @@ function WikiTreeNode({
         </div>
       )}
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -277,49 +278,49 @@ export function WikiSidebar({
   projectId,
 }: WikiSidebarProps) {
   // Note: wikiType and title props kept for backwards compatibility but no longer displayed
-  void _wikiType
-  void _title
+  void _wikiType;
+  void _title;
 
   // Fase 22: Duplicate manager dialog state
-  const [duplicateManagerOpen, setDuplicateManagerOpen] = useState(false)
+  const [duplicateManagerOpen, setDuplicateManagerOpen] = useState(false);
 
   // Track expanded nodes
   const [expandedIds, setExpandedIds] = useState<Set<number>>(() => {
     // Auto-expand parents of active page
-    if (!activeSlug) return new Set()
+    if (!activeSlug) return new Set();
 
-    const activePage = pages.find((p) => p.slug === activeSlug)
-    if (!activePage || !activePage.parentId) return new Set()
+    const activePage = pages.find((p) => p.slug === activeSlug);
+    if (!activePage || !activePage.parentId) return new Set();
 
-    const expanded = new Set<number>()
-    let currentId: number | null = activePage.parentId
+    const expanded = new Set<number>();
+    let currentId: number | null = activePage.parentId;
 
     while (currentId) {
-      expanded.add(currentId)
-      const parent = pages.find((p) => p.id === currentId)
-      currentId = parent?.parentId ?? null
+      expanded.add(currentId);
+      const parent = pages.find((p) => p.id === currentId);
+      currentId = parent?.parentId ?? null;
     }
 
-    return expanded
-  })
+    return expanded;
+  });
 
   const toggleExpanded = (id: number) => {
     setExpandedIds((prev) => {
-      const next = new Set(prev)
+      const next = new Set(prev);
       if (next.has(id)) {
-        next.delete(id)
+        next.delete(id);
       } else {
-        next.add(id)
+        next.add(id);
       }
-      return next
-    })
-  }
+      return next;
+    });
+  };
 
   // Build tree structure
   const { rootPages, childrenMap } = useMemo(
     () => buildTree(pages, showUnpublished),
     [pages, showUnpublished]
-  )
+  );
 
   return (
     <div className="flex flex-col h-full border-r bg-muted/20">
@@ -354,7 +355,8 @@ export function WikiSidebar({
               onClick={onAskWiki}
               title="Ask the Wiki"
               className={cn(
-                !askWikiActive && 'text-violet-600 hover:text-violet-700 hover:bg-violet-50 dark:text-violet-400 dark:hover:bg-violet-900/20'
+                !askWikiActive &&
+                  'text-violet-600 hover:text-violet-700 hover:bg-violet-50 dark:text-violet-400 dark:hover:bg-violet-900/20'
               )}
             >
               <Sparkles className="h-3.5 w-3.5" />
@@ -404,12 +406,7 @@ export function WikiSidebar({
               <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
               <p>No pages yet</p>
               {onCreatePage && (
-                <Button
-                  variant="link"
-                  size="sm"
-                  onClick={() => onCreatePage()}
-                  className="mt-2"
-                >
+                <Button variant="link" size="sm" onClick={() => onCreatePage()} className="mt-2">
                   Create first page
                 </Button>
               )}
@@ -436,9 +433,7 @@ export function WikiSidebar({
       <div className="p-3 border-t text-xs text-muted-foreground">
         {pages.length} page{pages.length !== 1 ? 's' : ''}
         {showUnpublished && (
-          <span className="ml-2">
-            ({pages.filter((p) => p.status === 'DRAFT').length} drafts)
-          </span>
+          <span className="ml-2">({pages.filter((p) => p.status === 'DRAFT').length} drafts)</span>
         )}
       </div>
 
@@ -452,7 +447,7 @@ export function WikiSidebar({
         />
       )}
     </div>
-  )
+  );
 }
 
-export default WikiSidebar
+export default WikiSidebar;

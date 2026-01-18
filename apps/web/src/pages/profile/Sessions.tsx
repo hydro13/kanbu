@@ -8,61 +8,61 @@
  * Task: USER-01 (Task 247), Task 264 - UX improvements
  */
 
-import { useState } from 'react'
-import { ProfileLayout } from '../../components/profile/ProfileLayout'
-import { Button } from '../../components/ui/button'
-import { trpc } from '../../lib/trpc'
+import { useState } from 'react';
+import { ProfileLayout } from '../../components/profile/ProfileLayout';
+import { Button } from '../../components/ui/button';
+import { trpc } from '../../lib/trpc';
 
 // =============================================================================
 // Helper Functions
 // =============================================================================
 
 function formatDateTime(date: Date | string): string {
-  const d = typeof date === 'string' ? new Date(date) : date
+  const d = typeof date === 'string' ? new Date(date) : date;
   return d.toLocaleString('en-US', {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-  })
+  });
 }
 
 function getTimeRemaining(expiresAt: Date | string): string {
-  const expires = typeof expiresAt === 'string' ? new Date(expiresAt) : expiresAt
-  const now = new Date()
-  const diff = expires.getTime() - now.getTime()
+  const expires = typeof expiresAt === 'string' ? new Date(expiresAt) : expiresAt;
+  const now = new Date();
+  const diff = expires.getTime() - now.getTime();
 
-  if (diff <= 0) return 'Expired'
+  if (diff <= 0) return 'Expired';
 
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
 
-  if (days > 0) return `${days}d ${hours}h remaining`
-  if (hours > 0) return `${hours}h remaining`
-  return 'Less than 1h remaining'
+  if (days > 0) return `${days}d ${hours}h remaining`;
+  if (hours > 0) return `${hours}h remaining`;
+  return 'Less than 1h remaining';
 }
 
 function getBrowserName(userAgent: string | null): string {
-  if (!userAgent) return 'Unknown Browser'
-  const ua = userAgent.toLowerCase()
-  if (ua.includes('firefox')) return 'Firefox'
-  if (ua.includes('edg')) return 'Edge'
-  if (ua.includes('chrome')) return 'Chrome'
-  if (ua.includes('safari')) return 'Safari'
-  if (ua.includes('opera')) return 'Opera'
-  return 'Unknown Browser'
+  if (!userAgent) return 'Unknown Browser';
+  const ua = userAgent.toLowerCase();
+  if (ua.includes('firefox')) return 'Firefox';
+  if (ua.includes('edg')) return 'Edge';
+  if (ua.includes('chrome')) return 'Chrome';
+  if (ua.includes('safari')) return 'Safari';
+  if (ua.includes('opera')) return 'Opera';
+  return 'Unknown Browser';
 }
 
 function getOSName(userAgent: string | null): string {
-  if (!userAgent) return 'Unknown OS'
-  const ua = userAgent.toLowerCase()
-  if (ua.includes('windows')) return 'Windows'
-  if (ua.includes('mac')) return 'macOS'
-  if (ua.includes('linux')) return 'Linux'
-  if (ua.includes('android')) return 'Android'
-  if (ua.includes('iphone') || ua.includes('ipad')) return 'iOS'
-  return 'Unknown OS'
+  if (!userAgent) return 'Unknown OS';
+  const ua = userAgent.toLowerCase();
+  if (ua.includes('windows')) return 'Windows';
+  if (ua.includes('mac')) return 'macOS';
+  if (ua.includes('linux')) return 'Linux';
+  if (ua.includes('android')) return 'Android';
+  if (ua.includes('iphone') || ua.includes('ipad')) return 'iOS';
+  return 'Unknown OS';
 }
 
 // =============================================================================
@@ -70,33 +70,33 @@ function getOSName(userAgent: string | null): string {
 // =============================================================================
 
 export function Sessions() {
-  const [revoking, setRevoking] = useState<string | number | null>(null)
+  const [revoking, setRevoking] = useState<string | number | null>(null);
 
-  const utils = trpc.useUtils()
-  const { data: sessions, isLoading: loadingSessions } = trpc.user.getSessions.useQuery()
-  const { data: tokens, isLoading: loadingTokens } = trpc.user.getRememberTokens.useQuery()
+  const utils = trpc.useUtils();
+  const { data: sessions, isLoading: loadingSessions } = trpc.user.getSessions.useQuery();
+  const { data: tokens, isLoading: loadingTokens } = trpc.user.getRememberTokens.useQuery();
 
   const revokeSession = trpc.user.revokeSession.useMutation({
     onSuccess: () => {
-      utils.user.getSessions.invalidate()
-      setRevoking(null)
+      utils.user.getSessions.invalidate();
+      setRevoking(null);
     },
-  })
+  });
 
   const revokeToken = trpc.user.revokeRememberToken.useMutation({
     onSuccess: () => {
-      utils.user.getRememberTokens.invalidate()
-      setRevoking(null)
+      utils.user.getRememberTokens.invalidate();
+      setRevoking(null);
     },
-  })
+  });
 
   const revokeAllSessions = trpc.user.revokeAllSessions.useMutation({
     onSuccess: () => {
-      utils.user.getSessions.invalidate()
+      utils.user.getSessions.invalidate();
     },
-  })
+  });
 
-  const isLoading = loadingSessions || loadingTokens
+  const isLoading = loadingSessions || loadingTokens;
 
   if (isLoading) {
     return (
@@ -105,7 +105,7 @@ export function Sessions() {
           <p className="text-muted-foreground">Loading sessions...</p>
         </div>
       </ProfileLayout>
-    )
+    );
   }
 
   return (
@@ -116,7 +116,9 @@ export function Sessions() {
           <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
             <div>
               <h3 className="text-sm font-semibold text-foreground">Active Sessions</h3>
-              <p className="text-xs text-muted-foreground">Stay logged in across browser restarts</p>
+              <p className="text-xs text-muted-foreground">
+                Stay logged in across browser restarts
+              </p>
             </div>
             {sessions && sessions.length > 0 && (
               <Button
@@ -147,15 +149,17 @@ export function Sessions() {
                       </div>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                         <span className="font-mono">{session.ipAddress || 'Unknown IP'}</span>
-                        <span className="text-green-600 dark:text-green-400">{getTimeRemaining(session.expiresAt)}</span>
+                        <span className="text-green-600 dark:text-green-400">
+                          {getTimeRemaining(session.expiresAt)}
+                        </span>
                       </div>
                     </div>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => {
-                        setRevoking(session.id)
-                        revokeSession.mutate({ sessionId: session.id })
+                        setRevoking(session.id);
+                        revokeSession.mutate({ sessionId: session.id });
                       }}
                       disabled={revoking === session.id}
                       className="h-7 px-2 text-xs"
@@ -189,15 +193,17 @@ export function Sessions() {
                       <div className="font-mono text-sm">{token.tokenPreview}</div>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
                         <span>{formatDateTime(token.createdAt)}</span>
-                        <span className="text-green-600 dark:text-green-400">{getTimeRemaining(token.expiresAt)}</span>
+                        <span className="text-green-600 dark:text-green-400">
+                          {getTimeRemaining(token.expiresAt)}
+                        </span>
                       </div>
                     </div>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => {
-                        setRevoking(token.id)
-                        revokeToken.mutate({ tokenId: token.id })
+                        setRevoking(token.id);
+                        revokeToken.mutate({ tokenId: token.id });
                       }}
                       disabled={revoking === token.id}
                       className="h-7 px-2 text-xs"
@@ -212,7 +218,7 @@ export function Sessions() {
         </div>
       </div>
     </ProfileLayout>
-  )
+  );
 }
 
-export default Sessions
+export default Sessions;

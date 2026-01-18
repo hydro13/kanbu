@@ -9,7 +9,7 @@
  * - Comments
  */
 
-import { definePermissions } from '../registry'
+import { definePermissions } from '../registry';
 
 export const taskPermissions = definePermissions('task', {
   view: {
@@ -156,7 +156,7 @@ export const taskPermissions = definePermissions('task', {
       },
       editAny: {
         name: 'Edit any comment',
-        description: 'Edit any user\'s comments',
+        description: "Edit any user's comments",
         defaultFor: ['MANAGER', 'ADMIN', 'OWNER'],
       },
       delete: {
@@ -166,7 +166,7 @@ export const taskPermissions = definePermissions('task', {
       },
       deleteAny: {
         name: 'Delete any comment',
-        description: 'Delete any user\'s comments',
+        description: "Delete any user's comments",
         defaultFor: ['MANAGER', 'ADMIN', 'OWNER'],
       },
     },
@@ -215,9 +215,9 @@ export const taskPermissions = definePermissions('task', {
       },
       editAny: {
         name: 'Edit any time entry',
-        description: 'Edit any user\'s time entries',
+        description: "Edit any user's time entries",
         defaultFor: ['MANAGER', 'ADMIN', 'OWNER'],
       },
     },
   },
-})
+});

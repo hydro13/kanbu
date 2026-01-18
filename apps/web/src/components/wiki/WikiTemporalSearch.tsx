@@ -12,29 +12,21 @@
  * ===================================================================
  */
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { trpc } from '@/lib/trpc'
-import {
-  Calendar,
-  Search,
-  Clock,
-  FileText,
-  ArrowRight,
-  Loader2,
-  Info,
-} from 'lucide-react'
-import { cn } from '@/lib/utils'
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { trpc } from '@/lib/trpc';
+import { Calendar, Search, Clock, FileText, ArrowRight, Loader2, Info } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 // =============================================================================
 // Types
@@ -42,21 +34,21 @@ import { cn } from '@/lib/utils'
 
 interface WikiTemporalSearchProps {
   /** Whether the dialog is open */
-  open: boolean
+  open: boolean;
   /** Close handler */
-  onClose: () => void
+  onClose: () => void;
   /** Group ID for the wiki (e.g., 'wiki-ws-1') */
-  groupId: string
+  groupId: string;
   /** Callback when a result is selected */
-  onResultSelect?: (result: TemporalSearchResult) => void
+  onResultSelect?: (result: TemporalSearchResult) => void;
 }
 
 interface TemporalSearchResult {
-  nodeId: string
-  name: string
-  type: string
-  score: number
-  pageId?: number
+  nodeId: string;
+  name: string;
+  type: string;
+  score: number;
+  pageId?: number;
 }
 
 // =============================================================================
@@ -64,27 +56,27 @@ interface TemporalSearchResult {
 // =============================================================================
 
 function formatDateForInput(date: Date): string {
-  const year = date.getFullYear()
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${year}-${month}-${day}`
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 function formatTimeForInput(date: Date): string {
-  const hours = String(date.getHours()).padStart(2, '0')
-  const minutes = String(date.getMinutes()).padStart(2, '0')
-  return `${hours}:${minutes}`
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${hours}:${minutes}`;
 }
 
 function combineDateAndTime(dateStr: string, timeStr: string): Date {
-  const dateParts = dateStr.split('-').map(Number)
-  const timeParts = timeStr.split(':').map(Number)
-  const year = dateParts[0] ?? 2026
-  const month = (dateParts[1] ?? 1) - 1
-  const day = dateParts[2] ?? 1
-  const hours = timeParts[0] ?? 0
-  const minutes = timeParts[1] ?? 0
-  return new Date(year, month, day, hours, minutes)
+  const dateParts = dateStr.split('-').map(Number);
+  const timeParts = timeStr.split(':').map(Number);
+  const year = dateParts[0] ?? 2026;
+  const month = (dateParts[1] ?? 1) - 1;
+  const day = dateParts[2] ?? 1;
+  const hours = timeParts[0] ?? 0;
+  const minutes = timeParts[1] ?? 0;
+  return new Date(year, month, day, hours, minutes);
 }
 
 // =============================================================================
@@ -98,13 +90,13 @@ export function WikiTemporalSearch({
   onResultSelect,
 }: WikiTemporalSearchProps) {
   // State
-  const [query, setQuery] = useState('')
-  const [asOfDate, setAsOfDate] = useState(formatDateForInput(new Date()))
-  const [asOfTime, setAsOfTime] = useState(formatTimeForInput(new Date()))
-  const [hasSearched, setHasSearched] = useState(false)
+  const [query, setQuery] = useState('');
+  const [asOfDate, setAsOfDate] = useState(formatDateForInput(new Date()));
+  const [asOfTime, setAsOfTime] = useState(formatTimeForInput(new Date()));
+  const [hasSearched, setHasSearched] = useState(false);
 
   // Build the ISO datetime string
-  const asOfDatetime = combineDateAndTime(asOfDate, asOfTime).toISOString()
+  const asOfDatetime = combineDateAndTime(asOfDate, asOfTime).toISOString();
 
   // Temporal search query
   const searchQuery = trpc.graphiti.temporalSearch.useQuery(
@@ -117,35 +109,35 @@ export function WikiTemporalSearch({
     {
       enabled: hasSearched && query.length >= 2,
     }
-  )
+  );
 
   // Handle search
   const handleSearch = useCallback(() => {
     if (query.length >= 2) {
-      setHasSearched(true)
+      setHasSearched(true);
     }
-  }, [query])
+  }, [query]);
 
   // Handle key press
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      handleSearch()
+      handleSearch();
     }
-  }
+  };
 
   // Handle result click
   const handleResultClick = (result: TemporalSearchResult) => {
-    onResultSelect?.(result)
-    onClose()
-  }
+    onResultSelect?.(result);
+    onClose();
+  };
 
   // Quick date presets
   const setPresetDate = (daysAgo: number) => {
-    const date = new Date()
-    date.setDate(date.getDate() - daysAgo)
-    setAsOfDate(formatDateForInput(date))
-    setAsOfTime('23:59')
-  }
+    const date = new Date();
+    date.setDate(date.getDate() - daysAgo);
+    setAsOfDate(formatDateForInput(date));
+    setAsOfTime('23:59');
+  };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -156,8 +148,8 @@ export function WikiTemporalSearch({
             Temporal Search
           </DialogTitle>
           <DialogDescription>
-            Search the knowledge graph at a specific point in time.
-            "What did we know about X on date Y?"
+            Search the knowledge graph at a specific point in time. "What did we know about X on
+            date Y?"
           </DialogDescription>
         </DialogHeader>
 
@@ -172,8 +164,8 @@ export function WikiTemporalSearch({
                 placeholder="e.g., authentication, Robin, project deadline..."
                 value={query}
                 onChange={(e) => {
-                  setQuery(e.target.value)
-                  setHasSearched(false)
+                  setQuery(e.target.value);
+                  setHasSearched(false);
                 }}
                 onKeyDown={handleKeyDown}
                 className="flex-1"
@@ -194,8 +186,8 @@ export function WikiTemporalSearch({
                 type="date"
                 value={asOfDate}
                 onChange={(e) => {
-                  setAsOfDate(e.target.value)
-                  setHasSearched(false)
+                  setAsOfDate(e.target.value);
+                  setHasSearched(false);
                 }}
                 className="w-40"
               />
@@ -207,8 +199,8 @@ export function WikiTemporalSearch({
                 type="time"
                 value={asOfTime}
                 onChange={(e) => {
-                  setAsOfTime(e.target.value)
-                  setHasSearched(false)
+                  setAsOfTime(e.target.value);
+                  setHasSearched(false);
                 }}
                 className="w-28"
               />
@@ -220,32 +212,20 @@ export function WikiTemporalSearch({
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  setAsOfDate(formatDateForInput(new Date()))
-                  setAsOfTime(formatTimeForInput(new Date()))
-                  setHasSearched(false)
+                  setAsOfDate(formatDateForInput(new Date()));
+                  setAsOfTime(formatTimeForInput(new Date()));
+                  setHasSearched(false);
                 }}
               >
                 Now
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPresetDate(1)}
-              >
+              <Button variant="outline" size="sm" onClick={() => setPresetDate(1)}>
                 Yesterday
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPresetDate(7)}
-              >
+              <Button variant="outline" size="sm" onClick={() => setPresetDate(7)}>
                 Week ago
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setPresetDate(30)}
-              >
+              <Button variant="outline" size="sm" onClick={() => setPresetDate(30)}>
                 Month ago
               </Button>
             </div>
@@ -297,8 +277,8 @@ export function WikiTemporalSearch({
               <div className="space-y-2 pr-4">
                 <p className="text-sm text-muted-foreground mb-3">
                   {searchQuery.data?.results.length} fact
-                  {searchQuery.data?.results.length !== 1 ? 's' : ''} found
-                  as of {new Date(asOfDatetime).toLocaleString()}
+                  {searchQuery.data?.results.length !== 1 ? 's' : ''} found as of{' '}
+                  {new Date(asOfDatetime).toLocaleString()}
                 </p>
                 {searchQuery.data?.results.map((result, index) => (
                   <button
@@ -316,9 +296,7 @@ export function WikiTemporalSearch({
                           <span className="text-xs px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
                             {result.type}
                           </span>
-                          <span className="font-medium truncate">
-                            {result.name}
-                          </span>
+                          <span className="font-medium truncate">{result.name}</span>
                         </div>
                         <p className="text-sm text-muted-foreground line-clamp-2">
                           Score: {(result.score * 100).toFixed(0)}%
@@ -337,13 +315,13 @@ export function WikiTemporalSearch({
         <div className="pt-3 border-t">
           <p className="text-xs text-muted-foreground flex items-center gap-1">
             <Info className="h-3 w-3" />
-            Temporal search shows facts that were valid at the specified time.
-            Facts may have been added or invalidated since then.
+            Temporal search shows facts that were valid at the specified time. Facts may have been
+            added or invalidated since then.
           </p>
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
 
-export default WikiTemporalSearch
+export default WikiTemporalSearch;

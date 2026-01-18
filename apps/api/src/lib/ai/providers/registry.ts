@@ -8,37 +8,37 @@
  * Fase 14.3 - Provider Abstraction Layer
  */
 
-import type { PrismaClient } from '@prisma/client'
+import type { PrismaClient } from '@prisma/client';
 import {
   createProvider,
   createEmbeddingProvider,
   createReasoningProvider,
   createVisionProvider,
   type AiProviderConfigRecord,
-} from './factory'
+} from './factory';
 import {
   type AiProvider,
   type AiCapability,
   type EmbeddingProvider,
   type ReasoningProvider,
   type VisionProvider,
-} from './types'
+} from './types';
 
 // =============================================================================
 // Registry Types
 // =============================================================================
 
 interface ProviderCache {
-  provider: AiProvider
-  configId: number
-  expiresAt: number
+  provider: AiProvider;
+  configId: number;
+  expiresAt: number;
 }
 
 interface ResolveOptions {
-  workspaceId?: number
-  projectId?: number
-  capability?: AiCapability
-  skipCache?: boolean
+  workspaceId?: number;
+  projectId?: number;
+  capability?: AiCapability;
+  skipCache?: boolean;
 }
 
 // =============================================================================
@@ -46,8 +46,8 @@ interface ResolveOptions {
 // =============================================================================
 
 export class ProviderRegistry {
-  private cache = new Map<string, ProviderCache>()
-  private readonly cacheTtlMs = 5 * 60 * 1000 // 5 minutes
+  private cache = new Map<string, ProviderCache>();
+  private readonly cacheTtlMs = 5 * 60 * 1000; // 5 minutes
 
   constructor(private readonly prisma: PrismaClient) {}
 
@@ -60,31 +60,31 @@ export class ProviderRegistry {
    * Resolution order: Project > Workspace > Global
    */
   async getProvider(options: ResolveOptions = {}): Promise<AiProvider | null> {
-    const cacheKey = this.getCacheKey(options)
+    const cacheKey = this.getCacheKey(options);
 
     // Check cache first
     if (!options.skipCache) {
-      const cached = this.cache.get(cacheKey)
+      const cached = this.cache.get(cacheKey);
       if (cached && cached.expiresAt > Date.now()) {
-        return cached.provider
+        return cached.provider;
       }
     }
 
     // Find effective provider from database
-    const config = await this.findEffectiveConfig(options)
+    const config = await this.findEffectiveConfig(options);
     if (!config) {
-      return null
+      return null;
     }
 
     // Create and cache provider
-    const provider = createProvider(config as AiProviderConfigRecord)
+    const provider = createProvider(config as AiProviderConfigRecord);
     this.cache.set(cacheKey, {
       provider,
       configId: config.id,
       expiresAt: Date.now() + this.cacheTtlMs,
-    })
+    });
 
-    return provider
+    return provider;
   }
 
   /**
@@ -96,11 +96,11 @@ export class ProviderRegistry {
     const config = await this.findEffectiveConfig({
       ...options,
       capability: 'EMBEDDING',
-    })
+    });
 
-    if (!config) return null
+    if (!config) return null;
 
-    return createEmbeddingProvider(config as AiProviderConfigRecord)
+    return createEmbeddingProvider(config as AiProviderConfigRecord);
   }
 
   /**
@@ -112,11 +112,11 @@ export class ProviderRegistry {
     const config = await this.findEffectiveConfig({
       ...options,
       capability: 'REASONING',
-    })
+    });
 
-    if (!config) return null
+    if (!config) return null;
 
-    return createReasoningProvider(config as AiProviderConfigRecord)
+    return createReasoningProvider(config as AiProviderConfigRecord);
   }
 
   /**
@@ -128,11 +128,11 @@ export class ProviderRegistry {
     const config = await this.findEffectiveConfig({
       ...options,
       capability: 'VISION',
-    })
+    });
 
-    if (!config) return null
+    if (!config) return null;
 
-    return createVisionProvider(config as AiProviderConfigRecord)
+    return createVisionProvider(config as AiProviderConfigRecord);
   }
 
   // ===========================================================================
@@ -143,25 +143,23 @@ export class ProviderRegistry {
    * Get a provider with automatic fallback if primary fails
    * Order: Primary (from context) > Fallback providers by priority
    */
-  async getProviderWithFallback(
-    options: ResolveOptions = {}
-  ): Promise<AiProvider | null> {
-    const configs = await this.findAllAvailableConfigs(options)
+  async getProviderWithFallback(options: ResolveOptions = {}): Promise<AiProvider | null> {
+    const configs = await this.findAllAvailableConfigs(options);
 
     for (const config of configs) {
       try {
-        const provider = createProvider(config as AiProviderConfigRecord)
-        const testResult = await provider.testConnection()
+        const provider = createProvider(config as AiProviderConfigRecord);
+        const testResult = await provider.testConnection();
 
         if (testResult.success) {
-          return provider
+          return provider;
         }
       } catch {
         // Continue to next provider
       }
     }
 
-    return null
+    return null;
   }
 
   // ===========================================================================
@@ -172,7 +170,7 @@ export class ProviderRegistry {
    * Clear all cached providers
    */
   clearCache(): void {
-    this.cache.clear()
+    this.cache.clear();
   }
 
   /**
@@ -181,7 +179,7 @@ export class ProviderRegistry {
   invalidateConfig(configId: number): void {
     for (const [key, value] of this.cache.entries()) {
       if (value.configId === configId) {
-        this.cache.delete(key)
+        this.cache.delete(key);
       }
     }
   }
@@ -190,10 +188,10 @@ export class ProviderRegistry {
    * Clear expired cache entries
    */
   cleanExpiredCache(): void {
-    const now = Date.now()
+    const now = Date.now();
     for (const [key, value] of this.cache.entries()) {
       if (value.expiresAt <= now) {
-        this.cache.delete(key)
+        this.cache.delete(key);
       }
     }
   }
@@ -203,7 +201,7 @@ export class ProviderRegistry {
   // ===========================================================================
 
   private getCacheKey(options: ResolveOptions): string {
-    return `${options.projectId || 'none'}-${options.workspaceId || 'none'}-${options.capability || 'any'}`
+    return `${options.projectId || 'none'}-${options.workspaceId || 'none'}-${options.capability || 'any'}`;
   }
 
   /**
@@ -213,20 +211,20 @@ export class ProviderRegistry {
   private async findEffectiveConfig(
     options: ResolveOptions
   ): Promise<AiProviderConfigRecord | null> {
-    const { workspaceId, projectId, capability } = options
+    const { workspaceId, projectId, capability } = options;
 
     const baseWhere = {
       isActive: true,
       ...(capability && { capabilities: { has: capability } }),
-    }
+    };
 
     // 1. Check project-level config
     if (projectId) {
       const projectConfig = await this.prisma.aiProviderConfig.findFirst({
         where: { ...baseWhere, projectId },
         orderBy: { priority: 'desc' },
-      })
-      if (projectConfig) return projectConfig as unknown as AiProviderConfigRecord
+      });
+      if (projectConfig) return projectConfig as unknown as AiProviderConfigRecord;
     }
 
     // 2. Check workspace-level config
@@ -234,17 +232,17 @@ export class ProviderRegistry {
       const workspaceConfig = await this.prisma.aiProviderConfig.findFirst({
         where: { ...baseWhere, workspaceId, projectId: null },
         orderBy: { priority: 'desc' },
-      })
-      if (workspaceConfig) return workspaceConfig as unknown as AiProviderConfigRecord
+      });
+      if (workspaceConfig) return workspaceConfig as unknown as AiProviderConfigRecord;
     }
 
     // 3. Check global config
     const globalConfig = await this.prisma.aiProviderConfig.findFirst({
       where: { ...baseWhere, isGlobal: true },
       orderBy: { priority: 'desc' },
-    })
+    });
 
-    return globalConfig as unknown as AiProviderConfigRecord | null
+    return globalConfig as unknown as AiProviderConfigRecord | null;
   }
 
   /**
@@ -253,22 +251,22 @@ export class ProviderRegistry {
   private async findAllAvailableConfigs(
     options: ResolveOptions
   ): Promise<AiProviderConfigRecord[]> {
-    const { workspaceId, projectId, capability } = options
+    const { workspaceId, projectId, capability } = options;
 
     const baseWhere = {
       isActive: true,
       ...(capability && { capabilities: { has: capability } }),
-    }
+    };
 
-    const configs: AiProviderConfigRecord[] = []
+    const configs: AiProviderConfigRecord[] = [];
 
     // 1. Project-level configs
     if (projectId) {
       const projectConfigs = await this.prisma.aiProviderConfig.findMany({
         where: { ...baseWhere, projectId },
         orderBy: { priority: 'desc' },
-      })
-      configs.push(...(projectConfigs as unknown as AiProviderConfigRecord[]))
+      });
+      configs.push(...(projectConfigs as unknown as AiProviderConfigRecord[]));
     }
 
     // 2. Workspace-level configs
@@ -276,18 +274,18 @@ export class ProviderRegistry {
       const workspaceConfigs = await this.prisma.aiProviderConfig.findMany({
         where: { ...baseWhere, workspaceId, projectId: null },
         orderBy: { priority: 'desc' },
-      })
-      configs.push(...(workspaceConfigs as unknown as AiProviderConfigRecord[]))
+      });
+      configs.push(...(workspaceConfigs as unknown as AiProviderConfigRecord[]));
     }
 
     // 3. Global configs
     const globalConfigs = await this.prisma.aiProviderConfig.findMany({
       where: { ...baseWhere, isGlobal: true },
       orderBy: { priority: 'desc' },
-    })
-    configs.push(...(globalConfigs as unknown as AiProviderConfigRecord[]))
+    });
+    configs.push(...(globalConfigs as unknown as AiProviderConfigRecord[]));
 
-    return configs
+    return configs;
   }
 }
 
@@ -295,22 +293,22 @@ export class ProviderRegistry {
 // Singleton Instance
 // =============================================================================
 
-let registryInstance: ProviderRegistry | null = null
+let registryInstance: ProviderRegistry | null = null;
 
 /**
  * Get or create the singleton provider registry
  */
 export function getProviderRegistry(prisma: PrismaClient): ProviderRegistry {
   if (!registryInstance) {
-    registryInstance = new ProviderRegistry(prisma)
+    registryInstance = new ProviderRegistry(prisma);
   }
-  return registryInstance
+  return registryInstance;
 }
 
 /**
  * Reset the singleton (useful for testing)
  */
 export function resetProviderRegistry(): void {
-  registryInstance?.clearCache()
-  registryInstance = null
+  registryInstance?.clearCache();
+  registryInstance = null;
 }

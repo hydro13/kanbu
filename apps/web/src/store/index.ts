@@ -24,13 +24,13 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { configureStore } from '@reduxjs/toolkit'
-import { useDispatch, useSelector, type TypedUseSelectorHook } from 'react-redux'
-import authReducer from './authSlice'
-import workspaceReducer from './workspaceSlice'
-import projectReducer from './projectSlice'
-import boardReducer from './boardSlice'
-import undoReducer from './undoSlice'
+import { configureStore } from '@reduxjs/toolkit';
+import { useDispatch, useSelector, type TypedUseSelectorHook } from 'react-redux';
+import authReducer from './authSlice';
+import workspaceReducer from './workspaceSlice';
+import projectReducer from './projectSlice';
+import boardReducer from './boardSlice';
+import undoReducer from './undoSlice';
 
 export const store = configureStore({
   reducer: {
@@ -48,10 +48,10 @@ export const store = configureStore({
       },
     }),
   devTools: import.meta.env.DEV,
-})
+});
 
-export type RootState = ReturnType<typeof store.getState>
-export type AppDispatch = typeof store.dispatch
+export type RootState = ReturnType<typeof store.getState>;
+export type AppDispatch = typeof store.dispatch;
 
-export const useAppDispatch: () => AppDispatch = useDispatch
-export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector
+export const useAppDispatch: () => AppDispatch = useDispatch;
+export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;

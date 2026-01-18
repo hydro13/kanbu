@@ -1,7 +1,9 @@
 # Dashboard Roadmap V2
 
 ## Version: 2.7.0
+
 ## Date: 2026-01-11
+
 ## Based on: IDEAAL-DASHBOARD-ONTWERP-V2.md
 
 ---
@@ -12,6 +14,7 @@ This document is the **implementation roadmap** for the container-aware dashboar
 Based on the design in [IDEAAL-DASHBOARD-ONTWERP-V2.md](./IDEAAL-DASHBOARD-ONTWERP-V2.md).
 
 **Important documents:**
+
 - [IDEAAL-DASHBOARD-ONTWERP-V2.md](./IDEAAL-DASHBOARD-ONTWERP-V2.md) - The complete UI/UX design
 - [KANBU-STRUCTUUR.md](./KANBU-STRUCTUUR.md) - Container hierarchy definition
 - [ROADMAP.md](./ROADMAP.md) - Old roadmap (v1, deprecated)
@@ -22,41 +25,41 @@ Based on the design in [IDEAAL-DASHBOARD-ONTWERP-V2.md](./IDEAAL-DASHBOARD-ONTWE
 
 ### Implementation Progress
 
-| Phase | Status | Progress |
-|-------|--------|----------|
-| **Phase 0** | ✅ COMPLETE | Foundation, bug fixes |
-| **Phase 1** | ✅ COMPLETE | 6/6 items complete |
-| **Phase 2** | ✅ COMPLETE | 2/3 items (My Tasks already good) |
-| **Phase 3** | ✅ COMPLETE | 2/2 items complete |
+| Phase       | Status      | Progress                            |
+| ----------- | ----------- | ----------------------------------- |
+| **Phase 0** | ✅ COMPLETE | Foundation, bug fixes               |
+| **Phase 1** | ✅ COMPLETE | 6/6 items complete                  |
+| **Phase 2** | ✅ COMPLETE | 2/3 items (My Tasks already good)   |
+| **Phase 3** | ✅ COMPLETE | 2/2 items complete                  |
 | **Phase 4** | ✅ COMPLETE | 5/5 items complete (all sub-phases) |
 
 ### What's Already There?
 
-| Component | Status | Notes |
-|-----------|--------|-------|
-| **BaseLayout** | ✅ Complete | Header, sidebar slot, resize, collapse |
-| **DashboardSidebar** | ✅ Complete | Personal, Navigation, Notes sections |
-| **ProjectSidebar** | ✅ Complete | ACL-aware, 4 sections, 24 menu items |
-| **WorkspaceSidebar** | ✅ Complete | 6 modules, back link, workspace header |
-| **WorkspaceLayout** | ✅ Complete | Container wrapper with WorkspaceSidebar |
-| **Dashboard Overview** | ✅ Complete | Stats, Today, Favorites, Workspaces |
-| **My Tasks** | ✅ Complete | Table with filters |
-| **My Subtasks** | ✅ Complete | Subtasks overview |
-| **Notes Page** | ✅ Complete | Route + page working |
-| **Workspace Page** | ✅ Complete | Uses WorkspaceLayout |
-| **Workspace Members** | ✅ Complete | Grouped by role, stats cards |
-| **Workspace Statistics** | ✅ Complete | Aggregated stats, per-project breakdown |
-| **Workspace Settings** | ✅ Basic | Via WorkspaceSettingsWrapper |
-| **Breadcrumbs** | ✅ Complete | Container-aware hierarchy |
-| **Inbox Page** | ✅ Complete | Notifications page with grouping |
-| **Favorites** | ✅ Complete | Sidebar + star buttons + overview widget |
-| **Workspace Wiki** | ✅ Complete | Hierarchical pages, CRUD |
-| **Workspace Groups** | ✅ Complete | Project categorization |
-| **ProductivityWidget** | ✅ Complete | Velocity chart, top projects |
-| **CommandPalette** | ✅ Complete | Context-aware, global search |
-| **ShortcutsModal** | ✅ Complete | Navigation shortcuts added |
-| **useNavigationContext** | ✅ Complete | Context detection hook |
-| **ContextMenu** | ✅ Complete | Reusable base + Project + Favorite menus |
+| Component                | Status      | Notes                                    |
+| ------------------------ | ----------- | ---------------------------------------- |
+| **BaseLayout**           | ✅ Complete | Header, sidebar slot, resize, collapse   |
+| **DashboardSidebar**     | ✅ Complete | Personal, Navigation, Notes sections     |
+| **ProjectSidebar**       | ✅ Complete | ACL-aware, 4 sections, 24 menu items     |
+| **WorkspaceSidebar**     | ✅ Complete | 6 modules, back link, workspace header   |
+| **WorkspaceLayout**      | ✅ Complete | Container wrapper with WorkspaceSidebar  |
+| **Dashboard Overview**   | ✅ Complete | Stats, Today, Favorites, Workspaces      |
+| **My Tasks**             | ✅ Complete | Table with filters                       |
+| **My Subtasks**          | ✅ Complete | Subtasks overview                        |
+| **Notes Page**           | ✅ Complete | Route + page working                     |
+| **Workspace Page**       | ✅ Complete | Uses WorkspaceLayout                     |
+| **Workspace Members**    | ✅ Complete | Grouped by role, stats cards             |
+| **Workspace Statistics** | ✅ Complete | Aggregated stats, per-project breakdown  |
+| **Workspace Settings**   | ✅ Basic    | Via WorkspaceSettingsWrapper             |
+| **Breadcrumbs**          | ✅ Complete | Container-aware hierarchy                |
+| **Inbox Page**           | ✅ Complete | Notifications page with grouping         |
+| **Favorites**            | ✅ Complete | Sidebar + star buttons + overview widget |
+| **Workspace Wiki**       | ✅ Complete | Hierarchical pages, CRUD                 |
+| **Workspace Groups**     | ✅ Complete | Project categorization                   |
+| **ProductivityWidget**   | ✅ Complete | Velocity chart, top projects             |
+| **CommandPalette**       | ✅ Complete | Context-aware, global search             |
+| **ShortcutsModal**       | ✅ Complete | Navigation shortcuts added               |
+| **useNavigationContext** | ✅ Complete | Context detection hook                   |
+| **ContextMenu**          | ✅ Complete | Reusable base + Project + Favorite menus |
 
 ---
 
@@ -118,13 +121,13 @@ Based on the design in [IDEAAL-DASHBOARD-ONTWERP-V2.md](./IDEAAL-DASHBOARD-ONTWE
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-| Phase | Name | Effort | Status | Progress |
-|-------|------|--------|--------|----------|
-| 0 | Foundation | Low | ✅ COMPLETE | 3/3 |
-| 1 | Workspace Navigation | High | ✅ COMPLETE | 6/6 |
-| 2 | Personal Enhancements | Medium | ✅ COMPLETE | 2/3 |
-| 3 | Enhanced Features | High | ✅ COMPLETE | 2/2 |
-| 4 | Polish & UX | Medium | ✅ COMPLETE | 5/5 |
+| Phase | Name                  | Effort | Status      | Progress |
+| ----- | --------------------- | ------ | ----------- | -------- |
+| 0     | Foundation            | Low    | ✅ COMPLETE | 3/3      |
+| 1     | Workspace Navigation  | High   | ✅ COMPLETE | 6/6      |
+| 2     | Personal Enhancements | Medium | ✅ COMPLETE | 2/3      |
+| 3     | Enhanced Features     | High   | ✅ COMPLETE | 2/2      |
+| 4     | Polish & UX           | Medium | ✅ COMPLETE | 5/5      |
 
 ---
 
@@ -152,11 +155,11 @@ Fix critical bugs and prepare the foundation for container-aware navigation.
 
 ### Files
 
-| File | Action |
-|------|--------|
-| `pages/dashboard/NotesPage.tsx` | Created |
-| `pages/dashboard/index.ts` | Export added |
-| `App.tsx` | Route added |
+| File                            | Action       |
+| ------------------------------- | ------------ |
+| `pages/dashboard/NotesPage.tsx` | Created      |
+| `pages/dashboard/index.ts`      | Export added |
+| `App.tsx`                       | Route added  |
 
 ---
 
@@ -173,11 +176,11 @@ Fix critical bugs and prepare the foundation for container-aware navigation.
 
 ### Files
 
-| File | Action |
-|------|--------|
-| `components/layout/WorkspaceSidebar.tsx` | Created |
-| `components/layout/WorkspaceLayout.tsx` | Created |
-| `pages/WorkspacePage.tsx` | Modified |
+| File                                     | Action   |
+| ---------------------------------------- | -------- |
+| `components/layout/WorkspaceSidebar.tsx` | Created  |
+| `components/layout/WorkspaceLayout.tsx`  | Created  |
+| `pages/WorkspacePage.tsx`                | Modified |
 
 ---
 
@@ -194,8 +197,8 @@ Fix critical bugs and prepare the foundation for container-aware navigation.
 
 ### Files
 
-| File | Action |
-|------|--------|
+| File                      | Action   |
+| ------------------------- | -------- |
 | `hooks/useBreadcrumbs.ts` | Extended |
 
 ---
@@ -226,10 +229,10 @@ Implement complete WorkspaceSidebar and workspace-level pages.
 
 ### Files
 
-| File | Action |
-|------|--------|
-| `components/layout/WorkspaceSidebar.tsx` | Created |
-| `components/layout/index.ts` | Export added |
+| File                                     | Action       |
+| ---------------------------------------- | ------------ |
+| `components/layout/WorkspaceSidebar.tsx` | Created      |
+| `components/layout/index.ts`             | Export added |
 
 ---
 
@@ -250,11 +253,11 @@ Implement complete WorkspaceSidebar and workspace-level pages.
 
 ### Files
 
-| File | Action |
-|------|--------|
-| `pages/workspace/WorkspaceMembersPage.tsx` | Created |
-| `pages/workspace/index.ts` | Export added |
-| `App.tsx` | Route added |
+| File                                       | Action       |
+| ------------------------------------------ | ------------ |
+| `pages/workspace/WorkspaceMembersPage.tsx` | Created      |
+| `pages/workspace/index.ts`                 | Export added |
+| `App.tsx`                                  | Route added  |
 
 ---
 
@@ -274,11 +277,11 @@ Implement complete WorkspaceSidebar and workspace-level pages.
 
 ### Files
 
-| File | Action |
-|------|--------|
-| `pages/workspace/WorkspaceStatisticsPage.tsx` | Created |
-| `pages/workspace/index.ts` | Export added |
-| `App.tsx` | Route added |
+| File                                          | Action       |
+| --------------------------------------------- | ------------ |
+| `pages/workspace/WorkspaceStatisticsPage.tsx` | Created      |
+| `pages/workspace/index.ts`                    | Export added |
+| `App.tsx`                                     | Route added  |
 
 ---
 
@@ -295,11 +298,11 @@ Implement complete WorkspaceSidebar and workspace-level pages.
 
 ### Files
 
-| File | Action |
-|------|--------|
-| `pages/workspace/WorkspaceSettingsWrapper.tsx` | Created |
-| `pages/workspace/index.ts` | Export added |
-| `App.tsx` | Route added |
+| File                                           | Action       |
+| ---------------------------------------------- | ------------ |
+| `pages/workspace/WorkspaceSettingsWrapper.tsx` | Created      |
+| `pages/workspace/index.ts`                     | Export added |
+| `App.tsx`                                      | Route added  |
 
 ---
 
@@ -324,14 +327,14 @@ Implement complete WorkspaceSidebar and workspace-level pages.
 
 ### Files
 
-| File | Action |
-|------|--------|
-| `packages/shared/prisma/schema.prisma` | WorkspaceWikiPage model added |
-| `apps/api/src/trpc/procedures/workspaceWiki.ts` | New router |
-| `apps/api/src/trpc/index.ts` | Router registered |
-| `pages/workspace/WorkspaceWikiPage.tsx` | Created |
-| `pages/workspace/index.ts` | Export added |
-| `App.tsx` | Routes added |
+| File                                            | Action                        |
+| ----------------------------------------------- | ----------------------------- |
+| `packages/shared/prisma/schema.prisma`          | WorkspaceWikiPage model added |
+| `apps/api/src/trpc/procedures/workspaceWiki.ts` | New router                    |
+| `apps/api/src/trpc/index.ts`                    | Router registered             |
+| `pages/workspace/WorkspaceWikiPage.tsx`         | Created                       |
+| `pages/workspace/index.ts`                      | Export added                  |
+| `App.tsx`                                       | Routes added                  |
 
 ---
 
@@ -355,13 +358,13 @@ Implement complete WorkspaceSidebar and workspace-level pages.
 
 ### Files
 
-| File | Action |
-|------|--------|
-| `apps/api/src/trpc/procedures/projectGroup.ts` | New router |
-| `apps/api/src/trpc/index.ts` | Router registered |
-| `pages/workspace/WorkspaceGroupsPage.tsx` | Created |
-| `pages/workspace/index.ts` | Export added |
-| `App.tsx` | Route added |
+| File                                           | Action            |
+| ---------------------------------------------- | ----------------- |
+| `apps/api/src/trpc/procedures/projectGroup.ts` | New router        |
+| `apps/api/src/trpc/index.ts`                   | Router registered |
+| `pages/workspace/WorkspaceGroupsPage.tsx`      | Created           |
+| `pages/workspace/index.ts`                     | Export added      |
+| `App.tsx`                                      | Route added       |
 
 ---
 
@@ -374,6 +377,7 @@ Implement complete WorkspaceSidebar and workspace-level pages.
 **Problem:** Clicking on workspace card went to `/workspaces?workspace=ID` instead of `/workspace/slug`
 
 **Solution:**
+
 - Modified `ProjectList.tsx`: Link to `/workspace/${workspace.slug}`
 - Modified settings button: Navigate to `/workspace/${workspace.slug}/settings`
 
@@ -425,13 +429,13 @@ Improve the personal (dashboard) section with favorites and better overview.
 
 ### Files
 
-| File | Action |
-|------|--------|
-| `packages/shared/prisma/schema.prisma` | UserFavorite model |
-| `apps/api/src/trpc/procedures/favorite.ts` | New router |
-| `apps/api/src/trpc/index.ts` | Router registered |
-| `components/dashboard/DashboardSidebar.tsx` | Favorites section |
-| `components/project/ProjectCard.tsx` | Star button |
+| File                                        | Action             |
+| ------------------------------------------- | ------------------ |
+| `packages/shared/prisma/schema.prisma`      | UserFavorite model |
+| `apps/api/src/trpc/procedures/favorite.ts`  | New router         |
+| `apps/api/src/trpc/index.ts`                | Router registered  |
+| `components/dashboard/DashboardSidebar.tsx` | Favorites section  |
+| `components/project/ProjectCard.tsx`        | Star button        |
 
 ---
 
@@ -455,8 +459,8 @@ Improve the personal (dashboard) section with favorites and better overview.
 
 ### Files
 
-| File | Action |
-|------|--------|
+| File                                    | Action        |
+| --------------------------------------- | ------------- |
 | `pages/dashboard/DashboardOverview.tsx` | Fully updated |
 
 ---
@@ -498,12 +502,12 @@ My Tasks page already worked correctly with filters and grouping. No changes nee
 
 ### Files
 
-| File | Action |
-|------|--------|
-| `pages/dashboard/InboxPage.tsx` | Created |
-| `pages/dashboard/index.ts` | Export added |
+| File                                        | Action                   |
+| ------------------------------------------- | ------------------------ |
+| `pages/dashboard/InboxPage.tsx`             | Created                  |
+| `pages/dashboard/index.ts`                  | Export added             |
 | `components/dashboard/DashboardSidebar.tsx` | Inbox link + badge added |
-| `App.tsx` | Route added |
+| `App.tsx`                                   | Route added              |
 
 ### Existing Infrastructure (reused)
 
@@ -531,12 +535,12 @@ My Tasks page already worked correctly with filters and grouping. No changes nee
 
 ### Files
 
-| File | Action |
-|------|--------|
-| `api/src/trpc/procedures/user.ts` | getMyProductivity endpoint added |
-| `components/dashboard/ProductivityWidget.tsx` | Created |
-| `components/dashboard/index.ts` | Export added |
-| `pages/dashboard/DashboardOverview.tsx` | Widget added in 3-column grid |
+| File                                          | Action                           |
+| --------------------------------------------- | -------------------------------- |
+| `api/src/trpc/procedures/user.ts`             | getMyProductivity endpoint added |
+| `components/dashboard/ProductivityWidget.tsx` | Created                          |
+| `components/dashboard/index.ts`               | Export added                     |
+| `pages/dashboard/DashboardOverview.tsx`       | Widget added in 3-column grid    |
 
 ### Existing Infrastructure (reused)
 
@@ -576,10 +580,10 @@ My Tasks page already worked correctly with filters and grouping. No changes nee
 
 ### Files
 
-| File | Action |
-|------|--------|
-| `lib/shortcuts.ts` | Extended with new categories |
-| `components/common/ShortcutsModal.tsx` | Filters empty groups |
+| File                                   | Action                       |
+| -------------------------------------- | ---------------------------- |
+| `lib/shortcuts.ts`                     | Extended with new categories |
+| `components/common/ShortcutsModal.tsx` | Filters empty groups         |
 
 ---
 
@@ -618,13 +622,13 @@ My Tasks page already worked correctly with filters and grouping. No changes nee
 
 ### Files
 
-| File | Action |
-|------|--------|
-| `components/common/ContextMenu.tsx` | New - reusable base component |
-| `components/project/ProjectContextMenu.tsx` | New - project-specific menu |
-| `components/dashboard/FavoriteContextMenu.tsx` | New - favorites-specific menu |
-| `components/project/ProjectCard.tsx` | Added context menu |
-| `components/dashboard/DashboardSidebar.tsx` | Added context menu for favorites |
+| File                                           | Action                           |
+| ---------------------------------------------- | -------------------------------- |
+| `components/common/ContextMenu.tsx`            | New - reusable base component    |
+| `components/project/ProjectContextMenu.tsx`    | New - project-specific menu      |
+| `components/dashboard/FavoriteContextMenu.tsx` | New - favorites-specific menu    |
+| `components/project/ProjectCard.tsx`           | Added context menu               |
+| `components/dashboard/DashboardSidebar.tsx`    | Added context menu for favorites |
 
 ---
 
@@ -655,10 +659,10 @@ My Tasks page already worked correctly with filters and grouping. No changes nee
 
 ### Files
 
-| File | Action |
-|------|--------|
-| `hooks/useNavigationContext.ts` | New - context detection |
-| `components/command/CommandPalette.tsx` | Completely redesigned |
+| File                                    | Action                  |
+| --------------------------------------- | ----------------------- |
+| `hooks/useNavigationContext.ts`         | New - context detection |
+| `components/command/CommandPalette.tsx` | Completely redesigned   |
 
 ---
 
@@ -679,28 +683,28 @@ Drag & Drop was already fully implemented before this roadmap item was added. Th
 
 ### Features
 
-| Feature | Status |
-|---------|--------|
-| Drag between columns | ✅ |
-| Drag between swimlanes | ✅ |
-| Reorder within column | ✅ |
-| Visual feedback (overlay, drop zones) | ✅ |
-| WIP limit enforcement | ✅ |
-| Touch support | ✅ |
-| Keyboard navigation | ✅ |
-| Optimistic updates | ✅ |
-| Error handling with rollback | ✅ |
-| Real-time sync | ✅ |
+| Feature                               | Status |
+| ------------------------------------- | ------ |
+| Drag between columns                  | ✅     |
+| Drag between swimlanes                | ✅     |
+| Reorder within column                 | ✅     |
+| Visual feedback (overlay, drop zones) | ✅     |
+| WIP limit enforcement                 | ✅     |
+| Touch support                         | ✅     |
+| Keyboard navigation                   | ✅     |
+| Optimistic updates                    | ✅     |
+| Error handling with rollback          | ✅     |
+| Real-time sync                        | ✅     |
 
 ### Files
 
-| File | Description |
-|------|-------------|
-| `components/board/DndContext.tsx` | Drag context, sensors, position calculation |
-| `components/board/DraggableTask.tsx` | Draggable wrapper for TaskCard |
-| `components/board/DroppableColumn.tsx` | Drop zone with WIP feedback |
-| `hooks/useDragDrop.ts` | API mutation with optimistic updates |
-| `lib/dnd-utils.ts` | Helper functions for IDs and positions |
+| File                                   | Description                                 |
+| -------------------------------------- | ------------------------------------------- |
+| `components/board/DndContext.tsx`      | Drag context, sensors, position calculation |
+| `components/board/DraggableTask.tsx`   | Draggable wrapper for TaskCard              |
+| `components/board/DroppableColumn.tsx` | Drop zone with WIP feedback                 |
+| `hooks/useDragDrop.ts`                 | API mutation with optimistic updates        |
+| `lib/dnd-utils.ts`                     | Helper functions for IDs and positions      |
 
 ---
 
@@ -718,6 +722,7 @@ Implement drag & drop for reordering items in the sidebar:
 ### What Was Done
 
 #### Favorites Drag & Drop (Complete)
+
 - `@dnd-kit/sortable` integrated in DashboardSidebar
 - `SortableFavoriteItem` component with drag handle (grip icon)
 - Optimistic updates with rollback on errors
@@ -725,6 +730,7 @@ Implement drag & drop for reordering items in the sidebar:
 - Visual feedback: opacity during drag, cursor-grab on handle
 
 #### Projects in Groups Drag & Drop (Complete)
+
 - `@dnd-kit/sortable` integrated in WorkspaceGroupsPage
 - `SortableProjectItem` component with drag handle (grip icon)
 - Optimistic updates with `isReordering` state for sync control
@@ -734,10 +740,10 @@ Implement drag & drop for reordering items in the sidebar:
 
 ### Files
 
-| File | Status | Change |
-|------|--------|--------|
-| `components/dashboard/DashboardSidebar.tsx` | ✅ | Drag & drop for favorites |
-| `pages/workspace/WorkspaceGroupsPage.tsx` | ✅ | Drag & drop for projects in groups |
+| File                                        | Status | Change                             |
+| ------------------------------------------- | ------ | ---------------------------------- |
+| `components/dashboard/DashboardSidebar.tsx` | ✅     | Drag & drop for favorites          |
+| `pages/workspace/WorkspaceGroupsPage.tsx`   | ✅     | Drag & drop for projects in groups |
 
 ---
 
@@ -759,8 +765,8 @@ Implement drag & drop for reordering items in the sidebar:
 
 ### Modified Files
 
-| File | Change |
-|------|--------|
+| File                                      | Change                                 |
+| ----------------------------------------- | -------------------------------------- |
 | `pages/workspace/WorkspaceGroupsPage.tsx` | Drag & drop for projects within groups |
 
 ---
@@ -792,17 +798,17 @@ Implement drag & drop for reordering items in the sidebar:
 
 ### New Files
 
-| File | Description |
-|------|-------------|
-| `components/common/ContextMenu.tsx` | Reusable context menu base |
-| `components/project/ProjectContextMenu.tsx` | Project-specific menu |
-| `components/dashboard/FavoriteContextMenu.tsx` | Favorites-specific menu |
+| File                                           | Description                |
+| ---------------------------------------------- | -------------------------- |
+| `components/common/ContextMenu.tsx`            | Reusable context menu base |
+| `components/project/ProjectContextMenu.tsx`    | Project-specific menu      |
+| `components/dashboard/FavoriteContextMenu.tsx` | Favorites-specific menu    |
 
 ### Modified Files
 
-| File | Change |
-|------|--------|
-| `components/project/ProjectCard.tsx` | Added context menu |
+| File                                        | Change                           |
+| ------------------------------------------- | -------------------------------- |
+| `components/project/ProjectCard.tsx`        | Added context menu               |
 | `components/dashboard/DashboardSidebar.tsx` | Added context menu for favorites |
 
 ---
@@ -826,17 +832,17 @@ Implement drag & drop for reordering items in the sidebar:
 
 ### New Files
 
-| File | Description |
-|------|-------------|
+| File                            | Description            |
+| ------------------------------- | ---------------------- |
 | `hooks/useNavigationContext.ts` | Context detection hook |
 
 ### Modified Files
 
-| File | Change |
-|------|--------|
-| `lib/shortcuts.ts` | New categories, chord shortcuts |
-| `components/command/CommandPalette.tsx` | Completely redesigned |
-| `components/common/ShortcutsModal.tsx` | Filters empty groups |
+| File                                    | Change                          |
+| --------------------------------------- | ------------------------------- |
+| `lib/shortcuts.ts`                      | New categories, chord shortcuts |
+| `components/command/CommandPalette.tsx` | Completely redesigned           |
+| `components/common/ShortcutsModal.tsx`  | Filters empty groups            |
 
 ---
 

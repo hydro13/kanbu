@@ -36,12 +36,12 @@ The GitHub connector uses a **two-tier architecture** to separate configuration 
 
 ### Why Two Levels?
 
-| Aspect | Admin Level | Project Level |
-|--------|--------------|----------------|
-| **GitHub App Installation** | Install once per org/user | Select repo from installation |
-| **User Mapping** | Centrally manage for all projects | Automatically used during sync |
-| **Overview** | All linked repos in workspace | Only own project repo |
-| **Permissions** | Workspace P permission | Project P permission |
+| Aspect                      | Admin Level                       | Project Level                  |
+| --------------------------- | --------------------------------- | ------------------------------ |
+| **GitHub App Installation** | Install once per org/user         | Select repo from installation  |
+| **User Mapping**            | Centrally manage for all projects | Automatically used during sync |
+| **Overview**                | All linked repos in workspace     | Only own project repo          |
+| **Permissions**             | Workspace P permission            | Project P permission           |
 
 ## Objectives
 
@@ -64,11 +64,13 @@ The GitHub connector uses a **two-tier architecture** to separate configuration 
 > **MANDATORY:** For each completed phase, the following checklist MUST be completed before marking the phase as "COMPLETE".
 
 ### 1. Code Implementation
+
 - [ ] All planned features implemented
 - [ ] TypeScript types created/updated
 - [ ] Database schema (if applicable) synchronized
 
 ### 2. Tests ⚠️ MANDATORY
+
 - [ ] **Unit tests** for pure logic functions
 - [ ] **Type tests** for new TypeScript types/interfaces
 - [ ] **Validation tests** for input validation and constraints
@@ -83,33 +85,39 @@ The GitHub connector uses a **two-tier architecture** to separate configuration 
 | `@kanbu/api` | `src/services/__tests__/*.test.ts` | Service integration tests |
 
 ### 3. Documentation Updates
+
 - [ ] `docs/Github-connector/ROADMAP.md` - Phase status → ✅ COMPLETE
 - [ ] `docs/Github-connector/ARCHITECTURE.md` - Update technical details if needed
 - [ ] `docs/Github-connector/README.md` - Update quick reference
 
 ### 4. ACL Integration (if UI features)
+
 - [ ] Register new features in `packages/shared/prisma/seed-features.ts`
 - [ ] Document permission requirements in `docs/ACL/ROADMAP.md`
 - [ ] Implement Feature Access Control hooks (`useProjectFeatureAccess`, etc.)
 - [ ] Add sidebar menu items with ACL checks
 
 ### 5. MCP Tools (if applicable)
+
 - [ ] Add new tools to `packages/mcp-server/src/tools/github.ts`
 - [ ] Document tools in `docs/MCP/ROADMAP.md`
 - [ ] Update Tool Overview table in `docs/MCP/README.md`
 - [ ] Update TypeScript types
 
 ### 6. Project Documentation
+
 - [ ] `v6/dev/kanbu/CLAUDE.md` - Update development instructions
 - [ ] `v6/dev/kanbu/README.md` - Update feature list
 - [ ] Document any new directories/patterns
 
 ### 7. Git Commit
+
 - [ ] Commit: `feat(github): Phase X - [description]`
 - [ ] Signed-off-by: Robin Waslander <R.Waslander@gmail.com>
 - [ ] Push to kanbu repo, then genx submodule update
 
 ### 8. Verification
+
 - [ ] `pnpm typecheck` passing
 - [ ] `pnpm test:run` passing (all packages)
 - [ ] Functionality manually tested
@@ -300,6 +308,7 @@ model GitHubUserMapping {
 - [x] API/database logic tests (69 tests in `apps/api/src/lib/__tests__/github.test.ts`)
 
 **Deliverables Phase 1:**
+
 - [x] Database schema extensions (7 models incl. GitHubUserMapping)
 - [x] Database synced via `prisma db push`
 - [x] Type definitions (`packages/shared/src/types/github.ts`)
@@ -307,6 +316,7 @@ model GitHubUserMapping {
 - [x] Test suite (114 tests)
 
 #### Phase 1 Completion Checklist
+
 - [x] **Code**: Database schema implemented, database synced
 - [x] **Tests**: 114 tests written and passing
 - [x] **ACL**: N/A (no new UI features)
@@ -341,6 +351,7 @@ model GitHubUserMapping {
 **File:** `apps/api/src/trpc/procedures/githubAdmin.ts`
 
 Installation management (Workspace level):
+
 - [x] `githubAdmin.isConfigured` - Check if GitHub App is configured
 - [x] `githubAdmin.getInstallationUrl` - Generate GitHub App installation URL
 - [x] `githubAdmin.handleCallback` - Handle OAuth callback from GitHub
@@ -350,6 +361,7 @@ Installation management (Workspace level):
 - [x] `githubAdmin.refreshToken` - Refresh installation access token
 
 User mapping (Workspace level):
+
 - [x] `githubAdmin.listUserMappings` - List user mappings in workspace
 - [x] `githubAdmin.createUserMapping` - Link GitHub login to Kanbu user
 - [x] `githubAdmin.updateUserMapping` - Modify mapping
@@ -358,6 +370,7 @@ User mapping (Workspace level):
 - [x] `githubAdmin.suggestMappings` - Suggestions for unmapped GitHub users
 
 Overview (Workspace level):
+
 - [x] `githubAdmin.getWorkspaceOverview` - Stats of all GitHub repos in workspace
 - [x] `githubAdmin.listLinkedRepositories` - All linked repos in workspace
 
@@ -366,6 +379,7 @@ Overview (Workspace level):
 **File:** `apps/web/src/pages/admin/GitHubAdminPage.tsx`
 
 Tabs:
+
 1. **Installations** - Manage GitHub App installations
    - [x] "Connect to GitHub" button
    - [x] Installation list with status
@@ -391,6 +405,7 @@ Tabs:
 - [x] GitHubIcon component
 
 **Deliverables Phase 2:**
+
 - [x] GitHub App configuration
 - [x] OAuth flow (install → callback → token storage)
 - [x] Admin-level installation management
@@ -398,6 +413,7 @@ Tabs:
 - [x] Workspace overview dashboard
 
 #### Phase 2 Completion Checklist
+
 - [x] **Code**: OAuth flow working, installations manageable
 - [x] **Tests**: OAuth callback tests, installation CRUD tests, user mapping tests (19 tests in `githubAdmin.test.ts`)
 - [x] **ACL**: `github-admin` feature registered, Workspace R/P permissions
@@ -419,6 +435,7 @@ Tabs:
 **File:** `apps/api/src/trpc/procedures/github.ts`
 
 Repository management (Project level):
+
 - [x] `github.linkRepository` - Link repository to project (select from workspace installations)
 - [x] `github.unlinkRepository` - Unlink repository from project
 - [x] `github.getLinkedRepository` - Get linked repository for project
@@ -426,6 +443,7 @@ Repository management (Project level):
 - [x] `github.listAvailableRepositories` - List available repos from workspace installations
 
 Sync operations (Project level):
+
 - [x] `github.triggerSync` - Trigger manual sync
 - [x] `github.getSyncStatus` - Current sync status
 - [x] `github.getSyncLogs` - Sync history
@@ -436,37 +454,37 @@ Sync operations (Project level):
 interface SyncSettings {
   // Issue Sync
   issueSync: {
-    enabled: boolean
-    direction: 'kanbu_to_github' | 'github_to_kanbu' | 'bidirectional'
-    createIssuesFromTasks: boolean
-    createTasksFromIssues: boolean
-    labelMapping: Record<string, string>  // Kanbu tag → GitHub label
-    columnMapping: Record<string, string> // Kanbu column → GitHub label
-  }
+    enabled: boolean;
+    direction: 'kanbu_to_github' | 'github_to_kanbu' | 'bidirectional';
+    createIssuesFromTasks: boolean;
+    createTasksFromIssues: boolean;
+    labelMapping: Record<string, string>; // Kanbu tag → GitHub label
+    columnMapping: Record<string, string>; // Kanbu column → GitHub label
+  };
 
   // PR Tracking
   pullRequests: {
-    enabled: boolean
-    autoLinkByBranch: boolean      // Link PRs by branch name pattern
-    autoLinkByMention: boolean     // Link PRs by task reference in title/body
-    taskReferencePattern: string   // e.g., "PROJ-123" or "#123"
-  }
+    enabled: boolean;
+    autoLinkByBranch: boolean; // Link PRs by branch name pattern
+    autoLinkByMention: boolean; // Link PRs by task reference in title/body
+    taskReferencePattern: string; // e.g., "PROJ-123" or "#123"
+  };
 
   // Commit Tracking
   commits: {
-    enabled: boolean
-    linkByMessage: boolean         // Parse commit messages for task refs
-    taskReferencePattern: string
-  }
+    enabled: boolean;
+    linkByMessage: boolean; // Parse commit messages for task refs
+    taskReferencePattern: string;
+  };
 
   // Automation
   automation: {
-    closeTaskOnPRMerge: boolean
-    moveTaskOnPROpen: string | null    // Column ID to move to
-    moveTaskOnPRMerge: string | null   // Column ID to move to
-    createBranchForTask: boolean
-    branchNamePattern: string          // e.g., "feature/{reference}-{slug}"
-  }
+    closeTaskOnPRMerge: boolean;
+    moveTaskOnPROpen: string | null; // Column ID to move to
+    moveTaskOnPRMerge: string | null; // Column ID to move to
+    createBranchForTask: boolean;
+    branchNamePattern: string; // e.g., "feature/{reference}-{slug}"
+  };
 }
 ```
 
@@ -495,12 +513,14 @@ interface SyncSettings {
 - [ ] Show badge if repo not linked (future enhancement)
 
 **Deliverables Phase 3:**
+
 - [x] Repository linking API (7 procedures)
 - [x] Sync settings configuration (Zod schema + DB storage)
 - [x] Project GitHub settings page (3 tabs)
 - [x] Sidebar navigation with ACL
 
 #### Phase 3 Completion Checklist
+
 - [x] **Code**: Repo linking working, settings UI complete
 - [x] **Tests**: Repository linking tests (21 tests in `githubProject.test.ts`), sync settings validation, ACL permission tests
 - [x] **ACL**: `github` project feature registered in `seed-features.ts`, hook updated in `useProjectFeatureAccess.ts`
@@ -548,12 +568,14 @@ interface SyncSettings {
 - [ ] Rate limiting (to be added if needed)
 
 **Deliverables Phase 4:**
+
 - [x] Webhook endpoint at `/api/webhooks/github`
 - [x] Event handlers for issues, PRs, commits, installations
 - [x] Security measures (signature verification, idempotency)
 - [x] Sync logging for all webhook operations
 
 #### Phase 4 Completion Checklist
+
 - [x] **Code**: Webhook endpoint working, events correctly routed
 - [x] **Tests**: 28 tests (signature verification, issue events, PR events, commit events, sync logging, installation events)
 - [x] **ACL**: N/A (backend only)
@@ -604,6 +626,7 @@ During issue sync, the workspace user mapping is used:
 **Service:** `apps/api/src/services/github/issueSyncService.ts`
 
 Key functions:
+
 - `mapGitHubUserToKanbu()` - User mapping lookup
 - `mapGitHubAssignees()` - Batch assignee mapping with unmapped tracking
 - `getOrCreateTagsFromLabels()` - Tag creation from GitHub labels
@@ -613,10 +636,12 @@ Key functions:
 - `importIssuesFromGitHub()` - Bulk import with GitHub API pagination
 
 **tRPC Procedures:** `apps/api/src/trpc/procedures/github.ts`
+
 - `github.importIssues` - Trigger bulk import
 - `github.getImportProgress` - Check import status
 
 **Deliverables Phase 5:**
+
 - [x] Issue import functionality (bulk + webhook real-time)
 - [x] Real-time issue sync via webhooks
 - [x] User mapping integration (via workspace mapping)
@@ -624,6 +649,7 @@ Key functions:
 - [x] Sync logging for audit trail
 
 #### Phase 5 Completion Checklist
+
 - [x] **Code**: Issue import working, real-time sync active via webhooks
 - [x] **Tests**: 18 tests (user mapping, tag mapping, column mapping, task creation, task update, import progress)
 - [x] **ACL**: Sync permissions documented (Project W for import)
@@ -671,6 +697,7 @@ Key functions:
 **Service:** `apps/api/src/services/github/issueSyncService.ts` (extended)
 
 New functions:
+
 - `mapKanbuUserToGitHub()` - Reverse user mapping lookup
 - `mapKanbuAssigneesToGitHub()` - Batch reverse assignee mapping
 - `getLabelsFromTags()` - Get label names from task tags
@@ -681,17 +708,20 @@ New functions:
 - `syncTaskToGitHub()` - Unified create-or-update
 
 **tRPC Procedures:** `apps/api/src/trpc/procedures/github.ts` (extended)
+
 - `github.createIssueFromTask` - Create GitHub issue from task
 - `github.updateIssueFromTask` - Update GitHub issue from task
 - `github.syncTaskToGitHub` - Unified sync (create or update)
 
 **Deliverables Phase 6:**
+
 - [x] Task → Issue creation
 - [x] Task → Issue updates
 - [x] Bidirectional sync support
 - [x] Conflict detection via sync hash
 
 #### Phase 6 Completion Checklist
+
 - [x] **Code**: Bidirectional sync working, sync hash for conflict detection
 - [x] **Tests**: 17 tests (reverse user mapping, labels from tags, sync hash, change detection)
 - [x] **ACL**: Reuses existing Project W permission (same as Phase 5)
@@ -725,12 +755,14 @@ New functions:
 **Service:** `apps/api/src/services/github/prCommitLinkService.ts`
 
 Supported patterns:
+
 - **PREFIX-NUMBER**: e.g., `PROJ-123`, `KANBU-456` (2-10 char prefix)
 - **#NUMBER**: GitHub-style issue reference, e.g., `#123`
 - **[PREFIX-NUMBER]**: Bracketed format, e.g., `[PROJ-123]`
 - **Branch patterns**: `feature/PROJ-123-*`, `fix/123-*`, `PROJ-123/description`
 
 Key functions:
+
 - `extractTaskReferences()` - Extract task refs from text (PR title, body, commit message)
 - `extractTaskFromBranch()` - Extract task ref from branch name
 - `findTaskByReference()` - Resolve reference to task ID
@@ -743,12 +775,14 @@ Key functions:
 **File:** `apps/api/src/trpc/procedures/github.ts` (10 new procedures)
 
 Query procedures:
+
 - `github.getTaskPRs` - Get PRs linked to a task
 - `github.getTaskCommits` - Get commits linked to a task
 - `github.listProjectPRs` - List all PRs in a project (with filtering)
 - `github.listProjectCommits` - List all commits in a project
 
 Mutation procedures:
+
 - `github.linkPRToTask` - Manually link PR to task
 - `github.unlinkPRFromTask` - Unlink PR from task
 - `github.linkCommitToTask` - Manually link commit to task
@@ -768,12 +802,14 @@ Mutation procedures:
 Backend API is complete and ready for frontend integration.
 
 **Deliverables Phase 7:**
+
 - [x] PR tracking with auto-link (branch, title, body)
 - [x] Commit tracking with auto-link (message parsing)
 - [x] 10 tRPC procedures for querying and managing links
 - [x] 38 tests for task reference extraction and patterns
 
 #### Phase 7 Completion Checklist
+
 - [x] **Code**: PR/Commit linking working, auto-link active via webhooks
 - [x] **Tests**: 38 tests (task reference extraction, branch patterns, commit messages, PR titles)
 - [x] **ACL**: Uses existing Project R (read) and W (write) permissions
@@ -799,6 +835,7 @@ Backend API is complete and ready for frontend integration.
 **Service:** `apps/api/src/services/github/automationService.ts`
 
 Key functions:
+
 - `createBranchForTask()` - Create feature branch on GitHub
 - `generateBranchName()` - Generate branch name from task reference and title
 - `branchExists()` - Check if branch exists on GitHub
@@ -812,12 +849,14 @@ Key functions:
 - [x] Close task when issue closed
 
 Event handlers:
+
 - `onPROpened()` - Move task to In Progress column
 - `onPRReadyForReview()` - Move task to Review column
 - `onPRMerged()` - Move task to Done column
 - `onIssueClosed()` - Close task (set isActive=false)
 
 Helper functions:
+
 - `findColumnByName()` - Find column by exact name (case-insensitive)
 - `findColumnByNameFuzzy()` - Find column by partial match or aliases
 - `moveTaskToColumn()` - Move task to specified column
@@ -857,11 +896,13 @@ automation?: {
 - `github.getAutomationSettings` - Get automation settings for project (R)
 
 **Deliverables Phase 8:**
+
 - [x] Branch creation automation (via API)
 - [x] Task status automation (via webhooks)
 - [ ] GitHub event notifications (deferred)
 
 #### Phase 8 Completion Checklist
+
 - [x] **Code**: Branch creation and task status automation working
 - [x] **Tests**: 33 tests (slugify, branch generation, settings, column finding, task movement, task closing)
 - [x] **ACL**: Reuses existing Project R/W permissions
@@ -897,10 +938,12 @@ automation?: {
 - [x] `kanbu_link_pr_to_task` - Manually link PR to task
 
 **Deliverables Phase 9:**
+
 - [x] 10 GitHub MCP tools (5 query + 5 management)
 - [x] Claude Code integration for GitHub workflow
 
 #### Phase 9 Completion Checklist
+
 - [x] **Code**: 10 MCP tools working, TypeScript compiles
 - [x] **Tests**: 34 tests (schema validation, tool definitions, response formats)
 - [x] **ACL**: Tools use existing project R/W permissions via tRPC
@@ -929,6 +972,7 @@ automation?: {
 #### 10.2 Build Status Tracking
 
 **Backend procedures:**
+
 - [x] `github.getWorkflowRuns` - List workflow runs for repo with filters
 - [x] `github.getWorkflowRunDetails` - Details of specific run with relations
 - [x] `github.getWorkflowJobs` - Get jobs and steps from GitHub API
@@ -938,6 +982,7 @@ automation?: {
 - [x] `github.cancelWorkflow` - Cancel running workflow
 
 **Database model:**
+
 ```prisma
 model GitHubWorkflowRun {
   id              Int       @id @default(autoincrement())
@@ -975,6 +1020,7 @@ model GitHubWorkflowRun {
 **Service:** `apps/api/src/services/github/workflowService.ts`
 
 Key functions:
+
 - `upsertWorkflowRun()` - Create/update workflow run with auto-linking
 - `getWorkflowRuns()` - List runs with filters (status, conclusion, branch, event)
 - `getTaskWorkflowRuns()` - Get runs for a specific task
@@ -988,6 +1034,7 @@ Key functions:
 - `processWorkflowRunEvent()` - Process webhook payload
 
 **Webhook:** `apps/api/src/routes/webhooks/github.ts`
+
 - [x] `workflow_run` event handler (requested, in_progress, completed)
 
 #### 10.3 Frontend: CI/CD Panel
@@ -1005,12 +1052,14 @@ Key functions:
 - [x] CI/CD status badge on task card
 
 **Deliverables Phase 10:**
+
 - [x] Workflow run tracking (database + webhook + service)
 - [x] Build status integration (7 tRPC procedures)
 - [x] CI/CD panel in task detail view
 - [x] Status badges on task cards
 
 #### Phase 10 Completion Checklist
+
 - [x] **Code**: Workflow runs tracked, webhook handler working, 7 tRPC procedures, frontend panel
 - [x] **Tests**: 26 tests (upsert, filters, task/PR runs, rerun, cancel, jobs, stats, webhook processing)
 - [x] **ACL**: Uses existing Project R (read) and W (write) permissions
@@ -1038,6 +1087,7 @@ Key functions:
 - [ ] Rollback trigger from Kanbu → Later
 
 **Database model:**
+
 ```prisma
 model GitHubDeployment {
   id              Int       @id @default(autoincrement())
@@ -1063,6 +1113,7 @@ model GitHubDeployment {
 ```
 
 **Backend services (implemented):**
+
 - [x] `deploymentService.upsertDeployment` - Create/update deployment
 - [x] `deploymentService.updateDeploymentStatus` - Update status
 - [x] `deploymentService.getDeployment` - Get single deployment
@@ -1085,6 +1136,7 @@ model GitHubDeployment {
 - [ ] Test coverage tracking (optional) → Later
 
 **Database model:**
+
 ```prisma
 model GitHubCheckRun {
   id              Int       @id @default(autoincrement())
@@ -1111,6 +1163,7 @@ model GitHubCheckRun {
 ```
 
 **Backend services (implemented):**
+
 - [x] `checkRunService.upsertCheckRun` - Create/update check run
 - [x] `checkRunService.getCheckRun` - Get single check run
 - [x] `checkRunService.getCheckRunsByPR` - List check runs for PR
@@ -1130,6 +1183,7 @@ model GitHubCheckRun {
 - [ ] Slack/webhook integration (optional) → Future extension
 
 **Backend service (implemented):**
+
 - [x] `cicdNotificationService.getCICDSettings` - Get notification settings
 - [x] `cicdNotificationService.updateCICDSettings` - Update settings
 - [x] `cicdNotificationService.notifyWorkflowRun` - Workflow notifications
@@ -1137,11 +1191,13 @@ model GitHubCheckRun {
 - [x] `cicdNotificationService.notifyCheckRun` - Check run notifications
 
 **Deliverables Phase 10B:**
+
 - [x] Deployment tracking (webhook + database + service)
 - [x] Test results integration (webhook + database + service)
 - [x] Notification system for CI/CD events
 
 #### Phase 10B Completion Checklist
+
 - [x] **Code**: Deploy tracking, check run tracking, notifications
 - [x] **Tests**: 14 deployment + 18 check run + 28 notification = 60 tests
 - [x] **ACL**: Uses existing Project permissions
@@ -1165,6 +1221,7 @@ model GitHubCheckRun {
 - [x] Stats component (total, open, closed, overdue)
 
 **Database model:** ✅ IMPLEMENTED
+
 ```prisma
 model GitHubMilestone {
   id              Int       @id @default(autoincrement())
@@ -1191,15 +1248,18 @@ model GitHubMilestone {
 ```
 
 **Backend procedures:** ✅ IMPLEMENTED
+
 - [x] `github.getProjectMilestones` - List milestones for project
 - [x] `github.getMilestoneStats` - Milestone statistics
 - [x] `github.getMilestoneByNumber` - Get milestone details
 
 **Backend services:**
+
 - [x] `milestoneService.ts` - Complete milestone CRUD + webhook sync
 - [x] 13 tests for milestone service
 
 **Frontend:**
+
 - [x] `ProjectMilestonesPanel.tsx` - Milestones tab in GitHub settings
 
 #### 11.2 GitHub Releases Tracking ✅ COMPLETE
@@ -1211,6 +1271,7 @@ model GitHubMilestone {
 - [x] Release changelog generation from merged PRs
 
 **Database model:** ✅ IMPLEMENTED
+
 ```prisma
 model GitHubRelease {
   id              Int       @id @default(autoincrement())
@@ -1239,6 +1300,7 @@ model GitHubRelease {
 ```
 
 **Backend procedures:** ✅ IMPLEMENTED
+
 - [x] `github.getProjectReleases` - List releases for project
 - [x] `github.getReleaseStats` - Release statistics
 - [x] `github.getLatestRelease` - Latest release
@@ -1246,10 +1308,12 @@ model GitHubRelease {
 - [x] `github.generateReleaseNotes` - Generate notes from merged PRs
 
 **Backend services:**
+
 - [x] `releaseService.ts` - Complete release CRUD + webhook sync + notes generation
 - [x] 17 tests for release service
 
 **Frontend:**
+
 - [x] `ProjectReleasesPanel.tsx` - Releases tab in GitHub settings
 - [x] Latest release highlight component
 - [x] Release notes generator component
@@ -1268,12 +1332,14 @@ model GitHubRelease {
 - [ ] View sync (optional)
 
 **Deliverables Phase 11:**
+
 - [x] Milestone synchronization (13 tests)
 - [x] Releases tracking (17 tests)
 - [ ] Wiki integration (→ Phase 11B)
 - [ ] GitHub Projects sync (→ Phase 11B)
 
 #### Phase 11 Completion Checklist
+
 - [x] **Code**: Milestones/Releases sync working
 - [x] **Tests**: 30 tests (13 milestone + 17 release)
 - [x] **ACL**: Uses existing project permissions
@@ -1298,6 +1364,7 @@ model GitHubRelease {
 - [ ] Auto-assign reviewer based on CODEOWNERS
 
 **Backend procedures:**
+
 - [x] `github.requestReview` - Request review from user
 - [x] `github.getPendingReviewRequests` - Pending review requests
 - [x] `github.getSuggestedReviewers` - Suggested reviewers
@@ -1311,6 +1378,7 @@ model GitHubRelease {
 - [ ] Resolved/unresolved tracking
 
 **Database model:** ✅ IMPLEMENTED
+
 ```prisma
 model GitHubReview {
   id              Int       @id @default(autoincrement())
@@ -1354,6 +1422,7 @@ model GitHubReviewComment {
 ```
 
 **Service layer:** ✅ `apps/api/src/services/github/reviewService.ts`
+
 - `upsertReview()` - Store/update review
 - `upsertReviewComment()` - Store/update review comment
 - `getReviewsForPR()` - Get reviews for a PR
@@ -1366,6 +1435,7 @@ model GitHubReviewComment {
 - `syncReviewsFromGitHub()` - Sync reviews from GitHub to database
 
 **tRPC procedures:** ✅ 8 procedures added
+
 - `github.getPRReviews` - Reviews for PR
 - `github.getPRReviewSummary` - Review summary for PR
 - `github.getTaskReviews` - Reviews for task
@@ -1376,6 +1446,7 @@ model GitHubReviewComment {
 - `github.syncPRReviews` - Sync reviews from GitHub
 
 **Webhook handler:** ✅ `pull_request_review` event
+
 - Automatic upsert of reviews on webhook
 - Sync log entries for audit trail
 
@@ -1406,6 +1477,7 @@ model GitHubReviewComment {
 - [ ] Approve/Request changes actions - future enhancement
 
 **Deliverables Phase 12:**
+
 - [x] Review tracking backend (database, service, tRPC)
 - [x] Webhook handler for pull_request_review
 - [x] Review summary aggregation
@@ -1413,6 +1485,7 @@ model GitHubReviewComment {
 - [ ] CODEOWNERS integration (deferred)
 
 #### Phase 12 Completion Checklist
+
 - [x] **Code**: Backend + Frontend review integration complete
 - [x] **Tests**: 17 tests for reviewService
 - [x] **ACL**: N/A (uses project R/W permissions)
@@ -1440,6 +1513,7 @@ model GitHubReviewComment {
 **Backend service:** `apps/api/src/services/github/analyticsService.ts`
 
 **Backend procedures (5):**
+
 - [x] `github.getCycleTimeStats` - Cycle time metrics
 - [x] `github.getReviewTimeStats` - Review time metrics
 - [x] `github.getContributorStats` - Contributor statistics
@@ -1487,6 +1561,7 @@ model GitHubReviewComment {
 - [ ] Export to CSV/PDF (deferred)
 
 **Deliverables Phase 13:**
+
 - [x] Cycle time analytics (backend + frontend)
 - [x] Code review metrics (via reviewService)
 - [x] Contributor statistics (aggregated from commits/PRs/reviews)
@@ -1494,6 +1569,7 @@ model GitHubReviewComment {
 - [ ] Burndown/velocity charts (deferred to 13B)
 
 #### Phase 13 Completion Checklist
+
 - [x] **Code**: Analytics service working, ProjectAnalyticsPanel integrated
 - [x] **Tests**: 11 tests for analytics calculations (analyticsService.test.ts)
 - [ ] **ACL**: `github-analytics` project feature (deferred - uses existing project perms)
@@ -1517,7 +1593,7 @@ model GitHubReviewComment {
 - [ ] Task reference auto-complete in commits
 - [ ] PR creation with task link
 
-*Planned for Phase 14B*
+_Planned for Phase 14B_
 
 #### 14.2 CLI Tool ✅ COMPLETE
 
@@ -1553,7 +1629,7 @@ kanbu pr status
 - [ ] Pre-push hook: Check PR exists
 - [ ] Post-checkout hook: Update task status
 
-*Planned for Phase 14B*
+_Planned for Phase 14B_
 
 #### 14.4 GitHub Bot ✅ COMPLETE
 
@@ -1564,6 +1640,7 @@ kanbu pr status
 - [ ] Welcome message for new contributors (Phase 14B)
 
 **Bot commands:**
+
 ```
 /kanbu link PROJ-123      - Link PR to task
 /kanbu unlink             - Unlink PR from task
@@ -1573,16 +1650,19 @@ kanbu pr status
 ```
 
 **Implementation:**
+
 - `apps/api/src/services/github/botService.ts` - Bot service (24 tests)
 - `apps/api/src/routes/webhooks/github.ts` - Issue comment handler
 
 **Deliverables Phase 14:**
+
 - [ ] VS Code extension (Phase 14B)
 - [x] CLI tool (`@kanbu/cli` package)
 - [ ] Git hooks package (Phase 14B)
 - [x] GitHub bot (slash commands + AI summary)
 
 #### Phase 14 Completion Checklist
+
 - [x] **Code**: CLI working (`packages/cli/`), Bot active (`botService.ts`)
 - [x] **Tests**: Bot command parsing tests (24 tests), all 134 GitHub tests passing
 - [x] **ACL**: N/A (external tools)
@@ -1607,27 +1687,29 @@ kanbu pr status
 - [x] Affected packages detection
 
 **Implemented in `monorepoService.ts`:**
+
 ```typescript
 interface MonorepoSettings {
-  enabled: boolean
+  enabled: boolean;
   packages: Array<{
-    path: string            // e.g., "packages/api"
-    name: string            // e.g., "API"
-    labelPrefix?: string    // e.g., "api:"
-    columnId?: number       // Default column
-  }>
+    path: string; // e.g., "packages/api"
+    name: string; // e.g., "API"
+    labelPrefix?: string; // e.g., "api:"
+    columnId?: number; // Default column
+  }>;
   affectedDetection: {
-    enabled: boolean
-    baseBranch: string
-  }
+    enabled: boolean;
+    baseBranch: string;
+  };
   pathPatterns?: {
-    include?: string[]
-    exclude?: string[]
-  }
+    include?: string[];
+    exclude?: string[];
+  };
 }
 ```
 
 **Functions:**
+
 - `matchesPackage()` - Check if file belongs to package
 - `findPackageForFile()` - Find package for file
 - `getAffectedPackages()` - Find affected packages from changed files
@@ -1643,6 +1725,7 @@ interface MonorepoSettings {
 - [x] Aggregated stats
 
 **Database model adjusted:**
+
 ```prisma
 model GitHubRepository {
   // ... existing fields
@@ -1660,6 +1743,7 @@ model Project {
 ```
 
 **Implemented in `multiRepoService.ts`:**
+
 - `getProjectRepositories()` - Get all repos for project
 - `linkRepository()` / `unlinkRepository()` - Manage repo links
 - `setPrimaryRepository()` - Set primary repo
@@ -1682,12 +1766,14 @@ model Project {
 - [ ] Shared settings per group (future)
 
 **Deliverables Phase 15:**
+
 - [x] Monorepo configuration with glob patterns
 - [x] Multi-repo project linking
 - [x] Cross-repo reference parsing
 - [ ] Repository groups (deferred)
 
 #### Phase 15 Completion Checklist
+
 - [x] **Code**: Multi-repo linking working, monorepo filtering active
 - [x] **Tests**: 34 monorepo tests + 23 multi-repo tests (57 total)
 - [x] **ACL**: N/A (extension of existing project linking)
@@ -1712,6 +1798,7 @@ model Project {
 - [x] Suggest affected areas
 
 **tRPC procedures:**
+
 - [x] `generateAIPRSummary` - Generate PR summary from commits and diff
 - [x] `getAIStatus` - Check if AI service is configured
 
@@ -1724,6 +1811,7 @@ model Project {
 - [x] Complexity warnings
 
 **Backend service:**
+
 ```typescript
 // apps/api/src/services/github/aiService.ts
 aiService = {
@@ -1737,6 +1825,7 @@ aiService = {
 ```
 
 **tRPC procedures:**
+
 - [x] `generateAICodeReview` - AI-powered code review suggestions
 
 #### 16.3 Release Notes Generation ✅
@@ -1747,6 +1836,7 @@ aiService = {
 - [x] Credit contributors
 
 **tRPC procedures:**
+
 - [x] `generateAIReleaseNotes` - Generate release notes from PRs
 
 #### 16.4 Commit Message Generation ✅
@@ -1757,6 +1847,7 @@ aiService = {
 - [x] Include body for complex changes
 
 **tRPC procedures:**
+
 - [x] `generateAICommitMessage` - Generate commit message from staged files
 
 #### 16.5 Bug Triage & Smart Tasks 🚧 FUTURE
@@ -1766,9 +1857,10 @@ aiService = {
 - [ ] Create tasks from PR review comments
 - [ ] Auto-link related tasks
 
-*Moved to future enhancement - core AI features complete*
+_Moved to future enhancement - core AI features complete_
 
 **Deliverables Phase 16:**
+
 - [x] PR summary generation
 - [x] AI code review assistance
 - [x] Release notes generation
@@ -1776,6 +1868,7 @@ aiService = {
 - [x] Multi-provider support (Anthropic Claude, OpenAI)
 
 #### Phase 16 Completion Checklist
+
 - [x] **Code**: AI service (`aiService.ts`) with 4 functions, dual provider support
 - [x] **Tests**: 26 tests for configuration, error handling and type validation
 - [x] **ACL**: Via existing project READ/WRITE permissions
@@ -1788,200 +1881,217 @@ aiService = {
 
 ## Tool Overview
 
-| Phase | Tools/Features | Level | Status |
-|-------|----------------|-------|--------|
-| Phase 1 | Database schema (7 models incl. UserMapping) + 69 tests | - | ✅ Complete |
-| Phase 2 | OAuth + Installation + User Mapping (15 procedures) + 19 tests | Admin/Workspace | ✅ Complete |
-| Phase 3 | Repository linking + Settings UI (7 procedures) + 21 tests | Project | ✅ Complete |
-| Phase 4 | Webhook handler (11 event types) + 28 tests | System | ✅ Complete |
-| Phase 5 | Issue sync GitHub→Kanbu (sync service + 2 procedures) + 18 tests | Project | ✅ Complete |
-| Phase 6 | Issue sync Kanbu→GitHub (outbound service + 3 procedures) + 17 tests | Project | ✅ Complete |
-| Phase 7 | PR & Commit tracking (10 procedures) + 38 tests | Project | ✅ Complete |
-| Phase 8 | Automation (branch creation, task status) + 33 tests | Project | ✅ Complete |
-| Phase 9 | MCP tools (10 tools) + 34 tests | MCP | ✅ Complete |
-| Phase 10 | CI/CD workflow tracking (7 procedures) + frontend panel + 26 tests | Project | ✅ Complete |
-| Phase 10B | Extended CI/CD (Deploy, Check runs, Notifications) + 60 tests | Project | ✅ Complete |
-| Phase 11 | Advanced Sync (Milestones, Releases) + 30 tests | Project | ⚡ Partially Complete |
-| Phase 12 | Code Review Integration (Reviews, CODEOWNERS) | Project | ✅ Complete |
-| Phase 13 | Analytics & Insights (Cycle Time, Stats) | Project | ✅ Complete |
-| Phase 14 | Developer Experience (Bot + CLI + Git Hooks) + 53 tests | Tools | ⚡ Partially Complete |
-| Phase 15 | Multi-Repo Support (Monorepo, Cross-repo) + 57 tests | Project | ✅ Complete |
-| Phase 16 | AI/Claude Integration (PR Summary, Review AI) + 26 tests | MCP/AI | ✅ Complete |
+| Phase     | Tools/Features                                                       | Level           | Status                |
+| --------- | -------------------------------------------------------------------- | --------------- | --------------------- |
+| Phase 1   | Database schema (7 models incl. UserMapping) + 69 tests              | -               | ✅ Complete           |
+| Phase 2   | OAuth + Installation + User Mapping (15 procedures) + 19 tests       | Admin/Workspace | ✅ Complete           |
+| Phase 3   | Repository linking + Settings UI (7 procedures) + 21 tests           | Project         | ✅ Complete           |
+| Phase 4   | Webhook handler (11 event types) + 28 tests                          | System          | ✅ Complete           |
+| Phase 5   | Issue sync GitHub→Kanbu (sync service + 2 procedures) + 18 tests     | Project         | ✅ Complete           |
+| Phase 6   | Issue sync Kanbu→GitHub (outbound service + 3 procedures) + 17 tests | Project         | ✅ Complete           |
+| Phase 7   | PR & Commit tracking (10 procedures) + 38 tests                      | Project         | ✅ Complete           |
+| Phase 8   | Automation (branch creation, task status) + 33 tests                 | Project         | ✅ Complete           |
+| Phase 9   | MCP tools (10 tools) + 34 tests                                      | MCP             | ✅ Complete           |
+| Phase 10  | CI/CD workflow tracking (7 procedures) + frontend panel + 26 tests   | Project         | ✅ Complete           |
+| Phase 10B | Extended CI/CD (Deploy, Check runs, Notifications) + 60 tests        | Project         | ✅ Complete           |
+| Phase 11  | Advanced Sync (Milestones, Releases) + 30 tests                      | Project         | ⚡ Partially Complete |
+| Phase 12  | Code Review Integration (Reviews, CODEOWNERS)                        | Project         | ✅ Complete           |
+| Phase 13  | Analytics & Insights (Cycle Time, Stats)                             | Project         | ✅ Complete           |
+| Phase 14  | Developer Experience (Bot + CLI + Git Hooks) + 53 tests              | Tools           | ⚡ Partially Complete |
+| Phase 15  | Multi-Repo Support (Monorepo, Cross-repo) + 57 tests                 | Project         | ✅ Complete           |
+| Phase 16  | AI/Claude Integration (PR Summary, Review AI) + 26 tests             | MCP/AI          | ✅ Complete           |
 
 ---
 
 ## Priority Matrix
 
 ### Core (P0-P1) - Phase 1-9
-| Item | Impact | Effort | Priority |
-|------|--------|--------|----------|
-| Database schema | Critical | Medium | P0 |
-| GitHub App setup | Critical | Medium | P0 |
-| Repository linking | Critical | Low | P0 |
-| Sidebar menu item | High | Low | P1 |
-| GitHub settings page | High | Medium | P1 |
-| Webhook handler | High | Medium | P1 |
-| Issue sync (inbound) | High | High | P1 |
-| Issue sync (outbound) | Medium | High | P2 |
-| PR tracking | Medium | Medium | P2 |
-| Commit tracking | Medium | Low | P2 |
-| Automation | Medium | High | P3 |
-| MCP tools | Low | Medium | P3 |
+
+| Item                  | Impact   | Effort | Priority |
+| --------------------- | -------- | ------ | -------- |
+| Database schema       | Critical | Medium | P0       |
+| GitHub App setup      | Critical | Medium | P0       |
+| Repository linking    | Critical | Low    | P0       |
+| Sidebar menu item     | High     | Low    | P1       |
+| GitHub settings page  | High     | Medium | P1       |
+| Webhook handler       | High     | Medium | P1       |
+| Issue sync (inbound)  | High     | High   | P1       |
+| Issue sync (outbound) | Medium   | High   | P2       |
+| PR tracking           | Medium   | Medium | P2       |
+| Commit tracking       | Medium   | Low    | P2       |
+| Automation            | Medium   | High   | P3       |
+| MCP tools             | Low      | Medium | P3       |
 
 ### Extended (P3-P4) - Phase 10-16
-| Item | Impact | Effort | Priority |
-|------|--------|--------|----------|
-| CI/CD - Build status | High | Medium | P3 |
-| CI/CD - Deploy tracking | Medium | Medium | P3 |
-| Code Review - Reviews sync | High | High | P3 |
-| Code Review - CODEOWNERS | Medium | Low | P4 |
-| Analytics - Cycle time | High | Medium | P3 |
-| Analytics - Contributor stats | Medium | Medium | P4 |
-| Milestones sync | Medium | Medium | P4 |
-| Releases tracking | Medium | Low | P4 |
-| VS Code Extension | High | High | P4 |
-| CLI Tool | Medium | Medium | P4 |
-| Git Hooks | Medium | Low | P4 |
-| GitHub Bot | Medium | High | P4 |
-| Monorepo support | Medium | High | P4 |
-| Multi-repo projects | Low | High | P5 |
-| AI - PR Summary | High | Medium | P4 |
-| AI - Code Review | High | High | P5 |
-| AI - Release Notes | Medium | Medium | P5 |
-| AI - Bug Triage | Medium | High | P5 |
+
+| Item                          | Impact | Effort | Priority |
+| ----------------------------- | ------ | ------ | -------- |
+| CI/CD - Build status          | High   | Medium | P3       |
+| CI/CD - Deploy tracking       | Medium | Medium | P3       |
+| Code Review - Reviews sync    | High   | High   | P3       |
+| Code Review - CODEOWNERS      | Medium | Low    | P4       |
+| Analytics - Cycle time        | High   | Medium | P3       |
+| Analytics - Contributor stats | Medium | Medium | P4       |
+| Milestones sync               | Medium | Medium | P4       |
+| Releases tracking             | Medium | Low    | P4       |
+| VS Code Extension             | High   | High   | P4       |
+| CLI Tool                      | Medium | Medium | P4       |
+| Git Hooks                     | Medium | Low    | P4       |
+| GitHub Bot                    | Medium | High   | P4       |
+| Monorepo support              | Medium | High   | P4       |
+| Multi-repo projects           | Low    | High   | P5       |
+| AI - PR Summary               | High   | Medium | P4       |
+| AI - Code Review              | High   | High   | P5       |
+| AI - Release Notes            | Medium | Medium | P5       |
+| AI - Bug Triage               | Medium | High   | P5       |
 
 ---
 
 ## Files to Modify/Create
 
 ### Database & Types
-| File | Change |
-|------|--------|
+
+| File                                   | Change                                 |
+| -------------------------------------- | -------------------------------------- |
 | `packages/shared/prisma/schema.prisma` | 7 new models (incl. GitHubUserMapping) |
-| `packages/shared/src/types/github.ts` | **New** - TypeScript types |
+| `packages/shared/src/types/github.ts`  | **New** - TypeScript types             |
 
 ### Backend API - Admin Level
-| File | Change |
-|------|--------|
-| `apps/api/src/trpc/procedures/githubAdmin.ts` | **New** - Admin-level tRPC procedures |
-| `apps/api/src/services/github/installationService.ts` | **New** - Installation management |
-| `apps/api/src/services/github/userMappingService.ts` | **New** - User mapping service |
+
+| File                                                  | Change                                |
+| ----------------------------------------------------- | ------------------------------------- |
+| `apps/api/src/trpc/procedures/githubAdmin.ts`         | **New** - Admin-level tRPC procedures |
+| `apps/api/src/services/github/installationService.ts` | **New** - Installation management     |
+| `apps/api/src/services/github/userMappingService.ts`  | **New** - User mapping service        |
 
 ### Backend API - Project Level
-| File | Change |
-|------|--------|
-| `apps/api/src/trpc/procedures/github.ts` | **New** - Project-level tRPC procedures |
-| `apps/api/src/services/github/syncService.ts` | **New** - Sync service |
-| `apps/api/src/services/github/repositoryService.ts` | **New** - Repository linking |
+
+| File                                                | Change                                  |
+| --------------------------------------------------- | --------------------------------------- |
+| `apps/api/src/trpc/procedures/github.ts`            | **New** - Project-level tRPC procedures |
+| `apps/api/src/services/github/syncService.ts`       | **New** - Sync service                  |
+| `apps/api/src/services/github/repositoryService.ts` | **New** - Repository linking            |
 
 ### Backend API - Shared
-| File | Change |
-|------|--------|
-| `apps/api/src/routes/webhooks/github.ts` | **New** - Webhook handler |
-| `apps/api/src/services/github/` | **New** - GitHub service classes |
-| `apps/api/src/lib/github.ts` | **New** - GitHub API client |
+
+| File                                     | Change                           |
+| ---------------------------------------- | -------------------------------- |
+| `apps/api/src/routes/webhooks/github.ts` | **New** - Webhook handler        |
+| `apps/api/src/services/github/`          | **New** - GitHub service classes |
+| `apps/api/src/lib/github.ts`             | **New** - GitHub API client      |
 
 ### Frontend - Admin Level
-| File | Change |
-|------|--------|
-| `apps/web/src/pages/admin/GitHubAdminPage.tsx` | **New** - Admin GitHub settings |
+
+| File                                                        | Change                             |
+| ----------------------------------------------------------- | ---------------------------------- |
+| `apps/web/src/pages/admin/GitHubAdminPage.tsx`              | **New** - Admin GitHub settings    |
 | `apps/web/src/components/admin/github/InstallationsTab.tsx` | **New** - Installations management |
-| `apps/web/src/components/admin/github/UserMappingTab.tsx` | **New** - User mapping UI |
-| `apps/web/src/components/admin/github/OverviewTab.tsx` | **New** - Repos overview |
-| `apps/web/src/pages/admin/AdminSidebar.tsx` | Add GitHub menu item |
+| `apps/web/src/components/admin/github/UserMappingTab.tsx`   | **New** - User mapping UI          |
+| `apps/web/src/components/admin/github/OverviewTab.tsx`      | **New** - Repos overview           |
+| `apps/web/src/pages/admin/AdminSidebar.tsx`                 | Add GitHub menu item               |
 
 ### Frontend - Project Level
-| File | Change |
-|------|--------|
+
+| File                                                   | Change                            |
+| ------------------------------------------------------ | --------------------------------- |
 | `apps/web/src/pages/project/GitHubProjectSettings.tsx` | **New** - Project GitHub settings |
-| `apps/web/src/components/github/RepoLinkForm.tsx` | **New** - Repo linking form |
-| `apps/web/src/components/github/SyncSettingsForm.tsx` | **New** - Sync settings |
-| `apps/web/src/components/github/SyncStatusPanel.tsx` | **New** - Sync status + logs |
-| `apps/web/src/components/task/TaskGitHubPanel.tsx` | **New** - Task GitHub info panel |
-| `apps/web/src/components/layout/ProjectSidebar.tsx` | Add GitHub menu item + GitHubIcon |
+| `apps/web/src/components/github/RepoLinkForm.tsx`      | **New** - Repo linking form       |
+| `apps/web/src/components/github/SyncSettingsForm.tsx`  | **New** - Sync settings           |
+| `apps/web/src/components/github/SyncStatusPanel.tsx`   | **New** - Sync status + logs      |
+| `apps/web/src/components/task/TaskGitHubPanel.tsx`     | **New** - Task GitHub info panel  |
+| `apps/web/src/components/layout/ProjectSidebar.tsx`    | Add GitHub menu item + GitHubIcon |
 
 ### Frontend - Shared
-| File | Change |
-|------|--------|
-| `apps/web/src/components/github/` | **New** - GitHub components directory |
-| `apps/web/src/hooks/useProjectFeatureAccess.ts` | Add 'github' feature slug |
-| `apps/web/src/router.tsx` | New routes (admin + project) |
+
+| File                                            | Change                                |
+| ----------------------------------------------- | ------------------------------------- |
+| `apps/web/src/components/github/`               | **New** - GitHub components directory |
+| `apps/web/src/hooks/useProjectFeatureAccess.ts` | Add 'github' feature slug             |
+| `apps/web/src/router.tsx`                       | New routes (admin + project)          |
 
 ### ACL & Permissions
-| File | Change |
-|------|--------|
+
+| File                                            | Change                          |
+| ----------------------------------------------- | ------------------------------- |
 | `apps/api/src/permissions/definitions/index.ts` | Add 'github' feature definition |
-| `apps/api/src/services/auditService.ts` | Add GITHUB_* audit actions |
+| `apps/api/src/services/auditService.ts`         | Add GITHUB\_\* audit actions    |
 
 ### MCP Server
-| File | Change |
-|------|--------|
+
+| File                                      | Change                 |
+| ----------------------------------------- | ---------------------- |
 | `packages/mcp-server/src/tools/github.ts` | **New** - GitHub tools |
-| `packages/mcp-server/src/tools/index.ts` | Export github tools |
-| `packages/mcp-server/src/index.ts` | Add github handlers |
+| `packages/mcp-server/src/tools/index.ts`  | Export github tools    |
+| `packages/mcp-server/src/index.ts`        | Add github handlers    |
 
 ### Phase 10-16: Extended Features
 
 #### CI/CD & Analytics (Phase 10, 13)
-| File | Change |
-|------|--------|
-| `apps/api/src/services/github/cicdService.ts` | **New** - CI/CD integration service |
-| `apps/api/src/services/github/analyticsService.ts` | **New** - Analytics service |
-| `apps/web/src/components/task/TaskCICDPanel.tsx` | **New** - CI/CD status panel |
-| `apps/web/src/pages/project/GitHubAnalyticsPage.tsx` | **New** - Analytics dashboard |
+
+| File                                                 | Change                              |
+| ---------------------------------------------------- | ----------------------------------- |
+| `apps/api/src/services/github/cicdService.ts`        | **New** - CI/CD integration service |
+| `apps/api/src/services/github/analyticsService.ts`   | **New** - Analytics service         |
+| `apps/web/src/components/task/TaskCICDPanel.tsx`     | **New** - CI/CD status panel        |
+| `apps/web/src/pages/project/GitHubAnalyticsPage.tsx` | **New** - Analytics dashboard       |
 
 #### Code Review (Phase 12)
-| File | Change |
-|------|--------|
-| `apps/api/src/services/github/reviewService.ts` | **New** - Code review service |
+
+| File                                               | Change                        |
+| -------------------------------------------------- | ----------------------------- |
+| `apps/api/src/services/github/reviewService.ts`    | **New** - Code review service |
 | `apps/web/src/components/task/TaskReviewPanel.tsx` | **New** - Review status panel |
 
 #### Advanced Sync (Phase 11)
-| File | Change |
-|------|--------|
-| `apps/api/src/services/github/milestoneService.ts` | **New** - Milestone sync |
-| `apps/api/src/services/github/releaseService.ts` | **New** - Release tracking |
+
+| File                                               | Change                     |
+| -------------------------------------------------- | -------------------------- |
+| `apps/api/src/services/github/milestoneService.ts` | **New** - Milestone sync   |
+| `apps/api/src/services/github/releaseService.ts`   | **New** - Release tracking |
 
 #### Developer Experience (Phase 14) ⚡
-| File | Change |
-|------|--------|
-| `packages/cli/` | **New** - CLI tool package ✅ |
-| `packages/cli/src/index.ts` | CLI entry point with all commands |
-| `packages/cli/src/config.ts` | Configuration storage |
-| `packages/cli/src/api.ts` | tRPC API client |
-| `packages/cli/src/commands/auth.ts` | login, logout, whoami |
-| `packages/cli/src/commands/task.ts` | list, show, start, done, create |
-| `packages/cli/src/commands/pr.ts` | create, status, link |
-| `apps/api/src/services/github/botService.ts` | **New** - Bot slash commands ✅ |
-| `apps/api/src/services/github/__tests__/botService.test.ts` | **New** - 24 tests |
-| `apps/api/src/routes/webhooks/github.ts` | Issue comment handler added |
-| `packages/git-hooks/` | **New** - Git hooks package ✅ |
-| `packages/git-hooks/src/cli.ts` | CLI: install, uninstall, status, config, run |
-| `packages/git-hooks/src/utils.ts` | Utilities for task extraction, hook management |
-| `packages/git-hooks/src/hooks/prepare-commit-msg.ts` | Auto-add task ref to commits |
-| `packages/git-hooks/src/hooks/commit-msg.ts` | Validate task reference |
-| `packages/git-hooks/src/hooks/post-commit.ts` | Link commit to task in Kanbu |
-| `packages/git-hooks/src/__tests__/utils.test.ts` | **New** - 29 tests |
-| `packages/vscode-extension/` | 🚧 Planned for Phase 14B |
+
+| File                                                        | Change                                         |
+| ----------------------------------------------------------- | ---------------------------------------------- |
+| `packages/cli/`                                             | **New** - CLI tool package ✅                  |
+| `packages/cli/src/index.ts`                                 | CLI entry point with all commands              |
+| `packages/cli/src/config.ts`                                | Configuration storage                          |
+| `packages/cli/src/api.ts`                                   | tRPC API client                                |
+| `packages/cli/src/commands/auth.ts`                         | login, logout, whoami                          |
+| `packages/cli/src/commands/task.ts`                         | list, show, start, done, create                |
+| `packages/cli/src/commands/pr.ts`                           | create, status, link                           |
+| `apps/api/src/services/github/botService.ts`                | **New** - Bot slash commands ✅                |
+| `apps/api/src/services/github/__tests__/botService.test.ts` | **New** - 24 tests                             |
+| `apps/api/src/routes/webhooks/github.ts`                    | Issue comment handler added                    |
+| `packages/git-hooks/`                                       | **New** - Git hooks package ✅                 |
+| `packages/git-hooks/src/cli.ts`                             | CLI: install, uninstall, status, config, run   |
+| `packages/git-hooks/src/utils.ts`                           | Utilities for task extraction, hook management |
+| `packages/git-hooks/src/hooks/prepare-commit-msg.ts`        | Auto-add task ref to commits                   |
+| `packages/git-hooks/src/hooks/commit-msg.ts`                | Validate task reference                        |
+| `packages/git-hooks/src/hooks/post-commit.ts`               | Link commit to task in Kanbu                   |
+| `packages/git-hooks/src/__tests__/utils.test.ts`            | **New** - 29 tests                             |
+| `packages/vscode-extension/`                                | 🚧 Planned for Phase 14B                       |
 
 #### Multi-Repo (Phase 15) ✅
-| File | Change |
-|------|--------|
-| `packages/shared/prisma/schema.prisma` | GitHubRepository: isPrimary, projectId multi-repo |
-| `apps/api/src/services/github/monorepoService.ts` | **New** - Monorepo support (13 functions) |
-| `apps/api/src/services/github/multiRepoService.ts` | **New** - Multi-repo linking (10 functions) |
-| `apps/api/src/services/github/__tests__/monorepoService.test.ts` | **New** - 34 tests |
-| `apps/api/src/services/github/__tests__/multiRepoService.test.ts` | **New** - 23 tests |
-| `apps/api/src/services/github/index.ts` | Exports for monorepo and multi-repo services |
+
+| File                                                              | Change                                            |
+| ----------------------------------------------------------------- | ------------------------------------------------- |
+| `packages/shared/prisma/schema.prisma`                            | GitHubRepository: isPrimary, projectId multi-repo |
+| `apps/api/src/services/github/monorepoService.ts`                 | **New** - Monorepo support (13 functions)         |
+| `apps/api/src/services/github/multiRepoService.ts`                | **New** - Multi-repo linking (10 functions)       |
+| `apps/api/src/services/github/__tests__/monorepoService.test.ts`  | **New** - 34 tests                                |
+| `apps/api/src/services/github/__tests__/multiRepoService.test.ts` | **New** - 23 tests                                |
+| `apps/api/src/services/github/index.ts`                           | Exports for monorepo and multi-repo services      |
 
 #### AI/Claude Integration (Phase 16) ✅
-| File | Change |
-|------|--------|
-| `apps/api/src/services/github/aiService.ts` | **New** - AI service (4 functions) |
-| `apps/api/src/services/github/__tests__/aiService.test.ts` | **New** - 26 tests |
-| `apps/api/src/services/github/index.ts` | Export AI service |
-| `apps/api/src/trpc/procedures/github.ts` | 5 AI procedures added |
-| `apps/api/.env.example` | AI provider configuration |
+
+| File                                                       | Change                             |
+| ---------------------------------------------------------- | ---------------------------------- |
+| `apps/api/src/services/github/aiService.ts`                | **New** - AI service (4 functions) |
+| `apps/api/src/services/github/__tests__/aiService.test.ts` | **New** - 26 tests                 |
+| `apps/api/src/services/github/index.ts`                    | Export AI service                  |
+| `apps/api/src/trpc/procedures/github.ts`                   | 5 AI procedures added              |
+| `apps/api/.env.example`                                    | AI provider configuration          |
 
 ---
 
@@ -1993,24 +2103,24 @@ The GitHub connector requires permissions at **two levels**:
 
 #### Workspace Level (Admin)
 
-| Action | Required Permission |
-|--------|---------------------|
-| View installations | Workspace R |
-| Manage installations | Workspace P |
-| View user mappings | Workspace R |
-| Create/edit user mappings | Workspace P |
-| View all repos in workspace | Workspace R |
+| Action                      | Required Permission |
+| --------------------------- | ------------------- |
+| View installations          | Workspace R         |
+| Manage installations        | Workspace P         |
+| View user mappings          | Workspace R         |
+| Create/edit user mappings   | Workspace P         |
+| View all repos in workspace | Workspace R         |
 
 #### Project Level
 
-| Action | Required Permission |
-|--------|---------------------|
-| View GitHub panel | Project R |
-| View synced issues/PRs | Project R |
-| Trigger manual sync | Project W |
-| Link/unlink repository | Project P |
-| Configure sync settings | Project P |
-| Create feature branch | Project W |
+| Action                  | Required Permission |
+| ----------------------- | ------------------- |
+| View GitHub panel       | Project R           |
+| View synced issues/PRs  | Project R           |
+| Trigger manual sync     | Project W           |
+| Link/unlink repository  | Project P           |
+| Configure sync settings | Project P           |
+| Create feature branch   | Project W           |
 
 ### Feature Access Control
 
@@ -2061,22 +2171,22 @@ All GitHub actions are logged in the audit system:
 
 ```typescript
 // Admin-level audit actions (Workspace)
-GITHUB_INSTALLATION_ADDED = 'github:installation_added'
-GITHUB_INSTALLATION_REMOVED = 'github:installation_removed'
-GITHUB_USER_MAPPING_CREATED = 'github:user_mapping_created'
-GITHUB_USER_MAPPING_UPDATED = 'github:user_mapping_updated'
-GITHUB_USER_MAPPING_DELETED = 'github:user_mapping_deleted'
-GITHUB_AUTO_MATCH_TRIGGERED = 'github:auto_match_triggered'
+GITHUB_INSTALLATION_ADDED = 'github:installation_added';
+GITHUB_INSTALLATION_REMOVED = 'github:installation_removed';
+GITHUB_USER_MAPPING_CREATED = 'github:user_mapping_created';
+GITHUB_USER_MAPPING_UPDATED = 'github:user_mapping_updated';
+GITHUB_USER_MAPPING_DELETED = 'github:user_mapping_deleted';
+GITHUB_AUTO_MATCH_TRIGGERED = 'github:auto_match_triggered';
 
 // Project-level audit actions
-GITHUB_REPO_LINKED = 'github:repo_linked'
-GITHUB_REPO_UNLINKED = 'github:repo_unlinked'
-GITHUB_SETTINGS_UPDATED = 'github:settings_updated'
-GITHUB_SYNC_TRIGGERED = 'github:sync_triggered'
-GITHUB_ISSUE_IMPORTED = 'github:issue_imported'
-GITHUB_ISSUE_EXPORTED = 'github:issue_exported'
-GITHUB_PR_LINKED = 'github:pr_linked'
-GITHUB_BRANCH_CREATED = 'github:branch_created'
+GITHUB_REPO_LINKED = 'github:repo_linked';
+GITHUB_REPO_UNLINKED = 'github:repo_unlinked';
+GITHUB_SETTINGS_UPDATED = 'github:settings_updated';
+GITHUB_SYNC_TRIGGERED = 'github:sync_triggered';
+GITHUB_ISSUE_IMPORTED = 'github:issue_imported';
+GITHUB_ISSUE_EXPORTED = 'github:issue_exported';
+GITHUB_PR_LINKED = 'github:pr_linked';
+GITHUB_BRANCH_CREATED = 'github:branch_created';
 ```
 
 ---
@@ -2096,12 +2206,14 @@ GITHUB_BRANCH_CREATED = 'github:branch_created'
 ## Verification Checklist
 
 ### Phase 1 ✅
+
 - [x] Database synced successfully (`prisma db push`)
 - [x] Types correctly generated (`packages/shared/src/types/github.ts`)
 - [x] Relations work correctly (7 models implemented)
 - [x] Tests passing (114 tests)
 
 ### Phase 2 ✅
+
 - [x] GitHub App installable
 - [x] OAuth callback works
 - [x] Token refresh automatic
@@ -2109,6 +2221,7 @@ GITHUB_BRANCH_CREATED = 'github:branch_created'
 - [x] Admin UI functional
 
 ### Phase 3 ✅
+
 - [x] Repository linking works (7 tRPC procedures)
 - [x] Settings save works (Zod schema validation)
 - [x] Settings UI responsive (3 tabs: Repository, Settings, Logs)
@@ -2116,37 +2229,44 @@ GITHUB_BRANCH_CREATED = 'github:branch_created'
 - [x] Tests passing (21 tests in `githubProject.test.ts`)
 
 ### Phase 4 ✅
+
 - [x] Webhook receives events
 - [x] Signature verification works
 - [x] Events correctly routed
 
 ### Phase 5 ✅
+
 - [x] Issues correctly imported
 - [x] User mapping lookup works
 - [x] Tags created from labels
 - [x] No duplicate creates (skipExisting)
 
 ### Phase 6 ✅
+
 - [x] Bidirectional sync works
 - [x] Conflict detection active (sync hash)
 
 ### Phase 7 ✅
+
 - [x] PRs auto-linked via branch/title/body
 - [x] Commits auto-linked via message parsing
 - [x] Manual linking/unlinking works
 - [x] Task reference patterns correctly extracted
 
 ### Phase 8 ✅
+
 - [x] Branch creation via API works
 - [x] Task status automation via webhooks works
 - [x] Column matching (exact + fuzzy) correct
 - [x] Automation settings configurable via sync settings
 
 ### Phase 9 ✅
+
 - [x] MCP tools typecheck
 - [x] MCP tools functional (10 tools implemented)
 
 ### Phase 10 (CI/CD) ✅
+
 - [x] Workflow runs correctly tracked (webhook + database)
 - [x] Auto-link to tasks/PRs by branch name
 - [x] Re-run workflow works (via GitHub API)
@@ -2157,6 +2277,7 @@ GITHUB_BRANCH_CREATED = 'github:branch_created'
 - [x] CI/CD panel in task detail view
 
 ### Phase 10B (Extended CI/CD) ✅ COMPLETE
+
 - [x] Deployment webhook handlers (deployment, deployment_status)
 - [x] Deploy history per environment (getEnvironmentHistory)
 - [x] Deployment stats (success rate, by environment)
@@ -2167,6 +2288,7 @@ GITHUB_BRANCH_CREATED = 'github:branch_created'
 - [x] In-app notifications via existing system
 
 ### Phase 11 (Advanced Sync) ⚡
+
 - [x] Milestones sync works (GitHubMilestone model, 13 tests)
 - [x] Releases tracking (GitHubRelease model, 17 tests)
 - [x] Frontend: ProjectMilestonesPanel + ProjectReleasesPanel
@@ -2174,6 +2296,7 @@ GITHUB_BRANCH_CREATED = 'github:branch_created'
 - [ ] GitHub Projects V2 (→ Phase 11B)
 
 ### Phase 12 (Code Review) ✅
+
 - [x] Review tracking in database (GitHubReview + GitHubReviewComment models)
 - [x] Review comments sync via webhook
 - [x] Approval status correct (via getPRReviewSummary)
@@ -2182,6 +2305,7 @@ GITHUB_BRANCH_CREATED = 'github:branch_created'
 - [ ] CODEOWNERS parsing (deferred)
 
 ### Phase 13 (Analytics) ✅
+
 - [x] Cycle time correctly calculated (avg, median, min, max)
 - [x] Review time stats accurate (time to first review, time to approval)
 - [x] Contributor stats accurate (commits, PRs, reviews per user)
@@ -2192,18 +2316,21 @@ GITHUB_BRANCH_CREATED = 'github:branch_created'
 - [ ] Export to CSV/PDF (deferred)
 
 ### Phase 14 (Developer Experience)
+
 - [ ] VS Code extension installs
 - [ ] CLI tool works
 - [ ] Git hooks install correctly
 - [ ] GitHub bot responds to commands
 
 ### Phase 15 (Multi-Repo) ✅
+
 - [x] Monorepo path filtering works (matchGlob, filterByPatterns)
 - [x] Multiple repos per project possible (linkRepository, isPrimary)
 - [x] Cross-repo references parsing (parseCrossRepoReference, findCrossRepoReferences)
 - [x] 57 tests written and passed
 
 ### Phase 16 (AI/Claude) ✅
+
 - [x] PR summary generation works
 - [x] AI code review suggestions correct
 - [x] Release notes generation accurate
@@ -2215,26 +2342,26 @@ GITHUB_BRANCH_CREATED = 'github:branch_created'
 
 ## Changelog
 
-| Date | Change |
-|------|--------|
-| 2026-01-09 | **Phase 12 COMPLETE**: Code Review Integration - GitHubReview + GitHubReviewComment models, reviewService.ts (10 functions), webhook handler for pull_request_review events, 8 tRPC procedures, 17 tests, TypeScript types extended. Frontend: TaskReviewPanel.tsx with Reviews tab in TaskDetailModal. |
+| Date       | Change                                                                                                                                                                                                                                                                                                                                     |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 2026-01-09 | **Phase 12 COMPLETE**: Code Review Integration - GitHubReview + GitHubReviewComment models, reviewService.ts (10 functions), webhook handler for pull_request_review events, 8 tRPC procedures, 17 tests, TypeScript types extended. Frontend: TaskReviewPanel.tsx with Reviews tab in TaskDetailModal.                                    |
 | 2026-01-09 | **Phase 10 COMPLETE**: CI/CD Integration - GitHubWorkflowRun model, workflowService.ts, webhook handler for workflow_run events, 7 tRPC procedures (getWorkflowRuns, getWorkflowRunDetails, getWorkflowJobs, getTaskWorkflowRuns, getWorkflowStats, rerunWorkflow, cancelWorkflow), 26 tests. Frontend panel and deploy tracking deferred. |
-| 2026-01-09 | **Phase 9 COMPLETE**: MCP Tools - 10 GitHub tools in `packages/mcp-server/src/tools/github.ts` (5 query + 5 management), 34 tests, TypeScript compiles, docs/MCP/ROADMAP.md updated |
-| 2026-01-09 | **Phase 8 COMPLETE**: Automation - automationService.ts with branch creation, task status automation via webhooks, column fuzzy matching, sync settings extension, 3 tRPC procedures, 33 tests |
-| 2026-01-09 | **Phase 7 COMPLETE**: PR & Commit Tracking - prCommitLinkService.ts with task reference extraction, auto-linking via webhook, 10 tRPC procedures, 38 tests |
-| 2026-01-09 | **Phase 6 COMPLETE**: Outbound sync (createGitHubIssueFromTask, updateGitHubIssueFromTask, syncTaskToGitHub), reverse user mapping, sync hash conflict detection, 17 tests, 3 tRPC procedures |
-| 2026-01-09 | **Phase 5 COMPLETE**: Issue sync service (issueSyncService.ts), bulk import, real-time webhook sync, user mapping integration, tag creation from labels, 18 tests |
-| 2026-01-09 | **Phase 3 COMPLETE**: 7 project-level tRPC procedures, GitHubProjectSettings page with 3 tabs, ProjectSidebar integration, `github` ACL feature, 21 tests |
-| 2026-01-09 | **Phase 2 COMPLETE**: GitHub service layer, 15 tRPC procedures, Admin UI with 3 tabs, 19 tests |
-| 2026-01-09 | **MCP corrections**: Phase 2-8 "MCP: N/A" corrected to audit logging + MCP tool references to Phase 9 |
-| 2026-01-09 | **Tests mandatory**: Phase Completion Protocol extended with mandatory tests section, all phases (2-16) updated |
-| 2026-01-09 | **Phase 1 COMPLETE**: Database schema (7 models), TypeScript types, 114 tests |
-| 2026-01-09 | Phase Completion Protocol added with per-phase completion checklists |
-| 2026-01-09 | Phase 10-16 added: CI/CD, Advanced Sync, Code Review, Analytics, DX, Multi-Repo, AI |
-| 2026-01-09 | Priority Matrix extended with Extended features (P3-P5) |
-| 2026-01-09 | Database models added for Workflow Runs, Reviews, Contributor Stats |
-| 2026-01-09 | Two-tier architecture added (Admin + Project level) |
-| 2026-01-09 | GitHubUserMapping model added (workspace level) |
-| 2026-01-09 | Files list split into Admin and Project level |
-| 2026-01-09 | ACL section extended with workspace permissions |
-| 2026-01-09 | Initial roadmap created |
+| 2026-01-09 | **Phase 9 COMPLETE**: MCP Tools - 10 GitHub tools in `packages/mcp-server/src/tools/github.ts` (5 query + 5 management), 34 tests, TypeScript compiles, docs/MCP/ROADMAP.md updated                                                                                                                                                        |
+| 2026-01-09 | **Phase 8 COMPLETE**: Automation - automationService.ts with branch creation, task status automation via webhooks, column fuzzy matching, sync settings extension, 3 tRPC procedures, 33 tests                                                                                                                                             |
+| 2026-01-09 | **Phase 7 COMPLETE**: PR & Commit Tracking - prCommitLinkService.ts with task reference extraction, auto-linking via webhook, 10 tRPC procedures, 38 tests                                                                                                                                                                                 |
+| 2026-01-09 | **Phase 6 COMPLETE**: Outbound sync (createGitHubIssueFromTask, updateGitHubIssueFromTask, syncTaskToGitHub), reverse user mapping, sync hash conflict detection, 17 tests, 3 tRPC procedures                                                                                                                                              |
+| 2026-01-09 | **Phase 5 COMPLETE**: Issue sync service (issueSyncService.ts), bulk import, real-time webhook sync, user mapping integration, tag creation from labels, 18 tests                                                                                                                                                                          |
+| 2026-01-09 | **Phase 3 COMPLETE**: 7 project-level tRPC procedures, GitHubProjectSettings page with 3 tabs, ProjectSidebar integration, `github` ACL feature, 21 tests                                                                                                                                                                                  |
+| 2026-01-09 | **Phase 2 COMPLETE**: GitHub service layer, 15 tRPC procedures, Admin UI with 3 tabs, 19 tests                                                                                                                                                                                                                                             |
+| 2026-01-09 | **MCP corrections**: Phase 2-8 "MCP: N/A" corrected to audit logging + MCP tool references to Phase 9                                                                                                                                                                                                                                      |
+| 2026-01-09 | **Tests mandatory**: Phase Completion Protocol extended with mandatory tests section, all phases (2-16) updated                                                                                                                                                                                                                            |
+| 2026-01-09 | **Phase 1 COMPLETE**: Database schema (7 models), TypeScript types, 114 tests                                                                                                                                                                                                                                                              |
+| 2026-01-09 | Phase Completion Protocol added with per-phase completion checklists                                                                                                                                                                                                                                                                       |
+| 2026-01-09 | Phase 10-16 added: CI/CD, Advanced Sync, Code Review, Analytics, DX, Multi-Repo, AI                                                                                                                                                                                                                                                        |
+| 2026-01-09 | Priority Matrix extended with Extended features (P3-P5)                                                                                                                                                                                                                                                                                    |
+| 2026-01-09 | Database models added for Workflow Runs, Reviews, Contributor Stats                                                                                                                                                                                                                                                                        |
+| 2026-01-09 | Two-tier architecture added (Admin + Project level)                                                                                                                                                                                                                                                                                        |
+| 2026-01-09 | GitHubUserMapping model added (workspace level)                                                                                                                                                                                                                                                                                            |
+| 2026-01-09 | Files list split into Admin and Project level                                                                                                                                                                                                                                                                                              |
+| 2026-01-09 | ACL section extended with workspace permissions                                                                                                                                                                                                                                                                                            |
+| 2026-01-09 | Initial roadmap created                                                                                                                                                                                                                                                                                                                    |

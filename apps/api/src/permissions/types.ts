@@ -21,77 +21,77 @@
  * Default roles that get this permission automatically.
  * Maps to project/workspace roles for auto-assignment.
  */
-export type DefaultRole = 'VIEWER' | 'MEMBER' | 'MANAGER' | 'ADMIN' | 'OWNER'
+export type DefaultRole = 'VIEWER' | 'MEMBER' | 'MANAGER' | 'ADMIN' | 'OWNER';
 
 /**
  * Permission scope - where does this permission apply?
  */
-export type PermissionScope = 'SYSTEM' | 'WORKSPACE' | 'PROJECT'
+export type PermissionScope = 'SYSTEM' | 'WORKSPACE' | 'PROJECT';
 
 /**
  * Definition of a single permission.
  */
 export interface PermissionDefinition {
   /** Human-readable name, e.g., "Create tasks" */
-  name: string
+  name: string;
 
   /** Optional longer description */
-  description?: string
+  description?: string;
 
   /** Which roles get this permission by default */
-  defaultFor?: DefaultRole[]
+  defaultFor?: DefaultRole[];
 
   /** Permission scope */
-  scope?: PermissionScope
+  scope?: PermissionScope;
 
   /** Child permissions for hierarchical structure */
-  children?: Record<string, PermissionDefinition>
+  children?: Record<string, PermissionDefinition>;
 }
 
 /**
  * A group of permissions for a module.
  */
-export type PermissionDefinitions = Record<string, PermissionDefinition>
+export type PermissionDefinitions = Record<string, PermissionDefinition>;
 
 /**
  * A registered permission with its full path.
  */
 export interface RegisteredPermission {
   /** Full path, e.g., "task.status.close" */
-  path: string
+  path: string;
 
   /** Human-readable name */
-  name: string
+  name: string;
 
   /** Optional description */
-  description?: string
+  description?: string;
 
   /** Parent path, e.g., "task.status" */
-  parentPath: string | null
+  parentPath: string | null;
 
   /** Module name, e.g., "task" */
-  module: string
+  module: string;
 
   /** Default roles */
-  defaultFor: DefaultRole[]
+  defaultFor: DefaultRole[];
 
   /** Permission scope */
-  scope: PermissionScope
+  scope: PermissionScope;
 
   /** Sort order for UI */
-  sortOrder: number
+  sortOrder: number;
 }
 
 /**
  * Permission tree node for UI display.
  */
 export interface PermissionNode {
-  path: string
-  name: string
-  description?: string
-  scope: PermissionScope
-  defaultFor: DefaultRole[]
-  children: PermissionNode[]
+  path: string;
+  name: string;
+  description?: string;
+  scope: PermissionScope;
+  defaultFor: DefaultRole[];
+  children: PermissionNode[];
 }
 
 // =============================================================================
@@ -102,9 +102,9 @@ export interface PermissionNode {
  * Result of syncing permissions to the database.
  */
 export interface SyncResult {
-  created: string[]
-  updated: string[]
-  deprecated: string[]
+  created: string[];
+  updated: string[];
+  deprecated: string[];
 }
 
 // =============================================================================
@@ -115,16 +115,16 @@ export interface SyncResult {
  * Context for checking permissions.
  */
 export interface PermissionContext {
-  userId: number
-  workspaceId?: number
-  projectId?: number
+  userId: number;
+  workspaceId?: number;
+  projectId?: number;
 }
 
 /**
  * Result of a permission check.
  */
 export interface PermissionCheckResult {
-  allowed: boolean
-  reason: 'ALLOW' | 'DENY' | 'DEFAULT' | 'NOT_GRANTED'
-  grantedBy?: string
+  allowed: boolean;
+  reason: 'ALLOW' | 'DENY' | 'DEFAULT' | 'NOT_GRANTED';
+  grantedBy?: string;
 }

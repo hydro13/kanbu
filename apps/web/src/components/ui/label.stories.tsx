@@ -10,11 +10,11 @@
  * ===================================================================
  */
 
-import type { Meta, StoryObj } from '@storybook/react-vite'
-import { Label } from './label'
-import { Input } from './input'
-import { Checkbox } from './checkbox'
-import { Switch } from './switch'
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import { Label } from './label';
+import { Input } from './input';
+import { Checkbox } from './checkbox';
+import { Switch } from './switch';
 
 const meta: Meta<typeof Label> = {
   title: 'UI/Label',
@@ -28,10 +28,10 @@ const meta: Meta<typeof Label> = {
       },
     },
   },
-}
+};
 
-export default meta
-type Story = StoryObj<typeof Label>
+export default meta;
+type Story = StoryObj<typeof Label>;
 
 // =============================================================================
 // Basic Variants
@@ -39,7 +39,7 @@ type Story = StoryObj<typeof Label>
 
 export const Default: Story = {
   render: () => <Label htmlFor="example">Label Text</Label>,
-}
+};
 
 export const WithInput: Story = {
   render: () => (
@@ -55,7 +55,7 @@ export const WithInput: Story = {
       },
     },
   },
-}
+};
 
 export const Required: Story = {
   render: () => (
@@ -73,16 +73,14 @@ export const Required: Story = {
       },
     },
   },
-}
+};
 
 export const WithDescription: Story = {
   render: () => (
     <div className="space-y-2 w-[300px]">
       <Label htmlFor="username">Username</Label>
       <Input id="username" />
-      <p className="text-sm text-muted-foreground">
-        This is your public display name.
-      </p>
+      <p className="text-sm text-muted-foreground">This is your public display name.</p>
     </div>
   ),
   parameters: {
@@ -92,7 +90,7 @@ export const WithDescription: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // With Different Form Elements
@@ -114,7 +112,7 @@ export const WithCheckbox: Story = {
       },
     },
   },
-}
+};
 
 export const WithSwitch: Story = {
   render: () => (
@@ -125,7 +123,7 @@ export const WithSwitch: Story = {
       </Label>
     </div>
   ),
-}
+};
 
 // =============================================================================
 // States
@@ -141,12 +139,11 @@ export const Disabled: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          'Label with disabled input. The peer-disabled class automatically reduces opacity.',
+        story: 'Label with disabled input. The peer-disabled class automatically reduces opacity.',
       },
     },
   },
-}
+};
 
 export const DisabledCheckbox: Story = {
   render: () => (
@@ -155,7 +152,7 @@ export const DisabledCheckbox: Story = {
       <Label htmlFor="disabled-checkbox">Disabled option</Label>
     </div>
   ),
-}
+};
 
 // =============================================================================
 // Form Examples
@@ -176,9 +173,7 @@ export const CompleteForm: Story = {
           Email <span className="text-destructive">*</span>
         </Label>
         <Input id="form-email" type="email" required />
-        <p className="text-sm text-muted-foreground">
-          We'll never share your email.
-        </p>
+        <p className="text-sm text-muted-foreground">We'll never share your email.</p>
       </div>
 
       <div className="space-y-2">
@@ -212,7 +207,7 @@ export const CompleteForm: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Variations
@@ -232,7 +227,7 @@ export const Inline: Story = {
       },
     },
   },
-}
+};
 
 export const MultipleLabels: Story = {
   render: () => (
@@ -258,7 +253,7 @@ export const MultipleLabels: Story = {
       },
     },
   },
-}
+};
 
 export const WithError: Story = {
   render: () => (
@@ -283,4 +278,4 @@ export const WithError: Story = {
       },
     },
   },
-}
+};

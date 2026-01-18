@@ -74,7 +74,13 @@ interface ImportPreviewProps {
 
 function CheckIcon({ className = 'h-5 w-5' }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
     </svg>
   );
@@ -82,7 +88,13 @@ function CheckIcon({ className = 'h-5 w-5' }: { className?: string }) {
 
 function XIcon({ className = 'h-5 w-5' }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
     </svg>
   );
@@ -90,8 +102,19 @@ function XIcon({ className = 'h-5 w-5' }: { className?: string }) {
 
 function AlertIcon({ className = 'h-5 w-5' }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+      />
     </svg>
   );
 }
@@ -139,9 +162,7 @@ export function ImportPreview({
     setMappings((prev) => {
       const existing = prev.find((m) => m.sourceField === sourceField);
       if (existing) {
-        return prev.map((m) =>
-          m.sourceField === sourceField ? { ...m, targetField } : m
-        );
+        return prev.map((m) => (m.sourceField === sourceField ? { ...m, targetField } : m));
       }
       return [...prev, { sourceField, targetField }];
     });
@@ -174,9 +195,7 @@ export function ImportPreview({
           <div className="grid grid-cols-4 gap-4 text-sm">
             <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
               <p className="text-gray-500 dark:text-gray-400">Total Rows</p>
-              <p className="text-2xl font-bold text-foreground">
-                {preview.summary.totalRows}
-              </p>
+              <p className="text-2xl font-bold text-foreground">{preview.summary.totalRows}</p>
             </div>
             <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
               <p className="text-green-600 dark:text-green-400">Valid</p>
@@ -210,9 +229,7 @@ export function ImportPreview({
             {preview.headers.map((header) => {
               const currentMapping = getMappingForField(header);
               const isUnmapped = preview.unmappedFields.includes(header);
-              const hasSuggestion = preview.suggestedMappings.some(
-                (m) => m.sourceField === header
-              );
+              const hasSuggestion = preview.suggestedMappings.some((m) => m.sourceField === header);
 
               return (
                 <div
@@ -224,9 +241,7 @@ export function ImportPreview({
                   }`}
                 >
                   <div className="flex-1">
-                    <p className="font-medium text-foreground">
-                      {header}
-                    </p>
+                    <p className="font-medium text-foreground">{header}</p>
                     {hasSuggestion && !currentMapping && (
                       <p className="text-xs text-yellow-600 dark:text-yellow-400">
                         Suggested mapping available
@@ -260,14 +275,8 @@ export function ImportPreview({
           <CardTitle className="flex items-center justify-between">
             <span>Data Preview</span>
             {preview.rows.length > 10 && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowAllRows(!showAllRows)}
-              >
-                {showAllRows
-                  ? 'Show Less'
-                  : `Show All (${preview.rows.length} rows)`}
+              <Button variant="outline" size="sm" onClick={() => setShowAllRows(!showAllRows)}>
+                {showAllRows ? 'Show Less' : `Show All (${preview.rows.length} rows)`}
               </Button>
             )}
           </CardTitle>
@@ -277,24 +286,12 @@ export function ImportPreview({
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b dark:border-gray-700">
-                  <th className="px-3 py-2 text-left text-gray-500 dark:text-gray-400">
-                    #
-                  </th>
-                  <th className="px-3 py-2 text-left text-gray-500 dark:text-gray-400">
-                    Status
-                  </th>
-                  <th className="px-3 py-2 text-left text-gray-500 dark:text-gray-400">
-                    Title
-                  </th>
-                  <th className="px-3 py-2 text-left text-gray-500 dark:text-gray-400">
-                    Column
-                  </th>
-                  <th className="px-3 py-2 text-left text-gray-500 dark:text-gray-400">
-                    Priority
-                  </th>
-                  <th className="px-3 py-2 text-left text-gray-500 dark:text-gray-400">
-                    Issues
-                  </th>
+                  <th className="px-3 py-2 text-left text-gray-500 dark:text-gray-400">#</th>
+                  <th className="px-3 py-2 text-left text-gray-500 dark:text-gray-400">Status</th>
+                  <th className="px-3 py-2 text-left text-gray-500 dark:text-gray-400">Title</th>
+                  <th className="px-3 py-2 text-left text-gray-500 dark:text-gray-400">Column</th>
+                  <th className="px-3 py-2 text-left text-gray-500 dark:text-gray-400">Priority</th>
+                  <th className="px-3 py-2 text-left text-gray-500 dark:text-gray-400">Issues</th>
                 </tr>
               </thead>
               <tbody>
@@ -305,13 +302,11 @@ export function ImportPreview({
                       row.errors.length > 0
                         ? 'bg-red-50 dark:bg-red-900/10'
                         : row.warnings.length > 0
-                        ? 'bg-yellow-50 dark:bg-yellow-900/10'
-                        : ''
+                          ? 'bg-yellow-50 dark:bg-yellow-900/10'
+                          : ''
                     }`}
                   >
-                    <td className="px-3 py-2 text-gray-500 dark:text-gray-400">
-                      {row.rowNumber}
-                    </td>
+                    <td className="px-3 py-2 text-gray-500 dark:text-gray-400">{row.rowNumber}</td>
                     <td className="px-3 py-2">
                       {row.willImport ? (
                         <CheckIcon className="h-4 w-4 text-green-500" />
@@ -327,7 +322,8 @@ export function ImportPreview({
                     </td>
                     <td className="px-3 py-2 text-gray-600 dark:text-gray-300">
                       {typeof row.mapped.priority === 'number'
-                        ? (['Low', 'Medium', 'High', 'Urgent'][row.mapped.priority] ?? String(row.mapped.priority))
+                        ? (['Low', 'Medium', 'High', 'Urgent'][row.mapped.priority] ??
+                          String(row.mapped.priority))
                         : '-'}
                     </td>
                     <td className="px-3 py-2">

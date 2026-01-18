@@ -27,20 +27,20 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { TRPCError } from '@trpc/server'
-import { ProjectRole } from '@prisma/client'
-import { prisma } from './prisma'
-import { permissionService } from '../services/permissions'
+import { TRPCError } from '@trpc/server';
+import { ProjectRole } from '@prisma/client';
+import { prisma } from './prisma';
+import { permissionService } from '../services/permissions';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface ProjectAccess {
-  projectId: number
-  workspaceId: number
-  userId: number
-  role: ProjectRole
+  projectId: number;
+  workspaceId: number;
+  userId: number;
+  role: ProjectRole;
 }
 
 // Role hierarchy for permission checks
@@ -49,7 +49,7 @@ const PROJECT_ROLE_HIERARCHY: Record<ProjectRole, number> = {
   MEMBER: 2,
   MANAGER: 3,
   OWNER: 4,
-}
+};
 
 // Default columns for new projects
 const DEFAULT_COLUMNS = [
@@ -59,7 +59,7 @@ const DEFAULT_COLUMNS = [
   { title: 'Review', position: 4, isArchive: false },
   { title: 'Done', position: 5, isArchive: false },
   { title: 'Archive', position: 6, isArchive: true },
-]
+];
 
 // =============================================================================
 // Permission Helpers
@@ -82,13 +82,13 @@ export async function requireProjectAccess(
   minRole: ProjectRole = 'VIEWER'
 ): Promise<ProjectAccess> {
   // Delegate to permissionService (ACL-based)
-  const access = await permissionService.requireProjectAccess(userId, projectId, minRole)
+  const access = await permissionService.requireProjectAccess(userId, projectId, minRole);
   return {
     projectId: access.projectId,
     workspaceId: access.workspaceId,
     userId: access.userId,
     role: access.role,
-  }
+  };
 }
 
 /**
@@ -105,14 +105,14 @@ export async function getProjectAccess(
   projectId: number
 ): Promise<ProjectAccess | null> {
   // Delegate to permissionService (ACL-based)
-  const access = await permissionService.getProjectAccess(userId, projectId)
-  if (!access) return null
+  const access = await permissionService.getProjectAccess(userId, projectId);
+  if (!access) return null;
   return {
     projectId: access.projectId,
     workspaceId: access.workspaceId,
     userId: access.userId,
     role: access.role,
-  }
+  };
 }
 
 /**
@@ -124,7 +124,7 @@ export async function getProjectAccess(
  * @returns true if userRole >= minRole
  */
 export function hasMinProjectRole(userRole: ProjectRole, minRole: ProjectRole): boolean {
-  return PROJECT_ROLE_HIERARCHY[userRole] >= PROJECT_ROLE_HIERARCHY[minRole]
+  return PROJECT_ROLE_HIERARCHY[userRole] >= PROJECT_ROLE_HIERARCHY[minRole];
 }
 
 // =============================================================================
@@ -154,9 +154,9 @@ export async function createDefaultColumns(
       position: true,
       isArchive: true,
     },
-  })
+  });
 
-  return columns
+  return columns;
 }
 
 /**
@@ -178,9 +178,9 @@ export async function createDefaultSwimlane(
       id: true,
       name: true,
     },
-  })
+  });
 
-  return swimlane
+  return swimlane;
 }
 
 /**
@@ -199,16 +199,16 @@ export async function generateProjectIdentifier(
   let baseIdentifier = name
     .toUpperCase()
     .replace(/[^A-Z]/g, '')
-    .substring(0, 6)
+    .substring(0, 6);
 
   // Fallback if no letters
   if (baseIdentifier.length < 2) {
-    baseIdentifier = 'PROJ'
+    baseIdentifier = 'PROJ';
   }
 
   // Check uniqueness within workspace
-  let identifier = baseIdentifier
-  let counter = 1
+  let identifier = baseIdentifier;
+  let counter = 1;
 
   while (true) {
     const existing = await prisma.project.findFirst({
@@ -217,23 +217,23 @@ export async function generateProjectIdentifier(
         identifier,
       },
       select: { id: true },
-    })
+    });
 
     if (!existing) {
-      break
+      break;
     }
 
-    identifier = `${baseIdentifier}${counter}`
-    counter++
+    identifier = `${baseIdentifier}${counter}`;
+    counter++;
 
     // Safety limit
     if (counter > 99) {
-      identifier = `${baseIdentifier}${Date.now() % 1000}`
-      break
+      identifier = `${baseIdentifier}${Date.now() % 1000}`;
+      break;
     }
   }
 
-  return identifier
+  return identifier;
 }
 
 /**
@@ -252,18 +252,18 @@ export async function generateTaskReference(projectId: number): Promise<string> 
         select: { tasks: true },
       },
     },
-  })
+  });
 
   if (!project) {
     throw new TRPCError({
       code: 'NOT_FOUND',
       message: 'Project not found',
-    })
+    });
   }
 
   // Count existing tasks + 1
-  const nextNumber = project._count.tasks + 1
-  const identifier = project.identifier || 'TASK'
+  const nextNumber = project._count.tasks + 1;
+  const identifier = project.identifier || 'TASK';
 
-  return `${identifier}-${nextNumber}`
+  return `${identifier}-${nextNumber}`;
 }

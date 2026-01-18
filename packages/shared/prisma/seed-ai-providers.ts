@@ -36,29 +36,29 @@
  * =============================================================================
  */
 
-import { PrismaClient, AiProviderType, AiCapability } from '@prisma/client'
+import { PrismaClient, AiProviderType, AiCapability } from '@prisma/client';
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface AiProviderSeed {
-  isGlobal: boolean
-  providerType: AiProviderType
-  name: string
-  isActive: boolean
-  priority: number
-  capabilities: AiCapability[]
-  baseUrl?: string
-  apiKey?: string
-  organizationId?: string
-  embeddingModel?: string
-  reasoningModel?: string
-  visionModel?: string
-  maxRequestsPerMinute?: number
-  maxTokensPerMinute?: number
+  isGlobal: boolean;
+  providerType: AiProviderType;
+  name: string;
+  isActive: boolean;
+  priority: number;
+  capabilities: AiCapability[];
+  baseUrl?: string;
+  apiKey?: string;
+  organizationId?: string;
+  embeddingModel?: string;
+  reasoningModel?: string;
+  visionModel?: string;
+  maxRequestsPerMinute?: number;
+  maxTokensPerMinute?: number;
 }
 
 // =============================================================================
@@ -72,7 +72,7 @@ const defaultProviders: AiProviderSeed[] = [
     providerType: 'OPENAI',
     name: 'OpenAI (Global)',
     isActive: false, // Inactive until API key is configured
-    priority: 100,   // Highest priority when active
+    priority: 100, // Highest priority when active
     capabilities: ['EMBEDDING', 'REASONING', 'VISION'],
     baseUrl: 'https://api.openai.com/v1',
     embeddingModel: 'text-embedding-3-small',
@@ -111,17 +111,17 @@ const defaultProviders: AiProviderSeed[] = [
     // No vision by default (depends on loaded model)
     // No rate limits for local
   },
-]
+];
 
 // =============================================================================
 // Seed Function
 // =============================================================================
 
 async function seedAiProviders() {
-  console.log('🤖 Starting AI Provider seed...\n')
+  console.log('🤖 Starting AI Provider seed...\n');
 
-  let created = 0
-  let skipped = 0
+  let created = 0;
+  let skipped = 0;
 
   for (const provider of defaultProviders) {
     // Check if provider already exists
@@ -131,33 +131,33 @@ async function seedAiProviders() {
         providerType: provider.providerType,
         name: provider.name,
       },
-    })
+    });
 
     if (existing) {
-      console.log(`  ⏭️  Skipping existing: ${provider.name}`)
-      skipped++
-      continue
+      console.log(`  ⏭️  Skipping existing: ${provider.name}`);
+      skipped++;
+      continue;
     }
 
     // Create new provider
     await prisma.aiProviderConfig.create({
       data: provider,
-    })
+    });
 
-    console.log(`  ✅ Created: ${provider.name}`)
-    console.log(`     Type: ${provider.providerType}`)
-    console.log(`     Capabilities: ${provider.capabilities.join(', ')}`)
-    console.log(`     Base URL: ${provider.baseUrl}`)
-    console.log(`     Active: ${provider.isActive}`)
-    console.log('')
+    console.log(`  ✅ Created: ${provider.name}`);
+    console.log(`     Type: ${provider.providerType}`);
+    console.log(`     Capabilities: ${provider.capabilities.join(', ')}`);
+    console.log(`     Base URL: ${provider.baseUrl}`);
+    console.log(`     Active: ${provider.isActive}`);
+    console.log('');
 
-    created++
+    created++;
   }
 
-  console.log('\n📊 Summary:')
-  console.log(`   Created: ${created}`)
-  console.log(`   Skipped: ${skipped}`)
-  console.log(`   Total:   ${defaultProviders.length}`)
+  console.log('\n📊 Summary:');
+  console.log(`   Created: ${created}`);
+  console.log(`   Skipped: ${skipped}`);
+  console.log(`   Total:   ${defaultProviders.length}`);
 }
 
 // =============================================================================
@@ -166,14 +166,14 @@ async function seedAiProviders() {
 
 async function main() {
   try {
-    await seedAiProviders()
-    console.log('\n✨ AI Provider seeding completed successfully!')
+    await seedAiProviders();
+    console.log('\n✨ AI Provider seeding completed successfully!');
   } catch (error) {
-    console.error('Error seeding AI providers:', error)
-    throw error
+    console.error('Error seeding AI providers:', error);
+    throw error;
   } finally {
-    await prisma.$disconnect()
+    await prisma.$disconnect();
   }
 }
 
-main()
+main();

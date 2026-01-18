@@ -13,44 +13,44 @@
  * =============================================================================
  */
 
-import { prisma } from '../../lib/prisma'
+import { prisma } from '../../lib/prisma';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface MonorepoPackage {
-  path: string           // e.g., "packages/api"
-  name: string           // e.g., "API"
-  labelPrefix?: string   // e.g., "api:" - auto-add to issues in this path
-  columnId?: number      // Default column for tasks in this package
+  path: string; // e.g., "packages/api"
+  name: string; // e.g., "API"
+  labelPrefix?: string; // e.g., "api:" - auto-add to issues in this path
+  columnId?: number; // Default column for tasks in this package
 }
 
 export interface MonorepoSettings {
-  enabled: boolean
-  packages: MonorepoPackage[]
+  enabled: boolean;
+  packages: MonorepoPackage[];
   affectedDetection: {
-    enabled: boolean
-    baseBranch: string   // e.g., "main"
-  }
+    enabled: boolean;
+    baseBranch: string; // e.g., "main"
+  };
   pathPatterns?: {
-    include?: string[]   // Glob patterns to include
-    exclude?: string[]   // Glob patterns to exclude
-  }
+    include?: string[]; // Glob patterns to include
+    exclude?: string[]; // Glob patterns to exclude
+  };
 }
 
 export interface AffectedPackagesResult {
-  packages: MonorepoPackage[]
-  files: string[]
-  hasChanges: boolean
+  packages: MonorepoPackage[];
+  files: string[];
+  hasChanges: boolean;
 }
 
 export interface PackageInfo {
-  package: MonorepoPackage
-  fileCount: number
-  recentCommits: number
-  openIssues: number
-  openPRs: number
+  package: MonorepoPackage;
+  fileCount: number;
+  recentCommits: number;
+  openIssues: number;
+  openPRs: number;
 }
 
 // =============================================================================
@@ -64,7 +64,7 @@ const DEFAULT_MONOREPO_SETTINGS: MonorepoSettings = {
     enabled: false,
     baseBranch: 'main',
   },
-}
+};
 
 // =============================================================================
 // Settings Management
@@ -73,20 +73,18 @@ const DEFAULT_MONOREPO_SETTINGS: MonorepoSettings = {
 /**
  * Get monorepo settings for a repository
  */
-export async function getMonorepoSettings(
-  repositoryId: number
-): Promise<MonorepoSettings> {
+export async function getMonorepoSettings(repositoryId: number): Promise<MonorepoSettings> {
   const repo = await prisma.gitHubRepository.findFirst({
     where: { id: repositoryId },
     select: { syncSettings: true },
-  })
+  });
 
   if (!repo?.syncSettings) {
-    return DEFAULT_MONOREPO_SETTINGS
+    return DEFAULT_MONOREPO_SETTINGS;
   }
 
-  const settings = repo.syncSettings as Record<string, unknown>
-  const monorepoSettings = settings.monorepo as MonorepoSettings | undefined
+  const settings = repo.syncSettings as Record<string, unknown>;
+  const monorepoSettings = settings.monorepo as MonorepoSettings | undefined;
 
   return {
     ...DEFAULT_MONOREPO_SETTINGS,
@@ -95,7 +93,7 @@ export async function getMonorepoSettings(
       ...DEFAULT_MONOREPO_SETTINGS.affectedDetection,
       ...(monorepoSettings?.affectedDetection || {}),
     },
-  }
+  };
 }
 
 /**
@@ -108,10 +106,11 @@ export async function updateMonorepoSettings(
   const repo = await prisma.gitHubRepository.findFirst({
     where: { id: repositoryId },
     select: { syncSettings: true },
-  })
+  });
 
-  const currentSettings = (repo?.syncSettings as Record<string, unknown>) || {}
-  const currentMonorepo = (currentSettings.monorepo as MonorepoSettings) || DEFAULT_MONOREPO_SETTINGS
+  const currentSettings = (repo?.syncSettings as Record<string, unknown>) || {};
+  const currentMonorepo =
+    (currentSettings.monorepo as MonorepoSettings) || DEFAULT_MONOREPO_SETTINGS;
 
   const newMonorepoSettings: MonorepoSettings = {
     ...currentMonorepo,
@@ -121,19 +120,21 @@ export async function updateMonorepoSettings(
       ...currentMonorepo.affectedDetection,
       ...(settings.affectedDetection || {}),
     },
-  }
+  };
 
   await prisma.gitHubRepository.update({
     where: { id: repositoryId },
     data: {
-      syncSettings: JSON.parse(JSON.stringify({
-        ...currentSettings,
-        monorepo: newMonorepoSettings,
-      })),
+      syncSettings: JSON.parse(
+        JSON.stringify({
+          ...currentSettings,
+          monorepo: newMonorepoSettings,
+        })
+      ),
     },
-  })
+  });
 
-  return newMonorepoSettings
+  return newMonorepoSettings;
 }
 
 // =============================================================================
@@ -147,22 +148,22 @@ export async function addPackage(
   repositoryId: number,
   pkg: MonorepoPackage
 ): Promise<MonorepoSettings> {
-  const settings = await getMonorepoSettings(repositoryId)
+  const settings = await getMonorepoSettings(repositoryId);
 
   // Check if package path already exists
-  const existingIndex = settings.packages.findIndex(p => p.path === pkg.path)
+  const existingIndex = settings.packages.findIndex((p) => p.path === pkg.path);
   if (existingIndex >= 0) {
     // Update existing package
-    settings.packages[existingIndex] = pkg
+    settings.packages[existingIndex] = pkg;
   } else {
     // Add new package
-    settings.packages.push(pkg)
+    settings.packages.push(pkg);
   }
 
   return updateMonorepoSettings(repositoryId, {
     packages: settings.packages,
     enabled: true, // Auto-enable when adding packages
-  })
+  });
 }
 
 /**
@@ -172,24 +173,22 @@ export async function removePackage(
   repositoryId: number,
   packagePath: string
 ): Promise<MonorepoSettings> {
-  const settings = await getMonorepoSettings(repositoryId)
-  settings.packages = settings.packages.filter(p => p.path !== packagePath)
+  const settings = await getMonorepoSettings(repositoryId);
+  settings.packages = settings.packages.filter((p) => p.path !== packagePath);
 
   return updateMonorepoSettings(repositoryId, {
     packages: settings.packages,
     // Auto-disable if no packages left
     enabled: settings.packages.length > 0,
-  })
+  });
 }
 
 /**
  * Get all packages for a repository
  */
-export async function getPackages(
-  repositoryId: number
-): Promise<MonorepoPackage[]> {
-  const settings = await getMonorepoSettings(repositoryId)
-  return settings.packages
+export async function getPackages(repositoryId: number): Promise<MonorepoPackage[]> {
+  const settings = await getMonorepoSettings(repositoryId);
+  return settings.packages;
 }
 
 // =============================================================================
@@ -199,15 +198,12 @@ export async function getPackages(
 /**
  * Check if a file path matches a package
  */
-export function matchesPackage(
-  filePath: string,
-  pkg: MonorepoPackage
-): boolean {
+export function matchesPackage(filePath: string, pkg: MonorepoPackage): boolean {
   // Normalize paths
-  const normalizedFile = filePath.replace(/\\/g, '/').replace(/^\//, '')
-  const normalizedPkg = pkg.path.replace(/\\/g, '/').replace(/^\//, '').replace(/\/$/, '')
+  const normalizedFile = filePath.replace(/\\/g, '/').replace(/^\//, '');
+  const normalizedPkg = pkg.path.replace(/\\/g, '/').replace(/^\//, '').replace(/\/$/, '');
 
-  return normalizedFile.startsWith(normalizedPkg + '/') || normalizedFile === normalizedPkg
+  return normalizedFile.startsWith(normalizedPkg + '/') || normalizedFile === normalizedPkg;
 }
 
 /**
@@ -218,15 +214,15 @@ export function findPackageForFile(
   packages: MonorepoPackage[]
 ): MonorepoPackage | null {
   // Sort packages by path length (longest first) for most specific match
-  const sorted = [...packages].sort((a, b) => b.path.length - a.path.length)
+  const sorted = [...packages].sort((a, b) => b.path.length - a.path.length);
 
   for (const pkg of sorted) {
     if (matchesPackage(filePath, pkg)) {
-      return pkg
+      return pkg;
     }
   }
 
-  return null
+  return null;
 }
 
 /**
@@ -236,14 +232,14 @@ export function getAffectedPackages(
   changedFiles: string[],
   packages: MonorepoPackage[]
 ): AffectedPackagesResult {
-  const affectedPkgs = new Set<MonorepoPackage>()
-  const affectedFiles: string[] = []
+  const affectedPkgs = new Set<MonorepoPackage>();
+  const affectedFiles: string[] = [];
 
   for (const file of changedFiles) {
-    const pkg = findPackageForFile(file, packages)
+    const pkg = findPackageForFile(file, packages);
     if (pkg) {
-      affectedPkgs.add(pkg)
-      affectedFiles.push(file)
+      affectedPkgs.add(pkg);
+      affectedFiles.push(file);
     }
   }
 
@@ -251,17 +247,14 @@ export function getAffectedPackages(
     packages: Array.from(affectedPkgs),
     files: affectedFiles,
     hasChanges: affectedPkgs.size > 0,
-  }
+  };
 }
 
 /**
  * Filter files by package
  */
-export function filterFilesByPackage(
-  files: string[],
-  pkg: MonorepoPackage
-): string[] {
-  return files.filter(file => matchesPackage(file, pkg))
+export function filterFilesByPackage(files: string[], pkg: MonorepoPackage): string[] {
+  return files.filter((file) => matchesPackage(file, pkg));
 }
 
 // =============================================================================
@@ -275,8 +268,8 @@ export function getLabelPrefixForFile(
   filePath: string,
   packages: MonorepoPackage[]
 ): string | null {
-  const pkg = findPackageForFile(filePath, packages)
-  return pkg?.labelPrefix || null
+  const pkg = findPackageForFile(filePath, packages);
+  return pkg?.labelPrefix || null;
 }
 
 /**
@@ -286,16 +279,16 @@ export function generatePackageLabels(
   changedFiles: string[],
   packages: MonorepoPackage[]
 ): string[] {
-  const labels = new Set<string>()
+  const labels = new Set<string>();
 
   for (const file of changedFiles) {
-    const pkg = findPackageForFile(file, packages)
+    const pkg = findPackageForFile(file, packages);
     if (pkg?.labelPrefix) {
-      labels.add(pkg.labelPrefix.replace(/:$/, '')) // Remove trailing colon
+      labels.add(pkg.labelPrefix.replace(/:$/, '')); // Remove trailing colon
     }
   }
 
-  return Array.from(labels)
+  return Array.from(labels);
 }
 
 // =============================================================================
@@ -305,13 +298,11 @@ export function generatePackageLabels(
 /**
  * Get statistics for all packages in a repository
  */
-export async function getPackageStats(
-  repositoryId: number
-): Promise<PackageInfo[]> {
-  const settings = await getMonorepoSettings(repositoryId)
+export async function getPackageStats(repositoryId: number): Promise<PackageInfo[]> {
+  const settings = await getMonorepoSettings(repositoryId);
 
   if (!settings.enabled || settings.packages.length === 0) {
-    return []
+    return [];
   }
 
   // Get all commits and PRs for the repo
@@ -330,27 +321,30 @@ export async function getPackageStats(
       where: { repositoryId, state: 'open' },
       select: { title: true },
     }),
-  ])
+  ]);
 
   // Calculate stats per package (simplified - in real impl would parse commit files)
-  const packageStats: PackageInfo[] = settings.packages.map(pkg => {
+  const packageStats: PackageInfo[] = settings.packages.map((pkg) => {
     // Count commits mentioning the package path
-    const packageCommits = commits.filter(c =>
-      c.message.toLowerCase().includes(pkg.path.toLowerCase()) ||
-      c.message.toLowerCase().includes(pkg.name.toLowerCase())
-    ).length
+    const packageCommits = commits.filter(
+      (c) =>
+        c.message.toLowerCase().includes(pkg.path.toLowerCase()) ||
+        c.message.toLowerCase().includes(pkg.name.toLowerCase())
+    ).length;
 
     // Count PRs with branch names containing package path
-    const packagePRs = pullRequests.filter(pr =>
-      pr.headBranch.toLowerCase().includes(pkg.path.toLowerCase()) ||
-      pr.title.toLowerCase().includes(pkg.name.toLowerCase())
-    ).length
+    const packagePRs = pullRequests.filter(
+      (pr) =>
+        pr.headBranch.toLowerCase().includes(pkg.path.toLowerCase()) ||
+        pr.title.toLowerCase().includes(pkg.name.toLowerCase())
+    ).length;
 
     // Count issues mentioning package
-    const packageIssues = issues.filter(i =>
-      i.title.toLowerCase().includes(pkg.name.toLowerCase()) ||
-      (pkg.labelPrefix && i.title.toLowerCase().includes(pkg.labelPrefix.replace(':', '')))
-    ).length
+    const packageIssues = issues.filter(
+      (i) =>
+        i.title.toLowerCase().includes(pkg.name.toLowerCase()) ||
+        (pkg.labelPrefix && i.title.toLowerCase().includes(pkg.labelPrefix.replace(':', '')))
+    ).length;
 
     return {
       package: pkg,
@@ -358,10 +352,10 @@ export async function getPackageStats(
       recentCommits: packageCommits,
       openIssues: packageIssues,
       openPRs: packagePRs,
-    }
-  })
+    };
+  });
 
-  return packageStats
+  return packageStats;
 }
 
 // =============================================================================
@@ -373,11 +367,11 @@ export async function getPackageStats(
  */
 export function matchGlob(pattern: string, path: string): boolean {
   // Normalize paths
-  const normalizedPattern = pattern.replace(/\\/g, '/')
-  const normalizedPath = path.replace(/\\/g, '/')
+  const normalizedPattern = pattern.replace(/\\/g, '/');
+  const normalizedPath = path.replace(/\\/g, '/');
 
   // Convert glob pattern to regex - handle globs BEFORE escaping special chars
-  let regexPattern = normalizedPattern
+  const regexPattern = normalizedPattern
     // Use placeholder for ** first (before escaping)
     .replace(/\*\*\//g, '<<GLOBSTAR_SLASH>>')
     .replace(/\/\*\*/g, '<<SLASH_GLOBSTAR>>')
@@ -399,12 +393,12 @@ export function matchGlob(pattern: string, path: string): boolean {
     // Handle ? (single character except /)
     .replace(/\?/g, '[^/]')
     // Convert placeholders back to proper regex
-    .replace(/<<GLOBSTAR_SLASH>>/g, '(?:[^/]+/)*')  // **/ matches zero or more directories
-    .replace(/<<SLASH_GLOBSTAR>>/g, '(?:/.*)?')     // /** matches everything after
-    .replace(/<<GLOBSTAR>>/g, '.*')                  // ** alone matches everything
+    .replace(/<<GLOBSTAR_SLASH>>/g, '(?:[^/]+/)*') // **/ matches zero or more directories
+    .replace(/<<SLASH_GLOBSTAR>>/g, '(?:/.*)?') // /** matches everything after
+    .replace(/<<GLOBSTAR>>/g, '.*'); // ** alone matches everything
 
-  const regex = new RegExp(`^${regexPattern}$`)
-  return regex.test(normalizedPath)
+  const regex = new RegExp(`^${regexPattern}$`);
+  return regex.test(normalizedPath);
 }
 
 /**
@@ -414,25 +408,23 @@ export function filterByPatterns(
   files: string[],
   patterns?: { include?: string[]; exclude?: string[] }
 ): string[] {
-  if (!patterns) return files
+  if (!patterns) return files;
 
-  let result = files
+  let result = files;
 
   // Apply include patterns
   if (patterns.include && patterns.include.length > 0) {
-    result = result.filter(file =>
-      patterns.include!.some(pattern => matchGlob(pattern, file))
-    )
+    result = result.filter((file) => patterns.include!.some((pattern) => matchGlob(pattern, file)));
   }
 
   // Apply exclude patterns
   if (patterns.exclude && patterns.exclude.length > 0) {
-    result = result.filter(file =>
-      !patterns.exclude!.some(pattern => matchGlob(pattern, file))
-    )
+    result = result.filter(
+      (file) => !patterns.exclude!.some((pattern) => matchGlob(pattern, file))
+    );
   }
 
-  return result
+  return result;
 }
 
 // =============================================================================
@@ -460,6 +452,6 @@ export const monorepoService = {
   // Glob matching
   matchGlob,
   filterByPatterns,
-}
+};
 
-export default monorepoService
+export default monorepoService;

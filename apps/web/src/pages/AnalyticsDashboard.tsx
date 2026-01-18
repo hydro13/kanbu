@@ -18,8 +18,8 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState, useMemo } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useState, useMemo } from 'react';
+import { useParams, Link } from 'react-router-dom';
 import {
   Loader2,
   AlertCircle,
@@ -30,59 +30,63 @@ import {
   Users,
   Calendar,
   Download,
-} from 'lucide-react'
-import { ProjectLayout } from '@/components/layout/ProjectLayout'
-import { TaskCountWidget } from '@/components/analytics/TaskCountWidget'
-import { VelocityChart } from '@/components/analytics/VelocityChart'
-import { CycleTimeChart } from '@/components/analytics/CycleTimeChart'
-import { WorkloadChart } from '@/components/analytics/WorkloadChart'
-import { trpc } from '@/lib/trpc'
+} from 'lucide-react';
+import { ProjectLayout } from '@/components/layout/ProjectLayout';
+import { TaskCountWidget } from '@/components/analytics/TaskCountWidget';
+import { VelocityChart } from '@/components/analytics/VelocityChart';
+import { CycleTimeChart } from '@/components/analytics/CycleTimeChart';
+import { WorkloadChart } from '@/components/analytics/WorkloadChart';
+import { trpc } from '@/lib/trpc';
 
 // =============================================================================
 // Types
 // =============================================================================
 
-type DateRangePreset = 'all' | '7d' | '30d' | '90d' | 'custom'
+type DateRangePreset = 'all' | '7d' | '30d' | '90d' | 'custom';
 
 // =============================================================================
 // Helpers
 // =============================================================================
 
 function getDateRange(preset: DateRangePreset): { dateFrom?: string; dateTo?: string } {
-  if (preset === 'all') return {}
+  if (preset === 'all') return {};
 
-  const now = new Date()
-  const dateTo = now.toISOString()
+  const now = new Date();
+  const dateTo = now.toISOString();
 
-  let dateFrom: Date
+  let dateFrom: Date;
   switch (preset) {
     case '7d':
-      dateFrom = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-      break
+      dateFrom = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      break;
     case '30d':
-      dateFrom = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-      break
+      dateFrom = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      break;
     case '90d':
-      dateFrom = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000)
-      break
+      dateFrom = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+      break;
     default:
-      return {}
+      return {};
   }
 
-  return { dateFrom: dateFrom.toISOString(), dateTo }
+  return { dateFrom: dateFrom.toISOString(), dateTo };
 }
 
-function getVelocityParams(preset: DateRangePreset): { days?: number; weeks?: number; granularity: 'day' | 'week' } {
+function getVelocityParams(preset: DateRangePreset): {
+  days?: number;
+  weeks?: number;
+  granularity: 'day' | 'week';
+} {
   switch (preset) {
     case '7d':
-      return { days: 7, granularity: 'day' }
+      return { days: 7, granularity: 'day' };
     case '30d':
-      return { days: 30, granularity: 'day' }
+      return { days: 30, granularity: 'day' };
     case '90d':
-      return { weeks: 13, granularity: 'week' }
+      return { weeks: 13, granularity: 'week' };
     case 'all':
     default:
-      return { weeks: 52, granularity: 'week' }
+      return { weeks: 52, granularity: 'week' };
   }
 }
 
@@ -91,47 +95,47 @@ function getVelocityParams(preset: DateRangePreset): { days?: number; weeks?: nu
 // =============================================================================
 
 export function AnalyticsDashboard() {
-  const { projectIdentifier } = useParams<{ projectIdentifier: string }>()
+  const { projectIdentifier } = useParams<{ projectIdentifier: string }>();
 
-  const [dateRange, setDateRange] = useState<DateRangePreset>('all')
+  const [dateRange, setDateRange] = useState<DateRangePreset>('all');
   // Memoize to prevent new Date() on every render causing infinite refetches
-  const dateRangeParams = useMemo(() => getDateRange(dateRange), [dateRange])
+  const dateRangeParams = useMemo(() => getDateRange(dateRange), [dateRange]);
 
   // Fetch project by identifier (SEO-friendly URL)
   const { data: project, isLoading: isProjectLoading } = trpc.project.getByIdentifier.useQuery(
     { identifier: projectIdentifier! },
     { enabled: !!projectIdentifier }
-  )
+  );
 
   // Get project ID from fetched data
-  const projectIdNum = project?.id ?? 0
+  const projectIdNum = project?.id ?? 0;
 
   const { data: stats, isLoading: isStatsLoading } = trpc.analytics.getProjectStats.useQuery(
     { projectId: projectIdNum, ...dateRangeParams },
     { enabled: projectIdNum > 0 }
-  )
+  );
 
-  const velocityParams = useMemo(() => getVelocityParams(dateRange), [dateRange])
+  const velocityParams = useMemo(() => getVelocityParams(dateRange), [dateRange]);
   const { data: velocity, isLoading: isVelocityLoading } = trpc.analytics.getVelocity.useQuery(
     { projectId: projectIdNum, ...velocityParams },
     { enabled: projectIdNum > 0 }
-  )
+  );
 
   const { data: cycleTime, isLoading: isCycleTimeLoading } = trpc.analytics.getCycleTime.useQuery(
     { projectId: projectIdNum },
     { enabled: projectIdNum > 0 }
-  )
+  );
 
   const { data: workload, isLoading: isWorkloadLoading } = trpc.analytics.getTeamWorkload.useQuery(
     { projectId: projectIdNum },
     { enabled: projectIdNum > 0 }
-  )
+  );
 
-  const isLoading = isProjectLoading || isStatsLoading
+  const isLoading = isProjectLoading || isStatsLoading;
 
   // Export handler
   const handleExport = () => {
-    if (!stats || !velocity || !cycleTime || !workload) return
+    if (!stats || !velocity || !cycleTime || !workload) return;
 
     const exportData = {
       project: project?.name,
@@ -140,16 +144,16 @@ export function AnalyticsDashboard() {
       velocity,
       cycleTime,
       workload,
-    }
+    };
 
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${project?.name ?? 'project'}-analytics-${new Date().toISOString().split('T')[0]}.json`
-    a.click()
-    URL.revokeObjectURL(url)
-  }
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${project?.name ?? 'project'}-analytics-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   // Loading state
   if (isLoading) {
@@ -159,7 +163,7 @@ export function AnalyticsDashboard() {
           <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
         </div>
       </ProjectLayout>
-    )
+    );
   }
 
   // Error state
@@ -168,18 +172,13 @@ export function AnalyticsDashboard() {
       <ProjectLayout>
         <div className="flex flex-col items-center justify-center h-64 gap-4">
           <AlertCircle className="w-12 h-12 text-red-500" />
-          <h2 className="text-xl font-semibold text-foreground">
-            Project not found
-          </h2>
-          <Link
-            to="/workspaces"
-            className="text-blue-500 hover:text-blue-600 dark:text-blue-400"
-          >
+          <h2 className="text-xl font-semibold text-foreground">Project not found</h2>
+          <Link to="/workspaces" className="text-blue-500 hover:text-blue-600 dark:text-blue-400">
             Return to projects
           </Link>
         </div>
       </ProjectLayout>
-    )
+    );
   }
 
   return (
@@ -198,13 +197,9 @@ export function AnalyticsDashboard() {
               <div>
                 <div className="flex items-center gap-2">
                   <BarChart3 className="w-6 h-6 text-blue-500" />
-                  <h1 className="text-page-title text-foreground">
-                    Analytics
-                  </h1>
+                  <h1 className="text-page-title text-foreground">Analytics</h1>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  {project.name}
-                </p>
+                <p className="text-sm text-muted-foreground">{project.name}</p>
               </div>
             </div>
 
@@ -245,57 +240,39 @@ export function AnalyticsDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Task Count Widget */}
           <div className="lg:col-span-2">
-            <TaskCountWidget
-              stats={stats}
-              isLoading={isStatsLoading}
-            />
+            <TaskCountWidget stats={stats} isLoading={isStatsLoading} />
           </div>
 
           {/* Velocity Chart */}
           <div className="bg-card rounded-card border border-border p-6">
             <div className="flex items-center gap-2 mb-4">
               <TrendingUp className="w-5 h-5 text-green-500" />
-              <h3 className="text-lg font-semibold text-foreground">
-                Velocity
-              </h3>
+              <h3 className="text-lg font-semibold text-foreground">Velocity</h3>
             </div>
-            <VelocityChart
-              data={velocity}
-              isLoading={isVelocityLoading}
-            />
+            <VelocityChart data={velocity} isLoading={isVelocityLoading} />
           </div>
 
           {/* Cycle Time Chart */}
           <div className="bg-card rounded-card border border-border p-6">
             <div className="flex items-center gap-2 mb-4">
               <Clock className="w-5 h-5 text-orange-500" />
-              <h3 className="text-lg font-semibold text-foreground">
-                Cycle Time
-              </h3>
+              <h3 className="text-lg font-semibold text-foreground">Cycle Time</h3>
             </div>
-            <CycleTimeChart
-              data={cycleTime}
-              isLoading={isCycleTimeLoading}
-            />
+            <CycleTimeChart data={cycleTime} isLoading={isCycleTimeLoading} />
           </div>
 
           {/* Workload Chart */}
           <div className="lg:col-span-2 bg-card rounded-card border border-border p-6">
             <div className="flex items-center gap-2 mb-4">
               <Users className="w-5 h-5 text-purple-500" />
-              <h3 className="text-lg font-semibold text-foreground">
-                Team Workload
-              </h3>
+              <h3 className="text-lg font-semibold text-foreground">Team Workload</h3>
             </div>
-            <WorkloadChart
-              data={workload}
-              isLoading={isWorkloadLoading}
-            />
+            <WorkloadChart data={workload} isLoading={isWorkloadLoading} />
           </div>
         </div>
       </div>
     </ProjectLayout>
-  )
+  );
 }
 
-export default AnalyticsDashboard
+export default AnalyticsDashboard;

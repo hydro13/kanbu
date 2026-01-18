@@ -20,9 +20,9 @@ import type {
   NodeKey,
   SerializedElementNode,
   Spread,
-} from 'lexical'
-import { $applyNodeReplacement, ElementNode, $createTextNode } from 'lexical'
-import { addClassNamesToElement } from '@lexical/utils'
+} from 'lexical';
+import { $applyNodeReplacement, ElementNode, $createTextNode } from 'lexical';
+import { addClassNamesToElement } from '@lexical/utils';
 
 // =============================================================================
 // Types
@@ -30,140 +30,127 @@ import { addClassNamesToElement } from '@lexical/utils'
 
 export interface MentionPayload {
   /** User ID */
-  userId: number
+  userId: number;
   /** Username (without @) */
-  username: string
+  username: string;
   /** Display name */
-  name: string | null
+  name: string | null;
   /** Avatar URL */
-  avatarUrl?: string | null
+  avatarUrl?: string | null;
   /** Optional key for the node */
-  key?: NodeKey
+  key?: NodeKey;
 }
 
 export type SerializedMentionNode = Spread<
   {
-    userId: number
-    username: string
-    name: string | null
+    userId: number;
+    username: string;
+    name: string | null;
   },
   SerializedElementNode
->
+>;
 
 // =============================================================================
 // Mention Node
 // =============================================================================
 
 export class MentionNode extends ElementNode {
-  __userId: number
-  __username: string
-  __name: string | null
+  __userId: number;
+  __username: string;
+  __name: string | null;
 
   static getType(): string {
-    return 'mention'
+    return 'mention';
   }
 
   static clone(node: MentionNode): MentionNode {
-    return new MentionNode(
-      node.__userId,
-      node.__username,
-      node.__name,
-      node.__key
-    )
+    return new MentionNode(node.__userId, node.__username, node.__name, node.__key);
   }
 
-  constructor(
-    userId: number,
-    username: string,
-    name: string | null,
-    key?: NodeKey
-  ) {
-    super(key)
-    this.__userId = userId
-    this.__username = username
-    this.__name = name
+  constructor(userId: number, username: string, name: string | null, key?: NodeKey) {
+    super(key);
+    this.__userId = userId;
+    this.__username = username;
+    this.__name = name;
   }
 
   // Getters
   getUserId(): number {
-    return this.__userId
+    return this.__userId;
   }
 
   getUsername(): string {
-    return this.__username
+    return this.__username;
   }
 
   getName(): string | null {
-    return this.__name
+    return this.__name;
   }
 
   // Setters (create new version for immutability)
   setUserId(userId: number): void {
-    const writable = this.getWritable()
-    writable.__userId = userId
+    const writable = this.getWritable();
+    writable.__userId = userId;
   }
 
   setUsername(username: string): void {
-    const writable = this.getWritable()
-    writable.__username = username
+    const writable = this.getWritable();
+    writable.__username = username;
   }
 
   setName(name: string | null): void {
-    const writable = this.getWritable()
-    writable.__name = name
+    const writable = this.getWritable();
+    writable.__name = name;
   }
 
   // Inline element that cannot contain other elements
   isInline(): boolean {
-    return true
+    return true;
   }
 
   canInsertTextBefore(): boolean {
-    return false
+    return false;
   }
 
   canInsertTextAfter(): boolean {
-    return false
+    return false;
   }
 
   // DOM Creation
   createDOM(config: EditorConfig): HTMLElement {
-    const element = document.createElement('span')
-    addClassNamesToElement(
-      element,
-      config.theme.mention ?? 'mention'
-    )
+    const element = document.createElement('span');
+    addClassNamesToElement(element, config.theme.mention ?? 'mention');
 
     // Add data attributes for identification
-    element.setAttribute('data-mention', this.__username)
-    element.setAttribute('data-user-id', String(this.__userId))
-    element.setAttribute('title', this.__name ?? this.__username)
+    element.setAttribute('data-mention', this.__username);
+    element.setAttribute('data-user-id', String(this.__userId));
+    element.setAttribute('title', this.__name ?? this.__username);
 
-    return element
+    return element;
   }
 
   updateDOM(prevNode: MentionNode, dom: HTMLElement): boolean {
     // Update if properties changed
     if (prevNode.__username !== this.__username) {
-      dom.setAttribute('data-mention', this.__username)
+      dom.setAttribute('data-mention', this.__username);
     }
     if (prevNode.__userId !== this.__userId) {
-      dom.setAttribute('data-user-id', String(this.__userId))
+      dom.setAttribute('data-user-id', String(this.__userId));
     }
     if (prevNode.__name !== this.__name) {
-      dom.setAttribute('title', this.__name ?? this.__username)
+      dom.setAttribute('title', this.__name ?? this.__username);
     }
-    return false
+    return false;
   }
 
   // HTML Export
   exportDOM(): DOMExportOutput {
-    const element = document.createElement('span')
-    element.setAttribute('data-mention', this.__username)
-    element.setAttribute('data-user-id', String(this.__userId))
-    element.textContent = `@${this.__username}`
-    element.className = 'mention'
-    return { element }
+    const element = document.createElement('span');
+    element.setAttribute('data-mention', this.__username);
+    element.setAttribute('data-user-id', String(this.__userId));
+    element.textContent = `@${this.__username}`;
+    element.className = 'mention';
+    return { element };
   }
 
   // HTML Import
@@ -174,11 +161,11 @@ export class MentionNode extends ElementNode {
           return {
             conversion: convertMentionElement,
             priority: 1,
-          }
+          };
         }
-        return null
+        return null;
       },
-    }
+    };
   }
 
   // JSON Serialization
@@ -189,8 +176,8 @@ export class MentionNode extends ElementNode {
       serializedNode.userId,
       serializedNode.username,
       serializedNode.name
-    )
-    return node
+    );
+    return node;
   }
 
   exportJSON(): SerializedMentionNode {
@@ -201,12 +188,12 @@ export class MentionNode extends ElementNode {
       username: this.__username,
       name: this.__name,
       version: 1,
-    }
+    };
   }
 
   // Text content for copy/paste
   getTextContent(): string {
-    return `@${this.__username}`
+    return `@${this.__username}`;
   }
 }
 
@@ -215,23 +202,23 @@ export class MentionNode extends ElementNode {
 // =============================================================================
 
 function convertMentionElement(domNode: HTMLElement): DOMConversionOutput {
-  const username = domNode.getAttribute('data-mention') ?? ''
-  const userIdAttr = domNode.getAttribute('data-user-id')
-  const userId = userIdAttr ? parseInt(userIdAttr, 10) : 0
+  const username = domNode.getAttribute('data-mention') ?? '';
+  const userIdAttr = domNode.getAttribute('data-user-id');
+  const userId = userIdAttr ? parseInt(userIdAttr, 10) : 0;
 
   // Get name from title attribute or use username
-  const name = domNode.getAttribute('title') ?? username
+  const name = domNode.getAttribute('title') ?? username;
 
   if (username) {
     const node = $createMentionNode({
       userId,
       username,
       name,
-    })
-    return { node }
+    });
+    return { node };
   }
 
-  return { node: null }
+  return { node: null };
 }
 
 // =============================================================================
@@ -239,19 +226,12 @@ function convertMentionElement(domNode: HTMLElement): DOMConversionOutput {
 // =============================================================================
 
 export function $createMentionNode(payload: MentionPayload): MentionNode {
-  const node = new MentionNode(
-    payload.userId,
-    payload.username,
-    payload.name,
-    payload.key
-  )
+  const node = new MentionNode(payload.userId, payload.username, payload.name, payload.key);
   // Add the mention text as a child
-  node.append($createTextNode(`@${payload.username}`))
-  return $applyNodeReplacement(node)
+  node.append($createTextNode(`@${payload.username}`));
+  return $applyNodeReplacement(node);
 }
 
-export function $isMentionNode(
-  node: LexicalNode | null | undefined
-): node is MentionNode {
-  return node instanceof MentionNode
+export function $isMentionNode(node: LexicalNode | null | undefined): node is MentionNode {
+  return node instanceof MentionNode;
 }

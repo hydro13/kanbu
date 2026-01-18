@@ -14,15 +14,15 @@
  * =============================================================================
  */
 
-import { useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import { Button } from '@/components/ui/button'
-import { trpc } from '@/lib/trpc'
-import { ProjectLayout } from '@/components/layout/ProjectLayout'
-import { ProjectAnalyticsPanel } from '@/components/github/ProjectAnalyticsPanel'
-import { ProjectMilestonesPanel } from '@/components/github/ProjectMilestonesPanel'
-import { ProjectReleasesPanel } from '@/components/github/ProjectReleasesPanel'
-import type { GitHubSyncSettings } from '@kanbu/shared'
+import { useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { trpc } from '@/lib/trpc';
+import { ProjectLayout } from '@/components/layout/ProjectLayout';
+import { ProjectAnalyticsPanel } from '@/components/github/ProjectAnalyticsPanel';
+import { ProjectMilestonesPanel } from '@/components/github/ProjectMilestonesPanel';
+import { ProjectReleasesPanel } from '@/components/github/ProjectReleasesPanel';
+import type { GitHubSyncSettings } from '@kanbu/shared';
 
 // =============================================================================
 // Icons
@@ -31,96 +31,185 @@ import type { GitHubSyncSettings } from '@kanbu/shared'
 function GitHubIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+      <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
     </svg>
-  )
+  );
 }
 
 function UnlinkIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
+      />
     </svg>
-  )
+  );
 }
 
 function RefreshIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+      />
     </svg>
-  )
+  );
 }
 
 function SettingsIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+      />
     </svg>
-  )
+  );
 }
 
 function ClockIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
     </svg>
-  )
+  );
 }
 
 function CheckIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
     </svg>
-  )
+  );
 }
 
 function BarChartIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+      />
     </svg>
-  )
+  );
 }
 
 function TargetIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
       <circle cx="12" cy="12" r="10" strokeWidth={2} />
       <circle cx="12" cy="12" r="6" strokeWidth={2} />
       <circle cx="12" cy="12" r="2" strokeWidth={2} />
     </svg>
-  )
+  );
 }
 
 function TagIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+      />
     </svg>
-  )
+  );
 }
 
 function XIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
     </svg>
-  )
+  );
 }
 
 // =============================================================================
 // Types
 // =============================================================================
 
-type TabId = 'repository' | 'settings' | 'logs' | 'milestones' | 'releases' | 'analytics'
+type TabId = 'repository' | 'settings' | 'logs' | 'milestones' | 'releases' | 'analytics';
 
 interface Tab {
-  id: TabId
-  label: string
-  icon: React.ComponentType<{ className?: string }>
+  id: TabId;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
 }
 
 const TABS: Tab[] = [
@@ -130,62 +219,69 @@ const TABS: Tab[] = [
   { id: 'milestones', label: 'Milestones', icon: TargetIcon },
   { id: 'releases', label: 'Releases', icon: TagIcon },
   { id: 'analytics', label: 'Analytics', icon: BarChartIcon },
-]
+];
 
 // =============================================================================
 // Component
 // =============================================================================
 
 export function GitHubProjectSettings() {
-  const { workspaceSlug, projectIdentifier } = useParams<{ workspaceSlug: string; projectIdentifier: string }>()
-  const [activeTab, setActiveTab] = useState<TabId>('repository')
+  const { workspaceSlug, projectIdentifier } = useParams<{
+    workspaceSlug: string;
+    projectIdentifier: string;
+  }>();
+  const [activeTab, setActiveTab] = useState<TabId>('repository');
 
   // Get project by identifier
   const { data: project, isLoading: projectLoading } = trpc.project.getByIdentifier.useQuery(
     { identifier: projectIdentifier || '' },
     { enabled: !!projectIdentifier }
-  )
+  );
 
   // Get linked repository
-  const { data: linkedRepo, isLoading: repoLoading, refetch: refetchRepo } = trpc.github.getLinkedRepository.useQuery(
+  const {
+    data: linkedRepo,
+    isLoading: repoLoading,
+    refetch: refetchRepo,
+  } = trpc.github.getLinkedRepository.useQuery(
     { projectId: project?.id || 0 },
     { enabled: !!project?.id }
-  )
+  );
 
   // Get sync status
   const { data: syncStatus, refetch: refetchStatus } = trpc.github.getSyncStatus.useQuery(
     { projectId: project?.id || 0 },
     { enabled: !!project?.id && !!linkedRepo }
-  )
+  );
 
   // Get sync logs
   const { data: syncLogs, refetch: refetchLogs } = trpc.github.getSyncLogs.useQuery(
     { projectId: project?.id || 0, limit: 20 },
     { enabled: !!project?.id && !!linkedRepo && activeTab === 'logs' }
-  )
+  );
 
   // Mutations
   const unlinkMutation = trpc.github.unlinkRepository.useMutation({
     onSuccess: () => {
-      refetchRepo()
-      refetchStatus()
+      refetchRepo();
+      refetchStatus();
     },
-  })
+  });
 
   const triggerSyncMutation = trpc.github.triggerSync.useMutation({
     onSuccess: () => {
-      refetchStatus()
-      refetchLogs()
+      refetchStatus();
+      refetchLogs();
     },
-  })
+  });
 
   const updateSettingsMutation = trpc.github.updateSyncSettings.useMutation({
     onSuccess: () => {
-      refetchRepo()
+      refetchRepo();
     },
-  })
+  });
 
-  const isLoading = projectLoading || repoLoading
+  const isLoading = projectLoading || repoLoading;
 
   if (isLoading) {
     return (
@@ -194,7 +290,7 @@ export function GitHubProjectSettings() {
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         </div>
       </ProjectLayout>
-    )
+    );
   }
 
   if (!project) {
@@ -204,7 +300,7 @@ export function GitHubProjectSettings() {
           <div className="text-center text-gray-500">Project not found</div>
         </div>
       </ProjectLayout>
-    )
+    );
   }
 
   return (
@@ -225,9 +321,9 @@ export function GitHubProjectSettings() {
         <div className="border-b border-gray-200 dark:border-gray-700 mb-4">
           <nav className="flex gap-2">
             {TABS.map((tab) => {
-              const Icon = tab.icon
-              const isActive = activeTab === tab.id
-              const isDisabled = !linkedRepo && tab.id !== 'repository'
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+              const isDisabled = !linkedRepo && tab.id !== 'repository';
 
               return (
                 <button
@@ -236,18 +332,19 @@ export function GitHubProjectSettings() {
                   disabled={isDisabled}
                   className={`
                     flex items-center gap-1.5 px-3 py-2 text-sm font-medium border-b-2 -mb-px transition-colors
-                    ${isActive
-                      ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                      : isDisabled
-                      ? 'border-transparent text-gray-400 cursor-not-allowed'
-                      : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-300'
+                    ${
+                      isActive
+                        ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                        : isDisabled
+                          ? 'border-transparent text-gray-400 cursor-not-allowed'
+                          : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:border-gray-300'
                     }
                   `}
                 >
                   <Icon className="h-4 w-4" />
                   {tab.label}
                 </button>
-              )
+              );
             })}
           </nav>
         </div>
@@ -270,14 +367,18 @@ export function GitHubProjectSettings() {
           <SettingsTab
             projectId={project.id}
             linkedRepo={linkedRepo}
-            onSave={(settings) => updateSettingsMutation.mutate({
-              projectId: project.id,
-              syncSettings: settings,
-            })}
-            onToggleSync={(enabled) => updateSettingsMutation.mutate({
-              projectId: project.id,
-              syncEnabled: enabled,
-            })}
+            onSave={(settings) =>
+              updateSettingsMutation.mutate({
+                projectId: project.id,
+                syncSettings: settings,
+              })
+            }
+            onToggleSync={(enabled) =>
+              updateSettingsMutation.mutate({
+                projectId: project.id,
+                syncEnabled: enabled,
+              })
+            }
             isSaving={updateSettingsMutation.isPending}
           />
         )}
@@ -299,7 +400,7 @@ export function GitHubProjectSettings() {
         )}
       </div>
     </ProjectLayout>
-  )
+  );
 }
 
 // =============================================================================
@@ -307,44 +408,50 @@ export function GitHubProjectSettings() {
 // =============================================================================
 
 interface RepositoryTabProps {
-  projectId: number
-  linkedRepo: {
-    id: number
-    owner: string
-    name: string
-    fullName: string
-    defaultBranch: string
-    isPrivate: boolean
-    syncEnabled: boolean
-    lastSyncAt: string | null
-    installation?: {
-      id: number
-      accountLogin: string
-      accountType: string
-    }
-    counts?: {
-      issues: number
-      pullRequests: number
-      commits: number
-    }
-  } | null | undefined
-  syncStatus: {
-    syncEnabled: boolean
-    lastSyncAt: string | null
-    lastSyncStatus: string | null
-    lastSyncAction: string | null
-    counts: {
-      issues: number
-      pullRequests: number
-      commits: number
-      syncLogs: number
-    }
-  } | null | undefined
-  workspaceSlug: string
-  onUnlink: () => void
-  onTriggerSync: () => void
-  isUnlinking: boolean
-  isSyncing: boolean
+  projectId: number;
+  linkedRepo:
+    | {
+        id: number;
+        owner: string;
+        name: string;
+        fullName: string;
+        defaultBranch: string;
+        isPrivate: boolean;
+        syncEnabled: boolean;
+        lastSyncAt: string | null;
+        installation?: {
+          id: number;
+          accountLogin: string;
+          accountType: string;
+        };
+        counts?: {
+          issues: number;
+          pullRequests: number;
+          commits: number;
+        };
+      }
+    | null
+    | undefined;
+  syncStatus:
+    | {
+        syncEnabled: boolean;
+        lastSyncAt: string | null;
+        lastSyncStatus: string | null;
+        lastSyncAction: string | null;
+        counts: {
+          issues: number;
+          pullRequests: number;
+          commits: number;
+          syncLogs: number;
+        };
+      }
+    | null
+    | undefined;
+  workspaceSlug: string;
+  onUnlink: () => void;
+  onTriggerSync: () => void;
+  isUnlinking: boolean;
+  isSyncing: boolean;
 }
 
 function RepositoryTab({
@@ -360,9 +467,7 @@ function RepositoryTab({
     return (
       <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-8 text-center">
         <GitHubIcon className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-        <h3 className="text-lg font-medium text-foreground mb-2">
-          No Repository Linked
-        </h3>
+        <h3 className="text-lg font-medium text-foreground mb-2">No Repository Linked</h3>
         <p className="text-gray-600 dark:text-gray-400 mb-6">
           Link a GitHub repository to enable issue sync, PR tracking, and more.
         </p>
@@ -376,11 +481,10 @@ function RepositoryTab({
           </Link>
         </p>
         <p className="text-sm text-amber-600 dark:text-amber-400">
-          Repository linking UI coming in next update.
-          For now, use the API or MCP tools.
+          Repository linking UI coming in next update. For now, use the API or MCP tools.
         </p>
       </div>
-    )
+    );
   }
 
   return (
@@ -425,12 +529,7 @@ function RepositoryTab({
               <RefreshIcon className={`h-4 w-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
               {isSyncing ? 'Syncing...' : 'Sync Now'}
             </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={onUnlink}
-              disabled={isUnlinking}
-            >
+            <Button variant="destructive" size="sm" onClick={onUnlink} disabled={isUnlinking}>
               <UnlinkIcon className="h-4 w-4 mr-2" />
               {isUnlinking ? 'Unlinking...' : 'Unlink'}
             </Button>
@@ -445,9 +544,7 @@ function RepositoryTab({
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
             <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <div className="text-2xl font-bold text-foreground">
-                {syncStatus.counts.issues}
-              </div>
+              <div className="text-2xl font-bold text-foreground">{syncStatus.counts.issues}</div>
               <div className="text-sm text-gray-600 dark:text-gray-400">Issues</div>
             </div>
             <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
@@ -457,15 +554,11 @@ function RepositoryTab({
               <div className="text-sm text-gray-600 dark:text-gray-400">Pull Requests</div>
             </div>
             <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <div className="text-2xl font-bold text-foreground">
-                {syncStatus.counts.commits}
-              </div>
+              <div className="text-2xl font-bold text-foreground">{syncStatus.counts.commits}</div>
               <div className="text-sm text-gray-600 dark:text-gray-400">Commits</div>
             </div>
             <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-              <div className="text-2xl font-bold text-foreground">
-                {syncStatus.counts.syncLogs}
-              </div>
+              <div className="text-2xl font-bold text-foreground">{syncStatus.counts.syncLogs}</div>
               <div className="text-sm text-gray-600 dark:text-gray-400">Sync Events</div>
             </div>
           </div>
@@ -492,7 +585,7 @@ function RepositoryTab({
         </div>
       )}
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -500,14 +593,14 @@ function RepositoryTab({
 // =============================================================================
 
 interface SettingsTabProps {
-  projectId: number
+  projectId: number;
   linkedRepo: {
-    syncEnabled: boolean
-    syncSettings: GitHubSyncSettings
-  }
-  onSave: (settings: GitHubSyncSettings) => void
-  onToggleSync: (enabled: boolean) => void
-  isSaving: boolean
+    syncEnabled: boolean;
+    syncSettings: GitHubSyncSettings;
+  };
+  onSave: (settings: GitHubSyncSettings) => void;
+  onToggleSync: (enabled: boolean) => void;
+  isSaving: boolean;
 }
 
 function Toggle({
@@ -515,9 +608,9 @@ function Toggle({
   onChange,
   disabled = false,
 }: {
-  enabled: boolean
-  onChange: (enabled: boolean) => void
-  disabled?: boolean
+  enabled: boolean;
+  onChange: (enabled: boolean) => void;
+  disabled?: boolean;
 }) {
   return (
     <button
@@ -536,7 +629,7 @@ function Toggle({
         `}
       />
     </button>
-  )
+  );
 }
 
 function SettingRow({
@@ -544,9 +637,9 @@ function SettingRow({
   description,
   children,
 }: {
-  label: string
-  description?: string
-  children: React.ReactNode
+  label: string;
+  description?: string;
+  children: React.ReactNode;
 }) {
   return (
     <div className="flex items-center justify-between py-2">
@@ -558,13 +651,16 @@ function SettingRow({
       </div>
       {children}
     </div>
-  )
+  );
 }
 
 function SettingsTab({ linkedRepo, onSave, onToggleSync, isSaving }: SettingsTabProps) {
-  const settings: GitHubSyncSettings = linkedRepo.syncSettings || {}
+  const settings: GitHubSyncSettings = linkedRepo.syncSettings || {};
 
-  const updateIssueSettings = (key: keyof NonNullable<GitHubSyncSettings['issues']>, value: boolean | string) => {
+  const updateIssueSettings = (
+    key: keyof NonNullable<GitHubSyncSettings['issues']>,
+    value: boolean | string
+  ) => {
     const newSettings: GitHubSyncSettings = {
       ...settings,
       issues: {
@@ -573,11 +669,14 @@ function SettingsTab({ linkedRepo, onSave, onToggleSync, isSaving }: SettingsTab
         ...settings.issues,
         [key]: value,
       },
-    }
-    onSave(newSettings)
-  }
+    };
+    onSave(newSettings);
+  };
 
-  const updatePRSettings = (key: keyof NonNullable<GitHubSyncSettings['pullRequests']>, value: boolean) => {
+  const updatePRSettings = (
+    key: keyof NonNullable<GitHubSyncSettings['pullRequests']>,
+    value: boolean
+  ) => {
     const newSettings: GitHubSyncSettings = {
       ...settings,
       pullRequests: {
@@ -586,11 +685,14 @@ function SettingsTab({ linkedRepo, onSave, onToggleSync, isSaving }: SettingsTab
         ...settings.pullRequests,
         [key]: value,
       },
-    }
-    onSave(newSettings)
-  }
+    };
+    onSave(newSettings);
+  };
 
-  const updateCommitSettings = (key: keyof NonNullable<GitHubSyncSettings['commits']>, value: boolean) => {
+  const updateCommitSettings = (
+    key: keyof NonNullable<GitHubSyncSettings['commits']>,
+    value: boolean
+  ) => {
     const newSettings: GitHubSyncSettings = {
       ...settings,
       commits: {
@@ -599,11 +701,14 @@ function SettingsTab({ linkedRepo, onSave, onToggleSync, isSaving }: SettingsTab
         ...settings.commits,
         [key]: value,
       },
-    }
-    onSave(newSettings)
-  }
+    };
+    onSave(newSettings);
+  };
 
-  const updateAutomationSettings = (key: keyof NonNullable<GitHubSyncSettings['automation']>, value: boolean) => {
+  const updateAutomationSettings = (
+    key: keyof NonNullable<GitHubSyncSettings['automation']>,
+    value: boolean
+  ) => {
     const newSettings: GitHubSyncSettings = {
       ...settings,
       automation: {
@@ -611,9 +716,9 @@ function SettingsTab({ linkedRepo, onSave, onToggleSync, isSaving }: SettingsTab
         ...settings.automation,
         [key]: value,
       },
-    }
-    onSave(newSettings)
-  }
+    };
+    onSave(newSettings);
+  };
 
   return (
     <div className="space-y-3">
@@ -626,11 +731,7 @@ function SettingsTab({ linkedRepo, onSave, onToggleSync, isSaving }: SettingsTab
               Enable or disable all sync operations for this repository
             </p>
           </div>
-          <Toggle
-            enabled={linkedRepo.syncEnabled}
-            onChange={onToggleSync}
-            disabled={isSaving}
-          />
+          <Toggle enabled={linkedRepo.syncEnabled} onChange={onToggleSync} disabled={isSaving} />
         </div>
       </div>
 
@@ -652,7 +753,12 @@ function SettingsTab({ linkedRepo, onSave, onToggleSync, isSaving }: SettingsTab
           >
             <select
               value={settings.issues?.direction ?? 'bidirectional'}
-              onChange={(e) => updateIssueSettings('direction', e.target.value as 'bidirectional' | 'github_to_kanbu' | 'kanbu_to_github')}
+              onChange={(e) =>
+                updateIssueSettings(
+                  'direction',
+                  e.target.value as 'bidirectional' | 'github_to_kanbu' | 'kanbu_to_github'
+                )
+              }
               disabled={isSaving || !(settings.issues?.enabled ?? true)}
               className="block w-40 rounded-md border border-input bg-background px-3 py-1.5 text-sm text-foreground focus:border-blue-500 focus:ring-blue-500 disabled:opacity-50"
             >
@@ -772,7 +878,7 @@ function SettingsTab({ linkedRepo, onSave, onToggleSync, isSaving }: SettingsTab
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -780,20 +886,20 @@ function SettingsTab({ linkedRepo, onSave, onToggleSync, isSaving }: SettingsTab
 // =============================================================================
 
 interface LogEntry {
-  id: number
-  action: string
-  direction: string
-  entityType: string
-  entityId: string | null
-  status: string
-  errorMessage: string | null
-  details: Record<string, unknown>
-  createdAt: string
+  id: number;
+  action: string;
+  direction: string;
+  entityType: string;
+  entityId: string | null;
+  status: string;
+  errorMessage: string | null;
+  details: Record<string, unknown>;
+  createdAt: string;
 }
 
 interface LogsTabProps {
-  logs: LogEntry[]
-  total: number
+  logs: LogEntry[];
+  total: number;
 }
 
 function LogsTab({ logs, total }: LogsTabProps) {
@@ -801,14 +907,12 @@ function LogsTab({ logs, total }: LogsTabProps) {
     return (
       <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-8 text-center">
         <ClockIcon className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-        <h3 className="text-lg font-medium text-foreground mb-2">
-          No Sync Logs Yet
-        </h3>
+        <h3 className="text-lg font-medium text-foreground mb-2">No Sync Logs Yet</h3>
         <p className="text-gray-600 dark:text-gray-400">
           Sync events will appear here once synchronization is triggered.
         </p>
       </div>
-    )
+    );
   }
 
   return (
@@ -821,10 +925,18 @@ function LogsTab({ logs, total }: LogsTabProps) {
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead className="bg-muted">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Time</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Action</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Direction</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Status</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                Time
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                Action
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                Direction
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">
+                Status
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -842,20 +954,25 @@ function LogsTab({ logs, total }: LogsTabProps) {
                   )}
                 </td>
                 <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
-                  {log.direction === 'kanbu_to_github' ? '→ GitHub' :
-                   log.direction === 'github_to_kanbu' ? '← GitHub' :
-                   '↔ Bidirectional'}
+                  {log.direction === 'kanbu_to_github'
+                    ? '→ GitHub'
+                    : log.direction === 'github_to_kanbu'
+                      ? '← GitHub'
+                      : '↔ Bidirectional'}
                 </td>
                 <td className="px-4 py-3">
-                  <span className={`
+                  <span
+                    className={`
                     inline-flex items-center px-2 py-1 text-xs font-medium rounded-full
-                    ${log.status === 'success'
-                      ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                      : log.status === 'failed'
-                      ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-400'
+                    ${
+                      log.status === 'success'
+                        ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                        : log.status === 'failed'
+                          ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-400'
                     }
-                  `}>
+                  `}
+                  >
                     {log.status}
                   </span>
                 </td>
@@ -865,7 +982,7 @@ function LogsTab({ logs, total }: LogsTabProps) {
         </table>
       </div>
     </div>
-  )
+  );
 }
 
-export default GitHubProjectSettings
+export default GitHubProjectSettings;

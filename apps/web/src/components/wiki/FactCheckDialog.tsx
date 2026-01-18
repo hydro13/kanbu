@@ -7,17 +7,17 @@
  * Shows entities found and related facts from other wiki pages.
  */
 
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { ScrollArea } from '@/components/ui/scroll-area'
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   AlertTriangle,
   CheckCircle2,
@@ -26,53 +26,53 @@ import {
   Loader2,
   Search,
   Tag,
-} from 'lucide-react'
-import { cn } from '@/lib/utils'
+} from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface FactCheckEntity {
-  name: string
-  type: string
-  confidence: number
+  name: string;
+  type: string;
+  confidence: number;
 }
 
 export interface RelatedFact {
-  entityName: string
-  entityType: string
-  fact: string
-  pageId: number
-  pageTitle: string
-  pageSlug?: string
-  validAt: string | null
-  invalidAt: string | null
+  entityName: string;
+  entityType: string;
+  fact: string;
+  pageId: number;
+  pageTitle: string;
+  pageSlug?: string;
+  validAt: string | null;
+  invalidAt: string | null;
 }
 
 export interface FactCheckResult {
-  success: boolean
-  selectedText: string
-  entities: FactCheckEntity[]
-  relatedFacts: RelatedFact[]
-  message: string
+  success: boolean;
+  selectedText: string;
+  entities: FactCheckEntity[];
+  relatedFacts: RelatedFact[];
+  message: string;
 }
 
 export interface FactCheckDialogProps {
   /** Whether the dialog is open */
-  open: boolean
+  open: boolean;
   /** Callback when dialog is closed */
-  onOpenChange: (open: boolean) => void
+  onOpenChange: (open: boolean) => void;
   /** The selected text being checked */
-  selectedText: string
+  selectedText: string;
   /** Fact check results (null while loading) */
-  result: FactCheckResult | null
+  result: FactCheckResult | null;
   /** Whether fact check is in progress */
-  isLoading: boolean
+  isLoading: boolean;
   /** Error message if check failed */
-  error?: string
+  error?: string;
   /** Base path for wiki page navigation */
-  wikiBasePath: string
+  wikiBasePath: string;
 }
 
 // =============================================================================
@@ -83,17 +83,17 @@ function getEntityTypeColor(type: string): string {
   switch (type.toLowerCase()) {
     case 'person':
     case 'user':
-      return 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400'
+      return 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400';
     case 'project':
-      return 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400'
+      return 'bg-green-100 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400';
     case 'concept':
-      return 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400'
+      return 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400';
     case 'task':
-      return 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-400'
+      return 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-400';
     case 'wikipage':
-      return 'bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400'
+      return 'bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400';
     default:
-      return 'bg-gray-100 text-gray-700 border-gray-200'
+      return 'bg-gray-100 text-gray-700 border-gray-200';
   }
 }
 
@@ -102,16 +102,16 @@ function getEntityTypeColor(type: string): string {
 // =============================================================================
 
 interface FactCardProps {
-  fact: RelatedFact
-  onNavigate: (slug: string) => void
+  fact: RelatedFact;
+  onNavigate: (slug: string) => void;
 }
 
 function FactCard({ fact, onNavigate }: FactCardProps) {
   const handleClick = () => {
     if (fact.pageSlug) {
-      onNavigate(fact.pageSlug)
+      onNavigate(fact.pageSlug);
     }
-  }
+  };
 
   return (
     <div className="p-3 bg-muted/50 rounded-lg border space-y-2">
@@ -122,12 +122,7 @@ function FactCard({ fact, onNavigate }: FactCardProps) {
           <span className="font-medium">{fact.pageTitle}</span>
         </div>
         {fact.pageSlug && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 text-xs"
-            onClick={handleClick}
-          >
+          <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={handleClick}>
             <ExternalLink className="h-3 w-3 mr-1" />
             Open
           </Button>
@@ -143,19 +138,19 @@ function FactCard({ fact, onNavigate }: FactCardProps) {
       </div>
 
       {/* Fact content */}
-      <p className="text-sm text-muted-foreground leading-relaxed">
-        {fact.fact}
-      </p>
+      <p className="text-sm text-muted-foreground leading-relaxed">{fact.fact}</p>
 
       {/* Temporal info if available */}
       {(fact.validAt || fact.invalidAt) && (
         <div className="text-xs text-muted-foreground">
           {fact.validAt && <span>Valid from: {new Date(fact.validAt).toLocaleDateString()}</span>}
-          {fact.invalidAt && <span className="ml-2">Until: {new Date(fact.invalidAt).toLocaleDateString()}</span>}
+          {fact.invalidAt && (
+            <span className="ml-2">Until: {new Date(fact.invalidAt).toLocaleDateString()}</span>
+          )}
         </div>
       )}
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -171,15 +166,15 @@ export function FactCheckDialog({
   error,
   wikiBasePath,
 }: FactCheckDialogProps) {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   const handleNavigateToPage = (slug: string) => {
-    onOpenChange(false)
-    navigate(`${wikiBasePath}/${slug}`)
-  }
+    onOpenChange(false);
+    navigate(`${wikiBasePath}/${slug}`);
+  };
 
-  const hasResults = result && result.relatedFacts.length > 0
-  const noResults = result && result.relatedFacts.length === 0
+  const hasResults = result && result.relatedFacts.length > 0;
+  const noResults = result && result.relatedFacts.length === 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -208,7 +203,9 @@ export function FactCheckDialog({
         {isLoading && (
           <div className="flex flex-col items-center justify-center py-12 gap-4">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-muted-foreground">Analyzing text and searching for related facts...</p>
+            <p className="text-muted-foreground">
+              Analyzing text and searching for related facts...
+            </p>
           </div>
         )}
 
@@ -254,11 +251,7 @@ export function FactCheckDialog({
                   </p>
                 </div>
                 {result.relatedFacts.map((fact, idx) => (
-                  <FactCard
-                    key={idx}
-                    fact={fact}
-                    onNavigate={handleNavigateToPage}
-                  />
+                  <FactCard key={idx} fact={fact} onNavigate={handleNavigateToPage} />
                 ))}
               </div>
             )}
@@ -284,5 +277,5 @@ export function FactCheckDialog({
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

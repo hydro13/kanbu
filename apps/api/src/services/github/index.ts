@@ -27,7 +27,7 @@ export {
   getGitHubUser,
   type GitHubConfig,
   type InstallationInfo,
-} from './githubService'
+} from './githubService';
 
 export {
   issueSyncService,
@@ -50,7 +50,7 @@ export {
   createGitHubIssueFromTask,
   updateGitHubIssueFromTask,
   syncTaskToGitHub,
-} from './issueSyncService'
+} from './issueSyncService';
 
 export {
   prCommitLinkService,
@@ -82,7 +82,7 @@ export {
   type PRLinkResult,
   type CommitLinkResult,
   type LinkingOptions,
-} from './prCommitLinkService'
+} from './prCommitLinkService';
 
 export {
   automationService,
@@ -108,7 +108,7 @@ export {
   type BranchCreationResult,
   type TaskStatusAutomationResult,
   type AutomationSettings,
-} from './automationService'
+} from './automationService';
 
 export {
   // Workflow CRUD
@@ -131,7 +131,7 @@ export {
   type WorkflowRunData,
   type WorkflowRunFilters,
   type WorkflowJob,
-} from './workflowService'
+} from './workflowService';
 
 export {
   // Review CRUD
@@ -152,7 +152,7 @@ export {
   type ReviewCommentData,
   type ReviewState,
   type PRReviewSummary,
-} from './reviewService'
+} from './reviewService';
 
 export {
   analyticsService,
@@ -173,7 +173,7 @@ export {
   type ContributorStats,
   type ThroughputStats,
   type ProjectAnalytics,
-} from './analyticsService'
+} from './analyticsService';
 
 export {
   milestoneService,
@@ -188,7 +188,7 @@ export {
   // Types
   type MilestoneData,
   type MilestoneInfo,
-} from './milestoneService'
+} from './milestoneService';
 
 export {
   milestoneSyncService,
@@ -202,7 +202,7 @@ export {
   syncKanbuToGitHub,
   deleteGitHubMilestone,
   deleteKanbuMilestoneFromGitHub,
-} from './milestoneSyncService'
+} from './milestoneSyncService';
 
 export {
   releaseService,
@@ -220,7 +220,7 @@ export {
   type ReleaseData,
   type ReleaseInfo,
   type ReleaseStats,
-} from './releaseService'
+} from './releaseService';
 
 export {
   aiService,
@@ -242,7 +242,7 @@ export {
   type ReleaseNotes,
   type CommitMessageInput,
   type CommitMessage,
-} from './aiService'
+} from './aiService';
 
 export {
   botService,
@@ -257,7 +257,7 @@ export {
   type BotCommand,
   type CommentContext,
   type BotResponse,
-} from './botService'
+} from './botService';
 
 export {
   deploymentService,
@@ -279,7 +279,7 @@ export {
   type DeploymentStats,
   type DeploymentWebhookPayload,
   type DeploymentStatusWebhookPayload,
-} from './deploymentService'
+} from './deploymentService';
 
 export {
   checkRunService,
@@ -301,7 +301,7 @@ export {
   type CheckRunStats,
   type PRCheckSummary,
   type CheckRunWebhookPayload,
-} from './checkRunService'
+} from './checkRunService';
 
 export {
   cicdNotificationService,
@@ -319,7 +319,7 @@ export {
   type WorkflowNotificationData,
   type DeploymentNotificationData,
   type CheckRunNotificationData,
-} from './cicdNotificationService'
+} from './cicdNotificationService';
 
 export {
   monorepoService,
@@ -348,7 +348,7 @@ export {
   type MonorepoSettings,
   type AffectedPackagesResult,
   type PackageInfo,
-} from './monorepoService'
+} from './monorepoService';
 
 export {
   multiRepoService,
@@ -371,15 +371,8 @@ export {
   type ProjectRepositories,
   type CrossRepoStats,
   type CrossRepoSearchResult,
-} from './multiRepoService'
+} from './multiRepoService';
 
-export {
-  githubImageService,
-  processGitHubImages,
-} from './githubImageService'
+export { githubImageService, processGitHubImages } from './githubImageService';
 
-export {
-  commentSyncService,
-  syncCommentToGitHub,
-  deleteGitHubComment,
-} from './commentSyncService'
+export { commentSyncService, syncCommentToGitHub, deleteGitHubComment } from './commentSyncService';

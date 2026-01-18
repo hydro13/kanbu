@@ -13,9 +13,9 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { z } from 'zod'
-import { router, protectedProcedure } from '../router'
-import { permissionService } from '../../services'
+import { z } from 'zod';
+import { router, protectedProcedure } from '../router';
+import { permissionService } from '../../services';
 
 // =============================================================================
 // Input Schemas
@@ -26,27 +26,27 @@ const searchTasksSchema = z.object({
   query: z.string().min(1).max(200),
   limit: z.number().min(1).max(50).default(20),
   includeCompleted: z.boolean().default(false),
-})
+});
 
 const searchTasksInWorkspaceSchema = z.object({
   workspaceId: z.number(),
   query: z.string().min(1).max(200),
   limit: z.number().min(1).max(50).default(20),
   includeCompleted: z.boolean().default(false),
-})
+});
 
 const searchMembersInWorkspaceSchema = z.object({
   workspaceId: z.number(),
   query: z.string().max(200).default(''),
   limit: z.number().min(1).max(50).default(10),
-})
+});
 
 const globalSearchSchema = z.object({
   projectId: z.number(),
   query: z.string().min(1).max(200),
   limit: z.number().min(1).max(50).default(20),
   entityTypes: z.array(z.enum(['task', 'comment', 'wiki'])).default(['task', 'comment', 'wiki']),
-})
+});
 
 // =============================================================================
 // Search Router
@@ -58,57 +58,55 @@ export const searchRouter = router({
    * Searches in title, reference, and description
    * Requires at least VIEWER access
    */
-  tasks: protectedProcedure
-    .input(searchTasksSchema)
-    .query(async ({ ctx, input }) => {
-      await permissionService.requireProjectAccess(ctx.user.id, input.projectId, 'VIEWER')
+  tasks: protectedProcedure.input(searchTasksSchema).query(async ({ ctx, input }) => {
+    await permissionService.requireProjectAccess(ctx.user.id, input.projectId, 'VIEWER');
 
-      const tasks = await ctx.prisma.task.findMany({
-        where: {
-          projectId: input.projectId,
-          ...(input.includeCompleted ? {} : { isActive: true }),
-          OR: [
-            { title: { contains: input.query, mode: 'insensitive' } },
-            { reference: { contains: input.query, mode: 'insensitive' } },
-            { description: { contains: input.query, mode: 'insensitive' } },
-          ],
-        },
-        select: {
-          id: true,
-          title: true,
-          reference: true,
-          priority: true,
-          isActive: true,
-          dateDue: true,
-          column: {
-            select: { id: true, title: true },
-          },
-          assignees: {
-            select: {
-              user: {
-                select: { id: true, username: true, name: true, avatarUrl: true },
-              },
-            },
-          },
-          tags: {
-            select: {
-              tag: { select: { id: true, name: true, color: true } },
-            },
-          },
-        },
-        orderBy: [
-          { isActive: 'desc' }, // Active tasks first
-          { updatedAt: 'desc' }, // Most recently updated first
+    const tasks = await ctx.prisma.task.findMany({
+      where: {
+        projectId: input.projectId,
+        ...(input.includeCompleted ? {} : { isActive: true }),
+        OR: [
+          { title: { contains: input.query, mode: 'insensitive' } },
+          { reference: { contains: input.query, mode: 'insensitive' } },
+          { description: { contains: input.query, mode: 'insensitive' } },
         ],
-        take: input.limit,
-      })
+      },
+      select: {
+        id: true,
+        title: true,
+        reference: true,
+        priority: true,
+        isActive: true,
+        dateDue: true,
+        column: {
+          select: { id: true, title: true },
+        },
+        assignees: {
+          select: {
+            user: {
+              select: { id: true, username: true, name: true, avatarUrl: true },
+            },
+          },
+        },
+        tags: {
+          select: {
+            tag: { select: { id: true, name: true, color: true } },
+          },
+        },
+      },
+      orderBy: [
+        { isActive: 'desc' }, // Active tasks first
+        { updatedAt: 'desc' }, // Most recently updated first
+      ],
+      take: input.limit,
+    });
 
-      return tasks.map((t) => ({
-        ...t,
-        assignees: t.assignees.map((a) => a.user),
-        tags: t.tags.map((tt) => tt.tag),
-      }))
-    }),
+    return tasks.map((t) => ({
+      ...t,
+      assignees: t.assignees.map((a) => a.user),
+      tags: t.tags.map((tt) => tt.tag),
+    }));
+  }),
 
   /**
    * Full-text search over tasks across ALL projects in a workspace
@@ -120,7 +118,7 @@ export const searchRouter = router({
     .input(searchTasksInWorkspaceSchema)
     .query(async ({ ctx, input }) => {
       // Check workspace access
-      await permissionService.requireWorkspaceAccess(ctx.user.id, input.workspaceId, 'VIEWER')
+      await permissionService.requireWorkspaceAccess(ctx.user.id, input.workspaceId, 'VIEWER');
 
       // Get all projects the user has access to in this workspace
       const projects = await ctx.prisma.project.findMany({
@@ -129,12 +127,12 @@ export const searchRouter = router({
           isActive: true,
         },
         select: { id: true },
-      })
+      });
 
-      const projectIds = projects.map((p) => p.id)
+      const projectIds = projects.map((p) => p.id);
 
       if (projectIds.length === 0) {
-        return []
+        return [];
       }
 
       // Search tasks across all projects in the workspace
@@ -156,15 +154,12 @@ export const searchRouter = router({
             select: { id: true, name: true, identifier: true },
           },
         },
-        orderBy: [
-          { isActive: 'desc' },
-          { updatedAt: 'desc' },
-        ],
+        orderBy: [{ isActive: 'desc' }, { updatedAt: 'desc' }],
         take: input.limit,
-      })
+      });
 
       // Map and sort results: reference starts with query first, then contains
-      const queryUpper = input.query.toUpperCase()
+      const queryUpper = input.query.toUpperCase();
       const results = tasks.map((t) => ({
         id: t.id,
         title: t.title,
@@ -173,26 +168,26 @@ export const searchRouter = router({
         isActive: t.isActive,
         column: t.column ? { title: t.column.title } : null,
         projectName: t.project.name,
-      }))
+      }));
 
       // Sort: reference starts with query > reference contains query > title match
       results.sort((a, b) => {
-        const aRefStartsWith = a.reference.toUpperCase().startsWith(queryUpper)
-        const bRefStartsWith = b.reference.toUpperCase().startsWith(queryUpper)
-        const aRefContains = a.reference.toUpperCase().includes(queryUpper)
-        const bRefContains = b.reference.toUpperCase().includes(queryUpper)
+        const aRefStartsWith = a.reference.toUpperCase().startsWith(queryUpper);
+        const bRefStartsWith = b.reference.toUpperCase().startsWith(queryUpper);
+        const aRefContains = a.reference.toUpperCase().includes(queryUpper);
+        const bRefContains = b.reference.toUpperCase().includes(queryUpper);
 
         // Priority: startsWith > contains > other
-        if (aRefStartsWith && !bRefStartsWith) return -1
-        if (!aRefStartsWith && bRefStartsWith) return 1
-        if (aRefContains && !bRefContains) return -1
-        if (!aRefContains && bRefContains) return 1
+        if (aRefStartsWith && !bRefStartsWith) return -1;
+        if (!aRefStartsWith && bRefStartsWith) return 1;
+        if (aRefContains && !bRefContains) return -1;
+        if (!aRefContains && bRefContains) return 1;
 
         // Same priority - sort by reference alphabetically
-        return a.reference.localeCompare(b.reference)
-      })
+        return a.reference.localeCompare(b.reference);
+      });
 
-      return results
+      return results;
     }),
 
   /**
@@ -204,7 +199,7 @@ export const searchRouter = router({
     .input(searchMembersInWorkspaceSchema)
     .query(async ({ ctx, input }) => {
       // Check workspace access
-      await permissionService.requireWorkspaceAccess(ctx.user.id, input.workspaceId, 'VIEWER')
+      await permissionService.requireWorkspaceAccess(ctx.user.id, input.workspaceId, 'VIEWER');
 
       // Get all workspace members via ACL entries
       const aclEntries = await ctx.prisma.aclEntry.findMany({
@@ -215,23 +210,24 @@ export const searchRouter = router({
           deny: false,
         },
         select: { principalId: true },
-      })
+      });
 
-      const userIds = aclEntries.map((e) => e.principalId)
+      const userIds = aclEntries.map((e) => e.principalId);
 
       if (userIds.length === 0) {
-        return []
+        return [];
       }
 
       // Build search filter
-      const searchFilter = input.query.length > 0
-        ? {
-            OR: [
-              { username: { contains: input.query, mode: 'insensitive' as const } },
-              { name: { contains: input.query, mode: 'insensitive' as const } },
-            ],
-          }
-        : {}
+      const searchFilter =
+        input.query.length > 0
+          ? {
+              OR: [
+                { username: { contains: input.query, mode: 'insensitive' as const } },
+                { name: { contains: input.query, mode: 'insensitive' as const } },
+              ],
+            }
+          : {};
 
       // Search users
       const users = await ctx.prisma.user.findMany({
@@ -246,34 +242,31 @@ export const searchRouter = router({
           name: true,
           avatarUrl: true,
         },
-        orderBy: [
-          { name: 'asc' },
-          { username: 'asc' },
-        ],
+        orderBy: [{ name: 'asc' }, { username: 'asc' }],
         take: input.limit,
-      })
+      });
 
       // Sort: username starts with query > name starts with query > contains
       if (input.query.length > 0) {
-        const queryLower = input.query.toLowerCase()
+        const queryLower = input.query.toLowerCase();
         users.sort((a, b) => {
-          const aUsernameStartsWith = a.username.toLowerCase().startsWith(queryLower)
-          const bUsernameStartsWith = b.username.toLowerCase().startsWith(queryLower)
-          const aNameStartsWith = (a.name ?? '').toLowerCase().startsWith(queryLower)
-          const bNameStartsWith = (b.name ?? '').toLowerCase().startsWith(queryLower)
+          const aUsernameStartsWith = a.username.toLowerCase().startsWith(queryLower);
+          const bUsernameStartsWith = b.username.toLowerCase().startsWith(queryLower);
+          const aNameStartsWith = (a.name ?? '').toLowerCase().startsWith(queryLower);
+          const bNameStartsWith = (b.name ?? '').toLowerCase().startsWith(queryLower);
 
           // Priority: username starts > name starts > other
-          if (aUsernameStartsWith && !bUsernameStartsWith) return -1
-          if (!aUsernameStartsWith && bUsernameStartsWith) return 1
-          if (aNameStartsWith && !bNameStartsWith) return -1
-          if (!aNameStartsWith && bNameStartsWith) return 1
+          if (aUsernameStartsWith && !bUsernameStartsWith) return -1;
+          if (!aUsernameStartsWith && bUsernameStartsWith) return 1;
+          if (aNameStartsWith && !bNameStartsWith) return -1;
+          if (!aNameStartsWith && bNameStartsWith) return 1;
 
           // Same priority - sort by username
-          return a.username.localeCompare(b.username)
-        })
+          return a.username.localeCompare(b.username);
+        });
       }
 
-      return users
+      return users;
     }),
 
   /**
@@ -281,145 +274,155 @@ export const searchRouter = router({
    * Searches tasks, comments, and wiki pages
    * Requires at least VIEWER access
    */
-  global: protectedProcedure
-    .input(globalSearchSchema)
-    .query(async ({ ctx, input }) => {
-      await permissionService.requireProjectAccess(ctx.user.id, input.projectId, 'VIEWER')
+  global: protectedProcedure.input(globalSearchSchema).query(async ({ ctx, input }) => {
+    await permissionService.requireProjectAccess(ctx.user.id, input.projectId, 'VIEWER');
 
-      const results: Array<{
-        type: 'task' | 'comment' | 'wiki'
-        id: number
-        title: string
-        snippet: string
-        taskId?: number
-        taskTitle?: string
-        updatedAt: Date
-      }> = []
+    const results: Array<{
+      type: 'task' | 'comment' | 'wiki';
+      id: number;
+      title: string;
+      snippet: string;
+      taskId?: number;
+      taskTitle?: string;
+      updatedAt: Date;
+    }> = [];
 
-      // Search tasks
-      if (input.entityTypes.includes('task')) {
-        const tasks = await ctx.prisma.task.findMany({
-          where: {
-            projectId: input.projectId,
-            OR: [
-              { title: { contains: input.query, mode: 'insensitive' } },
-              { reference: { contains: input.query, mode: 'insensitive' } },
-              { description: { contains: input.query, mode: 'insensitive' } },
-            ],
+    // Search tasks
+    if (input.entityTypes.includes('task')) {
+      const tasks = await ctx.prisma.task.findMany({
+        where: {
+          projectId: input.projectId,
+          OR: [
+            { title: { contains: input.query, mode: 'insensitive' } },
+            { reference: { contains: input.query, mode: 'insensitive' } },
+            { description: { contains: input.query, mode: 'insensitive' } },
+          ],
+        },
+        select: {
+          id: true,
+          title: true,
+          reference: true,
+          description: true,
+          updatedAt: true,
+        },
+        orderBy: { updatedAt: 'desc' },
+        take: input.limit,
+      });
+
+      tasks.forEach((task) => {
+        // Create snippet from description if it matches, otherwise use title
+        let snippet = task.title;
+        if (
+          task.description &&
+          task.description.toLowerCase().includes(input.query.toLowerCase())
+        ) {
+          const idx = task.description.toLowerCase().indexOf(input.query.toLowerCase());
+          const start = Math.max(0, idx - 50);
+          const end = Math.min(task.description.length, idx + input.query.length + 50);
+          snippet =
+            (start > 0 ? '...' : '') +
+            task.description.slice(start, end) +
+            (end < task.description.length ? '...' : '');
+        }
+
+        results.push({
+          type: 'task',
+          id: task.id,
+          title: task.reference ? `${task.reference}: ${task.title}` : task.title,
+          snippet,
+          updatedAt: task.updatedAt,
+        });
+      });
+    }
+
+    // Search comments
+    if (input.entityTypes.includes('comment')) {
+      const comments = await ctx.prisma.comment.findMany({
+        where: {
+          task: { projectId: input.projectId },
+          content: { contains: input.query, mode: 'insensitive' },
+        },
+        select: {
+          id: true,
+          content: true,
+          updatedAt: true,
+          task: {
+            select: { id: true, title: true, reference: true },
           },
-          select: {
-            id: true,
-            title: true,
-            reference: true,
-            description: true,
-            updatedAt: true,
-          },
-          orderBy: { updatedAt: 'desc' },
-          take: input.limit,
-        })
+        },
+        orderBy: { updatedAt: 'desc' },
+        take: input.limit,
+      });
 
-        tasks.forEach((task) => {
-          // Create snippet from description if it matches, otherwise use title
-          let snippet = task.title
-          if (task.description && task.description.toLowerCase().includes(input.query.toLowerCase())) {
-            const idx = task.description.toLowerCase().indexOf(input.query.toLowerCase())
-            const start = Math.max(0, idx - 50)
-            const end = Math.min(task.description.length, idx + input.query.length + 50)
-            snippet = (start > 0 ? '...' : '') + task.description.slice(start, end) + (end < task.description.length ? '...' : '')
-          }
+      comments.forEach((comment) => {
+        // Create snippet from comment content
+        const idx = comment.content.toLowerCase().indexOf(input.query.toLowerCase());
+        const start = Math.max(0, idx - 50);
+        const end = Math.min(comment.content.length, idx + input.query.length + 50);
+        const snippet =
+          (start > 0 ? '...' : '') +
+          comment.content.slice(start, end) +
+          (end < comment.content.length ? '...' : '');
 
-          results.push({
-            type: 'task',
-            id: task.id,
-            title: task.reference ? `${task.reference}: ${task.title}` : task.title,
-            snippet,
-            updatedAt: task.updatedAt,
-          })
-        })
-      }
+        results.push({
+          type: 'comment',
+          id: comment.id,
+          title: `Comment on ${comment.task.reference || comment.task.title}`,
+          snippet,
+          taskId: comment.task.id,
+          taskTitle: comment.task.title,
+          updatedAt: comment.updatedAt,
+        });
+      });
+    }
 
-      // Search comments
-      if (input.entityTypes.includes('comment')) {
-        const comments = await ctx.prisma.comment.findMany({
-          where: {
-            task: { projectId: input.projectId },
-            content: { contains: input.query, mode: 'insensitive' },
-          },
-          select: {
-            id: true,
-            content: true,
-            updatedAt: true,
-            task: {
-              select: { id: true, title: true, reference: true },
-            },
-          },
-          orderBy: { updatedAt: 'desc' },
-          take: input.limit,
-        })
+    // Search wiki pages
+    if (input.entityTypes.includes('wiki')) {
+      const wikiPages = await ctx.prisma.wikiPage.findMany({
+        where: {
+          projectId: input.projectId,
+          OR: [
+            { title: { contains: input.query, mode: 'insensitive' } },
+            { content: { contains: input.query, mode: 'insensitive' } },
+          ],
+        },
+        select: {
+          id: true,
+          title: true,
+          content: true,
+          updatedAt: true,
+        },
+        orderBy: { updatedAt: 'desc' },
+        take: input.limit,
+      });
 
-        comments.forEach((comment) => {
-          // Create snippet from comment content
-          const idx = comment.content.toLowerCase().indexOf(input.query.toLowerCase())
-          const start = Math.max(0, idx - 50)
-          const end = Math.min(comment.content.length, idx + input.query.length + 50)
-          const snippet = (start > 0 ? '...' : '') + comment.content.slice(start, end) + (end < comment.content.length ? '...' : '')
+      wikiPages.forEach((page) => {
+        // Create snippet from content if it matches
+        let snippet = page.title;
+        if (page.content.toLowerCase().includes(input.query.toLowerCase())) {
+          const idx = page.content.toLowerCase().indexOf(input.query.toLowerCase());
+          const start = Math.max(0, idx - 50);
+          const end = Math.min(page.content.length, idx + input.query.length + 50);
+          snippet =
+            (start > 0 ? '...' : '') +
+            page.content.slice(start, end) +
+            (end < page.content.length ? '...' : '');
+        }
 
-          results.push({
-            type: 'comment',
-            id: comment.id,
-            title: `Comment on ${comment.task.reference || comment.task.title}`,
-            snippet,
-            taskId: comment.task.id,
-            taskTitle: comment.task.title,
-            updatedAt: comment.updatedAt,
-          })
-        })
-      }
+        results.push({
+          type: 'wiki',
+          id: page.id,
+          title: page.title,
+          snippet,
+          updatedAt: page.updatedAt,
+        });
+      });
+    }
 
-      // Search wiki pages
-      if (input.entityTypes.includes('wiki')) {
-        const wikiPages = await ctx.prisma.wikiPage.findMany({
-          where: {
-            projectId: input.projectId,
-            OR: [
-              { title: { contains: input.query, mode: 'insensitive' } },
-              { content: { contains: input.query, mode: 'insensitive' } },
-            ],
-          },
-          select: {
-            id: true,
-            title: true,
-            content: true,
-            updatedAt: true,
-          },
-          orderBy: { updatedAt: 'desc' },
-          take: input.limit,
-        })
+    // Sort all results by updatedAt
+    results.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
 
-        wikiPages.forEach((page) => {
-          // Create snippet from content if it matches
-          let snippet = page.title
-          if (page.content.toLowerCase().includes(input.query.toLowerCase())) {
-            const idx = page.content.toLowerCase().indexOf(input.query.toLowerCase())
-            const start = Math.max(0, idx - 50)
-            const end = Math.min(page.content.length, idx + input.query.length + 50)
-            snippet = (start > 0 ? '...' : '') + page.content.slice(start, end) + (end < page.content.length ? '...' : '')
-          }
-
-          results.push({
-            type: 'wiki',
-            id: page.id,
-            title: page.title,
-            snippet,
-            updatedAt: page.updatedAt,
-          })
-        })
-      }
-
-      // Sort all results by updatedAt
-      results.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
-
-      // Return limited results
-      return results.slice(0, input.limit)
-    }),
-})
+    // Return limited results
+    return results.slice(0, input.limit);
+  }),
+});

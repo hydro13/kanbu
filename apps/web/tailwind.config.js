@@ -15,10 +15,7 @@
 /** @type {import('tailwindcss').Config} */
 export default {
   darkMode: ['class'],
-  content: [
-    './index.html',
-    './src/**/*.{js,ts,jsx,tsx}',
-  ],
+  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     container: {
       center: true,
@@ -302,15 +299,21 @@ export default {
         '2xs': ['var(--font-size-2xs)', { lineHeight: 'var(--line-height-normal)' }],
         // Component-specific font sizes
         'page-title': ['var(--page-title-size)', { fontWeight: 'var(--page-title-weight)' }],
-        'page-title-lg': ['var(--page-title-size-lg)', { fontWeight: 'var(--page-title-weight-lg)' }],
-        'section-title': ['var(--section-title-size)', { fontWeight: 'var(--section-title-weight)' }],
-        'button': 'var(--button-font-size)',
+        'page-title-lg': [
+          'var(--page-title-size-lg)',
+          { fontWeight: 'var(--page-title-weight-lg)' },
+        ],
+        'section-title': [
+          'var(--section-title-size)',
+          { fontWeight: 'var(--section-title-weight)' },
+        ],
+        button: 'var(--button-font-size)',
         'button-sm': 'var(--button-font-size-sm)',
         'button-lg': 'var(--button-font-size-lg)',
-        'input': 'var(--input-font-size)',
-        'badge': 'var(--badge-font-size)',
-        'tooltip': 'var(--tooltip-font-size)',
-        'tabs': 'var(--tabs-font-size)',
+        input: 'var(--input-font-size)',
+        badge: 'var(--badge-font-size)',
+        tooltip: 'var(--tooltip-font-size)',
+        tabs: 'var(--tabs-font-size)',
       },
       fontWeight: {
         button: 'var(--button-font-weight)',
@@ -458,19 +461,25 @@ export default {
           '0%': { transform: 'scale(1)', opacity: '1' },
           '100%': { transform: 'scale(0.95)', opacity: '0' },
         },
-        'spin': {
+        spin: {
           '0%': { transform: 'rotate(0deg)' },
           '100%': { transform: 'rotate(360deg)' },
         },
-        'pulse': {
+        pulse: {
           '0%, 100%': { opacity: '1' },
           '50%': { opacity: '0.5' },
         },
-        'bounce': {
-          '0%, 100%': { transform: 'translateY(-25%)', animationTimingFunction: 'cubic-bezier(0.8, 0, 1, 1)' },
-          '50%': { transform: 'translateY(0)', animationTimingFunction: 'cubic-bezier(0, 0, 0.2, 1)' },
+        bounce: {
+          '0%, 100%': {
+            transform: 'translateY(-25%)',
+            animationTimingFunction: 'cubic-bezier(0.8, 0, 1, 1)',
+          },
+          '50%': {
+            transform: 'translateY(0)',
+            animationTimingFunction: 'cubic-bezier(0, 0, 0.2, 1)',
+          },
         },
-        'skeleton': {
+        skeleton: {
           '0%': { backgroundPosition: '200% 0' },
           '100%': { backgroundPosition: '-200% 0' },
         },
@@ -484,12 +493,12 @@ export default {
         'slide-in-from-right': 'slide-in-from-right var(--duration-normal) var(--ease-out)',
         'scale-in': 'scale-in var(--duration-fast) var(--ease-out)',
         'scale-out': 'scale-out var(--duration-fast) var(--ease-out)',
-        'spin': 'spin 1s linear infinite',
-        'pulse': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        'bounce': 'bounce 1s infinite',
-        'skeleton': 'skeleton 1.5s ease-in-out infinite',
+        spin: 'spin 1s linear infinite',
+        pulse: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        bounce: 'bounce 1s infinite',
+        skeleton: 'skeleton 1.5s ease-in-out infinite',
       },
     },
   },
   plugins: [],
-}
+};

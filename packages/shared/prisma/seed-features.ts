@@ -30,23 +30,23 @@
  * =============================================================================
  */
 
-import { PrismaClient } from '@prisma/client'
+import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 
 // =============================================================================
 // Types
 // =============================================================================
 
-type FeatureScope = 'dashboard' | 'profile' | 'admin' | 'project'
+type FeatureScope = 'dashboard' | 'profile' | 'admin' | 'project';
 
 interface FeatureDefinition {
-  scope: FeatureScope
-  slug: string
-  name: string
-  description: string
-  icon: string
-  sortOrder: number
+  scope: FeatureScope;
+  slug: string;
+  name: string;
+  description: string;
+  icon: string;
+  sortOrder: number;
 }
 
 // =============================================================================
@@ -92,7 +92,7 @@ const DASHBOARD_FEATURES: FeatureDefinition[] = [
     icon: 'building',
     sortOrder: 40,
   },
-]
+];
 
 /**
  * PROFILE FEATURES
@@ -232,7 +232,7 @@ const PROFILE_FEATURES: FeatureDefinition[] = [
     icon: 'currency',
     sortOrder: 190,
   },
-]
+];
 
 /**
  * ADMIN FEATURES
@@ -328,7 +328,7 @@ const ADMIN_FEATURES: FeatureDefinition[] = [
     icon: 'github',
     sortOrder: 300,
   },
-]
+];
 
 /**
  * PROJECT FEATURES
@@ -442,7 +442,7 @@ const PROJECT_FEATURES: FeatureDefinition[] = [
     icon: 'github',
     sortOrder: 300,
   },
-]
+];
 
 // =============================================================================
 // All Features Combined
@@ -453,14 +453,14 @@ const ALL_FEATURES: FeatureDefinition[] = [
   ...PROFILE_FEATURES,
   ...ADMIN_FEATURES,
   ...PROJECT_FEATURES,
-]
+];
 
 // =============================================================================
 // Seed Function
 // =============================================================================
 
 async function seedFeatures() {
-  console.log('Seeding features...\n')
+  console.log('Seeding features...\n');
 
   // Track counts per scope
   const counts: Record<string, number> = {
@@ -468,7 +468,7 @@ async function seedFeatures() {
     profile: 0,
     admin: 0,
     project: 0,
-  }
+  };
 
   for (const feature of ALL_FEATURES) {
     const existing = await prisma.feature.findFirst({
@@ -477,10 +477,10 @@ async function seedFeatures() {
         projectId: null, // System-wide features only
         slug: feature.slug,
       },
-    })
+    });
 
     if (existing) {
-      console.log(`  [${feature.scope}] Updating "${feature.slug}"`)
+      console.log(`  [${feature.scope}] Updating "${feature.slug}"`);
       await prisma.feature.update({
         where: { id: existing.id },
         data: {
@@ -489,9 +489,9 @@ async function seedFeatures() {
           icon: feature.icon,
           sortOrder: feature.sortOrder,
         },
-      })
+      });
     } else {
-      console.log(`  [${feature.scope}] Creating "${feature.slug}"`)
+      console.log(`  [${feature.scope}] Creating "${feature.slug}"`);
       await prisma.feature.create({
         data: {
           scope: feature.scope,
@@ -503,18 +503,18 @@ async function seedFeatures() {
           sortOrder: feature.sortOrder,
           isActive: true,
         },
-      })
+      });
     }
 
-    counts[feature.scope]++
+    counts[feature.scope]++;
   }
 
-  console.log('\nFeature counts by scope:')
-  console.log(`  - Dashboard: ${counts.dashboard}`)
-  console.log(`  - Profile:   ${counts.profile}`)
-  console.log(`  - Admin:     ${counts.admin}`)
-  console.log(`  - Project:   ${counts.project}`)
-  console.log(`  - Total:     ${ALL_FEATURES.length}`)
+  console.log('\nFeature counts by scope:');
+  console.log(`  - Dashboard: ${counts.dashboard}`);
+  console.log(`  - Profile:   ${counts.profile}`);
+  console.log(`  - Admin:     ${counts.admin}`);
+  console.log(`  - Project:   ${counts.project}`);
+  console.log(`  - Total:     ${ALL_FEATURES.length}`);
 }
 
 // =============================================================================
@@ -523,14 +523,14 @@ async function seedFeatures() {
 
 async function main() {
   try {
-    await seedFeatures()
-    console.log('\nFeature seeding completed successfully!')
+    await seedFeatures();
+    console.log('\nFeature seeding completed successfully!');
   } catch (error) {
-    console.error('Error seeding features:', error)
-    throw error
+    console.error('Error seeding features:', error);
+    throw error;
   } finally {
-    await prisma.$disconnect()
+    await prisma.$disconnect();
   }
 }
 
-main()
+main();

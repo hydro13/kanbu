@@ -10,10 +10,10 @@
  * ===================================================================
  */
 
-import * as React from 'react'
-import type { Meta, StoryObj } from '@storybook/react-vite'
-import { ScrollArea, ScrollBar } from './scroll-area'
-import { Separator } from './separator'
+import * as React from 'react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import { ScrollArea, ScrollBar } from './scroll-area';
+import { Separator } from './separator';
 
 const meta: Meta<typeof ScrollArea> = {
   title: 'UI/ScrollArea',
@@ -27,10 +27,10 @@ const meta: Meta<typeof ScrollArea> = {
       },
     },
   },
-}
+};
 
-export default meta
-type Story = StoryObj<typeof ScrollArea>
+export default meta;
+type Story = StoryObj<typeof ScrollArea>;
 
 // =============================================================================
 // Basic Variants
@@ -49,17 +49,14 @@ export const Vertical: Story = {
       </div>
     </ScrollArea>
   ),
-}
+};
 
 export const Horizontal: Story = {
   render: () => (
     <ScrollArea className="w-96 whitespace-nowrap rounded-md border">
       <div className="flex w-max space-x-4 p-4">
         {Array.from({ length: 15 }).map((_, i) => (
-          <div
-            key={i}
-            className="h-24 w-24 rounded-md bg-muted flex items-center justify-center"
-          >
+          <div key={i} className="h-24 w-24 rounded-md bg-muted flex items-center justify-center">
             {i + 1}
           </div>
         ))}
@@ -74,7 +71,7 @@ export const Horizontal: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Different Heights
@@ -92,7 +89,7 @@ export const SmallHeight: Story = {
       </div>
     </ScrollArea>
   ),
-}
+};
 
 export const MediumHeight: Story = {
   render: () => (
@@ -106,7 +103,7 @@ export const MediumHeight: Story = {
       </div>
     </ScrollArea>
   ),
-}
+};
 
 export const LargeHeight: Story = {
   render: () => (
@@ -120,7 +117,7 @@ export const LargeHeight: Story = {
       </div>
     </ScrollArea>
   ),
-}
+};
 
 // =============================================================================
 // Real-World Examples
@@ -138,7 +135,7 @@ export const ChatMessages: Story = {
           { user: 'Alice', message: 'Cool! Are you using Tailwind?', time: '10:36 AM' },
           { user: 'Bob', message: 'Yes, with custom design tokens.', time: '10:37 AM' },
           { user: 'Alice', message: 'Nice! How is it going so far?', time: '10:38 AM' },
-          { user: 'Bob', message: "Pretty well! Making good progress.", time: '10:39 AM' },
+          { user: 'Bob', message: 'Pretty well! Making good progress.', time: '10:39 AM' },
           { user: 'Alice', message: 'Let me know if you need any help!', time: '10:40 AM' },
           { user: 'Bob', message: 'Will do, thanks!', time: '10:41 AM' },
         ].map((msg, i) => (
@@ -160,7 +157,7 @@ export const ChatMessages: Story = {
       },
     },
   },
-}
+};
 
 export const FileList: Story = {
   render: () => (
@@ -202,7 +199,7 @@ export const FileList: Story = {
       },
     },
   },
-}
+};
 
 export const MenuList: Story = {
   render: () => (
@@ -223,8 +220,8 @@ export const MenuList: Story = {
             'Kitchen Appliances',
             'Outdoor',
             'Fashion',
-            'Men\'s Clothing',
-            'Women\'s Clothing',
+            "Men's Clothing",
+            "Women's Clothing",
             'Shoes',
             'Accessories',
             'Sports & Outdoors',
@@ -249,7 +246,7 @@ export const MenuList: Story = {
       },
     },
   },
-}
+};
 
 export const CodeBlock: Story = {
   render: () => (
@@ -318,7 +315,7 @@ export function LoginForm() {
       },
     },
   },
-}
+};
 
 export const ImageGallery: Story = {
   render: () => (
@@ -343,7 +340,7 @@ export const ImageGallery: Story = {
       },
     },
   },
-}
+};
 
 export const NotificationList: Story = {
   render: () => (
@@ -404,4 +401,4 @@ export const NotificationList: Story = {
       },
     },
   },
-}
+};

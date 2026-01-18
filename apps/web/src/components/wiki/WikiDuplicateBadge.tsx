@@ -9,17 +9,12 @@
  * - Click to open duplicate manager
  */
 
-import { Copy, GitMerge, AlertCircle } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
-import { trpc } from '@/lib/trpc'
-import { cn } from '@/lib/utils'
+import { Copy, GitMerge, AlertCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { trpc } from '@/lib/trpc';
+import { cn } from '@/lib/utils';
 
 // =============================================================================
 // Types
@@ -27,20 +22,20 @@ import { cn } from '@/lib/utils'
 
 export interface WikiDuplicateBadgeProps {
   /** UUID of the entity node */
-  nodeUuid: string
+  nodeUuid: string;
   /** Optional: show compact version */
-  compact?: boolean
+  compact?: boolean;
   /** Callback when badge is clicked */
-  onClick?: () => void
+  onClick?: () => void;
   /** Additional class names */
-  className?: string
+  className?: string;
 }
 
 export interface DuplicateInfo {
-  uuid: string
-  name: string
-  type: string
-  direction: 'incoming' | 'outgoing'
+  uuid: string;
+  name: string;
+  type: string;
+  direction: 'incoming' | 'outgoing';
 }
 
 // =============================================================================
@@ -57,11 +52,11 @@ export function WikiDuplicateBadge({
   const { data, isLoading } = trpc.graphiti.getDuplicatesOf.useQuery(
     { nodeUuid },
     { enabled: !!nodeUuid }
-  )
+  );
 
   // Don't render if no duplicates and not loading
   if (!isLoading && (!data || data.count === 0)) {
-    return null
+    return null;
   }
 
   // Loading state
@@ -71,23 +66,23 @@ export function WikiDuplicateBadge({
         <Copy className="h-3 w-3 mr-1" />
         ...
       </Badge>
-    )
+    );
   }
 
-  const duplicates = data?.duplicates ?? []
+  const duplicates = data?.duplicates ?? [];
 
   // Count incoming (this is a duplicate of others) vs outgoing (others are duplicates of this)
-  const incoming = duplicates.filter((d) => d.direction === 'incoming')
-  const outgoing = duplicates.filter((d) => d.direction === 'outgoing')
-  const totalCount = data?.count ?? 0
+  const incoming = duplicates.filter((d) => d.direction === 'incoming');
+  const outgoing = duplicates.filter((d) => d.direction === 'outgoing');
+  const totalCount = data?.count ?? 0;
 
   // Determine badge type
-  const isDuplicateOfOther = incoming.length > 0
+  const isDuplicateOfOther = incoming.length > 0;
 
   // Badge styling based on status
   const badgeClass = isDuplicateOfOther
     ? 'bg-amber-100 text-amber-700 border-amber-200 hover:bg-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800'
-    : 'bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800'
+    : 'bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800';
 
   // Compact version - just icon and count
   if (compact) {
@@ -113,12 +108,14 @@ export function WikiDuplicateBadge({
             {isDuplicateOfOther ? (
               <p>This entity is a duplicate of {incoming[0]?.name ?? 'another entity'}</p>
             ) : (
-              <p>{outgoing.length} duplicate{outgoing.length !== 1 ? 's' : ''} found</p>
+              <p>
+                {outgoing.length} duplicate{outgoing.length !== 1 ? 's' : ''} found
+              </p>
             )}
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
-    )
+    );
   }
 
   // Full badge with label
@@ -163,9 +160,7 @@ export function WikiDuplicateBadge({
                 </p>
               ))}
               {outgoing.length > 3 && (
-                <p className="text-sm text-muted-foreground">
-                  +{outgoing.length - 3} more...
-                </p>
+                <p className="text-sm text-muted-foreground">+{outgoing.length - 3} more...</p>
               )}
             </div>
           )}
@@ -173,5 +168,5 @@ export function WikiDuplicateBadge({
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
-  )
+  );
 }

@@ -15,7 +15,7 @@ export {
   calculateRelativeDate,
   type ExtractEdgeDatesContext,
   type ExtractedEdgeDates,
-} from './extractEdgeDates'
+} from './extractEdgeDates';
 
 // Fase 16.3 - Contradiction Detection
 export {
@@ -25,7 +25,7 @@ export {
   type ExistingFact,
   type DetectContradictionsContext,
   type ContradictionResult,
-} from './detectContradictions'
+} from './detectContradictions';
 
 // Fase 17.2 - Enhanced Contradiction Detection
 export {
@@ -36,7 +36,7 @@ export {
   toBasicContradictionResult,
   type ContradictionDetail,
   type EnhancedContradictionResult,
-} from './detectContradictions'
+} from './detectContradictions';
 
 // Fase 17.2 - Batch Contradiction Detection
 export {
@@ -47,7 +47,7 @@ export {
   type BatchNewFact,
   type BatchFactResult,
   type BatchContradictionResult,
-} from './detectContradictions'
+} from './detectContradictions';
 
 // Fase 17.2 - Category-Specific Handling
 export {
@@ -57,7 +57,7 @@ export {
   filterContradictionsByCategory,
   getContradictionNotification,
   type CategoryHandlingConfig,
-} from './detectContradictions'
+} from './detectContradictions';
 
 // Fase 22.4 - Entity Deduplication
 export {
@@ -72,7 +72,7 @@ export {
   type DeduplicateNodesContext,
   type ExistingEdgeContext,
   type DeduplicateEdgeContext,
-} from './deduplicateNodes'
+} from './deduplicateNodes';
 
 // Fase 23.3 - Reflexion Extraction
 export {
@@ -81,7 +81,7 @@ export {
   parseReflexionNodesResponse,
   type ReflexionNodesContext,
   type ReflexionNodesResponse,
-} from './reflexionNodes'
+} from './reflexionNodes';
 
 export {
   getReflexionEdgesSystemPrompt,
@@ -90,7 +90,7 @@ export {
   type ExtractedFact,
   type ReflexionEdgesContext,
   type ReflexionEdgesResponse,
-} from './reflexionEdges'
+} from './reflexionEdges';
 
 // Fase 24.4 - Community Summarization
 export {
@@ -100,4 +100,4 @@ export {
   getGenerateCommunityNameSystemPrompt,
   getGenerateCommunityNameUserPrompt,
   parseGenerateCommunityNameResponse,
-} from './communitySummarization'
+} from './communitySummarization';

@@ -68,699 +68,721 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { Toaster } from '@/components/ui/sonner'
-import { CommandPaletteProvider } from './components/command'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from '@/components/ui/sonner';
+import { CommandPaletteProvider } from './components/command';
 // HomePage removed - now redirects to /dashboard
-import { LoginPage } from './pages/Login'
-import { RegisterPage } from './pages/Register'
-import { WorkspaceSettingsRedirect } from './pages/WorkspaceSettingsRedirect'
-import { ProjectListPage } from './pages/ProjectList'
-import { WorkspacePage } from './pages/WorkspacePage'
-import { ProjectRedirect } from './pages/ProjectRedirect'
-import { BoardViewPage } from './pages/BoardView'
-import { ListViewPage } from './pages/ListView'
-import { CalendarViewPage } from './pages/CalendarView'
-import { TimelineViewPage } from './pages/TimelineView'
-import { MilestoneViewPage } from './pages/MilestoneView'
-import { AnalyticsDashboard } from './pages/AnalyticsDashboard'
-import { ImportExportPage } from './pages/ImportExport'
-import { ApiSettings } from './pages/ApiSettings'
-import { WebhookSettings } from './pages/WebhookSettings'
-import { BoardSettingsPage } from './pages/BoardSettings'
-import { ProjectMembersPage } from './pages/ProjectMembers'
+import { LoginPage } from './pages/Login';
+import { RegisterPage } from './pages/Register';
+import { WorkspaceSettingsRedirect } from './pages/WorkspaceSettingsRedirect';
+import { ProjectListPage } from './pages/ProjectList';
+import { WorkspacePage } from './pages/WorkspacePage';
+import { ProjectRedirect } from './pages/ProjectRedirect';
+import { BoardViewPage } from './pages/BoardView';
+import { ListViewPage } from './pages/ListView';
+import { CalendarViewPage } from './pages/CalendarView';
+import { TimelineViewPage } from './pages/TimelineView';
+import { MilestoneViewPage } from './pages/MilestoneView';
+import { AnalyticsDashboard } from './pages/AnalyticsDashboard';
+import { ImportExportPage } from './pages/ImportExport';
+import { ApiSettings } from './pages/ApiSettings';
+import { WebhookSettings } from './pages/WebhookSettings';
+import { BoardSettingsPage } from './pages/BoardSettings';
+import { ProjectMembersPage } from './pages/ProjectMembers';
 // Sprint pages
-import { SprintPlanning } from './pages/SprintPlanning'
-import { SprintBoard } from './pages/SprintBoard'
-import { SprintBurndown } from './pages/SprintBurndown'
+import { SprintPlanning } from './pages/SprintPlanning';
+import { SprintBoard } from './pages/SprintBoard';
+import { SprintBurndown } from './pages/SprintBurndown';
 // Profile pages
-import { ProfileSummary } from './pages/profile/ProfileSummary'
-import { TimeTracking } from './pages/profile/TimeTracking'
-import { LastLogins } from './pages/profile/LastLogins'
-import { Sessions } from './pages/profile/Sessions'
-import { PasswordHistory } from './pages/profile/PasswordHistory'
-import { Metadata } from './pages/profile/Metadata'
-import { EditProfile } from './pages/profile/EditProfile'
-import { Avatar } from './pages/profile/Avatar'
-import { TwoFactorAuth } from './pages/profile/TwoFactorAuth'
-import { PublicAccess } from './pages/profile/PublicAccess'
-import { NotificationPreferences } from './pages/profile/NotificationPreferences'
-import { ExternalAccounts } from './pages/profile/ExternalAccounts'
-import { Integrations } from './pages/profile/Integrations'
-import { ApiTokens } from './pages/profile/ApiTokens'
-import { AiAssistant } from './pages/profile/AiAssistant'
-import { HourlyRate } from './pages/profile/HourlyRate'
-import { ChangePassword } from './pages/profile/ChangePassword'
-import { AppearanceSettings } from './pages/profile/AppearanceSettings'
+import { ProfileSummary } from './pages/profile/ProfileSummary';
+import { TimeTracking } from './pages/profile/TimeTracking';
+import { LastLogins } from './pages/profile/LastLogins';
+import { Sessions } from './pages/profile/Sessions';
+import { PasswordHistory } from './pages/profile/PasswordHistory';
+import { Metadata } from './pages/profile/Metadata';
+import { EditProfile } from './pages/profile/EditProfile';
+import { Avatar } from './pages/profile/Avatar';
+import { TwoFactorAuth } from './pages/profile/TwoFactorAuth';
+import { PublicAccess } from './pages/profile/PublicAccess';
+import { NotificationPreferences } from './pages/profile/NotificationPreferences';
+import { ExternalAccounts } from './pages/profile/ExternalAccounts';
+import { Integrations } from './pages/profile/Integrations';
+import { ApiTokens } from './pages/profile/ApiTokens';
+import { AiAssistant } from './pages/profile/AiAssistant';
+import { HourlyRate } from './pages/profile/HourlyRate';
+import { ChangePassword } from './pages/profile/ChangePassword';
+import { AppearanceSettings } from './pages/profile/AppearanceSettings';
 // Admin pages
-import { UserListPage, UserCreatePage, UserEditPage, InvitesPage, SystemSettingsPage, WorkspaceListPage, WorkspaceCreatePage, WorkspaceEditPage, BackupPage, PermissionTreePage, AclPage, AuditLogsPage, PermissionMatrixPage, GitHubAdminPage, AiSystemsPage } from './pages/admin'
+import {
+  UserListPage,
+  UserCreatePage,
+  UserEditPage,
+  InvitesPage,
+  SystemSettingsPage,
+  WorkspaceListPage,
+  WorkspaceCreatePage,
+  WorkspaceEditPage,
+  BackupPage,
+  PermissionTreePage,
+  AclPage,
+  AuditLogsPage,
+  PermissionMatrixPage,
+  GitHubAdminPage,
+  AiSystemsPage,
+} from './pages/admin';
 // Dashboard pages
-import { DashboardOverview, MyTasks, MySubtasks, NotesPage, InboxPage } from './pages/dashboard'
+import { DashboardOverview, MyTasks, MySubtasks, NotesPage, InboxPage } from './pages/dashboard';
 // Workspace pages
-import { WorkspaceMembersPage, WorkspaceStatisticsPage, WorkspaceSettingsWrapper, WorkspaceWikiPage, WorkspaceGroupsPage } from './pages/workspace'
+import {
+  WorkspaceMembersPage,
+  WorkspaceStatisticsPage,
+  WorkspaceSettingsWrapper,
+  WorkspaceWikiPage,
+  WorkspaceGroupsPage,
+} from './pages/workspace';
 // Project pages
-import { GitHubProjectSettings, ProjectDetailsPage, ProjectWikiPage } from './pages/project'
-import { AcceptInvitePage } from './pages/AcceptInvite'
+import { GitHubProjectSettings, ProjectDetailsPage, ProjectWikiPage } from './pages/project';
+import { AcceptInvitePage } from './pages/AcceptInvite';
 // Demo pages
-import { EditorDemoPage } from './pages/EditorDemo'
-import { ProtectedRoute } from './components/auth/ProtectedRoute'
-import { AdminRoute } from './components/auth/AdminRoute'
-import { useAppSelector } from './store'
-import { selectIsAuthenticated } from './store/authSlice'
+import { EditorDemoPage } from './pages/EditorDemo';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
+import { AdminRoute } from './components/auth/AdminRoute';
+import { useAppSelector } from './store';
+import { selectIsAuthenticated } from './store/authSlice';
 
 /**
  * Auth-aware redirect component
  * Redirects authenticated users away from auth pages
  */
 function AuthRedirect({ children }: { children: React.ReactNode }) {
-  const isAuthenticated = useAppSelector(selectIsAuthenticated)
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
   if (isAuthenticated) {
-    return <Navigate to="/" replace />
+    return <Navigate to="/" replace />;
   }
-  return <>{children}</>
+  return <>{children}</>;
 }
 
 function App() {
   return (
     <BrowserRouter>
       <CommandPaletteProvider>
-      <Routes>
-        {/* Public routes */}
-        <Route
-          path="/login"
-          element={
-            <AuthRedirect>
-              <LoginPage />
-            </AuthRedirect>
-          }
-        />
-        <Route
-          path="/register"
-          element={
-            <AuthRedirect>
-              <RegisterPage />
-            </AuthRedirect>
-          }
-        />
-        <Route
-          path="/invite/:token"
-          element={
-            <AuthRedirect>
-              <AcceptInvitePage />
-            </AuthRedirect>
-          }
-        />
+        <Routes>
+          {/* Public routes */}
+          <Route
+            path="/login"
+            element={
+              <AuthRedirect>
+                <LoginPage />
+              </AuthRedirect>
+            }
+          />
+          <Route
+            path="/register"
+            element={
+              <AuthRedirect>
+                <RegisterPage />
+              </AuthRedirect>
+            }
+          />
+          <Route
+            path="/invite/:token"
+            element={
+              <AuthRedirect>
+                <AcceptInvitePage />
+              </AuthRedirect>
+            }
+          />
 
-        {/* Protected routes */}
-        {/* Redirect root to dashboard - single homepage with sidebar */}
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <Navigate to="/dashboard" replace />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/workspaces"
-          element={
-            <ProtectedRoute>
-              <ProjectListPage />
-            </ProtectedRoute>
-          }
-        />
-        {/* Dashboard routes */}
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <DashboardOverview />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/tasks"
-          element={
-            <ProtectedRoute>
-              <MyTasks />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/subtasks"
-          element={
-            <ProtectedRoute>
-              <MySubtasks />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/notes"
-          element={
-            <ProtectedRoute>
-              <NotesPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/inbox"
-          element={
-            <ProtectedRoute>
-              <InboxPage />
-            </ProtectedRoute>
-          }
-        />
-        {/* Workspace page (SEO-friendly slug URL) */}
-        <Route
-          path="/workspace/:slug"
-          element={
-            <ProtectedRoute>
-              <WorkspacePage />
-            </ProtectedRoute>
-          }
-        />
-        {/* Workspace module routes */}
-        <Route
-          path="/workspace/:slug/members"
-          element={
-            <ProtectedRoute>
-              <WorkspaceMembersPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/workspace/:slug/stats"
-          element={
-            <ProtectedRoute>
-              <WorkspaceStatisticsPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/workspace/:slug/wiki"
-          element={
-            <ProtectedRoute>
-              <WorkspaceWikiPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/workspace/:slug/wiki/:pageSlug"
-          element={
-            <ProtectedRoute>
-              <WorkspaceWikiPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/workspace/:slug/groups"
-          element={
-            <ProtectedRoute>
-              <WorkspaceGroupsPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/workspace/:slug/settings"
-          element={
-            <ProtectedRoute>
-              <WorkspaceSettingsWrapper />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/workspace/settings"
-          element={
-            <ProtectedRoute>
-              <WorkspaceSettingsRedirect />
-            </ProtectedRoute>
-          }
-        />
-        {/* Profile routes */}
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <ProfileSummary />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile/timetracking"
-          element={
-            <ProtectedRoute>
-              <TimeTracking />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile/logins"
-          element={
-            <ProtectedRoute>
-              <LastLogins />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile/sessions"
-          element={
-            <ProtectedRoute>
-              <Sessions />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile/password-history"
-          element={
-            <ProtectedRoute>
-              <PasswordHistory />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile/metadata"
-          element={
-            <ProtectedRoute>
-              <Metadata />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile/edit"
-          element={
-            <ProtectedRoute>
-              <EditProfile />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile/avatar"
-          element={
-            <ProtectedRoute>
-              <Avatar />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile/2fa"
-          element={
-            <ProtectedRoute>
-              <TwoFactorAuth />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile/public"
-          element={
-            <ProtectedRoute>
-              <PublicAccess />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile/notifications"
-          element={
-            <ProtectedRoute>
-              <NotificationPreferences />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile/external"
-          element={
-            <ProtectedRoute>
-              <ExternalAccounts />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile/integrations"
-          element={
-            <ProtectedRoute>
-              <Integrations />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile/api"
-          element={
-            <ProtectedRoute>
-              <ApiTokens />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile/assistant"
-          element={
-            <ProtectedRoute>
-              <AiAssistant />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile/hourly-rate"
-          element={
-            <ProtectedRoute>
-              <HourlyRate />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile/password"
-          element={
-            <ProtectedRoute>
-              <ChangePassword />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/profile/appearance"
-          element={
-            <ProtectedRoute>
-              <AppearanceSettings />
-            </ProtectedRoute>
-          }
-        />
+          {/* Protected routes */}
+          {/* Redirect root to dashboard - single homepage with sidebar */}
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <Navigate to="/dashboard" replace />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/workspaces"
+            element={
+              <ProtectedRoute>
+                <ProjectListPage />
+              </ProtectedRoute>
+            }
+          />
+          {/* Dashboard routes */}
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <DashboardOverview />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/tasks"
+            element={
+              <ProtectedRoute>
+                <MyTasks />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/subtasks"
+            element={
+              <ProtectedRoute>
+                <MySubtasks />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/notes"
+            element={
+              <ProtectedRoute>
+                <NotesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/inbox"
+            element={
+              <ProtectedRoute>
+                <InboxPage />
+              </ProtectedRoute>
+            }
+          />
+          {/* Workspace page (SEO-friendly slug URL) */}
+          <Route
+            path="/workspace/:slug"
+            element={
+              <ProtectedRoute>
+                <WorkspacePage />
+              </ProtectedRoute>
+            }
+          />
+          {/* Workspace module routes */}
+          <Route
+            path="/workspace/:slug/members"
+            element={
+              <ProtectedRoute>
+                <WorkspaceMembersPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/workspace/:slug/stats"
+            element={
+              <ProtectedRoute>
+                <WorkspaceStatisticsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/workspace/:slug/wiki"
+            element={
+              <ProtectedRoute>
+                <WorkspaceWikiPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/workspace/:slug/wiki/:pageSlug"
+            element={
+              <ProtectedRoute>
+                <WorkspaceWikiPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/workspace/:slug/groups"
+            element={
+              <ProtectedRoute>
+                <WorkspaceGroupsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/workspace/:slug/settings"
+            element={
+              <ProtectedRoute>
+                <WorkspaceSettingsWrapper />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/workspace/settings"
+            element={
+              <ProtectedRoute>
+                <WorkspaceSettingsRedirect />
+              </ProtectedRoute>
+            }
+          />
+          {/* Profile routes */}
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <ProfileSummary />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile/timetracking"
+            element={
+              <ProtectedRoute>
+                <TimeTracking />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile/logins"
+            element={
+              <ProtectedRoute>
+                <LastLogins />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile/sessions"
+            element={
+              <ProtectedRoute>
+                <Sessions />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile/password-history"
+            element={
+              <ProtectedRoute>
+                <PasswordHistory />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile/metadata"
+            element={
+              <ProtectedRoute>
+                <Metadata />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile/edit"
+            element={
+              <ProtectedRoute>
+                <EditProfile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile/avatar"
+            element={
+              <ProtectedRoute>
+                <Avatar />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile/2fa"
+            element={
+              <ProtectedRoute>
+                <TwoFactorAuth />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile/public"
+            element={
+              <ProtectedRoute>
+                <PublicAccess />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile/notifications"
+            element={
+              <ProtectedRoute>
+                <NotificationPreferences />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile/external"
+            element={
+              <ProtectedRoute>
+                <ExternalAccounts />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile/integrations"
+            element={
+              <ProtectedRoute>
+                <Integrations />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile/api"
+            element={
+              <ProtectedRoute>
+                <ApiTokens />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile/assistant"
+            element={
+              <ProtectedRoute>
+                <AiAssistant />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile/hourly-rate"
+            element={
+              <ProtectedRoute>
+                <HourlyRate />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile/password"
+            element={
+              <ProtectedRoute>
+                <ChangePassword />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/profile/appearance"
+            element={
+              <ProtectedRoute>
+                <AppearanceSettings />
+              </ProtectedRoute>
+            }
+          />
 
-        {/* Project routes - uses workspace slug + project identifier for SEO-friendly URLs */}
-        <Route
-          path="/workspace/:workspaceSlug/project/:projectIdentifier/board"
-          element={
-            <ProtectedRoute>
-              <BoardViewPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/workspace/:workspaceSlug/project/:projectIdentifier/list"
-          element={
-            <ProtectedRoute>
-              <ListViewPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/workspace/:workspaceSlug/project/:projectIdentifier/calendar"
-          element={
-            <ProtectedRoute>
-              <CalendarViewPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/workspace/:workspaceSlug/project/:projectIdentifier/timeline"
-          element={
-            <ProtectedRoute>
-              <TimelineViewPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/workspace/:workspaceSlug/project/:projectIdentifier/milestones"
-          element={
-            <ProtectedRoute>
-              <MilestoneViewPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/workspace/:workspaceSlug/project/:projectIdentifier/analytics"
-          element={
-            <ProtectedRoute>
-              <AnalyticsDashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/workspace/:workspaceSlug/project/:projectIdentifier/import-export"
-          element={
-            <ProtectedRoute>
-              <ImportExportPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/workspace/:workspaceSlug/project/:projectIdentifier/webhooks"
-          element={
-            <ProtectedRoute>
-              <WebhookSettings />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/workspace/:workspaceSlug/project/:projectIdentifier/github"
-          element={
-            <ProtectedRoute>
-              <GitHubProjectSettings />
-            </ProtectedRoute>
-          }
-        />
-        {/* Project Wiki routes */}
-        <Route
-          path="/workspace/:workspaceSlug/project/:projectIdentifier/wiki"
-          element={
-            <ProtectedRoute>
-              <ProjectWikiPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/workspace/:workspaceSlug/project/:projectIdentifier/wiki/:pageSlug"
-          element={
-            <ProtectedRoute>
-              <ProjectWikiPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/workspace/:workspaceSlug/project/:projectIdentifier/details"
-          element={
-            <ProtectedRoute>
-              <ProjectDetailsPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/settings/api"
-          element={
-            <ProtectedRoute>
-              <ApiSettings />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/workspace/:workspaceSlug/project/:projectIdentifier/settings"
-          element={
-            <ProtectedRoute>
-              <BoardSettingsPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/workspace/:workspaceSlug/project/:projectIdentifier/members"
-          element={
-            <ProtectedRoute>
-              <ProjectMembersPage />
-            </ProtectedRoute>
-          }
-        />
-        {/* Sprint routes */}
-        <Route
-          path="/workspace/:workspaceSlug/project/:projectIdentifier/sprints"
-          element={
-            <ProtectedRoute>
-              <SprintPlanning />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/workspace/:workspaceSlug/project/:projectIdentifier/sprint/:sprintId"
-          element={
-            <ProtectedRoute>
-              <SprintBoard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/workspace/:workspaceSlug/project/:projectIdentifier/sprint/:sprintId/burndown"
-          element={
-            <ProtectedRoute>
-              <SprintBurndown />
-            </ProtectedRoute>
-          }
-        />
-        {/* Legacy project routes - redirect to workspace-prefixed URLs */}
-        <Route
-          path="/project/:projectIdentifier/*"
-          element={
-            <ProtectedRoute>
-              <ProjectRedirect />
-            </ProtectedRoute>
-          }
-        />
+          {/* Project routes - uses workspace slug + project identifier for SEO-friendly URLs */}
+          <Route
+            path="/workspace/:workspaceSlug/project/:projectIdentifier/board"
+            element={
+              <ProtectedRoute>
+                <BoardViewPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/workspace/:workspaceSlug/project/:projectIdentifier/list"
+            element={
+              <ProtectedRoute>
+                <ListViewPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/workspace/:workspaceSlug/project/:projectIdentifier/calendar"
+            element={
+              <ProtectedRoute>
+                <CalendarViewPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/workspace/:workspaceSlug/project/:projectIdentifier/timeline"
+            element={
+              <ProtectedRoute>
+                <TimelineViewPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/workspace/:workspaceSlug/project/:projectIdentifier/milestones"
+            element={
+              <ProtectedRoute>
+                <MilestoneViewPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/workspace/:workspaceSlug/project/:projectIdentifier/analytics"
+            element={
+              <ProtectedRoute>
+                <AnalyticsDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/workspace/:workspaceSlug/project/:projectIdentifier/import-export"
+            element={
+              <ProtectedRoute>
+                <ImportExportPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/workspace/:workspaceSlug/project/:projectIdentifier/webhooks"
+            element={
+              <ProtectedRoute>
+                <WebhookSettings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/workspace/:workspaceSlug/project/:projectIdentifier/github"
+            element={
+              <ProtectedRoute>
+                <GitHubProjectSettings />
+              </ProtectedRoute>
+            }
+          />
+          {/* Project Wiki routes */}
+          <Route
+            path="/workspace/:workspaceSlug/project/:projectIdentifier/wiki"
+            element={
+              <ProtectedRoute>
+                <ProjectWikiPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/workspace/:workspaceSlug/project/:projectIdentifier/wiki/:pageSlug"
+            element={
+              <ProtectedRoute>
+                <ProjectWikiPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/workspace/:workspaceSlug/project/:projectIdentifier/details"
+            element={
+              <ProtectedRoute>
+                <ProjectDetailsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings/api"
+            element={
+              <ProtectedRoute>
+                <ApiSettings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/workspace/:workspaceSlug/project/:projectIdentifier/settings"
+            element={
+              <ProtectedRoute>
+                <BoardSettingsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/workspace/:workspaceSlug/project/:projectIdentifier/members"
+            element={
+              <ProtectedRoute>
+                <ProjectMembersPage />
+              </ProtectedRoute>
+            }
+          />
+          {/* Sprint routes */}
+          <Route
+            path="/workspace/:workspaceSlug/project/:projectIdentifier/sprints"
+            element={
+              <ProtectedRoute>
+                <SprintPlanning />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/workspace/:workspaceSlug/project/:projectIdentifier/sprint/:sprintId"
+            element={
+              <ProtectedRoute>
+                <SprintBoard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/workspace/:workspaceSlug/project/:projectIdentifier/sprint/:sprintId/burndown"
+            element={
+              <ProtectedRoute>
+                <SprintBurndown />
+              </ProtectedRoute>
+            }
+          />
+          {/* Legacy project routes - redirect to workspace-prefixed URLs */}
+          <Route
+            path="/project/:projectIdentifier/*"
+            element={
+              <ProtectedRoute>
+                <ProjectRedirect />
+              </ProtectedRoute>
+            }
+          />
 
-        {/* Admin routes */}
-        <Route
-          path="/admin/users"
-          element={
-            <ProtectedRoute>
-              <AdminRoute>
-                <UserListPage />
-              </AdminRoute>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/users/create"
-          element={
-            <ProtectedRoute>
-              <AdminRoute>
-                <UserCreatePage />
-              </AdminRoute>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/users/:userId"
-          element={
-            <ProtectedRoute>
-              <AdminRoute>
-                <UserEditPage />
-              </AdminRoute>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/invites"
-          element={
-            <ProtectedRoute>
-              <AdminRoute>
-                <InvitesPage />
-              </AdminRoute>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/settings"
-          element={
-            <ProtectedRoute>
-              <AdminRoute>
-                <SystemSettingsPage />
-              </AdminRoute>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/settings/ai"
-          element={
-            <ProtectedRoute>
-              <AdminRoute>
-                <AiSystemsPage />
-              </AdminRoute>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/workspaces"
-          element={
-            <ProtectedRoute>
-              <AdminRoute>
-                <WorkspaceListPage />
-              </AdminRoute>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/workspaces/new"
-          element={
-            <ProtectedRoute>
-              <AdminRoute>
-                <WorkspaceCreatePage />
-              </AdminRoute>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/workspaces/:id"
-          element={
-            <ProtectedRoute>
-              <AdminRoute>
-                <WorkspaceEditPage />
-              </AdminRoute>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/backup"
-          element={
-            <ProtectedRoute>
-              <AdminRoute>
-                <BackupPage />
-              </AdminRoute>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/permissions"
-          element={
-            <ProtectedRoute>
-              <AdminRoute>
-                <PermissionTreePage />
-              </AdminRoute>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/acl"
-          element={
-            <ProtectedRoute>
-              <AdminRoute>
-                <AclPage />
-              </AdminRoute>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/audit-logs"
-          element={
-            <ProtectedRoute>
-              <AdminRoute>
-                <AuditLogsPage />
-              </AdminRoute>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/permission-matrix"
-          element={
-            <ProtectedRoute>
-              <AdminRoute>
-                <PermissionMatrixPage />
-              </AdminRoute>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/admin/github"
-          element={
-            <ProtectedRoute>
-              <AdminRoute>
-                <GitHubAdminPage />
-              </AdminRoute>
-            </ProtectedRoute>
-          }
-        />
+          {/* Admin routes */}
+          <Route
+            path="/admin/users"
+            element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <UserListPage />
+                </AdminRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/users/create"
+            element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <UserCreatePage />
+                </AdminRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/users/:userId"
+            element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <UserEditPage />
+                </AdminRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/invites"
+            element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <InvitesPage />
+                </AdminRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/settings"
+            element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <SystemSettingsPage />
+                </AdminRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/settings/ai"
+            element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <AiSystemsPage />
+                </AdminRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/workspaces"
+            element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <WorkspaceListPage />
+                </AdminRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/workspaces/new"
+            element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <WorkspaceCreatePage />
+                </AdminRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/workspaces/:id"
+            element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <WorkspaceEditPage />
+                </AdminRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/backup"
+            element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <BackupPage />
+                </AdminRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/permissions"
+            element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <PermissionTreePage />
+                </AdminRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/acl"
+            element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <AclPage />
+                </AdminRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/audit-logs"
+            element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <AuditLogsPage />
+                </AdminRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/permission-matrix"
+            element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <PermissionMatrixPage />
+                </AdminRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/github"
+            element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <GitHubAdminPage />
+                </AdminRoute>
+              </ProtectedRoute>
+            }
+          />
 
-        {/* Demo routes (development) */}
-        <Route path="/demo/editor" element={<EditorDemoPage />} />
+          {/* Demo routes (development) */}
+          <Route path="/demo/editor" element={<EditorDemoPage />} />
 
-        {/* Catch-all redirect */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+          {/* Catch-all redirect */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
       </CommandPaletteProvider>
       <Toaster position="bottom-right" richColors closeButton />
     </BrowserRouter>
-  )
+  );
 }
 
-export default App
+export default App;

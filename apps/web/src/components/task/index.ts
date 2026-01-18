@@ -26,26 +26,26 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-export { TaskDetailModal } from './TaskDetailModal'
-export { TaskContextMenu } from './TaskContextMenu'
-export { TaskQuickActions } from './TaskQuickActions'
-export { TimeDisplay, TimeCompact, formatTime } from './TimeDisplay'
-export { TimeTracker, SubtaskTimeTracker } from './TimeTracker'
-export { DueDatePicker } from './DueDatePicker'
-export { ReminderSelector } from './ReminderSelector'
-export { DueDateBadge, formatDueDate } from './DueDateBadge'
-export { FileUpload } from './FileUpload'
-export { AttachmentSection } from './AttachmentSection'
-export { SubtaskList } from './SubtaskList'
-export { SubtaskEditModal } from './SubtaskEditModal'
+export { TaskDetailModal } from './TaskDetailModal';
+export { TaskContextMenu } from './TaskContextMenu';
+export { TaskQuickActions } from './TaskQuickActions';
+export { TimeDisplay, TimeCompact, formatTime } from './TimeDisplay';
+export { TimeTracker, SubtaskTimeTracker } from './TimeTracker';
+export { DueDatePicker } from './DueDatePicker';
+export { ReminderSelector } from './ReminderSelector';
+export { DueDateBadge, formatDueDate } from './DueDateBadge';
+export { FileUpload } from './FileUpload';
+export { AttachmentSection } from './AttachmentSection';
+export { SubtaskList } from './SubtaskList';
+export { SubtaskEditModal } from './SubtaskEditModal';
 
-export type { TaskDetailModalProps } from './TaskDetailModal'
-export type { TaskContextMenuProps } from './TaskContextMenu'
-export type { TaskQuickActionsProps } from './TaskQuickActions'
-export type { TimeDisplayProps, TimeCompactProps } from './TimeDisplay'
-export type { TimeTrackerProps, SubtaskTimeTrackerProps } from './TimeTracker'
-export type { DueDatePickerProps } from './DueDatePicker'
-export type { ReminderSelectorProps } from './ReminderSelector'
-export type { DueDateBadgeProps, DueDateInfo } from './DueDateBadge'
-export type { SubtaskListProps, Subtask } from './SubtaskList'
-export type { SubtaskEditModalProps } from './SubtaskEditModal'
+export type { TaskDetailModalProps } from './TaskDetailModal';
+export type { TaskContextMenuProps } from './TaskContextMenu';
+export type { TaskQuickActionsProps } from './TaskQuickActions';
+export type { TimeDisplayProps, TimeCompactProps } from './TimeDisplay';
+export type { TimeTrackerProps, SubtaskTimeTrackerProps } from './TimeTracker';
+export type { DueDatePickerProps } from './DueDatePicker';
+export type { ReminderSelectorProps } from './ReminderSelector';
+export type { DueDateBadgeProps, DueDateInfo } from './DueDateBadge';
+export type { SubtaskListProps, Subtask } from './SubtaskList';
+export type { SubtaskEditModalProps } from './SubtaskEditModal';

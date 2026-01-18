@@ -10,7 +10,7 @@
  * We implement it but keep it disabled by default (enableEdgeReflexion: false).
  */
 
-import type { ParsedMissedFact } from '../types/reflexion'
+import type { ParsedMissedFact } from '../types/reflexion';
 
 // ===========================================================================
 // System Prompt
@@ -40,7 +40,7 @@ Relationship Types to consider:
 - BELONGS_TO: Entity belongs to/is part of another
 - RELATES_TO: General relationship
 - REFERENCES: Entity references another entity
-- DEPENDS_ON: Entity depends on another`
+- DEPENDS_ON: Entity depends on another`;
 }
 
 // ===========================================================================
@@ -51,9 +51,9 @@ Relationship Types to consider:
  * Extracted fact for context
  */
 export interface ExtractedFact {
-  source: string
-  target: string
-  fact: string
+  source: string;
+  target: string;
+  fact: string;
 }
 
 /**
@@ -61,20 +61,20 @@ export interface ExtractedFact {
  */
 export interface ReflexionEdgesContext {
   /** Current wiki page content being analyzed */
-  episodeContent: string
+  episodeContent: string;
   /** Previous wiki pages for context (optional) */
-  previousEpisodes?: string[]
+  previousEpisodes?: string[];
   /** Entity names extracted */
-  extractedNodes: string[]
+  extractedNodes: string[];
   /** Facts/edges extracted in first pass */
-  extractedFacts: ExtractedFact[]
+  extractedFacts: ExtractedFact[];
 }
 
 /**
  * Get user prompt for edge reflexion
  */
 export function getReflexionEdgesUserPrompt(context: ReflexionEdgesContext): string {
-  const { episodeContent, previousEpisodes = [], extractedNodes, extractedFacts } = context
+  const { episodeContent, previousEpisodes = [], extractedNodes, extractedFacts } = context;
 
   const previousSection =
     previousEpisodes.length > 0
@@ -83,15 +83,17 @@ ${previousEpisodes.map((ep, i) => `[${i + 1}] ${ep}`).join('\n')}
 </PREVIOUS MESSAGES>
 
 `
-      : ''
+      : '';
 
   const nodesSection =
-    extractedNodes.length > 0 ? extractedNodes.map((n, i) => `${i + 1}. ${n}`).join('\n') : '(none)'
+    extractedNodes.length > 0
+      ? extractedNodes.map((n, i) => `${i + 1}. ${n}`).join('\n')
+      : '(none)';
 
   const factsSection =
     extractedFacts.length > 0
       ? extractedFacts.map((f, i) => `${i + 1}. ${f.source} → ${f.target}: "${f.fact}"`).join('\n')
-      : '(no facts extracted)'
+      : '(no facts extracted)';
 
   return `${previousSection}<CURRENT MESSAGE>
 ${episodeContent}
@@ -122,7 +124,7 @@ Respond with a JSON object:
   "reasoning": "Overall explanation of the analysis"
 }
 
-If no facts were missed, return an empty missed_facts array.`
+If no facts were missed, return an empty missed_facts array.`;
 }
 
 // ===========================================================================
@@ -133,8 +135,8 @@ If no facts were missed, return an empty missed_facts array.`
  * Parsed response from reflexion edges prompt
  */
 export interface ReflexionEdgesResponse {
-  missedFacts: ParsedMissedFact[]
-  reasoning: string
+  missedFacts: ParsedMissedFact[];
+  reasoning: string;
 }
 
 /**
@@ -143,25 +145,25 @@ export interface ReflexionEdgesResponse {
 export function parseReflexionEdgesResponse(response: string): ReflexionEdgesResponse {
   try {
     // Try to extract JSON from response (handle markdown code blocks)
-    let jsonStr = response.trim()
+    let jsonStr = response.trim();
 
     // Remove markdown code block if present
-    const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/)
+    const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
     if (jsonMatch && jsonMatch[1]) {
-      jsonStr = jsonMatch[1].trim()
+      jsonStr = jsonMatch[1].trim();
     }
 
-    const parsed = JSON.parse(jsonStr)
+    const parsed = JSON.parse(jsonStr);
 
     const missedFacts = (parsed.missed_facts || [])
       .map((f: unknown): ParsedMissedFact | null => {
-        if (typeof f !== 'object' || f === null) return null
-        const obj = f as Record<string, unknown>
+        if (typeof f !== 'object' || f === null) return null;
+        const obj = f as Record<string, unknown>;
 
-        const sourceName = String(obj.source_name || '').trim()
-        const targetName = String(obj.target_name || '').trim()
+        const sourceName = String(obj.source_name || '').trim();
+        const targetName = String(obj.target_name || '').trim();
 
-        if (!sourceName || !targetName) return null
+        if (!sourceName || !targetName) return null;
 
         return {
           sourceName,
@@ -169,18 +171,18 @@ export function parseReflexionEdgesResponse(response: string): ReflexionEdgesRes
           relationType: String(obj.relation_type || 'RELATES_TO'),
           fact: String(obj.fact || ''),
           reason: obj.reason ? String(obj.reason) : undefined,
-        }
+        };
       })
-      .filter((f: ParsedMissedFact | null): f is ParsedMissedFact => f !== null)
+      .filter((f: ParsedMissedFact | null): f is ParsedMissedFact => f !== null);
 
     return {
       missedFacts,
       reasoning: parsed.reasoning || '',
-    }
+    };
   } catch {
     return {
       missedFacts: [],
       reasoning: 'Failed to parse response',
-    }
+    };
   }
 }

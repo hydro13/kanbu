@@ -12,8 +12,8 @@
  * @date 2026-01-13
  */
 
-import { PrismaClient } from '@prisma/client'
-import { getWikiAiService } from '../apps/api/src/lib/ai/wiki'
+import { PrismaClient } from '@prisma/client';
+import { getWikiAiService } from '../apps/api/src/lib/ai/wiki';
 
 const TEST_CASES = [
   {
@@ -51,44 +51,48 @@ const TEST_CASES = [
     expectedValidAt: '2022-01-01',
     expectedInvalidAt: '2023-03-31',
   },
-]
+];
 
 async function main() {
-  console.log('='.repeat(60))
-  console.log('Fase 16.2 - Date Extraction Test')
-  console.log('='.repeat(60))
-  console.log('')
+  console.log('='.repeat(60));
+  console.log('Fase 16.2 - Date Extraction Test');
+  console.log('='.repeat(60));
+  console.log('');
 
-  const prisma = new PrismaClient()
+  const prisma = new PrismaClient();
 
   try {
-    const wikiAiService = getWikiAiService(prisma)
+    const wikiAiService = getWikiAiService(prisma);
 
     // Get capabilities to check if reasoning provider is available
-    const workspaceId = 1 // Use default workspace
-    const capabilities = await wikiAiService.getCapabilities({ workspaceId })
+    const workspaceId = 1; // Use default workspace
+    const capabilities = await wikiAiService.getCapabilities({ workspaceId });
 
     if (!capabilities.reasoning) {
-      console.error('ERROR: No reasoning provider configured!')
-      console.error('Please configure an AI provider (OpenAI, Ollama, or LM Studio) in Admin > AI Systems')
-      await prisma.$disconnect()
-      process.exit(1)
+      console.error('ERROR: No reasoning provider configured!');
+      console.error(
+        'Please configure an AI provider (OpenAI, Ollama, or LM Studio) in Admin > AI Systems'
+      );
+      await prisma.$disconnect();
+      process.exit(1);
     }
 
-    console.log(`Reasoning Provider: ${capabilities.reasoningProvider} (${capabilities.reasoningModel})`)
-    console.log('')
+    console.log(
+      `Reasoning Provider: ${capabilities.reasoningProvider} (${capabilities.reasoningModel})`
+    );
+    console.log('');
 
-    const referenceTimestamp = new Date()
-    console.log(`Reference Timestamp: ${referenceTimestamp.toISOString()}`)
-    console.log('')
+    const referenceTimestamp = new Date();
+    console.log(`Reference Timestamp: ${referenceTimestamp.toISOString()}`);
+    console.log('');
 
     // Run test cases
     for (const testCase of TEST_CASES) {
-      console.log('-'.repeat(60))
-      console.log(`Test: ${testCase.name}`)
-      console.log(`Fact: ${testCase.fact}`)
-      console.log(`Content: ${testCase.content.substring(0, 100)}...`)
-      console.log('')
+      console.log('-'.repeat(60));
+      console.log(`Test: ${testCase.name}`);
+      console.log(`Fact: ${testCase.fact}`);
+      console.log(`Content: ${testCase.content.substring(0, 100)}...`);
+      console.log('');
 
       try {
         const result = await wikiAiService.extractEdgeDates(
@@ -96,46 +100,46 @@ async function main() {
           testCase.fact,
           testCase.content,
           referenceTimestamp
-        )
+        );
 
-        console.log('Result:')
-        console.log(`  valid_at:   ${result.validAt?.toISOString() ?? 'null'}`)
-        console.log(`  invalid_at: ${result.invalidAt?.toISOString() ?? 'null'}`)
-        console.log(`  reasoning:  ${result.reasoning}`)
-        console.log(`  provider:   ${result.provider} (${result.model})`)
-        console.log('')
+        console.log('Result:');
+        console.log(`  valid_at:   ${result.validAt?.toISOString() ?? 'null'}`);
+        console.log(`  invalid_at: ${result.invalidAt?.toISOString() ?? 'null'}`);
+        console.log(`  reasoning:  ${result.reasoning}`);
+        console.log(`  provider:   ${result.provider} (${result.model})`);
+        console.log('');
 
         // Basic validation
-        const validAtMatch = testCase.expectedValidAt === 'reference timestamp'
-          ? result.validAt?.toISOString() === referenceTimestamp.toISOString()
-          : true // Skip detailed validation for now
+        const validAtMatch =
+          testCase.expectedValidAt === 'reference timestamp'
+            ? result.validAt?.toISOString() === referenceTimestamp.toISOString()
+            : true; // Skip detailed validation for now
 
-        const invalidAtMatch = testCase.expectedInvalidAt === null
-          ? result.invalidAt === null
-          : result.invalidAt !== null
+        const invalidAtMatch =
+          testCase.expectedInvalidAt === null
+            ? result.invalidAt === null
+            : result.invalidAt !== null;
 
-        console.log(`Expected validAt: ${testCase.expectedValidAt}`)
-        console.log(`Expected invalidAt: ${testCase.expectedInvalidAt ?? 'null'}`)
-        console.log(`validAt match: ${validAtMatch ? '✅' : '⚠️'}`)
-        console.log(`invalidAt match: ${invalidAtMatch ? '✅' : '⚠️'}`)
-
+        console.log(`Expected validAt: ${testCase.expectedValidAt}`);
+        console.log(`Expected invalidAt: ${testCase.expectedInvalidAt ?? 'null'}`);
+        console.log(`validAt match: ${validAtMatch ? '✅' : '⚠️'}`);
+        console.log(`invalidAt match: ${invalidAtMatch ? '✅' : '⚠️'}`);
       } catch (error) {
-        console.error(`ERROR: ${error instanceof Error ? error.message : 'Unknown error'}`)
+        console.error(`ERROR: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
 
-      console.log('')
+      console.log('');
     }
-
   } catch (error) {
-    console.error('Test failed:', error)
-    await prisma.$disconnect()
-    process.exit(1)
+    console.error('Test failed:', error);
+    await prisma.$disconnect();
+    process.exit(1);
   }
 
-  await prisma.$disconnect()
-  console.log('='.repeat(60))
-  console.log('Test Complete')
-  console.log('='.repeat(60))
+  await prisma.$disconnect();
+  console.log('='.repeat(60));
+  console.log('Test Complete');
+  console.log('='.repeat(60));
 }
 
-main()
+main();

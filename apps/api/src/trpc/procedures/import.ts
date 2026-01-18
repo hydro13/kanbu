@@ -14,10 +14,10 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { z } from 'zod'
-import { TRPCError } from '@trpc/server'
-import { router, protectedProcedure } from '../router'
-import { permissionService } from '../../services'
+import { z } from 'zod';
+import { TRPCError } from '@trpc/server';
+import { router, protectedProcedure } from '../router';
+import { permissionService } from '../../services';
 import {
   type ImportSource,
   type FieldMapping,
@@ -29,7 +29,7 @@ import {
   getFieldMappings,
   validateJSONImport,
   processBatch,
-} from '../../lib/importExport'
+} from '../../lib/importExport';
 
 // =============================================================================
 // Input Schemas
@@ -48,7 +48,7 @@ const fieldMappingSchema = z.object({
     })
     .optional(),
   required: z.boolean().optional(),
-})
+});
 
 const previewSchema = z.object({
   projectId: z.number(),
@@ -70,7 +70,7 @@ const previewSchema = z.object({
     ])
     .default('generic'),
   previewLimit: z.number().min(1).max(500).default(100),
-})
+});
 
 const executeSchema = z.object({
   projectId: z.number(),
@@ -108,7 +108,7 @@ const executeSchema = z.object({
       defaultColumn: opts?.defaultColumn,
       batchSize: opts?.batchSize ?? 50,
     })),
-})
+});
 
 // =============================================================================
 // Import Source Information
@@ -191,7 +191,7 @@ const IMPORT_SOURCE_INFO: Record<
     example:
       'id,title,description,column_id,priority,date_due\n1,Task 1,Description,1,2,1705276800',
   },
-}
+};
 
 // =============================================================================
 // Import Router
@@ -203,81 +203,82 @@ export const importRouter = router({
    * Use this to show users what will be imported before executing
    */
   preview: protectedProcedure.input(previewSchema).mutation(async ({ ctx, input }) => {
-    await permissionService.requireProjectAccess(ctx.user.id, input.projectId, 'OWNER')
+    await permissionService.requireProjectAccess(ctx.user.id, input.projectId, 'OWNER');
 
     try {
       if (input.fileType === 'csv') {
         // Parse CSV
-        const parseResult = parseCSV(input.content)
+        const parseResult = parseCSV(input.content);
 
         if (!parseResult.success && parseResult.errors.some((e) => e.type === 'error')) {
           throw new TRPCError({
             code: 'BAD_REQUEST',
             message: `Failed to parse CSV: ${parseResult.errors.map((e) => e.message).join(', ')}`,
-          })
+          });
         }
 
         // Generate preview with auto-detection
-        const preview = generatePreview(parseResult, input.source, undefined, input.previewLimit)
+        const preview = generatePreview(parseResult, input.source, undefined, input.previewLimit);
 
         // Get project columns for mapping suggestions
         const columns = await ctx.prisma.column.findMany({
           where: { projectId: input.projectId },
           select: { id: true, title: true },
           orderBy: { position: 'asc' },
-        })
+        });
 
         // Get project tags
         const tags = await ctx.prisma.tag.findMany({
           where: { projectId: input.projectId },
           select: { id: true, name: true },
-        })
+        });
 
         return {
           ...preview,
           projectColumns: columns,
           projectTags: tags,
-          sourceInfo: IMPORT_SOURCE_INFO[input.source === 'generic' ? preview.detectedSource ?? 'generic' : input.source],
-        }
+          sourceInfo:
+            IMPORT_SOURCE_INFO[
+              input.source === 'generic' ? (preview.detectedSource ?? 'generic') : input.source
+            ],
+        };
       } else {
         // Parse JSON
-        let json: unknown
+        let json: unknown;
         try {
-          json = JSON.parse(input.content)
+          json = JSON.parse(input.content);
         } catch {
           throw new TRPCError({
             code: 'BAD_REQUEST',
             message: 'Invalid JSON format',
-          })
+          });
         }
 
-        const validation = validateJSONImport(json)
+        const validation = validateJSONImport(json);
         if (!validation.valid) {
           throw new TRPCError({
             code: 'BAD_REQUEST',
             message: `Invalid JSON structure: ${validation.errors.map((e) => e.message).join(', ')}`,
-          })
+          });
         }
 
         // Extract tasks from JSON
-        const obj = json as Record<string, unknown>
-        let tasks: Record<string, unknown>[]
+        const obj = json as Record<string, unknown>;
+        let tasks: Record<string, unknown>[];
 
         if (Array.isArray(json)) {
-          tasks = json
+          tasks = json;
         } else if (obj.data && typeof obj.data === 'object') {
-          const data = obj.data as Record<string, unknown>
-          tasks = (data.tasks ?? []) as Record<string, unknown>[]
+          const data = obj.data as Record<string, unknown>;
+          tasks = (data.tasks ?? []) as Record<string, unknown>[];
         } else {
-          tasks = []
+          tasks = [];
         }
 
         // Generate preview rows for JSON
         const previewRows = tasks.slice(0, input.previewLimit).map((task, i) => ({
           rowNumber: i + 1,
-          original: Object.fromEntries(
-            Object.entries(task).map(([k, v]) => [k, String(v ?? '')])
-          ),
+          original: Object.fromEntries(Object.entries(task).map(([k, v]) => [k, String(v ?? '')])),
           mapped: {
             title: task.title ?? task.name ?? task.summary ?? '',
             description: task.description ?? task.notes ?? '',
@@ -289,11 +290,11 @@ export const importRouter = router({
           errors: [],
           warnings: [],
           willImport: true,
-        }))
+        }));
 
         // Get headers from first task
-        const firstTask = tasks[0]
-        const headers = firstTask ? Object.keys(firstTask) : []
+        const firstTask = tasks[0];
+        const headers = firstTask ? Object.keys(firstTask) : [];
 
         return {
           source: input.source,
@@ -319,14 +320,14 @@ export const importRouter = router({
             select: { id: true, name: true },
           }),
           sourceInfo: IMPORT_SOURCE_INFO[input.source],
-        }
+        };
       }
     } catch (e) {
-      if (e instanceof TRPCError) throw e
+      if (e instanceof TRPCError) throw e;
       throw new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
         message: `Failed to preview import: ${e instanceof Error ? e.message : String(e)}`,
-      })
+      });
     }
   }),
 
@@ -334,45 +335,45 @@ export const importRouter = router({
    * Execute import - create tasks based on confirmed mappings
    */
   execute: protectedProcedure.input(executeSchema).mutation(async ({ ctx, input }) => {
-    await permissionService.requireProjectAccess(ctx.user.id, input.projectId, 'OWNER')
+    await permissionService.requireProjectAccess(ctx.user.id, input.projectId, 'OWNER');
 
     // Parse file
-    let rows: Record<string, string>[]
+    let rows: Record<string, string>[];
     if (input.fileType === 'csv') {
-      const parseResult = parseCSV(input.content)
+      const parseResult = parseCSV(input.content);
       if (!parseResult.success) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
           message: 'Failed to parse CSV',
-        })
+        });
       }
-      rows = parseResult.rows
+      rows = parseResult.rows;
     } else {
       // JSON parsing
-      let json: unknown
+      let json: unknown;
       try {
-        json = JSON.parse(input.content)
+        json = JSON.parse(input.content);
       } catch {
         throw new TRPCError({
           code: 'BAD_REQUEST',
           message: 'Invalid JSON',
-        })
+        });
       }
 
-      const obj = json as Record<string, unknown>
+      const obj = json as Record<string, unknown>;
       if (Array.isArray(json)) {
         rows = json.map((item) =>
           Object.fromEntries(Object.entries(item).map(([k, v]) => [k, String(v ?? '')]))
-        )
+        );
       } else if (obj.data && typeof obj.data === 'object') {
-        const data = obj.data as { tasks?: unknown[] }
+        const data = obj.data as { tasks?: unknown[] };
         rows = (data.tasks ?? []).map((item: unknown) =>
           Object.fromEntries(
             Object.entries(item as Record<string, unknown>).map(([k, v]) => [k, String(v ?? '')])
           )
-        )
+        );
       } else {
-        rows = []
+        rows = [];
       }
     }
 
@@ -391,24 +392,24 @@ export const importRouter = router({
         where: { projectId: input.projectId },
         select: { title: true, reference: true },
       }),
-    ])
+    ]);
 
     // Default to first column if not specified
     const defaultColumn =
-      columns.find((c) => c.title === input.options.defaultColumn) ?? columns[0]
+      columns.find((c) => c.title === input.options.defaultColumn) ?? columns[0];
 
     if (!defaultColumn) {
       throw new TRPCError({
         code: 'BAD_REQUEST',
         message: 'Project has no columns. Create at least one column before importing.',
-      })
+      });
     }
 
     // Track created items for deduplication
-    const existingTitles = new Set(existingTasks.map((t) => t.title.toLowerCase()))
-    const existingRefs = new Set(existingTasks.filter((t) => t.reference).map((t) => t.reference!))
-    const columnMap = new Map(columns.map((c) => [c.title.toLowerCase(), c.id]))
-    const tagMap = new Map(tags.map((t) => [t.name.toLowerCase(), t.id]))
+    const existingTitles = new Set(existingTasks.map((t) => t.title.toLowerCase()));
+    const existingRefs = new Set(existingTasks.filter((t) => t.reference).map((t) => t.reference!));
+    const columnMap = new Map(columns.map((c) => [c.title.toLowerCase(), c.id]));
+    const tagMap = new Map(tags.map((t) => [t.name.toLowerCase(), t.id]));
 
     // Convert fieldMappings from input
     const mappings: FieldMapping[] = input.fieldMappings.map((m) => ({
@@ -424,7 +425,7 @@ export const importRouter = router({
             ...(m.transform.format && { format: m.transform.format }),
           } as FieldMapping['transform'])
         : undefined,
-    }))
+    }));
 
     // Process rows in batches
     const result: ImportResult = {
@@ -434,14 +435,14 @@ export const importRouter = router({
       skipped: 0,
       errors: [],
       createdIds: [],
-    }
+    };
 
     // Get max position for new tasks
     const maxPosition = await ctx.prisma.task.aggregate({
       where: { projectId: input.projectId, columnId: defaultColumn.id },
       _max: { position: true },
-    })
-    let nextPosition = (maxPosition._max.position ?? 0) + 1
+    });
+    let nextPosition = (maxPosition._max.position ?? 0) + 1;
 
     // Process each row
     const { results, errors } = await processBatch(
@@ -449,34 +450,34 @@ export const importRouter = router({
       input.options.batchSize,
       async (row, index) => {
         // Transform row using mappings
-        const transformedRow = transformRow(row, mappings, index + 2)
+        const transformedRow = transformRow(row, mappings, index + 2);
 
         if (!transformedRow.willImport) {
-          result.skipped++
-          return null
+          result.skipped++;
+          return null;
         }
 
-        const mapped = transformedRow.mapped as Record<string, unknown>
-        const title = String(mapped.title ?? '')
-        const reference = mapped.reference ? String(mapped.reference) : null
+        const mapped = transformedRow.mapped as Record<string, unknown>;
+        const title = String(mapped.title ?? '');
+        const reference = mapped.reference ? String(mapped.reference) : null;
 
         // Check for duplicates
         if (input.options.skipDuplicates) {
           if (existingTitles.has(title.toLowerCase())) {
-            result.skipped++
-            return null
+            result.skipped++;
+            return null;
           }
           if (reference && existingRefs.has(reference)) {
-            result.skipped++
-            return null
+            result.skipped++;
+            return null;
           }
         }
 
         // Resolve column
-        let columnId = defaultColumn.id
-        const columnName = mapped.column ? String(mapped.column).toLowerCase() : null
+        let columnId = defaultColumn.id;
+        const columnName = mapped.column ? String(mapped.column).toLowerCase() : null;
         if (columnName && columnMap.has(columnName)) {
-          columnId = columnMap.get(columnName)!
+          columnId = columnMap.get(columnName)!;
         } else if (columnName && input.options.createMissingColumns) {
           // Create new column
           const newColumn = await ctx.prisma.column.create({
@@ -485,19 +486,19 @@ export const importRouter = router({
               title: String(mapped.column),
               position: columns.length,
             },
-          })
-          columnMap.set(columnName, newColumn.id)
-          columnId = newColumn.id
+          });
+          columnMap.set(columnName, newColumn.id);
+          columnId = newColumn.id;
         }
 
         // Resolve tags
-        const taskTags = mapped.tags as string[] | undefined
-        const tagIds: number[] = []
+        const taskTags = mapped.tags as string[] | undefined;
+        const tagIds: number[] = [];
         if (taskTags && Array.isArray(taskTags)) {
           for (const tagName of taskTags) {
-            const normalized = tagName.toLowerCase()
+            const normalized = tagName.toLowerCase();
             if (tagMap.has(normalized)) {
-              tagIds.push(tagMap.get(normalized)!)
+              tagIds.push(tagMap.get(normalized)!);
             } else if (input.options.createMissingTags) {
               const newTag = await ctx.prisma.tag.create({
                 data: {
@@ -505,9 +506,9 @@ export const importRouter = router({
                   name: tagName,
                   color: 'grey',
                 },
-              })
-              tagMap.set(normalized, newTag.id)
-              tagIds.push(newTag.id)
+              });
+              tagMap.set(normalized, newTag.id);
+              tagIds.push(newTag.id);
             }
           }
         }
@@ -525,8 +526,7 @@ export const importRouter = router({
             position: nextPosition++,
             dateDue: mapped.dateDue ? new Date(String(mapped.dateDue)) : null,
             dateStarted: mapped.dateStarted ? new Date(String(mapped.dateStarted)) : null,
-            timeEstimated:
-              typeof mapped.timeEstimated === 'number' ? mapped.timeEstimated : 0,
+            timeEstimated: typeof mapped.timeEstimated === 'number' ? mapped.timeEstimated : 0,
             score: typeof mapped.score === 'number' ? mapped.score : 0,
             isActive: mapped.isActive !== false,
             ...(tagIds.length > 0 && {
@@ -537,29 +537,29 @@ export const importRouter = router({
               },
             }),
           },
-        })
+        });
 
-        existingTitles.add(title.toLowerCase())
-        if (reference) existingRefs.add(reference)
+        existingTitles.add(title.toLowerCase());
+        if (reference) existingRefs.add(reference);
 
-        return task.id
+        return task.id;
       }
-    )
+    );
 
     // Collect results
     for (const id of results) {
       if (id !== null) {
-        result.imported++
-        result.createdIds.push(id)
+        result.imported++;
+        result.createdIds.push(id);
       }
     }
 
     for (const error of errors) {
-      result.failed++
-      result.errors.push({ row: error.index + 2, error: error.error })
+      result.failed++;
+      result.errors.push({ row: error.index + 2, error: error.error });
     }
 
-    result.success = result.failed === 0
+    result.success = result.failed === 0;
 
     // Log activity
     await ctx.prisma.activity.create({
@@ -576,9 +576,9 @@ export const importRouter = router({
           failed: result.failed,
         },
       },
-    })
+    });
 
-    return result
+    return result;
   }),
 
   /**
@@ -593,7 +593,7 @@ export const importRouter = router({
         targetField: m.targetField,
         required: m.required ?? false,
       })),
-    }))
+    }));
   }),
 
   /**
@@ -630,7 +630,7 @@ export const importRouter = router({
               ...(m.transform.type === 'boolean' && { trueValues: m.transform.trueValues }),
             }
           : undefined,
-      }))
+      }));
     }),
 
   /**
@@ -645,8 +645,8 @@ export const importRouter = router({
     )
     .mutation(async ({ input }) => {
       if (input.fileType === 'csv') {
-        const parseResult = parseCSV(input.content)
-        const detectedSource = detectImportSource(parseResult.headers)
+        const parseResult = parseCSV(input.content);
+        const detectedSource = detectImportSource(parseResult.headers);
 
         return {
           valid: parseResult.success,
@@ -655,30 +655,35 @@ export const importRouter = router({
           headers: parseResult.headers,
           rowCount: parseResult.meta.parsedRows,
           errors: parseResult.errors,
-        }
+        };
       } else {
-        let json: unknown
+        let json: unknown;
         try {
-          json = JSON.parse(input.content)
+          json = JSON.parse(input.content);
         } catch (e) {
           return {
             valid: false,
             fileType: 'json' as const,
-            errors: [{ message: `Invalid JSON: ${e instanceof Error ? e.message : String(e)}`, type: 'error' as const }],
-          }
+            errors: [
+              {
+                message: `Invalid JSON: ${e instanceof Error ? e.message : String(e)}`,
+                type: 'error' as const,
+              },
+            ],
+          };
         }
 
-        const validation = validateJSONImport(json)
+        const validation = validateJSONImport(json);
 
         // Count tasks
-        let taskCount = 0
+        let taskCount = 0;
         if (Array.isArray(json)) {
-          taskCount = json.length
+          taskCount = json.length;
         } else {
-          const obj = json as Record<string, unknown>
+          const obj = json as Record<string, unknown>;
           if (obj.data && typeof obj.data === 'object') {
-            const data = obj.data as { tasks?: unknown[] }
-            taskCount = data.tasks?.length ?? 0
+            const data = obj.data as { tasks?: unknown[] };
+            taskCount = data.tasks?.length ?? 0;
           }
         }
 
@@ -689,7 +694,7 @@ export const importRouter = router({
           taskCount,
           errors: validation.errors,
           warnings: validation.warnings,
-        }
+        };
       }
     }),
-})
+});

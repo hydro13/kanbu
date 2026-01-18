@@ -106,9 +106,11 @@ function setWidthState(pagePath: string, isFullWidth: boolean, isPinned: boolean
   localStorage.setItem(WIDTH_STATE_KEY, JSON.stringify(state));
 
   // Dispatch custom event to notify all hook instances
-  window.dispatchEvent(new CustomEvent(WIDTH_CHANGE_EVENT, {
-    detail: { pagePath, isFullWidth, isPinned }
-  }));
+  window.dispatchEvent(
+    new CustomEvent(WIDTH_CHANGE_EVENT, {
+      detail: { pagePath, isFullWidth, isPinned },
+    })
+  );
 }
 
 function getPageWidthState(pagePath: string): { isFullWidth: boolean; isPinned: boolean } {
@@ -162,7 +164,9 @@ export function usePageWidth(options: UsePageWidthOptions = {}): UsePageWidthRet
 
   // Listen for changes from other hook instances
   useEffect(() => {
-    function handleWidthChange(event: CustomEvent<{ pagePath: string; isFullWidth: boolean; isPinned: boolean }>) {
+    function handleWidthChange(
+      event: CustomEvent<{ pagePath: string; isFullWidth: boolean; isPinned: boolean }>
+    ) {
       if (event.detail.pagePath === pagePath) {
         setLocalIsFullWidth(event.detail.isFullWidth);
         setLocalIsPinned(event.detail.isPinned);

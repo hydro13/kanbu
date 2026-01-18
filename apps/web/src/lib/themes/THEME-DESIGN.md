@@ -3,17 +3,20 @@
 ## Design Principes
 
 ### 1. Neutraliteit als Basis
+
 - **Achtergronden**: Altijd neutraal (grijs/wit tonen)
 - **Tekst**: Hoog contrast, leesbaar
 - **Borders**: Subtiel, niet afleidend
 - **Één accent kleur**: De enige "kleur" in de UI
 
 ### 2. Professionele Kleurtheorie
+
 - **60-30-10 Regel**: 60% neutraal, 30% secondary, 10% accent
 - **Geen competing colors**: Eén primary accent, geen secundaire kleuren
 - **Semantische kleuren blijven vast**: Success=groen, Error=rood, Warning=amber
 
 ### 3. Toegankelijkheid (WCAG AA)
+
 - Minimum contrast ratio 4.5:1 voor tekst
 - Minimum contrast ratio 3:1 voor UI elementen
 - Focus states altijd zichtbaar
@@ -23,22 +26,25 @@
 ## Theme Structuur
 
 ### Base Themes (Mode)
-| Theme | Beschrijving |
-|-------|--------------|
-| Light | Witte achtergrond, donkere tekst |
-| Dark | Donkere achtergrond, lichte tekst |
+
+| Theme | Beschrijving                      |
+| ----- | --------------------------------- |
+| Light | Witte achtergrond, donkere tekst  |
+| Dark  | Donkere achtergrond, lichte tekst |
 
 ### Accent Colors (6 professionele opties)
-| Naam | Hex | Gebruik |
-|------|-----|---------|
-| **Slate** | `#475569` | Neutraal, zakelijk (default) |
-| **Blue** | `#2563eb` | Vertrouwen, technologie |
-| **Teal** | `#0d9488` | Fris, modern |
-| **Violet** | `#7c3aed` | Creatief, premium |
-| **Rose** | `#e11d48` | Energie, urgentie |
-| **Amber** | `#d97706` | Warm, vriendelijk |
+
+| Naam       | Hex       | Gebruik                      |
+| ---------- | --------- | ---------------------------- |
+| **Slate**  | `#475569` | Neutraal, zakelijk (default) |
+| **Blue**   | `#2563eb` | Vertrouwen, technologie      |
+| **Teal**   | `#0d9488` | Fris, modern                 |
+| **Violet** | `#7c3aed` | Creatief, premium            |
+| **Rose**   | `#e11d48` | Energie, urgentie            |
+| **Amber**  | `#d97706` | Warm, vriendelijk            |
 
 ### High Contrast Mode (Accessibility)
+
 - Verhoogde contrast ratios
 - Dikkere borders
 - Geen transparanties
@@ -71,7 +77,7 @@ Info: blue-500/600 (of primary als primary niet blue is)
   --color-border: 214 32% 91%;
 
   /* Primary accent - WEL wijzigen per accent */
-  --color-primary: 221 83% 53%;      /* Blue default */
+  --color-primary: 221 83% 53%; /* Blue default */
   --color-primary-foreground: 0 0% 100%;
 
   /* Ring/focus - volgt primary */
@@ -86,13 +92,14 @@ Info: blue-500/600 (of primary als primary niet blue is)
 }
 
 /* Accent variant: Teal */
-[data-accent="teal"] {
+[data-accent='teal'] {
   --color-primary: 166 76% 32%;
   --color-ring: 166 76% 32%;
 }
 ```
 
 ### Data Attributes
+
 - `data-theme="light|dark"` - Op <html>
 - `data-accent="slate|blue|teal|violet|rose|amber"` - Op <html>
 - `data-contrast="normal|high"` - Op <html> (optioneel)
@@ -102,6 +109,7 @@ Info: blue-500/600 (of primary als primary niet blue is)
 ## Visueel Voorbeeld
 
 ### Light + Blue (Default)
+
 ```
 ┌─────────────────────────────────────┐
 │ ████ Header          [🔵 Action]    │  <- Blue accent
@@ -120,6 +128,7 @@ Info: blue-500/600 (of primary als primary niet blue is)
 ```
 
 ### Dark + Teal
+
 ```
 ┌─────────────────────────────────────┐
 │ ████ Header          [🟢 Action]    │  <- Teal accent

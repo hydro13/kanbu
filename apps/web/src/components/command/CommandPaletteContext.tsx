@@ -11,61 +11,61 @@
  * ===================================================================
  */
 
-import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react'
+import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface CommandPaletteContextValue {
-  isOpen: boolean
-  open: () => void
-  close: () => void
-  toggle: () => void
+  isOpen: boolean;
+  open: () => void;
+  close: () => void;
+  toggle: () => void;
 }
 
 // =============================================================================
 // Context
 // =============================================================================
 
-const CommandPaletteContext = createContext<CommandPaletteContextValue | null>(null)
+const CommandPaletteContext = createContext<CommandPaletteContextValue | null>(null);
 
 // =============================================================================
 // Provider
 // =============================================================================
 
 export function CommandPaletteProvider({ children }: { children: ReactNode }) {
-  const [isOpen, setIsOpen] = useState(false)
+  const [isOpen, setIsOpen] = useState(false);
 
-  const open = useCallback(() => setIsOpen(true), [])
-  const close = useCallback(() => setIsOpen(false), [])
-  const toggle = useCallback(() => setIsOpen((prev) => !prev), [])
+  const open = useCallback(() => setIsOpen(true), []);
+  const close = useCallback(() => setIsOpen(false), []);
+  const toggle = useCallback(() => setIsOpen((prev) => !prev), []);
 
   // Global keyboard listener for Ctrl+K / Cmd+K
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Cmd+K or Ctrl+K
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault()
-        e.stopPropagation()
-        setIsOpen((prev) => !prev)
+        e.preventDefault();
+        e.stopPropagation();
+        setIsOpen((prev) => !prev);
       }
       // Escape to close (only when open)
       if (e.key === 'Escape' && isOpen) {
-        e.preventDefault()
-        setIsOpen(false)
+        e.preventDefault();
+        setIsOpen(false);
       }
-    }
+    };
 
-    document.addEventListener('keydown', handleKeyDown, true) // capture phase
-    return () => document.removeEventListener('keydown', handleKeyDown, true)
-  }, [isOpen])
+    document.addEventListener('keydown', handleKeyDown, true); // capture phase
+    return () => document.removeEventListener('keydown', handleKeyDown, true);
+  }, [isOpen]);
 
   return (
     <CommandPaletteContext.Provider value={{ isOpen, open, close, toggle }}>
       {children}
     </CommandPaletteContext.Provider>
-  )
+  );
 }
 
 // =============================================================================
@@ -73,11 +73,11 @@ export function CommandPaletteProvider({ children }: { children: ReactNode }) {
 // =============================================================================
 
 export function useCommandPalette(): CommandPaletteContextValue {
-  const context = useContext(CommandPaletteContext)
+  const context = useContext(CommandPaletteContext);
   if (!context) {
-    throw new Error('useCommandPalette must be used within a CommandPaletteProvider')
+    throw new Error('useCommandPalette must be used within a CommandPaletteProvider');
   }
-  return context
+  return context;
 }
 
-export default CommandPaletteProvider
+export default CommandPaletteProvider;

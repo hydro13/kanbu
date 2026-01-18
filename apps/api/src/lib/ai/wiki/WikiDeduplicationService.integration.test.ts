@@ -13,16 +13,11 @@
  * @date 2026-01-14
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import {
-  WikiDeduplicationService,
-} from './WikiDeduplicationService'
-import type {
-  EntityNodeInfo,
-  DeduplicationOptions,
-} from './types'
-import type { WikiAiService } from './WikiAiService'
-import type { WikiNodeEmbeddingService } from './WikiNodeEmbeddingService'
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { WikiDeduplicationService } from './WikiDeduplicationService';
+import type { EntityNodeInfo, DeduplicationOptions } from './types';
+import type { WikiAiService } from './WikiAiService';
+import type { WikiNodeEmbeddingService } from './WikiNodeEmbeddingService';
 
 // ===========================================================================
 // Test Data Factory
@@ -34,7 +29,7 @@ function createTestNode(
   type: 'Concept' | 'Person' | 'Task' | 'Project' = 'Concept',
   groupId = 'wiki-ws-1'
 ): EntityNodeInfo {
-  return { uuid, name, type, groupId }
+  return { uuid, name, type, groupId };
 }
 
 // ===========================================================================
@@ -42,11 +37,11 @@ function createTestNode(
 // ===========================================================================
 
 describe('WikiDeduplicationService Integration', () => {
-  let service: WikiDeduplicationService
+  let service: WikiDeduplicationService;
 
   beforeEach(() => {
-    service = new WikiDeduplicationService()
-  })
+    service = new WikiDeduplicationService();
+  });
 
   // =========================================================================
   // Flow: Exact Match Resolution
@@ -57,64 +52,56 @@ describe('WikiDeduplicationService Integration', () => {
       const extractedNodes: EntityNodeInfo[] = [
         createTestNode('new-1', 'Machine Learning'),
         createTestNode('new-2', 'Deep Learning'),
-      ]
+      ];
 
       const existingNodes: EntityNodeInfo[] = [
         createTestNode('existing-1', 'machine learning'), // Exact match (lowercase)
         createTestNode('existing-2', 'Neural Networks'),
-      ]
+      ];
 
       const options: DeduplicationOptions = {
         workspaceId: 1,
         useEmbeddings: false,
         useLlm: false,
-      }
+      };
 
-      const result = await service.resolveExtractedNodes(
-        extractedNodes,
-        existingNodes,
-        options
-      )
+      const result = await service.resolveExtractedNodes(extractedNodes, existingNodes, options);
 
       // Should find 1 exact match
-      expect(result.duplicatePairs.length).toBeGreaterThanOrEqual(1)
-      expect(result.duplicatePairs[0]!.matchType).toBe('exact')
-      expect(result.duplicatePairs[0]!.sourceNode.name).toBe('Machine Learning')
-      expect(result.duplicatePairs[0]!.targetNode.name).toBe('machine learning')
-      expect(result.duplicatePairs[0]!.confidence).toBe(1.0)
+      expect(result.duplicatePairs.length).toBeGreaterThanOrEqual(1);
+      expect(result.duplicatePairs[0]!.matchType).toBe('exact');
+      expect(result.duplicatePairs[0]!.sourceNode.name).toBe('Machine Learning');
+      expect(result.duplicatePairs[0]!.targetNode.name).toBe('machine learning');
+      expect(result.duplicatePairs[0]!.confidence).toBe(1.0);
 
       // Stats should reflect exact match
-      expect(result.stats.exactMatches).toBeGreaterThanOrEqual(1)
-      expect(result.stats.embeddingMatches).toBe(0)
-      expect(result.stats.llmMatches).toBe(0)
-    })
+      expect(result.stats.exactMatches).toBeGreaterThanOrEqual(1);
+      expect(result.stats.embeddingMatches).toBe(0);
+      expect(result.stats.llmMatches).toBe(0);
+    });
 
     it('should handle whitespace variations', async () => {
       const extractedNodes: EntityNodeInfo[] = [
         createTestNode('new-1', 'Natural  Language   Processing'), // Multiple spaces
-      ]
+      ];
 
       const existingNodes: EntityNodeInfo[] = [
         createTestNode('existing-1', 'Natural Language Processing'), // Single spaces
-      ]
+      ];
 
       const options: DeduplicationOptions = {
         workspaceId: 1,
         useEmbeddings: false,
         useLlm: false,
-      }
+      };
 
-      const result = await service.resolveExtractedNodes(
-        extractedNodes,
-        existingNodes,
-        options
-      )
+      const result = await service.resolveExtractedNodes(extractedNodes, existingNodes, options);
 
       // Should normalize whitespace and find match
-      expect(result.duplicatePairs.length).toBeGreaterThanOrEqual(1)
-      expect(result.duplicatePairs[0]!.matchType).toBe('exact')
-    })
-  })
+      expect(result.duplicatePairs.length).toBeGreaterThanOrEqual(1);
+      expect(result.duplicatePairs[0]!.matchType).toBe('exact');
+    });
+  });
 
   // =========================================================================
   // Flow: Fuzzy Match Resolution
@@ -125,60 +112,52 @@ describe('WikiDeduplicationService Integration', () => {
       const extractedNodes: EntityNodeInfo[] = [
         createTestNode('new-1', 'Project Management Tool'),
         createTestNode('new-2', 'User Authentication System'),
-      ]
+      ];
 
       const existingNodes: EntityNodeInfo[] = [
         createTestNode('existing-1', 'Project Management Tools'), // Slight variation
         createTestNode('existing-2', 'Data Storage'),
-      ]
+      ];
 
       const options: DeduplicationOptions = {
         workspaceId: 1,
         fuzzyThreshold: 0.7, // Lower threshold for fuzzy
         useEmbeddings: false,
         useLlm: false,
-      }
+      };
 
-      const result = await service.resolveExtractedNodes(
-        extractedNodes,
-        existingNodes,
-        options
-      )
+      const result = await service.resolveExtractedNodes(extractedNodes, existingNodes, options);
 
       // Should find fuzzy match for Project Management
-      const fuzzyMatches = result.duplicatePairs.filter(p => p.matchType === 'fuzzy')
-      expect(fuzzyMatches.length).toBeGreaterThanOrEqual(1)
-      expect(fuzzyMatches[0]!.confidence).toBeGreaterThan(0.7)
-    })
+      const fuzzyMatches = result.duplicatePairs.filter((p) => p.matchType === 'fuzzy');
+      expect(fuzzyMatches.length).toBeGreaterThanOrEqual(1);
+      expect(fuzzyMatches[0]!.confidence).toBeGreaterThan(0.7);
+    });
 
     it('should skip low-entropy names in fuzzy matching', async () => {
       const extractedNodes: EntityNodeInfo[] = [
         createTestNode('new-1', 'API'), // Short, low entropy
-        createTestNode('new-2', 'XX'),  // Very short
-      ]
+        createTestNode('new-2', 'XX'), // Very short
+      ];
 
       const existingNodes: EntityNodeInfo[] = [
         createTestNode('existing-1', 'api'),
         createTestNode('existing-2', 'xx'),
-      ]
+      ];
 
       const options: DeduplicationOptions = {
         workspaceId: 1,
         useEmbeddings: false,
         useLlm: false,
-      }
+      };
 
-      const result = await service.resolveExtractedNodes(
-        extractedNodes,
-        existingNodes,
-        options
-      )
+      const result = await service.resolveExtractedNodes(extractedNodes, existingNodes, options);
 
       // Should still find exact matches but not fuzzy (low entropy)
-      const fuzzyMatches = result.duplicatePairs.filter(p => p.matchType === 'fuzzy')
-      expect(fuzzyMatches).toHaveLength(0)
-    })
-  })
+      const fuzzyMatches = result.duplicatePairs.filter((p) => p.matchType === 'fuzzy');
+      expect(fuzzyMatches).toHaveLength(0);
+    });
+  });
 
   // =========================================================================
   // Flow: Embedding Match Resolution
@@ -188,109 +167,105 @@ describe('WikiDeduplicationService Integration', () => {
     it('should resolve semantic duplicates via embeddings', async () => {
       // Create mock that returns high similarity for specific pairs
       const mockEmbeddingService = {
-        findSimilarEntities: vi.fn().mockImplementation(
-          async (_context: unknown, name: string) => {
-            // Return semantic match for "Artificial Intelligence" -> "AI Systems"
-            if (name === 'Artificial Intelligence') {
-              return [{
+        findSimilarEntities: vi.fn().mockImplementation(async (_context: unknown, name: string) => {
+          // Return semantic match for "Artificial Intelligence" -> "AI Systems"
+          if (name === 'Artificial Intelligence') {
+            return [
+              {
                 nodeId: 'existing-1',
                 name: 'AI Systems',
                 nodeType: 'Concept',
                 score: 0.92,
                 groupId: 'wiki-ws-1',
-              }]
-            }
-            return []
+              },
+            ];
           }
-        ),
-      }
+          return [];
+        }),
+      };
 
       const serviceWithEmbeddings = new WikiDeduplicationService(
         mockEmbeddingService as unknown as WikiNodeEmbeddingService
-      )
+      );
 
       const extractedNodes: EntityNodeInfo[] = [
         createTestNode('new-1', 'Artificial Intelligence'),
         createTestNode('new-2', 'Database Design'),
-      ]
+      ];
 
       const existingNodes: EntityNodeInfo[] = [
         createTestNode('existing-1', 'AI Systems'), // Semantic match
         createTestNode('existing-2', 'Web Development'),
-      ]
+      ];
 
       const options: DeduplicationOptions = {
         workspaceId: 1,
         useEmbeddings: true,
         useLlm: false,
         embeddingThreshold: 0.85,
-      }
+      };
 
       const result = await serviceWithEmbeddings.resolveExtractedNodes(
         extractedNodes,
         existingNodes,
         options
-      )
+      );
 
       // Should find embedding match
-      const embeddingMatches = result.duplicatePairs.filter(p => p.matchType === 'embedding')
-      expect(embeddingMatches).toHaveLength(1)
-      expect(embeddingMatches[0]!.sourceNode.name).toBe('Artificial Intelligence')
-      expect(embeddingMatches[0]!.targetNode.name).toBe('AI Systems')
-      expect(embeddingMatches[0]!.confidence).toBe(0.92)
+      const embeddingMatches = result.duplicatePairs.filter((p) => p.matchType === 'embedding');
+      expect(embeddingMatches).toHaveLength(1);
+      expect(embeddingMatches[0]!.sourceNode.name).toBe('Artificial Intelligence');
+      expect(embeddingMatches[0]!.targetNode.name).toBe('AI Systems');
+      expect(embeddingMatches[0]!.confidence).toBe(0.92);
 
-      expect(result.stats.embeddingMatches).toBe(1)
-    })
+      expect(result.stats.embeddingMatches).toBe(1);
+    });
 
     it('should skip nodes below embedding threshold', async () => {
       const mockEmbeddingService = {
-        findSimilarEntities: vi.fn().mockImplementation(
-          async (_context: unknown, name: string) => {
-            // Return low similarity
-            if (name === 'Frontend Framework') {
-              return [{
+        findSimilarEntities: vi.fn().mockImplementation(async (_context: unknown, name: string) => {
+          // Return low similarity
+          if (name === 'Frontend Framework') {
+            return [
+              {
                 nodeId: 'existing-1',
                 name: 'Backend System',
                 nodeType: 'Concept',
                 score: 0.5, // Below threshold
                 groupId: 'wiki-ws-1',
-              }]
-            }
-            return []
+              },
+            ];
           }
-        ),
-      }
+          return [];
+        }),
+      };
 
       const serviceWithEmbeddings = new WikiDeduplicationService(
         mockEmbeddingService as unknown as WikiNodeEmbeddingService
-      )
+      );
 
-      const extractedNodes: EntityNodeInfo[] = [
-        createTestNode('new-1', 'Frontend Framework'),
-      ]
+      const extractedNodes: EntityNodeInfo[] = [createTestNode('new-1', 'Frontend Framework')];
 
-      const existingNodes: EntityNodeInfo[] = [
-        createTestNode('existing-1', 'Backend System'),
-      ]
+      const existingNodes: EntityNodeInfo[] = [createTestNode('existing-1', 'Backend System')];
 
       const options: DeduplicationOptions = {
         workspaceId: 1,
         useEmbeddings: true,
         useLlm: false,
         embeddingThreshold: 0.85, // High threshold
-      }
+      };
 
       const result = await serviceWithEmbeddings.resolveExtractedNodes(
         extractedNodes,
         existingNodes,
         options
-      )
+      );
 
       // Should not find match (below threshold)
-      expect(result.duplicatePairs).toHaveLength(0)
-      expect(result.stats.embeddingMatches).toBe(0)
-    })
-  })
+      expect(result.duplicatePairs).toHaveLength(0);
+      expect(result.stats.embeddingMatches).toBe(0);
+    });
+  });
 
   // =========================================================================
   // Flow: LLM Match Resolution
@@ -305,80 +280,78 @@ describe('WikiDeduplicationService Integration', () => {
             { id: 0, duplicateIdx: 0 }, // First unresolved node matches first existing node (NLP)
           ],
         }),
-      }
+      };
 
       const serviceWithLlm = new WikiDeduplicationService(
         undefined,
         mockAiService as unknown as WikiAiService
-      )
+      );
 
       const extractedNodes: EntityNodeInfo[] = [
         createTestNode('new-1', 'Natural Language Processing'),
-      ]
+      ];
 
       const existingNodes: EntityNodeInfo[] = [
         createTestNode('existing-1', 'NLP'), // Abbreviation
         createTestNode('existing-2', 'Machine Learning'),
-      ]
+      ];
 
       const options: DeduplicationOptions = {
         workspaceId: 1,
         useEmbeddings: false,
         useLlm: true,
-      }
+      };
 
       const result = await serviceWithLlm.resolveExtractedNodes(
         extractedNodes,
         existingNodes,
         options,
         'Content about NLP techniques' // Episode content for context
-      )
+      );
 
       // Should find LLM match
-      const llmMatches = result.duplicatePairs.filter(p => p.matchType === 'llm')
-      expect(llmMatches).toHaveLength(1)
-      expect(llmMatches[0]!.sourceNode.name).toBe('Natural Language Processing')
-      expect(llmMatches[0]!.targetNode.name).toBe('NLP')
-      expect(llmMatches[0]!.confidence).toBe(0.85) // Default LLM confidence
+      const llmMatches = result.duplicatePairs.filter((p) => p.matchType === 'llm');
+      expect(llmMatches).toHaveLength(1);
+      expect(llmMatches[0]!.sourceNode.name).toBe('Natural Language Processing');
+      expect(llmMatches[0]!.targetNode.name).toBe('NLP');
+      expect(llmMatches[0]!.confidence).toBe(0.85); // Default LLM confidence
 
-      expect(result.stats.llmMatches).toBe(1)
-    })
+      expect(result.stats.llmMatches).toBe(1);
+    });
 
     it('should skip LLM when useLlm is false', async () => {
       const mockAiService = {
         detectNodeDuplicates: vi.fn(),
-      }
+      };
 
       const serviceWithLlm = new WikiDeduplicationService(
         undefined,
         mockAiService as unknown as WikiAiService
-      )
+      );
 
       const extractedNodes: EntityNodeInfo[] = [
         createTestNode('new-1', 'Natural Language Processing'),
-      ]
+      ];
 
-      const existingNodes: EntityNodeInfo[] = [
-        createTestNode('existing-1', 'NLP'),
-      ]
+      const existingNodes: EntityNodeInfo[] = [createTestNode('existing-1', 'NLP')];
 
       const options: DeduplicationOptions = {
         workspaceId: 1,
         useEmbeddings: false,
         useLlm: false, // Disabled
-      }
+      };
 
       const result = await serviceWithLlm.resolveExtractedNodes(
         extractedNodes,
         existingNodes,
         options
-      )
+      );
 
       // LLM should not be called
-      expect(mockAiService.detectNodeDuplicates).not.toHaveBeenCalled()
-      expect(result.stats.llmMatches).toBe(0)
-    })
-  })
+      expect(mockAiService.detectNodeDuplicates).not.toHaveBeenCalled();
+      expect(result.stats.llmMatches).toBe(0);
+    });
+  });
 
   // =========================================================================
   // Flow: Complete Pipeline (All Methods)
@@ -388,93 +361,89 @@ describe('WikiDeduplicationService Integration', () => {
     it('should try methods in order: exact -> fuzzy -> embedding -> LLM', async () => {
       const mockEmbeddingService = {
         findSimilarNodes: vi.fn().mockResolvedValue([]),
-      }
+      };
 
       const mockAiService = {
         detectNodeDuplicates: vi.fn().mockResolvedValue({
           duplicateUuids: ['existing-3'],
         }),
-      }
+      };
 
       const serviceWithAll = new WikiDeduplicationService(
         mockEmbeddingService as unknown as WikiNodeEmbeddingService,
         mockAiService as unknown as WikiAiService
-      )
+      );
 
       const extractedNodes: EntityNodeInfo[] = [
-        createTestNode('new-1', 'Machine Learning'),           // Exact match
-        createTestNode('new-2', 'Data Science Framework'),     // Fuzzy match
-        createTestNode('new-3', 'Computer Vision Systems'),    // Will go to LLM
-      ]
+        createTestNode('new-1', 'Machine Learning'), // Exact match
+        createTestNode('new-2', 'Data Science Framework'), // Fuzzy match
+        createTestNode('new-3', 'Computer Vision Systems'), // Will go to LLM
+      ];
 
       const existingNodes: EntityNodeInfo[] = [
-        createTestNode('existing-1', 'machine learning'),        // Exact for new-1
+        createTestNode('existing-1', 'machine learning'), // Exact for new-1
         createTestNode('existing-2', 'Data Science Frameworks'), // Fuzzy for new-2
-        createTestNode('existing-3', 'CV Systems'),              // LLM for new-3
-      ]
+        createTestNode('existing-3', 'CV Systems'), // LLM for new-3
+      ];
 
       const options: DeduplicationOptions = {
         workspaceId: 1,
         fuzzyThreshold: 0.7,
         useEmbeddings: true,
         useLlm: true,
-      }
+      };
 
       const result = await serviceWithAll.resolveExtractedNodes(
         extractedNodes,
         existingNodes,
         options
-      )
+      );
 
       // Should have matches from different methods
-      expect(result.duplicatePairs.length).toBeGreaterThanOrEqual(1)
+      expect(result.duplicatePairs.length).toBeGreaterThanOrEqual(1);
 
       // Verify exact match was found first
-      const exactMatches = result.duplicatePairs.filter(p => p.matchType === 'exact')
-      expect(exactMatches).toHaveLength(1)
-      expect(exactMatches[0]!.sourceNode.name).toBe('Machine Learning')
-    })
+      const exactMatches = result.duplicatePairs.filter((p) => p.matchType === 'exact');
+      expect(exactMatches).toHaveLength(1);
+      expect(exactMatches[0]!.sourceNode.name).toBe('Machine Learning');
+    });
 
     it('should not re-process already resolved nodes', async () => {
       const mockEmbeddingService = {
         findSimilarEntities: vi.fn().mockResolvedValue([]),
-      }
+      };
 
       const serviceWithEmbedding = new WikiDeduplicationService(
         mockEmbeddingService as unknown as WikiNodeEmbeddingService
-      )
+      );
 
       const extractedNodes: EntityNodeInfo[] = [
         createTestNode('new-1', 'Machine Learning'), // Exact match
-        createTestNode('new-2', 'Deep Learning'),    // No exact match
-      ]
+        createTestNode('new-2', 'Deep Learning'), // No exact match
+      ];
 
       const existingNodes: EntityNodeInfo[] = [
         createTestNode('existing-1', 'machine learning'),
         createTestNode('existing-2', 'Neural Networks'),
-      ]
+      ];
 
       const options: DeduplicationOptions = {
         workspaceId: 1,
         useEmbeddings: true,
         useLlm: false,
-      }
+      };
 
-      await serviceWithEmbedding.resolveExtractedNodes(
-        extractedNodes,
-        existingNodes,
-        options
-      )
+      await serviceWithEmbedding.resolveExtractedNodes(extractedNodes, existingNodes, options);
 
       // Embedding should only be called for unresolved node (new-2)
-      expect(mockEmbeddingService.findSimilarEntities).toHaveBeenCalledTimes(1)
+      expect(mockEmbeddingService.findSimilarEntities).toHaveBeenCalledTimes(1);
       expect(mockEmbeddingService.findSimilarEntities).toHaveBeenCalledWith(
         expect.any(Object), // context
-        'Deep Learning',    // name
-        expect.any(Object)  // options
-      )
-    })
-  })
+        'Deep Learning', // name
+        expect.any(Object) // options
+      );
+    });
+  });
 
   // =========================================================================
   // Flow: Workspace Duplicate Detection
@@ -484,61 +453,59 @@ describe('WikiDeduplicationService Integration', () => {
     it('should find all duplicates in workspace', async () => {
       const nodes: EntityNodeInfo[] = [
         createTestNode('node-1', 'Machine Learning'),
-        createTestNode('node-2', 'machine learning'),       // Duplicate of 1
+        createTestNode('node-2', 'machine learning'), // Duplicate of 1
         createTestNode('node-3', 'Deep Learning'),
-        createTestNode('node-4', 'Deep Learning System'),   // Similar to 3
+        createTestNode('node-4', 'Deep Learning System'), // Similar to 3
         createTestNode('node-5', 'Web Development'),
-      ]
+      ];
 
-      const duplicates = await service.findDuplicatesInWorkspace(
-        nodes,
-        { threshold: 0.7, limit: 50 }
-      )
+      const duplicates = await service.findDuplicatesInWorkspace(nodes, {
+        threshold: 0.7,
+        limit: 50,
+      });
 
       // Should find at least the exact match
-      expect(duplicates.length).toBeGreaterThanOrEqual(1)
+      expect(duplicates.length).toBeGreaterThanOrEqual(1);
 
       // Check that we found the exact match
       const exactMatch = duplicates.find(
-        d => d.matchType === 'exact' &&
-        ((d.sourceNode.uuid === 'node-1' && d.targetNode.uuid === 'node-2') ||
-         (d.sourceNode.uuid === 'node-2' && d.targetNode.uuid === 'node-1'))
-      )
-      expect(exactMatch).toBeDefined()
-      expect(exactMatch?.confidence).toBe(1.0)
-    })
+        (d) =>
+          d.matchType === 'exact' &&
+          ((d.sourceNode.uuid === 'node-1' && d.targetNode.uuid === 'node-2') ||
+            (d.sourceNode.uuid === 'node-2' && d.targetNode.uuid === 'node-1'))
+      );
+      expect(exactMatch).toBeDefined();
+      expect(exactMatch?.confidence).toBe(1.0);
+    });
 
     it('should respect limit parameter', async () => {
       // Create many potential duplicates
-      const nodes: EntityNodeInfo[] = []
+      const nodes: EntityNodeInfo[] = [];
       for (let i = 0; i < 20; i++) {
-        nodes.push(createTestNode(`node-${i}`, `Concept Number ${i}`))
-        nodes.push(createTestNode(`node-${i}-dup`, `concept number ${i}`))
+        nodes.push(createTestNode(`node-${i}`, `Concept Number ${i}`));
+        nodes.push(createTestNode(`node-${i}-dup`, `concept number ${i}`));
       }
 
-      const duplicates = await service.findDuplicatesInWorkspace(
-        nodes,
-        { threshold: 0.5, limit: 5 }
-      )
+      const duplicates = await service.findDuplicatesInWorkspace(nodes, {
+        threshold: 0.5,
+        limit: 5,
+      });
 
-      expect(duplicates.length).toBeLessThanOrEqual(5)
-    })
+      expect(duplicates.length).toBeLessThanOrEqual(5);
+    });
 
     it('should avoid duplicate pairs (A->B and B->A)', async () => {
       const nodes: EntityNodeInfo[] = [
         createTestNode('node-1', 'Machine Learning'),
         createTestNode('node-2', 'machine learning'),
-      ]
+      ];
 
-      const duplicates = await service.findDuplicatesInWorkspace(
-        nodes,
-        { threshold: 0.85 }
-      )
+      const duplicates = await service.findDuplicatesInWorkspace(nodes, { threshold: 0.85 });
 
       // Should only have one pair, not both directions
-      expect(duplicates).toHaveLength(1)
-    })
-  })
+      expect(duplicates).toHaveLength(1);
+    });
+  });
 
   // =========================================================================
   // Edge Cases
@@ -550,87 +517,83 @@ describe('WikiDeduplicationService Integration', () => {
         [],
         [createTestNode('existing-1', 'Test')],
         { workspaceId: 1 }
-      )
+      );
 
-      expect(result.duplicatePairs).toHaveLength(0)
-      expect(result.stats.totalExtracted).toBe(0)
-    })
+      expect(result.duplicatePairs).toHaveLength(0);
+      expect(result.stats.totalExtracted).toBe(0);
+    });
 
     it('should handle empty existing nodes', async () => {
-      const result = await service.resolveExtractedNodes(
-        [createTestNode('new-1', 'Test')],
-        [],
-        { workspaceId: 1 }
-      )
+      const result = await service.resolveExtractedNodes([createTestNode('new-1', 'Test')], [], {
+        workspaceId: 1,
+      });
 
-      expect(result.duplicatePairs).toHaveLength(0)
+      expect(result.duplicatePairs).toHaveLength(0);
       // All extracted nodes should be marked as new
-      expect(result.stats.newNodes).toBe(1)
-    })
+      expect(result.stats.newNodes).toBe(1);
+    });
 
     it('should handle nodes with special characters', async () => {
       const extractedNodes: EntityNodeInfo[] = [
         createTestNode('new-1', 'C++ Programming'),
         createTestNode('new-2', 'Node.js Framework'),
         createTestNode('new-3', "O'Reilly Books"),
-      ]
+      ];
 
       const existingNodes: EntityNodeInfo[] = [
         createTestNode('existing-1', 'c++ programming'),
         createTestNode('existing-2', 'node.js framework'),
         createTestNode('existing-3', "o'reilly books"),
-      ]
+      ];
 
-      const result = await service.resolveExtractedNodes(
-        extractedNodes,
-        existingNodes,
-        { workspaceId: 1, useEmbeddings: false, useLlm: false }
-      )
+      const result = await service.resolveExtractedNodes(extractedNodes, existingNodes, {
+        workspaceId: 1,
+        useEmbeddings: false,
+        useLlm: false,
+      });
 
       // Should find all exact matches
-      expect(result.duplicatePairs).toHaveLength(3)
-    })
+      expect(result.duplicatePairs).toHaveLength(3);
+    });
 
     it('should handle unicode characters', async () => {
       const extractedNodes: EntityNodeInfo[] = [
         createTestNode('new-1', 'Café Culture'),
         createTestNode('new-2', '日本語処理'),
-      ]
+      ];
 
       const existingNodes: EntityNodeInfo[] = [
         createTestNode('existing-1', 'café culture'),
         createTestNode('existing-2', '日本語処理'),
-      ]
+      ];
 
-      const result = await service.resolveExtractedNodes(
-        extractedNodes,
-        existingNodes,
-        { workspaceId: 1, useEmbeddings: false, useLlm: false }
-      )
+      const result = await service.resolveExtractedNodes(extractedNodes, existingNodes, {
+        workspaceId: 1,
+        useEmbeddings: false,
+        useLlm: false,
+      });
 
       // Should find matches (lowercase handling)
-      expect(result.duplicatePairs).toHaveLength(2)
-    })
+      expect(result.duplicatePairs).toHaveLength(2);
+    });
 
     it('should handle nodes with same name but different types', async () => {
-      const extractedNodes: EntityNodeInfo[] = [
-        createTestNode('new-1', 'Testing', 'Concept'),
-      ]
+      const extractedNodes: EntityNodeInfo[] = [createTestNode('new-1', 'Testing', 'Concept')];
 
       const existingNodes: EntityNodeInfo[] = [
         createTestNode('existing-1', 'testing', 'Task'), // Same name, different type
-      ]
+      ];
 
-      const result = await service.resolveExtractedNodes(
-        extractedNodes,
-        existingNodes,
-        { workspaceId: 1, useEmbeddings: false, useLlm: false }
-      )
+      const result = await service.resolveExtractedNodes(extractedNodes, existingNodes, {
+        workspaceId: 1,
+        useEmbeddings: false,
+        useLlm: false,
+      });
 
       // Should still find exact match (type doesn't matter for matching)
-      expect(result.duplicatePairs).toHaveLength(1)
-    })
-  })
+      expect(result.duplicatePairs).toHaveLength(1);
+    });
+  });
 
   // =========================================================================
   // Statistics Verification
@@ -639,37 +602,37 @@ describe('WikiDeduplicationService Integration', () => {
   describe('statistics correctness', () => {
     it('should correctly count all statistics', async () => {
       const mockEmbeddingService = {
-        findSimilarNodes: vi.fn().mockImplementation(
-          async (node: EntityNodeInfo, nodes: EntityNodeInfo[]) => {
+        findSimilarNodes: vi
+          .fn()
+          .mockImplementation(async (node: EntityNodeInfo, nodes: EntityNodeInfo[]) => {
             if (node.uuid === 'new-3') {
-              const match = nodes.find(n => n.uuid === 'existing-3')
+              const match = nodes.find((n) => n.uuid === 'existing-3');
               if (match) {
-                return [{ node: match, similarity: 0.91 }]
+                return [{ node: match, similarity: 0.91 }];
               }
             }
-            return []
-          }
-        ),
-      }
+            return [];
+          }),
+      };
 
       const mockAiService = {
         detectNodeDuplicates: vi.fn().mockResolvedValue({
           duplicateUuids: ['existing-4'],
         }),
-      }
+      };
 
       const serviceWithAll = new WikiDeduplicationService(
         mockEmbeddingService as unknown as WikiNodeEmbeddingService,
         mockAiService as unknown as WikiAiService
-      )
+      );
 
       const extractedNodes: EntityNodeInfo[] = [
-        createTestNode('new-1', 'Machine Learning'),             // Exact
-        createTestNode('new-2', 'Data Science Framework'),       // Fuzzy
-        createTestNode('new-3', 'Artificial Intelligence'),      // Embedding
-        createTestNode('new-4', 'Natural Language Processing'),  // LLM
-        createTestNode('new-5', 'Quantum Computing'),            // No match
-      ]
+        createTestNode('new-1', 'Machine Learning'), // Exact
+        createTestNode('new-2', 'Data Science Framework'), // Fuzzy
+        createTestNode('new-3', 'Artificial Intelligence'), // Embedding
+        createTestNode('new-4', 'Natural Language Processing'), // LLM
+        createTestNode('new-5', 'Quantum Computing'), // No match
+      ];
 
       const existingNodes: EntityNodeInfo[] = [
         createTestNode('existing-1', 'machine learning'),
@@ -677,30 +640,27 @@ describe('WikiDeduplicationService Integration', () => {
         createTestNode('existing-3', 'AI'),
         createTestNode('existing-4', 'NLP'),
         createTestNode('existing-5', 'Web Development'),
-      ]
+      ];
 
-      const result = await serviceWithAll.resolveExtractedNodes(
-        extractedNodes,
-        existingNodes,
-        {
-          workspaceId: 1,
-          fuzzyThreshold: 0.7,
-          useEmbeddings: true,
-          useLlm: true,
-        }
-      )
+      const result = await serviceWithAll.resolveExtractedNodes(extractedNodes, existingNodes, {
+        workspaceId: 1,
+        fuzzyThreshold: 0.7,
+        useEmbeddings: true,
+        useLlm: true,
+      });
 
       // Verify statistics
-      expect(result.stats.totalExtracted).toBe(5)
-      expect(result.stats.exactMatches).toBeGreaterThanOrEqual(1)
+      expect(result.stats.totalExtracted).toBe(5);
+      expect(result.stats.exactMatches).toBeGreaterThanOrEqual(1);
 
       // Total matches should be consistent
-      const totalMatches = result.stats.exactMatches +
-                          result.stats.fuzzyMatches +
-                          result.stats.embeddingMatches +
-                          result.stats.llmMatches
+      const totalMatches =
+        result.stats.exactMatches +
+        result.stats.fuzzyMatches +
+        result.stats.embeddingMatches +
+        result.stats.llmMatches;
 
-      expect(result.duplicatePairs).toHaveLength(totalMatches)
-    })
-  })
-})
+      expect(result.duplicatePairs).toHaveLength(totalMatches);
+    });
+  });
+});

@@ -12,25 +12,25 @@
  * ===================================================================
  */
 
-import { useParams, Link } from 'react-router-dom'
-import { WorkspaceLayout } from '@/components/layout/WorkspaceLayout'
-import { Card, CardContent } from '@/components/ui/card'
-import { trpc } from '@/lib/trpc'
-import { Users, Crown, Shield, User, ArrowLeft, Star } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { useParams, Link } from 'react-router-dom';
+import { WorkspaceLayout } from '@/components/layout/WorkspaceLayout';
+import { Card, CardContent } from '@/components/ui/card';
+import { trpc } from '@/lib/trpc';
+import { Users, Crown, Shield, User, ArrowLeft, Star } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface Member {
-  id: number
-  username: string
-  name: string | null
-  email: string
-  avatarUrl: string | null
-  role: string
-  isDomainAdmin: boolean
+  id: number;
+  username: string;
+  name: string | null;
+  email: string;
+  avatarUrl: string | null;
+  role: string;
+  isDomainAdmin: boolean;
 }
 
 // =============================================================================
@@ -38,27 +38,24 @@ interface Member {
 // =============================================================================
 
 export function WorkspaceMembersPage() {
-  const { slug } = useParams<{ slug: string }>()
+  const { slug } = useParams<{ slug: string }>();
 
   // Fetch workspace
-  const workspaceQuery = trpc.workspace.getBySlug.useQuery(
-    { slug: slug! },
-    { enabled: !!slug }
-  )
-  const workspace = workspaceQuery.data
+  const workspaceQuery = trpc.workspace.getBySlug.useQuery({ slug: slug! }, { enabled: !!slug });
+  const workspace = workspaceQuery.data;
 
   // Fetch members
   const membersQuery = trpc.workspace.getMembers.useQuery(
     { workspaceId: workspace?.id ?? 0 },
     { enabled: !!workspace?.id }
-  )
-  const members = (membersQuery.data ?? []) as Member[]
+  );
+  const members = (membersQuery.data ?? []) as Member[];
 
   // Group members by role
-  const systemAdmins = members.filter((m) => m.role === 'SYSTEM')
-  const admins = members.filter((m) => m.role === 'ADMIN')
-  const regularMembers = members.filter((m) => m.role === 'MEMBER')
-  const viewers = members.filter((m) => m.role === 'VIEWER')
+  const systemAdmins = members.filter((m) => m.role === 'SYSTEM');
+  const admins = members.filter((m) => m.role === 'ADMIN');
+  const regularMembers = members.filter((m) => m.role === 'MEMBER');
+  const viewers = members.filter((m) => m.role === 'VIEWER');
 
   // Loading state
   if (workspaceQuery.isLoading || membersQuery.isLoading) {
@@ -86,7 +83,7 @@ export function WorkspaceMembersPage() {
           </div>
         </div>
       </WorkspaceLayout>
-    )
+    );
   }
 
   // Workspace not found
@@ -101,7 +98,7 @@ export function WorkspaceMembersPage() {
           </Link>
         </div>
       </WorkspaceLayout>
-    )
+    );
   }
 
   return (
@@ -200,7 +197,7 @@ export function WorkspaceMembersPage() {
         )}
       </div>
     </WorkspaceLayout>
-  )
+  );
 }
 
 // =============================================================================
@@ -208,10 +205,10 @@ export function WorkspaceMembersPage() {
 // =============================================================================
 
 interface MemberSectionProps {
-  title: string
-  description: string
-  members: Member[]
-  icon: React.ReactNode
+  title: string;
+  description: string;
+  members: Member[];
+  icon: React.ReactNode;
 }
 
 function MemberSection({ title, description, members, icon }: MemberSectionProps) {
@@ -230,7 +227,7 @@ function MemberSection({ title, description, members, icon }: MemberSectionProps
         ))}
       </div>
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -238,7 +235,7 @@ function MemberSection({ title, description, members, icon }: MemberSectionProps
 // =============================================================================
 
 interface MemberCardProps {
-  member: Member
+  member: Member;
 }
 
 function MemberCard({ member }: MemberCardProps) {
@@ -247,7 +244,7 @@ function MemberCard({ member }: MemberCardProps) {
     ADMIN: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
     MEMBER: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
     VIEWER: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400',
-  }
+  };
 
   return (
     <Card className="hover:bg-accent/30 transition-colors">
@@ -293,7 +290,7 @@ function MemberCard({ member }: MemberCardProps) {
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
 
-export default WorkspaceMembersPage
+export default WorkspaceMembersPage;

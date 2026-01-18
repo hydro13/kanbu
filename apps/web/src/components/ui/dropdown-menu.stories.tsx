@@ -10,7 +10,7 @@
  * ===================================================================
  */
 
-import type { Meta, StoryObj } from '@storybook/react-vite'
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -26,8 +26,8 @@ import {
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
-} from './dropdown-menu'
-import { Button } from './button'
+} from './dropdown-menu';
+import { Button } from './button';
 import {
   User,
   Settings,
@@ -44,8 +44,8 @@ import {
   CreditCard,
   Keyboard,
   Users,
-} from 'lucide-react'
-import { useState } from 'react'
+} from 'lucide-react';
+import { useState } from 'react';
 
 const meta: Meta<typeof DropdownMenu> = {
   title: 'UI/DropdownMenu',
@@ -59,10 +59,10 @@ const meta: Meta<typeof DropdownMenu> = {
       },
     },
   },
-}
+};
 
-export default meta
-type Story = StoryObj<typeof DropdownMenu>
+export default meta;
+type Story = StoryObj<typeof DropdownMenu>;
 
 // =============================================================================
 // Basic Variants
@@ -81,7 +81,7 @@ export const Default: Story = {
       </DropdownMenuContent>
     </DropdownMenu>
   ),
-}
+};
 
 export const WithIcons: Story = {
   render: () => (
@@ -113,7 +113,7 @@ export const WithIcons: Story = {
       },
     },
   },
-}
+};
 
 export const WithShortcuts: Story = {
   render: () => (
@@ -150,7 +150,7 @@ export const WithShortcuts: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // With Labels and Groups
@@ -198,7 +198,7 @@ export const WithLabelsAndGroups: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Checkbox Items
@@ -206,9 +206,9 @@ export const WithLabelsAndGroups: Story = {
 
 export const WithCheckboxes: Story = {
   render: function CheckboxStory() {
-    const [showPanel, setShowPanel] = useState(true)
-    const [showActivityBar, setShowActivityBar] = useState(false)
-    const [showStatusBar, setShowStatusBar] = useState(true)
+    const [showPanel, setShowPanel] = useState(true);
+    const [showActivityBar, setShowActivityBar] = useState(false);
+    const [showStatusBar, setShowStatusBar] = useState(true);
 
     return (
       <DropdownMenu>
@@ -218,27 +218,18 @@ export const WithCheckboxes: Story = {
         <DropdownMenuContent className="w-56">
           <DropdownMenuLabel>Appearance</DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuCheckboxItem
-            checked={showPanel}
-            onCheckedChange={setShowPanel}
-          >
+          <DropdownMenuCheckboxItem checked={showPanel} onCheckedChange={setShowPanel}>
             Show Panel
           </DropdownMenuCheckboxItem>
-          <DropdownMenuCheckboxItem
-            checked={showActivityBar}
-            onCheckedChange={setShowActivityBar}
-          >
+          <DropdownMenuCheckboxItem checked={showActivityBar} onCheckedChange={setShowActivityBar}>
             Show Activity Bar
           </DropdownMenuCheckboxItem>
-          <DropdownMenuCheckboxItem
-            checked={showStatusBar}
-            onCheckedChange={setShowStatusBar}
-          >
+          <DropdownMenuCheckboxItem checked={showStatusBar} onCheckedChange={setShowStatusBar}>
             Show Status Bar
           </DropdownMenuCheckboxItem>
         </DropdownMenuContent>
       </DropdownMenu>
-    )
+    );
   },
   parameters: {
     docs: {
@@ -247,7 +238,7 @@ export const WithCheckboxes: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Radio Items
@@ -255,7 +246,7 @@ export const WithCheckboxes: Story = {
 
 export const WithRadioGroup: Story = {
   render: function RadioStory() {
-    const [position, setPosition] = useState('bottom')
+    const [position, setPosition] = useState('bottom');
 
     return (
       <DropdownMenu>
@@ -272,7 +263,7 @@ export const WithRadioGroup: Story = {
           </DropdownMenuRadioGroup>
         </DropdownMenuContent>
       </DropdownMenu>
-    )
+    );
   },
   parameters: {
     docs: {
@@ -281,7 +272,7 @@ export const WithRadioGroup: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Nested Menus
@@ -339,7 +330,7 @@ export const NestedMenu: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Complex Examples
@@ -359,9 +350,7 @@ export const UserMenu: Story = {
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">John Doe</p>
-            <p className="text-xs leading-none text-muted-foreground">
-              john@example.com
-            </p>
+            <p className="text-xs leading-none text-muted-foreground">john@example.com</p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
@@ -398,12 +387,12 @@ export const UserMenu: Story = {
       },
     },
   },
-}
+};
 
 export const ComplexMenu: Story = {
   render: function ComplexStory() {
-    const [notifications, setNotifications] = useState(true)
-    const [theme, setTheme] = useState('light')
+    const [notifications, setNotifications] = useState(true);
+    const [theme, setTheme] = useState('light');
 
     return (
       <DropdownMenu>
@@ -431,10 +420,7 @@ export const ComplexMenu: Story = {
             </DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
-          <DropdownMenuCheckboxItem
-            checked={notifications}
-            onCheckedChange={setNotifications}
-          >
+          <DropdownMenuCheckboxItem checked={notifications} onCheckedChange={setNotifications}>
             Enable notifications
           </DropdownMenuCheckboxItem>
           <DropdownMenuSeparator />
@@ -467,7 +453,7 @@ export const ComplexMenu: Story = {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-    )
+    );
   },
   parameters: {
     docs: {
@@ -477,7 +463,7 @@ export const ComplexMenu: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Context Menu Pattern
@@ -527,9 +513,8 @@ export const ContextMenuPattern: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          'Context menu pattern with actions, nested menus, and destructive action.',
+        story: 'Context menu pattern with actions, nested menus, and destructive action.',
       },
     },
   },
-}
+};

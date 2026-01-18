@@ -14,48 +14,48 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { z } from 'zod'
-import { requireAuth, client, success, error } from '../tools.js'
+import { z } from 'zod';
+import { requireAuth, client, success, error } from '../tools.js';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface InviteResponse {
-  id: number
-  email: string
-  role: string
-  token: string
-  expiresAt: string
-  acceptedAt: string | null
-  createdAt: string
+  id: number;
+  email: string;
+  role: string;
+  token: string;
+  expiresAt: string;
+  acceptedAt: string | null;
+  createdAt: string;
   invitedBy: {
-    id: number
-    name: string
-    email: string
-  }
-  status: 'pending' | 'accepted' | 'expired'
+    id: number;
+    name: string;
+    email: string;
+  };
+  status: 'pending' | 'accepted' | 'expired';
 }
 
 interface InviteListResponse {
-  invites: InviteResponse[]
-  total: number
-  limit: number
-  offset: number
-  hasMore: boolean
+  invites: InviteResponse[];
+  total: number;
+  limit: number;
+  offset: number;
+  hasMore: boolean;
 }
 
 interface SendInviteResult {
-  email: string
-  success: boolean
-  message: string
-  inviteId?: number
+  email: string;
+  success: boolean;
+  message: string;
+  inviteId?: number;
 }
 
 interface SendInviteResponse {
-  results: SendInviteResult[]
-  successCount: number
-  failedCount: number
+  results: SendInviteResult[];
+  successCount: number;
+  failedCount: number;
 }
 
 // =============================================================================
@@ -63,29 +63,42 @@ interface SendInviteResponse {
 // =============================================================================
 
 export const ListInvitesSchema = z.object({
-  status: z.enum(['all', 'pending', 'accepted', 'expired']).optional().describe('Filter by status (default: all)'),
+  status: z
+    .enum(['all', 'pending', 'accepted', 'expired'])
+    .optional()
+    .describe('Filter by status (default: all)'),
   limit: z.number().optional().describe('Max results (default 50)'),
   offset: z.number().optional().describe('Pagination offset'),
-})
+});
 
 export const GetInviteSchema = z.object({
   inviteId: z.number().describe('Invite ID'),
-})
+});
 
 export const SendInviteSchema = z.object({
   emails: z.array(z.string().email()).min(1).max(50).describe('Email addresses to invite'),
   role: z.enum(['user', 'admin']).optional().describe('Role for invited users (default: user)'),
-  expiresInDays: z.number().min(1).max(30).optional().describe('Days until invite expires (default: 7)'),
-})
+  expiresInDays: z
+    .number()
+    .min(1)
+    .max(30)
+    .optional()
+    .describe('Days until invite expires (default: 7)'),
+});
 
 export const CancelInviteSchema = z.object({
   inviteId: z.number().describe('Invite ID to cancel'),
-})
+});
 
 export const ResendInviteSchema = z.object({
   inviteId: z.number().describe('Invite ID to resend'),
-  expiresInDays: z.number().min(1).max(30).optional().describe('Days until invite expires (default: 7)'),
-})
+  expiresInDays: z
+    .number()
+    .min(1)
+    .max(30)
+    .optional()
+    .describe('Days until invite expires (default: 7)'),
+});
 
 // =============================================================================
 // Tool Definitions
@@ -94,11 +107,16 @@ export const ResendInviteSchema = z.object({
 export const inviteToolDefinitions = [
   {
     name: 'kanbu_list_invites',
-    description: 'List all invites with status filtering. Shows pending, accepted, and expired invitations.',
+    description:
+      'List all invites with status filtering. Shows pending, accepted, and expired invitations.',
     inputSchema: {
       type: 'object',
       properties: {
-        status: { type: 'string', enum: ['all', 'pending', 'accepted', 'expired'], description: 'Filter by status (default: all)' },
+        status: {
+          type: 'string',
+          enum: ['all', 'pending', 'accepted', 'expired'],
+          description: 'Filter by status (default: all)',
+        },
         limit: { type: 'number', description: 'Max results (default 50)' },
         offset: { type: 'number', description: 'Pagination offset' },
       },
@@ -122,9 +140,20 @@ export const inviteToolDefinitions = [
     inputSchema: {
       type: 'object',
       properties: {
-        emails: { type: 'array', items: { type: 'string' }, description: 'Email addresses to invite (max 50)' },
-        role: { type: 'string', enum: ['user', 'admin'], description: 'Role for invited users (default: user)' },
-        expiresInDays: { type: 'number', description: 'Days until invite expires (default: 7, max 30)' },
+        emails: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Email addresses to invite (max 50)',
+        },
+        role: {
+          type: 'string',
+          enum: ['user', 'admin'],
+          description: 'Role for invited users (default: user)',
+        },
+        expiresInDays: {
+          type: 'number',
+          description: 'Days until invite expires (default: 7, max 30)',
+        },
       },
       required: ['emails'],
     },
@@ -147,31 +176,38 @@ export const inviteToolDefinitions = [
       type: 'object',
       properties: {
         inviteId: { type: 'number', description: 'Invite ID to resend' },
-        expiresInDays: { type: 'number', description: 'Days until invite expires (default: 7, max 30)' },
+        expiresInDays: {
+          type: 'number',
+          description: 'Days until invite expires (default: 7, max 30)',
+        },
       },
       required: ['inviteId'],
     },
   },
-]
+];
 
 // =============================================================================
 // Helpers
 // =============================================================================
 
 function formatDate(date: string | null): string {
-  if (!date) return 'Never'
+  if (!date) return 'Never';
   return new Date(date).toLocaleString('nl-NL', {
     dateStyle: 'short',
     timeStyle: 'short',
-  })
+  });
 }
 
 function getStatusIcon(status: string): string {
   switch (status) {
-    case 'pending': return '⏳'
-    case 'accepted': return '✅'
-    case 'expired': return '❌'
-    default: return '❓'
+    case 'pending':
+      return '⏳';
+    case 'accepted':
+      return '✅';
+    case 'expired':
+      return '❌';
+    default:
+      return '❓';
   }
 }
 
@@ -183,8 +219,8 @@ function getStatusIcon(status: string): string {
  * List all invites
  */
 export async function handleListInvites(args: unknown) {
-  const input = ListInvitesSchema.parse(args)
-  const config = requireAuth()
+  const input = ListInvitesSchema.parse(args);
+  const config = requireAuth();
 
   try {
     const result = await client.call<InviteListResponse>(
@@ -196,57 +232,56 @@ export async function handleListInvites(args: unknown) {
         limit: input.limit ?? 50,
         offset: input.offset ?? 0,
       }
-    )
+    );
 
     if (result.invites.length === 0) {
-      return success('No invites found.')
+      return success('No invites found.');
     }
 
-    const lines: string[] = [
-      `Invites (${result.total} total)`,
-      '',
-    ]
+    const lines: string[] = [`Invites (${result.total} total)`, ''];
 
     // Group by status
-    const pending = result.invites.filter(i => i.status === 'pending')
-    const accepted = result.invites.filter(i => i.status === 'accepted')
-    const expired = result.invites.filter(i => i.status === 'expired')
+    const pending = result.invites.filter((i) => i.status === 'pending');
+    const accepted = result.invites.filter((i) => i.status === 'accepted');
+    const expired = result.invites.filter((i) => i.status === 'expired');
 
     if (pending.length > 0) {
-      lines.push('== Pending ==')
+      lines.push('== Pending ==');
       for (const invite of pending) {
-        lines.push(`#${invite.id} ${invite.email}`)
-        lines.push(`   Role: ${invite.role} | Invited by: ${invite.invitedBy.name}`)
-        lines.push(`   Expires: ${formatDate(invite.expiresAt)}`)
+        lines.push(`#${invite.id} ${invite.email}`);
+        lines.push(`   Role: ${invite.role} | Invited by: ${invite.invitedBy.name}`);
+        lines.push(`   Expires: ${formatDate(invite.expiresAt)}`);
       }
-      lines.push('')
+      lines.push('');
     }
 
     if (accepted.length > 0) {
-      lines.push('== Accepted ==')
+      lines.push('== Accepted ==');
       for (const invite of accepted) {
-        lines.push(`#${invite.id} ${invite.email}`)
-        lines.push(`   Role: ${invite.role} | Accepted: ${formatDate(invite.acceptedAt)}`)
+        lines.push(`#${invite.id} ${invite.email}`);
+        lines.push(`   Role: ${invite.role} | Accepted: ${formatDate(invite.acceptedAt)}`);
       }
-      lines.push('')
+      lines.push('');
     }
 
     if (expired.length > 0) {
-      lines.push('== Expired ==')
+      lines.push('== Expired ==');
       for (const invite of expired) {
-        lines.push(`#${invite.id} ${invite.email}`)
-        lines.push(`   Role: ${invite.role} | Expired: ${formatDate(invite.expiresAt)}`)
+        lines.push(`#${invite.id} ${invite.email}`);
+        lines.push(`   Role: ${invite.role} | Expired: ${formatDate(invite.expiresAt)}`);
       }
     }
 
     if (result.hasMore) {
-      lines.push('')
-      lines.push(`Showing ${result.invites.length} of ${result.total}. Use offset=${result.offset + result.limit} for more.`)
+      lines.push('');
+      lines.push(
+        `Showing ${result.invites.length} of ${result.total}. Use offset=${result.offset + result.limit} for more.`
+      );
     }
 
-    return success(lines.join('\n'))
+    return success(lines.join('\n'));
   } catch (err) {
-    return error(`Failed to list invites: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    return error(`Failed to list invites: ${err instanceof Error ? err.message : 'Unknown error'}`);
   }
 }
 
@@ -254,8 +289,8 @@ export async function handleListInvites(args: unknown) {
  * Get invite details
  */
 export async function handleGetInvite(args: unknown) {
-  const input = GetInviteSchema.parse(args)
-  const config = requireAuth()
+  const input = GetInviteSchema.parse(args);
+  const config = requireAuth();
 
   try {
     const invite = await client.call<InviteResponse>(
@@ -263,7 +298,7 @@ export async function handleGetInvite(args: unknown) {
       config.token,
       'admin.getInvite',
       { inviteId: input.inviteId }
-    )
+    );
 
     const lines: string[] = [
       `Invite #${invite.id}`,
@@ -275,15 +310,15 @@ export async function handleGetInvite(args: unknown) {
       `Invited by: ${invite.invitedBy.name} (${invite.invitedBy.email})`,
       `Created: ${formatDate(invite.createdAt)}`,
       `Expires: ${formatDate(invite.expiresAt)}`,
-    ]
+    ];
 
     if (invite.acceptedAt) {
-      lines.push(`Accepted: ${formatDate(invite.acceptedAt)}`)
+      lines.push(`Accepted: ${formatDate(invite.acceptedAt)}`);
     }
 
-    return success(lines.join('\n'))
+    return success(lines.join('\n'));
   } catch (err) {
-    return error(`Failed to get invite: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    return error(`Failed to get invite: ${err instanceof Error ? err.message : 'Unknown error'}`);
   }
 }
 
@@ -291,8 +326,8 @@ export async function handleGetInvite(args: unknown) {
  * Send invites
  */
 export async function handleSendInvite(args: unknown) {
-  const input = SendInviteSchema.parse(args)
-  const config = requireAuth()
+  const input = SendInviteSchema.parse(args);
+  const config = requireAuth();
 
   try {
     const result = await client.call<SendInviteResponse>(
@@ -304,7 +339,7 @@ export async function handleSendInvite(args: unknown) {
         role: input.role ?? 'user',
         expiresInDays: input.expiresInDays ?? 7,
       }
-    )
+    );
 
     const lines: string[] = [
       `Invite Results`,
@@ -312,16 +347,16 @@ export async function handleSendInvite(args: unknown) {
       `Success: ${result.successCount}`,
       `Failed: ${result.failedCount}`,
       '',
-    ]
+    ];
 
     for (const r of result.results) {
-      const icon = r.success ? '✅' : '❌'
-      lines.push(`${icon} ${r.email}: ${r.message}${r.inviteId ? ` (ID: ${r.inviteId})` : ''}`)
+      const icon = r.success ? '✅' : '❌';
+      lines.push(`${icon} ${r.email}: ${r.message}${r.inviteId ? ` (ID: ${r.inviteId})` : ''}`);
     }
 
-    return success(lines.join('\n'))
+    return success(lines.join('\n'));
   } catch (err) {
-    return error(`Failed to send invites: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    return error(`Failed to send invites: ${err instanceof Error ? err.message : 'Unknown error'}`);
   }
 }
 
@@ -329,8 +364,8 @@ export async function handleSendInvite(args: unknown) {
  * Cancel invite
  */
 export async function handleCancelInvite(args: unknown) {
-  const input = CancelInviteSchema.parse(args)
-  const config = requireAuth()
+  const input = CancelInviteSchema.parse(args);
+  const config = requireAuth();
 
   try {
     await client.call<{ success: boolean; message: string }>(
@@ -338,11 +373,13 @@ export async function handleCancelInvite(args: unknown) {
       config.token,
       'admin.cancelInvite',
       { inviteId: input.inviteId }
-    )
+    );
 
-    return success(`Invite #${input.inviteId} cancelled successfully.`)
+    return success(`Invite #${input.inviteId} cancelled successfully.`);
   } catch (err) {
-    return error(`Failed to cancel invite: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    return error(
+      `Failed to cancel invite: ${err instanceof Error ? err.message : 'Unknown error'}`
+    );
   }
 }
 
@@ -350,8 +387,8 @@ export async function handleCancelInvite(args: unknown) {
  * Resend invite
  */
 export async function handleResendInvite(args: unknown) {
-  const input = ResendInviteSchema.parse(args)
-  const config = requireAuth()
+  const input = ResendInviteSchema.parse(args);
+  const config = requireAuth();
 
   try {
     const result = await client.call<InviteResponse>(
@@ -362,17 +399,19 @@ export async function handleResendInvite(args: unknown) {
         inviteId: input.inviteId,
         expiresInDays: input.expiresInDays ?? 7,
       }
-    )
+    );
 
     const lines: string[] = [
       `Invite #${input.inviteId} resent!`,
       '',
       `Email: ${result.email}`,
       `New expiration: ${formatDate(result.expiresAt)}`,
-    ]
+    ];
 
-    return success(lines.join('\n'))
+    return success(lines.join('\n'));
   } catch (err) {
-    return error(`Failed to resend invite: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    return error(
+      `Failed to resend invite: ${err instanceof Error ? err.message : 'Unknown error'}`
+    );
   }
 }

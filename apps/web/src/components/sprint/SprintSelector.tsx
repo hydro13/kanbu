@@ -13,20 +13,20 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState, useRef, useEffect } from 'react'
-import { ChevronDown, Zap, Clock, CheckCircle, Archive, X } from 'lucide-react'
-import { trpc } from '../../lib/trpc'
+import { useState, useRef, useEffect } from 'react';
+import { ChevronDown, Zap, Clock, CheckCircle, Archive, X } from 'lucide-react';
+import { trpc } from '../../lib/trpc';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface SprintSelectorProps {
-  projectId: number
-  selectedSprintId: number | null
-  onSprintChange: (sprintId: number | null) => void
-  showAllOption?: boolean
-  className?: string
+  projectId: number;
+  selectedSprintId: number | null;
+  onSprintChange: (sprintId: number | null) => void;
+  showAllOption?: boolean;
+  className?: string;
 }
 
 // =============================================================================
@@ -36,34 +36,34 @@ export interface SprintSelectorProps {
 function getStatusIcon(status: string) {
   switch (status) {
     case 'ACTIVE':
-      return Zap
+      return Zap;
     case 'PLANNING':
-      return Clock
+      return Clock;
     case 'COMPLETED':
-      return CheckCircle
+      return CheckCircle;
     default:
-      return Archive
+      return Archive;
   }
 }
 
 function getStatusColor(status: string) {
   switch (status) {
     case 'ACTIVE':
-      return 'text-green-500'
+      return 'text-green-500';
     case 'PLANNING':
-      return 'text-blue-500'
+      return 'text-blue-500';
     case 'COMPLETED':
-      return 'text-gray-400'
+      return 'text-gray-400';
     default:
-      return 'text-gray-500'
+      return 'text-gray-500';
   }
 }
 
 function formatDateRange(start: string, end: string): string {
-  const startDate = new Date(start)
-  const endDate = new Date(end)
-  const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' }
-  return `${startDate.toLocaleDateString('en-US', options)} - ${endDate.toLocaleDateString('en-US', options)}`
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+  const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
+  return `${startDate.toLocaleDateString('en-US', options)} - ${endDate.toLocaleDateString('en-US', options)}`;
 }
 
 // =============================================================================
@@ -77,29 +77,29 @@ export function SprintSelector({
   showAllOption = true,
   className = '',
 }: SprintSelectorProps) {
-  const [isOpen, setIsOpen] = useState(false)
-  const containerRef = useRef<HTMLDivElement>(null)
+  const [isOpen, setIsOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Query sprints
   const { data: sprints, isLoading } = trpc.sprint.list.useQuery(
     { projectId },
     { enabled: projectId > 0 }
-  )
+  );
 
   // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false)
+        setIsOpen(false);
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Find selected sprint
-  const selectedSprint = sprints?.find((s) => s.id === selectedSprintId)
+  const selectedSprint = sprints?.find((s) => s.id === selectedSprintId);
 
   // Render selected sprint display
   const renderSelectedDisplay = () => {
@@ -108,11 +108,11 @@ export function SprintSelector({
         <span className="text-gray-500 dark:text-gray-400">
           {showAllOption ? 'All Sprints' : 'Select Sprint'}
         </span>
-      )
+      );
     }
 
-    const StatusIcon = getStatusIcon(selectedSprint.status)
-    const statusColor = getStatusColor(selectedSprint.status)
+    const StatusIcon = getStatusIcon(selectedSprint.status);
+    const statusColor = getStatusColor(selectedSprint.status);
 
     return (
       <div className="flex items-center gap-2">
@@ -124,8 +124,8 @@ export function SprintSelector({
           </span>
         )}
       </div>
-    )
-  }
+    );
+  };
 
   return (
     <div ref={containerRef} className={`relative ${className}`}>
@@ -134,11 +134,7 @@ export function SprintSelector({
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center justify-between gap-2 px-3 py-2 w-full min-w-[200px] bg-card border border-input rounded-lg hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
       >
-        {isLoading ? (
-          <span className="text-gray-400">Loading...</span>
-        ) : (
-          renderSelectedDisplay()
-        )}
+        {isLoading ? <span className="text-gray-400">Loading...</span> : renderSelectedDisplay()}
         <ChevronDown
           className={`w-4 h-4 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
         />
@@ -151,8 +147,8 @@ export function SprintSelector({
           {showAllOption && (
             <button
               onClick={() => {
-                onSprintChange(null)
-                setIsOpen(false)
+                onSprintChange(null);
+                setIsOpen(false);
               }}
               className={`w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
                 !selectedSprintId ? 'bg-blue-50 dark:bg-blue-900/20' : ''
@@ -160,9 +156,7 @@ export function SprintSelector({
             >
               <Archive className="w-4 h-4 text-gray-400" />
               <span>All Sprints</span>
-              {selectedSprintId && (
-                <X className="w-4 h-4 ml-auto text-gray-400" />
-              )}
+              {selectedSprintId && <X className="w-4 h-4 ml-auto text-gray-400" />}
             </button>
           )}
 
@@ -174,16 +168,16 @@ export function SprintSelector({
           {/* Sprint options */}
           <div className="max-h-64 overflow-y-auto">
             {sprints?.map((sprint) => {
-              const StatusIcon = getStatusIcon(sprint.status)
-              const statusColor = getStatusColor(sprint.status)
-              const isSelected = sprint.id === selectedSprintId
+              const StatusIcon = getStatusIcon(sprint.status);
+              const statusColor = getStatusColor(sprint.status);
+              const isSelected = sprint.id === selectedSprintId;
 
               return (
                 <button
                   key={sprint.id}
                   onClick={() => {
-                    onSprintChange(sprint.id)
-                    setIsOpen(false)
+                    onSprintChange(sprint.id);
+                    setIsOpen(false);
                   }}
                   className={`w-full flex items-start gap-3 px-3 py-2.5 text-left hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors ${
                     isSelected ? 'bg-blue-50 dark:bg-blue-900/20' : ''
@@ -212,7 +206,7 @@ export function SprintSelector({
                     </div>
                   </div>
                 </button>
-              )
+              );
             })}
 
             {/* Empty state */}
@@ -225,7 +219,7 @@ export function SprintSelector({
         </div>
       )}
     </div>
-  )
+  );
 }
 
-export default SprintSelector
+export default SprintSelector;

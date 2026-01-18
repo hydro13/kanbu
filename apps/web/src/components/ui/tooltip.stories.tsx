@@ -10,24 +10,10 @@
  * ===================================================================
  */
 
-import type { Meta, StoryObj } from '@storybook/react-vite'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from './tooltip'
-import { Button } from './button'
-import {
-  Plus,
-  Settings,
-  HelpCircle,
-  Info,
-  Trash2,
-  Edit,
-  Copy,
-  Download,
-} from 'lucide-react'
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './tooltip';
+import { Button } from './button';
+import { Plus, Settings, HelpCircle, Info, Trash2, Edit, Copy, Download } from 'lucide-react';
 
 const meta: Meta<typeof Tooltip> = {
   title: 'UI/Tooltip',
@@ -48,10 +34,10 @@ const meta: Meta<typeof Tooltip> = {
       },
     },
   },
-}
+};
 
-export default meta
-type Story = StoryObj<typeof Tooltip>
+export default meta;
+type Story = StoryObj<typeof Tooltip>;
 
 // =============================================================================
 // Basic Variants
@@ -68,7 +54,7 @@ export const Default: Story = {
       </TooltipContent>
     </Tooltip>
   ),
-}
+};
 
 export const OnButton: Story = {
   render: () => (
@@ -81,7 +67,7 @@ export const OnButton: Story = {
       </TooltipContent>
     </Tooltip>
   ),
-}
+};
 
 export const OnIconButton: Story = {
   render: () => (
@@ -127,7 +113,7 @@ export const OnIconButton: Story = {
       },
     },
   },
-}
+};
 
 export const OnText: Story = {
   render: () => (
@@ -135,9 +121,7 @@ export const OnText: Story = {
       This is a paragraph with a{' '}
       <Tooltip>
         <TooltipTrigger asChild>
-          <span className="underline decoration-dotted cursor-help">
-            tooltip trigger
-          </span>
+          <span className="underline decoration-dotted cursor-help">tooltip trigger</span>
         </TooltipTrigger>
         <TooltipContent>
           <p>This text has a tooltip</p>
@@ -153,7 +137,7 @@ export const OnText: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Positioning
@@ -208,7 +192,7 @@ export const Positions: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Content Variations
@@ -227,8 +211,7 @@ export const WithRichContent: Story = {
         <div className="space-y-2">
           <p className="font-semibold">Feature Information</p>
           <p className="text-sm">
-            This feature allows you to manage your settings and preferences
-            efficiently.
+            This feature allows you to manage your settings and preferences efficiently.
           </p>
         </div>
       </TooltipContent>
@@ -241,7 +224,7 @@ export const WithRichContent: Story = {
       },
     },
   },
-}
+};
 
 export const LongText: Story = {
   render: () => (
@@ -251,13 +234,13 @@ export const LongText: Story = {
       </TooltipTrigger>
       <TooltipContent className="max-w-xs">
         <p>
-          This is a longer tooltip with more text to demonstrate how the tooltip
-          handles longer content. The max-width keeps it readable.
+          This is a longer tooltip with more text to demonstrate how the tooltip handles longer
+          content. The max-width keeps it readable.
         </p>
       </TooltipContent>
     </Tooltip>
   ),
-}
+};
 
 export const WithKeyboardShortcut: Story = {
   render: () => (
@@ -302,7 +285,7 @@ export const WithKeyboardShortcut: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Disabled State
@@ -329,7 +312,7 @@ export const DisabledButton: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Real-World Examples
@@ -403,7 +386,7 @@ export const Toolbar: Story = {
       },
     },
   },
-}
+};
 
 export const StatusIndicators: Story = {
   render: () => (
@@ -452,7 +435,7 @@ export const StatusIndicators: Story = {
       },
     },
   },
-}
+};
 
 export const InlineHelp: Story = {
   render: () => (
@@ -468,8 +451,8 @@ export const InlineHelp: Story = {
             </TooltipTrigger>
             <TooltipContent className="max-w-xs">
               <p>
-                Your username must be 3-20 characters and can only contain letters,
-                numbers, and underscores.
+                Your username must be 3-20 characters and can only contain letters, numbers, and
+                underscores.
               </p>
             </TooltipContent>
           </Tooltip>
@@ -492,8 +475,8 @@ export const InlineHelp: Story = {
             </TooltipTrigger>
             <TooltipContent className="max-w-xs">
               <p>
-                Your API key is used to authenticate requests. Keep it secret and
-                never share it publicly.
+                Your API key is used to authenticate requests. Keep it secret and never share it
+                publicly.
               </p>
             </TooltipContent>
           </Tooltip>
@@ -514,7 +497,7 @@ export const InlineHelp: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Delay Configuration
@@ -558,4 +541,4 @@ export const CustomDelay: Story = {
       },
     },
   },
-}
+};

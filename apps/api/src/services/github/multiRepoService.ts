@@ -13,54 +13,54 @@
  * =============================================================================
  */
 
-import { prisma } from '../../lib/prisma'
+import { prisma } from '../../lib/prisma';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface RepositoryInfo {
-  id: number
-  projectId: number
-  owner: string
-  name: string
-  fullName: string
-  defaultBranch: string
-  isPrivate: boolean
-  isPrimary: boolean
-  syncEnabled: boolean
-  lastSyncAt: Date | null
-  createdAt: Date
+  id: number;
+  projectId: number;
+  owner: string;
+  name: string;
+  fullName: string;
+  defaultBranch: string;
+  isPrivate: boolean;
+  isPrimary: boolean;
+  syncEnabled: boolean;
+  lastSyncAt: Date | null;
+  createdAt: Date;
 }
 
 export interface ProjectRepositories {
-  projectId: number
-  projectName: string
-  primary: RepositoryInfo | null
-  secondary: RepositoryInfo[]
-  total: number
+  projectId: number;
+  projectName: string;
+  primary: RepositoryInfo | null;
+  secondary: RepositoryInfo[];
+  total: number;
 }
 
 export interface CrossRepoStats {
-  totalRepositories: number
-  totalIssues: number
-  totalPRs: number
-  totalCommits: number
+  totalRepositories: number;
+  totalIssues: number;
+  totalPRs: number;
+  totalCommits: number;
   byRepository: Array<{
-    repository: RepositoryInfo
-    issues: number
-    prs: number
-    commits: number
-  }>
+    repository: RepositoryInfo;
+    issues: number;
+    prs: number;
+    commits: number;
+  }>;
 }
 
 export interface CrossRepoSearchResult {
-  type: 'issue' | 'pr' | 'commit'
-  repository: RepositoryInfo
-  id: number
-  title?: string
-  reference?: string
-  url?: string
+  type: 'issue' | 'pr' | 'commit';
+  repository: RepositoryInfo;
+  id: number;
+  title?: string;
+  reference?: string;
+  url?: string;
 }
 
 // =============================================================================
@@ -70,27 +70,22 @@ export interface CrossRepoSearchResult {
 /**
  * Get all repositories for a project
  */
-export async function getProjectRepositories(
-  projectId: number
-): Promise<ProjectRepositories> {
+export async function getProjectRepositories(projectId: number): Promise<ProjectRepositories> {
   const project = await prisma.project.findUnique({
     where: { id: projectId },
     select: { id: true, name: true },
-  })
+  });
 
   if (!project) {
-    throw new Error(`Project ${projectId} not found`)
+    throw new Error(`Project ${projectId} not found`);
   }
 
   const repositories = await prisma.gitHubRepository.findMany({
     where: { projectId },
-    orderBy: [
-      { isPrimary: 'desc' },
-      { createdAt: 'asc' },
-    ],
-  })
+    orderBy: [{ isPrimary: 'desc' }, { createdAt: 'asc' }],
+  });
 
-  const repoInfos: RepositoryInfo[] = repositories.map(r => ({
+  const repoInfos: RepositoryInfo[] = repositories.map((r) => ({
     id: r.id,
     projectId: r.projectId,
     owner: r.owner,
@@ -102,10 +97,10 @@ export async function getProjectRepositories(
     syncEnabled: r.syncEnabled,
     lastSyncAt: r.lastSyncAt,
     createdAt: r.createdAt,
-  }))
+  }));
 
-  const primary = repoInfos.find(r => r.isPrimary) || null
-  const secondary = repoInfos.filter(r => !r.isPrimary)
+  const primary = repoInfos.find((r) => r.isPrimary) || null;
+  const secondary = repoInfos.filter((r) => !r.isPrimary);
 
   return {
     projectId: project.id,
@@ -113,7 +108,7 @@ export async function getProjectRepositories(
     primary,
     secondary,
     total: repoInfos.length,
-  }
+  };
 }
 
 /**
@@ -129,13 +124,13 @@ export async function linkRepository(
     await prisma.gitHubRepository.updateMany({
       where: { projectId, isPrimary: true },
       data: { isPrimary: false },
-    })
+    });
   }
 
   // Check if this is the first repository (auto-set as primary)
   const existingCount = await prisma.gitHubRepository.count({
     where: { projectId },
-  })
+  });
 
   const repo = await prisma.gitHubRepository.update({
     where: { id: repositoryId },
@@ -143,7 +138,7 @@ export async function linkRepository(
       projectId,
       isPrimary: isPrimary || existingCount === 0,
     },
-  })
+  });
 
   return {
     id: repo.id,
@@ -157,41 +152,39 @@ export async function linkRepository(
     syncEnabled: repo.syncEnabled,
     lastSyncAt: repo.lastSyncAt,
     createdAt: repo.createdAt,
-  }
+  };
 }
 
 /**
  * Unlink a repository from a project
  */
-export async function unlinkRepository(
-  repositoryId: number
-): Promise<void> {
+export async function unlinkRepository(repositoryId: number): Promise<void> {
   const repo = await prisma.gitHubRepository.findFirst({
     where: { id: repositoryId },
     select: { projectId: true, isPrimary: true },
-  })
+  });
 
   if (!repo) {
-    throw new Error(`Repository ${repositoryId} not found`)
+    throw new Error(`Repository ${repositoryId} not found`);
   }
 
   // Delete the repository link
   await prisma.gitHubRepository.delete({
     where: { id: repositoryId },
-  })
+  });
 
   // If this was primary, promote another repository
   if (repo.isPrimary) {
     const nextRepo = await prisma.gitHubRepository.findFirst({
       where: { projectId: repo.projectId },
       orderBy: { createdAt: 'asc' },
-    })
+    });
 
     if (nextRepo) {
       await prisma.gitHubRepository.update({
         where: { id: nextRepo.id },
         data: { isPrimary: true },
-      })
+      });
     }
   }
 }
@@ -199,51 +192,46 @@ export async function unlinkRepository(
 /**
  * Set a repository as primary
  */
-export async function setPrimaryRepository(
-  projectId: number,
-  repositoryId: number
-): Promise<void> {
+export async function setPrimaryRepository(projectId: number, repositoryId: number): Promise<void> {
   // Verify repository belongs to project
   const repo = await prisma.gitHubRepository.findFirst({
     where: { id: repositoryId },
     select: { projectId: true },
-  })
+  });
 
   if (!repo || repo.projectId !== projectId) {
-    throw new Error(`Repository ${repositoryId} does not belong to project ${projectId}`)
+    throw new Error(`Repository ${repositoryId} does not belong to project ${projectId}`);
   }
 
   // Unset current primary
   await prisma.gitHubRepository.updateMany({
     where: { projectId, isPrimary: true },
     data: { isPrimary: false },
-  })
+  });
 
   // Set new primary
   await prisma.gitHubRepository.update({
     where: { id: repositoryId },
     data: { isPrimary: true },
-  })
+  });
 }
 
 /**
  * Get primary repository for a project
  */
-export async function getPrimaryRepository(
-  projectId: number
-): Promise<RepositoryInfo | null> {
+export async function getPrimaryRepository(projectId: number): Promise<RepositoryInfo | null> {
   const repo = await prisma.gitHubRepository.findFirst({
     where: { projectId, isPrimary: true },
-  })
+  });
 
   if (!repo) {
     // Fall back to first repository
     const firstRepo = await prisma.gitHubRepository.findFirst({
       where: { projectId },
       orderBy: { createdAt: 'asc' },
-    })
+    });
 
-    if (!firstRepo) return null
+    if (!firstRepo) return null;
 
     return {
       id: firstRepo.id,
@@ -257,7 +245,7 @@ export async function getPrimaryRepository(
       syncEnabled: firstRepo.syncEnabled,
       lastSyncAt: firstRepo.lastSyncAt,
       createdAt: firstRepo.createdAt,
-    }
+    };
   }
 
   return {
@@ -272,7 +260,7 @@ export async function getPrimaryRepository(
     syncEnabled: repo.syncEnabled,
     lastSyncAt: repo.lastSyncAt,
     createdAt: repo.createdAt,
-  }
+  };
 }
 
 // =============================================================================
@@ -282,9 +270,7 @@ export async function getPrimaryRepository(
 /**
  * Get aggregated stats across all repositories in a project
  */
-export async function getCrossRepoStats(
-  projectId: number
-): Promise<CrossRepoStats> {
+export async function getCrossRepoStats(projectId: number): Promise<CrossRepoStats> {
   const repositories = await prisma.gitHubRepository.findMany({
     where: { projectId },
     include: {
@@ -296,9 +282,9 @@ export async function getCrossRepoStats(
         },
       },
     },
-  })
+  });
 
-  const byRepository = repositories.map(repo => ({
+  const byRepository = repositories.map((repo) => ({
     repository: {
       id: repo.id,
       projectId: repo.projectId,
@@ -315,7 +301,7 @@ export async function getCrossRepoStats(
     issues: repo._count.issues,
     prs: repo._count.pullRequests,
     commits: repo._count.commits,
-  }))
+  }));
 
   return {
     totalRepositories: repositories.length,
@@ -323,7 +309,7 @@ export async function getCrossRepoStats(
     totalPRs: byRepository.reduce((sum, r) => sum + r.prs, 0),
     totalCommits: byRepository.reduce((sum, r) => sum + r.commits, 0),
     byRepository,
-  }
+  };
 }
 
 // =============================================================================
@@ -337,20 +323,20 @@ export async function searchAcrossRepositories(
   projectId: number,
   query: string,
   options?: {
-    types?: ('issue' | 'pr' | 'commit')[]
-    limit?: number
+    types?: ('issue' | 'pr' | 'commit')[];
+    limit?: number;
   }
 ): Promise<CrossRepoSearchResult[]> {
-  const { types = ['issue', 'pr', 'commit'], limit = 20 } = options || {}
-  const results: CrossRepoSearchResult[] = []
+  const { types = ['issue', 'pr', 'commit'], limit = 20 } = options || {};
+  const results: CrossRepoSearchResult[] = [];
 
   // Get all repositories for the project
   const repositories = await prisma.gitHubRepository.findMany({
     where: { projectId },
-  })
+  });
 
-  const repoMap = new Map(repositories.map(r => [r.id, r]))
-  const repoIds = repositories.map(r => r.id)
+  const repoMap = new Map(repositories.map((r) => [r.id, r]));
+  const repoIds = repositories.map((r) => r.id);
 
   // Search issues
   if (types.includes('issue')) {
@@ -360,10 +346,10 @@ export async function searchAcrossRepositories(
         title: { contains: query, mode: 'insensitive' },
       },
       take: limit,
-    })
+    });
 
     for (const issue of issues) {
-      const repo = repoMap.get(issue.repositoryId)
+      const repo = repoMap.get(issue.repositoryId);
       if (repo) {
         results.push({
           type: 'issue',
@@ -384,7 +370,7 @@ export async function searchAcrossRepositories(
           title: issue.title,
           reference: `${repo.fullName}#${issue.issueNumber}`,
           url: `https://github.com/${repo.fullName}/issues/${issue.issueNumber}`,
-        })
+        });
       }
     }
   }
@@ -397,10 +383,10 @@ export async function searchAcrossRepositories(
         title: { contains: query, mode: 'insensitive' },
       },
       take: limit,
-    })
+    });
 
     for (const pr of prs) {
-      const repo = repoMap.get(pr.repositoryId)
+      const repo = repoMap.get(pr.repositoryId);
       if (repo) {
         results.push({
           type: 'pr',
@@ -421,7 +407,7 @@ export async function searchAcrossRepositories(
           title: pr.title,
           reference: `${repo.fullName}#${pr.prNumber}`,
           url: `https://github.com/${repo.fullName}/pull/${pr.prNumber}`,
-        })
+        });
       }
     }
   }
@@ -434,10 +420,10 @@ export async function searchAcrossRepositories(
         message: { contains: query, mode: 'insensitive' },
       },
       take: limit,
-    })
+    });
 
     for (const commit of commits) {
-      const repo = repoMap.get(commit.repositoryId)
+      const repo = repoMap.get(commit.repositoryId);
       if (repo) {
         results.push({
           type: 'commit',
@@ -458,12 +444,12 @@ export async function searchAcrossRepositories(
           title: commit.message.split('\n')[0],
           reference: `${repo.fullName}@${commit.sha.substring(0, 7)}`,
           url: `https://github.com/${repo.fullName}/commit/${commit.sha}`,
-        })
+        });
       }
     }
   }
 
-  return results.slice(0, limit)
+  return results.slice(0, limit);
 }
 
 // =============================================================================
@@ -477,15 +463,15 @@ export function parseCrossRepoReference(
   reference: string
 ): { owner: string; repo: string; number: number; type: 'issue' | 'pr' } | null {
   // Match owner/repo#123 format
-  const match = reference.match(/^([^/]+)\/([^#]+)#(\d+)$/)
-  if (!match?.[1] || !match[2] || !match[3]) return null
+  const match = reference.match(/^([^/]+)\/([^#]+)#(\d+)$/);
+  if (!match?.[1] || !match[2] || !match[3]) return null;
 
   return {
     owner: match[1],
     repo: match[2],
     number: parseInt(match[3], 10),
     type: 'issue', // Could be either, needs API call to determine
-  }
+  };
 }
 
 /**
@@ -494,26 +480,26 @@ export function parseCrossRepoReference(
 export function findCrossRepoReferences(
   text: string
 ): Array<{ owner: string; repo: string; number: number }> {
-  const references: Array<{ owner: string; repo: string; number: number }> = []
+  const references: Array<{ owner: string; repo: string; number: number }> = [];
 
   // Match owner/repo#123 format
-  const regex = /([a-zA-Z0-9_-]+)\/([a-zA-Z0-9_.-]+)#(\d+)/g
-  let match
+  const regex = /([a-zA-Z0-9_-]+)\/([a-zA-Z0-9_.-]+)#(\d+)/g;
+  let match;
 
   while ((match = regex.exec(text)) !== null) {
-    const owner = match[1]
-    const repo = match[2]
-    const num = match[3]
+    const owner = match[1];
+    const repo = match[2];
+    const num = match[3];
     if (owner && repo && num) {
       references.push({
         owner,
         repo,
         number: parseInt(num, 10),
-      })
+      });
     }
   }
 
-  return references
+  return references;
 }
 
 /**
@@ -523,16 +509,16 @@ export async function resolveCrossRepoReferences(
   projectId: number,
   references: Array<{ owner: string; repo: string; number: number }>
 ): Promise<CrossRepoSearchResult[]> {
-  const results: CrossRepoSearchResult[] = []
+  const results: CrossRepoSearchResult[] = [];
 
   // Get all repositories for the project
   const repositories = await prisma.gitHubRepository.findMany({
     where: { projectId },
-  })
+  });
 
   for (const ref of references) {
-    const repo = repositories.find(r => r.owner === ref.owner && r.name === ref.repo)
-    if (!repo) continue
+    const repo = repositories.find((r) => r.owner === ref.owner && r.name === ref.repo);
+    if (!repo) continue;
 
     // Try to find as issue first
     const issue = await prisma.gitHubIssue.findUnique({
@@ -542,7 +528,7 @@ export async function resolveCrossRepoReferences(
           issueNumber: ref.number,
         },
       },
-    })
+    });
 
     if (issue) {
       results.push({
@@ -564,8 +550,8 @@ export async function resolveCrossRepoReferences(
         title: issue.title,
         reference: `${repo.fullName}#${issue.issueNumber}`,
         url: `https://github.com/${repo.fullName}/issues/${issue.issueNumber}`,
-      })
-      continue
+      });
+      continue;
     }
 
     // Try as PR
@@ -576,7 +562,7 @@ export async function resolveCrossRepoReferences(
           prNumber: ref.number,
         },
       },
-    })
+    });
 
     if (pr) {
       results.push({
@@ -598,11 +584,11 @@ export async function resolveCrossRepoReferences(
         title: pr.title,
         reference: `${repo.fullName}#${pr.prNumber}`,
         url: `https://github.com/${repo.fullName}/pull/${pr.prNumber}`,
-      })
+      });
     }
   }
 
-  return results
+  return results;
 }
 
 // =============================================================================
@@ -624,6 +610,6 @@ export const multiRepoService = {
   parseCrossRepoReference,
   findCrossRepoReferences,
   resolveCrossRepoReferences,
-}
+};
 
-export default multiRepoService
+export default multiRepoService;

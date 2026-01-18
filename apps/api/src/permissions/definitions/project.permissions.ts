@@ -7,7 +7,7 @@
  * - Project settings
  */
 
-import { definePermissions } from '../registry'
+import { definePermissions } from '../registry';
 
 export const projectPermissions = definePermissions('project', {
   view: {
@@ -84,4 +84,4 @@ export const projectPermissions = definePermissions('project', {
       },
     },
   },
-})
+});

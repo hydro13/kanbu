@@ -10,11 +10,11 @@
  * ===================================================================
  */
 
-import type { Meta, StoryObj } from '@storybook/react-vite'
-import { Switch } from './switch'
-import { Label } from './label'
-import { Button } from './button'
-import { useState } from 'react'
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import { Switch } from './switch';
+import { Label } from './label';
+import { Button } from './button';
+import { useState } from 'react';
 
 const meta: Meta<typeof Switch> = {
   title: 'UI/Switch',
@@ -38,10 +38,10 @@ const meta: Meta<typeof Switch> = {
       },
     },
   },
-}
+};
 
-export default meta
-type Story = StoryObj<typeof Switch>
+export default meta;
+type Story = StoryObj<typeof Switch>;
 
 // =============================================================================
 // Basic Variants
@@ -49,19 +49,19 @@ type Story = StoryObj<typeof Switch>
 
 export const Default: Story = {
   args: {},
-}
+};
 
 export const Checked: Story = {
   args: {
     defaultChecked: true,
   },
-}
+};
 
 export const Disabled: Story = {
   args: {
     disabled: true,
   },
-}
+};
 
 export const DisabledChecked: Story = {
   args: {
@@ -75,7 +75,7 @@ export const DisabledChecked: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // With Label
@@ -93,12 +93,11 @@ export const WithLabel: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          'Switch with label. The label has cursor-pointer for better UX when clicking.',
+        story: 'Switch with label. The label has cursor-pointer for better UX when clicking.',
       },
     },
   },
-}
+};
 
 export const WithDescription: Story = {
   render: () => (
@@ -114,7 +113,7 @@ export const WithDescription: Story = {
       </p>
     </div>
   ),
-}
+};
 
 // =============================================================================
 // Controlled State
@@ -122,7 +121,7 @@ export const WithDescription: Story = {
 
 export const Controlled: Story = {
   render: function ControlledStory() {
-    const [enabled, setEnabled] = useState(false)
+    const [enabled, setEnabled] = useState(false);
 
     return (
       <div className="space-y-4">
@@ -132,14 +131,12 @@ export const Controlled: Story = {
             Notifications
           </Label>
         </div>
-        <p className="text-sm text-muted-foreground">
-          Status: {enabled ? 'Enabled' : 'Disabled'}
-        </p>
+        <p className="text-sm text-muted-foreground">Status: {enabled ? 'Enabled' : 'Disabled'}</p>
         <Button size="sm" onClick={() => setEnabled(!enabled)}>
           Toggle
         </Button>
       </div>
-    )
+    );
   },
   parameters: {
     docs: {
@@ -148,7 +145,7 @@ export const Controlled: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Switch Groups
@@ -159,9 +156,7 @@ export const NotificationSettings: Story = {
     <div className="space-y-4 max-w-md">
       <div>
         <h3 className="text-base font-semibold mb-1">Notifications</h3>
-        <p className="text-sm text-muted-foreground">
-          Manage how you receive notifications
-        </p>
+        <p className="text-sm text-muted-foreground">Manage how you receive notifications</p>
       </div>
       <div className="space-y-4 border rounded-lg p-4">
         <div className="flex items-center justify-between">
@@ -169,9 +164,7 @@ export const NotificationSettings: Story = {
             <Label htmlFor="email-notif" className="cursor-pointer">
               Email notifications
             </Label>
-            <p className="text-sm text-muted-foreground">
-              Receive notifications via email
-            </p>
+            <p className="text-sm text-muted-foreground">Receive notifications via email</p>
           </div>
           <Switch id="email-notif" defaultChecked />
         </div>
@@ -191,9 +184,7 @@ export const NotificationSettings: Story = {
             <Label htmlFor="sms-notif" className="cursor-pointer">
               SMS notifications
             </Label>
-            <p className="text-sm text-muted-foreground">
-              Receive notifications via SMS
-            </p>
+            <p className="text-sm text-muted-foreground">Receive notifications via SMS</p>
           </div>
           <Switch id="sms-notif" />
         </div>
@@ -207,16 +198,14 @@ export const NotificationSettings: Story = {
       },
     },
   },
-}
+};
 
 export const FeatureToggles: Story = {
   render: () => (
     <div className="space-y-4 max-w-md">
       <div>
         <h3 className="text-base font-semibold mb-1">Feature Flags</h3>
-        <p className="text-sm text-muted-foreground">
-          Enable or disable experimental features
-        </p>
+        <p className="text-sm text-muted-foreground">Enable or disable experimental features</p>
       </div>
       <div className="space-y-3">
         <div className="flex items-center justify-between">
@@ -253,7 +242,7 @@ export const FeatureToggles: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Form Example
@@ -338,7 +327,7 @@ export const FormExample: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // States Showcase
@@ -376,7 +365,7 @@ export const AllStates: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Real-World Examples
@@ -387,9 +376,7 @@ export const SecuritySettings: Story = {
     <div className="space-y-4 max-w-md">
       <div>
         <h3 className="text-base font-semibold mb-1">Security</h3>
-        <p className="text-sm text-muted-foreground">
-          Manage your account security settings
-        </p>
+        <p className="text-sm text-muted-foreground">Manage your account security settings</p>
       </div>
       <div className="space-y-4 border rounded-lg p-4">
         <div className="flex items-center justify-between">
@@ -408,9 +395,7 @@ export const SecuritySettings: Story = {
             <Label htmlFor="session-alerts" className="cursor-pointer font-medium">
               Login alerts
             </Label>
-            <p className="text-sm text-muted-foreground">
-              Get notified about new login activity
-            </p>
+            <p className="text-sm text-muted-foreground">Get notified about new login activity</p>
           </div>
           <Switch id="session-alerts" defaultChecked />
         </div>
@@ -435,16 +420,14 @@ export const SecuritySettings: Story = {
       },
     },
   },
-}
+};
 
 export const AccessibilitySettings: Story = {
   render: () => (
     <div className="space-y-4 max-w-md">
       <div>
         <h3 className="text-base font-semibold mb-1">Accessibility</h3>
-        <p className="text-sm text-muted-foreground">
-          Customize your experience
-        </p>
+        <p className="text-sm text-muted-foreground">Customize your experience</p>
       </div>
       <div className="space-y-3">
         <div className="flex items-center justify-between">
@@ -452,9 +435,7 @@ export const AccessibilitySettings: Story = {
             <Label htmlFor="reduce-motion" className="cursor-pointer">
               Reduce motion
             </Label>
-            <p className="text-sm text-muted-foreground">
-              Minimize animations and transitions
-            </p>
+            <p className="text-sm text-muted-foreground">Minimize animations and transitions</p>
           </div>
           <Switch id="reduce-motion" />
         </div>
@@ -474,9 +455,7 @@ export const AccessibilitySettings: Story = {
             <Label htmlFor="large-text" className="cursor-pointer">
               Large text
             </Label>
-            <p className="text-sm text-muted-foreground">
-              Increase text size throughout the app
-            </p>
+            <p className="text-sm text-muted-foreground">Increase text size throughout the app</p>
           </div>
           <Switch id="large-text" />
         </div>
@@ -485,9 +464,7 @@ export const AccessibilitySettings: Story = {
             <Label htmlFor="keyboard-nav" className="cursor-pointer">
               Keyboard navigation hints
             </Label>
-            <p className="text-sm text-muted-foreground">
-              Show keyboard shortcuts and hints
-            </p>
+            <p className="text-sm text-muted-foreground">Show keyboard shortcuts and hints</p>
           </div>
           <Switch id="keyboard-nav" defaultChecked />
         </div>
@@ -501,4 +478,4 @@ export const AccessibilitySettings: Story = {
       },
     },
   },
-}
+};

@@ -11,19 +11,19 @@
  * ===================================================================
  */
 
-import { type ReactNode } from 'react'
-import { Outlet } from 'react-router-dom'
-import { BaseLayout } from '@/components/layout/BaseLayout'
-import { DashboardSidebar } from './DashboardSidebar'
+import { type ReactNode } from 'react';
+import { Outlet } from 'react-router-dom';
+import { BaseLayout } from '@/components/layout/BaseLayout';
+import { DashboardSidebar } from './DashboardSidebar';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface DashboardLayoutProps {
-  children?: ReactNode
+  children?: ReactNode;
   /** Custom sidebar component. Defaults to DashboardSidebar if not provided. */
-  sidebar?: ReactNode
+  sidebar?: ReactNode;
 }
 
 // =============================================================================
@@ -32,13 +32,10 @@ export interface DashboardLayoutProps {
 
 export function DashboardLayout({ children, sidebar }: DashboardLayoutProps) {
   return (
-    <BaseLayout
-      sidebar={sidebar ?? <DashboardSidebar collapsed={false} />}
-      contentPadding={true}
-    >
+    <BaseLayout sidebar={sidebar ?? <DashboardSidebar collapsed={false} />} contentPadding={true}>
       {children ?? <Outlet />}
     </BaseLayout>
-  )
+  );
 }
 
-export default DashboardLayout
+export default DashboardLayout;

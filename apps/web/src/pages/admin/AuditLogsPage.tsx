@@ -15,59 +15,68 @@
  * =============================================================================
  */
 
-import { useState, useMemo } from 'react'
-import { AdminLayout } from '@/components/admin'
-import { trpc } from '@/lib/trpc'
-import { cn } from '@/lib/utils'
+import { useState, useMemo } from 'react';
+import { AdminLayout } from '@/components/admin';
+import { trpc } from '@/lib/trpc';
+import { cn } from '@/lib/utils';
 
 // =============================================================================
 // Types
 // =============================================================================
 
-type AuditCategory = 'ACL' | 'GROUP' | 'USER' | 'WORKSPACE' | 'SETTINGS' | 'PROJECT' | 'TASK' | 'SUBTASK' | 'COMMENT'
+type AuditCategory =
+  | 'ACL'
+  | 'GROUP'
+  | 'USER'
+  | 'WORKSPACE'
+  | 'SETTINGS'
+  | 'PROJECT'
+  | 'TASK'
+  | 'SUBTASK'
+  | 'COMMENT';
 
 interface FilterState {
-  category?: AuditCategory
-  action?: string
-  workspaceId?: number
-  search?: string
-  dateFrom?: Date
-  dateTo?: Date
-  mcpOnly?: boolean  // Filter for MCP/Claude Code actions only
+  category?: AuditCategory;
+  action?: string;
+  workspaceId?: number;
+  search?: string;
+  dateFrom?: Date;
+  dateTo?: Date;
+  mcpOnly?: boolean; // Filter for MCP/Claude Code actions only
 }
 
 // Simple types to avoid TS2589 with deep tRPC/Prisma types
 interface AuditLogUser {
-  id: number
-  name: string | null
-  username: string
-  avatarUrl: string | null
+  id: number;
+  name: string | null;
+  username: string;
+  avatarUrl: string | null;
 }
 
 interface AuditLogWorkspace {
-  id: number
-  name: string
-  slug: string
+  id: number;
+  name: string;
+  slug: string;
 }
 
 interface AuditLogEntry {
-  id: number
-  category: string
-  action: string
-  resourceType: string
-  resourceId: number | null
-  resourceName: string | null
-  targetType: string | null
-  targetId: number | null
-  targetName: string | null
-  changes: Record<string, unknown> | null
-  metadata: Record<string, unknown> | null
-  userId: number
-  workspaceId: number | null
-  ipAddress: string | null
-  createdAt: Date | string
-  user: AuditLogUser | null
-  workspace: AuditLogWorkspace | null
+  id: number;
+  category: string;
+  action: string;
+  resourceType: string;
+  resourceId: number | null;
+  resourceName: string | null;
+  targetType: string | null;
+  targetId: number | null;
+  targetName: string | null;
+  changes: Record<string, unknown> | null;
+  metadata: Record<string, unknown> | null;
+  userId: number;
+  workspaceId: number | null;
+  ipAddress: string | null;
+  createdAt: Date | string;
+  user: AuditLogUser | null;
+  workspace: AuditLogWorkspace | null;
 }
 
 // =============================================================================
@@ -78,38 +87,44 @@ const CATEGORY_STYLES: Record<AuditCategory, { bg: string; text: string }> = {
   ACL: { bg: 'bg-purple-100 dark:bg-purple-900/30', text: 'text-purple-800 dark:text-purple-200' },
   GROUP: { bg: 'bg-blue-100 dark:bg-blue-900/30', text: 'text-blue-800 dark:text-blue-200' },
   USER: { bg: 'bg-green-100 dark:bg-green-900/30', text: 'text-green-800 dark:text-green-200' },
-  WORKSPACE: { bg: 'bg-orange-100 dark:bg-orange-900/30', text: 'text-orange-800 dark:text-orange-200' },
+  WORKSPACE: {
+    bg: 'bg-orange-100 dark:bg-orange-900/30',
+    text: 'text-orange-800 dark:text-orange-200',
+  },
   SETTINGS: { bg: 'bg-gray-100 dark:bg-gray-700', text: 'text-gray-800 dark:text-gray-200' },
   // Fase 16 - MCP Activity categories
-  PROJECT: { bg: 'bg-indigo-100 dark:bg-indigo-900/30', text: 'text-indigo-800 dark:text-indigo-200' },
+  PROJECT: {
+    bg: 'bg-indigo-100 dark:bg-indigo-900/30',
+    text: 'text-indigo-800 dark:text-indigo-200',
+  },
   TASK: { bg: 'bg-cyan-100 dark:bg-cyan-900/30', text: 'text-cyan-800 dark:text-cyan-200' },
   SUBTASK: { bg: 'bg-teal-100 dark:bg-teal-900/30', text: 'text-teal-800 dark:text-teal-200' },
   COMMENT: { bg: 'bg-pink-100 dark:bg-pink-900/30', text: 'text-pink-800 dark:text-pink-200' },
-}
+};
 
 // =============================================================================
 // Date Helpers
 // =============================================================================
 
 function formatTimeAgo(date: Date | string): string {
-  const d = new Date(date)
-  const now = new Date()
-  const diffMs = now.getTime() - d.getTime()
-  const diffSec = Math.floor(diffMs / 1000)
-  const diffMin = Math.floor(diffSec / 60)
-  const diffHour = Math.floor(diffMin / 60)
-  const diffDay = Math.floor(diffHour / 24)
+  const d = new Date(date);
+  const now = new Date();
+  const diffMs = now.getTime() - d.getTime();
+  const diffSec = Math.floor(diffMs / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+  const diffHour = Math.floor(diffMin / 60);
+  const diffDay = Math.floor(diffHour / 24);
 
-  if (diffSec < 60) return 'Just now'
-  if (diffMin < 60) return `${diffMin} minute${diffMin > 1 ? 's' : ''} ago`
-  if (diffHour < 24) return `${diffHour} hour${diffHour > 1 ? 's' : ''} ago`
-  if (diffDay < 7) return `${diffDay} day${diffDay > 1 ? 's' : ''} ago`
+  if (diffSec < 60) return 'Just now';
+  if (diffMin < 60) return `${diffMin} minute${diffMin > 1 ? 's' : ''} ago`;
+  if (diffHour < 24) return `${diffHour} hour${diffHour > 1 ? 's' : ''} ago`;
+  if (diffDay < 7) return `${diffDay} day${diffDay > 1 ? 's' : ''} ago`;
 
-  return d.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' })
+  return d.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 function formatFullTimestamp(date: Date | string): string {
-  const d = new Date(date)
+  const d = new Date(date);
   return d.toLocaleString('nl-NL', {
     day: '2-digit',
     month: 'short',
@@ -117,7 +132,7 @@ function formatFullTimestamp(date: Date | string): string {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
-  })
+  });
 }
 
 // =============================================================================
@@ -125,14 +140,14 @@ function formatFullTimestamp(date: Date | string): string {
 // =============================================================================
 
 export function AuditLogsPage() {
-  const [filters, setFilters] = useState<FilterState>({})
-  const [page, setPage] = useState(0)
-  const [expandedLog, setExpandedLog] = useState<number | null>(null)
-  const [exporting, setExporting] = useState(false)
-  const limit = 50
+  const [filters, setFilters] = useState<FilterState>({});
+  const [page, setPage] = useState(0);
+  const [expandedLog, setExpandedLog] = useState<number | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const limit = 50;
 
   // Get workspaces for filter dropdown
-  const { data: workspaces } = trpc.workspace.list.useQuery()
+  const { data: workspaces } = trpc.workspace.list.useQuery();
 
   // Get audit logs
   const { data: auditData, isLoading } = trpc.auditLog.list.useQuery({
@@ -140,63 +155,63 @@ export function AuditLogsPage() {
     limit,
     offset: page * limit,
     sortOrder: 'desc',
-  })
+  });
 
   // Get stats for dashboard summary
   const { data: statsData } = trpc.auditLog.getStats.useQuery({
     workspaceId: filters.workspaceId,
-  })
+  });
 
   // Export mutation
   const exportMutation = trpc.auditLog.export.useMutation({
     onSuccess: (data) => {
       // Create download link
-      const blob = new Blob([data.data], { type: data.mimeType })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = data.filename
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
-      setExporting(false)
+      const blob = new Blob([data.data], { type: data.mimeType });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = data.filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setExporting(false);
     },
     onError: () => {
-      setExporting(false)
+      setExporting(false);
     },
-  })
+  });
 
   const handleExport = (format: 'csv' | 'json') => {
-    setExporting(true)
+    setExporting(true);
     exportMutation.mutate({
       ...filters,
       format,
-    })
-  }
+    });
+  };
 
   // Cast logs to simple type to avoid TS2589 with deep tRPC/Prisma types
-  const logs = (auditData?.logs ?? []) as unknown as AuditLogEntry[]
+  const logs = (auditData?.logs ?? []) as unknown as AuditLogEntry[];
 
   // Compute expanded log data separately
   const expandedLogData = useMemo((): AuditLogEntry | null => {
-    if (!expandedLog) return null
-    return logs.find(log => log.id === expandedLog) ?? null
-  }, [expandedLog, logs])
+    if (!expandedLog) return null;
+    return logs.find((log) => log.id === expandedLog) ?? null;
+  }, [expandedLog, logs]);
 
   const handleFilterChange = (key: keyof FilterState, value: unknown) => {
-    setFilters(prev => ({
+    setFilters((prev) => ({
       ...prev,
       [key]: value === '' ? undefined : value,
-    }))
-    setPage(0)
-  }
+    }));
+    setPage(0);
+  };
 
   const renderChanges = (changes: Record<string, unknown> | null) => {
-    if (!changes || Object.keys(changes).length === 0) return null
+    if (!changes || Object.keys(changes).length === 0) return null;
 
-    const before = changes.before as Record<string, unknown> | null
-    const after = changes.after as Record<string, unknown> | null
+    const before = changes.before as Record<string, unknown> | null;
+    const after = changes.after as Record<string, unknown> | null;
 
     return (
       <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg text-sm">
@@ -220,11 +235,14 @@ export function AuditLogsPage() {
           )}
         </div>
       </div>
-    )
-  }
+    );
+  };
 
   return (
-    <AdminLayout title="Audit Logs" description="Security event logging for compliance and troubleshooting">
+    <AdminLayout
+      title="Audit Logs"
+      description="Security event logging for compliance and troubleshooting"
+    >
       <div className="space-y-6">
         {/* Export Buttons */}
         <div className="flex justify-end gap-2">
@@ -315,7 +333,12 @@ export function AuditLogsPage() {
               </label>
               <select
                 value={filters.workspaceId || ''}
-                onChange={(e) => handleFilterChange('workspaceId', e.target.value ? Number(e.target.value) : undefined)}
+                onChange={(e) =>
+                  handleFilterChange(
+                    'workspaceId',
+                    e.target.value ? Number(e.target.value) : undefined
+                  )
+                }
                 className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">All Workspaces</option>
@@ -333,7 +356,9 @@ export function AuditLogsPage() {
                 <input
                   type="checkbox"
                   checked={filters.mcpOnly || false}
-                  onChange={(e) => handleFilterChange('mcpOnly', e.target.checked ? true : undefined)}
+                  onChange={(e) =>
+                    handleFilterChange('mcpOnly', e.target.checked ? true : undefined)
+                  }
                   className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
                 <span className="text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap">
@@ -346,8 +371,8 @@ export function AuditLogsPage() {
             <div className="flex items-end">
               <button
                 onClick={() => {
-                  setFilters({})
-                  setPage(0)
+                  setFilters({});
+                  setPage(0);
                 }}
                 className="w-full px-4 py-2 text-sm text-gray-600 dark:text-gray-400 border border-input rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
@@ -415,11 +440,15 @@ export function AuditLogsPage() {
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          <span className={cn(
-                            'inline-flex px-2 py-1 text-xs font-medium rounded-full',
-                            CATEGORY_STYLES[log.category as AuditCategory]?.bg || 'bg-gray-100 dark:bg-gray-700',
-                            CATEGORY_STYLES[log.category as AuditCategory]?.text || 'text-gray-800 dark:text-gray-200'
-                          )}>
+                          <span
+                            className={cn(
+                              'inline-flex px-2 py-1 text-xs font-medium rounded-full',
+                              CATEGORY_STYLES[log.category as AuditCategory]?.bg ||
+                                'bg-gray-100 dark:bg-gray-700',
+                              CATEGORY_STYLES[log.category as AuditCategory]?.text ||
+                                'text-gray-800 dark:text-gray-200'
+                            )}
+                          >
                             {log.category}
                           </span>
                         </td>
@@ -439,21 +468,19 @@ export function AuditLogsPage() {
                           )}
                         </td>
                         <td className="px-4 py-3">
-                          <div className="text-sm text-foreground">
-                            {log.resourceName || '-'}
-                          </div>
+                          <div className="text-sm text-foreground">{log.resourceName || '-'}</div>
                           <div className="text-xs text-gray-500 dark:text-gray-400">
-                            {log.resourceType}{log.resourceId ? ` #${log.resourceId}` : ''}
+                            {log.resourceType}
+                            {log.resourceId ? ` #${log.resourceId}` : ''}
                           </div>
                         </td>
                         <td className="px-4 py-3">
                           {log.targetName ? (
                             <>
-                              <div className="text-sm text-foreground">
-                                {log.targetName}
-                              </div>
+                              <div className="text-sm text-foreground">{log.targetName}</div>
                               <div className="text-xs text-gray-500 dark:text-gray-400">
-                                {log.targetType}{log.targetId ? ` #${log.targetId}` : ''}
+                                {log.targetType}
+                                {log.targetId ? ` #${log.targetId}` : ''}
                               </div>
                             </>
                           ) : (
@@ -470,7 +497,11 @@ export function AuditLogsPage() {
                               />
                             ) : (
                               <div className="w-6 h-6 rounded-full bg-gray-200 dark:bg-gray-600 flex items-center justify-center text-xs text-gray-600 dark:text-gray-300">
-                                {(log.user?.name?.[0] || log.user?.username?.[0] || '?').toUpperCase()}
+                                {(
+                                  log.user?.name?.[0] ||
+                                  log.user?.username?.[0] ||
+                                  '?'
+                                ).toUpperCase()}
                               </div>
                             )}
                             <div className="text-sm text-foreground">
@@ -497,13 +528,16 @@ export function AuditLogsPage() {
                       {expandedLogData.ipAddress && (
                         <>
                           <span className="text-gray-500 dark:text-gray-400">IP:</span>
-                          <span className="font-mono text-foreground">{expandedLogData.ipAddress}</span>
+                          <span className="font-mono text-foreground">
+                            {expandedLogData.ipAddress}
+                          </span>
                         </>
                       )}
                     </div>
                     {renderChanges(expandedLogData.changes)}
                     {/* Claude Code / MCP Details */}
-                    {(expandedLogData.metadata as Record<string, unknown> | null)?.via === 'assistant' && (
+                    {(expandedLogData.metadata as Record<string, unknown> | null)?.via ===
+                      'assistant' && (
                       <div className="p-3 bg-violet-50 dark:bg-violet-900/20 rounded-lg text-sm border border-violet-200 dark:border-violet-800">
                         <div className="flex items-center gap-2 font-medium text-violet-800 dark:text-violet-200 mb-2">
                           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
@@ -515,34 +549,51 @@ export function AuditLogsPage() {
                           <div>
                             <span className="text-violet-600 dark:text-violet-400">Machine:</span>{' '}
                             <span className="text-foreground font-mono">
-                              {String((expandedLogData.metadata as Record<string, unknown>)?.machineName || 'Unknown')}
+                              {String(
+                                (expandedLogData.metadata as Record<string, unknown>)
+                                  ?.machineName || 'Unknown'
+                              )}
                             </span>
                           </div>
                           <div>
-                            <span className="text-violet-600 dark:text-violet-400">Machine ID:</span>{' '}
+                            <span className="text-violet-600 dark:text-violet-400">
+                              Machine ID:
+                            </span>{' '}
                             <span className="text-foreground font-mono text-xs">
-                              {String((expandedLogData.metadata as Record<string, unknown>)?.machineId || 'Unknown')}
+                              {String(
+                                (expandedLogData.metadata as Record<string, unknown>)?.machineId ||
+                                  'Unknown'
+                              )}
                             </span>
                           </div>
                           <div>
-                            <span className="text-violet-600 dark:text-violet-400">Binding ID:</span>{' '}
+                            <span className="text-violet-600 dark:text-violet-400">
+                              Binding ID:
+                            </span>{' '}
                             <span className="text-foreground font-mono">
-                              {String((expandedLogData.metadata as Record<string, unknown>)?.bindingId || 'Unknown')}
+                              {String(
+                                (expandedLogData.metadata as Record<string, unknown>)?.bindingId ||
+                                  'Unknown'
+                              )}
                             </span>
                           </div>
                         </div>
                       </div>
                     )}
                     {/* Other Metadata */}
-                    {expandedLogData.metadata && Object.keys(expandedLogData.metadata).length > 0 &&
-                     (expandedLogData.metadata as Record<string, unknown>)?.via !== 'assistant' && (
-                      <div className="p-3 bg-card rounded-lg text-sm">
-                        <div className="font-medium text-gray-700 dark:text-gray-300 mb-2">Metadata:</div>
-                        <pre className="text-xs text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
-                          {JSON.stringify(expandedLogData.metadata, null, 2)}
-                        </pre>
-                      </div>
-                    )}
+                    {expandedLogData.metadata &&
+                      Object.keys(expandedLogData.metadata).length > 0 &&
+                      (expandedLogData.metadata as Record<string, unknown>)?.via !==
+                        'assistant' && (
+                        <div className="p-3 bg-card rounded-lg text-sm">
+                          <div className="font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Metadata:
+                          </div>
+                          <pre className="text-xs text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+                            {JSON.stringify(expandedLogData.metadata, null, 2)}
+                          </pre>
+                        </div>
+                      )}
                   </div>
                 </div>
               )}
@@ -550,18 +601,19 @@ export function AuditLogsPage() {
               {/* Pagination */}
               <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between bg-muted">
                 <div className="text-sm text-gray-500 dark:text-gray-400">
-                  Showing {page * limit + 1} - {Math.min((page + 1) * limit, auditData.total)} of {auditData.total} logs
+                  Showing {page * limit + 1} - {Math.min((page + 1) * limit, auditData.total)} of{' '}
+                  {auditData.total} logs
                 </div>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => setPage(p => Math.max(0, p - 1))}
+                    onClick={() => setPage((p) => Math.max(0, p - 1))}
                     disabled={page === 0}
                     className="px-3 py-1 text-sm border border-input rounded hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     Previous
                   </button>
                   <button
-                    onClick={() => setPage(p => p + 1)}
+                    onClick={() => setPage((p) => p + 1)}
                     disabled={!auditData.hasMore}
                     className="px-3 py-1 text-sm border border-input rounded hover:bg-accent disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
@@ -574,5 +626,5 @@ export function AuditLogsPage() {
         </div>
       </div>
     </AdminLayout>
-  )
+  );
 }

@@ -21,29 +21,29 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { Navigate } from 'react-router-dom'
-import { useAppSelector } from '../../store'
-import { selectIsAuthenticated } from '../../store/authSlice'
-import { trpc } from '../../lib/trpc'
+import { Navigate } from 'react-router-dom';
+import { useAppSelector } from '../../store';
+import { selectIsAuthenticated } from '../../store/authSlice';
+import { trpc } from '../../lib/trpc';
 
 interface AdminRouteProps {
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
 export function AdminRoute({ children }: AdminRouteProps) {
-  const isAuthenticated = useAppSelector(selectIsAuthenticated)
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
 
   // Use the new AD-style permission system to check admin access
   // This checks if user is a Domain Admin OR a Workspace Admin
   const { data: adminScope, isLoading } = trpc.group.myAdminScope.useQuery(undefined, {
     enabled: isAuthenticated,
     staleTime: 5 * 60 * 1000,
-  })
-  const hasAdminAccess = adminScope?.hasAnyAdminAccess ?? false
+  });
+  const hasAdminAccess = adminScope?.hasAnyAdminAccess ?? false;
 
   // Should be used with ProtectedRoute, but double-check auth
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />
+    return <Navigate to="/login" replace />;
   }
 
   // Show loading state while checking admin access
@@ -52,13 +52,13 @@ export function AdminRoute({ children }: AdminRouteProps) {
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
-    )
+    );
   }
 
   // Redirect non-admins to home
   if (!hasAdminAccess) {
-    return <Navigate to="/" replace />
+    return <Navigate to="/" replace />;
   }
 
-  return <>{children}</>
+  return <>{children}</>;
 }

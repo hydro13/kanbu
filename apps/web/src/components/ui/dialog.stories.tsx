@@ -10,7 +10,7 @@
  * ===================================================================
  */
 
-import type { Meta, StoryObj } from '@storybook/react-vite'
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import {
   Dialog,
   DialogContent,
@@ -20,12 +20,12 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogClose,
-} from './dialog'
-import { Button } from './button'
-import { Input } from './input'
-import { Label } from './label'
-import { Checkbox } from './checkbox'
-import { Trash2, AlertTriangle, Settings } from 'lucide-react'
+} from './dialog';
+import { Button } from './button';
+import { Input } from './input';
+import { Label } from './label';
+import { Checkbox } from './checkbox';
+import { Trash2, AlertTriangle, Settings } from 'lucide-react';
 
 const meta: Meta<typeof Dialog> = {
   title: 'UI/Dialog',
@@ -39,10 +39,10 @@ const meta: Meta<typeof Dialog> = {
       },
     },
   },
-}
+};
 
-export default meta
-type Story = StoryObj<typeof Dialog>
+export default meta;
+type Story = StoryObj<typeof Dialog>;
 
 // =============================================================================
 // Basic Variants
@@ -75,7 +75,7 @@ export const Default: Story = {
       </DialogContent>
     </Dialog>
   ),
-}
+};
 
 export const WithoutDescription: Story = {
   render: () => (
@@ -96,7 +96,7 @@ export const WithoutDescription: Story = {
       </DialogContent>
     </Dialog>
   ),
-}
+};
 
 // =============================================================================
 // Form Dialog
@@ -111,9 +111,7 @@ export const WithForm: Story = {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Create Account</DialogTitle>
-          <DialogDescription>
-            Enter your details to create a new account.
-          </DialogDescription>
+          <DialogDescription>Enter your details to create a new account.</DialogDescription>
         </DialogHeader>
         <form className="space-y-4">
           <div className="space-y-2">
@@ -151,7 +149,7 @@ export const WithForm: Story = {
       },
     },
   },
-}
+};
 
 export const EditProfile: Story = {
   render: () => (
@@ -201,7 +199,7 @@ export const EditProfile: Story = {
       </DialogContent>
     </Dialog>
   ),
-}
+};
 
 // =============================================================================
 // Confirmation Dialogs
@@ -236,7 +234,7 @@ export const ConfirmAction: Story = {
       },
     },
   },
-}
+};
 
 export const DestructiveAction: Story = {
   render: () => (
@@ -254,8 +252,8 @@ export const DestructiveAction: Story = {
             Delete Account
           </DialogTitle>
           <DialogDescription>
-            This action cannot be undone. This will permanently delete your account
-            and remove your data from our servers.
+            This action cannot be undone. This will permanently delete your account and remove your
+            data from our servers.
           </DialogDescription>
         </DialogHeader>
         <div className="py-4">
@@ -282,12 +280,11 @@ export const DestructiveAction: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          'Destructive action dialog with warning styling and clear consequences.',
+        story: 'Destructive action dialog with warning styling and clear consequences.',
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Content Variations
@@ -302,52 +299,47 @@ export const ScrollableContent: Story = {
       <DialogContent className="max-h-[80vh]">
         <DialogHeader>
           <DialogTitle>Terms of Service</DialogTitle>
-          <DialogDescription>
-            Please read our terms of service carefully.
-          </DialogDescription>
+          <DialogDescription>Please read our terms of service carefully.</DialogDescription>
         </DialogHeader>
         <div className="overflow-y-auto max-h-[50vh] py-4">
           <div className="space-y-4 text-sm">
             <section>
               <h3 className="font-semibold mb-2">1. Introduction</h3>
               <p className="text-muted-foreground">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do
-                eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim
-                ad minim veniam, quis nostrud exercitation ullamco laboris.
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor
+                incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud
+                exercitation ullamco laboris.
               </p>
             </section>
             <section>
               <h3 className="font-semibold mb-2">2. User Accounts</h3>
               <p className="text-muted-foreground">
-                Duis aute irure dolor in reprehenderit in voluptate velit esse
-                cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat
-                cupidatat non proident, sunt in culpa qui officia deserunt mollit
-                anim id est laborum.
+                Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu
+                fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa
+                qui officia deserunt mollit anim id est laborum.
               </p>
             </section>
             <section>
               <h3 className="font-semibold mb-2">3. Privacy Policy</h3>
               <p className="text-muted-foreground">
-                Sed ut perspiciatis unde omnis iste natus error sit voluptatem
-                accusantium doloremque laudantium, totam rem aperiam, eaque ipsa
-                quae ab illo inventore veritatis et quasi architecto beatae vitae
-                dicta sunt explicabo.
+                Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium
+                doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore
+                veritatis et quasi architecto beatae vitae dicta sunt explicabo.
               </p>
             </section>
             <section>
               <h3 className="font-semibold mb-2">4. Terms and Conditions</h3>
               <p className="text-muted-foreground">
-                Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut
-                fugit, sed quia consequuntur magni dolores eos qui ratione
-                voluptatem sequi nesciunt.
+                Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia
+                consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.
               </p>
             </section>
             <section>
               <h3 className="font-semibold mb-2">5. Liability</h3>
               <p className="text-muted-foreground">
-                Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet,
-                consectetur, adipisci velit, sed quia non numquam eius modi tempora
-                incidunt ut labore et dolore magnam aliquam quaerat voluptatem.
+                Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur,
+                adipisci velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore
+                magnam aliquam quaerat voluptatem.
               </p>
             </section>
           </div>
@@ -368,7 +360,7 @@ export const ScrollableContent: Story = {
       },
     },
   },
-}
+};
 
 export const SmallDialog: Story = {
   render: () => (
@@ -379,9 +371,7 @@ export const SmallDialog: Story = {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Share Link</DialogTitle>
-          <DialogDescription>
-            Anyone with this link can view the document.
-          </DialogDescription>
+          <DialogDescription>Anyone with this link can view the document.</DialogDescription>
         </DialogHeader>
         <div className="flex items-center space-x-2 py-4">
           <Input value="https://example.com/share/abc123" readOnly />
@@ -402,7 +392,7 @@ export const SmallDialog: Story = {
       },
     },
   },
-}
+};
 
 export const LargeDialog: Story = {
   render: () => (
@@ -440,7 +430,7 @@ export const LargeDialog: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Alert Dialog Pattern
@@ -472,7 +462,7 @@ export const AlertDialog: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Complex Content
@@ -487,9 +477,7 @@ export const ComplexContent: Story = {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Project Settings</DialogTitle>
-          <DialogDescription>
-            Configure your project settings and preferences.
-          </DialogDescription>
+          <DialogDescription>Configure your project settings and preferences.</DialogDescription>
         </DialogHeader>
         <div className="space-y-6 py-4">
           <div className="space-y-4">
@@ -555,9 +543,8 @@ export const ComplexContent: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          'Complex dialog with multiple sections, inputs, checkboxes, and danger zone.',
+        story: 'Complex dialog with multiple sections, inputs, checkboxes, and danger zone.',
       },
     },
   },
-}
+};

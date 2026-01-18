@@ -9,6 +9,7 @@ Thank you for your interest in contributing to Kanbu! This document provides gui
 Before creating a bug report, please check the issue tracker to ensure the bug hasn't already been reported.
 
 When creating a bug report, include:
+
 - **Clear title** describing the issue
 - **Detailed description** of the problem
 - **Steps to reproduce** the behavior
@@ -19,6 +20,7 @@ When creating a bug report, include:
 ### Suggesting Enhancements
 
 Enhancement suggestions are tracked as GitHub Issues. When suggesting an enhancement:
+
 - Use a clear title describing the suggestion
 - Provide a detailed description with use cases
 - List any alternatives you've considered
@@ -92,6 +94,7 @@ pnpm dev
 Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
 
 Examples:
+
 - `feat(api): add new permission validation`
 - `fix(web): resolve kanban board drag issue`
 - `docs: update setup instructions`
@@ -99,6 +102,7 @@ Examples:
 ### Testing
 
 Run tests with:
+
 ```bash
 pnpm test
 ```

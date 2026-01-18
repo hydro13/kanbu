@@ -8,4 +8,4 @@ export {
   BackupNotificationService,
   backupNotificationService,
   type WebhookPayload,
-} from './notificationService'
+} from './notificationService';

@@ -14,7 +14,7 @@
  * =============================================================================
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -22,34 +22,34 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '../ui/dialog'
-import { Input } from '../ui/input'
-import { Button } from '../ui/button'
-import { trpc } from '../../lib/trpc'
+} from '../ui/dialog';
+import { Input } from '../ui/input';
+import { Button } from '../ui/button';
+import { trpc } from '../../lib/trpc';
 
 // =============================================================================
 // Types
 // =============================================================================
 
-export type WorkspaceRole = 'ADMIN' | 'MEMBER' | 'VIEWER'
+export type WorkspaceRole = 'ADMIN' | 'MEMBER' | 'VIEWER';
 
 interface User {
-  id: number
-  email: string
-  username: string | null
-  name: string | null
-  avatarUrl: string | null
+  id: number;
+  email: string;
+  username: string | null;
+  name: string | null;
+  avatarUrl: string | null;
 }
 
 interface SelectedUser extends User {
-  role: WorkspaceRole
+  role: WorkspaceRole;
 }
 
 interface AddMembersModalProps {
-  workspaceId: number
-  isOpen: boolean
-  onClose: () => void
-  onMembersAdded?: () => void
+  workspaceId: number;
+  isOpen: boolean;
+  onClose: () => void;
+  onMembersAdded?: () => void;
 }
 
 // =============================================================================
@@ -72,7 +72,7 @@ function SearchIcon({ className }: { className?: string }) {
         d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
       />
     </svg>
-  )
+  );
 }
 
 function UserIcon({ className }: { className?: string }) {
@@ -91,7 +91,7 @@ function UserIcon({ className }: { className?: string }) {
         d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
       />
     </svg>
-  )
+  );
 }
 
 function XIcon({ className }: { className?: string }) {
@@ -103,14 +103,9 @@ function XIcon({ className }: { className?: string }) {
       viewBox="0 0 24 24"
       stroke="currentColor"
     >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M6 18L18 6M6 6l12 12"
-      />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
     </svg>
-  )
+  );
 }
 
 function CheckIcon({ className }: { className?: string }) {
@@ -122,14 +117,9 @@ function CheckIcon({ className }: { className?: string }) {
       viewBox="0 0 24 24"
       stroke="currentColor"
     >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M5 13l4 4L19 7"
-      />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
     </svg>
-  )
+  );
 }
 
 function UsersIcon({ className }: { className?: string }) {
@@ -148,7 +138,7 @@ function UsersIcon({ className }: { className?: string }) {
         d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
       />
     </svg>
-  )
+  );
 }
 
 // =============================================================================
@@ -161,14 +151,14 @@ export function AddMembersModal({
   onClose,
   onMembersAdded,
 }: AddMembersModalProps) {
-  const [query, setQuery] = useState('')
-  const [defaultRole, setDefaultRole] = useState<WorkspaceRole>('MEMBER')
-  const [selectedUsers, setSelectedUsers] = useState<SelectedUser[]>([])
-  const [isAdding, setIsAdding] = useState(false)
-  const [addedCount, setAddedCount] = useState(0)
-  const [errorMessages, setErrorMessages] = useState<string[]>([])
+  const [query, setQuery] = useState('');
+  const [defaultRole, setDefaultRole] = useState<WorkspaceRole>('MEMBER');
+  const [selectedUsers, setSelectedUsers] = useState<SelectedUser[]>([]);
+  const [isAdding, setIsAdding] = useState(false);
+  const [addedCount, setAddedCount] = useState(0);
+  const [errorMessages, setErrorMessages] = useState<string[]>([]);
 
-  const utils = trpc.useUtils()
+  const utils = trpc.useUtils();
 
   // Search query
   const searchQuery = trpc.workspace.searchAvailableUsers.useQuery(
@@ -177,55 +167,53 @@ export function AddMembersModal({
       enabled: query.length >= 1 && isOpen,
       staleTime: 30000,
     }
-  )
+  );
 
   // Add member mutation
-  const addMemberMutation = trpc.workspace.addMember.useMutation()
+  const addMemberMutation = trpc.workspace.addMember.useMutation();
 
   // Reset state when modal closes
   useEffect(() => {
     if (!isOpen) {
-      setQuery('')
-      setSelectedUsers([])
-      setIsAdding(false)
-      setAddedCount(0)
-      setErrorMessages([])
+      setQuery('');
+      setSelectedUsers([]);
+      setIsAdding(false);
+      setAddedCount(0);
+      setErrorMessages([]);
     }
-  }, [isOpen])
+  }, [isOpen]);
 
   // Toggle user selection
   const toggleUserSelection = (user: User) => {
-    const isSelected = selectedUsers.some((u) => u.id === user.id)
+    const isSelected = selectedUsers.some((u) => u.id === user.id);
 
     if (isSelected) {
-      setSelectedUsers(selectedUsers.filter((u) => u.id !== user.id))
+      setSelectedUsers(selectedUsers.filter((u) => u.id !== user.id));
     } else {
-      setSelectedUsers([...selectedUsers, { ...user, role: defaultRole }])
+      setSelectedUsers([...selectedUsers, { ...user, role: defaultRole }]);
     }
-  }
+  };
 
   // Update role for selected user
   const updateUserRole = (userId: number, role: WorkspaceRole) => {
-    setSelectedUsers(
-      selectedUsers.map((u) => (u.id === userId ? { ...u, role } : u))
-    )
-  }
+    setSelectedUsers(selectedUsers.map((u) => (u.id === userId ? { ...u, role } : u)));
+  };
 
   // Remove user from selection
   const removeUser = (userId: number) => {
-    setSelectedUsers(selectedUsers.filter((u) => u.id !== userId))
-  }
+    setSelectedUsers(selectedUsers.filter((u) => u.id !== userId));
+  };
 
   // Add all selected members
   const handleAddMembers = async () => {
-    if (selectedUsers.length === 0) return
+    if (selectedUsers.length === 0) return;
 
-    setIsAdding(true)
-    setAddedCount(0)
-    setErrorMessages([])
+    setIsAdding(true);
+    setAddedCount(0);
+    setErrorMessages([]);
 
-    const errors: string[] = []
-    let successCount = 0
+    const errors: string[] = [];
+    let successCount = 0;
 
     for (const user of selectedUsers) {
       try {
@@ -233,40 +221,37 @@ export function AddMembersModal({
           workspaceId,
           userId: user.id,
           role: user.role,
-        })
-        successCount++
-        setAddedCount(successCount)
+        });
+        successCount++;
+        setAddedCount(successCount);
       } catch (error) {
-        const errorMessage =
-          error instanceof Error ? error.message : 'Unknown error'
-        errors.push(`${user.name || user.email}: ${errorMessage}`)
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        errors.push(`${user.name || user.email}: ${errorMessage}`);
       }
     }
 
-    setIsAdding(false)
-    setErrorMessages(errors)
+    setIsAdding(false);
+    setErrorMessages(errors);
 
     if (successCount > 0) {
-      utils.workspace.getMembers.invalidate({ workspaceId })
-      utils.workspace.searchAvailableUsers.invalidate()
-      onMembersAdded?.()
+      utils.workspace.getMembers.invalidate({ workspaceId });
+      utils.workspace.searchAvailableUsers.invalidate();
+      onMembersAdded?.();
     }
 
     if (errors.length === 0) {
       // All successful - close modal after short delay
       setTimeout(() => {
-        onClose()
-      }, 1000)
+        onClose();
+      }, 1000);
     }
-  }
+  };
 
-  const users = searchQuery.data ?? []
-  const isLoading = searchQuery.isLoading
+  const users = searchQuery.data ?? [];
+  const isLoading = searchQuery.isLoading;
 
   // Filter out already selected users from search results
-  const availableUsers = users.filter(
-    (user) => !selectedUsers.some((su) => su.id === user.id)
-  )
+  const availableUsers = users.filter((user) => !selectedUsers.some((su) => su.id === user.id));
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -319,9 +304,7 @@ export function AddMembersModal({
               </div>
               <div className="max-h-40 overflow-auto">
                 {isLoading ? (
-                  <div className="p-3 text-sm text-muted-foreground">
-                    Searching...
-                  </div>
+                  <div className="p-3 text-sm text-muted-foreground">Searching...</div>
                 ) : availableUsers.length === 0 ? (
                   <div className="p-3 text-sm text-muted-foreground">
                     {users.length > 0
@@ -351,13 +334,9 @@ export function AddMembersModal({
                           <p className="text-sm font-medium truncate">
                             {user.name || user.username || 'Unnamed User'}
                           </p>
-                          <p className="text-xs text-muted-foreground truncate">
-                            {user.email}
-                          </p>
+                          <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                         </div>
-                        <span className="text-xs text-muted-foreground">
-                          Click to add
-                        </span>
+                        <span className="text-xs text-muted-foreground">Click to add</span>
                       </li>
                     ))}
                   </ul>
@@ -370,9 +349,7 @@ export function AddMembersModal({
           {selectedUsers.length > 0 && (
             <div className="border rounded-md">
               <div className="px-3 py-2 border-b bg-muted/50 flex items-center justify-between">
-                <span className="text-sm font-medium">
-                  Selected Users ({selectedUsers.length})
-                </span>
+                <span className="text-sm font-medium">Selected Users ({selectedUsers.length})</span>
                 <Button
                   variant="ghost"
                   size="sm"
@@ -384,10 +361,7 @@ export function AddMembersModal({
               </div>
               <ul className="max-h-40 overflow-auto divide-y">
                 {selectedUsers.map((user) => (
-                  <li
-                    key={user.id}
-                    className="flex items-center gap-3 px-3 py-2"
-                  >
+                  <li key={user.id} className="flex items-center gap-3 px-3 py-2">
                     {user.avatarUrl ? (
                       <img
                         src={user.avatarUrl}
@@ -403,15 +377,11 @@ export function AddMembersModal({
                       <p className="text-sm font-medium truncate">
                         {user.name || user.username || 'Unnamed User'}
                       </p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {user.email}
-                      </p>
+                      <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                     </div>
                     <select
                       value={user.role}
-                      onChange={(e) =>
-                        updateUserRole(user.id, e.target.value as WorkspaceRole)
-                      }
+                      onChange={(e) => updateUserRole(user.id, e.target.value as WorkspaceRole)}
                       className="h-8 rounded-md border border-input bg-background px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                     >
                       <option value="VIEWER">Viewer</option>
@@ -468,10 +438,7 @@ export function AddMembersModal({
           <Button variant="outline" onClick={onClose} disabled={isAdding}>
             Cancel
           </Button>
-          <Button
-            onClick={handleAddMembers}
-            disabled={selectedUsers.length === 0 || isAdding}
-          >
+          <Button onClick={handleAddMembers} disabled={selectedUsers.length === 0 || isAdding}>
             {isAdding
               ? 'Adding...'
               : `Add ${selectedUsers.length} Member${selectedUsers.length !== 1 ? 's' : ''}`}
@@ -479,5 +446,5 @@ export function AddMembersModal({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

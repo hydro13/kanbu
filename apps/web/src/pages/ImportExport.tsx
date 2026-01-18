@@ -61,36 +61,74 @@ interface FieldMapping {
 
 function UploadIcon({ className = 'h-5 w-5' }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+      />
     </svg>
   );
 }
 
 function DownloadIcon({ className = 'h-5 w-5' }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+      />
     </svg>
   );
 }
 
 function FileIcon({ className = 'h-5 w-5' }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+      />
     </svg>
   );
 }
 
 function CheckIcon({ className = 'h-5 w-5' }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
     </svg>
   );
 }
-
 
 // =============================================================================
 // Source Cards Data
@@ -103,15 +141,69 @@ const IMPORT_SOURCES: Array<{
   icon: string;
   color: string;
 }> = [
-  { id: 'trello', name: 'Trello', description: 'Import from Trello CSV export', icon: '📋', color: 'blue' },
-  { id: 'asana', name: 'Asana', description: 'Import from Asana CSV export', icon: '🎯', color: 'pink' },
-  { id: 'jira', name: 'Jira', description: 'Import from Jira CSV export', icon: '🔵', color: 'blue' },
-  { id: 'todoist', name: 'Todoist', description: 'Import from Todoist CSV', icon: '✓', color: 'red' },
-  { id: 'notion', name: 'Notion', description: 'Import from Notion database export', icon: '📓', color: 'gray' },
-  { id: 'monday', name: 'Monday.com', description: 'Import from Monday.com export', icon: '📊', color: 'red' },
-  { id: 'clickup', name: 'ClickUp', description: 'Import from ClickUp export', icon: '⬆️', color: 'purple' },
-  { id: 'kanboard', name: 'Kanboard', description: 'Import from Kanboard/GENX-Planner', icon: '📌', color: 'green' },
-  { id: 'generic', name: 'Generic CSV', description: 'Import from any CSV file', icon: '📄', color: 'gray' },
+  {
+    id: 'trello',
+    name: 'Trello',
+    description: 'Import from Trello CSV export',
+    icon: '📋',
+    color: 'blue',
+  },
+  {
+    id: 'asana',
+    name: 'Asana',
+    description: 'Import from Asana CSV export',
+    icon: '🎯',
+    color: 'pink',
+  },
+  {
+    id: 'jira',
+    name: 'Jira',
+    description: 'Import from Jira CSV export',
+    icon: '🔵',
+    color: 'blue',
+  },
+  {
+    id: 'todoist',
+    name: 'Todoist',
+    description: 'Import from Todoist CSV',
+    icon: '✓',
+    color: 'red',
+  },
+  {
+    id: 'notion',
+    name: 'Notion',
+    description: 'Import from Notion database export',
+    icon: '📓',
+    color: 'gray',
+  },
+  {
+    id: 'monday',
+    name: 'Monday.com',
+    description: 'Import from Monday.com export',
+    icon: '📊',
+    color: 'red',
+  },
+  {
+    id: 'clickup',
+    name: 'ClickUp',
+    description: 'Import from ClickUp export',
+    icon: '⬆️',
+    color: 'purple',
+  },
+  {
+    id: 'kanboard',
+    name: 'Kanboard',
+    description: 'Import from Kanboard/GENX-Planner',
+    icon: '📌',
+    color: 'green',
+  },
+  {
+    id: 'generic',
+    name: 'Generic CSV',
+    description: 'Import from any CSV file',
+    icon: '📄',
+    color: 'gray',
+  },
 ];
 
 // =============================================================================
@@ -328,11 +420,10 @@ export function ImportExportPage() {
       <div className="max-w-4xl mx-auto py-8 px-4">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-page-title text-foreground">
-            Import & Export
-          </h1>
+          <h1 className="text-page-title text-foreground">Import & Export</h1>
           <p className="mt-1 text-muted-foreground">
-            Import tasks from other tools or export your project data. No lock-in - your data is always yours.
+            Import tasks from other tools or export your project data. No lock-in - your data is
+            always yours.
           </p>
         </div>
 
@@ -358,21 +449,22 @@ export function ImportExportPage() {
                   <div className="mx-auto w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-4">
                     <CheckIcon className="h-8 w-8 text-green-600 dark:text-green-400" />
                   </div>
-                  <h2 className="text-xl font-bold text-foreground mb-2">
-                    Import Complete
-                  </h2>
+                  <h2 className="text-xl font-bold text-foreground mb-2">Import Complete</h2>
                   <div className="text-gray-600 dark:text-gray-300 space-y-1 mb-6">
                     <p>
-                      <span className="font-medium text-green-600">{importResult.imported}</span> tasks imported
+                      <span className="font-medium text-green-600">{importResult.imported}</span>{' '}
+                      tasks imported
                     </p>
                     {importResult.skipped > 0 && (
                       <p>
-                        <span className="font-medium text-yellow-600">{importResult.skipped}</span> tasks skipped (duplicates)
+                        <span className="font-medium text-yellow-600">{importResult.skipped}</span>{' '}
+                        tasks skipped (duplicates)
                       </p>
                     )}
                     {importResult.failed > 0 && (
                       <p>
-                        <span className="font-medium text-red-600">{importResult.failed}</span> tasks failed
+                        <span className="font-medium text-red-600">{importResult.failed}</span>{' '}
+                        tasks failed
                       </p>
                     )}
                   </div>
@@ -414,10 +506,7 @@ export function ImportExportPage() {
                     <Button variant="outline" onClick={handleReset}>
                       Cancel
                     </Button>
-                    <Button
-                      onClick={handleGeneratePreview}
-                      disabled={previewMutation.isPending}
-                    >
+                    <Button onClick={handleGeneratePreview} disabled={previewMutation.isPending}>
                       {previewMutation.isPending ? 'Analyzing...' : 'Preview Import'}
                     </Button>
                   </div>
@@ -432,9 +521,7 @@ export function ImportExportPage() {
                       <CardTitle>
                         Import from {IMPORT_SOURCES.find((s) => s.id === selectedSource)?.name}
                       </CardTitle>
-                      <CardDescription>
-                        Upload your CSV or JSON export file
-                      </CardDescription>
+                      <CardDescription>Upload your CSV or JSON export file</CardDescription>
                     </div>
                     <Button variant="outline" size="sm" onClick={handleReset}>
                       Change Source
@@ -450,9 +537,10 @@ export function ImportExportPage() {
                     className={`
                       relative border-2 border-dashed rounded-lg p-12 text-center cursor-pointer
                       transition-colors duration-200
-                      ${isDragging
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                        : 'border-input hover:border-gray-400'
+                      ${
+                        isDragging
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                          : 'border-input hover:border-gray-400'
                       }
                     `}
                   >
@@ -470,9 +558,7 @@ export function ImportExportPage() {
                       </span>
                       {' or drag and drop'}
                     </p>
-                    <p className="mt-2 text-xs text-gray-500">
-                      CSV or JSON files
-                    </p>
+                    <p className="mt-2 text-xs text-gray-500">CSV or JSON files</p>
                   </div>
                   {error && (
                     <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-600 dark:text-red-400 text-sm">
@@ -484,9 +570,7 @@ export function ImportExportPage() {
             ) : (
               // Source Selection
               <div>
-                <h2 className="text-lg font-medium text-foreground mb-4">
-                  Select Import Source
-                </h2>
+                <h2 className="text-lg font-medium text-foreground mb-4">Select Import Source</h2>
                 <div className="grid grid-cols-3 gap-4">
                   {IMPORT_SOURCES.map((source) => (
                     <Card
@@ -496,9 +580,7 @@ export function ImportExportPage() {
                     >
                       <CardContent className="py-6 text-center">
                         <span className="text-3xl">{source.icon}</span>
-                        <h3 className="mt-2 font-medium text-foreground">
-                          {source.name}
-                        </h3>
+                        <h3 className="mt-2 font-medium text-foreground">{source.name}</h3>
                         <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                           {source.description}
                         </p>
@@ -513,9 +595,7 @@ export function ImportExportPage() {
           {/* Export Tab */}
           <TabsContent value="export">
             <div className="space-y-4">
-              <h2 className="text-lg font-medium text-foreground">
-                Export Project Data
-              </h2>
+              <h2 className="text-lg font-medium text-foreground">Export Project Data</h2>
               <p className="text-sm text-gray-500 dark:text-gray-400">
                 Download your project data in various formats. Your data is always yours.
               </p>
@@ -529,9 +609,7 @@ export function ImportExportPage() {
                           <FileIcon className="h-5 w-5 text-gray-600 dark:text-gray-400" />
                         </div>
                         <div>
-                          <h3 className="font-medium text-foreground">
-                            {format.name}
-                          </h3>
+                          <h3 className="font-medium text-foreground">{format.name}</h3>
                           <p className="text-xs text-gray-500">{format.extension}</p>
                         </div>
                       </div>

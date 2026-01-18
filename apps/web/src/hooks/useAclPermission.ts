@@ -26,50 +26,58 @@
  * =============================================================================
  */
 
-import { useMemo } from 'react'
-import { trpc } from '@/lib/trpc'
-import { useAppSelector } from '@/store'
-import { selectUser } from '@/store/authSlice'
+import { useMemo } from 'react';
+import { trpc } from '@/lib/trpc';
+import { useAppSelector } from '@/store';
+import { selectUser } from '@/store/authSlice';
 
 // =============================================================================
 // Types
 // =============================================================================
 
-export type AclResourceType = 'root' | 'system' | 'dashboard' | 'workspace' | 'project' | 'feature' | 'admin' | 'profile'
+export type AclResourceType =
+  | 'root'
+  | 'system'
+  | 'dashboard'
+  | 'workspace'
+  | 'project'
+  | 'feature'
+  | 'admin'
+  | 'profile';
 
 export interface AclPermissionContext {
-  resourceType: AclResourceType
-  resourceId: number | null
+  resourceType: AclResourceType;
+  resourceId: number | null;
 }
 
 export interface UseAclPermissionResult {
   /** Whether user has any access to this resource */
-  allowed: boolean
+  allowed: boolean;
 
   /** Raw effective permissions bitmask */
-  effectivePermissions: number
+  effectivePermissions: number;
 
   /** Permission names as array */
-  effectivePermissionNames: string[]
+  effectivePermissionNames: string[];
 
   /** Preset name (Read Only, Contributor, Editor, Full Control) */
-  presetName: string | null
+  presetName: string | null;
 
   // Convenience flags
-  canRead: boolean
-  canWrite: boolean
-  canExecute: boolean
-  canDelete: boolean
-  canManagePermissions: boolean
+  canRead: boolean;
+  canWrite: boolean;
+  canExecute: boolean;
+  canDelete: boolean;
+  canManagePermissions: boolean;
 
   /** Whether permission data is still loading */
-  isLoading: boolean
+  isLoading: boolean;
 
   /** Whether there was an error fetching permissions */
-  isError: boolean
+  isError: boolean;
 
   /** Refetch permissions */
-  refetch: () => void
+  refetch: () => void;
 }
 
 // =============================================================================
@@ -77,7 +85,7 @@ export interface UseAclPermissionResult {
 // =============================================================================
 
 export function useAclPermission(context: AclPermissionContext): UseAclPermissionResult {
-  const user = useAppSelector(selectUser)
+  const user = useAppSelector(selectUser);
 
   // Fetch ACL permissions for this resource
   const permissionQuery = trpc.acl.myPermission.useQuery(
@@ -90,7 +98,7 @@ export function useAclPermission(context: AclPermissionContext): UseAclPermissio
       staleTime: 30 * 1000, // 30 seconds
       refetchOnWindowFocus: false,
     }
-  )
+  );
 
   // Memoize result
   const result = useMemo((): UseAclPermissionResult => {
@@ -109,11 +117,11 @@ export function useAclPermission(context: AclPermissionContext): UseAclPermissio
         isLoading: false,
         isError: false,
         refetch: permissionQuery.refetch,
-      }
+      };
     }
 
     // Use query data
-    const data = permissionQuery.data
+    const data = permissionQuery.data;
     return {
       allowed: data?.allowed ?? false,
       effectivePermissions: data?.effectivePermissions ?? 0,
@@ -127,10 +135,16 @@ export function useAclPermission(context: AclPermissionContext): UseAclPermissio
       isLoading: permissionQuery.isLoading,
       isError: permissionQuery.isError,
       refetch: permissionQuery.refetch,
-    }
-  }, [user?.role, permissionQuery.data, permissionQuery.isLoading, permissionQuery.isError, permissionQuery.refetch])
+    };
+  }, [
+    user?.role,
+    permissionQuery.data,
+    permissionQuery.isLoading,
+    permissionQuery.isError,
+    permissionQuery.refetch,
+  ]);
 
-  return result
+  return result;
 }
 
 // =============================================================================
@@ -141,14 +155,14 @@ export function useAclPermission(context: AclPermissionContext): UseAclPermissio
  * Hook for checking workspace permissions.
  */
 export function useWorkspaceAcl(workspaceId: number): UseAclPermissionResult {
-  return useAclPermission({ resourceType: 'workspace', resourceId: workspaceId })
+  return useAclPermission({ resourceType: 'workspace', resourceId: workspaceId });
 }
 
 /**
  * Hook for checking project permissions.
  */
 export function useProjectAcl(projectId: number): UseAclPermissionResult {
-  return useAclPermission({ resourceType: 'project', resourceId: projectId })
+  return useAclPermission({ resourceType: 'project', resourceId: projectId });
 }
 
 /**
@@ -156,21 +170,21 @@ export function useProjectAcl(projectId: number): UseAclPermissionResult {
  * Use this to check if a user can see a specific menu item/feature.
  */
 export function useFeatureAcl(featureId: number): UseAclPermissionResult {
-  return useAclPermission({ resourceType: 'feature', resourceId: featureId })
+  return useAclPermission({ resourceType: 'feature', resourceId: featureId });
 }
 
 /**
  * Hook for checking system-level permissions (admin access).
  */
 export function useSystemAcl(): UseAclPermissionResult {
-  return useAclPermission({ resourceType: 'system', resourceId: null })
+  return useAclPermission({ resourceType: 'system', resourceId: null });
 }
 
 /**
  * Hook for checking root-level permissions (domain admin).
  */
 export function useRootAcl(): UseAclPermissionResult {
-  return useAclPermission({ resourceType: 'root', resourceId: null })
+  return useAclPermission({ resourceType: 'root', resourceId: null });
 }
 
-export default useAclPermission
+export default useAclPermission;

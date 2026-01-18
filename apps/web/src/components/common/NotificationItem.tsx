@@ -13,7 +13,7 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom';
 import {
   UserPlus,
   MessageSquare,
@@ -25,27 +25,27 @@ import {
   FolderPlus,
   ShieldCheck,
   Bell,
-} from 'lucide-react'
+} from 'lucide-react';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface NotificationItemData {
-  id: number
-  type: string
-  title: string
-  content: string | null
-  data: Record<string, unknown>
-  isRead: boolean
-  createdAt: string | Date
-  link?: string
+  id: number;
+  type: string;
+  title: string;
+  content: string | null;
+  data: Record<string, unknown>;
+  isRead: boolean;
+  createdAt: string | Date;
+  link?: string;
 }
 
 export interface NotificationItemProps {
-  notification: NotificationItemData
-  onMarkRead?: (id: number) => void
-  onClick?: (notification: NotificationItemData) => void
+  notification: NotificationItemData;
+  onMarkRead?: (id: number) => void;
+  onClick?: (notification: NotificationItemData) => void;
 }
 
 // =============================================================================
@@ -55,28 +55,28 @@ export interface NotificationItemProps {
 function getNotificationIcon(type: string) {
   switch (type) {
     case 'task_assigned':
-      return UserPlus
+      return UserPlus;
     case 'task_updated':
-      return Bell
+      return Bell;
     case 'task_completed':
-      return CheckCircle
+      return CheckCircle;
     case 'task_due_soon':
-      return Clock
+      return Clock;
     case 'task_overdue':
-      return AlertCircle
+      return AlertCircle;
     case 'comment_added':
-      return MessageSquare
+      return MessageSquare;
     case 'comment_mentioned':
-      return AtSign
+      return AtSign;
     case 'subtask_assigned':
     case 'subtask_completed':
-      return ListTodo
+      return ListTodo;
     case 'project_invited':
-      return FolderPlus
+      return FolderPlus;
     case 'project_role_changed':
-      return ShieldCheck
+      return ShieldCheck;
     default:
-      return Bell
+      return Bell;
   }
 }
 
@@ -84,80 +84,74 @@ function getNotificationColor(type: string): string {
   switch (type) {
     case 'task_assigned':
     case 'subtask_assigned':
-      return 'text-blue-500'
+      return 'text-blue-500';
     case 'task_completed':
     case 'subtask_completed':
-      return 'text-green-500'
+      return 'text-green-500';
     case 'task_overdue':
-      return 'text-red-500'
+      return 'text-red-500';
     case 'task_due_soon':
-      return 'text-orange-500'
+      return 'text-orange-500';
     case 'comment_added':
     case 'comment_mentioned':
-      return 'text-purple-500'
+      return 'text-purple-500';
     case 'project_invited':
     case 'project_role_changed':
-      return 'text-indigo-500'
+      return 'text-indigo-500';
     default:
-      return 'text-gray-500'
+      return 'text-gray-500';
   }
 }
 
 function formatRelativeTime(date: Date | string): string {
-  const now = new Date()
-  const then = typeof date === 'string' ? new Date(date) : date
-  const diffMs = now.getTime() - then.getTime()
-  const diffSeconds = Math.floor(diffMs / 1000)
-  const diffMinutes = Math.floor(diffSeconds / 60)
-  const diffHours = Math.floor(diffMinutes / 60)
-  const diffDays = Math.floor(diffHours / 24)
+  const now = new Date();
+  const then = typeof date === 'string' ? new Date(date) : date;
+  const diffMs = now.getTime() - then.getTime();
+  const diffSeconds = Math.floor(diffMs / 1000);
+  const diffMinutes = Math.floor(diffSeconds / 60);
+  const diffHours = Math.floor(diffMinutes / 60);
+  const diffDays = Math.floor(diffHours / 24);
 
-  if (diffSeconds < 60) return 'just now'
-  if (diffMinutes < 60) return `${diffMinutes}m ago`
-  if (diffHours < 24) return `${diffHours}h ago`
-  if (diffDays === 1) return 'yesterday'
-  if (diffDays < 7) return `${diffDays}d ago`
+  if (diffSeconds < 60) return 'just now';
+  if (diffMinutes < 60) return `${diffMinutes}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays === 1) return 'yesterday';
+  if (diffDays < 7) return `${diffDays}d ago`;
 
-  return then.toLocaleDateString()
+  return then.toLocaleDateString();
 }
 
 // =============================================================================
 // Component
 // =============================================================================
 
-export function NotificationItem({
-  notification,
-  onMarkRead,
-  onClick,
-}: NotificationItemProps) {
-  const navigate = useNavigate()
-  const Icon = getNotificationIcon(notification.type)
-  const iconColor = getNotificationColor(notification.type)
+export function NotificationItem({ notification, onMarkRead, onClick }: NotificationItemProps) {
+  const navigate = useNavigate();
+  const Icon = getNotificationIcon(notification.type);
+  const iconColor = getNotificationColor(notification.type);
 
   const handleClick = () => {
     // Mark as read if not already
     if (!notification.isRead && onMarkRead) {
-      onMarkRead(notification.id)
+      onMarkRead(notification.id);
     }
 
     // Call custom onClick handler
     if (onClick) {
-      onClick(notification)
+      onClick(notification);
     }
 
     // Navigate to link if available
     if (notification.link) {
-      navigate(notification.link)
+      navigate(notification.link);
     }
-  }
+  };
 
   return (
     <button
       onClick={handleClick}
       className={`w-full flex items-start gap-3 p-3 text-left transition-colors ${
-        notification.isRead
-          ? 'bg-card'
-          : 'bg-blue-50 dark:bg-blue-900/20'
+        notification.isRead ? 'bg-card' : 'bg-blue-50 dark:bg-blue-900/20'
       } hover:bg-gray-50 dark:hover:bg-gray-700`}
     >
       {/* Icon */}
@@ -169,9 +163,7 @@ export function NotificationItem({
       <div className="flex-1 min-w-0">
         <p
           className={`text-sm ${
-            notification.isRead
-              ? 'text-gray-700 dark:text-gray-300'
-              : 'text-foreground font-medium'
+            notification.isRead ? 'text-gray-700 dark:text-gray-300' : 'text-foreground font-medium'
           }`}
         >
           {notification.title}
@@ -193,7 +185,7 @@ export function NotificationItem({
         </div>
       )}
     </button>
-  )
+  );
 }
 
-export default NotificationItem
+export default NotificationItem;

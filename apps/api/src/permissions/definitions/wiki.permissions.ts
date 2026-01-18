@@ -6,7 +6,7 @@
  * - Documentation
  */
 
-import { definePermissions } from '../registry'
+import { definePermissions } from '../registry';
 
 export const wikiPermissions = definePermissions('wiki', {
   view: {
@@ -56,4 +56,4 @@ export const wikiPermissions = definePermissions('wiki', {
       },
     },
   },
-})
+});

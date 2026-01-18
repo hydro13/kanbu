@@ -8,13 +8,13 @@ This directory contains the complete vision, architecture and implementation roa
 
 ## Documents
 
-| Document | Description | Reading Order |
-|----------|--------------|--------------|
-| [VISIE.md](./VISIE.md) | Overarching vision and design principles | 1. Read first |
-| [IDEAAL-DASHBOARD-ONTWERP.md](./IDEAAL-DASHBOARD-ONTWERP.md) | Claude's Planner - the complete ideal design | 2. Reference |
-| [HUIDIGE-STAAT.md](./HUIDIGE-STAAT.md) | Analysis of existing implementation | 3. Understand current state |
-| [CONCURRENTIE-ANALYSE.md](./CONCURRENTIE-ANALYSE.md) | Analysis of 10 PM tools (incl. Claude's Planner) | 4. Background |
-| [ROADMAP.md](./ROADMAP.md) | **IMPLEMENTATION GUIDE** - Detailed phases | 5. **Work with this** |
+| Document                                                     | Description                                      | Reading Order               |
+| ------------------------------------------------------------ | ------------------------------------------------ | --------------------------- |
+| [VISIE.md](./VISIE.md)                                       | Overarching vision and design principles         | 1. Read first               |
+| [IDEAAL-DASHBOARD-ONTWERP.md](./IDEAAL-DASHBOARD-ONTWERP.md) | Claude's Planner - the complete ideal design     | 2. Reference                |
+| [HUIDIGE-STAAT.md](./HUIDIGE-STAAT.md)                       | Analysis of existing implementation              | 3. Understand current state |
+| [CONCURRENTIE-ANALYSE.md](./CONCURRENTIE-ANALYSE.md)         | Analysis of 10 PM tools (incl. Claude's Planner) | 4. Background               |
+| [ROADMAP.md](./ROADMAP.md)                                   | **IMPLEMENTATION GUIDE** - Detailed phases       | 5. **Work with this**       |
 
 ---
 
@@ -55,23 +55,23 @@ Dashboard Sidebar (Claude's Planner model)
 
 ### MUST Respect
 
-| Constraint | Reason |
-|------------|-------|
-| **Real-time multi-user** | Socket.io + Redis adapter, NO offline-first |
-| **ACL everywhere** | Every menu item, every action via RWXDP permissions |
-| **BaseLayout pattern** | Existing collapsible/resizable sidebar |
-| **tRPC procedures** | Consistent API patterns |
-| **Docker + SaaS** | Multi-server deployment with Redis |
-| **LDAP sync (planned)** | ACL is prepared for external identity providers |
+| Constraint               | Reason                                              |
+| ------------------------ | --------------------------------------------------- |
+| **Real-time multi-user** | Socket.io + Redis adapter, NO offline-first         |
+| **ACL everywhere**       | Every menu item, every action via RWXDP permissions |
+| **BaseLayout pattern**   | Existing collapsible/resizable sidebar              |
+| **tRPC procedures**      | Consistent API patterns                             |
+| **Docker + SaaS**        | Multi-server deployment with Redis                  |
+| **LDAP sync (planned)**  | ACL is prepared for external identity providers     |
 
 ### MUST NOT Do
 
-| Forbidden | Why |
-|----------|--------|
-| Implement offline-first | Conflicts with real-time multi-user |
-| Bypass ACL | Security and audit trail |
-| New state management library | Redux + Zustand already in use |
-| Hardcoded permissions | Everything via ACL service |
+| Forbidden                    | Why                                 |
+| ---------------------------- | ----------------------------------- |
+| Implement offline-first      | Conflicts with real-time multi-user |
+| Bypass ACL                   | Security and audit trail            |
+| New state management library | Redux + Zustand already in use      |
+| Hardcoded permissions        | Everything via ACL service          |
 
 ---
 
@@ -101,13 +101,13 @@ Dashboard Sidebar (Claude's Planner model)
 
 ## Status Legend
 
-| Status | Meaning |
-|--------|-----------|
-| 📋 Planned | Not yet started |
-| 🔶 In Progress | Active development |
-| ✅ Done | Complete and tested |
-| 🔲 Todo | Specific item to do |
-| ⚠️ Blocked | Waiting for dependency |
+| Status         | Meaning                |
+| -------------- | ---------------------- |
+| 📋 Planned     | Not yet started        |
+| 🔶 In Progress | Active development     |
+| ✅ Done        | Complete and tested    |
+| 🔲 Todo        | Specific item to do    |
+| ⚠️ Blocked     | Waiting for dependency |
 
 ---
 

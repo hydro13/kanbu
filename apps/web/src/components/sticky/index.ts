@@ -7,7 +7,7 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-export { StickyNote } from './StickyNote'
-export type { StickyNoteData, StickyNoteColor, StickyVisibility } from './StickyNote'
-export { StickyNoteModal } from './StickyNoteModal'
-export { StickyNoteList } from './StickyNoteList'
+export { StickyNote } from './StickyNote';
+export type { StickyNoteData, StickyNoteColor, StickyVisibility } from './StickyNote';
+export { StickyNoteModal } from './StickyNoteModal';
+export { StickyNoteList } from './StickyNoteList';

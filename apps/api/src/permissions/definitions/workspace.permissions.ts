@@ -7,7 +7,7 @@
  * - Workspace settings
  */
 
-import { definePermissions } from '../registry'
+import { definePermissions } from '../registry';
 
 export const workspacePermissions = definePermissions('workspace', {
   view: {
@@ -95,4 +95,4 @@ export const workspacePermissions = definePermissions('workspace', {
       },
     },
   },
-})
+});

@@ -14,23 +14,23 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState, useRef, useEffect, useCallback } from 'react'
-import { Input } from '@/components/ui/input'
-import { Button } from '@/components/ui/button'
-import { trpc } from '@/lib/trpc'
-import { cn } from '@/lib/utils'
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { trpc } from '@/lib/trpc';
+import { cn } from '@/lib/utils';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface QuickAddTaskProps {
-  projectId: number
-  columnId: number
-  swimlaneId?: number | null
-  onCancel: () => void
-  onCreated?: (taskId: number) => void
-  className?: string
+  projectId: number;
+  columnId: number;
+  swimlaneId?: number | null;
+  onCancel: () => void;
+  onCreated?: (taskId: number) => void;
+  className?: string;
 }
 
 // =============================================================================
@@ -45,83 +45,80 @@ export function QuickAddTask({
   onCreated,
   className,
 }: QuickAddTaskProps) {
-  const [title, setTitle] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const [title, setTitle] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const utils = trpc.useUtils()
+  const utils = trpc.useUtils();
 
   // Auto-focus input on mount
   useEffect(() => {
-    inputRef.current?.focus()
-  }, [])
+    inputRef.current?.focus();
+  }, []);
 
   // Create task mutation
   const createMutation = trpc.task.create.useMutation({
     onSuccess: (data) => {
       // Invalidate task list to refresh board
-      utils.task.list.invalidate({ projectId })
-      setTitle('')
-      setIsSubmitting(false)
-      onCreated?.(data.id)
+      utils.task.list.invalidate({ projectId });
+      setTitle('');
+      setIsSubmitting(false);
+      onCreated?.(data.id);
       // Keep open for another quick add
-      inputRef.current?.focus()
+      inputRef.current?.focus();
     },
     onError: () => {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     },
-  })
+  });
 
   // Handle form submission
   const handleSubmit = useCallback(async () => {
-    const trimmedTitle = title.trim()
-    if (!trimmedTitle || isSubmitting) return
+    const trimmedTitle = title.trim();
+    if (!trimmedTitle || isSubmitting) return;
 
-    setIsSubmitting(true)
+    setIsSubmitting(true);
     createMutation.mutate({
       projectId,
       columnId,
       swimlaneId: swimlaneId ?? undefined,
       title: trimmedTitle,
-    })
-  }, [title, isSubmitting, projectId, columnId, swimlaneId, createMutation])
+    });
+  }, [title, isSubmitting, projectId, columnId, swimlaneId, createMutation]);
 
   // Handle keyboard events
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault()
-        handleSubmit()
+        e.preventDefault();
+        handleSubmit();
       } else if (e.key === 'Escape') {
-        onCancel()
+        onCancel();
       }
     },
     [handleSubmit, onCancel]
-  )
+  );
 
   // Handle click outside to cancel
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as Element
+      const target = e.target as Element;
       if (!target.closest('[data-quick-add]')) {
         // Only cancel if input is empty
         if (!title.trim()) {
-          onCancel()
+          onCancel();
         }
       }
-    }
+    };
 
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [title, onCancel])
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [title, onCancel]);
 
   return (
     <div
       data-quick-add
-      className={cn(
-        'p-2 bg-card rounded-card border border-border shadow-sm',
-        className
-      )}
+      className={cn('p-2 bg-card rounded-card border border-border shadow-sm', className)}
     >
       <Input
         ref={inputRef}
@@ -157,12 +154,10 @@ export function QuickAddTask({
         </div>
       </div>
       {createMutation.error && (
-        <p className="mt-2 text-xs text-red-500">
-          {createMutation.error.message}
-        </p>
+        <p className="mt-2 text-xs text-red-500">{createMutation.error.message}</p>
       )}
     </div>
-  )
+  );
 }
 
-export default QuickAddTask
+export default QuickAddTask;

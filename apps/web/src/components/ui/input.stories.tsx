@@ -10,12 +10,12 @@
  * ===================================================================
  */
 
-import type { Meta, StoryObj } from '@storybook/react-vite'
-import { Input } from './input'
-import { Label } from './label'
-import { Button } from './button'
-import { Search as SearchIcon, Mail, Lock, Eye, EyeOff } from 'lucide-react'
-import { useState } from 'react'
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import { Input } from './input';
+import { Label } from './label';
+import { Button } from './button';
+import { Search as SearchIcon, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { useState } from 'react';
 
 const meta: Meta<typeof Input> = {
   title: 'UI/Input',
@@ -44,10 +44,10 @@ const meta: Meta<typeof Input> = {
       },
     },
   },
-}
+};
 
-export default meta
-type Story = StoryObj<typeof Input>
+export default meta;
+type Story = StoryObj<typeof Input>;
 
 // =============================================================================
 // Basic Variants
@@ -57,7 +57,7 @@ export const Default: Story = {
   args: {
     placeholder: 'Enter text...',
   },
-}
+};
 
 export const WithLabel: Story = {
   render: () => (
@@ -66,19 +66,17 @@ export const WithLabel: Story = {
       <Input id="email" type="email" placeholder="you@example.com" />
     </div>
   ),
-}
+};
 
 export const WithDescription: Story = {
   render: () => (
     <div className="space-y-2 w-[300px]">
       <Label htmlFor="username">Username</Label>
       <Input id="username" placeholder="johndoe" />
-      <p className="text-sm text-muted-foreground">
-        Your username must be unique.
-      </p>
+      <p className="text-sm text-muted-foreground">Your username must be unique.</p>
     </div>
   ),
-}
+};
 
 // =============================================================================
 // Input Types
@@ -89,14 +87,14 @@ export const Email: Story = {
     type: 'email',
     placeholder: 'you@example.com',
   },
-}
+};
 
 export const Password: Story = {
   args: {
     type: 'password',
     placeholder: 'Enter password',
   },
-}
+};
 
 export const Number: Story = {
   args: {
@@ -105,14 +103,14 @@ export const Number: Story = {
     min: 0,
     max: 100,
   },
-}
+};
 
 export const Search: Story = {
   args: {
     type: 'search',
     placeholder: 'Search...',
   },
-}
+};
 
 // =============================================================================
 // States
@@ -123,7 +121,7 @@ export const Disabled: Story = {
     disabled: true,
     value: 'Disabled input',
   },
-}
+};
 
 export const WithError: Story = {
   render: () => (
@@ -145,12 +143,11 @@ export const WithError: Story = {
   parameters: {
     docs: {
       description: {
-        story:
-          'Input with error state. Use border-destructive and aria-invalid for accessibility.',
+        story: 'Input with error state. Use border-destructive and aria-invalid for accessibility.',
       },
     },
   },
-}
+};
 
 export const Required: Story = {
   render: () => (
@@ -168,7 +165,7 @@ export const Required: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // With Icons
@@ -181,7 +178,7 @@ export const WithIconLeft: Story = {
       <Input className="pl-10" placeholder="Search..." />
     </div>
   ),
-}
+};
 
 export const WithIconRight: Story = {
   render: () => (
@@ -190,11 +187,11 @@ export const WithIconRight: Story = {
       <Mail className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
     </div>
   ),
-}
+};
 
 export const PasswordToggle: Story = {
   render: function PasswordToggleStory() {
-    const [showPassword, setShowPassword] = useState(false)
+    const [showPassword, setShowPassword] = useState(false);
     return (
       <div className="relative w-[300px]">
         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -209,14 +206,10 @@ export const PasswordToggle: Story = {
           className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
           aria-label={showPassword ? 'Hide password' : 'Show password'}
         >
-          {showPassword ? (
-            <EyeOff className="h-4 w-4" />
-          ) : (
-            <Eye className="h-4 w-4" />
-          )}
+          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
         </button>
       </div>
-    )
+    );
   },
   parameters: {
     docs: {
@@ -225,7 +218,7 @@ export const PasswordToggle: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // With Button
@@ -238,7 +231,7 @@ export const WithButton: Story = {
       <Button>Subscribe</Button>
     </div>
   ),
-}
+};
 
 export const SearchWithButton: Story = {
   render: () => (
@@ -250,7 +243,7 @@ export const SearchWithButton: Story = {
       <Button>Search</Button>
     </div>
   ),
-}
+};
 
 // =============================================================================
 // Form Example
@@ -290,7 +283,7 @@ export const FormExample: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // File Input
@@ -303,4 +296,4 @@ export const FileInput: Story = {
       <Input id="file" type="file" />
     </div>
   ),
-}
+};

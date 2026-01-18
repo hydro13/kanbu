@@ -25,19 +25,19 @@
  * ===================================================================
  */
 
-import { useEffect, useRef, useState, useCallback } from 'react'
-import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import { cn } from '@/lib/utils'
+import { useEffect, useRef, useState, useCallback } from 'react';
+import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
+import { cn } from '@/lib/utils';
 
 // =============================================================================
 // Constants
 // =============================================================================
 
 /** Minimum pixels per line in the minimap - below this, minimap starts scrolling */
-const MIN_PIXELS_PER_LINE = 1.5
+const MIN_PIXELS_PER_LINE = 1.5;
 
 /** Estimated pixels per line of text in the editor */
-const EDITOR_LINE_HEIGHT = 24
+const EDITOR_LINE_HEIGHT = 24;
 
 // =============================================================================
 // Types
@@ -45,298 +45,302 @@ const EDITOR_LINE_HEIGHT = 24
 
 interface EditorMinimapProps {
   /** Width of the minimap in pixels */
-  width?: number
+  width?: number;
   /** Minimum content-to-viewport ratio to show minimap */
-  minRatio?: number
+  minRatio?: number;
   /** Additional CSS class */
-  className?: string
+  className?: string;
 }
 
 interface ContentLine {
-  type: 'heading' | 'text' | 'code' | 'list' | 'quote'
+  type: 'heading' | 'text' | 'code' | 'list' | 'quote';
   /** Absolute position in pixels from top of document */
-  absoluteTop: number
-  width: number
+  absoluteTop: number;
+  width: number;
 }
 
 // =============================================================================
 // Main Component
 // =============================================================================
 
-export function EditorMinimap({
-  width = 100,
-  minRatio = 1.2,
-  className,
-}: EditorMinimapProps) {
-  const [editor] = useLexicalComposerContext()
-  const minimapRef = useRef<HTMLDivElement>(null)
-  const viewportRef = useRef<HTMLDivElement>(null)
-  const [lines, setLines] = useState<ContentLine[]>([])
+export function EditorMinimap({ width = 100, minRatio = 1.2, className }: EditorMinimapProps) {
+  const [editor] = useLexicalComposerContext();
+  const minimapRef = useRef<HTMLDivElement>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const [lines, setLines] = useState<ContentLine[]>([]);
   const [scrollInfo, setScrollInfo] = useState({
     scrollTop: 0,
     scrollHeight: 1,
     clientHeight: 1,
-  })
-  const [minimapHeight, setMinimapHeight] = useState(400)
+  });
+  const [minimapHeight, setMinimapHeight] = useState(400);
   // Use state instead of ref so changes trigger re-renders
-  const [scrollContainer, setScrollContainer] = useState<HTMLElement | null>(null)
-  const isDragging = useRef(false)
-  const dragStartY = useRef(0)
-  const dragStartScrollTop = useRef(0)
+  const [scrollContainer, setScrollContainer] = useState<HTMLElement | null>(null);
+  const isDragging = useRef(false);
+  const dragStartY = useRef(0);
+  const dragStartScrollTop = useRef(0);
 
   // Find the scrollable container (the WikiPageView content area)
   useEffect(() => {
-    const rootElement = editor.getRootElement()
-    if (!rootElement) return
+    const rootElement = editor.getRootElement();
+    if (!rootElement) return;
 
     // Find the closest scrollable parent
-    let container: HTMLElement | null = rootElement.parentElement
+    let container: HTMLElement | null = rootElement.parentElement;
     while (container) {
-      const style = getComputedStyle(container)
+      const style = getComputedStyle(container);
       if (style.overflowY === 'auto' || style.overflowY === 'scroll') {
-        break
+        break;
       }
-      container = container.parentElement
+      container = container.parentElement;
     }
 
-    setScrollContainer(container || document.documentElement)
-  }, [editor])
+    setScrollContainer(container || document.documentElement);
+  }, [editor]);
 
   // Update minimap height to match scroll container
   useEffect(() => {
-    if (!scrollContainer) return
+    if (!scrollContainer) return;
 
     const updateHeight = () => {
-      setMinimapHeight(scrollContainer.clientHeight || 400)
-    }
+      setMinimapHeight(scrollContainer.clientHeight || 400);
+    };
 
-    updateHeight()
-    window.addEventListener('resize', updateHeight)
+    updateHeight();
+    window.addEventListener('resize', updateHeight);
     return () => {
-      window.removeEventListener('resize', updateHeight)
-    }
-  }, [scrollContainer])
+      window.removeEventListener('resize', updateHeight);
+    };
+  }, [scrollContainer]);
 
   // Extract content lines from editor - store absolute positions
   useEffect(() => {
-    if (!scrollContainer) return
+    if (!scrollContainer) return;
 
     const updateLines = () => {
-      const rootElement = editor.getRootElement()
-      if (!rootElement) return
+      const rootElement = editor.getRootElement();
+      if (!rootElement) return;
 
-      const newLines: ContentLine[] = []
-      const children = rootElement.children
+      const newLines: ContentLine[] = [];
+      const children = rootElement.children;
 
       for (let i = 0; i < children.length; i++) {
-        const child = children[i] as HTMLElement
-        const tagName = child.tagName.toLowerCase()
-        const rect = child.getBoundingClientRect()
-        const rootRect = rootElement.getBoundingClientRect()
+        const child = children[i] as HTMLElement;
+        const tagName = child.tagName.toLowerCase();
+        const rect = child.getBoundingClientRect();
+        const rootRect = rootElement.getBoundingClientRect();
 
         // Calculate absolute position in document
-        const topOffset = rect.top - rootRect.top + scrollContainer.scrollTop
+        const topOffset = rect.top - rootRect.top + scrollContainer.scrollTop;
 
         // Determine type
-        let type: ContentLine['type'] = 'text'
-        if (tagName.match(/^h[1-6]$/)) type = 'heading'
-        else if (tagName === 'pre' || child.classList.contains('code')) type = 'code'
-        else if (tagName === 'ul' || tagName === 'ol') type = 'list'
-        else if (tagName === 'blockquote') type = 'quote'
+        let type: ContentLine['type'] = 'text';
+        if (tagName.match(/^h[1-6]$/)) type = 'heading';
+        else if (tagName === 'pre' || child.classList.contains('code')) type = 'code';
+        else if (tagName === 'ul' || tagName === 'ol') type = 'list';
+        else if (tagName === 'blockquote') type = 'quote';
 
         // Estimate number of lines based on element height
-        const elementHeight = rect.height
-        const estimatedLines = Math.max(1, Math.round(elementHeight / EDITOR_LINE_HEIGHT))
+        const elementHeight = rect.height;
+        const estimatedLines = Math.max(1, Math.round(elementHeight / EDITOR_LINE_HEIGHT));
 
         // Create multiple thin lines for this element
         for (let j = 0; j < estimatedLines; j++) {
-          const lineTop = topOffset + (j * (elementHeight / estimatedLines))
+          const lineTop = topOffset + j * (elementHeight / estimatedLines);
           // Vary width for visual interest
-          const lineWidth = type === 'heading' ? 90 : 40 + Math.random() * 40
+          const lineWidth = type === 'heading' ? 90 : 40 + Math.random() * 40;
 
           newLines.push({
             type,
             absoluteTop: lineTop,
             width: lineWidth,
-          })
+          });
         }
       }
 
-      setLines(newLines)
-    }
+      setLines(newLines);
+    };
 
-    updateLines()
+    updateLines();
     return editor.registerUpdateListener(() => {
-      requestAnimationFrame(updateLines)
-    })
-  }, [editor, scrollContainer])
+      requestAnimationFrame(updateLines);
+    });
+  }, [editor, scrollContainer]);
 
   // Track scroll position
   useEffect(() => {
-    if (!scrollContainer) return
+    if (!scrollContainer) return;
 
     const updateScroll = () => {
-      if (isDragging.current) return
+      if (isDragging.current) return;
 
       setScrollInfo({
         scrollTop: scrollContainer.scrollTop,
         scrollHeight: scrollContainer.scrollHeight,
         clientHeight: scrollContainer.clientHeight,
-      })
-    }
+      });
+    };
 
-    updateScroll()
-    scrollContainer.addEventListener('scroll', updateScroll, { passive: true })
-    window.addEventListener('resize', updateScroll)
+    updateScroll();
+    scrollContainer.addEventListener('scroll', updateScroll, { passive: true });
+    window.addEventListener('resize', updateScroll);
 
     return () => {
-      scrollContainer.removeEventListener('scroll', updateScroll)
-      window.removeEventListener('resize', updateScroll)
-    }
-  }, [scrollContainer])
+      scrollContainer.removeEventListener('scroll', updateScroll);
+      window.removeEventListener('resize', updateScroll);
+    };
+  }, [scrollContainer]);
 
   // Calculate if minimap should be shown
-  const contentRatio = scrollInfo.scrollHeight / scrollInfo.clientHeight
-  const shouldShow = contentRatio > minRatio
+  const contentRatio = scrollInfo.scrollHeight / scrollInfo.clientHeight;
+  const shouldShow = contentRatio > minRatio;
 
   // === Hybrid mode calculations ===
   // Estimate total lines in document
-  const estimatedTotalLines = Math.max(1, lines.length)
+  const estimatedTotalLines = Math.max(1, lines.length);
 
   // Calculate if we need hybrid scrolling
   // If all lines fit with MIN_PIXELS_PER_LINE, use fill mode
   // Otherwise, use hybrid mode where minimap scrolls slower
-  const idealMinimapContentHeight = estimatedTotalLines * MIN_PIXELS_PER_LINE
-  const needsHybridScroll = idealMinimapContentHeight > minimapHeight
+  const idealMinimapContentHeight = estimatedTotalLines * MIN_PIXELS_PER_LINE;
+  const needsHybridScroll = idealMinimapContentHeight > minimapHeight;
 
   // In hybrid mode: minimap content is larger than minimap viewport
   // In fill mode: minimap content fits entirely in minimap viewport
-  const minimapContentHeight = needsHybridScroll
-    ? idealMinimapContentHeight
-    : minimapHeight
+  const minimapContentHeight = needsHybridScroll ? idealMinimapContentHeight : minimapHeight;
 
   // Scale factor: how much to scale document positions to minimap positions
-  const scale = minimapContentHeight / scrollInfo.scrollHeight
+  const scale = minimapContentHeight / scrollInfo.scrollHeight;
 
   // Viewport slider size (how much of the minimap represents visible area)
-  const viewportHeight = Math.max(20, scrollInfo.clientHeight * scale)
+  const viewportHeight = Math.max(20, scrollInfo.clientHeight * scale);
 
   // Calculate minimap scroll position (for hybrid mode)
   // The minimap needs to scroll so the viewport stays visible
-  const totalEditorScroll = scrollInfo.scrollHeight - scrollInfo.clientHeight
-  const totalMinimapScroll = minimapContentHeight - minimapHeight
+  const totalEditorScroll = scrollInfo.scrollHeight - scrollInfo.clientHeight;
+  const totalMinimapScroll = minimapContentHeight - minimapHeight;
 
   // Editor scroll progress (0 to 1)
-  const editorScrollProgress = totalEditorScroll > 0
-    ? scrollInfo.scrollTop / totalEditorScroll
-    : 0
+  const editorScrollProgress = totalEditorScroll > 0 ? scrollInfo.scrollTop / totalEditorScroll : 0;
 
   // Minimap content offset (how much to shift the content up)
-  const minimapContentOffset = needsHybridScroll
-    ? editorScrollProgress * totalMinimapScroll
-    : 0
+  const minimapContentOffset = needsHybridScroll ? editorScrollProgress * totalMinimapScroll : 0;
 
   // Viewport slider position within the visible minimap
   // In fill mode: slider travels the full minimap height
   // In hybrid mode: slider position is relative to visible minimap area
-  const viewportTopInContent = scrollInfo.scrollTop * scale
-  const viewportTop = viewportTopInContent - minimapContentOffset
+  const viewportTopInContent = scrollInfo.scrollTop * scale;
+  const viewportTop = viewportTopInContent - minimapContentOffset;
 
   // Clamp viewport to minimap bounds
-  const clampedViewportTop = Math.max(0, Math.min(minimapHeight - viewportHeight, viewportTop))
+  const clampedViewportTop = Math.max(0, Math.min(minimapHeight - viewportHeight, viewportTop));
 
   // Handle click on minimap - jump to that position in document
-  const handleClick = useCallback((e: React.MouseEvent) => {
-    if (!scrollContainer || !minimapRef.current) return
+  const handleClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (!scrollContainer || !minimapRef.current) return;
 
-    const rect = minimapRef.current.getBoundingClientRect()
-    const clickY = e.clientY - rect.top
+      const rect = minimapRef.current.getBoundingClientRect();
+      const clickY = e.clientY - rect.top;
 
-    // Convert click position to document position
-    // Account for minimap content offset in hybrid mode
-    const clickInContent = clickY + minimapContentOffset
-    const targetDocPosition = clickInContent / scale
-    const targetScrollTop = targetDocPosition - scrollInfo.clientHeight / 2
+      // Convert click position to document position
+      // Account for minimap content offset in hybrid mode
+      const clickInContent = clickY + minimapContentOffset;
+      const targetDocPosition = clickInContent / scale;
+      const targetScrollTop = targetDocPosition - scrollInfo.clientHeight / 2;
 
-    scrollContainer.scrollTo({
-      top: Math.max(0, Math.min(totalEditorScroll, targetScrollTop)),
-      behavior: 'smooth',
-    })
-  }, [scrollContainer, minimapContentOffset, scale, scrollInfo.clientHeight, totalEditorScroll])
+      scrollContainer.scrollTo({
+        top: Math.max(0, Math.min(totalEditorScroll, targetScrollTop)),
+        behavior: 'smooth',
+      });
+    },
+    [scrollContainer, minimapContentOffset, scale, scrollInfo.clientHeight, totalEditorScroll]
+  );
 
   // Handle viewport drag start - using pointer capture for smooth tracking
-  const handlePointerDown = useCallback((e: React.PointerEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
+  const handlePointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
 
-    if (!scrollContainer || !viewportRef.current) return
+      if (!scrollContainer || !viewportRef.current) return;
 
-    // Capture pointer for smooth tracking even outside element bounds
-    viewportRef.current.setPointerCapture(e.pointerId)
+      // Capture pointer for smooth tracking even outside element bounds
+      viewportRef.current.setPointerCapture(e.pointerId);
 
-    isDragging.current = true
-    dragStartY.current = e.clientY
-    dragStartScrollTop.current = scrollContainer.scrollTop
-  }, [scrollContainer])
+      isDragging.current = true;
+      dragStartY.current = e.clientY;
+      dragStartScrollTop.current = scrollContainer.scrollTop;
+    },
+    [scrollContainer]
+  );
 
   // Handle viewport drag move
-  const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    if (!isDragging.current || !scrollContainer) return
+  const handlePointerMove = useCallback(
+    (e: React.PointerEvent) => {
+      if (!isDragging.current || !scrollContainer) return;
 
-    const deltaY = e.clientY - dragStartY.current
+      const deltaY = e.clientY - dragStartY.current;
 
-    // Convert minimap movement to document scroll
-    // In hybrid mode, we need to account for the different scroll ratios
-    // The viewport should follow the mouse, so we use:
-    // - In fill mode: viewport moves across full minimap height for full scroll
-    // - In hybrid mode: viewport moves less because minimap also scrolls
-    const effectiveMinimapScrollRange = needsHybridScroll
-      ? minimapHeight - viewportHeight  // Available range for viewport in minimap
-      : minimapHeight - viewportHeight
+      // Convert minimap movement to document scroll
+      // In hybrid mode, we need to account for the different scroll ratios
+      // The viewport should follow the mouse, so we use:
+      // - In fill mode: viewport moves across full minimap height for full scroll
+      // - In hybrid mode: viewport moves less because minimap also scrolls
+      const effectiveMinimapScrollRange = needsHybridScroll
+        ? minimapHeight - viewportHeight // Available range for viewport in minimap
+        : minimapHeight - viewportHeight;
 
-    // How much document scroll per pixel of viewport movement
-    const scrollRatio = totalEditorScroll / effectiveMinimapScrollRange
-    const newScrollTop = Math.max(0, Math.min(totalEditorScroll, dragStartScrollTop.current + (deltaY * scrollRatio)))
+      // How much document scroll per pixel of viewport movement
+      const scrollRatio = totalEditorScroll / effectiveMinimapScrollRange;
+      const newScrollTop = Math.max(
+        0,
+        Math.min(totalEditorScroll, dragStartScrollTop.current + deltaY * scrollRatio)
+      );
 
-    scrollContainer.scrollTop = newScrollTop
-    setScrollInfo({
-      scrollTop: scrollContainer.scrollTop,
-      scrollHeight: scrollContainer.scrollHeight,
-      clientHeight: scrollContainer.clientHeight,
-    })
-  }, [scrollContainer, totalEditorScroll, minimapHeight, viewportHeight, needsHybridScroll])
+      scrollContainer.scrollTop = newScrollTop;
+      setScrollInfo({
+        scrollTop: scrollContainer.scrollTop,
+        scrollHeight: scrollContainer.scrollHeight,
+        clientHeight: scrollContainer.clientHeight,
+      });
+    },
+    [scrollContainer, totalEditorScroll, minimapHeight, viewportHeight, needsHybridScroll]
+  );
 
   // Handle viewport drag end
   const handlePointerUp = useCallback((e: React.PointerEvent) => {
-    if (!viewportRef.current) return
+    if (!viewportRef.current) return;
 
-    viewportRef.current.releasePointerCapture(e.pointerId)
-    isDragging.current = false
-  }, [])
+    viewportRef.current.releasePointerCapture(e.pointerId);
+    isDragging.current = false;
+  }, []);
 
   // Get line color based on type
   const getLineColor = (type: ContentLine['type']) => {
     switch (type) {
-      case 'heading': return 'bg-foreground/50'
-      case 'code': return 'bg-amber-500/50'
-      case 'quote': return 'bg-blue-500/40'
-      case 'list': return 'bg-foreground/25'
-      default: return 'bg-foreground/20'
+      case 'heading':
+        return 'bg-foreground/50';
+      case 'code':
+        return 'bg-amber-500/50';
+      case 'quote':
+        return 'bg-blue-500/40';
+      case 'list':
+        return 'bg-foreground/25';
+      default:
+        return 'bg-foreground/20';
     }
-  }
+  };
 
   // Don't render if content isn't long enough
   if (!shouldShow) {
-    return null
+    return null;
   }
 
   return (
     <div
       ref={minimapRef}
-      className={cn(
-        'bg-muted/10 border-l select-none cursor-pointer flex-shrink-0',
-        className
-      )}
+      className={cn('bg-muted/10 border-l select-none cursor-pointer flex-shrink-0', className)}
       style={{
         width,
         height: minimapHeight,
@@ -350,9 +354,9 @@ export function EditorMinimap({
       <div className="absolute inset-0 overflow-hidden">
         {lines.map((line, i) => {
           // Calculate line position in minimap, accounting for content offset
-          const lineTop = (line.absoluteTop * scale) - minimapContentOffset
+          const lineTop = line.absoluteTop * scale - minimapContentOffset;
           // Only render lines that are visible in the minimap viewport
-          if (lineTop < -10 || lineTop > minimapHeight + 10) return null
+          if (lineTop < -10 || lineTop > minimapHeight + 10) return null;
           return (
             <div
               key={i}
@@ -363,7 +367,7 @@ export function EditorMinimap({
                 width: `${line.width * 0.9}%`,
               }}
             />
-          )
+          );
         })}
       </div>
 
@@ -391,7 +395,7 @@ export function EditorMinimap({
         }}
       />
     </div>
-  )
+  );
 }
 
-export default EditorMinimap
+export default EditorMinimap;

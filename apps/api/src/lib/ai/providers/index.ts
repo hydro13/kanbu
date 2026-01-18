@@ -42,15 +42,15 @@ export {
   DEFAULT_MODELS,
   DEFAULT_URLS,
   EMBEDDING_DIMENSIONS,
-} from './types'
+} from './types';
 
 // Base class (for extension)
-export { OpenAiCompatibleProvider } from './OpenAiCompatibleProvider'
+export { OpenAiCompatibleProvider } from './OpenAiCompatibleProvider';
 
 // Provider implementations
-export { OpenAiProvider, createOpenAiProvider } from './OpenAiProvider'
-export { OllamaProvider, createOllamaProvider } from './OllamaProvider'
-export { LmStudioProvider, createLmStudioProvider } from './LmStudioProvider'
+export { OpenAiProvider, createOpenAiProvider } from './OpenAiProvider';
+export { OllamaProvider, createOllamaProvider } from './OllamaProvider';
+export { LmStudioProvider, createLmStudioProvider } from './LmStudioProvider';
 
 // Factory functions
 export {
@@ -66,11 +66,7 @@ export {
   getSupportedProviderTypes,
   getSupportedCapabilities,
   type AiProviderConfigRecord,
-} from './factory'
+} from './factory';
 
 // Registry (singleton)
-export {
-  ProviderRegistry,
-  getProviderRegistry,
-  resetProviderRegistry,
-} from './registry'
+export { ProviderRegistry, getProviderRegistry, resetProviderRegistry } from './registry';

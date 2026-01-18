@@ -13,7 +13,7 @@
  * =============================================================================
  */
 
-import { prisma } from '../../lib/prisma'
+import { prisma } from '../../lib/prisma';
 
 // =============================================================================
 // Types
@@ -26,43 +26,43 @@ export type DeploymentStatus =
   | 'success'
   | 'failure'
   | 'error'
-  | 'inactive'
+  | 'inactive';
 
 export interface DeploymentData {
-  repositoryId: number
-  deploymentId: bigint
-  environment: string
-  ref: string
-  sha: string
-  task?: string | null
-  description?: string | null
-  creator?: string | null
-  status: DeploymentStatus
-  targetUrl?: string | null
+  repositoryId: number;
+  deploymentId: bigint;
+  environment: string;
+  ref: string;
+  sha: string;
+  task?: string | null;
+  description?: string | null;
+  creator?: string | null;
+  status: DeploymentStatus;
+  targetUrl?: string | null;
 }
 
 export interface DeploymentInfo {
-  id: number
-  repositoryId: number
-  deploymentId: bigint
-  environment: string
-  ref: string
-  sha: string
-  task: string | null
-  description: string | null
-  creator: string | null
-  status: string
-  targetUrl: string | null
-  createdAt: Date
-  updatedAt: Date
+  id: number;
+  repositoryId: number;
+  deploymentId: bigint;
+  environment: string;
+  ref: string;
+  sha: string;
+  task: string | null;
+  description: string | null;
+  creator: string | null;
+  status: string;
+  targetUrl: string | null;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface DeploymentStats {
-  total: number
-  byEnvironment: Record<string, number>
-  byStatus: Record<string, number>
-  recentDeployments: number
-  successRate: number
+  total: number;
+  byEnvironment: Record<string, number>;
+  byStatus: Record<string, number>;
+  recentDeployments: number;
+  successRate: number;
 }
 
 // =============================================================================
@@ -102,9 +102,9 @@ export async function upsertDeployment(data: DeploymentData): Promise<Deployment
       status: data.status,
       targetUrl: data.targetUrl,
     },
-  })
+  });
 
-  return deployment
+  return deployment;
 }
 
 /**
@@ -128,10 +128,10 @@ export async function updateDeploymentStatus(
         status,
         targetUrl: targetUrl ?? undefined,
       },
-    })
-    return deployment
+    });
+    return deployment;
   } catch {
-    return null
+    return null;
   }
 }
 
@@ -149,7 +149,7 @@ export async function getDeployment(
         deploymentId,
       },
     },
-  })
+  });
 }
 
 /**
@@ -158,13 +158,13 @@ export async function getDeployment(
 export async function getRepositoryDeployments(
   repositoryId: number,
   options?: {
-    environment?: string
-    status?: DeploymentStatus
-    limit?: number
-    offset?: number
+    environment?: string;
+    status?: DeploymentStatus;
+    limit?: number;
+    offset?: number;
   }
 ): Promise<DeploymentInfo[]> {
-  const { environment, status, limit = 50, offset = 0 } = options || {}
+  const { environment, status, limit = 50, offset = 0 } = options || {};
 
   return prisma.gitHubDeployment.findMany({
     where: {
@@ -175,21 +175,19 @@ export async function getRepositoryDeployments(
     orderBy: { createdAt: 'desc' },
     take: limit,
     skip: offset,
-  })
+  });
 }
 
 /**
  * Get latest deployment per environment
  */
-export async function getLatestDeployments(
-  repositoryId: number
-): Promise<DeploymentInfo[]> {
+export async function getLatestDeployments(repositoryId: number): Promise<DeploymentInfo[]> {
   // Get distinct environments
   const environments = await prisma.gitHubDeployment.findMany({
     where: { repositoryId },
     select: { environment: true },
     distinct: ['environment'],
-  })
+  });
 
   // Get latest deployment for each environment
   const deployments = await Promise.all(
@@ -197,11 +195,11 @@ export async function getLatestDeployments(
       return prisma.gitHubDeployment.findFirst({
         where: { repositoryId, environment },
         orderBy: { createdAt: 'desc' },
-      })
+      });
     })
-  )
+  );
 
-  return deployments.filter((d): d is DeploymentInfo => d !== null)
+  return deployments.filter((d): d is DeploymentInfo => d !== null);
 }
 
 /**
@@ -216,7 +214,7 @@ export async function getEnvironmentHistory(
     where: { repositoryId, environment },
     orderBy: { createdAt: 'desc' },
     take: limit,
-  })
+  });
 }
 
 /**
@@ -225,30 +223,25 @@ export async function getEnvironmentHistory(
 export async function getDeploymentStats(repositoryId: number): Promise<DeploymentStats> {
   const deployments = await prisma.gitHubDeployment.findMany({
     where: { repositoryId },
-  })
+  });
 
-  const thirtyDaysAgo = new Date()
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-  const recentDeployments = deployments.filter(
-    (d) => d.createdAt >= thirtyDaysAgo
-  )
+  const recentDeployments = deployments.filter((d) => d.createdAt >= thirtyDaysAgo);
 
-  const byEnvironment: Record<string, number> = {}
-  const byStatus: Record<string, number> = {}
+  const byEnvironment: Record<string, number> = {};
+  const byStatus: Record<string, number> = {};
 
   for (const deployment of deployments) {
-    byEnvironment[deployment.environment] =
-      (byEnvironment[deployment.environment] || 0) + 1
-    byStatus[deployment.status] = (byStatus[deployment.status] || 0) + 1
+    byEnvironment[deployment.environment] = (byEnvironment[deployment.environment] || 0) + 1;
+    byStatus[deployment.status] = (byStatus[deployment.status] || 0) + 1;
   }
 
-  const successCount = recentDeployments.filter(
-    (d) => d.status === 'success'
-  ).length
+  const successCount = recentDeployments.filter((d) => d.status === 'success').length;
   const completedCount = recentDeployments.filter((d) =>
     ['success', 'failure', 'error'].includes(d.status)
-  ).length
+  ).length;
 
   return {
     total: deployments.length,
@@ -256,7 +249,7 @@ export async function getDeploymentStats(repositoryId: number): Promise<Deployme
     byStatus,
     recentDeployments: recentDeployments.length,
     successRate: completedCount > 0 ? (successCount / completedCount) * 100 : 0,
-  }
+  };
 }
 
 // =============================================================================
@@ -265,35 +258,35 @@ export async function getDeploymentStats(repositoryId: number): Promise<Deployme
 
 export interface DeploymentWebhookPayload {
   deployment: {
-    id: number
-    sha: string
-    ref: string
-    task: string | null
-    environment: string
-    description: string | null
+    id: number;
+    sha: string;
+    ref: string;
+    task: string | null;
+    environment: string;
+    description: string | null;
     creator: {
-      login: string
-    } | null
-  }
+      login: string;
+    } | null;
+  };
   repository: {
-    id: number
-    full_name: string
-  }
+    id: number;
+    full_name: string;
+  };
 }
 
 export interface DeploymentStatusWebhookPayload {
   deployment: {
-    id: number
-  }
+    id: number;
+  };
   deployment_status: {
-    state: DeploymentStatus
-    target_url: string | null
-    description: string | null
-  }
+    state: DeploymentStatus;
+    target_url: string | null;
+    description: string | null;
+  };
   repository: {
-    id: number
-    full_name: string
-  }
+    id: number;
+    full_name: string;
+  };
 }
 
 /**
@@ -305,10 +298,10 @@ export async function processDeploymentWebhook(
   // Find repository by GitHub repo ID
   const repo = await prisma.gitHubRepository.findFirst({
     where: { repoId: BigInt(payload.repository.id) },
-  })
+  });
 
   if (!repo) {
-    return null
+    return null;
   }
 
   return upsertDeployment({
@@ -321,7 +314,7 @@ export async function processDeploymentWebhook(
     description: payload.deployment.description,
     creator: payload.deployment.creator?.login,
     status: 'pending',
-  })
+  });
 }
 
 /**
@@ -333,10 +326,10 @@ export async function processDeploymentStatusWebhook(
   // Find repository by GitHub repo ID
   const repo = await prisma.gitHubRepository.findFirst({
     where: { repoId: BigInt(payload.repository.id) },
-  })
+  });
 
   if (!repo) {
-    return null
+    return null;
   }
 
   return updateDeploymentStatus(
@@ -344,7 +337,7 @@ export async function processDeploymentStatusWebhook(
     BigInt(payload.deployment.id),
     payload.deployment_status.state,
     payload.deployment_status.target_url
-  )
+  );
 }
 
 // =============================================================================
@@ -361,6 +354,6 @@ export const deploymentService = {
   getDeploymentStats,
   processDeploymentWebhook,
   processDeploymentStatusWebhook,
-}
+};
 
-export default deploymentService
+export default deploymentService;

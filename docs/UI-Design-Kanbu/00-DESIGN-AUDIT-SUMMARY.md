@@ -10,6 +10,7 @@
 ## Executive Summary
 
 Kanbu is a **functionally strong** application with:
+
 - **60+ routes**
 - **85,000+ lines** of frontend code (30,887 pages + 46,565 components + 8,902 wiki)
 - **20+ component directories**
@@ -17,26 +18,26 @@ Kanbu is a **functionally strong** application with:
 
 ### Current Status: Design System v2.0.0 Implemented
 
-| Phase | Status | Description |
-|-------|--------|-------------|
-| Phase 1: Foundation | ✅ Completed | Primitive tokens, typography, spacing |
-| Phase 2: Hardcoded Migration | ✅ Completed | 100% hardcoded colors removed |
-| Phase 3: Theme Infrastructure | ✅ Completed | ThemeContext, accent colors |
-| Phase 4: Backend Persistence | ✅ Completed | Theme/accent saved in database |
-| Phase 6: Design Tokens v2.0.0 | ✅ Completed | Complete token system |
+| Phase                         | Status       | Description                           |
+| ----------------------------- | ------------ | ------------------------------------- |
+| Phase 1: Foundation           | ✅ Completed | Primitive tokens, typography, spacing |
+| Phase 2: Hardcoded Migration  | ✅ Completed | 100% hardcoded colors removed         |
+| Phase 3: Theme Infrastructure | ✅ Completed | ThemeContext, accent colors           |
+| Phase 4: Backend Persistence  | ✅ Completed | Theme/accent saved in database        |
+| Phase 6: Design Tokens v2.0.0 | ✅ Completed | Complete token system                 |
 
 ---
 
 ## Detailed Reports
 
-| Document | Content |
-|----------|---------|
-| [01-INVENTORY.md](./01-INVENTORY.md) | Routes, pages, tech stack |
-| [02-COLOR-AUDIT.md](./02-COLOR-AUDIT.md) | Color audit (historical) |
-| [03-COMPONENT-AUDIT.md](./03-COMPONENT-AUDIT.md) | Component analysis, sidebars, layouts |
-| [04-UI-PATTERN-LIBRARY.md](./04-UI-PATTERN-LIBRARY.md) | **Complete inventory** of all UI patterns |
-| [05-DESIGN-SYSTEM-ARCHITECTURE.md](./05-DESIGN-SYSTEM-ARCHITECTURE.md) | **Implemented architecture** |
-| [06-DESIGN-SYSTEM-ROADMAP.md](./06-DESIGN-SYSTEM-ROADMAP.md) | **Implementation roadmap** with progress tracking |
+| Document                                                               | Content                                           |
+| ---------------------------------------------------------------------- | ------------------------------------------------- |
+| [01-INVENTORY.md](./01-INVENTORY.md)                                   | Routes, pages, tech stack                         |
+| [02-COLOR-AUDIT.md](./02-COLOR-AUDIT.md)                               | Color audit (historical)                          |
+| [03-COMPONENT-AUDIT.md](./03-COMPONENT-AUDIT.md)                       | Component analysis, sidebars, layouts             |
+| [04-UI-PATTERN-LIBRARY.md](./04-UI-PATTERN-LIBRARY.md)                 | **Complete inventory** of all UI patterns         |
+| [05-DESIGN-SYSTEM-ARCHITECTURE.md](./05-DESIGN-SYSTEM-ARCHITECTURE.md) | **Implemented architecture**                      |
+| [06-DESIGN-SYSTEM-ROADMAP.md](./06-DESIGN-SYSTEM-ROADMAP.md)           | **Implementation roadmap** with progress tracking |
 
 ---
 
@@ -47,6 +48,7 @@ Kanbu is a **functionally strong** application with:
 **Was:** "High" priority was ORANGE in some views, YELLOW in others.
 
 **Solution:** Centralized in `lib/design-tokens.ts` and `globals.css`:
+
 - Priority colors as semantic tokens
 - `--priority-low`, `--priority-medium`, `--priority-high`, `--priority-urgent`
 
@@ -55,11 +57,13 @@ Kanbu is a **functionally strong** application with:
 ### ~~2. Hardcoded Colors (75%)~~ ✅ RESOLVED
 
 **Was:**
+
 - 1,443 `bg-[color]-[number]` classes
 - 2,405 `text-[color]-[number]` classes
 - Only 804 design system classes
 
 **Now:**
+
 - 100% migrated to design tokens
 - All colors via CSS custom properties
 - Full dark mode support
@@ -69,11 +73,13 @@ Kanbu is a **functionally strong** application with:
 ### ~~3. Missing Design Tokens~~ ✅ RESOLVED
 
 **Was missing:**
+
 - success (green for completed)
 - warning (orange for deadlines)
 - info (blue for notifications)
 
 **Now present (globals.css v2.0.0):**
+
 - Complete color scales (Gray, Blue, Orange, Red, Green, Amber, Teal, Violet, Rose, Cyan)
 - State colors (success, warning, error, info)
 - Component tokens (Card, Button, Input, Badge, Avatar, Tooltip, Toast, Tabs, etc.)
@@ -121,6 +127,7 @@ Kanbu is a **functionally strong** application with:
 ### Accent Color System
 
 6 available accent colors:
+
 - **Slate** - Neutral and professional
 - **Blue** - Trust and reliability (default)
 - **Teal** - Fresh and modern
@@ -148,13 +155,13 @@ Kanbu is a **functionally strong** application with:
 
 **Current state:** 7 different sidebar implementations.
 
-| Sidebar | Icons | Drag & Drop | Collapse |
-|---------|-------|-------------|----------|
-| DashboardSidebar | lucide | ✅ | ✅ |
-| ProjectSidebar | **custom SVG** | ❌ | ❌ |
-| WorkspaceSidebar | lucide | ❌ | ❌ |
-| AdminSidebar | lucide | ❌ | ❌ |
-| ProfileSidebar | lucide | ❌ | ❌ |
+| Sidebar          | Icons          | Drag & Drop | Collapse |
+| ---------------- | -------------- | ----------- | -------- |
+| DashboardSidebar | lucide         | ✅          | ✅       |
+| ProjectSidebar   | **custom SVG** | ❌          | ❌       |
+| WorkspaceSidebar | lucide         | ❌          | ❌       |
+| AdminSidebar     | lucide         | ❌          | ❌       |
+| ProfileSidebar   | lucide         | ❌          | ❌       |
 
 **Recommendation:** Create `SidebarBase` component for consistent UX.
 
@@ -171,6 +178,7 @@ Kanbu is a **functionally strong** application with:
 ### 3. Component Refactoring (Ongoing)
 
 **Large components:**
+
 - WikiGraphView.tsx (2,177 lines)
 - FilterBar.tsx (688 lines)
 - ToolbarPlugin.tsx (681 lines)
@@ -203,11 +211,11 @@ apps/web/src/
 
 ### Key Commits
 
-| Commit | Description |
-|--------|-------------|
-| `ce26b0c0` | feat(design-system): Complete design token system (Phase 6) |
-| `2d801549` | feat(design-system): Add backend persistence (Phase 4) |
-| `be525603` | feat(design-system): Theme infrastructure + accents (Phase 3) |
+| Commit     | Description                                                    |
+| ---------- | -------------------------------------------------------------- |
+| `ce26b0c0` | feat(design-system): Complete design token system (Phase 6)    |
+| `2d801549` | feat(design-system): Add backend persistence (Phase 4)         |
+| `be525603` | feat(design-system): Theme infrastructure + accents (Phase 3)  |
 | `c3e7a709` | refactor(design-system): Remove ALL hardcoded colors (Phase 2) |
 
 ---
@@ -223,6 +231,7 @@ The Kanbu design system is now **production-ready** with:
 5. **Accessibility** - High contrast mode, focus indicators, reduced motion
 
 The foundation is laid for future extensions such as:
+
 - Custom color picker
 - Layout preferences
 - Component density settings
@@ -230,5 +239,5 @@ The foundation is laid for future extensions such as:
 
 ---
 
-*Document version: 2.0.0*
-*Last updated: 2026-01-15*
+_Document version: 2.0.0_
+_Last updated: 2026-01-15_

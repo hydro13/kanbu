@@ -23,24 +23,24 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { DroppableColumn } from './DroppableColumn'
-import { DraggableTask } from './DraggableTask'
-import type { BoardTask } from './Board'
+import { DroppableColumn } from './DroppableColumn';
+import { DraggableTask } from './DraggableTask';
+import type { BoardTask } from './Board';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface TaskListProps {
-  tasks: BoardTask[]
-  columnId: number
-  swimlaneId: number | null
-  projectId: number
-  taskLimit?: number
-  showEmpty?: boolean
-  isLoading?: boolean
-  onTaskClick?: (taskId: number) => void
-  onTaskContextMenu?: (taskId: number, event: React.MouseEvent) => void
+  tasks: BoardTask[];
+  columnId: number;
+  swimlaneId: number | null;
+  projectId: number;
+  taskLimit?: number;
+  showEmpty?: boolean;
+  isLoading?: boolean;
+  onTaskClick?: (taskId: number) => void;
+  onTaskContextMenu?: (taskId: number, event: React.MouseEvent) => void;
 }
 
 // =============================================================================
@@ -53,7 +53,7 @@ function TaskSkeleton() {
       <div className="h-4 bg-gray-200 dark:bg-gray-600 rounded w-3/4 mb-2" />
       <div className="h-3 bg-gray-200 dark:bg-gray-600 rounded w-1/2" />
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -63,11 +63,9 @@ function TaskSkeleton() {
 function EmptyState() {
   return (
     <div className="flex items-center justify-center h-20 border-2 border-dashed border-gray-200 dark:border-gray-600 rounded-lg">
-      <span className="text-sm text-gray-400 dark:text-gray-500">
-        No tasks
-      </span>
+      <span className="text-sm text-gray-400 dark:text-gray-500">No tasks</span>
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -93,7 +91,7 @@ export function TaskList({
         <TaskSkeleton />
         <TaskSkeleton />
       </div>
-    )
+    );
   }
 
   // Empty state - still wrapped in DroppableColumn for drop target
@@ -107,7 +105,7 @@ export function TaskList({
       >
         {showEmpty ? <EmptyState /> : null}
       </DroppableColumn>
-    )
+    );
   }
 
   // Task list with drag & drop support
@@ -130,7 +128,7 @@ export function TaskList({
         ))}
       </div>
     </DroppableColumn>
-  )
+  );
 }
 
-export default TaskList
+export default TaskList;

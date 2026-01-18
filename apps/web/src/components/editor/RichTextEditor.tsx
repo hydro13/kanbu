@@ -10,49 +10,57 @@
  * ===================================================================
  */
 
-import { useCallback, useEffect } from 'react'
-import { LexicalComposer } from '@lexical/react/LexicalComposer'
-import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin'
-import { ContentEditable } from '@lexical/react/LexicalContentEditable'
-import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin'
-import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
-import { AutoFocusPlugin } from '@lexical/react/LexicalAutoFocusPlugin'
-import { ListPlugin } from '@lexical/react/LexicalListPlugin'
-import { LinkPlugin } from '@lexical/react/LexicalLinkPlugin'
-import { CheckListPlugin } from '@lexical/react/LexicalCheckListPlugin'
-import { MarkdownShortcutPlugin } from '@lexical/react/LexicalMarkdownShortcutPlugin'
-import { TabIndentationPlugin } from '@lexical/react/LexicalTabIndentationPlugin'
-import { LexicalErrorBoundary } from '@lexical/react/LexicalErrorBoundary'
-import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import { TRANSFORMERS } from '@lexical/markdown'
-import { $getRoot, $insertNodes, type EditorState, type LexicalEditor } from 'lexical'
-import { $generateNodesFromDOM } from '@lexical/html'
-import Showdown from 'showdown'
+import { useCallback, useEffect } from 'react';
+import { LexicalComposer } from '@lexical/react/LexicalComposer';
+import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin';
+import { ContentEditable } from '@lexical/react/LexicalContentEditable';
+import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin';
+import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin';
+import { AutoFocusPlugin } from '@lexical/react/LexicalAutoFocusPlugin';
+import { ListPlugin } from '@lexical/react/LexicalListPlugin';
+import { LinkPlugin } from '@lexical/react/LexicalLinkPlugin';
+import { CheckListPlugin } from '@lexical/react/LexicalCheckListPlugin';
+import { MarkdownShortcutPlugin } from '@lexical/react/LexicalMarkdownShortcutPlugin';
+import { TabIndentationPlugin } from '@lexical/react/LexicalTabIndentationPlugin';
+import { LexicalErrorBoundary } from '@lexical/react/LexicalErrorBoundary';
+import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
+import { TRANSFORMERS } from '@lexical/markdown';
+import { $getRoot, $insertNodes, type EditorState, type LexicalEditor } from 'lexical';
+import { $generateNodesFromDOM } from '@lexical/html';
+import Showdown from 'showdown';
 
 // Nodes
-import { HeadingNode, QuoteNode } from '@lexical/rich-text'
-import { ListNode, ListItemNode } from '@lexical/list'
-import { LinkNode, AutoLinkNode } from '@lexical/link'
-import { CodeNode, CodeHighlightNode } from '@lexical/code'
-import { TableNode, TableCellNode, TableRowNode } from '@lexical/table'
+import { HeadingNode, QuoteNode } from '@lexical/rich-text';
+import { ListNode, ListItemNode } from '@lexical/list';
+import { LinkNode, AutoLinkNode } from '@lexical/link';
+import { CodeNode, CodeHighlightNode } from '@lexical/code';
+import { TableNode, TableCellNode, TableRowNode } from '@lexical/table';
 
 // Table plugin
-import { TablePlugin } from '@lexical/react/LexicalTablePlugin'
+import { TablePlugin } from '@lexical/react/LexicalTablePlugin';
 
 // Local imports
-import { editorTheme } from './theme'
-import { ToolbarPlugin } from './ToolbarPlugin'
-import { MarkdownPastePlugin } from './MarkdownPastePlugin'
-import { MediaPlugin } from './MediaPlugin'
-import { DraggableMediaPlugin } from './DraggableMediaPlugin'
-import { WikiLinkPlugin, type WikiPage } from './WikiLinkPlugin'
-import { TaskRefPlugin, type TaskResult } from './TaskRefPlugin'
-import { TaskRefCleanupPlugin } from './TaskRefCleanupPlugin'
-import { MentionPlugin, type MentionResult } from './MentionPlugin'
-import { SignaturePlugin, type SignatureUser } from './SignaturePlugin'
-import { EditorMinimap } from './EditorMinimap'
-import { ImageNode, VideoNode, EmbedNode, WikiLinkNode, TaskRefNode, MentionNode, SignatureNode } from './nodes'
-import './editor.css'
+import { editorTheme } from './theme';
+import { ToolbarPlugin } from './ToolbarPlugin';
+import { MarkdownPastePlugin } from './MarkdownPastePlugin';
+import { MediaPlugin } from './MediaPlugin';
+import { DraggableMediaPlugin } from './DraggableMediaPlugin';
+import { WikiLinkPlugin, type WikiPage } from './WikiLinkPlugin';
+import { TaskRefPlugin, type TaskResult } from './TaskRefPlugin';
+import { TaskRefCleanupPlugin } from './TaskRefCleanupPlugin';
+import { MentionPlugin, type MentionResult } from './MentionPlugin';
+import { SignaturePlugin, type SignatureUser } from './SignaturePlugin';
+import { EditorMinimap } from './EditorMinimap';
+import {
+  ImageNode,
+  VideoNode,
+  EmbedNode,
+  WikiLinkNode,
+  TaskRefNode,
+  MentionNode,
+  SignatureNode,
+} from './nodes';
+import './editor.css';
 
 // =============================================================================
 // Types
@@ -60,53 +68,53 @@ import './editor.css'
 
 export interface RichTextEditorProps {
   /** Initial content as Lexical JSON state */
-  initialContent?: string
+  initialContent?: string;
   /** Initial content as markdown (will be converted to Lexical nodes) */
-  initialMarkdown?: string
+  initialMarkdown?: string;
   /** Callback when content changes */
-  onChange?: (editorState: EditorState, editor: LexicalEditor, jsonString: string) => void
+  onChange?: (editorState: EditorState, editor: LexicalEditor, jsonString: string) => void;
   /** Placeholder text */
-  placeholder?: string
+  placeholder?: string;
   /** Whether the editor is read-only */
-  readOnly?: boolean
+  readOnly?: boolean;
   /** Whether to show the toolbar */
-  showToolbar?: boolean
+  showToolbar?: boolean;
   /** Whether to auto-focus on mount */
-  autoFocus?: boolean
+  autoFocus?: boolean;
   /** Minimum height of the editor */
-  minHeight?: string
+  minHeight?: string;
   /** Maximum height of the editor */
-  maxHeight?: string
+  maxHeight?: string;
   /** Additional CSS class for the container */
-  className?: string
+  className?: string;
   /** Namespace for the editor (should be unique per editor instance) */
-  namespace?: string
+  namespace?: string;
   /** Enable wiki link detection with [[ syntax */
-  enableWikiLinks?: boolean
+  enableWikiLinks?: boolean;
   /** Function to search for wiki pages (for wiki link autocomplete) */
-  searchWikiPages?: (query: string) => Promise<WikiPage[]>
+  searchWikiPages?: (query: string) => Promise<WikiPage[]>;
   /** Static list of wiki pages (alternative to searchWikiPages) */
-  wikiPages?: WikiPage[]
+  wikiPages?: WikiPage[];
   /** Base path for wiki links (e.g., /workspace/slug/wiki) */
-  wikiBasePath?: string
+  wikiBasePath?: string;
   /** Enable task reference detection with # syntax */
-  enableTaskRefs?: boolean
+  enableTaskRefs?: boolean;
   /** Function to search for tasks (for task ref autocomplete) */
-  searchTasks?: (query: string) => Promise<TaskResult[]>
+  searchTasks?: (query: string) => Promise<TaskResult[]>;
   /** Enable @mention detection */
-  enableMentions?: boolean
+  enableMentions?: boolean;
   /** Function to search for users (for mention autocomplete) */
-  searchUsers?: (query: string) => Promise<MentionResult[]>
+  searchUsers?: (query: string) => Promise<MentionResult[]>;
   /** Enable &signature insertion */
-  enableSignatures?: boolean
+  enableSignatures?: boolean;
   /** Current user for &Sign shortcut */
-  currentUser?: SignatureUser
+  currentUser?: SignatureUser;
   /** Function to search for users (for signature autocomplete) */
-  searchUsersForSignature?: (query: string) => Promise<SignatureUser[]>
+  searchUsersForSignature?: (query: string) => Promise<SignatureUser[]>;
   /** Show VSCode-style minimap on the right side */
-  showMinimap?: boolean
+  showMinimap?: boolean;
   /** Width of the minimap in pixels */
-  minimapWidth?: number
+  minimapWidth?: number;
 }
 
 // =============================================================================
@@ -114,7 +122,7 @@ export interface RichTextEditorProps {
 // =============================================================================
 
 function onError(error: Error): void {
-  console.error('Lexical error:', error)
+  console.error('Lexical error:', error);
 }
 
 // =============================================================================
@@ -122,7 +130,7 @@ function onError(error: Error): void {
 // =============================================================================
 
 function PlaceholderElement({ text }: { text: string }) {
-  return <div className="lexical-placeholder">{text}</div>
+  return <div className="lexical-placeholder">{text}</div>;
 }
 
 // =============================================================================
@@ -130,24 +138,24 @@ function PlaceholderElement({ text }: { text: string }) {
 // =============================================================================
 
 interface InitialStatePluginProps {
-  initialContent?: string
+  initialContent?: string;
 }
 
 function InitialStatePlugin({ initialContent }: InitialStatePluginProps) {
-  const [editor] = useLexicalComposerContext()
+  const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
     if (initialContent) {
       try {
-        const parsedState = editor.parseEditorState(initialContent)
-        editor.setEditorState(parsedState)
+        const parsedState = editor.parseEditorState(initialContent);
+        editor.setEditorState(parsedState);
       } catch (error) {
-        console.error('Failed to parse initial content:', error)
+        console.error('Failed to parse initial content:', error);
       }
     }
-  }, []) // Only run once on mount
+  }, []); // Only run once on mount
 
-  return null
+  return null;
 }
 
 // =============================================================================
@@ -173,20 +181,20 @@ function createMarkdownConverter(): Showdown.Converter {
     headerLevelStart: 1,
     parseImgDimensions: true,
     splitAdjacentBlockquotes: true,
-  })
+  });
 }
 
-let markdownConverter: Showdown.Converter | null = null
+let markdownConverter: Showdown.Converter | null = null;
 
 function getMarkdownConverter(): Showdown.Converter {
   if (!markdownConverter) {
-    markdownConverter = createMarkdownConverter()
+    markdownConverter = createMarkdownConverter();
   }
-  return markdownConverter
+  return markdownConverter;
 }
 
 interface MarkdownInitPluginProps {
-  markdown: string
+  markdown: string;
 }
 
 /**
@@ -194,42 +202,42 @@ interface MarkdownInitPluginProps {
  * Uses Showdown for markdown-to-HTML conversion, then Lexical's $generateNodesFromDOM.
  */
 function MarkdownInitPlugin({ markdown }: MarkdownInitPluginProps) {
-  const [editor] = useLexicalComposerContext()
+  const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
-    if (!markdown) return
+    if (!markdown) return;
 
     // Convert markdown to HTML using Showdown
-    const converter = getMarkdownConverter()
-    const html = converter.makeHtml(markdown)
+    const converter = getMarkdownConverter();
+    const html = converter.makeHtml(markdown);
 
     // Parse HTML to DOM
-    const parser = new DOMParser()
-    const dom = parser.parseFromString(html, 'text/html')
+    const parser = new DOMParser();
+    const dom = parser.parseFromString(html, 'text/html');
 
     // Convert DOM to Lexical nodes and insert
     editor.update(
       () => {
-        const nodes = $generateNodesFromDOM(editor, dom)
-        const root = $getRoot()
-        root.clear()
+        const nodes = $generateNodesFromDOM(editor, dom);
+        const root = $getRoot();
+        root.clear();
 
         // Filter out empty/whitespace-only nodes
-        const filteredNodes = nodes.filter(node => {
-          if (node.getType() !== 'text') return true
-          const textContent = node.getTextContent()
-          return textContent.trim().length > 0
-        })
+        const filteredNodes = nodes.filter((node) => {
+          if (node.getType() !== 'text') return true;
+          const textContent = node.getTextContent();
+          return textContent.trim().length > 0;
+        });
 
         if (filteredNodes.length > 0) {
-          $insertNodes(filteredNodes)
+          $insertNodes(filteredNodes);
         }
       },
       { discrete: true }
-    )
-  }, []) // Only run once on mount
+    );
+  }, []); // Only run once on mount
 
-  return null
+  return null;
 }
 
 // =============================================================================
@@ -294,24 +302,24 @@ export function RichTextEditor({
       // Signature nodes
       SignatureNode,
     ],
-  }
+  };
 
   // Handle content changes
   const handleChange = useCallback(
     (editorState: EditorState, editor: LexicalEditor) => {
       if (onChange) {
-        const jsonString = JSON.stringify(editorState.toJSON())
-        onChange(editorState, editor, jsonString)
+        const jsonString = JSON.stringify(editorState.toJSON());
+        onChange(editorState, editor, jsonString);
       }
     },
     [onChange]
-  )
+  );
 
   // Custom styles for content editable
   const contentEditableStyle = {
     minHeight,
     maxHeight,
-  }
+  };
 
   return (
     <LexicalComposer initialConfig={initialConfig}>
@@ -371,10 +379,7 @@ export function RichTextEditor({
 
             {/* Signature Plugin - only in edit mode with enableSignatures */}
             {enableSignatures && !readOnly && (currentUser || searchUsersForSignature) && (
-              <SignaturePlugin
-                currentUser={currentUser}
-                searchUsers={searchUsersForSignature}
-              />
+              <SignaturePlugin currentUser={currentUser} searchUsers={searchUsersForSignature} />
             )}
 
             {/* Change handler */}
@@ -385,7 +390,9 @@ export function RichTextEditor({
 
             {/* Initial content - Lexical JSON takes priority, fallback to markdown */}
             {initialContent && <InitialStatePlugin initialContent={initialContent} />}
-            {!initialContent && initialMarkdown && <MarkdownInitPlugin markdown={initialMarkdown} />}
+            {!initialContent && initialMarkdown && (
+              <MarkdownInitPlugin markdown={initialMarkdown} />
+            )}
           </div>
 
           {/* Minimap */}
@@ -393,7 +400,7 @@ export function RichTextEditor({
         </div>
       </div>
     </LexicalComposer>
-  )
+  );
 }
 
-export default RichTextEditor
+export default RichTextEditor;

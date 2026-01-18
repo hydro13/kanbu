@@ -13,27 +13,27 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState, useRef, useEffect } from 'react'
-import { trpc } from '../../lib/trpc'
-import { TagBadge } from './TagBadge'
-import { Plus, Check, X, Loader2 } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react';
+import { trpc } from '../../lib/trpc';
+import { TagBadge } from './TagBadge';
+import { Plus, Check, X, Loader2 } from 'lucide-react';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface Tag {
-  id: number
-  name: string
-  color: string | null
+  id: number;
+  name: string;
+  color: string | null;
 }
 
 export interface TagSelectorProps {
-  projectId: number
-  taskId: number
-  selectedTags: Tag[]
-  onTagsChange?: (tags: Tag[]) => void
-  disabled?: boolean
+  projectId: number;
+  taskId: number;
+  selectedTags: Tag[];
+  onTagsChange?: (tags: Tag[]) => void;
+  disabled?: boolean;
 }
 
 // =============================================================================
@@ -50,7 +50,7 @@ const PRESET_COLORS = [
   '#8B5CF6', // Purple
   '#EC4899', // Pink
   '#6B7280', // Gray
-]
+];
 
 // =============================================================================
 // TagSelector Component
@@ -63,89 +63,89 @@ export function TagSelector({
   onTagsChange,
   disabled = false,
 }: TagSelectorProps) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [isCreating, setIsCreating] = useState(false)
-  const [newTagName, setNewTagName] = useState('')
-  const [newTagColor, setNewTagColor] = useState(PRESET_COLORS[0])
-  const containerRef = useRef<HTMLDivElement>(null)
+  const [isOpen, setIsOpen] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [newTagName, setNewTagName] = useState('');
+  const [newTagColor, setNewTagColor] = useState(PRESET_COLORS[0]);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Fetch all tags for the project
   const { data: allTags, isLoading } = trpc.tag.list.useQuery(
     { projectId },
     { enabled: !!projectId }
-  )
+  );
 
   // Mutations
-  const utils = trpc.useUtils()
+  const utils = trpc.useUtils();
 
   const createTagMutation = trpc.tag.create.useMutation({
     onSuccess: (newTag) => {
-      utils.tag.list.invalidate({ projectId })
+      utils.tag.list.invalidate({ projectId });
       // Auto-select the newly created tag
-      addTagToTaskMutation.mutate({ taskId, tagId: newTag.id })
-      setNewTagName('')
-      setIsCreating(false)
+      addTagToTaskMutation.mutate({ taskId, tagId: newTag.id });
+      setNewTagName('');
+      setIsCreating(false);
     },
-  })
+  });
 
   const addTagToTaskMutation = trpc.tag.addToTask.useMutation({
     onSuccess: () => {
-      utils.task.get.invalidate({ taskId })
+      utils.task.get.invalidate({ taskId });
     },
-  })
+  });
 
   const removeTagFromTaskMutation = trpc.tag.removeFromTask.useMutation({
     onSuccess: () => {
-      utils.task.get.invalidate({ taskId })
+      utils.task.get.invalidate({ taskId });
     },
-  })
+  });
 
   // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false)
-        setIsCreating(false)
+        setIsOpen(false);
+        setIsCreating(false);
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
-  const selectedTagIds = new Set(selectedTags.map((t) => t.id))
+  const selectedTagIds = new Set(selectedTags.map((t) => t.id));
 
   const handleToggleTag = (tag: Tag) => {
-    if (disabled) return
+    if (disabled) return;
 
     if (selectedTagIds.has(tag.id)) {
-      removeTagFromTaskMutation.mutate({ taskId, tagId: tag.id })
-      onTagsChange?.(selectedTags.filter((t) => t.id !== tag.id))
+      removeTagFromTaskMutation.mutate({ taskId, tagId: tag.id });
+      onTagsChange?.(selectedTags.filter((t) => t.id !== tag.id));
     } else {
-      addTagToTaskMutation.mutate({ taskId, tagId: tag.id })
-      onTagsChange?.([...selectedTags, tag])
+      addTagToTaskMutation.mutate({ taskId, tagId: tag.id });
+      onTagsChange?.([...selectedTags, tag]);
     }
-  }
+  };
 
   const handleRemoveTag = (tagId: number) => {
-    if (disabled) return
-    removeTagFromTaskMutation.mutate({ taskId, tagId })
-    onTagsChange?.(selectedTags.filter((t) => t.id !== tagId))
-  }
+    if (disabled) return;
+    removeTagFromTaskMutation.mutate({ taskId, tagId });
+    onTagsChange?.(selectedTags.filter((t) => t.id !== tagId));
+  };
 
   const handleCreateTag = () => {
-    if (!newTagName.trim()) return
+    if (!newTagName.trim()) return;
     createTagMutation.mutate({
       projectId,
       name: newTagName.trim(),
       color: newTagColor,
-    })
-  }
+    });
+  };
 
   const isMutating =
     addTagToTaskMutation.isPending ||
     removeTagFromTaskMutation.isPending ||
-    createTagMutation.isPending
+    createTagMutation.isPending;
 
   return (
     <div ref={containerRef} className="relative">
@@ -188,15 +188,15 @@ export function TagSelector({
             ) : allTags && allTags.length > 0 ? (
               <div className="space-y-1">
                 {allTags.map((tag) => {
-                  const isSelected = selectedTagIds.has(tag.id)
+                  const isSelected = selectedTagIds.has(tag.id);
                   return (
                     <button
                       key={tag.id}
-                      onClick={() => handleToggleTag({ id: tag.id, name: tag.name, color: tag.color })}
+                      onClick={() =>
+                        handleToggleTag({ id: tag.id, name: tag.name, color: tag.color })
+                      }
                       className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-left text-sm transition-colors ${
-                        isSelected
-                          ? 'bg-blue-50 dark:bg-blue-900/30'
-                          : 'hover:bg-accent'
+                        isSelected ? 'bg-blue-50 dark:bg-blue-900/30' : 'hover:bg-accent'
                       }`}
                       disabled={isMutating}
                     >
@@ -207,7 +207,7 @@ export function TagSelector({
                       <span className="flex-1 text-foreground">{tag.name}</span>
                       {isSelected && <Check className="w-4 h-4 text-blue-500" />}
                     </button>
-                  )
+                  );
                 })}
               </div>
             ) : (
@@ -230,8 +230,8 @@ export function TagSelector({
                 placeholder="Tag name"
                 className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-foreground placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleCreateTag()
-                  if (e.key === 'Escape') setIsCreating(false)
+                  if (e.key === 'Enter') handleCreateTag();
+                  if (e.key === 'Escape') setIsCreating(false);
                 }}
                 autoFocus
               />
@@ -280,7 +280,7 @@ export function TagSelector({
         </div>
       )}
     </div>
-  )
+  );
 }
 
-export default TagSelector
+export default TagSelector;

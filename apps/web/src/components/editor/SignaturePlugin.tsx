@@ -11,8 +11,8 @@
  * ===================================================================
  */
 
-import React, { useCallback, useEffect, useState, useRef } from 'react'
-import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
+import React, { useCallback, useEffect, useState, useRef } from 'react';
+import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
 import {
   $getSelection,
   $isRangeSelection,
@@ -24,28 +24,28 @@ import {
   KEY_ESCAPE_COMMAND,
   KEY_TAB_COMMAND,
   TextNode,
-} from 'lexical'
-import { mergeRegister } from '@lexical/utils'
-import { $createSignatureNode } from './nodes/SignatureNode'
-import { createPortal } from 'react-dom'
-import { cn } from '@/lib/utils'
+} from 'lexical';
+import { mergeRegister } from '@lexical/utils';
+import { $createSignatureNode } from './nodes/SignatureNode';
+import { createPortal } from 'react-dom';
+import { cn } from '@/lib/utils';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface SignatureUser {
-  id: number
-  username: string
-  name: string | null
-  avatarUrl?: string | null
+  id: number;
+  username: string;
+  name: string | null;
+  avatarUrl?: string | null;
 }
 
 export interface SignaturePluginProps {
   /** Current user (for &Sign shortcut) */
-  currentUser?: SignatureUser
+  currentUser?: SignatureUser;
   /** Function to search for users */
-  searchUsers?: (query: string) => Promise<SignatureUser[]>
+  searchUsers?: (query: string) => Promise<SignatureUser[]>;
 }
 
 // =============================================================================
@@ -53,9 +53,9 @@ export interface SignaturePluginProps {
 // =============================================================================
 
 interface AnchorRect {
-  left: number
-  top: number
-  bottom: number
+  left: number;
+  top: number;
+  bottom: number;
 }
 
 // =============================================================================
@@ -70,7 +70,7 @@ function UserAvatar({ user }: { user: SignatureUser }) {
         alt={user.name ?? user.username}
         className="w-8 h-8 rounded-full object-cover"
       />
-    )
+    );
   }
 
   // Fallback initials avatar
@@ -79,13 +79,13 @@ function UserAvatar({ user }: { user: SignatureUser }) {
     .map((n) => n[0])
     .join('')
     .toUpperCase()
-    .slice(0, 2)
+    .slice(0, 2);
 
   return (
     <div className="w-8 h-8 rounded-full bg-primary/10 text-primary text-sm font-medium flex items-center justify-center">
       {initials}
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -93,13 +93,13 @@ function UserAvatar({ user }: { user: SignatureUser }) {
 // =============================================================================
 
 interface AutocompleteDropdownProps {
-  anchorRect: AnchorRect | null
-  items: SignatureUser[]
-  selectedIndex: number
-  onSelect: (user: SignatureUser) => void
-  query: string
-  isLoading?: boolean
-  currentUser?: SignatureUser
+  anchorRect: AnchorRect | null;
+  items: SignatureUser[];
+  selectedIndex: number;
+  onSelect: (user: SignatureUser) => void;
+  query: string;
+  isLoading?: boolean;
+  currentUser?: SignatureUser;
 }
 
 function AutocompleteDropdown({
@@ -111,38 +111,44 @@ function AutocompleteDropdown({
   isLoading,
   currentUser,
 }: AutocompleteDropdownProps) {
-  if (!anchorRect) return null
+  if (!anchorRect) return null;
 
   // Calculate position
-  const dropdownWidth = 320
-  const viewportWidth = window.innerWidth
-  const viewportHeight = window.innerHeight
+  const dropdownWidth = 320;
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
 
-  let left = anchorRect.left - dropdownWidth / 2 + 10
-  left = Math.max(16, Math.min(left, viewportWidth - dropdownWidth - 16))
+  let left = anchorRect.left - dropdownWidth / 2 + 10;
+  left = Math.max(16, Math.min(left, viewportWidth - dropdownWidth - 16));
 
-  let top = anchorRect.bottom + 8
-  const dropdownHeight = 300
+  let top = anchorRect.bottom + 8;
+  const dropdownHeight = 300;
   if (top + dropdownHeight > viewportHeight - 16) {
-    top = anchorRect.top - dropdownHeight - 8
+    top = anchorRect.top - dropdownHeight - 8;
   }
 
   // Check for &Sign or &sign shortcut
-  const isSignShortcut = query.toLowerCase() === 'sign'
+  const isSignShortcut = query.toLowerCase() === 'sign';
 
   // Build display items - add current user as "Sign" option at top
-  const displayItems: (SignatureUser & { isSignOption?: boolean })[] = []
+  const displayItems: (SignatureUser & { isSignOption?: boolean })[] = [];
 
-  if (currentUser && (query === '' || isSignShortcut || currentUser.username.toLowerCase().includes(query.toLowerCase()) || (currentUser.name ?? '').toLowerCase().includes(query.toLowerCase()))) {
-    displayItems.push({ ...currentUser, isSignOption: true })
+  if (
+    currentUser &&
+    (query === '' ||
+      isSignShortcut ||
+      currentUser.username.toLowerCase().includes(query.toLowerCase()) ||
+      (currentUser.name ?? '').toLowerCase().includes(query.toLowerCase()))
+  ) {
+    displayItems.push({ ...currentUser, isSignOption: true });
   }
 
   // Add other users (but not current user again)
   items.forEach((user) => {
     if (!currentUser || user.id !== currentUser.id) {
-      displayItems.push(user)
+      displayItems.push(user);
     }
-  })
+  });
 
   return createPortal(
     <div
@@ -157,9 +163,7 @@ function AutocompleteDropdown({
         Insert Signature
       </div>
       {isLoading ? (
-        <div className="px-3 py-3 text-sm text-muted-foreground">
-          Searching users...
-        </div>
+        <div className="px-3 py-3 text-sm text-muted-foreground">Searching users...</div>
       ) : displayItems.length === 0 ? (
         <div className="px-3 py-3 text-sm text-muted-foreground">
           {query ? `No users matching "${query}"` : 'Type to search users...'}
@@ -178,29 +182,26 @@ function AutocompleteDropdown({
               <UserAvatar user={user} />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium truncate">
-                    {user.name ?? user.username}
-                  </span>
+                  <span className="text-sm font-medium truncate">{user.name ?? user.username}</span>
                   {'isSignOption' in user && user.isSignOption && (
                     <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium">
                       Your signature
                     </span>
                   )}
                 </div>
-                <div className="text-xs text-muted-foreground truncate">
-                  @{user.username}
-                </div>
+                <div className="text-xs text-muted-foreground truncate">@{user.username}</div>
               </div>
             </button>
           ))}
         </div>
       )}
       <div className="px-3 py-1.5 text-[10px] text-muted-foreground border-t bg-muted/30">
-        Type <kbd className="px-1 py-0.5 rounded bg-muted text-[9px]">&Sign</kbd> for quick signature
+        Type <kbd className="px-1 py-0.5 rounded bg-muted text-[9px]">&Sign</kbd> for quick
+        signature
       </div>
     </div>,
     document.body
-  )
+  );
 }
 
 // =============================================================================
@@ -211,94 +212,100 @@ export function SignaturePlugin({
   currentUser,
   searchUsers,
 }: SignaturePluginProps): React.ReactElement | null {
-  const [editor] = useLexicalComposerContext()
+  const [editor] = useLexicalComposerContext();
 
-  const [isOpen, setIsOpen] = useState(false)
-  const [query, setQuery] = useState('')
-  const [selectedIndex, setSelectedIndex] = useState(0)
-  const [anchorRect, setAnchorRect] = useState<AnchorRect | null>(null)
-  const [searchResults, setSearchResults] = useState<SignatureUser[]>([])
-  const [triggerOffset, setTriggerOffset] = useState<number | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const [isOpen, setIsOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const [anchorRect, setAnchorRect] = useState<AnchorRect | null>(null);
+  const [searchResults, setSearchResults] = useState<SignatureUser[]>([]);
+  const [triggerOffset, setTriggerOffset] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const isOpenRef = useRef(isOpen)
-  isOpenRef.current = isOpen
+  const isOpenRef = useRef(isOpen);
+  isOpenRef.current = isOpen;
 
   // Guard against duplicate insertions
-  const isInsertingRef = useRef(false)
+  const isInsertingRef = useRef(false);
 
   // Build display items for index calculation
-  const displayItems: SignatureUser[] = []
-  if (currentUser && (query === '' || query.toLowerCase() === 'sign' || currentUser.username.toLowerCase().includes(query.toLowerCase()) || (currentUser.name ?? '').toLowerCase().includes(query.toLowerCase()))) {
-    displayItems.push(currentUser)
+  const displayItems: SignatureUser[] = [];
+  if (
+    currentUser &&
+    (query === '' ||
+      query.toLowerCase() === 'sign' ||
+      currentUser.username.toLowerCase().includes(query.toLowerCase()) ||
+      (currentUser.name ?? '').toLowerCase().includes(query.toLowerCase()))
+  ) {
+    displayItems.push(currentUser);
   }
   searchResults.forEach((user) => {
     if (!currentUser || user.id !== currentUser.id) {
-      displayItems.push(user)
+      displayItems.push(user);
     }
-  })
+  });
 
   // Search effect for async search
   useEffect(() => {
     if (!searchUsers || !isOpen) {
-      setSearchResults([])
-      return
+      setSearchResults([]);
+      return;
     }
 
     // Don't search if just "sign" - that's for current user
     if (query.toLowerCase() === 'sign') {
-      setSearchResults([])
-      return
+      setSearchResults([]);
+      return;
     }
 
-    setIsLoading(true)
+    setIsLoading(true);
     const timeoutId = setTimeout(async () => {
       try {
-        const results = await searchUsers(query)
-        setSearchResults(results)
+        const results = await searchUsers(query);
+        setSearchResults(results);
       } catch (error) {
-        console.error('User search failed:', error)
-        setSearchResults([])
+        console.error('User search failed:', error);
+        setSearchResults([]);
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
-    }, 150)
+    }, 150);
 
-    return () => clearTimeout(timeoutId)
-  }, [query, searchUsers, isOpen])
+    return () => clearTimeout(timeoutId);
+  }, [query, searchUsers, isOpen]);
 
   // Reset selected index when results change
   useEffect(() => {
-    setSelectedIndex(0)
-  }, [displayItems.length])
+    setSelectedIndex(0);
+  }, [displayItems.length]);
 
   // Insert signature
   const insertSignature = useCallback(
     (user: SignatureUser) => {
       // Prevent duplicate insertions
-      if (isInsertingRef.current) return
-      isInsertingRef.current = true
+      if (isInsertingRef.current) return;
+      isInsertingRef.current = true;
 
       // Close dropdown immediately
-      setIsOpen(false)
-      setQuery('')
-      const currentTriggerOffset = triggerOffset
-      setTriggerOffset(null)
+      setIsOpen(false);
+      setQuery('');
+      const currentTriggerOffset = triggerOffset;
+      setTriggerOffset(null);
 
       editor.update(() => {
-        const selection = $getSelection()
+        const selection = $getSelection();
         if (!$isRangeSelection(selection) || currentTriggerOffset === null) {
-          isInsertingRef.current = false
-          return
+          isInsertingRef.current = false;
+          return;
         }
 
-        const anchor = selection.anchor
-        const node = anchor.getNode()
+        const anchor = selection.anchor;
+        const node = anchor.getNode();
 
         if (node instanceof TextNode) {
-          const text = node.getTextContent()
-          const beforeTrigger = text.substring(0, currentTriggerOffset)
-          const afterCursor = text.substring(anchor.offset)
+          const text = node.getTextContent();
+          const beforeTrigger = text.substring(0, currentTriggerOffset);
+          const afterCursor = text.substring(anchor.offset);
 
           // Create the signature node
           const signatureNode = $createSignatureNode({
@@ -306,223 +313,219 @@ export function SignaturePlugin({
             username: user.username,
             name: user.name,
             avatarUrl: user.avatarUrl,
-          })
+          });
 
           // Replace text
-          node.setTextContent(beforeTrigger)
-          node.insertAfter(signatureNode)
+          node.setTextContent(beforeTrigger);
+          node.insertAfter(signatureNode);
 
           if (afterCursor) {
-            const afterNode = $createTextNode(afterCursor)
-            signatureNode.insertAfter(afterNode)
+            const afterNode = $createTextNode(afterCursor);
+            signatureNode.insertAfter(afterNode);
           }
 
           // Add space after signature
-          const spaceNode = $createTextNode(' ')
-          signatureNode.insertAfter(spaceNode)
-          spaceNode.select(1, 1)
+          const spaceNode = $createTextNode(' ');
+          signatureNode.insertAfter(spaceNode);
+          spaceNode.select(1, 1);
         }
 
         setTimeout(() => {
-          isInsertingRef.current = false
-        }, 100)
-      })
+          isInsertingRef.current = false;
+        }, 100);
+      });
     },
     [editor, triggerOffset]
-  )
+  );
 
   // Handle selection
   const handleSelect = useCallback(
     (user: SignatureUser) => {
-      insertSignature(user)
+      insertSignature(user);
     },
     [insertSignature]
-  )
+  );
 
   // Update listener to detect & and track query
   useEffect(() => {
     return editor.registerUpdateListener(({ editorState }) => {
       editorState.read(() => {
-        const selection = $getSelection()
+        const selection = $getSelection();
         if (!$isRangeSelection(selection) || !selection.isCollapsed()) {
           if (isOpenRef.current) {
-            setIsOpen(false)
-            setQuery('')
-            setTriggerOffset(null)
+            setIsOpen(false);
+            setQuery('');
+            setTriggerOffset(null);
           }
-          return
+          return;
         }
 
-        const anchor = selection.anchor
-        const node = anchor.getNode()
+        const anchor = selection.anchor;
+        const node = anchor.getNode();
 
         if (!(node instanceof TextNode)) {
           if (isOpenRef.current) {
-            setIsOpen(false)
-            setQuery('')
-            setTriggerOffset(null)
+            setIsOpen(false);
+            setQuery('');
+            setTriggerOffset(null);
           }
-          return
+          return;
         }
 
-        const text = node.getTextContent()
-        const cursorPos = anchor.offset
-        const textBeforeCursor = text.substring(0, cursorPos)
+        const text = node.getTextContent();
+        const cursorPos = anchor.offset;
+        const textBeforeCursor = text.substring(0, cursorPos);
 
         // Look for & that is either at the start or after whitespace
-        let triggerIndex = -1
+        let triggerIndex = -1;
         for (let i = textBeforeCursor.length - 1; i >= 0; i--) {
           if (textBeforeCursor[i] === '&') {
             if (i === 0 || /\s/.test(textBeforeCursor[i - 1] ?? '')) {
-              triggerIndex = i
-              break
+              triggerIndex = i;
+              break;
             }
           }
           if (/\s/.test(textBeforeCursor[i] ?? '')) {
-            break
+            break;
           }
         }
 
         if (triggerIndex === -1) {
           if (isOpenRef.current) {
-            setIsOpen(false)
-            setQuery('')
-            setTriggerOffset(null)
+            setIsOpen(false);
+            setQuery('');
+            setTriggerOffset(null);
           }
-          return
+          return;
         }
 
-        const queryText = textBeforeCursor.substring(triggerIndex + 1)
+        const queryText = textBeforeCursor.substring(triggerIndex + 1);
 
         // If query contains whitespace, close dropdown
         if (/\s/.test(queryText)) {
           if (isOpenRef.current) {
-            setIsOpen(false)
-            setQuery('')
-            setTriggerOffset(null)
+            setIsOpen(false);
+            setQuery('');
+            setTriggerOffset(null);
           }
-          return
+          return;
         }
 
-        setQuery(queryText)
-        setTriggerOffset(triggerIndex)
+        setQuery(queryText);
+        setTriggerOffset(triggerIndex);
 
         if (!isOpenRef.current) {
-          setIsOpen(true)
+          setIsOpen(true);
         }
 
         // Update anchor position
-        const domSelection = window.getSelection()
+        const domSelection = window.getSelection();
         if (domSelection && domSelection.rangeCount > 0) {
-          const range = domSelection.getRangeAt(0)
-          const rect = range.getBoundingClientRect()
+          const range = domSelection.getRangeAt(0);
+          const rect = range.getBoundingClientRect();
           setAnchorRect({
             left: rect.left,
             top: rect.top,
             bottom: rect.bottom,
-          })
+          });
         }
-      })
-    })
-  }, [editor])
+      });
+    });
+  }, [editor]);
 
   // Keyboard navigation
   useEffect(() => {
-    if (!isOpen) return
+    if (!isOpen) return;
 
     return mergeRegister(
       editor.registerCommand(
         KEY_ARROW_DOWN_COMMAND,
         (event) => {
-          if (!isOpenRef.current) return false
-          event?.preventDefault()
-          setSelectedIndex((prev) =>
-            prev < displayItems.length - 1 ? prev + 1 : 0
-          )
-          return true
+          if (!isOpenRef.current) return false;
+          event?.preventDefault();
+          setSelectedIndex((prev) => (prev < displayItems.length - 1 ? prev + 1 : 0));
+          return true;
         },
         COMMAND_PRIORITY_LOW
       ),
       editor.registerCommand(
         KEY_ARROW_UP_COMMAND,
         (event) => {
-          if (!isOpenRef.current) return false
-          event?.preventDefault()
-          setSelectedIndex((prev) =>
-            prev > 0 ? prev - 1 : displayItems.length - 1
-          )
-          return true
+          if (!isOpenRef.current) return false;
+          event?.preventDefault();
+          setSelectedIndex((prev) => (prev > 0 ? prev - 1 : displayItems.length - 1));
+          return true;
         },
         COMMAND_PRIORITY_LOW
       ),
       editor.registerCommand(
         KEY_ENTER_COMMAND,
         (event) => {
-          if (!isOpenRef.current) return false
+          if (!isOpenRef.current) return false;
           if (displayItems[selectedIndex]) {
-            event?.preventDefault()
-            handleSelect(displayItems[selectedIndex])
-            return true
+            event?.preventDefault();
+            handleSelect(displayItems[selectedIndex]);
+            return true;
           }
-          return false
+          return false;
         },
         COMMAND_PRIORITY_LOW
       ),
       editor.registerCommand(
         KEY_TAB_COMMAND,
         (event) => {
-          if (!isOpenRef.current) return false
+          if (!isOpenRef.current) return false;
           if (displayItems[selectedIndex]) {
-            event?.preventDefault()
-            handleSelect(displayItems[selectedIndex])
-            return true
+            event?.preventDefault();
+            handleSelect(displayItems[selectedIndex]);
+            return true;
           }
-          return false
+          return false;
         },
         COMMAND_PRIORITY_LOW
       ),
       editor.registerCommand(
         KEY_ESCAPE_COMMAND,
         () => {
-          if (!isOpenRef.current) return false
-          setIsOpen(false)
-          setQuery('')
-          setTriggerOffset(null)
-          return true
+          if (!isOpenRef.current) return false;
+          setIsOpen(false);
+          setQuery('');
+          setTriggerOffset(null);
+          return true;
         },
         COMMAND_PRIORITY_LOW
       )
-    )
-  }, [editor, isOpen, displayItems, selectedIndex, handleSelect])
+    );
+  }, [editor, isOpen, displayItems, selectedIndex, handleSelect]);
 
   // Update anchor position on scroll/resize
   useEffect(() => {
-    if (!isOpen) return
+    if (!isOpen) return;
 
     const updatePosition = () => {
-      const domSelection = window.getSelection()
+      const domSelection = window.getSelection();
       if (domSelection && domSelection.rangeCount > 0) {
-        const range = domSelection.getRangeAt(0)
-        const rect = range.getBoundingClientRect()
+        const range = domSelection.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
         setAnchorRect({
           left: rect.left,
           top: rect.top,
           bottom: rect.bottom,
-        })
+        });
       }
-    }
+    };
 
-    window.addEventListener('scroll', updatePosition, true)
-    window.addEventListener('resize', updatePosition)
+    window.addEventListener('scroll', updatePosition, true);
+    window.addEventListener('resize', updatePosition);
 
     return () => {
-      window.removeEventListener('scroll', updatePosition, true)
-      window.removeEventListener('resize', updatePosition)
-    }
-  }, [isOpen])
+      window.removeEventListener('scroll', updatePosition, true);
+      window.removeEventListener('resize', updatePosition);
+    };
+  }, [isOpen]);
 
   // Don't render if no current user and no search function
-  if (!currentUser && !searchUsers) return null
+  if (!currentUser && !searchUsers) return null;
 
   return isOpen ? (
     <AutocompleteDropdown
@@ -534,7 +537,7 @@ export function SignaturePlugin({
       isLoading={isLoading}
       currentUser={currentUser}
     />
-  ) : null
+  ) : null;
 }
 
-export default SignaturePlugin
+export default SignaturePlugin;

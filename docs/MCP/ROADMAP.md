@@ -130,6 +130,7 @@ model AssistantBinding {
   - (Server-side revocation planned for next phase)
 
 **Deliverables Phase 1:** ✅ ALL DELIVERED
+
 - ✅ Working setup code pairing system
 - ✅ Profile page AI Assistant section
 - ✅ MCP server with 3 pairing tools
@@ -167,6 +168,7 @@ model AssistantBinding {
 - [x] Audit logging with "via Claude Code" marker (Implemented in Phase 13)
 
 **Deliverables Phase 2:** ✅ ALL DELIVERED
+
 - ✅ 11 core tools (workspace, project, task management)
 - ✅ ACL enforcement via tRPC procedures
 - ✅ Tools files organized in `src/tools/` directory
@@ -195,6 +197,7 @@ model AssistantBinding {
 - [x] `kanbu_delete_comment` - Delete comment
 
 **Deliverables Phase 3:** ✅ ALL DELIVERED
+
 - ✅ 9 additional tools (5 subtask + 4 comment)
 - ✅ Time tracking display in subtasks
 - ✅ Status toggle functionality
@@ -219,6 +222,7 @@ model AssistantBinding {
 - [x] `kanbu_activity_stats` - Activity statistics (last 30 days)
 
 **Deliverables Phase 4:** ✅ ALL DELIVERED
+
 - ✅ 5 additional tools (2 search + 3 activity)
 - ✅ Full-text search in tasks, comments, wiki
 - ✅ Activity timeline and statistics
@@ -239,6 +243,7 @@ model AssistantBinding {
 - [x] `kanbu_team_workload` - Tasks per member, overdue counts
 
 **Deliverables Phase 5:** ✅ ALL DELIVERED
+
 - ✅ 4 analytics tools
 - ✅ Project statistics and trends
 - ✅ Velocity tracking and visualization
@@ -248,6 +253,7 @@ model AssistantBinding {
 ---
 
 ### Phase 5: Analytics & Insights ✅ COMPLETE (2026-01-09)
+
 ### Phase 5+ (Hardening): Dry Run & Safety ✅ COMPLETE (2026-01-16)
 
 **Goal:** Add safety mechanisms for destructive actions.
@@ -292,6 +298,7 @@ model AssistantBinding {
 - [x] `kanbu_revoke_sessions` - End all sessions
 
 **Deliverables Phase 6:**
+
 - [x] 11 user management tools
 - [x] Admin-only access via ACL check
 - [x] Audit logging for all actions
@@ -321,6 +328,7 @@ model AssistantBinding {
 - [x] `kanbu_remove_group_member` - Remove member from group
 
 **Deliverables Phase 7:**
+
 - [x] 10 group management tools
 - [x] Privilege escalation prevention
 - [x] WebSocket events for real-time updates
@@ -360,6 +368,7 @@ model AssistantBinding {
 - [x] `kanbu_import_acl` - Import ACL (JSON/CSV)
 
 **Deliverables Phase 8:**
+
 - [x] 20 ACL management tools (8 query + 12 management)
 - [x] RWXDP bitmask support (R=1, W=2, X=4, D=8, P=16)
 - [x] Presets: None (0), Read Only (1), Contributor (7), Editor (15), Full Control (31)
@@ -380,6 +389,7 @@ model AssistantBinding {
 - [x] `kanbu_resend_invite` - Resend invitation (with new token)
 
 **Deliverables Phase 9:**
+
 - [x] 5 invite management tools
 - [x] Status tracking (pending, accepted, expired)
 - [x] Bulk invite support
@@ -399,6 +409,7 @@ model AssistantBinding {
 - [x] `kanbu_get_audit_categories` - Available categories (ACL, GROUP, USER, WORKSPACE, SETTINGS)
 
 **Deliverables Phase 10:**
+
 - [x] 5 audit log tools
 - [x] Scoped access (Domain Admin vs Workspace Admin)
 - [x] Export functionality (CSV and JSON)
@@ -434,6 +445,7 @@ model AssistantBinding {
 - [x] `kanbu_admin_reactivate_workspace` - Reactivate workspace
 
 **Deliverables Phase 11:**
+
 - [x] 12 system management tools
 - [x] Domain Admin / Workspace Admin scoped access
 - [x] Backup to Google Drive with automatic cleanup
@@ -511,6 +523,7 @@ model AssistantBinding {
 - [x] `kanbu_revoke_all_sessions` - End all sessions
 
 **Deliverables Phase 12:**
+
 - [x] 36 profile management tools
 - [x] Self-service profile management
 - [x] 2FA setup and management (TOTP)
@@ -548,7 +561,7 @@ export const AUDIT_CATEGORIES = {
   TASK: 'TASK',
   SUBTASK: 'SUBTASK',
   COMMENT: 'COMMENT',
-} as const
+} as const;
 ```
 
 #### 13.2 New Audit Actions
@@ -581,7 +594,7 @@ export const AUDIT_ACTIONS = {
   COMMENT_CREATED: 'comment:created',
   COMMENT_UPDATED: 'comment:updated',
   COMMENT_DELETED: 'comment:deleted',
-} as const
+} as const;
 ```
 
 #### 13.3 AssistantContext Metadata
@@ -619,6 +632,7 @@ async logCommentEvent(params: Omit<AuditLogParams, 'category'>): Promise<{ id: n
 ```
 
 **Deliverables Phase 13:**
+
 - [x] 4 new audit categories (PROJECT, TASK, SUBTASK, COMMENT)
 - [x] 17 new audit actions
 - [x] Helper functions for each category
@@ -634,16 +648,17 @@ async logCommentEvent(params: Omit<AuditLogParams, 'category'>): Promise<{ id: n
 
 #### 14.1 Task Procedures Logging
 
-| Procedure | Action | What to log |
-|-----------|--------|-------------|
-| `task.create` | `task:created` | projectId, title, assignees |
-| `task.update` | `task:updated` | taskId, changed fields (before/after) |
-| `task.move` | `task:moved` | taskId, fromColumn, toColumn |
-| `task.delete` | `task:deleted` | taskId, title |
-| `task.assign` | `task:assigned` | taskId, userId |
-| `task.unassign` | `task:unassigned` | taskId, userId |
+| Procedure       | Action            | What to log                           |
+| --------------- | ----------------- | ------------------------------------- |
+| `task.create`   | `task:created`    | projectId, title, assignees           |
+| `task.update`   | `task:updated`    | taskId, changed fields (before/after) |
+| `task.move`     | `task:moved`      | taskId, fromColumn, toColumn          |
+| `task.delete`   | `task:deleted`    | taskId, title                         |
+| `task.assign`   | `task:assigned`   | taskId, userId                        |
+| `task.unassign` | `task:unassigned` | taskId, userId                        |
 
 Example implementation:
+
 ```typescript
 // In task.ts create procedure
 await auditService.logTaskEvent({
@@ -654,25 +669,28 @@ await auditService.logTaskEvent({
   userId: ctx.user.id,
   workspaceId: project.workspaceId,
   changes: { title: task.title, column: task.columnId },
-  metadata: ctx.assistantContext ? {
-    via: 'assistant',
-    machineId: ctx.assistantContext.machineId,
-    machineName: ctx.assistantContext.machineName,
-    bindingId: ctx.assistantContext.bindingId,
-  } : undefined,
-})
+  metadata: ctx.assistantContext
+    ? {
+        via: 'assistant',
+        machineId: ctx.assistantContext.machineId,
+        machineName: ctx.assistantContext.machineName,
+        bindingId: ctx.assistantContext.bindingId,
+      }
+    : undefined,
+});
 ```
 
 #### 14.2 Project Procedures Logging
 
-| Procedure | Action | What to log |
-|-----------|--------|-------------|
-| `project.create` | `project:created` | workspaceId, name, prefix |
-| `project.update` | `project:updated` | projectId, changed fields |
-| `project.archive` | `project:archived` | projectId, name |
-| `project.restore` | `project:restored` | projectId, name |
+| Procedure         | Action             | What to log               |
+| ----------------- | ------------------ | ------------------------- |
+| `project.create`  | `project:created`  | workspaceId, name, prefix |
+| `project.update`  | `project:updated`  | projectId, changed fields |
+| `project.archive` | `project:archived` | projectId, name           |
+| `project.restore` | `project:restored` | projectId, name           |
 
 **Deliverables Phase 14:**
+
 - [x] Audit logging in all task procedures (create, update, move, delete, assign)
 - [x] Audit logging in all project procedures (Implemented in Phase 14)
 - [x] Before/after change tracking for updates
@@ -688,22 +706,23 @@ await auditService.logTaskEvent({
 
 #### 15.1 Subtask Procedures Logging
 
-| Procedure | Action | What to log |
-|-----------|--------|-------------|
-| `subtask.create` | `subtask:created` | taskId, title |
-| `subtask.update` | `subtask:updated` | subtaskId, changed fields |
+| Procedure        | Action            | What to log                      |
+| ---------------- | ----------------- | -------------------------------- |
+| `subtask.create` | `subtask:created` | taskId, title                    |
+| `subtask.update` | `subtask:updated` | subtaskId, changed fields        |
 | `subtask.toggle` | `subtask:toggled` | subtaskId, newStatus (TODO/DONE) |
-| `subtask.delete` | `subtask:deleted` | subtaskId, title |
+| `subtask.delete` | `subtask:deleted` | subtaskId, title                 |
 
 #### 15.2 Comment Procedures Logging
 
-| Procedure | Action | What to log |
-|-----------|--------|-------------|
+| Procedure        | Action            | What to log                         |
+| ---------------- | ----------------- | ----------------------------------- |
 | `comment.create` | `comment:created` | taskId, content preview (truncated) |
-| `comment.update` | `comment:updated` | commentId, before/after |
-| `comment.delete` | `comment:deleted` | commentId, content preview |
+| `comment.update` | `comment:updated` | commentId, before/after             |
+| `comment.delete` | `comment:deleted` | commentId, content preview          |
 
 **Deliverables Phase 15:**
+
 - [x] Audit logging in all subtask procedures (create, update, delete)
 - [x] Audit logging in all comment procedures (create, update, delete)
 - [x] Content preview truncation (max 100 chars)
@@ -719,6 +738,7 @@ await auditService.logTaskEvent({
 #### 16.1 New Category Filters
 
 Extend UI with filters for:
+
 - PROJECT
 - TASK
 - SUBTASK
@@ -727,12 +747,14 @@ Extend UI with filters for:
 #### 16.2 "Via Claude Code" Indicator
 
 Show in audit logs table:
+
 ```
 [USER_AVATAR] Robin Waslander
               via Claude Code (MAX)
 ```
 
 Or as badge:
+
 ```
 Robin Waslander [🤖 Claude]
 ```
@@ -740,6 +762,7 @@ Robin Waslander [🤖 Claude]
 #### 16.3 Machine Details in Log Detail View
 
 When clicking on audit entry:
+
 ```
 Action: task:created
 User: Robin Waslander
@@ -750,6 +773,7 @@ Via: Claude Code
 ```
 
 **Deliverables Phase 16:** ✅ ALL DELIVERED
+
 - [x] Category filters for PROJECT, TASK, SUBTASK, COMMENT
 - [x] "Via Claude Code" badge/indicator in table
 - [x] Machine details in detail view (MCP panel with machine name, ID, binding)
@@ -759,26 +783,26 @@ Via: Claude Code
 
 ## Tool Overview
 
-| Phase | Tools | Cumulative | Status |
-|------|-------|------------|--------|
-| Phase 1 | 3 (pairing) | 3 | ✅ Complete |
-| Phase 2 | 11 (core) | 14 | ✅ Complete |
-| Phase 3 | 9 (subtasks/comments) | 23 | ✅ Complete |
-| Phase 4 | 5 (search/activity) | 28 | ✅ Complete |
-| Phase 5 | 4 (analytics) | 32 | ✅ Complete |
-| Phase 6 | 11 (user management) | 43 | ✅ Complete |
-| Phase 7 | 10 (groups) | 53 | ✅ Complete |
-| Phase 8 | 20 (ACL) | 73 | ✅ Complete |
-| Phase 9 | 5 (invites) | 78 | ✅ Complete |
-| Phase 10 | 5 (audit) | 83 | ✅ Complete |
-| Phase 11 | 12 (system) | 95 | ✅ Complete |
-| Phase 12 | 36 (profile) | 131 | ✅ Complete |
-| Phase 13 | - (audit infrastructure) | 131 | ✅ Complete |
-| Phase 14 | - (task/project logging) | 131 | ✅ Complete |
-| Phase 15 | - (subtask/comment logging) | 131 | ✅ Complete |
-| Phase 16 | - (audit UI updates) | 131 | ✅ Complete |
-| GitHub Phase 9 | 10 (github) | 141 | ✅ Complete |
-| Phase 17 | 18 (wiki pages) | 159 | 🔄 In Progress |
+| Phase          | Tools                       | Cumulative | Status         |
+| -------------- | --------------------------- | ---------- | -------------- |
+| Phase 1        | 3 (pairing)                 | 3          | ✅ Complete    |
+| Phase 2        | 11 (core)                   | 14         | ✅ Complete    |
+| Phase 3        | 9 (subtasks/comments)       | 23         | ✅ Complete    |
+| Phase 4        | 5 (search/activity)         | 28         | ✅ Complete    |
+| Phase 5        | 4 (analytics)               | 32         | ✅ Complete    |
+| Phase 6        | 11 (user management)        | 43         | ✅ Complete    |
+| Phase 7        | 10 (groups)                 | 53         | ✅ Complete    |
+| Phase 8        | 20 (ACL)                    | 73         | ✅ Complete    |
+| Phase 9        | 5 (invites)                 | 78         | ✅ Complete    |
+| Phase 10       | 5 (audit)                   | 83         | ✅ Complete    |
+| Phase 11       | 12 (system)                 | 95         | ✅ Complete    |
+| Phase 12       | 36 (profile)                | 131        | ✅ Complete    |
+| Phase 13       | - (audit infrastructure)    | 131        | ✅ Complete    |
+| Phase 14       | - (task/project logging)    | 131        | ✅ Complete    |
+| Phase 15       | - (subtask/comment logging) | 131        | ✅ Complete    |
+| Phase 16       | - (audit UI updates)        | 131        | ✅ Complete    |
+| GitHub Phase 9 | 10 (github)                 | 141        | ✅ Complete    |
+| Phase 17       | 18 (wiki pages)             | 159        | 🔄 In Progress |
 
 ---
 
@@ -792,25 +816,26 @@ Via: Claude Code
 
 #### Query Tools (5)
 
-| Tool | Description |
-|------|--------------|
-| `kanbu_get_github_repo` | Get linked GitHub repository for a project |
-| `kanbu_list_github_prs` | List pull requests for a project (with state filter) |
-| `kanbu_list_github_commits` | List commits for a project |
-| `kanbu_get_task_prs` | Get PRs linked to a specific task |
-| `kanbu_get_task_commits` | Get commits linked to a specific task |
+| Tool                        | Description                                          |
+| --------------------------- | ---------------------------------------------------- |
+| `kanbu_get_github_repo`     | Get linked GitHub repository for a project           |
+| `kanbu_list_github_prs`     | List pull requests for a project (with state filter) |
+| `kanbu_list_github_commits` | List commits for a project                           |
+| `kanbu_get_task_prs`        | Get PRs linked to a specific task                    |
+| `kanbu_get_task_commits`    | Get commits linked to a specific task                |
 
 #### Management Tools (5)
 
-| Tool | Description |
-|------|--------------|
-| `kanbu_link_github_repo` | Link a GitHub repository to a Kanbu project |
-| `kanbu_unlink_github_repo` | Unlink a GitHub repository from a project |
-| `kanbu_sync_github_issues` | Import/sync issues from GitHub to Kanbu |
+| Tool                         | Description                                  |
+| ---------------------------- | -------------------------------------------- |
+| `kanbu_link_github_repo`     | Link a GitHub repository to a Kanbu project  |
+| `kanbu_unlink_github_repo`   | Unlink a GitHub repository from a project    |
+| `kanbu_sync_github_issues`   | Import/sync issues from GitHub to Kanbu      |
 | `kanbu_create_github_branch` | Create a feature branch on GitHub for a task |
-| `kanbu_link_pr_to_task` | Manually link a PR to a task |
+| `kanbu_link_pr_to_task`      | Manually link a PR to a task                 |
 
 **Deliverables:**
+
 - [x] 10 GitHub MCP tools
 - [x] TypeScript compiles without errors
 - [x] Tools registered in index.ts
@@ -824,6 +849,7 @@ Via: Claude Code
 **Status:** Implementation in progress. Tools created, tests passing. Awaiting manual testing.
 
 **Background:** Wiki functionality is fully implemented in the backend (Prisma models, tRPC procedures), including:
+
 - Version control (20 versions per page)
 - Lexical JSON content support
 - Hierarchical page structure (parent/child)
@@ -835,41 +861,43 @@ However, no MCP tools exist yet for creating, updating, or managing wiki pages f
 
 #### 17.1 Project Wiki Tools (9)
 
-| Tool | Description |
-|------|--------------|
-| `kanbu_list_project_wiki_pages` | List wiki pages in a project (with parent filter) |
-| `kanbu_get_project_wiki_page` | Get wiki page by ID |
-| `kanbu_get_project_wiki_page_by_slug` | Get wiki page by slug (permalink) |
-| `kanbu_create_project_wiki_page` | Create new wiki page in project |
-| `kanbu_update_project_wiki_page` | Update wiki page (creates new version) |
-| `kanbu_delete_project_wiki_page` | Delete wiki page |
-| `kanbu_get_project_wiki_versions` | Get version history for a page |
-| `kanbu_get_project_wiki_version` | Get specific version of a page |
-| `kanbu_restore_project_wiki_version` | Restore old version (creates new version) |
+| Tool                                  | Description                                       |
+| ------------------------------------- | ------------------------------------------------- |
+| `kanbu_list_project_wiki_pages`       | List wiki pages in a project (with parent filter) |
+| `kanbu_get_project_wiki_page`         | Get wiki page by ID                               |
+| `kanbu_get_project_wiki_page_by_slug` | Get wiki page by slug (permalink)                 |
+| `kanbu_create_project_wiki_page`      | Create new wiki page in project                   |
+| `kanbu_update_project_wiki_page`      | Update wiki page (creates new version)            |
+| `kanbu_delete_project_wiki_page`      | Delete wiki page                                  |
+| `kanbu_get_project_wiki_versions`     | Get version history for a page                    |
+| `kanbu_get_project_wiki_version`      | Get specific version of a page                    |
+| `kanbu_restore_project_wiki_version`  | Restore old version (creates new version)         |
 
 #### 17.2 Workspace Wiki Tools (9)
 
-| Tool | Description |
-|------|--------------|
-| `kanbu_list_workspace_wiki_pages` | List wiki pages in workspace (with parent filter) |
-| `kanbu_get_workspace_wiki_page` | Get wiki page by ID |
-| `kanbu_get_workspace_wiki_page_by_slug` | Get wiki page by slug (permalink) |
-| `kanbu_create_workspace_wiki_page` | Create new wiki page in workspace |
-| `kanbu_update_workspace_wiki_page` | Update wiki page (creates new version) |
-| `kanbu_delete_workspace_wiki_page` | Delete wiki page |
-| `kanbu_get_workspace_wiki_versions` | Get version history for a page |
-| `kanbu_get_workspace_wiki_version` | Get specific version of a page |
-| `kanbu_restore_workspace_wiki_version` | Restore old version (creates new version) |
+| Tool                                    | Description                                       |
+| --------------------------------------- | ------------------------------------------------- |
+| `kanbu_list_workspace_wiki_pages`       | List wiki pages in workspace (with parent filter) |
+| `kanbu_get_workspace_wiki_page`         | Get wiki page by ID                               |
+| `kanbu_get_workspace_wiki_page_by_slug` | Get wiki page by slug (permalink)                 |
+| `kanbu_create_workspace_wiki_page`      | Create new wiki page in workspace                 |
+| `kanbu_update_workspace_wiki_page`      | Update wiki page (creates new version)            |
+| `kanbu_delete_workspace_wiki_page`      | Delete wiki page                                  |
+| `kanbu_get_workspace_wiki_versions`     | Get version history for a page                    |
+| `kanbu_get_workspace_wiki_version`      | Get specific version of a page                    |
+| `kanbu_restore_workspace_wiki_version`  | Restore old version (creates new version)         |
 
 #### 17.3 Implementation Notes
 
 **Content Format:**
+
 - Wiki pages support both plain text (`content`) and Lexical JSON (`contentJson`)
 - For MCP, plain text is primary interface, Lexical JSON optional
 - Auto-generate slug from title on create
 
 **Cross-Reference Support:**
 Wiki pages support rich cross-references that are automatically extracted and tracked:
+
 - `[[Wiki Page]]` - Links to other wiki pages (with link resolution and backlinks)
 - `#TASK-123` or `#123` - Links to tasks (with status indicators)
 - `@username` - User mentions (triggers notifications)
@@ -877,6 +905,7 @@ Wiki pages support rich cross-references that are automatically extracted and tr
 - External URLs - Automatic link detection
 
 **Link Extraction:**
+
 - On save: extract all cross-references from content
 - Resolve `[[wiki links]]` to page IDs
 - Store link relationships for backlinks
@@ -884,26 +913,31 @@ Wiki pages support rich cross-references that are automatically extracted and tr
 - Track broken links (when target doesn't exist)
 
 **Version Control:**
+
 - Each update creates new version (max 20 versions)
 - Include `changeNote` parameter for version history
 - Restore creates new version (doesn't rewrite history)
 
 **Hierarchy:**
+
 - Pages can have parent pages (`parentId`)
 - Support for nested wiki structures
 - List pages with optional parent filter
 
 **Status:**
+
 - DRAFT: Work in progress, not visible to non-authors
 - PUBLISHED: Visible to all with read access
 - ARCHIVED: Hidden but preserved
 
 **ACL Integration:**
+
 - Project wiki: requires READ on project for list/get, WRITE for create/update/delete
 - Workspace wiki: requires READ on workspace for list/get, WRITE for create/update/delete
 - Audit logging for all wiki operations (category: WIKI)
 
 **Graphiti Sync:**
+
 - Wiki pages are synced to knowledge graph
 - Entities and facts are extracted
 - Cross-references become graph edges
@@ -913,6 +947,7 @@ Wiki pages support rich cross-references that are automatically extracted and tr
 Before marking Phase 17 as complete, the following must be verified:
 
 **Unit Tests:**
+
 - [x] Test handlers for all 18 wiki tools (71 tests passing)
 - [ ] Test cross-reference extraction ([[wiki]], @mention, #task, #tag)
 - [ ] Test link resolution logic (project → workspace fallback)
@@ -922,6 +957,7 @@ Before marking Phase 17 as complete, the following must be verified:
 - [ ] Test audit logging for all operations
 
 **Integration Tests:**
+
 - [ ] Test with real tRPC procedures (projectWiki, workspaceWiki)
 - [ ] Test Graphiti sync after wiki page creation/update
 - [ ] Test notification sending for @mentions
@@ -929,6 +965,7 @@ Before marking Phase 17 as complete, the following must be verified:
 - [ ] Test broken link detection
 
 **Manual Testing Checklist:**
+
 - [ ] Create wiki page via Claude Code in test project
 - [ ] Update page and verify version is created
 - [ ] Test [[wiki link]] to another page
@@ -941,12 +978,14 @@ Before marking Phase 17 as complete, the following must be verified:
 - [ ] Verify audit log entries for all operations
 
 **Code Quality:**
+
 - [x] TypeScript compiles without errors
 - [x] All tools registered in `packages/mcp-server/src/index.ts`
 - [ ] Test coverage >80% for wiki tools
 - [ ] Documentation with examples in README
 
 **User Approval:**
+
 - [ ] Robin has tested all wiki tools in Claude Code
 - [ ] All test cases passed
 - [ ] Performance is acceptable
@@ -954,6 +993,7 @@ Before marking Phase 17 as complete, the following must be verified:
 - [ ] **Explicit approval from Robin before marking complete**
 
 **Deliverables Phase 17:**
+
 - [x] 18 wiki management tools (9 project + 9 workspace)
 - [x] Full CRUD operations for wiki pages
 - [x] Version control support (list, get, restore)
@@ -970,20 +1010,21 @@ Before marking Phase 17 as complete, the following must be verified:
 
 ## Priority Matrix
 
-| Item | Impact | Effort | Priority |
-|------|--------|--------|------------|
-| Setup code system | Critical | Medium | P0 |
-| Profile page UI | Critical | Low | P0 |
-| `kanbu_connect` | Critical | Low | P0 |
-| `kanbu_my_tasks` | High | Low | P1 |
-| `kanbu_create_task` | High | Low | P1 |
-| `kanbu_move_task` | High | Low | P1 |
-| `kanbu_search_tasks` | High | Medium | P2 |
-| `kanbu_add_comment` | Medium | Low | P2 |
+| Item                 | Impact   | Effort | Priority |
+| -------------------- | -------- | ------ | -------- |
+| Setup code system    | Critical | Medium | P0       |
+| Profile page UI      | Critical | Low    | P0       |
+| `kanbu_connect`      | Critical | Low    | P0       |
+| `kanbu_my_tasks`     | High     | Low    | P1       |
+| `kanbu_create_task`  | High     | Low    | P1       |
+| `kanbu_move_task`    | High     | Low    | P1       |
+| `kanbu_search_tasks` | High     | Medium | P2       |
+| `kanbu_add_comment`  | Medium   | Low    | P2       |
 
 ## Security Checklist
 
 ### Setup Code
+
 - [x] Format: `KNB-XXXX-XXXX` (14 chars including hyphens)
 - [x] Alphanumeric uppercase (no O/0/I/1 ambiguity)
 - [x] TTL: 5 minutes
@@ -991,17 +1032,20 @@ Before marking Phase 17 as complete, the following must be verified:
 - [x] Max 5 attempts per hour per user (planned)
 
 ### Permanent Token
+
 - [x] 256-bit entropy
 - [x] argon2 hash in database
 - [x] Never shown to user
 - [x] Only stored locally
 
 ### Machine Binding
+
 - [x] Machine ID = SHA256(hostname + user)
 - [x] Not portable to other machines
 - [x] Revokable per machine
 
 ### Audit Trail
+
 - [x] Pairing actions logged (ASSISTANT_PAIRED, ASSISTANT_DISCONNECTED)
 - [x] Task/Project actions logged (Phase 14) ✅
 - [x] Subtask/Comment actions logged (Phase 15) ✅
@@ -1047,25 +1091,25 @@ Before marking Phase 17 as complete, the following must be verified:
 
 ## Changelog
 
-| Date | Change |
-|-------|-----------|
-| 2026-01-16 | **Phase 17 ADDED** - Wiki Pages Management: 18 new tools planned (9 project wiki + 9 workspace wiki) for full CRUD, version control, hierarchical structure |
+| Date       | Change                                                                                                                                                                                         |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-01-16 | **Phase 17 ADDED** - Wiki Pages Management: 18 new tools planned (9 project wiki + 9 workspace wiki) for full CRUD, version control, hierarchical structure                                    |
 | 2026-01-09 | **Phase 16 COMPLETE** - Audit UI Updates: new category filters (PROJECT, TASK, SUBTASK, COMMENT), "Via Claude Code" badge in audit logs table, machine details in detail view, MCP-only filter |
-| 2026-01-09 | **Phase 13-15 COMPLETE** - MCP Audit Logging: infrastructure, task logging, subtask/comment logging - all MCP actions are now logged with `via: assistant` metadata |
-| 2026-01-09 | **Phase 13-16 ADDED** - MCP Audit Logging roadmap: infrastructure, task/project/subtask/comment logging, UI updates |
-| 2026-01-09 | **Phase 12 COMPLETE** - 36 tools for profile management (info, 2FA, notifications, API tokens, sessions, hourly rate) |
-| 2026-01-09 | **ALL 12 PHASES COMPLETE!** - 131 MCP tools implemented across 12 phases |
-| 2026-01-09 | **Phase 11 COMPLETE** - 12 tools for system settings & backup (settings, backup, admin workspaces) |
-| 2026-01-09 | **Phase 10 COMPLETE** - 5 tools for audit logs (list, get, stats, export, categories) |
-| 2026-01-09 | **Phase 9 COMPLETE** - 5 tools for invite management (list, get, send, cancel, resend) |
-| 2026-01-09 | **Phase 8 COMPLETE** - 20 tools for ACL management (query, grant, deny, bulk, export, import, simulate) |
-| 2026-01-09 | **Phase 7 COMPLETE** - 10 tools for groups management (list, create, members, etc.) |
-| 2026-01-09 | **Phase 6 COMPLETE** - 11 tools for user management (list, create, update, delete, etc.) |
-| 2026-01-09 | **ROADMAP UPDATE** - Phases 6-11 added (61 new tools planned, total 93) |
-| 2026-01-09 | **Phase 5 COMPLETE** - 4 tools for analytics and insights |
-| 2026-01-09 | **Phase 4 COMPLETE** - 5 tools for search and activity queries |
-| 2026-01-09 | **Phase 3 COMPLETE** - 9 tools for subtask and comment management |
-| 2026-01-09 | **Phase 2 COMPLETE** - 11 core tools for workspace/project/task management |
-| 2026-01-09 | **Phase 1 COMPLETE** - MCP server with pairing tools working |
-| 2026-01-09 | Roadmap rewritten for one-time setup code pairing |
-| 2026-01-09 | Initial roadmap created |
+| 2026-01-09 | **Phase 13-15 COMPLETE** - MCP Audit Logging: infrastructure, task logging, subtask/comment logging - all MCP actions are now logged with `via: assistant` metadata                            |
+| 2026-01-09 | **Phase 13-16 ADDED** - MCP Audit Logging roadmap: infrastructure, task/project/subtask/comment logging, UI updates                                                                            |
+| 2026-01-09 | **Phase 12 COMPLETE** - 36 tools for profile management (info, 2FA, notifications, API tokens, sessions, hourly rate)                                                                          |
+| 2026-01-09 | **ALL 12 PHASES COMPLETE!** - 131 MCP tools implemented across 12 phases                                                                                                                       |
+| 2026-01-09 | **Phase 11 COMPLETE** - 12 tools for system settings & backup (settings, backup, admin workspaces)                                                                                             |
+| 2026-01-09 | **Phase 10 COMPLETE** - 5 tools for audit logs (list, get, stats, export, categories)                                                                                                          |
+| 2026-01-09 | **Phase 9 COMPLETE** - 5 tools for invite management (list, get, send, cancel, resend)                                                                                                         |
+| 2026-01-09 | **Phase 8 COMPLETE** - 20 tools for ACL management (query, grant, deny, bulk, export, import, simulate)                                                                                        |
+| 2026-01-09 | **Phase 7 COMPLETE** - 10 tools for groups management (list, create, members, etc.)                                                                                                            |
+| 2026-01-09 | **Phase 6 COMPLETE** - 11 tools for user management (list, create, update, delete, etc.)                                                                                                       |
+| 2026-01-09 | **ROADMAP UPDATE** - Phases 6-11 added (61 new tools planned, total 93)                                                                                                                        |
+| 2026-01-09 | **Phase 5 COMPLETE** - 4 tools for analytics and insights                                                                                                                                      |
+| 2026-01-09 | **Phase 4 COMPLETE** - 5 tools for search and activity queries                                                                                                                                 |
+| 2026-01-09 | **Phase 3 COMPLETE** - 9 tools for subtask and comment management                                                                                                                              |
+| 2026-01-09 | **Phase 2 COMPLETE** - 11 core tools for workspace/project/task management                                                                                                                     |
+| 2026-01-09 | **Phase 1 COMPLETE** - MCP server with pairing tools working                                                                                                                                   |
+| 2026-01-09 | Roadmap rewritten for one-time setup code pairing                                                                                                                                              |
+| 2026-01-09 | Initial roadmap created                                                                                                                                                                        |

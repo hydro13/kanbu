@@ -10,19 +10,12 @@
  * ===================================================================
  */
 
-import type { Meta, StoryObj } from '@storybook/react-vite'
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  CardFooter,
-} from './card'
-import { Button } from './button'
-import { Badge } from './badge'
-import { Input } from './input'
-import { Label } from './label'
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from './card';
+import { Button } from './button';
+import { Badge } from './badge';
+import { Input } from './input';
+import { Label } from './label';
 
 const meta: Meta<typeof Card> = {
   title: 'UI/Card',
@@ -36,10 +29,10 @@ const meta: Meta<typeof Card> = {
       },
     },
   },
-}
+};
 
-export default meta
-type Story = StoryObj<typeof Card>
+export default meta;
+type Story = StoryObj<typeof Card>;
 
 // =============================================================================
 // Basic Variants
@@ -62,7 +55,7 @@ export const Default: Story = {
       </CardFooter>
     </Card>
   ),
-}
+};
 
 export const Simple: Story = {
   render: () => (
@@ -73,7 +66,7 @@ export const Simple: Story = {
       </p>
     </Card>
   ),
-}
+};
 
 // =============================================================================
 // With Content
@@ -109,7 +102,7 @@ export const WithForm: Story = {
       },
     },
   },
-}
+};
 
 export const WithBadges: Story = {
   render: () => (
@@ -127,9 +120,7 @@ export const WithBadges: Story = {
           <Badge variant="outline">Frontend</Badge>
         </div>
       </CardContent>
-      <CardFooter className="text-sm text-muted-foreground">
-        Updated 2 hours ago
-      </CardFooter>
+      <CardFooter className="text-sm text-muted-foreground">Updated 2 hours ago</CardFooter>
     </Card>
   ),
   parameters: {
@@ -139,7 +130,7 @@ export const WithBadges: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Stat Cards
@@ -166,7 +157,7 @@ export const StatCard: Story = {
       },
     },
   },
-}
+};
 
 export const StatCards: Story = {
   render: () => (
@@ -198,7 +189,7 @@ export const StatCards: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Interactive States
@@ -225,7 +216,7 @@ export const Hoverable: Story = {
       },
     },
   },
-}
+};
 
 // =============================================================================
 // Grid Layout
@@ -279,4 +270,4 @@ export const CardGrid: Story = {
       },
     },
   },
-}
+};

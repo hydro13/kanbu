@@ -7,10 +7,10 @@
  * Provides quick actions: View Details, Undo, OK
  */
 
-import { toast } from 'sonner'
-import { AlertTriangle, Eye, Undo2, Check } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { toast } from 'sonner';
+import { AlertTriangle, Eye, Undo2, Check } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 // =============================================================================
 // Types
@@ -42,26 +42,26 @@ export enum ResolutionStrategy {
  */
 export interface ContradictionData {
   /** The new fact that was added */
-  newFact: string
+  newFact: string;
   /** The invalidated old fact */
-  invalidatedFact: string
+  invalidatedFact: string;
   /** Confidence score 0.0 - 1.0 */
-  confidence: number
+  confidence: number;
   /** Type of contradiction */
-  category: ContradictionCategory
+  category: ContradictionCategory;
   /** Resolution strategy that was applied */
-  strategy: ResolutionStrategy
+  strategy: ResolutionStrategy;
   /** Audit entry ID for undo functionality */
-  auditId?: number
+  auditId?: number;
 }
 
 export interface ContradictionToastProps {
   /** The contradiction data to display */
-  contradiction: ContradictionData
+  contradiction: ContradictionData;
   /** Callback when "View Details" is clicked */
-  onViewDetails?: () => void
+  onViewDetails?: () => void;
   /** Callback when "Undo" is clicked */
-  onUndo?: () => void
+  onUndo?: () => void;
 }
 
 // =============================================================================
@@ -74,15 +74,15 @@ export interface ContradictionToastProps {
 function getCategoryLabel(category: ContradictionCategory): string {
   switch (category) {
     case ContradictionCategory.FACTUAL:
-      return 'Factual'
+      return 'Factual';
     case ContradictionCategory.ATTRIBUTE:
-      return 'Attribute'
+      return 'Attribute';
     case ContradictionCategory.TEMPORAL:
-      return 'Temporal'
+      return 'Temporal';
     case ContradictionCategory.SEMANTIC:
-      return 'Semantic'
+      return 'Semantic';
     default:
-      return 'Unknown'
+      return 'Unknown';
   }
 }
 
@@ -92,15 +92,15 @@ function getCategoryLabel(category: ContradictionCategory): string {
 function getCategoryBadgeClass(category: ContradictionCategory): string {
   switch (category) {
     case ContradictionCategory.FACTUAL:
-      return 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800'
+      return 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800';
     case ContradictionCategory.ATTRIBUTE:
-      return 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800'
+      return 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-400 dark:border-orange-800';
     case ContradictionCategory.TEMPORAL:
-      return 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800'
+      return 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-400 dark:border-blue-800';
     case ContradictionCategory.SEMANTIC:
-      return 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800'
+      return 'bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/20 dark:text-purple-400 dark:border-purple-800';
     default:
-      return ''
+      return '';
   }
 }
 
@@ -110,17 +110,17 @@ function getCategoryBadgeClass(category: ContradictionCategory): string {
 function getStrategyLabel(strategy: ResolutionStrategy): string {
   switch (strategy) {
     case ResolutionStrategy.INVALIDATE_OLD:
-      return 'Old fact invalidated'
+      return 'Old fact invalidated';
     case ResolutionStrategy.INVALIDATE_NEW:
-      return 'New fact rejected'
+      return 'New fact rejected';
     case ResolutionStrategy.KEEP_BOTH:
-      return 'Both facts kept'
+      return 'Both facts kept';
     case ResolutionStrategy.MERGE:
-      return 'Facts merged'
+      return 'Facts merged';
     case ResolutionStrategy.ASK_USER:
-      return 'Awaiting your decision'
+      return 'Awaiting your decision';
     default:
-      return 'Resolved'
+      return 'Resolved';
   }
 }
 
@@ -129,14 +129,14 @@ function getStrategyLabel(strategy: ResolutionStrategy): string {
 // =============================================================================
 
 interface ToastContentProps {
-  contradiction: ContradictionData
-  onViewDetails?: () => void
-  onUndo?: () => void
-  toastId: string | number
+  contradiction: ContradictionData;
+  onViewDetails?: () => void;
+  onUndo?: () => void;
+  toastId: string | number;
 }
 
 function ToastContent({ contradiction, onViewDetails, onUndo, toastId }: ToastContentProps) {
-  const confidencePercent = Math.round(contradiction.confidence * 100)
+  const confidencePercent = Math.round(contradiction.confidence * 100);
 
   return (
     <div className="flex flex-col gap-3 w-full">
@@ -147,9 +147,7 @@ function ToastContent({ contradiction, onViewDetails, onUndo, toastId }: ToastCo
       </div>
 
       {/* Subtitle */}
-      <p className="text-sm text-muted-foreground">
-        New fact conflicts with existing information:
-      </p>
+      <p className="text-sm text-muted-foreground">New fact conflicts with existing information:</p>
 
       {/* Fact Comparison */}
       <div className="space-y-2 text-sm">
@@ -186,8 +184,8 @@ function ToastContent({ contradiction, onViewDetails, onUndo, toastId }: ToastCo
             variant="outline"
             size="sm"
             onClick={() => {
-              onViewDetails()
-              toast.dismiss(toastId)
+              onViewDetails();
+              toast.dismiss(toastId);
             }}
             className="h-8"
           >
@@ -200,8 +198,8 @@ function ToastContent({ contradiction, onViewDetails, onUndo, toastId }: ToastCo
             variant="outline"
             size="sm"
             onClick={() => {
-              onUndo()
-              toast.dismiss(toastId)
+              onUndo();
+              toast.dismiss(toastId);
             }}
             className="h-8"
           >
@@ -209,18 +207,13 @@ function ToastContent({ contradiction, onViewDetails, onUndo, toastId }: ToastCo
             Undo
           </Button>
         )}
-        <Button
-          variant="default"
-          size="sm"
-          onClick={() => toast.dismiss(toastId)}
-          className="h-8"
-        >
+        <Button variant="default" size="sm" onClick={() => toast.dismiss(toastId)} className="h-8">
           <Check className="h-3.5 w-3.5 mr-1" />
           OK
         </Button>
       </div>
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -252,7 +245,7 @@ export function showContradictionToast({
   onUndo,
 }: ContradictionToastProps): string | number {
   // High confidence contradictions get persistent toast
-  const isPersistent = contradiction.confidence >= 0.8
+  const isPersistent = contradiction.confidence >= 0.8;
 
   return toast.custom(
     (toastId) => (
@@ -267,7 +260,7 @@ export function showContradictionToast({
       duration: isPersistent ? Infinity : 10000,
       className: 'w-[400px] max-w-[90vw] bg-background border rounded-lg p-4 shadow-lg',
     }
-  )
+  );
 }
 
 /**
@@ -279,22 +272,23 @@ export function showContradictionToast({
 export function showBatchContradictionToasts(
   contradictions: ContradictionData[],
   handlers: {
-    onViewDetails?: (index: number) => void
-    onUndo?: (auditId: number) => void
+    onViewDetails?: (index: number) => void;
+    onUndo?: (auditId: number) => void;
   }
 ): void {
-  if (contradictions.length === 0) return
+  if (contradictions.length === 0) return;
 
   if (contradictions.length === 1) {
-    const firstContradiction = contradictions[0]!
+    const firstContradiction = contradictions[0]!;
     showContradictionToast({
       contradiction: firstContradiction,
       onViewDetails: handlers.onViewDetails ? () => handlers.onViewDetails!(0) : undefined,
-      onUndo: handlers.onUndo && firstContradiction.auditId
-        ? () => handlers.onUndo!(firstContradiction.auditId!)
-        : undefined,
-    })
-    return
+      onUndo:
+        handlers.onUndo && firstContradiction.auditId
+          ? () => handlers.onUndo!(firstContradiction.auditId!)
+          : undefined,
+    });
+    return;
   }
 
   // For multiple contradictions, show a summary toast
@@ -307,5 +301,5 @@ export function showBatchContradictionToasts(
           onClick: () => handlers.onViewDetails!(0),
         }
       : undefined,
-  })
+  });
 }

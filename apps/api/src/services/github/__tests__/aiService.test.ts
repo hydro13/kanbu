@@ -15,7 +15,7 @@
  * =============================================================================
  */
 
-import { describe, it, expect, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import {
   isAIConfigured,
   getAIProvider,
@@ -27,23 +27,23 @@ import {
   type CodeReviewInput,
   type ReleaseNotesInput,
   type CommitMessageInput,
-} from '../aiService'
+} from '../aiService';
 
 describe('aiService', () => {
-  const originalEnv = { ...process.env }
+  const originalEnv = { ...process.env };
 
   beforeEach(() => {
     // Reset environment for each test
-    process.env = { ...originalEnv }
+    process.env = { ...originalEnv };
     // Clear any cached client
-    delete process.env.AI_PROVIDER
-    delete process.env.ANTHROPIC_API_KEY
-    delete process.env.OPENAI_API_KEY
-  })
+    delete process.env.AI_PROVIDER;
+    delete process.env.ANTHROPIC_API_KEY;
+    delete process.env.OPENAI_API_KEY;
+  });
 
   afterEach(() => {
-    process.env = originalEnv
-  })
+    process.env = originalEnv;
+  });
 
   // ===========================================================================
   // Configuration Tests
@@ -51,50 +51,50 @@ describe('aiService', () => {
 
   describe('isAIConfigured', () => {
     it('should return false when no provider is set', () => {
-      expect(isAIConfigured()).toBe(false)
-    })
+      expect(isAIConfigured()).toBe(false);
+    });
 
     it('should return false when provider is set but no API key', () => {
-      process.env.AI_PROVIDER = 'anthropic'
-      process.env.ANTHROPIC_API_KEY = ''
-      expect(isAIConfigured()).toBe(false)
-    })
+      process.env.AI_PROVIDER = 'anthropic';
+      process.env.ANTHROPIC_API_KEY = '';
+      expect(isAIConfigured()).toBe(false);
+    });
 
     it('should return true when Anthropic is configured', () => {
-      process.env.AI_PROVIDER = 'anthropic'
-      process.env.ANTHROPIC_API_KEY = 'sk-ant-test-key'
-      expect(isAIConfigured()).toBe(true)
-    })
+      process.env.AI_PROVIDER = 'anthropic';
+      process.env.ANTHROPIC_API_KEY = 'sk-ant-test-key';
+      expect(isAIConfigured()).toBe(true);
+    });
 
     it('should return true when OpenAI is configured', () => {
-      process.env.AI_PROVIDER = 'openai'
-      process.env.OPENAI_API_KEY = 'sk-test-key'
-      expect(isAIConfigured()).toBe(true)
-    })
+      process.env.AI_PROVIDER = 'openai';
+      process.env.OPENAI_API_KEY = 'sk-test-key';
+      expect(isAIConfigured()).toBe(true);
+    });
 
     it('should default to anthropic provider', () => {
-      process.env.ANTHROPIC_API_KEY = 'sk-ant-test-key'
-      expect(isAIConfigured()).toBe(true)
-    })
-  })
+      process.env.ANTHROPIC_API_KEY = 'sk-ant-test-key';
+      expect(isAIConfigured()).toBe(true);
+    });
+  });
 
   describe('getAIProvider', () => {
     it('should return null when not configured', () => {
-      expect(getAIProvider()).toBeNull()
-    })
+      expect(getAIProvider()).toBeNull();
+    });
 
     it('should return anthropic when Anthropic is configured', () => {
-      process.env.AI_PROVIDER = 'anthropic'
-      process.env.ANTHROPIC_API_KEY = 'sk-ant-test-key'
-      expect(getAIProvider()).toBe('anthropic')
-    })
+      process.env.AI_PROVIDER = 'anthropic';
+      process.env.ANTHROPIC_API_KEY = 'sk-ant-test-key';
+      expect(getAIProvider()).toBe('anthropic');
+    });
 
     it('should return openai when OpenAI is configured', () => {
-      process.env.AI_PROVIDER = 'openai'
-      process.env.OPENAI_API_KEY = 'sk-test-key'
-      expect(getAIProvider()).toBe('openai')
-    })
-  })
+      process.env.AI_PROVIDER = 'openai';
+      process.env.OPENAI_API_KEY = 'sk-test-key';
+      expect(getAIProvider()).toBe('openai');
+    });
+  });
 
   // ===========================================================================
   // Error Handling Tests - PR Summary
@@ -109,13 +109,11 @@ describe('aiService', () => {
       ],
       baseBranch: 'main',
       headBranch: 'feature/auth',
-    }
+    };
 
     it('should throw when AI service is not configured', async () => {
-      await expect(generatePRSummary(validInput)).rejects.toThrow(
-        'AI service not configured'
-      )
-    })
+      await expect(generatePRSummary(validInput)).rejects.toThrow('AI service not configured');
+    });
 
     it('should accept valid input structure', () => {
       // Type check - if this compiles, the types are correct
@@ -124,9 +122,9 @@ describe('aiService', () => {
         commits: [],
         baseBranch: 'main',
         headBranch: 'feature',
-      }
-      expect(input.title).toBe('Test')
-    })
+      };
+      expect(input.title).toBe('Test');
+    });
 
     it('should accept optional diff in input', () => {
       const inputWithDiff: PRSummaryInput = {
@@ -135,10 +133,10 @@ describe('aiService', () => {
         baseBranch: 'main',
         headBranch: 'feature',
         diff: '+ new code\n- old code',
-      }
-      expect(inputWithDiff.diff).toBeDefined()
-    })
-  })
+      };
+      expect(inputWithDiff.diff).toBeDefined();
+    });
+  });
 
   // ===========================================================================
   // Error Handling Tests - Code Review
@@ -156,30 +154,28 @@ describe('aiService', () => {
 +  return bcrypt.hashSync(password, 10)
  }
 `,
-    }
+    };
 
     it('should throw when AI service is not configured', async () => {
-      await expect(reviewCode(validInput)).rejects.toThrow(
-        'AI service not configured'
-      )
-    })
+      await expect(reviewCode(validInput)).rejects.toThrow('AI service not configured');
+    });
 
     it('should accept valid input with language hint', () => {
       const input: CodeReviewInput = {
         diff: '+ const x = 1',
         language: 'typescript',
-      }
-      expect(input.language).toBe('typescript')
-    })
+      };
+      expect(input.language).toBe('typescript');
+    });
 
     it('should accept valid input with context', () => {
       const input: CodeReviewInput = {
         diff: '+ const x = 1',
         context: 'This is a security-critical component',
-      }
-      expect(input.context).toBeDefined()
-    })
-  })
+      };
+      expect(input.context).toBeDefined();
+    });
+  });
 
   // ===========================================================================
   // Error Handling Tests - Release Notes
@@ -202,22 +198,20 @@ describe('aiService', () => {
           mergedAt: '2026-01-09T11:00:00Z',
         },
       ],
-    }
+    };
 
     it('should throw when AI service is not configured', async () => {
-      await expect(generateReleaseNotes(validInput)).rejects.toThrow(
-        'AI service not configured'
-      )
-    })
+      await expect(generateReleaseNotes(validInput)).rejects.toThrow('AI service not configured');
+    });
 
     it('should accept input with version', () => {
       const input: ReleaseNotesInput = {
         projectName: 'Test',
         version: 'v1.0.0',
         prs: [],
-      }
-      expect(input.version).toBe('v1.0.0')
-    })
+      };
+      expect(input.version).toBe('v1.0.0');
+    });
 
     it('should accept input with previous version', () => {
       const input: ReleaseNotesInput = {
@@ -225,9 +219,9 @@ describe('aiService', () => {
         version: 'v1.1.0',
         previousVersion: 'v1.0.0',
         prs: [],
-      }
-      expect(input.previousVersion).toBe('v1.0.0')
-    })
+      };
+      expect(input.previousVersion).toBe('v1.0.0');
+    });
 
     it('should accept PRs with labels', () => {
       const input: ReleaseNotesInput = {
@@ -241,10 +235,10 @@ describe('aiService', () => {
             labels: ['feature', 'ui'],
           },
         ],
-      }
-      expect(input.prs[0]!.labels).toContain('feature')
-    })
-  })
+      };
+      expect(input.prs[0]!.labels).toContain('feature');
+    });
+  });
 
   // ===========================================================================
   // Error Handling Tests - Commit Message
@@ -256,13 +250,11 @@ describe('aiService', () => {
         { path: 'src/auth.ts', status: 'modified' },
         { path: 'src/types.ts', status: 'added' },
       ],
-    }
+    };
 
     it('should throw when AI service is not configured', async () => {
-      await expect(generateCommitMessage(validInput)).rejects.toThrow(
-        'AI service not configured'
-      )
-    })
+      await expect(generateCommitMessage(validInput)).rejects.toThrow('AI service not configured');
+    });
 
     it('should accept all file status types', () => {
       const input: CommitMessageInput = {
@@ -272,9 +264,9 @@ describe('aiService', () => {
           { path: 'c.ts', status: 'deleted' },
           { path: 'd.ts', status: 'renamed' },
         ],
-      }
-      expect(input.files).toHaveLength(4)
-    })
+      };
+      expect(input.files).toHaveLength(4);
+    });
 
     it('should accept files with diffs', () => {
       const input: CommitMessageInput = {
@@ -285,18 +277,18 @@ describe('aiService', () => {
             diff: '+ console.log("hello")\n- console.log("world")',
           },
         ],
-      }
-      expect(input.files[0]!.diff).toBeDefined()
-    })
+      };
+      expect(input.files[0]!.diff).toBeDefined();
+    });
 
     it('should accept context parameter', () => {
       const input: CommitMessageInput = {
         files: [{ path: 'test.ts', status: 'added' }],
         context: 'Adding unit tests for auth module',
-      }
-      expect(input.context).toBeDefined()
-    })
-  })
+      };
+      expect(input.context).toBeDefined();
+    });
+  });
 
   // ===========================================================================
   // Type Structure Tests
@@ -306,37 +298,37 @@ describe('aiService', () => {
     it('should have correct PRSummary structure', () => {
       // This test verifies the return type structure at compile time
       type PRSummary = {
-        summary: string
-        keyChanges: string[]
-        breakingChanges: string[]
-        affectedAreas: string[]
-        suggestedReviewers?: string[]
-      }
+        summary: string;
+        keyChanges: string[];
+        breakingChanges: string[];
+        affectedAreas: string[];
+        suggestedReviewers?: string[];
+      };
 
       const mockResult: PRSummary = {
         summary: 'Test',
         keyChanges: ['change1'],
         breakingChanges: [],
         affectedAreas: ['area1'],
-      }
-      expect(mockResult.summary).toBe('Test')
-    })
+      };
+      expect(mockResult.summary).toBe('Test');
+    });
 
     it('should have correct CodeReviewResult structure', () => {
       type CodeReviewSuggestion = {
-        type: 'security' | 'performance' | 'style' | 'bug' | 'complexity' | 'suggestion'
-        severity: 'info' | 'warning' | 'error'
-        message: string
-        file?: string
-        line?: number
-        suggestion?: string
-      }
+        type: 'security' | 'performance' | 'style' | 'bug' | 'complexity' | 'suggestion';
+        severity: 'info' | 'warning' | 'error';
+        message: string;
+        file?: string;
+        line?: number;
+        suggestion?: string;
+      };
 
       type CodeReviewResult = {
-        suggestions: CodeReviewSuggestion[]
-        overallAssessment: string
-        score: number
-      }
+        suggestions: CodeReviewSuggestion[];
+        overallAssessment: string;
+        score: number;
+      };
 
       const mockResult: CodeReviewResult = {
         suggestions: [
@@ -348,24 +340,24 @@ describe('aiService', () => {
         ],
         overallAssessment: 'Needs improvement',
         score: 60,
-      }
-      expect(mockResult.score).toBe(60)
-    })
+      };
+      expect(mockResult.score).toBe(60);
+    });
 
     it('should have correct ReleaseNotes structure', () => {
       type ReleaseNotes = {
-        title: string
-        summary: string
+        title: string;
+        summary: string;
         sections: {
-          features: string[]
-          fixes: string[]
-          improvements: string[]
-          breaking: string[]
-          other: string[]
-        }
-        contributors: string[]
-        markdown: string
-      }
+          features: string[];
+          fixes: string[];
+          improvements: string[];
+          breaking: string[];
+          other: string[];
+        };
+        contributors: string[];
+        markdown: string;
+      };
 
       const mockResult: ReleaseNotes = {
         title: 'v1.0.0',
@@ -379,26 +371,26 @@ describe('aiService', () => {
         },
         contributors: ['dev1'],
         markdown: '# v1.0.0',
-      }
-      expect(mockResult.sections.features).toContain('Feature 1')
-    })
+      };
+      expect(mockResult.sections.features).toContain('Feature 1');
+    });
 
     it('should have correct CommitMessage structure', () => {
       type CommitMessage = {
-        type: 'feat' | 'fix' | 'refactor' | 'docs' | 'style' | 'test' | 'chore'
-        scope?: string
-        title: string
-        body?: string
-        full: string
-      }
+        type: 'feat' | 'fix' | 'refactor' | 'docs' | 'style' | 'test' | 'chore';
+        scope?: string;
+        title: string;
+        body?: string;
+        full: string;
+      };
 
       const mockResult: CommitMessage = {
         type: 'feat',
         scope: 'auth',
         title: 'Add login functionality',
         full: 'feat(auth): Add login functionality',
-      }
-      expect(mockResult.type).toBe('feat')
-    })
-  })
-})
+      };
+      expect(mockResult.type).toBe('feat');
+    });
+  });
+});

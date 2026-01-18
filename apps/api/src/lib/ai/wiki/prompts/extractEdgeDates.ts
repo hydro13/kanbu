@@ -12,20 +12,20 @@
 
 export interface ExtractEdgeDatesContext {
   /** The fact/relationship to extract dates for */
-  fact: string
+  fact: string;
   /** The reference timestamp (episode creation time) */
-  referenceTimestamp: string
+  referenceTimestamp: string;
   /** The full episode/wiki page content */
-  episodeContent: string
+  episodeContent: string;
 }
 
 export interface ExtractedEdgeDates {
   /** When the fact became true in the real world (ISO 8601) */
-  valid_at: string | null
+  valid_at: string | null;
   /** When the fact stopped being true (ISO 8601), null if still true */
-  invalid_at: string | null
+  invalid_at: string | null;
   /** Brief explanation of how dates were determined */
-  reasoning: string
+  reasoning: string;
 }
 
 /**
@@ -67,7 +67,7 @@ Return a JSON object with this exact structure:
   "valid_at": "2024-01-15T00:00:00.000Z" | null,
   "invalid_at": "2024-06-01T00:00:00.000Z" | null,
   "reasoning": "Brief explanation of how dates were determined"
-}`
+}`;
 }
 
 /**
@@ -86,7 +86,7 @@ ${context.referenceTimestamp}
 ${context.episodeContent}
 </EPISODE_CONTENT>
 
-Extract the valid_at and invalid_at dates for this fact. Return only the JSON object.`
+Extract the valid_at and invalid_at dates for this fact. Return only the JSON object.`;
 }
 
 /**
@@ -95,35 +95,35 @@ Extract the valid_at and invalid_at dates for this fact. Return only the JSON ob
  */
 export function parseExtractEdgeDatesResponse(response: string): ExtractedEdgeDates {
   // Try to extract JSON from the response
-  let jsonStr = response.trim()
+  let jsonStr = response.trim();
 
   // Handle markdown code blocks
-  const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/)
+  const jsonMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (jsonMatch) {
-    jsonStr = jsonMatch[1]?.trim() ?? jsonStr
+    jsonStr = jsonMatch[1]?.trim() ?? jsonStr;
   }
 
   // Try to find JSON object in the response
-  const jsonObjectMatch = jsonStr.match(/\{[\s\S]*\}/)
+  const jsonObjectMatch = jsonStr.match(/\{[\s\S]*\}/);
   if (jsonObjectMatch) {
-    jsonStr = jsonObjectMatch[0]
+    jsonStr = jsonObjectMatch[0];
   }
 
   try {
-    const parsed = JSON.parse(jsonStr) as Record<string, unknown>
+    const parsed = JSON.parse(jsonStr) as Record<string, unknown>;
 
     return {
       valid_at: validateIsoDate(parsed.valid_at as string | null | undefined),
       invalid_at: validateIsoDate(parsed.invalid_at as string | null | undefined),
       reasoning: typeof parsed.reasoning === 'string' ? parsed.reasoning : 'No reasoning provided',
-    }
+    };
   } catch {
     // If parsing fails, return null dates with error reasoning
     return {
       valid_at: null,
       invalid_at: null,
       reasoning: `Failed to parse LLM response: ${response.substring(0, 100)}...`,
-    }
+    };
   }
 }
 
@@ -132,75 +132,72 @@ export function parseExtractEdgeDatesResponse(response: string): ExtractedEdgeDa
  */
 function validateIsoDate(value: string | null | undefined): string | null {
   if (value === null || value === undefined || value === '') {
-    return null
+    return null;
   }
 
   // Try to parse as date
-  const date = new Date(value)
+  const date = new Date(value);
   if (isNaN(date.getTime())) {
-    return null
+    return null;
   }
 
   // Return normalized ISO string
-  return date.toISOString()
+  return date.toISOString();
 }
 
 /**
  * Calculate a date from a relative expression
  * Used as fallback when LLM doesn't handle relative time correctly
  */
-export function calculateRelativeDate(
-  expression: string,
-  referenceDate: Date
-): Date | null {
-  const lowerExpr = expression.toLowerCase()
+export function calculateRelativeDate(expression: string, referenceDate: Date): Date | null {
+  const lowerExpr = expression.toLowerCase();
 
   // Handle "X years ago"
-  const yearsMatch = lowerExpr.match(/(\d+)\s*(?:jaar|jaren|years?)\s*(?:geleden|ago)/i)
+  const yearsMatch = lowerExpr.match(/(\d+)\s*(?:jaar|jaren|years?)\s*(?:geleden|ago)/i);
   if (yearsMatch) {
-    const years = parseInt(yearsMatch[1] ?? '0', 10)
-    const result = new Date(referenceDate)
-    result.setFullYear(result.getFullYear() - years)
-    return result
+    const years = parseInt(yearsMatch[1] ?? '0', 10);
+    const result = new Date(referenceDate);
+    result.setFullYear(result.getFullYear() - years);
+    return result;
   }
 
   // Handle "X months ago"
-  const monthsMatch = lowerExpr.match(/(\d+)\s*(?:maand|maanden|months?)\s*(?:geleden|ago)/i)
+  const monthsMatch = lowerExpr.match(/(\d+)\s*(?:maand|maanden|months?)\s*(?:geleden|ago)/i);
   if (monthsMatch) {
-    const months = parseInt(monthsMatch[1] ?? '0', 10)
-    const result = new Date(referenceDate)
-    result.setMonth(result.getMonth() - months)
-    return result
+    const months = parseInt(monthsMatch[1] ?? '0', 10);
+    const result = new Date(referenceDate);
+    result.setMonth(result.getMonth() - months);
+    return result;
   }
 
   // Handle "X days ago"
-  const daysMatch = lowerExpr.match(/(\d+)\s*(?:dag|dagen|days?)\s*(?:geleden|ago)/i)
+  const daysMatch = lowerExpr.match(/(\d+)\s*(?:dag|dagen|days?)\s*(?:geleden|ago)/i);
   if (daysMatch) {
-    const days = parseInt(daysMatch[1] ?? '0', 10)
-    const result = new Date(referenceDate)
-    result.setDate(result.getDate() - days)
-    return result
+    const days = parseInt(daysMatch[1] ?? '0', 10);
+    const result = new Date(referenceDate);
+    result.setDate(result.getDate() - days);
+    return result;
   }
 
   // Handle "last month/year"
   if (lowerExpr.includes('vorige maand') || lowerExpr.includes('last month')) {
-    const result = new Date(referenceDate)
-    result.setMonth(result.getMonth() - 1)
-    return result
+    const result = new Date(referenceDate);
+    result.setMonth(result.getMonth() - 1);
+    return result;
   }
 
   if (lowerExpr.includes('vorig jaar') || lowerExpr.includes('last year')) {
-    const result = new Date(referenceDate)
-    result.setFullYear(result.getFullYear() - 1)
-    return result
+    const result = new Date(referenceDate);
+    result.setFullYear(result.getFullYear() - 1);
+    return result;
   }
 
   // Handle "yesterday"
   if (lowerExpr.includes('gisteren') || lowerExpr.includes('yesterday')) {
-    const result = new Date(referenceDate)
-    result.setDate(result.getDate() - 1)
-    return result
+    const result = new Date(referenceDate);
+    result.setDate(result.getDate() - 1);
+    return result;
   }
 
-  return null
+  return null;
 }

@@ -13,88 +13,88 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { describe, it, expect } from 'vitest'
-import { hasMinRole, generateInviteToken, getInviteExpiration } from '../workspace'
+import { describe, it, expect } from 'vitest';
+import { hasMinRole, generateInviteToken, getInviteExpiration } from '../workspace';
 
 describe('workspace', () => {
   describe('hasMinRole', () => {
     it('returns true when user role is equal to required role', () => {
-      expect(hasMinRole('VIEWER', 'VIEWER')).toBe(true)
-      expect(hasMinRole('MEMBER', 'MEMBER')).toBe(true)
-      expect(hasMinRole('ADMIN', 'ADMIN')).toBe(true)
-      expect(hasMinRole('OWNER', 'OWNER')).toBe(true)
-    })
+      expect(hasMinRole('VIEWER', 'VIEWER')).toBe(true);
+      expect(hasMinRole('MEMBER', 'MEMBER')).toBe(true);
+      expect(hasMinRole('ADMIN', 'ADMIN')).toBe(true);
+      expect(hasMinRole('OWNER', 'OWNER')).toBe(true);
+    });
 
     it('returns true when user role is higher than required role', () => {
-      expect(hasMinRole('OWNER', 'VIEWER')).toBe(true)
-      expect(hasMinRole('OWNER', 'MEMBER')).toBe(true)
-      expect(hasMinRole('OWNER', 'ADMIN')).toBe(true)
-      expect(hasMinRole('ADMIN', 'MEMBER')).toBe(true)
-      expect(hasMinRole('ADMIN', 'VIEWER')).toBe(true)
-      expect(hasMinRole('MEMBER', 'VIEWER')).toBe(true)
-    })
+      expect(hasMinRole('OWNER', 'VIEWER')).toBe(true);
+      expect(hasMinRole('OWNER', 'MEMBER')).toBe(true);
+      expect(hasMinRole('OWNER', 'ADMIN')).toBe(true);
+      expect(hasMinRole('ADMIN', 'MEMBER')).toBe(true);
+      expect(hasMinRole('ADMIN', 'VIEWER')).toBe(true);
+      expect(hasMinRole('MEMBER', 'VIEWER')).toBe(true);
+    });
 
     it('returns false when user role is lower than required role', () => {
-      expect(hasMinRole('VIEWER', 'MEMBER')).toBe(false)
-      expect(hasMinRole('VIEWER', 'ADMIN')).toBe(false)
-      expect(hasMinRole('VIEWER', 'OWNER')).toBe(false)
-      expect(hasMinRole('MEMBER', 'ADMIN')).toBe(false)
-      expect(hasMinRole('MEMBER', 'OWNER')).toBe(false)
-      expect(hasMinRole('ADMIN', 'OWNER')).toBe(false)
-    })
-  })
+      expect(hasMinRole('VIEWER', 'MEMBER')).toBe(false);
+      expect(hasMinRole('VIEWER', 'ADMIN')).toBe(false);
+      expect(hasMinRole('VIEWER', 'OWNER')).toBe(false);
+      expect(hasMinRole('MEMBER', 'ADMIN')).toBe(false);
+      expect(hasMinRole('MEMBER', 'OWNER')).toBe(false);
+      expect(hasMinRole('ADMIN', 'OWNER')).toBe(false);
+    });
+  });
 
   describe('generateInviteToken', () => {
     it('generates a 64-character hex token', () => {
-      const token = generateInviteToken()
+      const token = generateInviteToken();
 
-      expect(token).toBeDefined()
-      expect(token.length).toBe(64)
-      expect(/^[0-9a-f]+$/.test(token)).toBe(true)
-    })
+      expect(token).toBeDefined();
+      expect(token.length).toBe(64);
+      expect(/^[0-9a-f]+$/.test(token)).toBe(true);
+    });
 
     it('generates unique tokens on each call', () => {
-      const token1 = generateInviteToken()
-      const token2 = generateInviteToken()
-      const token3 = generateInviteToken()
+      const token1 = generateInviteToken();
+      const token2 = generateInviteToken();
+      const token3 = generateInviteToken();
 
-      expect(token1).not.toBe(token2)
-      expect(token2).not.toBe(token3)
-      expect(token1).not.toBe(token3)
-    })
-  })
+      expect(token1).not.toBe(token2);
+      expect(token2).not.toBe(token3);
+      expect(token1).not.toBe(token3);
+    });
+  });
 
   describe('getInviteExpiration', () => {
     it('returns a date 7 days from now by default', () => {
-      const now = new Date()
-      const expiration = getInviteExpiration()
+      const now = new Date();
+      const expiration = getInviteExpiration();
 
       // Check it's roughly 7 days from now (allowing for test execution time)
-      const diffDays = Math.round((expiration.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-      expect(diffDays).toBe(7)
-    })
+      const diffDays = Math.round((expiration.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      expect(diffDays).toBe(7);
+    });
 
     it('returns a date N days from now when specified', () => {
-      const now = new Date()
+      const now = new Date();
 
-      const exp3 = getInviteExpiration(3)
-      const exp14 = getInviteExpiration(14)
-      const exp30 = getInviteExpiration(30)
+      const exp3 = getInviteExpiration(3);
+      const exp14 = getInviteExpiration(14);
+      const exp30 = getInviteExpiration(30);
 
-      const diffDays3 = Math.round((exp3.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-      const diffDays14 = Math.round((exp14.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
-      const diffDays30 = Math.round((exp30.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+      const diffDays3 = Math.round((exp3.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      const diffDays14 = Math.round((exp14.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+      const diffDays30 = Math.round((exp30.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
-      expect(diffDays3).toBe(3)
-      expect(diffDays14).toBe(14)
-      expect(diffDays30).toBe(30)
-    })
+      expect(diffDays3).toBe(3);
+      expect(diffDays14).toBe(14);
+      expect(diffDays30).toBe(30);
+    });
 
     it('returns a date in the future', () => {
-      const now = new Date()
-      const expiration = getInviteExpiration()
+      const now = new Date();
+      const expiration = getInviteExpiration();
 
-      expect(expiration.getTime()).toBeGreaterThan(now.getTime())
-    })
-  })
-})
+      expect(expiration.getTime()).toBeGreaterThan(now.getTime());
+    });
+  });
+});

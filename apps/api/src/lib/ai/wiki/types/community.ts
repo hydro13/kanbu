@@ -15,7 +15,7 @@
  * @date 2026-01-15
  */
 
-import type { WikiContext } from '../WikiAiService'
+import type { WikiContext } from '../WikiAiService';
 
 // ============================================================================
 // Core Node & Edge Types
@@ -27,21 +27,21 @@ import type { WikiContext } from '../WikiAiService'
  */
 export interface CommunityNode {
   /** Unique identifier (UUID v4) */
-  uuid: string
+  uuid: string;
   /** LLM-generated short name for the community (max 100 chars) */
-  name: string
+  name: string;
   /** LLM-generated summary of what this community represents */
-  summary: string
+  summary: string;
   /** Multi-tenant scoping: wiki-ws-{id} or wiki-proj-{id} */
-  groupId: string
+  groupId: string;
   /** Cached count of members for quick access */
-  memberCount: number
+  memberCount: number;
   /** Optional: embedding vector for semantic search */
-  nameEmbedding?: number[]
+  nameEmbedding?: number[];
   /** Creation timestamp */
-  createdAt: Date
+  createdAt: Date;
   /** Last update timestamp */
-  updatedAt: Date
+  updatedAt: Date;
 }
 
 /**
@@ -50,19 +50,19 @@ export interface CommunityNode {
  */
 export interface CommunityMembership {
   /** Unique identifier for the edge */
-  uuid: string
+  uuid: string;
   /** Community UUID (source) */
-  communityUuid: string
+  communityUuid: string;
   /** Entity UUID (target - can be Person, Concept, WikiPage, etc.) */
-  entityUuid: string
+  entityUuid: string;
   /** Entity type for quick filtering */
-  entityType: string
+  entityType: string;
   /** Entity name for display */
-  entityName: string
+  entityName: string;
   /** Multi-tenant scoping */
-  groupId: string
+  groupId: string;
   /** When this membership was created */
-  createdAt: Date
+  createdAt: Date;
 }
 
 // ============================================================================
@@ -74,9 +74,9 @@ export interface CommunityMembership {
  */
 export interface LPNeighbor {
   /** UUID of the neighboring node */
-  nodeUuid: string
+  nodeUuid: string;
   /** Number of edges connecting to this neighbor */
-  edgeCount: number
+  edgeCount: number;
 }
 
 /**
@@ -84,7 +84,7 @@ export interface LPNeighbor {
  * Maps node UUIDs to their neighbors with edge counts
  */
 export interface LPProjectionMap {
-  [nodeUuid: string]: LPNeighbor[]
+  [nodeUuid: string]: LPNeighbor[];
 }
 
 /**
@@ -92,9 +92,9 @@ export interface LPProjectionMap {
  */
 export interface LPClusterResult {
   /** Community identifier (will become UUID) */
-  communityId: number
+  communityId: number;
   /** UUIDs of nodes belonging to this cluster */
-  memberUuids: string[]
+  memberUuids: string[];
 }
 
 /**
@@ -102,11 +102,11 @@ export interface LPClusterResult {
  */
 export interface LPConfig {
   /** Maximum iterations to prevent infinite loops (default: 100) */
-  maxIterations?: number
+  maxIterations?: number;
   /** Minimum cluster size to keep (default: 2) */
-  minClusterSize?: number
+  minClusterSize?: number;
   /** Random seed for tie-breaking (optional, for reproducibility) */
-  seed?: number
+  seed?: number;
 }
 
 /**
@@ -116,7 +116,7 @@ export const DEFAULT_LP_CONFIG: Required<LPConfig> = {
   maxIterations: 100,
   minClusterSize: 2,
   seed: 42,
-} as const
+} as const;
 
 // ============================================================================
 // Service Input/Output Types
@@ -127,13 +127,13 @@ export const DEFAULT_LP_CONFIG: Required<LPConfig> = {
  */
 export interface DetectCommunitiesInput {
   /** Wiki context for multi-tenant scoping */
-  context: WikiContext
+  context: WikiContext;
   /** Force rebuild: delete existing communities first (default: false) */
-  forceRebuild?: boolean
+  forceRebuild?: boolean;
   /** Label Propagation configuration */
-  lpConfig?: LPConfig
+  lpConfig?: LPConfig;
   /** Generate AI summaries for communities (default: true) */
-  generateSummaries?: boolean
+  generateSummaries?: boolean;
 }
 
 /**
@@ -141,26 +141,26 @@ export interface DetectCommunitiesInput {
  */
 export interface DetectCommunitiesOutput {
   /** Detected communities */
-  communities: CommunityNode[]
+  communities: CommunityNode[];
   /** Total membership edges created */
-  membershipCount: number
+  membershipCount: number;
   /** Processing statistics */
   stats: {
     /** Total nodes analyzed */
-    totalNodes: number
+    totalNodes: number;
     /** Total edges analyzed */
-    totalEdges: number
+    totalEdges: number;
     /** Number of communities detected */
-    totalCommunities: number
+    totalCommunities: number;
     /** Average community size */
-    avgCommunitySize: number
+    avgCommunitySize: number;
     /** Largest community size */
-    maxCommunitySize: number
+    maxCommunitySize: number;
     /** Label Propagation iterations */
-    lpIterations: number
+    lpIterations: number;
     /** Total processing time in milliseconds */
-    processingTimeMs: number
-  }
+    processingTimeMs: number;
+  };
 }
 
 /**
@@ -168,11 +168,11 @@ export interface DetectCommunitiesOutput {
  */
 export interface UpdateCommunitiesInput {
   /** Wiki context for multi-tenant scoping */
-  context: WikiContext
+  context: WikiContext;
   /** UUID of newly added/modified entity (optional) */
-  entityUuid?: string
+  entityUuid?: string;
   /** Force full recalculation (default: false, uses incremental) */
-  forceRecalculate?: boolean
+  forceRecalculate?: boolean;
 }
 
 /**
@@ -180,11 +180,11 @@ export interface UpdateCommunitiesInput {
  */
 export interface UpdateCommunitiesOutput {
   /** Whether communities were modified */
-  modified: boolean
+  modified: boolean;
   /** Number of communities affected */
-  communitiesAffected: number
+  communitiesAffected: number;
   /** New community if entity was placed in one */
-  newCommunity?: CommunityNode
+  newCommunity?: CommunityNode;
 }
 
 /**
@@ -192,13 +192,13 @@ export interface UpdateCommunitiesOutput {
  */
 export interface GetCommunitiesInput {
   /** Wiki context for multi-tenant scoping */
-  context: WikiContext
+  context: WikiContext;
   /** Include member details (default: false, just counts) */
-  includeMembers?: boolean
+  includeMembers?: boolean;
   /** Filter by minimum member count */
-  minMembers?: number
+  minMembers?: number;
   /** Maximum number of communities to return */
-  limit?: number
+  limit?: number;
 }
 
 /**
@@ -207,10 +207,10 @@ export interface GetCommunitiesInput {
 export interface CommunityWithMembers extends CommunityNode {
   /** Member entities (only if includeMembers=true) */
   members?: Array<{
-    uuid: string
-    name: string
-    type: string
-  }>
+    uuid: string;
+    name: string;
+    type: string;
+  }>;
 }
 
 /**
@@ -218,9 +218,9 @@ export interface CommunityWithMembers extends CommunityNode {
  */
 export interface GetCommunitiesOutput {
   /** Communities (with or without members) */
-  communities: CommunityWithMembers[]
+  communities: CommunityWithMembers[];
   /** Total count (may be more than returned if limit applied) */
-  totalCount: number
+  totalCount: number;
 }
 
 // ============================================================================
@@ -232,7 +232,7 @@ export interface GetCommunitiesOutput {
  */
 export interface SummarizePairInput {
   /** Two summaries to combine */
-  summaries: [string, string]
+  summaries: [string, string];
 }
 
 /**
@@ -240,7 +240,7 @@ export interface SummarizePairInput {
  */
 export interface SummarizePairOutput {
   /** Combined summary */
-  summary: string
+  summary: string;
 }
 
 /**
@@ -248,9 +248,9 @@ export interface SummarizePairOutput {
  */
 export interface GenerateCommunityNameInput {
   /** Summary of all community members */
-  summary: string
+  summary: string;
   /** Names of top entities in the community */
-  topEntityNames: string[]
+  topEntityNames: string[];
 }
 
 /**
@@ -258,9 +258,9 @@ export interface GenerateCommunityNameInput {
  */
 export interface GenerateCommunityNameOutput {
   /** Short descriptive name (max 100 chars) */
-  name: string
+  name: string;
   /** Longer description if needed */
-  description?: string
+  description?: string;
 }
 
 /**
@@ -268,13 +268,13 @@ export interface GenerateCommunityNameOutput {
  */
 export interface EntitySummary {
   /** Entity UUID */
-  uuid: string
+  uuid: string;
   /** Entity name */
-  name: string
+  name: string;
   /** Entity type (Person, Concept, etc.) */
-  type: string
+  type: string;
   /** Summary or description of the entity */
-  summary?: string
+  summary?: string;
 }
 
 // ============================================================================
@@ -286,15 +286,15 @@ export interface EntitySummary {
  */
 export interface CommunityCacheEntry {
   /** Cached communities */
-  communities: CommunityNode[]
+  communities: CommunityNode[];
   /** When this cache entry was computed */
-  computedAt: Date
+  computedAt: Date;
   /** Group ID for scoping */
-  groupId: string
+  groupId: string;
   /** Node count at time of computation (for invalidation) */
-  nodeCount: number
+  nodeCount: number;
   /** Edge count at time of computation (for invalidation) */
-  edgeCount: number
+  edgeCount: number;
 }
 
 /**
@@ -302,9 +302,9 @@ export interface CommunityCacheEntry {
  */
 export interface CommunityCacheConfig {
   /** Cache TTL in milliseconds (default: 5 minutes) */
-  ttlMs?: number
+  ttlMs?: number;
   /** Invalidate on any graph change (default: true) */
-  invalidateOnChange?: boolean
+  invalidateOnChange?: boolean;
 }
 
 /**
@@ -313,7 +313,7 @@ export interface CommunityCacheConfig {
 export const DEFAULT_CACHE_CONFIG: Required<CommunityCacheConfig> = {
   ttlMs: 5 * 60 * 1000, // 5 minutes
   invalidateOnChange: true,
-} as const
+} as const;
 
 // ============================================================================
 // FalkorDB Schema Types
@@ -323,24 +323,24 @@ export const DEFAULT_CACHE_CONFIG: Required<CommunityCacheConfig> = {
  * Community node as stored in FalkorDB
  */
 export interface FalkorCommunityNode {
-  uuid: string
-  name: string
-  summary: string
-  group_id: string
-  member_count: number
-  created_at: string // ISO date string
-  updated_at: string // ISO date string
+  uuid: string;
+  name: string;
+  summary: string;
+  group_id: string;
+  member_count: number;
+  created_at: string; // ISO date string
+  updated_at: string; // ISO date string
 }
 
 /**
  * HAS_MEMBER relationship as stored in FalkorDB
  */
 export interface FalkorHasMemberEdge {
-  uuid: string
-  group_id: string
-  entity_type: string
-  entity_name: string
-  created_at: string // ISO date string
+  uuid: string;
+  group_id: string;
+  entity_type: string;
+  entity_name: string;
+  created_at: string; // ISO date string
 }
 
 // ============================================================================
@@ -352,39 +352,34 @@ export interface FalkorHasMemberEdge {
  */
 export interface CommunityDisplayData {
   /** Community UUID */
-  id: string
+  id: string;
   /** Display name */
-  name: string
+  name: string;
   /** Summary text */
-  summary: string
+  summary: string;
   /** Number of members */
-  memberCount: number
+  memberCount: number;
   /** Color for visualization (assigned by frontend) */
-  color?: string
+  color?: string;
   /** Whether this community is currently selected */
-  isSelected?: boolean
+  isSelected?: boolean;
 }
 
 /**
  * Community detection status
  */
-export type CommunityDetectionStatus =
-  | 'idle'
-  | 'detecting'
-  | 'summarizing'
-  | 'complete'
-  | 'error'
+export type CommunityDetectionStatus = 'idle' | 'detecting' | 'summarizing' | 'complete' | 'error';
 
 /**
  * Community detection progress
  */
 export interface CommunityDetectionProgress {
   /** Current status */
-  status: CommunityDetectionStatus
+  status: CommunityDetectionStatus;
   /** Progress percentage (0-100) */
-  progress: number
+  progress: number;
   /** Current step description */
-  currentStep: string
+  currentStep: string;
   /** Error message if status is 'error' */
-  error?: string
+  error?: string;
 }

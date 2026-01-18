@@ -9,7 +9,7 @@
  * Based on Python Graphiti: dedupe_nodes.py, dedupe_edges.py
  */
 
-import type { NodeResolutionsResponse, EdgeDuplicateResponse } from '../types'
+import type { NodeResolutionsResponse, EdgeDuplicateResponse } from '../types';
 
 // ===========================================================================
 // Types
@@ -17,57 +17,57 @@ import type { NodeResolutionsResponse, EdgeDuplicateResponse } from '../types'
 
 export interface ExtractedNodeContext {
   /** ID from extraction (0-indexed) */
-  id: number
+  id: number;
   /** Entity name */
-  name: string
+  name: string;
   /** Entity type(s) */
-  entity_type: string[]
+  entity_type: string[];
   /** Type description */
-  entity_type_description?: string
+  entity_type_description?: string;
 }
 
 export interface ExistingNodeContext {
   /** Index in existing nodes array */
-  idx: number
+  idx: number;
   /** Entity name */
-  name: string
+  name: string;
   /** Entity type(s) */
-  entity_types: string[]
+  entity_types: string[];
   /** Summary/description */
-  summary?: string
+  summary?: string;
 }
 
 export interface DeduplicateNodesContext {
   /** Extracted entities to check */
-  extractedNodes: ExtractedNodeContext[]
+  extractedNodes: ExtractedNodeContext[];
   /** Existing entities to compare against */
-  existingNodes: ExistingNodeContext[]
+  existingNodes: ExistingNodeContext[];
   /** Current episode/page content */
-  episodeContent: string
+  episodeContent: string;
   /** Previous episodes for context */
-  previousEpisodes?: string[]
+  previousEpisodes?: string[];
 }
 
 export interface ExistingEdgeContext {
   /** Index in existing edges array */
-  idx: number
+  idx: number;
   /** The fact/relationship */
-  fact: string
+  fact: string;
   /** Source entity UUID */
-  sourceUuid: string
+  sourceUuid: string;
   /** Target entity UUID */
-  targetUuid: string
+  targetUuid: string;
 }
 
 export interface DeduplicateEdgeContext {
   /** Existing edges to compare against */
-  existingEdges: ExistingEdgeContext[]
+  existingEdges: ExistingEdgeContext[];
   /** New edge to check */
   newEdge: {
-    fact: string
-    sourceUuid: string
-    targetUuid: string
-  }
+    fact: string;
+    sourceUuid: string;
+    targetUuid: string;
+  };
 }
 
 // ===========================================================================
@@ -114,7 +114,7 @@ Return a JSON object with exactly this structure:
   ]
 }
 
-IMPORTANT: Your response MUST include exactly one resolution for each entity in the input.`
+IMPORTANT: Your response MUST include exactly one resolution for each entity in the input.`;
 }
 
 /**
@@ -124,7 +124,7 @@ export function getDeduplicateNodesUserPrompt(context: DeduplicateNodesContext):
   const previousEpisodesText =
     context.previousEpisodes && context.previousEpisodes.length > 0
       ? context.previousEpisodes.join('\n---\n')
-      : 'No previous messages'
+      : 'No previous messages';
 
   return `<PREVIOUS MESSAGES>
 ${previousEpisodesText}
@@ -144,7 +144,7 @@ ${JSON.stringify(context.existingNodes, null, 2)}
 
 For each entity in NEW ENTITIES (IDs 0 through ${context.extractedNodes.length - 1}), determine if it is a duplicate of any entity in EXISTING ENTITIES.
 
-Return a JSON response with entityResolutions for all ${context.extractedNodes.length} entities.`
+Return a JSON response with entityResolutions for all ${context.extractedNodes.length} entities.`;
 }
 
 /**
@@ -156,18 +156,18 @@ export function parseDeduplicateNodesResponse(
 ): NodeResolutionsResponse {
   try {
     // Try to extract JSON from response
-    const jsonMatch = response.match(/\{[\s\S]*"entityResolutions"[\s\S]*\}/)
+    const jsonMatch = response.match(/\{[\s\S]*"entityResolutions"[\s\S]*\}/);
     if (!jsonMatch) {
-      console.warn('[parseDeduplicateNodesResponse] No JSON found in response')
-      return { entityResolutions: [] }
+      console.warn('[parseDeduplicateNodesResponse] No JSON found in response');
+      return { entityResolutions: [] };
     }
 
-    const parsed = JSON.parse(jsonMatch[0]) as NodeResolutionsResponse
+    const parsed = JSON.parse(jsonMatch[0]) as NodeResolutionsResponse;
 
     // Validate response
     if (!parsed.entityResolutions || !Array.isArray(parsed.entityResolutions)) {
-      console.warn('[parseDeduplicateNodesResponse] Invalid response structure')
-      return { entityResolutions: [] }
+      console.warn('[parseDeduplicateNodesResponse] Invalid response structure');
+      return { entityResolutions: [] };
     }
 
     // Validate each resolution
@@ -179,19 +179,19 @@ export function parseDeduplicateNodesResponse(
         typeof r.name === 'string' &&
         typeof r.duplicateIdx === 'number' &&
         Array.isArray(r.duplicates)
-      )
-    })
+      );
+    });
 
     if (validResolutions.length !== expectedCount) {
       console.warn(
         `[parseDeduplicateNodesResponse] Expected ${expectedCount} resolutions, got ${validResolutions.length}`
-      )
+      );
     }
 
-    return { entityResolutions: validResolutions }
+    return { entityResolutions: validResolutions };
   } catch (error) {
-    console.error('[parseDeduplicateNodesResponse] Failed to parse response:', error)
-    return { entityResolutions: [] }
+    console.error('[parseDeduplicateNodesResponse] Failed to parse response:', error);
+    return { entityResolutions: [] };
   }
 }
 
@@ -245,7 +245,7 @@ Return a JSON object:
   "duplicateFacts": [indices of duplicate facts in EXISTING FACTS],
   "contradictedFacts": [indices of contradicted facts in EXISTING FACTS],
   "factType": "DEFAULT" or specific type
-}`
+}`;
 }
 
 /**
@@ -265,7 +265,7 @@ Analyze the NEW FACT and determine:
 2. Which EXISTING FACTS (if any) are contradicted by the NEW FACT
 3. The type/category of this fact
 
-Return a JSON response with duplicateFacts, contradictedFacts, and factType.`
+Return a JSON response with duplicateFacts, contradictedFacts, and factType.`;
 }
 
 /**
@@ -277,30 +277,30 @@ export function parseDeduplicateEdgeResponse(
 ): EdgeDuplicateResponse {
   try {
     // Try to extract JSON from response
-    const jsonMatch = response.match(/\{[\s\S]*\}/)
+    const jsonMatch = response.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      console.warn('[parseDeduplicateEdgeResponse] No JSON found in response')
-      return { duplicateFacts: [], contradictedFacts: [], factType: 'DEFAULT' }
+      console.warn('[parseDeduplicateEdgeResponse] No JSON found in response');
+      return { duplicateFacts: [], contradictedFacts: [], factType: 'DEFAULT' };
     }
 
-    const parsed = JSON.parse(jsonMatch[0]) as EdgeDuplicateResponse
+    const parsed = JSON.parse(jsonMatch[0]) as EdgeDuplicateResponse;
 
     // Validate and filter indices
     const validDuplicates = (parsed.duplicateFacts || []).filter(
       (idx) => typeof idx === 'number' && idx >= 0 && idx < existingCount
-    )
+    );
 
     const validContradicted = (parsed.contradictedFacts || []).filter(
       (idx) => typeof idx === 'number' && idx >= 0 && idx < existingCount
-    )
+    );
 
     return {
       duplicateFacts: validDuplicates,
       contradictedFacts: validContradicted,
       factType: parsed.factType || 'DEFAULT',
-    }
+    };
   } catch (error) {
-    console.error('[parseDeduplicateEdgeResponse] Failed to parse response:', error)
-    return { duplicateFacts: [], contradictedFacts: [], factType: 'DEFAULT' }
+    console.error('[parseDeduplicateEdgeResponse] Failed to parse response:', error);
+    return { duplicateFacts: [], contradictedFacts: [], factType: 'DEFAULT' };
   }
 }

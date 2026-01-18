@@ -51,23 +51,51 @@ interface UploadingFile {
 
 function UploadIcon({ className = 'h-8 w-8' }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.5}
+        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+      />
     </svg>
   );
 }
 
 function FileIcon({ className = 'h-5 w-5' }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+      />
     </svg>
   );
 }
 
 function CheckIcon({ className = 'h-5 w-5' }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
     </svg>
   );
@@ -75,7 +103,13 @@ function CheckIcon({ className = 'h-5 w-5' }: { className?: string }) {
 
 function XIcon({ className = 'h-5 w-5' }: { className?: string }) {
   return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
     </svg>
   );
@@ -124,59 +158,55 @@ export function FileUpload({
 
   const uploadMutation = trpc.attachment.upload.useMutation();
 
-  const uploadFile = useCallback(async (file: File) => {
-    // Add to uploading list
-    setUploadingFiles((prev) => [
-      ...prev,
-      { file, progress: 0, status: 'uploading' },
-    ]);
+  const uploadFile = useCallback(
+    async (file: File) => {
+      // Add to uploading list
+      setUploadingFiles((prev) => [...prev, { file, progress: 0, status: 'uploading' }]);
 
-    try {
-      // Convert to base64
-      const base64Data = await fileToBase64(file);
+      try {
+        // Convert to base64
+        const base64Data = await fileToBase64(file);
 
-      // Upload via tRPC
-      const result = await uploadMutation.mutateAsync({
-        taskId,
-        filename: file.name,
-        mimeType: file.type || 'application/octet-stream',
-        data: base64Data,
-      });
+        // Upload via tRPC
+        const result = await uploadMutation.mutateAsync({
+          taskId,
+          filename: file.name,
+          mimeType: file.type || 'application/octet-stream',
+          data: base64Data,
+        });
 
-      // Update status to success
-      setUploadingFiles((prev) =>
-        prev.map((f) =>
-          f.file === file ? { ...f, progress: 100, status: 'success' } : f
-        )
-      );
+        // Update status to success
+        setUploadingFiles((prev) =>
+          prev.map((f) => (f.file === file ? { ...f, progress: 100, status: 'success' } : f))
+        );
 
-      // Notify parent
-      onUploadComplete?.({
-        id: result.id,
-        name: result.name,
-        url: result.url,
-        mimeType: result.mimeType,
-        size: result.size,
-        isImage: result.isImage,
-      });
+        // Notify parent
+        onUploadComplete?.({
+          id: result.id,
+          name: result.name,
+          url: result.url,
+          mimeType: result.mimeType,
+          size: result.size,
+          isImage: result.isImage,
+        });
 
-      // Remove from list after a delay
-      setTimeout(() => {
-        setUploadingFiles((prev) => prev.filter((f) => f.file !== file));
-      }, 2000);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Upload failed';
+        // Remove from list after a delay
+        setTimeout(() => {
+          setUploadingFiles((prev) => prev.filter((f) => f.file !== file));
+        }, 2000);
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Upload failed';
 
-      // Update status to error
-      setUploadingFiles((prev) =>
-        prev.map((f) =>
-          f.file === file ? { ...f, status: 'error', error: errorMessage } : f
-        )
-      );
+        // Update status to error
+        setUploadingFiles((prev) =>
+          prev.map((f) => (f.file === file ? { ...f, status: 'error', error: errorMessage } : f))
+        );
 
-      onError?.(errorMessage);
-    }
-  }, [taskId, uploadMutation, onUploadComplete, onError]);
+        onError?.(errorMessage);
+      }
+    },
+    [taskId, uploadMutation, onUploadComplete, onError]
+  );
 
   const handleFiles = useCallback(
     (files: FileList | null) => {
@@ -189,13 +219,16 @@ export function FileUpload({
     [uploadFile, disabled]
   );
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (!disabled) {
-      setIsDragging(true);
-    }
-  }, [disabled]);
+  const handleDragOver = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!disabled) {
+        setIsDragging(true);
+      }
+    },
+    [disabled]
+  );
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -245,9 +278,10 @@ export function FileUpload({
         className={`
           relative border-2 border-dashed rounded-lg p-6 text-center cursor-pointer
           transition-colors duration-200
-          ${isDragging
-            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-            : 'border-input hover:border-gray-400 dark:hover:border-gray-500'
+          ${
+            isDragging
+              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+              : 'border-input hover:border-gray-400 dark:hover:border-gray-500'
           }
           ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
         `}

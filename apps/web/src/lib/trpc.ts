@@ -1,8 +1,8 @@
-import { createTRPCReact, httpBatchLink, type CreateTRPCReact } from '@trpc/react-query'
-import { QueryClient } from '@tanstack/react-query'
+import { createTRPCReact, httpBatchLink, type CreateTRPCReact } from '@trpc/react-query';
+import { QueryClient } from '@tanstack/react-query';
 // Type-only import - uses relative path in monorepo
 // tRPC types are shared at build time, not runtime
-import type { AppRouter } from '../../../../apps/api/src/trpc'
+import type { AppRouter } from '../../../../apps/api/src/trpc';
 
 const TOKEN_KEY = 'kanbu_token';
 
@@ -30,7 +30,7 @@ export function getMediaUrl(path: string | null | undefined): string | undefined
  * tRPC React client
  * Explicit type annotation to avoid fastify type inference issues
  */
-export const trpc: CreateTRPCReact<AppRouter, unknown> = createTRPCReact<AppRouter>()
+export const trpc: CreateTRPCReact<AppRouter, unknown> = createTRPCReact<AppRouter>();
 
 /**
  * React Query client
@@ -42,7 +42,7 @@ export const queryClient = new QueryClient({
       retry: 1,
     },
   },
-})
+});
 
 /**
  * Get API host - connects directly to API server in development
@@ -97,4 +97,4 @@ export const trpcClient: ReturnType<typeof trpc.createClient> = trpc.createClien
       },
     }),
   ],
-})
+});

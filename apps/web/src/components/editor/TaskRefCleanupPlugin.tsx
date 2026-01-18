@@ -11,34 +11,34 @@
  * ===================================================================
  */
 
-import { useEffect } from 'react'
-import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
-import { $getRoot, $isTextNode, TextNode } from 'lexical'
-import { $isTaskRefNode, TaskRefNode } from './nodes/TaskRefNode'
+import { useEffect } from 'react';
+import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext';
+import { $getRoot, $isTextNode, TextNode } from 'lexical';
+import { $isTaskRefNode, TaskRefNode } from './nodes/TaskRefNode';
 
 /**
  * Recursively find all TaskRefNodes in the editor tree
  */
 function findAllTaskRefNodes(node: ReturnType<typeof $getRoot>): TaskRefNode[] {
-  const taskRefNodes: TaskRefNode[] = []
+  const taskRefNodes: TaskRefNode[] = [];
 
   const traverse = (currentNode: unknown) => {
     if ($isTaskRefNode(currentNode as TaskRefNode)) {
-      taskRefNodes.push(currentNode as TaskRefNode)
+      taskRefNodes.push(currentNode as TaskRefNode);
     }
 
     // Check if node has children
-    const nodeWithChildren = currentNode as { getChildren?: () => unknown[] }
+    const nodeWithChildren = currentNode as { getChildren?: () => unknown[] };
     if (typeof nodeWithChildren.getChildren === 'function') {
-      const children = nodeWithChildren.getChildren()
+      const children = nodeWithChildren.getChildren();
       for (const child of children) {
-        traverse(child)
+        traverse(child);
       }
     }
-  }
+  };
 
-  traverse(node)
-  return taskRefNodes
+  traverse(node);
+  return taskRefNodes;
 }
 
 /**
@@ -46,73 +46,75 @@ function findAllTaskRefNodes(node: ReturnType<typeof $getRoot>): TaskRefNode[] {
  * Keep only the first text node that matches the expected format
  */
 function cleanupTaskRefNode(taskRefNode: TaskRefNode): boolean {
-  const children = taskRefNode.getChildren()
+  const children = taskRefNode.getChildren();
 
   if (children.length <= 1) {
-    return false // Nothing to clean up
+    return false; // Nothing to clean up
   }
 
-  const reference = taskRefNode.getReference()
-  const expectedText = `#${reference}`
+  const reference = taskRefNode.getReference();
+  const expectedText = `#${reference}`;
 
-  let foundValid = false
-  let modified = false
+  let foundValid = false;
+  let modified = false;
 
   // Remove all children except the first valid one
   for (const child of children) {
     if ($isTextNode(child)) {
-      const textNode = child as TextNode
+      const textNode = child as TextNode;
       if (!foundValid && textNode.getTextContent() === expectedText) {
-        foundValid = true
+        foundValid = true;
         // Keep this one
       } else {
         // Remove duplicate
-        textNode.remove()
-        modified = true
+        textNode.remove();
+        modified = true;
       }
     }
   }
 
   // If no valid text node found, add one
   if (!foundValid && children.length === 0) {
-    const textNode = new TextNode(expectedText)
-    taskRefNode.append(textNode)
-    modified = true
+    const textNode = new TextNode(expectedText);
+    taskRefNode.append(textNode);
+    modified = true;
   }
 
-  return modified
+  return modified;
 }
 
 /**
  * Plugin that cleans up duplicate TaskRefNode children on editor load
  */
 export function TaskRefCleanupPlugin(): null {
-  const [editor] = useLexicalComposerContext()
+  const [editor] = useLexicalComposerContext();
 
   useEffect(() => {
     // Run cleanup once after editor initializes
     const timeoutId = setTimeout(() => {
       editor.update(() => {
-        const root = $getRoot()
-        const taskRefNodes = findAllTaskRefNodes(root)
+        const root = $getRoot();
+        const taskRefNodes = findAllTaskRefNodes(root);
 
-        let cleanedCount = 0
+        let cleanedCount = 0;
         for (const taskRefNode of taskRefNodes) {
           if (cleanupTaskRefNode(taskRefNode)) {
-            cleanedCount++
+            cleanedCount++;
           }
         }
 
         if (cleanedCount > 0) {
-          console.log(`[TaskRefCleanupPlugin] Cleaned up ${cleanedCount} TaskRefNode(s) with duplicate children`)
+          console.log(
+            `[TaskRefCleanupPlugin] Cleaned up ${cleanedCount} TaskRefNode(s) with duplicate children`
+          );
         }
-      })
-    }, 100) // Small delay to ensure content is loaded
+      });
+    }, 100); // Small delay to ensure content is loaded
 
-    return () => clearTimeout(timeoutId)
-  }, [editor])
+    return () => clearTimeout(timeoutId);
+  }, [editor]);
 
-  return null
+  return null;
 }
 
-export default TaskRefCleanupPlugin
+export default TaskRefCleanupPlugin;

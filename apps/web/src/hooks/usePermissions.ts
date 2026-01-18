@@ -22,41 +22,41 @@
  * =============================================================================
  */
 
-import { useMemo, useCallback } from 'react'
-import { trpc } from '@/lib/trpc'
-import { useAppSelector } from '@/store'
-import { selectUser } from '@/store/authSlice'
+import { useMemo, useCallback } from 'react';
+import { trpc } from '@/lib/trpc';
+import { useAppSelector } from '@/store';
+import { selectUser } from '@/store/authSlice';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface PermissionContext {
-  workspaceId?: number
-  projectId?: number
+  workspaceId?: number;
+  projectId?: number;
 }
 
 export interface UsePermissionsResult {
   /** Check if user has a specific permission */
-  canDo: (permission: string) => boolean
+  canDo: (permission: string) => boolean;
 
   /** Check multiple permissions at once */
-  canDoAny: (permissions: string[]) => boolean
+  canDoAny: (permissions: string[]) => boolean;
 
   /** Check if user has ALL of the given permissions */
-  canDoAll: (permissions: string[]) => boolean
+  canDoAll: (permissions: string[]) => boolean;
 
   /** Get all granted permissions as a Set */
-  grantedPermissions: Set<string>
+  grantedPermissions: Set<string>;
 
   /** Whether permission data is still loading */
-  isLoading: boolean
+  isLoading: boolean;
 
   /** Whether there was an error fetching permissions */
-  isError: boolean
+  isError: boolean;
 
   /** Refetch permissions */
-  refetch: () => void
+  refetch: () => void;
 }
 
 // =============================================================================
@@ -64,7 +64,7 @@ export interface UsePermissionsResult {
 // =============================================================================
 
 export function usePermissions(context: PermissionContext = {}): UsePermissionsResult {
-  const user = useAppSelector(selectUser)
+  const user = useAppSelector(selectUser);
 
   // Fetch effective permissions for the user in this context
   const permissionsQuery = trpc.group.myPermissions.useQuery(
@@ -77,46 +77,46 @@ export function usePermissions(context: PermissionContext = {}): UsePermissionsR
       staleTime: 60 * 1000, // 1 minute
       refetchOnWindowFocus: false,
     }
-  )
+  );
 
   // Build a Set of granted permissions for fast lookups
   const grantedPermissions = useMemo(() => {
-    if (!permissionsQuery.data) return new Set<string>()
+    if (!permissionsQuery.data) return new Set<string>();
 
     // The API returns { allowed: string[], denied: string[], full: [...] }
-    return new Set<string>(permissionsQuery.data.allowed)
-  }, [permissionsQuery.data])
+    return new Set<string>(permissionsQuery.data.allowed);
+  }, [permissionsQuery.data]);
 
   // Check single permission
   const canDo = useCallback(
     (permission: string): boolean => {
       // Platform admins have all permissions
-      if (user?.role === 'ADMIN') return true
+      if (user?.role === 'ADMIN') return true;
 
-      return grantedPermissions.has(permission)
+      return grantedPermissions.has(permission);
     },
     [grantedPermissions, user?.role]
-  )
+  );
 
   // Check if user has ANY of the given permissions
   const canDoAny = useCallback(
     (permissions: string[]): boolean => {
-      if (user?.role === 'ADMIN') return true
+      if (user?.role === 'ADMIN') return true;
 
-      return permissions.some((p) => grantedPermissions.has(p))
+      return permissions.some((p) => grantedPermissions.has(p));
     },
     [grantedPermissions, user?.role]
-  )
+  );
 
   // Check if user has ALL of the given permissions
   const canDoAll = useCallback(
     (permissions: string[]): boolean => {
-      if (user?.role === 'ADMIN') return true
+      if (user?.role === 'ADMIN') return true;
 
-      return permissions.every((p) => grantedPermissions.has(p))
+      return permissions.every((p) => grantedPermissions.has(p));
     },
     [grantedPermissions, user?.role]
-  )
+  );
 
   return {
     canDo,
@@ -126,7 +126,7 @@ export function usePermissions(context: PermissionContext = {}): UsePermissionsR
     isLoading: permissionsQuery.isLoading,
     isError: permissionsQuery.isError,
     refetch: permissionsQuery.refetch,
-  }
+  };
 }
 
 // =============================================================================
@@ -141,12 +141,12 @@ export function useCanDo(
   permission: string,
   context: PermissionContext = {}
 ): { allowed: boolean; isLoading: boolean } {
-  const { canDo, isLoading } = usePermissions(context)
+  const { canDo, isLoading } = usePermissions(context);
 
   return {
     allowed: canDo(permission),
     isLoading,
-  }
+  };
 }
 
 /**
@@ -156,7 +156,7 @@ export function useProjectPermission(
   permission: string,
   projectId: number
 ): { allowed: boolean; isLoading: boolean } {
-  return useCanDo(permission, { projectId })
+  return useCanDo(permission, { projectId });
 }
 
 /**
@@ -166,7 +166,7 @@ export function useWorkspacePermission(
   permission: string,
   workspaceId: number
 ): { allowed: boolean; isLoading: boolean } {
-  return useCanDo(permission, { workspaceId })
+  return useCanDo(permission, { workspaceId });
 }
 
-export default usePermissions
+export default usePermissions;

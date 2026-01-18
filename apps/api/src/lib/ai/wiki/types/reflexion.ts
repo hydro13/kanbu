@@ -25,11 +25,11 @@
  */
 export interface MissedEntity {
   /** Name of the missed entity */
-  name: string
+  name: string;
   /** Why this entity was missed (optional explanation) */
-  reason?: string
+  reason?: string;
   /** Suggested entity type based on context */
-  suggestedType?: string
+  suggestedType?: string;
 }
 
 /**
@@ -37,13 +37,13 @@ export interface MissedEntity {
  */
 export interface NodeReflexionResult {
   /** List of missed entity names */
-  missedEntities: MissedEntity[]
+  missedEntities: MissedEntity[];
   /** Reasoning for the detection */
-  reasoning: string
+  reasoning: string;
   /** Provider used */
-  provider: string
+  provider: string;
   /** Model used */
-  model: string
+  model: string;
 }
 
 // ===========================================================================
@@ -55,15 +55,15 @@ export interface NodeReflexionResult {
  */
 export interface MissedFact {
   /** Source entity name */
-  sourceName: string
+  sourceName: string;
   /** Target entity name */
-  targetName: string
+  targetName: string;
   /** Relationship type */
-  relationType: string
+  relationType: string;
   /** Human-readable fact description */
-  fact: string
+  fact: string;
   /** Why this fact was missed */
-  reason?: string
+  reason?: string;
 }
 
 /**
@@ -71,13 +71,13 @@ export interface MissedFact {
  */
 export interface EdgeReflexionResult {
   /** List of missed facts */
-  missedFacts: MissedFact[]
+  missedFacts: MissedFact[];
   /** Reasoning for the detection */
-  reasoning: string
+  reasoning: string;
   /** Provider used */
-  provider: string
+  provider: string;
   /** Model used */
-  model: string
+  model: string;
 }
 
 // ===========================================================================
@@ -94,13 +94,13 @@ export interface EdgeReflexionResult {
  */
 export interface ReflexionConfig {
   /** Enable reflexion for nodes (default: true) */
-  enableNodeReflexion?: boolean
+  enableNodeReflexion?: boolean;
   /** Enable reflexion for edges (default: false - like Python Graphiti) */
-  enableEdgeReflexion?: boolean
+  enableEdgeReflexion?: boolean;
   /** Maximum number of reflexion passes (default: 1) */
-  maxPasses?: number
+  maxPasses?: number;
   /** Minimum missed entities to trigger re-extraction (default: 1) */
-  minMissedThreshold?: number
+  minMissedThreshold?: number;
 }
 
 /**
@@ -112,7 +112,7 @@ export const DEFAULT_REFLEXION_CONFIG: Required<ReflexionConfig> = {
   enableEdgeReflexion: false,
   maxPasses: 1,
   minMissedThreshold: 1,
-} as const
+} as const;
 
 // ===========================================================================
 // Sync Result Types
@@ -123,15 +123,15 @@ export const DEFAULT_REFLEXION_CONFIG: Required<ReflexionConfig> = {
  */
 export interface ReflexionSyncResult {
   /** Missed nodes detected and re-extracted */
-  nodesRecovered: number
+  nodesRecovered: number;
   /** Missed edges detected and re-extracted */
-  edgesRecovered: number
+  edgesRecovered: number;
   /** Total reflexion passes executed */
-  passesExecuted: number
+  passesExecuted: number;
   /** Whether reflexion was skipped (e.g., no initial entities) */
-  skipped: boolean
+  skipped: boolean;
   /** Skip reason if applicable */
-  skipReason?: string
+  skipReason?: string;
 }
 
 // ===========================================================================
@@ -143,9 +143,9 @@ export interface ReflexionSyncResult {
  * Used internally by parseReflexionNodesResponse
  */
 export interface ParsedMissedEntity {
-  name: string
-  reason?: string
-  suggestedType?: string
+  name: string;
+  reason?: string;
+  suggestedType?: string;
 }
 
 /**
@@ -153,9 +153,9 @@ export interface ParsedMissedEntity {
  * Used internally by parseReflexionEdgesResponse
  */
 export interface ParsedMissedFact {
-  sourceName: string
-  targetName: string
-  relationType: string
-  fact: string
-  reason?: string
+  sourceName: string;
+  targetName: string;
+  relationType: string;
+  fact: string;
+  reason?: string;
 }

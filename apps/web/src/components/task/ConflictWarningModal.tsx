@@ -14,7 +14,7 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { AlertTriangle, RefreshCw, X } from 'lucide-react'
+import { AlertTriangle, RefreshCw, X } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -22,18 +22,18 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface ConflictWarningModalProps {
-  isOpen: boolean
-  onClose: () => void
-  onReload: () => void
-  modifiedByUsername?: string
+  isOpen: boolean;
+  onClose: () => void;
+  onReload: () => void;
+  modifiedByUsername?: string;
 }
 
 // =============================================================================
@@ -47,9 +47,9 @@ export function ConflictWarningModal({
   modifiedByUsername,
 }: ConflictWarningModalProps) {
   const handleReload = () => {
-    onReload()
-    onClose()
-  }
+    onReload();
+    onClose();
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -61,9 +61,7 @@ export function ConflictWarningModal({
             </div>
             <div>
               <DialogTitle>Task Modified</DialogTitle>
-              <DialogDescription className="mt-1">
-                Concurrent edit detected
-              </DialogDescription>
+              <DialogDescription className="mt-1">Concurrent edit detected</DialogDescription>
             </div>
           </div>
         </DialogHeader>
@@ -74,12 +72,11 @@ export function ConflictWarningModal({
             <span className="font-medium text-foreground">
               {modifiedByUsername ?? 'another user'}
             </span>{' '}
-            while you were editing. Your changes could not be saved to prevent
-            overwriting their work.
+            while you were editing. Your changes could not be saved to prevent overwriting their
+            work.
           </p>
           <p className="mt-3 text-sm text-gray-600 dark:text-gray-400">
-            Please reload the task to see the latest changes, then reapply your
-            edits if needed.
+            Please reload the task to see the latest changes, then reapply your edits if needed.
           </p>
         </div>
 
@@ -95,7 +92,7 @@ export function ConflictWarningModal({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
 
-export default ConflictWarningModal
+export default ConflictWarningModal;

@@ -13,8 +13,8 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Bell,
   BellOff,
@@ -27,19 +27,19 @@ import {
   ArrowLeft,
   Save,
   Loader2,
-} from 'lucide-react'
+} from 'lucide-react';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface NotificationPreference {
-  key: string
-  label: string
-  description: string
-  icon: React.ReactNode
-  inApp: boolean
-  email: boolean
+  key: string;
+  label: string;
+  description: string;
+  icon: React.ReactNode;
+  inApp: boolean;
+  email: boolean;
 }
 
 // =============================================================================
@@ -95,49 +95,43 @@ const DEFAULT_PREFERENCES: NotificationPreference[] = [
     inApp: true,
     email: true,
   },
-]
+];
 
 // =============================================================================
 // Component
 // =============================================================================
 
 export function NotificationSettings() {
-  const navigate = useNavigate()
-  const [preferences, setPreferences] = useState<NotificationPreference[]>(DEFAULT_PREFERENCES)
-  const [isSaving, setIsSaving] = useState(false)
-  const [masterInApp, setMasterInApp] = useState(true)
-  const [masterEmail, setMasterEmail] = useState(true)
+  const navigate = useNavigate();
+  const [preferences, setPreferences] = useState<NotificationPreference[]>(DEFAULT_PREFERENCES);
+  const [isSaving, setIsSaving] = useState(false);
+  const [masterInApp, setMasterInApp] = useState(true);
+  const [masterEmail, setMasterEmail] = useState(true);
 
   const handleToggle = (key: string, field: 'inApp' | 'email') => {
     setPreferences((prev) =>
-      prev.map((pref) =>
-        pref.key === key ? { ...pref, [field]: !pref[field] } : pref
-      )
-    )
-  }
+      prev.map((pref) => (pref.key === key ? { ...pref, [field]: !pref[field] } : pref))
+    );
+  };
 
   const handleMasterToggle = (field: 'inApp' | 'email') => {
     if (field === 'inApp') {
-      const newValue = !masterInApp
-      setMasterInApp(newValue)
-      setPreferences((prev) =>
-        prev.map((pref) => ({ ...pref, inApp: newValue }))
-      )
+      const newValue = !masterInApp;
+      setMasterInApp(newValue);
+      setPreferences((prev) => prev.map((pref) => ({ ...pref, inApp: newValue })));
     } else {
-      const newValue = !masterEmail
-      setMasterEmail(newValue)
-      setPreferences((prev) =>
-        prev.map((pref) => ({ ...pref, email: newValue }))
-      )
+      const newValue = !masterEmail;
+      setMasterEmail(newValue);
+      setPreferences((prev) => prev.map((pref) => ({ ...pref, email: newValue })));
     }
-  }
+  };
 
   const handleSave = async () => {
-    setIsSaving(true)
+    setIsSaving(true);
     // TODO: Save preferences to backend when user preferences API is implemented
-    await new Promise((resolve) => setTimeout(resolve, 500))
-    setIsSaving(false)
-  }
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    setIsSaving(false);
+  };
 
   return (
     <div className="min-h-screen bg-muted">
@@ -153,9 +147,7 @@ export function NotificationSettings() {
             </button>
             <div className="flex items-center gap-3">
               <Bell className="w-6 h-6 text-muted-foreground" />
-              <h1 className="text-section-title text-foreground">
-                Notification Settings
-              </h1>
+              <h1 className="text-section-title text-foreground">Notification Settings</h1>
             </div>
           </div>
         </div>
@@ -165,9 +157,7 @@ export function NotificationSettings() {
       <div className="max-w-4xl mx-auto px-4 py-6">
         {/* Master Controls */}
         <div className="bg-card rounded-card border border-border p-6 mb-6">
-          <h2 className="text-lg font-semibold text-foreground mb-4">
-            Master Controls
-          </h2>
+          <h2 className="text-lg font-semibold text-foreground mb-4">Master Controls</h2>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -177,9 +167,7 @@ export function NotificationSettings() {
                   <BellOff className="w-5 h-5 text-gray-400" />
                 )}
                 <div>
-                  <p className="font-medium text-foreground">
-                    In-App Notifications
-                  </p>
+                  <p className="font-medium text-foreground">In-App Notifications</p>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
                     Show notifications in the app
                   </p>
@@ -203,9 +191,7 @@ export function NotificationSettings() {
               <div className="flex items-center gap-3">
                 <Mail className={`w-5 h-5 ${masterEmail ? 'text-blue-500' : 'text-gray-400'}`} />
                 <div>
-                  <p className="font-medium text-foreground">
-                    Email Notifications
-                  </p>
+                  <p className="font-medium text-foreground">Email Notifications</p>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
                     Send notifications to your email
                   </p>
@@ -230,9 +216,7 @@ export function NotificationSettings() {
         {/* Individual Preferences */}
         <div className="bg-card rounded-card border border-border overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-            <h2 className="text-lg font-semibold text-foreground">
-              Notification Types
-            </h2>
+            <h2 className="text-lg font-semibold text-foreground">Notification Types</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
               Configure which notifications you want to receive
             </p>
@@ -260,19 +244,12 @@ export function NotificationSettings() {
           {/* Preference Rows */}
           <div className="divide-y divide-gray-200 dark:divide-gray-700">
             {preferences.map((pref) => (
-              <div
-                key={pref.key}
-                className="grid grid-cols-12 gap-4 px-6 py-4 items-center"
-              >
+              <div key={pref.key} className="grid grid-cols-12 gap-4 px-6 py-4 items-center">
                 <div className="col-span-8 flex items-center gap-3">
                   <div className="text-gray-400">{pref.icon}</div>
                   <div>
-                    <p className="font-medium text-foreground">
-                      {pref.label}
-                    </p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      {pref.description}
-                    </p>
+                    <p className="font-medium text-foreground">{pref.label}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{pref.description}</p>
                   </div>
                 </div>
                 <div className="col-span-2 flex justify-center">
@@ -325,17 +302,13 @@ export function NotificationSettings() {
             disabled={isSaving}
             className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {isSaving ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Save className="w-4 h-4" />
-            )}
+            {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
             Save Preferences
           </button>
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default NotificationSettings
+export default NotificationSettings;

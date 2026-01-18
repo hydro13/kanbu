@@ -13,13 +13,13 @@
  * =============================================================================
  */
 
-import { prisma } from '../../lib/prisma'
+import { prisma } from '../../lib/prisma';
 
 // =============================================================================
 // Types
 // =============================================================================
 
-export type CheckRunStatus = 'queued' | 'in_progress' | 'completed'
+export type CheckRunStatus = 'queued' | 'in_progress' | 'completed';
 
 export type CheckRunConclusion =
   | 'success'
@@ -29,54 +29,54 @@ export type CheckRunConclusion =
   | 'skipped'
   | 'timed_out'
   | 'action_required'
-  | 'stale'
+  | 'stale';
 
 export interface CheckRunData {
-  repositoryId: number
-  pullRequestId?: number | null
-  checkRunId: bigint
-  name: string
-  headSha: string
-  status: CheckRunStatus
-  conclusion?: CheckRunConclusion | null
-  startedAt?: Date | null
-  completedAt?: Date | null
-  outputTitle?: string | null
-  outputSummary?: string | null
+  repositoryId: number;
+  pullRequestId?: number | null;
+  checkRunId: bigint;
+  name: string;
+  headSha: string;
+  status: CheckRunStatus;
+  conclusion?: CheckRunConclusion | null;
+  startedAt?: Date | null;
+  completedAt?: Date | null;
+  outputTitle?: string | null;
+  outputSummary?: string | null;
 }
 
 export interface CheckRunInfo {
-  id: number
-  repositoryId: number
-  pullRequestId: number | null
-  checkRunId: bigint
-  name: string
-  headSha: string
-  status: string
-  conclusion: string | null
-  startedAt: Date | null
-  completedAt: Date | null
-  outputTitle: string | null
-  outputSummary: string | null
-  createdAt: Date
+  id: number;
+  repositoryId: number;
+  pullRequestId: number | null;
+  checkRunId: bigint;
+  name: string;
+  headSha: string;
+  status: string;
+  conclusion: string | null;
+  startedAt: Date | null;
+  completedAt: Date | null;
+  outputTitle: string | null;
+  outputSummary: string | null;
+  createdAt: Date;
 }
 
 export interface CheckRunStats {
-  total: number
-  byStatus: Record<string, number>
-  byConclusion: Record<string, number>
-  byName: Record<string, { total: number; passed: number; failed: number }>
-  passRate: number
-  avgDuration: number | null
+  total: number;
+  byStatus: Record<string, number>;
+  byConclusion: Record<string, number>;
+  byName: Record<string, { total: number; passed: number; failed: number }>;
+  passRate: number;
+  avgDuration: number | null;
 }
 
 export interface PRCheckSummary {
-  pullRequestId: number
-  total: number
-  passed: number
-  failed: number
-  pending: number
-  checkRuns: CheckRunInfo[]
+  pullRequestId: number;
+  total: number;
+  passed: number;
+  failed: number;
+  pending: number;
+  checkRuns: CheckRunInfo[];
 }
 
 // =============================================================================
@@ -118,9 +118,9 @@ export async function upsertCheckRun(data: CheckRunData): Promise<CheckRunInfo> 
       outputTitle: data.outputTitle,
       outputSummary: data.outputSummary,
     },
-  })
+  });
 
-  return checkRun
+  return checkRun;
 }
 
 /**
@@ -137,7 +137,7 @@ export async function getCheckRun(
         checkRunId,
       },
     },
-  })
+  });
 }
 
 /**
@@ -150,49 +150,43 @@ export async function getCheckRunsForCommit(
   return prisma.gitHubCheckRun.findMany({
     where: { repositoryId, headSha },
     orderBy: { createdAt: 'desc' },
-  })
+  });
 }
 
 /**
  * Get check runs for a pull request
  */
-export async function getCheckRunsForPR(
-  pullRequestId: number
-): Promise<CheckRunInfo[]> {
+export async function getCheckRunsForPR(pullRequestId: number): Promise<CheckRunInfo[]> {
   return prisma.gitHubCheckRun.findMany({
     where: { pullRequestId },
     orderBy: { createdAt: 'desc' },
-  })
+  });
 }
 
 /**
  * Get PR check summary
  */
-export async function getPRCheckSummary(
-  pullRequestId: number
-): Promise<PRCheckSummary> {
+export async function getPRCheckSummary(pullRequestId: number): Promise<PRCheckSummary> {
   const checkRuns = await prisma.gitHubCheckRun.findMany({
     where: { pullRequestId },
     orderBy: { createdAt: 'desc' },
-  })
+  });
 
   // Get latest check run per name
-  const latestByName = new Map<string, CheckRunInfo>()
+  const latestByName = new Map<string, CheckRunInfo>();
   for (const run of checkRuns) {
     if (!latestByName.has(run.name)) {
-      latestByName.set(run.name, run)
+      latestByName.set(run.name, run);
     }
   }
 
-  const latest = Array.from(latestByName.values())
+  const latest = Array.from(latestByName.values());
 
-  const passed = latest.filter((r) => r.conclusion === 'success').length
+  const passed = latest.filter((r) => r.conclusion === 'success').length;
   const failed = latest.filter((r) =>
     ['failure', 'timed_out', 'cancelled'].includes(r.conclusion || '')
-  ).length
-  const pending = latest.filter(
-    (r) => r.status !== 'completed' || r.conclusion === null
-  ).length
+  ).length;
+  const pending = latest.filter((r) => r.status !== 'completed' || r.conclusion === null).length;
 
   return {
     pullRequestId,
@@ -201,7 +195,7 @@ export async function getPRCheckSummary(
     failed,
     pending,
     checkRuns: latest,
-  }
+  };
 }
 
 /**
@@ -211,62 +205,59 @@ export async function getCheckRunStats(
   repositoryId: number,
   options?: { days?: number }
 ): Promise<CheckRunStats> {
-  const { days = 30 } = options || {}
+  const { days = 30 } = options || {};
 
-  const since = new Date()
-  since.setDate(since.getDate() - days)
+  const since = new Date();
+  since.setDate(since.getDate() - days);
 
   const checkRuns = await prisma.gitHubCheckRun.findMany({
     where: {
       repositoryId,
       createdAt: { gte: since },
     },
-  })
+  });
 
-  const byStatus: Record<string, number> = {}
-  const byConclusion: Record<string, number> = {}
-  const byName: Record<string, { total: number; passed: number; failed: number }> = {}
+  const byStatus: Record<string, number> = {};
+  const byConclusion: Record<string, number> = {};
+  const byName: Record<string, { total: number; passed: number; failed: number }> = {};
 
-  let totalDuration = 0
-  let durationCount = 0
+  let totalDuration = 0;
+  let durationCount = 0;
 
   for (const run of checkRuns) {
-    byStatus[run.status] = (byStatus[run.status] || 0) + 1
+    byStatus[run.status] = (byStatus[run.status] || 0) + 1;
 
     if (run.conclusion) {
-      byConclusion[run.conclusion] = (byConclusion[run.conclusion] || 0) + 1
+      byConclusion[run.conclusion] = (byConclusion[run.conclusion] || 0) + 1;
     }
 
     if (!byName[run.name]) {
-      byName[run.name] = { total: 0, passed: 0, failed: 0 }
+      byName[run.name] = { total: 0, passed: 0, failed: 0 };
     }
-    const nameStats = byName[run.name]!
-    nameStats.total++
-    if (run.conclusion === 'success') nameStats.passed++
+    const nameStats = byName[run.name]!;
+    nameStats.total++;
+    if (run.conclusion === 'success') nameStats.passed++;
     if (['failure', 'timed_out'].includes(run.conclusion || '')) {
-      nameStats.failed++
+      nameStats.failed++;
     }
 
     if (run.startedAt && run.completedAt) {
-      totalDuration += run.completedAt.getTime() - run.startedAt.getTime()
-      durationCount++
+      totalDuration += run.completedAt.getTime() - run.startedAt.getTime();
+      durationCount++;
     }
   }
 
-  const completedRuns = checkRuns.filter((r) => r.status === 'completed')
-  const passedRuns = completedRuns.filter((r) => r.conclusion === 'success')
+  const completedRuns = checkRuns.filter((r) => r.status === 'completed');
+  const passedRuns = completedRuns.filter((r) => r.conclusion === 'success');
 
   return {
     total: checkRuns.length,
     byStatus,
     byConclusion,
     byName,
-    passRate:
-      completedRuns.length > 0
-        ? (passedRuns.length / completedRuns.length) * 100
-        : 0,
+    passRate: completedRuns.length > 0 ? (passedRuns.length / completedRuns.length) * 100 : 0,
     avgDuration: durationCount > 0 ? totalDuration / durationCount : null,
-  }
+  };
 }
 
 /**
@@ -276,10 +267,10 @@ export async function getTestTrends(
   repositoryId: number,
   options?: { weeks?: number }
 ): Promise<Array<{ week: string; total: number; passed: number; failed: number }>> {
-  const { weeks = 8 } = options || {}
+  const { weeks = 8 } = options || {};
 
-  const since = new Date()
-  since.setDate(since.getDate() - weeks * 7)
+  const since = new Date();
+  since.setDate(since.getDate() - weeks * 7);
 
   const checkRuns = await prisma.gitHubCheckRun.findMany({
     where: {
@@ -288,43 +279,40 @@ export async function getTestTrends(
       status: 'completed',
     },
     orderBy: { createdAt: 'asc' },
-  })
+  });
 
   // Group by week
-  const weekData = new Map<
-    string,
-    { total: number; passed: number; failed: number }
-  >()
+  const weekData = new Map<string, { total: number; passed: number; failed: number }>();
 
   for (const run of checkRuns) {
-    const weekStart = getWeekStart(run.createdAt)
-    const weekKey = weekStart.toISOString().slice(0, 10)
+    const weekStart = getWeekStart(run.createdAt);
+    const weekKey = weekStart.toISOString().slice(0, 10);
 
     if (!weekData.has(weekKey)) {
-      weekData.set(weekKey, { total: 0, passed: 0, failed: 0 })
+      weekData.set(weekKey, { total: 0, passed: 0, failed: 0 });
     }
 
-    const data = weekData.get(weekKey)!
-    data.total++
-    if (run.conclusion === 'success') data.passed++
+    const data = weekData.get(weekKey)!;
+    data.total++;
+    if (run.conclusion === 'success') data.passed++;
     if (['failure', 'timed_out'].includes(run.conclusion || '')) {
-      data.failed++
+      data.failed++;
     }
   }
 
   return Array.from(weekData.entries()).map(([week, data]) => ({
     week,
     ...data,
-  }))
+  }));
 }
 
 function getWeekStart(date: Date): Date {
-  const d = new Date(date)
-  const day = d.getDay()
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1)
-  d.setDate(diff)
-  d.setHours(0, 0, 0, 0)
-  return d
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  d.setDate(diff);
+  d.setHours(0, 0, 0, 0);
+  return d;
 }
 
 // =============================================================================
@@ -332,25 +320,25 @@ function getWeekStart(date: Date): Date {
 // =============================================================================
 
 export interface CheckRunWebhookPayload {
-  action: 'created' | 'completed' | 'rerequested' | 'requested_action'
+  action: 'created' | 'completed' | 'rerequested' | 'requested_action';
   check_run: {
-    id: number
-    name: string
-    head_sha: string
-    status: CheckRunStatus
-    conclusion: CheckRunConclusion | null
-    started_at: string | null
-    completed_at: string | null
+    id: number;
+    name: string;
+    head_sha: string;
+    status: CheckRunStatus;
+    conclusion: CheckRunConclusion | null;
+    started_at: string | null;
+    completed_at: string | null;
     output: {
-      title: string | null
-      summary: string | null
-    } | null
-    pull_requests: Array<{ number: number }>
-  }
+      title: string | null;
+      summary: string | null;
+    } | null;
+    pull_requests: Array<{ number: number }>;
+  };
   repository: {
-    id: number
-    full_name: string
-  }
+    id: number;
+    full_name: string;
+  };
 }
 
 /**
@@ -362,17 +350,17 @@ export async function processCheckRunWebhook(
   // Find repository by GitHub repo ID
   const repo = await prisma.gitHubRepository.findFirst({
     where: { repoId: BigInt(payload.repository.id) },
-  })
+  });
 
   if (!repo) {
-    return null
+    return null;
   }
 
   // Find associated PR if any
-  let pullRequestId: number | null = null
-  const firstPR = payload.check_run.pull_requests[0]
+  let pullRequestId: number | null = null;
+  const firstPR = payload.check_run.pull_requests[0];
   if (firstPR) {
-    const prNumber = firstPR.number
+    const prNumber = firstPR.number;
     const pr = await prisma.gitHubPullRequest.findUnique({
       where: {
         repositoryId_prNumber: {
@@ -380,8 +368,8 @@ export async function processCheckRunWebhook(
           prNumber,
         },
       },
-    })
-    pullRequestId = pr?.id ?? null
+    });
+    pullRequestId = pr?.id ?? null;
   }
 
   return upsertCheckRun({
@@ -392,15 +380,11 @@ export async function processCheckRunWebhook(
     headSha: payload.check_run.head_sha,
     status: payload.check_run.status,
     conclusion: payload.check_run.conclusion,
-    startedAt: payload.check_run.started_at
-      ? new Date(payload.check_run.started_at)
-      : null,
-    completedAt: payload.check_run.completed_at
-      ? new Date(payload.check_run.completed_at)
-      : null,
+    startedAt: payload.check_run.started_at ? new Date(payload.check_run.started_at) : null,
+    completedAt: payload.check_run.completed_at ? new Date(payload.check_run.completed_at) : null,
     outputTitle: payload.check_run.output?.title,
     outputSummary: payload.check_run.output?.summary,
-  })
+  });
 }
 
 // =============================================================================
@@ -416,6 +400,6 @@ export const checkRunService = {
   getCheckRunStats,
   getTestTrends,
   processCheckRunWebhook,
-}
+};
 
-export default checkRunService
+export default checkRunService;

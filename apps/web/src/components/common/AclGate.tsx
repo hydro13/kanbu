@@ -57,73 +57,73 @@
  * =============================================================================
  */
 
-import type { ReactNode } from 'react'
-import { useAclPermission, type AclResourceType } from '@/hooks/useAclPermission'
+import type { ReactNode } from 'react';
+import { useAclPermission, type AclResourceType } from '@/hooks/useAclPermission';
 
 // =============================================================================
 // Types
 // =============================================================================
 
-export type AclPermissionType = 'read' | 'write' | 'execute' | 'delete' | 'permissions'
+export type AclPermissionType = 'read' | 'write' | 'execute' | 'delete' | 'permissions';
 
 export interface AclGateProps {
   /** Resource type */
-  resourceType: AclResourceType
+  resourceType: AclResourceType;
 
   /** Resource ID (null for root-level resources like 'system') */
-  resourceId: number | null
+  resourceId: number | null;
 
   /** Permission to check */
-  permission: AclPermissionType
+  permission: AclPermissionType;
 
   /** Content to render if permission is granted */
-  children: ReactNode
+  children: ReactNode;
 
   /** Optional content to render if permission is denied */
-  fallback?: ReactNode
+  fallback?: ReactNode;
 
   /** If true, show children while loading (optimistic) */
-  optimistic?: boolean
+  optimistic?: boolean;
 }
 
 export interface AclGateAllProps {
   /** Resource type */
-  resourceType: AclResourceType
+  resourceType: AclResourceType;
 
   /** Resource ID */
-  resourceId: number | null
+  resourceId: number | null;
 
   /** All these permissions are required */
-  permissions: AclPermissionType[]
+  permissions: AclPermissionType[];
 
   /** Content to render if all permissions are granted */
-  children: ReactNode
+  children: ReactNode;
 
   /** Optional content to render if any permission is denied */
-  fallback?: ReactNode
+  fallback?: ReactNode;
 
   /** If true, show children while loading (optimistic) */
-  optimistic?: boolean
+  optimistic?: boolean;
 }
 
 export interface AclGateAnyProps {
   /** Resource type */
-  resourceType: AclResourceType
+  resourceType: AclResourceType;
 
   /** Resource ID */
-  resourceId: number | null
+  resourceId: number | null;
 
   /** At least one of these permissions is required */
-  permissions: AclPermissionType[]
+  permissions: AclPermissionType[];
 
   /** Content to render if any permission is granted */
-  children: ReactNode
+  children: ReactNode;
 
   /** Optional content to render if all permissions are denied */
-  fallback?: ReactNode
+  fallback?: ReactNode;
 
   /** If true, show children while loading (optimistic) */
-  optimistic?: boolean
+  optimistic?: boolean;
 }
 
 // =============================================================================
@@ -132,21 +132,27 @@ export interface AclGateAnyProps {
 
 function hasPermission(
   permissionType: AclPermissionType,
-  acl: { canRead: boolean; canWrite: boolean; canExecute: boolean; canDelete: boolean; canManagePermissions: boolean }
+  acl: {
+    canRead: boolean;
+    canWrite: boolean;
+    canExecute: boolean;
+    canDelete: boolean;
+    canManagePermissions: boolean;
+  }
 ): boolean {
   switch (permissionType) {
     case 'read':
-      return acl.canRead
+      return acl.canRead;
     case 'write':
-      return acl.canWrite
+      return acl.canWrite;
     case 'execute':
-      return acl.canExecute
+      return acl.canExecute;
     case 'delete':
-      return acl.canDelete
+      return acl.canDelete;
     case 'permissions':
-      return acl.canManagePermissions
+      return acl.canManagePermissions;
     default:
-      return false
+      return false;
   }
 }
 
@@ -165,13 +171,13 @@ export function AclGate({
   fallback = null,
   optimistic = false,
 }: AclGateProps): ReactNode {
-  const acl = useAclPermission({ resourceType, resourceId })
+  const acl = useAclPermission({ resourceType, resourceId });
 
   if (acl.isLoading) {
-    return optimistic ? children : null
+    return optimistic ? children : null;
   }
 
-  return hasPermission(permission, acl) ? children : fallback
+  return hasPermission(permission, acl) ? children : fallback;
 }
 
 /**
@@ -185,14 +191,14 @@ export function AclGateAll({
   fallback = null,
   optimistic = false,
 }: AclGateAllProps): ReactNode {
-  const acl = useAclPermission({ resourceType, resourceId })
+  const acl = useAclPermission({ resourceType, resourceId });
 
   if (acl.isLoading) {
-    return optimistic ? children : null
+    return optimistic ? children : null;
   }
 
-  const hasAll = permissions.every((p) => hasPermission(p, acl))
-  return hasAll ? children : fallback
+  const hasAll = permissions.every((p) => hasPermission(p, acl));
+  return hasAll ? children : fallback;
 }
 
 /**
@@ -206,18 +212,18 @@ export function AclGateAny({
   fallback = null,
   optimistic = false,
 }: AclGateAnyProps): ReactNode {
-  const acl = useAclPermission({ resourceType, resourceId })
+  const acl = useAclPermission({ resourceType, resourceId });
 
   if (acl.isLoading) {
-    return optimistic ? children : null
+    return optimistic ? children : null;
   }
 
-  const hasAny = permissions.some((p) => hasPermission(p, acl))
-  return hasAny ? children : fallback
+  const hasAny = permissions.some((p) => hasPermission(p, acl));
+  return hasAny ? children : fallback;
 }
 
 // =============================================================================
 // Default Export
 // =============================================================================
 
-export default AclGate
+export default AclGate;

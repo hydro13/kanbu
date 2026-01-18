@@ -20,11 +20,11 @@
  * =============================================================================
  */
 
-import { createHash } from 'crypto'
-import { prisma } from '../lib/prisma'
-import { aclService, ACL_PERMISSIONS } from './aclService'
-import { auditService, AUDIT_ACTIONS } from './auditService'
-import type { ApiKeyScope } from '@prisma/client'
+import { createHash } from 'crypto';
+import { prisma } from '../lib/prisma';
+import { aclService, ACL_PERMISSIONS } from './aclService';
+import { auditService, AUDIT_ACTIONS } from './auditService';
+import type { ApiKeyScope } from '@prisma/client';
 
 // =============================================================================
 // Types
@@ -32,42 +32,42 @@ import type { ApiKeyScope } from '@prisma/client'
 
 export interface ApiKeyContext {
   /** User ID that owns this API key */
-  userId: number
+  userId: number;
   /** API Key ID */
-  keyId: number
+  keyId: number;
   /** API Key name (for display) */
-  keyName: string
+  keyName: string;
   /** Scope level: USER, WORKSPACE, or PROJECT */
-  scope: ApiKeyScope
+  scope: ApiKeyScope;
   /** Workspace ID if scope is WORKSPACE */
-  workspaceId: number | null
+  workspaceId: number | null;
   /** Project ID if scope is PROJECT */
-  projectId: number | null
+  projectId: number | null;
   /** Whether this is a service account key */
-  isServiceAccount: boolean
+  isServiceAccount: boolean;
   /** Service account name if applicable */
-  serviceAccountName: string | null
+  serviceAccountName: string | null;
   /** Rate limit (requests per minute) */
-  rateLimit: number
+  rateLimit: number;
 }
 
 export interface ApiKeyUsageParams {
   /** API key context */
-  keyContext: ApiKeyContext
+  keyContext: ApiKeyContext;
   /** Endpoint that was called */
-  endpoint: string
+  endpoint: string;
   /** Resource type accessed */
-  resourceType: string
+  resourceType: string;
   /** Resource ID accessed (if applicable) */
-  resourceId?: number
+  resourceId?: number;
   /** Whether the request was successful */
-  success: boolean
+  success: boolean;
   /** Client IP address */
-  ipAddress?: string
+  ipAddress?: string;
   /** User agent string */
-  userAgent?: string
+  userAgent?: string;
   /** Error message if request failed */
-  errorMessage?: string
+  errorMessage?: string;
 }
 
 // =============================================================================
@@ -79,7 +79,7 @@ class ApiKeyService {
    * Hash an API key for storage/comparison
    */
   hashKey(key: string): string {
-    return createHash('sha256').update(key).digest('hex')
+    return createHash('sha256').update(key).digest('hex');
   }
 
   /**
@@ -89,11 +89,11 @@ class ApiKeyService {
   async authenticate(apiKey: string): Promise<ApiKeyContext | null> {
     // Validate key format
     if (!apiKey || !apiKey.startsWith('kb_')) {
-      return null
+      return null;
     }
 
     // Hash the key for lookup
-    const keyHash = this.hashKey(apiKey)
+    const keyHash = this.hashKey(apiKey);
 
     // Find the key in database
     const key = await prisma.apiKey.findFirst({
@@ -101,16 +101,16 @@ class ApiKeyService {
       include: {
         user: { select: { id: true, isActive: true } },
       },
-    })
+    });
 
     // Key not found or user inactive
     if (!key || !key.user.isActive) {
-      return null
+      return null;
     }
 
     // Check expiration
     if (key.expiresAt && key.expiresAt < new Date()) {
-      return null
+      return null;
     }
 
     // Update last used timestamp (fire and forget)
@@ -121,7 +121,7 @@ class ApiKeyService {
       })
       .catch(() => {
         // Ignore errors - this is non-critical
-      })
+      });
 
     return {
       userId: key.userId,
@@ -133,7 +133,7 @@ class ApiKeyService {
       isServiceAccount: key.isServiceAccount,
       serviceAccountName: key.serviceAccountName,
       rateLimit: key.rateLimit,
-    }
+    };
   }
 
   /**
@@ -153,7 +153,7 @@ class ApiKeyService {
   ): Promise<boolean> {
     // Step 1: Check scope restrictions
     if (!this.isInScope(keyContext, resourceType, resourceId)) {
-      return false
+      return false;
     }
 
     // Step 2: If project-scoped, verify project belongs to allowed workspace
@@ -161,10 +161,10 @@ class ApiKeyService {
       const project = await prisma.project.findUnique({
         where: { id: resourceId },
         select: { workspaceId: true },
-      })
+      });
 
       if (!project || project.workspaceId !== keyContext.workspaceId) {
-        return false
+        return false;
       }
     }
 
@@ -174,7 +174,7 @@ class ApiKeyService {
       resourceType,
       resourceId,
       requiredPermission
-    )
+    );
   }
 
   /**
@@ -188,24 +188,24 @@ class ApiKeyService {
     switch (keyContext.scope) {
       case 'USER':
         // No scope restriction - use full user permissions
-        return true
+        return true;
 
       case 'WORKSPACE':
         if (resourceType === 'workspace') {
-          return keyContext.workspaceId === resourceId
+          return keyContext.workspaceId === resourceId;
         }
         // For projects, we'll check workspace membership in hasPermission
-        return true
+        return true;
 
       case 'PROJECT':
         if (resourceType === 'project') {
-          return keyContext.projectId === resourceId
+          return keyContext.projectId === resourceId;
         }
         // Workspace-level operations not allowed with project-scoped key
-        return false
+        return false;
 
       default:
-        return false
+        return false;
     }
   }
 
@@ -225,12 +225,12 @@ class ApiKeyService {
       resourceType,
       resourceId,
       requiredPermission
-    )
+    );
 
     if (!hasAccess) {
       throw new Error(
         errorMessage || `API key does not have access to ${resourceType} ${resourceId}`
-      )
+      );
     }
   }
 
@@ -238,9 +238,7 @@ class ApiKeyService {
    * Log API key usage to the audit log.
    */
   async logUsage(params: ApiKeyUsageParams): Promise<void> {
-    const action = params.success
-      ? AUDIT_ACTIONS.API_KEY_USED
-      : AUDIT_ACTIONS.API_REQUEST_DENIED
+    const action = params.success ? AUDIT_ACTIONS.API_KEY_USED : AUDIT_ACTIONS.API_REQUEST_DENIED;
 
     await auditService.logApiEvent({
       action,
@@ -258,7 +256,7 @@ class ApiKeyService {
         isServiceAccount: params.keyContext.isServiceAccount,
         ...(params.errorMessage && { error: params.errorMessage }),
       },
-    })
+    });
   }
 
   /**
@@ -271,24 +269,25 @@ class ApiKeyService {
     switch (keyContext.scope) {
       case 'USER':
         // Full user access - return null to indicate no restriction
-        return null
+        return null;
 
       case 'WORKSPACE':
-        return keyContext.workspaceId ? [keyContext.workspaceId] : []
+        return keyContext.workspaceId ? [keyContext.workspaceId] : [];
 
-      case 'PROJECT':
+      case 'PROJECT': {
         if (!keyContext.projectId) {
-          return []
+          return [];
         }
         // Get the project's workspace
         const project = await prisma.project.findUnique({
           where: { id: keyContext.projectId },
           select: { workspaceId: true },
-        })
-        return project ? [project.workspaceId] : []
+        });
+        return project ? [project.workspaceId] : [];
+      }
 
       default:
-        return []
+        return [];
     }
   }
 
@@ -301,22 +300,22 @@ class ApiKeyService {
   async getAccessibleProjectIds(keyContext: ApiKeyContext): Promise<number[] | null> {
     switch (keyContext.scope) {
       case 'USER':
-        return null
+        return null;
 
       case 'WORKSPACE':
-        return null // ACL will filter to workspace's projects
+        return null; // ACL will filter to workspace's projects
 
       case 'PROJECT':
-        return keyContext.projectId ? [keyContext.projectId] : []
+        return keyContext.projectId ? [keyContext.projectId] : [];
 
       default:
-        return []
+        return [];
     }
   }
 }
 
 // Export singleton instance
-export const apiKeyService = new ApiKeyService()
+export const apiKeyService = new ApiKeyService();
 
 // Re-export for convenience
-export { ACL_PERMISSIONS }
+export { ACL_PERMISSIONS };

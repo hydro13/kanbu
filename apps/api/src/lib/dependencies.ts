@@ -13,7 +13,7 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { prisma } from './prisma'
+import { prisma } from './prisma';
 
 /**
  * Check if creating a link would cause a circular dependency.
@@ -29,7 +29,7 @@ export async function wouldCreateCircularDependency(
 ): Promise<boolean> {
   // If source and target are the same, it's immediately circular
   if (sourceTaskId === targetTaskId) {
-    return true
+    return true;
   }
 
   // Get all BLOCKS relationships from database
@@ -41,47 +41,47 @@ export async function wouldCreateCircularDependency(
       taskId: true,
       oppositeTaskId: true,
     },
-  })
+  });
 
   // Build adjacency list: task -> tasks it blocks
-  const blocksGraph = new Map<number, number[]>()
+  const blocksGraph = new Map<number, number[]>();
   for (const link of allBlockingLinks) {
-    const existing = blocksGraph.get(link.taskId) ?? []
-    existing.push(link.oppositeTaskId)
-    blocksGraph.set(link.taskId, existing)
+    const existing = blocksGraph.get(link.taskId) ?? [];
+    existing.push(link.oppositeTaskId);
+    blocksGraph.set(link.taskId, existing);
   }
 
   // Add the proposed new link to the graph
-  const existingFromSource = blocksGraph.get(sourceTaskId) ?? []
-  existingFromSource.push(targetTaskId)
-  blocksGraph.set(sourceTaskId, existingFromSource)
+  const existingFromSource = blocksGraph.get(sourceTaskId) ?? [];
+  existingFromSource.push(targetTaskId);
+  blocksGraph.set(sourceTaskId, existingFromSource);
 
   // DFS to detect if there's a path from targetTaskId back to sourceTaskId
-  const visited = new Set<number>()
-  const stack = [targetTaskId]
+  const visited = new Set<number>();
+  const stack = [targetTaskId];
 
   while (stack.length > 0) {
-    const current = stack.pop()!
+    const current = stack.pop()!;
 
     if (current === sourceTaskId) {
       // Found a path back to source - circular dependency!
-      return true
+      return true;
     }
 
     if (visited.has(current)) {
-      continue
+      continue;
     }
-    visited.add(current)
+    visited.add(current);
 
-    const blockedBy = blocksGraph.get(current) ?? []
+    const blockedBy = blocksGraph.get(current) ?? [];
     for (const blocked of blockedBy) {
       if (!visited.has(blocked)) {
-        stack.push(blocked)
+        stack.push(blocked);
       }
     }
   }
 
-  return false
+  return false;
 }
 
 /**
@@ -92,60 +92,57 @@ export async function wouldCreateCircularDependency(
  * @returns Array of task IDs that are blocking this task
  */
 export async function getBlockingChain(taskId: number): Promise<number[]> {
-  const blockingTasks: number[] = []
-  const visited = new Set<number>()
-  const stack = [taskId]
+  const blockingTasks: number[] = [];
+  const visited = new Set<number>();
+  const stack = [taskId];
 
   // Get all blocking relationships
   const allBlockingLinks = await prisma.taskLink.findMany({
     where: {
-      OR: [
-        { linkType: 'BLOCKS' },
-        { linkType: 'IS_BLOCKED_BY' },
-      ],
+      OR: [{ linkType: 'BLOCKS' }, { linkType: 'IS_BLOCKED_BY' }],
     },
     select: {
       taskId: true,
       oppositeTaskId: true,
       linkType: true,
     },
-  })
+  });
 
   // Build reverse adjacency list: task -> tasks that block it
-  const blockedByGraph = new Map<number, number[]>()
+  const blockedByGraph = new Map<number, number[]>();
   for (const link of allBlockingLinks) {
     if (link.linkType === 'BLOCKS') {
       // If A BLOCKS B, then B is blocked by A
-      const existing = blockedByGraph.get(link.oppositeTaskId) ?? []
-      existing.push(link.taskId)
-      blockedByGraph.set(link.oppositeTaskId, existing)
+      const existing = blockedByGraph.get(link.oppositeTaskId) ?? [];
+      existing.push(link.taskId);
+      blockedByGraph.set(link.oppositeTaskId, existing);
     } else if (link.linkType === 'IS_BLOCKED_BY') {
       // If A IS_BLOCKED_BY B, then A is blocked by B
-      const existing = blockedByGraph.get(link.taskId) ?? []
-      existing.push(link.oppositeTaskId)
-      blockedByGraph.set(link.taskId, existing)
+      const existing = blockedByGraph.get(link.taskId) ?? [];
+      existing.push(link.oppositeTaskId);
+      blockedByGraph.set(link.taskId, existing);
     }
   }
 
   // DFS to find all blocking tasks
   while (stack.length > 0) {
-    const current = stack.pop()!
+    const current = stack.pop()!;
 
     if (visited.has(current)) {
-      continue
+      continue;
     }
-    visited.add(current)
+    visited.add(current);
 
-    const blockers = blockedByGraph.get(current) ?? []
+    const blockers = blockedByGraph.get(current) ?? [];
     for (const blocker of blockers) {
       if (!visited.has(blocker)) {
-        blockingTasks.push(blocker)
-        stack.push(blocker)
+        blockingTasks.push(blocker);
+        stack.push(blocker);
       }
     }
   }
 
-  return blockingTasks
+  return blockingTasks;
 }
 
 /**
@@ -156,60 +153,57 @@ export async function getBlockingChain(taskId: number): Promise<number[]> {
  * @returns Array of task IDs that this task is blocking
  */
 export async function getBlockedChain(taskId: number): Promise<number[]> {
-  const blockedTasks: number[] = []
-  const visited = new Set<number>()
-  const stack = [taskId]
+  const blockedTasks: number[] = [];
+  const visited = new Set<number>();
+  const stack = [taskId];
 
   // Get all blocking relationships
   const allBlockingLinks = await prisma.taskLink.findMany({
     where: {
-      OR: [
-        { linkType: 'BLOCKS' },
-        { linkType: 'IS_BLOCKED_BY' },
-      ],
+      OR: [{ linkType: 'BLOCKS' }, { linkType: 'IS_BLOCKED_BY' }],
     },
     select: {
       taskId: true,
       oppositeTaskId: true,
       linkType: true,
     },
-  })
+  });
 
   // Build adjacency list: task -> tasks it blocks
-  const blocksGraph = new Map<number, number[]>()
+  const blocksGraph = new Map<number, number[]>();
   for (const link of allBlockingLinks) {
     if (link.linkType === 'BLOCKS') {
       // If A BLOCKS B, then A blocks B
-      const existing = blocksGraph.get(link.taskId) ?? []
-      existing.push(link.oppositeTaskId)
-      blocksGraph.set(link.taskId, existing)
+      const existing = blocksGraph.get(link.taskId) ?? [];
+      existing.push(link.oppositeTaskId);
+      blocksGraph.set(link.taskId, existing);
     } else if (link.linkType === 'IS_BLOCKED_BY') {
       // If A IS_BLOCKED_BY B, then B blocks A
-      const existing = blocksGraph.get(link.oppositeTaskId) ?? []
-      existing.push(link.taskId)
-      blocksGraph.set(link.oppositeTaskId, existing)
+      const existing = blocksGraph.get(link.oppositeTaskId) ?? [];
+      existing.push(link.taskId);
+      blocksGraph.set(link.oppositeTaskId, existing);
     }
   }
 
   // DFS to find all blocked tasks
   while (stack.length > 0) {
-    const current = stack.pop()!
+    const current = stack.pop()!;
 
     if (visited.has(current)) {
-      continue
+      continue;
     }
-    visited.add(current)
+    visited.add(current);
 
-    const blocked = blocksGraph.get(current) ?? []
+    const blocked = blocksGraph.get(current) ?? [];
     for (const blockedTask of blocked) {
       if (!visited.has(blockedTask)) {
-        blockedTasks.push(blockedTask)
-        stack.push(blockedTask)
+        blockedTasks.push(blockedTask);
+        stack.push(blockedTask);
       }
     }
   }
 
-  return blockedTasks
+  return blockedTasks;
 }
 
 /**
@@ -232,16 +226,16 @@ export async function isTaskBlocked(taskId: number): Promise<boolean> {
       oppositeTaskId: true,
       linkType: true,
     },
-  })
+  });
 
   if (directBlockers.length === 0) {
-    return false
+    return false;
   }
 
   // Get the blocking task IDs
   const blockerIds = directBlockers.map((link) =>
     link.linkType === 'BLOCKS' ? link.taskId : link.oppositeTaskId
-  )
+  );
 
   // Check if any blocker is not completed
   const uncompletedBlockers = await prisma.task.count({
@@ -249,7 +243,7 @@ export async function isTaskBlocked(taskId: number): Promise<boolean> {
       id: { in: blockerIds },
       isActive: true, // Not closed
     },
-  })
+  });
 
-  return uncompletedBlockers > 0
+  return uncompletedBlockers > 0;
 }

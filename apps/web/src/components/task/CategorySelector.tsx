@@ -13,27 +13,27 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useState, useRef, useEffect } from 'react'
-import { trpc } from '../../lib/trpc'
-import { ChevronDown, Plus, Check, X, Loader2, Folder } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react';
+import { trpc } from '../../lib/trpc';
+import { ChevronDown, Plus, Check, X, Loader2, Folder } from 'lucide-react';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface Category {
-  id: number
-  name: string
-  color: string | null
-  description?: string | null
+  id: number;
+  name: string;
+  color: string | null;
+  description?: string | null;
 }
 
 export interface CategorySelectorProps {
-  projectId: number
-  taskId: number
-  selectedCategory: Category | null
-  onCategoryChange?: (category: Category | null) => void
-  disabled?: boolean
+  projectId: number;
+  taskId: number;
+  selectedCategory: Category | null;
+  onCategoryChange?: (category: Category | null) => void;
+  disabled?: boolean;
 }
 
 // =============================================================================
@@ -49,7 +49,7 @@ const PRESET_COLORS = [
   '#8B5CF6', // Purple
   '#EC4899', // Pink
   '#6B7280', // Gray
-]
+];
 
 // =============================================================================
 // CategorySelector Component
@@ -62,71 +62,71 @@ export function CategorySelector({
   onCategoryChange,
   disabled = false,
 }: CategorySelectorProps) {
-  const [isOpen, setIsOpen] = useState(false)
-  const [isCreating, setIsCreating] = useState(false)
-  const [newCategoryName, setNewCategoryName] = useState('')
-  const [newCategoryColor, setNewCategoryColor] = useState(PRESET_COLORS[0])
-  const containerRef = useRef<HTMLDivElement>(null)
+  const [isOpen, setIsOpen] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryColor, setNewCategoryColor] = useState(PRESET_COLORS[0]);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Fetch all categories for the project
   const { data: categories, isLoading } = trpc.category.list.useQuery(
     { projectId },
     { enabled: !!projectId }
-  )
+  );
 
   // Mutations
-  const utils = trpc.useUtils()
+  const utils = trpc.useUtils();
 
   const createCategoryMutation = trpc.category.create.useMutation({
     onSuccess: (newCategory) => {
-      utils.category.list.invalidate({ projectId })
+      utils.category.list.invalidate({ projectId });
       // Auto-select the newly created category
-      setCategoryMutation.mutate({ taskId, categoryId: newCategory.id })
-      setNewCategoryName('')
-      setIsCreating(false)
+      setCategoryMutation.mutate({ taskId, categoryId: newCategory.id });
+      setNewCategoryName('');
+      setIsCreating(false);
     },
-  })
+  });
 
   const setCategoryMutation = trpc.category.setForTask.useMutation({
     onSuccess: (result) => {
-      utils.task.get.invalidate({ taskId })
+      utils.task.get.invalidate({ taskId });
       if ('category' in result && result.category) {
-        onCategoryChange?.(result.category as Category)
+        onCategoryChange?.(result.category as Category);
       } else {
-        onCategoryChange?.(null)
+        onCategoryChange?.(null);
       }
-      setIsOpen(false)
+      setIsOpen(false);
     },
-  })
+  });
 
   // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        setIsOpen(false)
-        setIsCreating(false)
+        setIsOpen(false);
+        setIsCreating(false);
       }
     }
 
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleSelectCategory = (category: Category | null) => {
-    if (disabled) return
-    setCategoryMutation.mutate({ taskId, categoryId: category?.id ?? null })
-  }
+    if (disabled) return;
+    setCategoryMutation.mutate({ taskId, categoryId: category?.id ?? null });
+  };
 
   const handleCreateCategory = () => {
-    if (!newCategoryName.trim()) return
+    if (!newCategoryName.trim()) return;
     createCategoryMutation.mutate({
       projectId,
       name: newCategoryName.trim(),
       color: newCategoryColor,
-    })
-  }
+    });
+  };
 
-  const isMutating = setCategoryMutation.isPending || createCategoryMutation.isPending
+  const isMutating = setCategoryMutation.isPending || createCategoryMutation.isPending;
 
   return (
     <div ref={containerRef} className="relative">
@@ -146,16 +146,12 @@ export function CategorySelector({
               className="w-3 h-3 rounded-full"
               style={{ backgroundColor: selectedCategory.color ?? '#6B7280' }}
             />
-            <span className="flex-1 text-left text-foreground">
-              {selectedCategory.name}
-            </span>
+            <span className="flex-1 text-left text-foreground">{selectedCategory.name}</span>
           </>
         ) : (
           <>
             <Folder className="w-4 h-4 text-gray-400" />
-            <span className="flex-1 text-left text-gray-500 dark:text-gray-400">
-              No category
-            </span>
+            <span className="flex-1 text-left text-gray-500 dark:text-gray-400">No category</span>
           </>
         )}
         {isMutating ? (
@@ -174,9 +170,7 @@ export function CategorySelector({
             <button
               onClick={() => handleSelectCategory(null)}
               className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-left text-sm transition-colors ${
-                !selectedCategory
-                  ? 'bg-blue-50 dark:bg-blue-900/30'
-                  : 'hover:bg-accent'
+                !selectedCategory ? 'bg-blue-50 dark:bg-blue-900/30' : 'hover:bg-accent'
               }`}
               disabled={isMutating}
             >
@@ -197,7 +191,7 @@ export function CategorySelector({
             ) : categories && categories.length > 0 ? (
               <div className="space-y-1">
                 {categories.map((category) => {
-                  const isSelected = selectedCategory?.id === category.id
+                  const isSelected = selectedCategory?.id === category.id;
                   return (
                     <button
                       key={category.id}
@@ -210,9 +204,7 @@ export function CategorySelector({
                         })
                       }
                       className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-left text-sm transition-colors ${
-                        isSelected
-                          ? 'bg-blue-50 dark:bg-blue-900/30'
-                          : 'hover:bg-accent'
+                        isSelected ? 'bg-blue-50 dark:bg-blue-900/30' : 'hover:bg-accent'
                       }`}
                       disabled={isMutating}
                     >
@@ -223,7 +215,7 @@ export function CategorySelector({
                       <span className="flex-1 text-foreground">{category.name}</span>
                       {isSelected && <Check className="w-4 h-4 text-blue-500" />}
                     </button>
-                  )
+                  );
                 })}
               </div>
             ) : null}
@@ -242,8 +234,8 @@ export function CategorySelector({
                 placeholder="Category name"
                 className="w-full px-2 py-1.5 text-sm border border-input rounded bg-background text-foreground placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleCreateCategory()
-                  if (e.key === 'Escape') setIsCreating(false)
+                  if (e.key === 'Enter') handleCreateCategory();
+                  if (e.key === 'Escape') setIsCreating(false);
                 }}
                 autoFocus
               />
@@ -253,7 +245,9 @@ export function CategorySelector({
                     key={color}
                     onClick={() => setNewCategoryColor(color)}
                     className={`w-5 h-5 rounded-full transition-transform ${
-                      newCategoryColor === color ? 'ring-2 ring-offset-2 ring-blue-500 scale-110' : ''
+                      newCategoryColor === color
+                        ? 'ring-2 ring-offset-2 ring-blue-500 scale-110'
+                        : ''
                     }`}
                     style={{ backgroundColor: color }}
                   />
@@ -292,7 +286,7 @@ export function CategorySelector({
         </div>
       )}
     </div>
-  )
+  );
 }
 
-export default CategorySelector
+export default CategorySelector;

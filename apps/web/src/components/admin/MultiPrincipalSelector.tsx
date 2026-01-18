@@ -15,27 +15,27 @@
  * =============================================================================
  */
 
-import { useState, useMemo } from 'react'
-import { cn } from '@/lib/utils'
-import { trpc } from '@/lib/trpc'
+import { useState, useMemo } from 'react';
+import { cn } from '@/lib/utils';
+import { trpc } from '@/lib/trpc';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface SelectedPrincipal {
-  type: 'user' | 'group'
-  id: number
-  name: string
-  displayName: string
+  type: 'user' | 'group';
+  id: number;
+  name: string;
+  displayName: string;
 }
 
 export interface MultiPrincipalSelectorProps {
-  selected: SelectedPrincipal[]
-  onChange: (selected: SelectedPrincipal[]) => void
-  excludeIds?: { users?: number[]; groups?: number[] }
-  maxSelections?: number
-  workspaceId?: number
+  selected: SelectedPrincipal[];
+  onChange: (selected: SelectedPrincipal[]) => void;
+  excludeIds?: { users?: number[]; groups?: number[] };
+  maxSelections?: number;
+  workspaceId?: number;
 }
 
 // =============================================================================
@@ -49,72 +49,72 @@ export function MultiPrincipalSelector({
   maxSelections = 100,
   workspaceId,
 }: MultiPrincipalSelectorProps) {
-  const [activeTab, setActiveTab] = useState<'user' | 'group'>('user')
-  const [search, setSearch] = useState('')
+  const [activeTab, setActiveTab] = useState<'user' | 'group'>('user');
+  const [search, setSearch] = useState('');
 
   // Fetch principals
   const { data: principals, isLoading } = trpc.acl.getPrincipals.useQuery({
     search: search || undefined,
     workspaceId,
-  })
+  });
 
   // Filter out excluded IDs and already selected
   const filteredUsers = useMemo(() => {
-    if (!principals?.users) return []
+    if (!principals?.users) return [];
     const excludedUserIds = new Set([
       ...(excludeIds?.users ?? []),
-      ...selected.filter(s => s.type === 'user').map(s => s.id),
-    ])
-    return principals.users.filter(u => !excludedUserIds.has(u.id))
-  }, [principals?.users, excludeIds?.users, selected])
+      ...selected.filter((s) => s.type === 'user').map((s) => s.id),
+    ]);
+    return principals.users.filter((u) => !excludedUserIds.has(u.id));
+  }, [principals?.users, excludeIds?.users, selected]);
 
   const filteredGroups = useMemo(() => {
-    if (!principals?.groups) return []
+    if (!principals?.groups) return [];
     const excludedGroupIds = new Set([
       ...(excludeIds?.groups ?? []),
-      ...selected.filter(s => s.type === 'group').map(s => s.id),
-    ])
-    return principals.groups.filter(g => !excludedGroupIds.has(g.id))
-  }, [principals?.groups, excludeIds?.groups, selected])
+      ...selected.filter((s) => s.type === 'group').map((s) => s.id),
+    ]);
+    return principals.groups.filter((g) => !excludedGroupIds.has(g.id));
+  }, [principals?.groups, excludeIds?.groups, selected]);
 
   // Selected counts by type
-  const selectedUserCount = selected.filter(s => s.type === 'user').length
-  const selectedGroupCount = selected.filter(s => s.type === 'group').length
+  const selectedUserCount = selected.filter((s) => s.type === 'user').length;
+  const selectedGroupCount = selected.filter((s) => s.type === 'group').length;
 
   // Add principal
   const addPrincipal = (principal: SelectedPrincipal) => {
-    if (selected.length >= maxSelections) return
-    if (selected.some(s => s.type === principal.type && s.id === principal.id)) return
-    onChange([...selected, principal])
-  }
+    if (selected.length >= maxSelections) return;
+    if (selected.some((s) => s.type === principal.type && s.id === principal.id)) return;
+    onChange([...selected, principal]);
+  };
 
   // Remove principal
   const removePrincipal = (type: 'user' | 'group', id: number) => {
-    onChange(selected.filter(s => !(s.type === type && s.id === id)))
-  }
+    onChange(selected.filter((s) => !(s.type === type && s.id === id)));
+  };
 
   // Select all visible
   const selectAllVisible = () => {
-    const currentList = activeTab === 'user' ? filteredUsers : filteredGroups
-    const remaining = maxSelections - selected.length
-    const toAdd = currentList.slice(0, remaining).map(item => ({
+    const currentList = activeTab === 'user' ? filteredUsers : filteredGroups;
+    const remaining = maxSelections - selected.length;
+    const toAdd = currentList.slice(0, remaining).map((item) => ({
       type: activeTab,
       id: item.id,
       name: item.name,
       displayName: item.displayName,
-    }))
-    onChange([...selected, ...toAdd])
-  }
+    }));
+    onChange([...selected, ...toAdd]);
+  };
 
   // Clear all
   const clearAll = () => {
-    onChange([])
-  }
+    onChange([]);
+  };
 
   // Clear by type
   const clearByType = (type: 'user' | 'group') => {
-    onChange(selected.filter(s => s.type !== type))
-  }
+    onChange(selected.filter((s) => s.type !== type));
+  };
 
   return (
     <div className="space-y-3">
@@ -125,15 +125,12 @@ export function MultiPrincipalSelector({
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Selected ({selected.length}/{maxSelections})
             </span>
-            <button
-              onClick={clearAll}
-              className="text-xs text-red-600 hover:text-red-700"
-            >
+            <button onClick={clearAll} className="text-xs text-red-600 hover:text-red-700">
               Clear All
             </button>
           </div>
           <div className="flex flex-wrap gap-2">
-            {selected.map(s => (
+            {selected.map((s) => (
               <span
                 key={`${s.type}-${s.id}`}
                 className={cn(
@@ -151,7 +148,13 @@ export function MultiPrincipalSelector({
                   onClick={() => removePrincipal(s.type, s.id)}
                   className="ml-1 hover:text-red-600"
                 >
-                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                  <svg
+                    className="w-3 h-3"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
                     <path d="M18 6L6 18M6 6l12 12" />
                   </svg>
                 </button>
@@ -202,7 +205,7 @@ export function MultiPrincipalSelector({
         <input
           type="text"
           value={search}
-          onChange={e => setSearch(e.target.value)}
+          onChange={(e) => setSearch(e.target.value)}
           placeholder={`Search ${activeTab === 'user' ? 'users' : 'groups'}...`}
           className="w-full pl-10 pr-3 py-2 border border-input rounded-lg bg-background text-foreground text-sm focus:ring-2 focus:ring-blue-500"
         />
@@ -238,15 +241,17 @@ export function MultiPrincipalSelector({
               {search ? 'No users found' : 'All users already selected'}
             </div>
           ) : (
-            filteredUsers.map(user => (
+            filteredUsers.map((user) => (
               <button
                 key={user.id}
-                onClick={() => addPrincipal({
-                  type: 'user',
-                  id: user.id,
-                  name: user.name,
-                  displayName: user.displayName,
-                })}
+                onClick={() =>
+                  addPrincipal({
+                    type: 'user',
+                    id: user.id,
+                    name: user.name,
+                    displayName: user.displayName,
+                  })
+                }
                 disabled={selected.length >= maxSelections}
                 className="w-full flex items-center gap-3 px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 border-b border-gray-100 dark:border-gray-800 last:border-b-0"
               >
@@ -254,9 +259,7 @@ export function MultiPrincipalSelector({
                   {user.displayName.charAt(0).toUpperCase()}
                 </div>
                 <div className="text-left flex-1 min-w-0">
-                  <div className="font-medium text-foreground truncate">
-                    {user.displayName}
-                  </div>
+                  <div className="font-medium text-foreground truncate">{user.displayName}</div>
                   <div className="text-xs text-gray-500 truncate">
                     {user.name} {user.email && `• ${user.email}`}
                   </div>
@@ -273,51 +276,49 @@ export function MultiPrincipalSelector({
               </button>
             ))
           )
+        ) : filteredGroups.length === 0 ? (
+          <div className="p-4 text-center text-gray-500 text-sm">
+            {search ? 'No groups found' : 'All groups already selected'}
+          </div>
         ) : (
-          filteredGroups.length === 0 ? (
-            <div className="p-4 text-center text-gray-500 text-sm">
-              {search ? 'No groups found' : 'All groups already selected'}
-            </div>
-          ) : (
-            filteredGroups.map(group => (
-              <button
-                key={group.id}
-                onClick={() => addPrincipal({
+          filteredGroups.map((group) => (
+            <button
+              key={group.id}
+              onClick={() =>
+                addPrincipal({
                   type: 'group',
                   id: group.id,
                   name: group.name,
                   displayName: group.displayName,
-                })}
-                disabled={selected.length >= maxSelections}
-                className="w-full flex items-center gap-3 px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 border-b border-gray-100 dark:border-gray-800 last:border-b-0"
+                })
+              }
+              disabled={selected.length >= maxSelections}
+              className="w-full flex items-center gap-3 px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 disabled:opacity-50 border-b border-gray-100 dark:border-gray-800 last:border-b-0"
+            >
+              <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 text-xs font-medium">
+                G
+              </div>
+              <div className="text-left flex-1 min-w-0">
+                <div className="font-medium text-foreground truncate">{group.displayName}</div>
+                <div className="text-xs text-gray-500 truncate">
+                  {group.name} • {group.memberCount} members
+                </div>
+              </div>
+              <svg
+                className="w-5 h-5 text-gray-400"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
               >
-                <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 text-xs font-medium">
-                  G
-                </div>
-                <div className="text-left flex-1 min-w-0">
-                  <div className="font-medium text-foreground truncate">
-                    {group.displayName}
-                  </div>
-                  <div className="text-xs text-gray-500 truncate">
-                    {group.name} • {group.memberCount} members
-                  </div>
-                </div>
-                <svg
-                  className="w-5 h-5 text-gray-400"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2}
-                >
-                  <path d="M12 5v14M5 12h14" />
-                </svg>
-              </button>
-            ))
-          )
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+            </button>
+          ))
         )}
       </div>
     </div>
-  )
+  );
 }
 
-export default MultiPrincipalSelector
+export default MultiPrincipalSelector;

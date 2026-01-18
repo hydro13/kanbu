@@ -11,8 +11,8 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useNavigate } from 'react-router-dom'
-import { trpc } from '@/lib/trpc'
+import { useNavigate } from 'react-router-dom';
+import { trpc } from '@/lib/trpc';
 import {
   ContextMenu,
   useContextMenu,
@@ -24,24 +24,24 @@ import {
   ArchiveIcon,
   UsersIcon,
   TrashIcon,
-} from '@/components/common/ContextMenu'
+} from '@/components/common/ContextMenu';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface ProjectContextMenuProps {
-  projectId: number
-  projectIdentifier: string
-  projectName: string
-  workspaceSlug: string
-  isFavorite: boolean
-  isArchived?: boolean
-  canEdit: boolean
-  canDelete: boolean
-  isOpen: boolean
-  position: { x: number; y: number }
-  onClose: () => void
+  projectId: number;
+  projectIdentifier: string;
+  projectName: string;
+  workspaceSlug: string;
+  isFavorite: boolean;
+  isArchived?: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
+  isOpen: boolean;
+  position: { x: number; y: number };
+  onClose: () => void;
 }
 
 // =============================================================================
@@ -61,38 +61,38 @@ export function ProjectContextMenu({
   position,
   onClose,
 }: ProjectContextMenuProps) {
-  const navigate = useNavigate()
-  const utils = trpc.useUtils()
+  const navigate = useNavigate();
+  const utils = trpc.useUtils();
 
   // Mutations
   const toggleFavorite = trpc.favorite.toggle.useMutation({
     onSuccess: () => {
-      utils.favorite.list.invalidate()
-      utils.favorite.isFavorite.invalidate({ projectId })
-      onClose()
+      utils.favorite.list.invalidate();
+      utils.favorite.isFavorite.invalidate({ projectId });
+      onClose();
     },
-  })
+  });
 
   const archiveProject = trpc.project.archive.useMutation({
     onSuccess: () => {
-      utils.project.list.invalidate()
-      onClose()
+      utils.project.list.invalidate();
+      onClose();
     },
-  })
+  });
 
   const unarchiveProject = trpc.project.unarchive.useMutation({
     onSuccess: () => {
-      utils.project.list.invalidate()
-      onClose()
+      utils.project.list.invalidate();
+      onClose();
     },
-  })
+  });
 
   const deleteProject = trpc.project.delete.useMutation({
     onSuccess: () => {
-      utils.project.list.invalidate()
-      onClose()
+      utils.project.list.invalidate();
+      onClose();
     },
-  })
+  });
 
   // Build menu items
   const menuItems: MenuItemProps[] = [
@@ -101,7 +101,7 @@ export function ProjectContextMenu({
       label: 'Open Project',
       icon: <OpenIcon />,
       onClick: () => {
-        navigate(`/workspace/${workspaceSlug}/project/${projectIdentifier}/board`)
+        navigate(`/workspace/${workspaceSlug}/project/${projectIdentifier}/board`);
       },
     },
     {
@@ -109,7 +109,7 @@ export function ProjectContextMenu({
       label: isFavorite ? 'Remove from Favorites' : 'Add to Favorites',
       icon: <StarIcon />,
       onClick: () => {
-        toggleFavorite.mutate({ projectId })
+        toggleFavorite.mutate({ projectId });
       },
     },
     {
@@ -122,8 +122,8 @@ export function ProjectContextMenu({
       label: 'Copy Link',
       icon: <CopyIcon />,
       onClick: () => {
-        const url = `${window.location.origin}/workspace/${workspaceSlug}/project/${projectIdentifier}/board`
-        navigator.clipboard.writeText(url)
+        const url = `${window.location.origin}/workspace/${workspaceSlug}/project/${projectIdentifier}/board`;
+        navigator.clipboard.writeText(url);
         // Could add a toast notification here
       },
     },
@@ -132,7 +132,7 @@ export function ProjectContextMenu({
       label: 'Copy Project ID',
       icon: <CopyIcon />,
       onClick: () => {
-        navigator.clipboard.writeText(projectIdentifier)
+        navigator.clipboard.writeText(projectIdentifier);
       },
     },
     {
@@ -145,7 +145,7 @@ export function ProjectContextMenu({
       label: 'Members',
       icon: <UsersIcon />,
       onClick: () => {
-        navigate(`/workspace/${workspaceSlug}/project/${projectIdentifier}/members`)
+        navigate(`/workspace/${workspaceSlug}/project/${projectIdentifier}/members`);
       },
       disabled: !canEdit,
     },
@@ -154,7 +154,7 @@ export function ProjectContextMenu({
       label: 'Project Settings',
       icon: <SettingsIcon />,
       onClick: () => {
-        navigate(`/workspace/${workspaceSlug}/project/${projectIdentifier}/details`)
+        navigate(`/workspace/${workspaceSlug}/project/${projectIdentifier}/details`);
       },
       disabled: !canEdit,
     },
@@ -169,9 +169,9 @@ export function ProjectContextMenu({
       icon: <ArchiveIcon />,
       onClick: () => {
         if (isArchived) {
-          unarchiveProject.mutate({ projectId })
+          unarchiveProject.mutate({ projectId });
         } else {
-          archiveProject.mutate({ projectId })
+          archiveProject.mutate({ projectId });
         }
       },
       disabled: !canEdit,
@@ -183,24 +183,19 @@ export function ProjectContextMenu({
       danger: true,
       disabled: !canDelete,
       onClick: () => {
-        if (confirm(`Are you sure you want to delete "${projectName}"? This action cannot be undone.`)) {
-          deleteProject.mutate({ projectId })
+        if (
+          confirm(`Are you sure you want to delete "${projectName}"? This action cannot be undone.`)
+        ) {
+          deleteProject.mutate({ projectId });
         }
       },
     },
-  ]
+  ];
 
-  return (
-    <ContextMenu
-      isOpen={isOpen}
-      position={position}
-      items={menuItems}
-      onClose={onClose}
-    />
-  )
+  return <ContextMenu isOpen={isOpen} position={position} items={menuItems} onClose={onClose} />;
 }
 
 // Re-export useContextMenu for convenience
-export { useContextMenu }
+export { useContextMenu };
 
-export default ProjectContextMenu
+export default ProjectContextMenu;

@@ -71,6 +71,7 @@ This Code of Conduct is adapted from the [Contributor Covenant](https://www.cont
 ## Questions?
 
 If you have questions about this Code of Conduct, please reach out to:
+
 - Email: conduct@kanbu.dev
 - Email: R.Waslander@gmail.com
 

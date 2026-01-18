@@ -9,18 +9,18 @@
  * ===================================================================
  */
 
-export { RichTextEditor } from './RichTextEditor'
-export type { RichTextEditorProps } from './RichTextEditor'
+export { RichTextEditor } from './RichTextEditor';
+export type { RichTextEditorProps } from './RichTextEditor';
 
-export { ToolbarPlugin } from './ToolbarPlugin'
+export { ToolbarPlugin } from './ToolbarPlugin';
 
-export { MarkdownPastePlugin } from './MarkdownPastePlugin'
+export { MarkdownPastePlugin } from './MarkdownPastePlugin';
 
-export { SpeechToTextPlugin, useSpeechRecognition } from './SpeechToTextPlugin'
-export type { SpeechToTextPluginProps } from './SpeechToTextPlugin'
+export { SpeechToTextPlugin, useSpeechRecognition } from './SpeechToTextPlugin';
+export type { SpeechToTextPluginProps } from './SpeechToTextPlugin';
 
-export { ResizableMediaWrapper } from './ResizableMediaWrapper'
-export type { ResizableMediaWrapperProps, MediaAlignment } from './ResizableMediaWrapper'
+export { ResizableMediaWrapper } from './ResizableMediaWrapper';
+export type { ResizableMediaWrapperProps, MediaAlignment } from './ResizableMediaWrapper';
 
 export {
   MediaPlugin,
@@ -32,26 +32,26 @@ export {
   isVideoFile,
   ACCEPTED_IMAGE_TYPES,
   ACCEPTED_VIDEO_TYPES,
-} from './MediaPlugin'
-export type { MediaPluginProps } from './MediaPlugin'
+} from './MediaPlugin';
+export type { MediaPluginProps } from './MediaPlugin';
 
-export { DraggableMediaPlugin } from './DraggableMediaPlugin'
+export { DraggableMediaPlugin } from './DraggableMediaPlugin';
 
-export { WikiLinkPlugin } from './WikiLinkPlugin'
-export type { WikiPage, WikiLinkPluginProps } from './WikiLinkPlugin'
+export { WikiLinkPlugin } from './WikiLinkPlugin';
+export type { WikiPage, WikiLinkPluginProps } from './WikiLinkPlugin';
 
-export { TaskRefPlugin } from './TaskRefPlugin'
-export type { TaskResult, TaskRefPluginProps } from './TaskRefPlugin'
+export { TaskRefPlugin } from './TaskRefPlugin';
+export type { TaskResult, TaskRefPluginProps } from './TaskRefPlugin';
 
-export { TaskRefCleanupPlugin } from './TaskRefCleanupPlugin'
+export { TaskRefCleanupPlugin } from './TaskRefCleanupPlugin';
 
-export { MentionPlugin } from './MentionPlugin'
-export type { MentionResult, MentionPluginProps } from './MentionPlugin'
+export { MentionPlugin } from './MentionPlugin';
+export type { MentionResult, MentionPluginProps } from './MentionPlugin';
 
-export { SignaturePlugin } from './SignaturePlugin'
-export type { SignatureUser, SignaturePluginProps } from './SignaturePlugin'
+export { SignaturePlugin } from './SignaturePlugin';
+export type { SignatureUser, SignaturePluginProps } from './SignaturePlugin';
 
-export { EditorMinimap } from './EditorMinimap'
+export { EditorMinimap } from './EditorMinimap';
 
 // Nodes
 export {
@@ -79,7 +79,7 @@ export {
   SignatureNode,
   $createSignatureNode,
   $isSignatureNode,
-} from './nodes'
+} from './nodes';
 export type {
   ImagePayload,
   SerializedImageNode,
@@ -96,9 +96,9 @@ export type {
   SerializedMentionNode,
   SignaturePayload,
   SerializedSignatureNode,
-} from './nodes'
+} from './nodes';
 
-export { editorTheme } from './theme'
+export { editorTheme } from './theme';
 
 // Utilities
 export {
@@ -109,4 +109,4 @@ export {
   getDisplayContent,
   isMarkdownOrHtml,
   markdownToLexical,
-} from './utils'
+} from './utils';

@@ -148,10 +148,7 @@ export async function authenticateSocket(
 /**
  * Check if user can access a workspace
  */
-export function canAccessWorkspace(
-  socket: AuthenticatedSocket,
-  workspaceId: number
-): boolean {
+export function canAccessWorkspace(socket: AuthenticatedSocket, workspaceId: number): boolean {
   return socket.data.workspaceIds.includes(workspaceId);
 }
 

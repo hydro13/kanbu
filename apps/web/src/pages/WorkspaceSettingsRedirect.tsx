@@ -8,25 +8,25 @@
  * Task: 262 - Workspace Settings consolidatie
  */
 
-import { useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useAppSelector } from '../store'
-import { selectCurrentWorkspace } from '../store/workspaceSlice'
-import { Layout } from '../components/layout/Layout'
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAppSelector } from '../store';
+import { selectCurrentWorkspace } from '../store/workspaceSlice';
+import { Layout } from '../components/layout/Layout';
 
 export function WorkspaceSettingsRedirect() {
-  const navigate = useNavigate()
-  const currentWorkspace = useAppSelector(selectCurrentWorkspace)
+  const navigate = useNavigate();
+  const currentWorkspace = useAppSelector(selectCurrentWorkspace);
 
   useEffect(() => {
     if (currentWorkspace?.id) {
       // Redirect to admin workspace edit page
-      navigate(`/admin/workspaces/${currentWorkspace.id}`, { replace: true })
+      navigate(`/admin/workspaces/${currentWorkspace.id}`, { replace: true });
     } else {
       // No workspace selected, go to admin workspace list
-      navigate('/admin/workspaces', { replace: true })
+      navigate('/admin/workspaces', { replace: true });
     }
-  }, [currentWorkspace, navigate])
+  }, [currentWorkspace, navigate]);
 
   // Show loading while redirecting
   return (
@@ -38,5 +38,5 @@ export function WorkspaceSettingsRedirect() {
         </div>
       </div>
     </Layout>
-  )
+  );
 }

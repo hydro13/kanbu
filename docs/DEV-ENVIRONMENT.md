@@ -3,17 +3,18 @@
 ## Overview
 
 Kanbu runs on HTTPS in development for:
+
 - GitHub App webhooks and OAuth callbacks
 - Secure API communication
 - Tailscale network access
 
 ## Services
 
-| Service | Port | Protocol | Description |
-|---------|------|----------|-------------|
-| PostgreSQL | 5432 | TCP | Database (Docker) |
-| API Server | 3001 | **HTTPS** | Fastify + tRPC |
-| Web Server | 5173 | **HTTPS** | Vite dev server |
+| Service    | Port | Protocol  | Description       |
+| ---------- | ---- | --------- | ----------------- |
+| PostgreSQL | 5432 | TCP       | Database (Docker) |
+| API Server | 3001 | **HTTPS** | Fastify + tRPC    |
+| Web Server | 5173 | **HTTPS** | Vite dev server   |
 
 ## Starting
 
@@ -37,6 +38,7 @@ cd apps/web && pnpm dev
 **WARNING:** Do NOT modify this file without consultation!
 
 The configuration contains:
+
 - HTTPS with self-signed certificates (mkcert)
 - Proxy configuration to HTTPS API
 - Host configuration for network access
@@ -50,6 +52,7 @@ The configuration contains:
 If both `vite.config.js` and `vite.config.ts` exist, Vite loads the `.js` version.
 
 **Solution:** Ensure ONLY `vite.config.ts` exists:
+
 ```bash
 ls apps/web/vite.config.*
 # Should only show vite.config.ts!
@@ -61,6 +64,7 @@ rm apps/web/vite.config.js
 #### Vite 7.x HTTPS Bug
 
 Vite 7.x has issues with HTTPS configuration. Use Vite 6.x:
+
 ```json
 "vite": "^6.4.1"
 ```
@@ -78,6 +82,7 @@ certs/
 ```
 
 These certificates are valid for:
+
 - localhost
 - your-hostname
 - your-hostname.tailscale-domain.ts.net (optional)
@@ -121,12 +126,14 @@ tail -f /tmp/kanbu-api.log
 ### Web server starts on HTTP instead of HTTPS
 
 1. Check that `vite.config.js` does NOT exist:
+
    ```bash
    ls apps/web/vite.config.js
    # Should return "No such file"
    ```
 
 2. Check certificates:
+
    ```bash
    ls -la certs/
    # Should show localhost+4.pem and localhost+4-key.pem
@@ -141,6 +148,7 @@ tail -f /tmp/kanbu-api.log
 ### API unreachable
 
 1. Check if API is running:
+
    ```bash
    bash scripts/api.sh status
    ```
@@ -153,6 +161,7 @@ tail -f /tmp/kanbu-api.log
 ### Mixed Content Errors
 
 If browser complains about mixed content:
+
 - Web MUST run on HTTPS
 - API MUST run on HTTPS
 - Both use self-signed certificates
@@ -160,6 +169,7 @@ If browser complains about mixed content:
 ## GitHub App Integration
 
 The GitHub App requires HTTPS for:
+
 - OAuth callback: `https://your-domain.com/api/github/callback`
 - Webhooks: `https://your-domain.com/api/webhooks/github`
 

@@ -11,18 +11,18 @@
  * ===================================================================
  */
 
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
-import { trpc } from '@/lib/trpc'
-import { TrendingUp, TrendingDown, Minus, BarChart3, Trophy } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { trpc } from '@/lib/trpc';
+import { TrendingUp, TrendingDown, Minus, BarChart3, Trophy } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 interface VelocityDataPoint {
-  weekStart: string
-  tasksCompleted: number
+  weekStart: string;
+  tasksCompleted: number;
 }
 
 // =============================================================================
@@ -30,18 +30,17 @@ interface VelocityDataPoint {
 // =============================================================================
 
 function formatWeekLabel(dateString: string): string {
-  const date = new Date(dateString)
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  const date = new Date(dateString);
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
 function TrendIndicator({ trend }: { trend: number }) {
   if (trend > 0) {
     return (
       <span className="inline-flex items-center text-green-600 dark:text-green-400">
-        <TrendingUp className="h-4 w-4 mr-1" />
-        +{trend}
+        <TrendingUp className="h-4 w-4 mr-1" />+{trend}
       </span>
-    )
+    );
   }
   if (trend < 0) {
     return (
@@ -49,43 +48,35 @@ function TrendIndicator({ trend }: { trend: number }) {
         <TrendingDown className="h-4 w-4 mr-1" />
         {trend}
       </span>
-    )
+    );
   }
   return (
     <span className="inline-flex items-center text-muted-foreground">
-      <Minus className="h-4 w-4 mr-1" />
-      0
+      <Minus className="h-4 w-4 mr-1" />0
     </span>
-  )
+  );
 }
 
 // Simple bar chart using divs
 function VelocityChart({ data }: { data: VelocityDataPoint[] }) {
-  const maxValue = Math.max(...data.map((d) => d.tasksCompleted), 1)
+  const maxValue = Math.max(...data.map((d) => d.tasksCompleted), 1);
 
   return (
     <div className="flex items-end gap-1 h-24">
       {data.map((point, index) => {
-        const height = (point.tasksCompleted / maxValue) * 100
-        const isCurrentWeek = index === data.length - 1
+        const height = (point.tasksCompleted / maxValue) * 100;
+        const isCurrentWeek = index === data.length - 1;
 
         return (
-          <div
-            key={point.weekStart}
-            className="flex-1 flex flex-col items-center gap-1"
-          >
+          <div key={point.weekStart} className="flex-1 flex flex-col items-center gap-1">
             <div className="w-full flex flex-col items-center justify-end h-20">
               {point.tasksCompleted > 0 && (
-                <span className="text-xs text-muted-foreground mb-1">
-                  {point.tasksCompleted}
-                </span>
+                <span className="text-xs text-muted-foreground mb-1">{point.tasksCompleted}</span>
               )}
               <div
                 className={cn(
                   'w-full rounded-t transition-all',
-                  isCurrentWeek
-                    ? 'bg-primary'
-                    : 'bg-primary/50'
+                  isCurrentWeek ? 'bg-primary' : 'bg-primary/50'
                 )}
                 style={{ height: `${Math.max(height, 4)}%` }}
               />
@@ -94,10 +85,10 @@ function VelocityChart({ data }: { data: VelocityDataPoint[] }) {
               {formatWeekLabel(point.weekStart)}
             </span>
           </div>
-        )
+        );
       })}
     </div>
-  )
+  );
 }
 
 // =============================================================================
@@ -105,8 +96,8 @@ function VelocityChart({ data }: { data: VelocityDataPoint[] }) {
 // =============================================================================
 
 export function ProductivityWidget() {
-  const productivityQuery = trpc.user.getMyProductivity.useQuery({ weeks: 4 })
-  const data = productivityQuery.data
+  const productivityQuery = trpc.user.getMyProductivity.useQuery({ weeks: 4 });
+  const data = productivityQuery.data;
 
   if (productivityQuery.isLoading) {
     return (
@@ -118,14 +109,14 @@ export function ProductivityWidget() {
           <div className="h-32 bg-muted rounded" />
         </CardContent>
       </Card>
-    )
+    );
   }
 
   if (!data) {
-    return null
+    return null;
   }
 
-  const hasActivity = data.totalCompleted > 0 || data.thisWeek > 0
+  const hasActivity = data.totalCompleted > 0 || data.thisWeek > 0;
 
   return (
     <Card>
@@ -155,9 +146,7 @@ export function ProductivityWidget() {
               <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                 Weekly Velocity
               </span>
-              <span className="text-xs text-muted-foreground">
-                avg: {data.avgVelocity}/week
-              </span>
+              <span className="text-xs text-muted-foreground">avg: {data.avgVelocity}/week</span>
             </div>
             <VelocityChart data={data.velocityData} />
           </div>
@@ -174,17 +163,12 @@ export function ProductivityWidget() {
             </div>
             <div className="space-y-1">
               {data.topProjects.slice(0, 3).map((project, index) => (
-                <div
-                  key={project.projectId}
-                  className="flex items-center justify-between text-sm"
-                >
+                <div key={project.projectId} className="flex items-center justify-between text-sm">
                   <span className="truncate flex-1">
                     <span className="text-muted-foreground mr-2">{index + 1}.</span>
                     {project.name}
                   </span>
-                  <span className="text-muted-foreground ml-2">
-                    {project.count} tasks
-                  </span>
+                  <span className="text-muted-foreground ml-2">{project.count} tasks</span>
                 </div>
               ))}
             </div>
@@ -200,7 +184,7 @@ export function ProductivityWidget() {
         )}
       </CardContent>
     </Card>
-  )
+  );
 }
 
-export default ProductivityWidget
+export default ProductivityWidget;

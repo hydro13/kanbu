@@ -22,13 +22,13 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { z } from 'zod'
-import { TRPCError } from '@trpc/server'
-import * as OTPAuth from 'otpauth'
-import { router, protectedProcedure } from '../router'
-import { hashPassword, verifyPassword } from '../../lib/auth'
-import { permissionService } from '../../services'
-import { scopeService } from '../../services/scopeService'
+import { z } from 'zod';
+import { TRPCError } from '@trpc/server';
+import * as OTPAuth from 'otpauth';
+import { router, protectedProcedure } from '../router';
+import { hashPassword, verifyPassword } from '../../lib/auth';
+import { permissionService } from '../../services';
+import { scopeService } from '../../services/scopeService';
 
 // =============================================================================
 // Input Schemas
@@ -49,7 +49,7 @@ const updateProfileSchema = z.object({
   // Sidebar position
   sidebarPosition: z.enum(['left', 'right']).optional(),
   defaultFilter: z.string().optional(),
-})
+});
 
 const changePasswordSchema = z.object({
   currentPassword: z.string().min(1),
@@ -57,18 +57,18 @@ const changePasswordSchema = z.object({
     .string()
     .min(8, 'Password must be at least 8 characters')
     .max(128, 'Password must be at most 128 characters'),
-})
+});
 
 const timeTrackingSchema = z.object({
   dateFrom: z.string().optional(), // ISO date string
   dateTo: z.string().optional(), // ISO date string
   limit: z.number().min(1).max(100).default(50),
-})
+});
 
 const paginationSchema = z.object({
   limit: z.number().min(1).max(100).default(50),
   offset: z.number().min(0).default(0),
-})
+});
 
 // =============================================================================
 // User Router
@@ -81,7 +81,7 @@ const paginationSchema = z.object({
 const socialLinkSchema = z.object({
   value: z.string(),
   visible: z.boolean(),
-})
+});
 
 const updateSocialLinksSchema = z.object({
   // Messaging
@@ -98,18 +98,24 @@ const updateSocialLinksSchema = z.object({
   teams: socialLinkSchema.nullable(),
   // Code collaboration (placeholders for future)
   gitlab: socialLinkSchema.nullable(),
-})
+});
 
 const SOCIAL_PLATFORMS = [
-  'whatsapp', 'slack', 'discord',
-  'linkedin', 'github', 'reddit',
-  'zoom', 'googlemeet', 'teams',
+  'whatsapp',
+  'slack',
+  'discord',
+  'linkedin',
+  'github',
+  'reddit',
+  'zoom',
+  'googlemeet',
+  'teams',
   'gitlab',
-] as const
-type SocialPlatform = (typeof SOCIAL_PLATFORMS)[number]
+] as const;
+type SocialPlatform = (typeof SOCIAL_PLATFORMS)[number];
 
 function getSocialMetadataKey(platform: SocialPlatform): string {
-  return `social_${platform}`
+  return `social_${platform}`;
 }
 
 export const userRouter = router({
@@ -158,18 +164,18 @@ export const userRouter = router({
         notificationsEnabled: true,
         notificationFilter: true,
       },
-    })
+    });
 
     if (!user) {
       throw new TRPCError({
         code: 'NOT_FOUND',
         message: 'User not found',
-      })
+      });
     }
 
     // Get workspaces via ACL-based permission service
-    const userWorkspaces = await permissionService.getUserWorkspaces(ctx.user.id)
-    const workspaceIds = userWorkspaces.map(w => w.id)
+    const userWorkspaces = await permissionService.getUserWorkspaces(ctx.user.id);
+    const workspaceIds = userWorkspaces.map((w) => w.id);
 
     // Get workspace details
     const workspaces = await ctx.prisma.workspace.findMany({
@@ -181,16 +187,16 @@ export const userRouter = router({
         logoUrl: true,
       },
       orderBy: { name: 'asc' },
-    })
+    });
 
-    const roleMap = new Map(userWorkspaces.map(w => [w.id, w.role]))
-    const workspacesWithRoles = workspaces.map(ws => ({
+    const roleMap = new Map(userWorkspaces.map((w) => [w.id, w.role]));
+    const workspacesWithRoles = workspaces.map((ws) => ({
       ...ws,
       role: roleMap.get(ws.id) ?? 'VIEWER',
-    }))
+    }));
 
     // Get recent projects via scope service
-    const scope = await scopeService.getUserScope(ctx.user.id)
+    const scope = await scopeService.getUserScope(ctx.user.id);
     const recentProjects = await ctx.prisma.project.findMany({
       where: {
         id: { in: scope.projectIds },
@@ -209,47 +215,45 @@ export const userRouter = router({
       },
       orderBy: { updatedAt: 'desc' },
       take: 5,
-    })
+    });
 
     return {
       ...user,
       workspaceCount: workspacesWithRoles.length,
       workspaces: workspacesWithRoles,
       recentProjects,
-    }
+    };
   }),
 
   /**
    * Update current user's profile
    */
-  updateProfile: protectedProcedure
-    .input(updateProfileSchema)
-    .mutation(async ({ ctx, input }) => {
-      const user = await ctx.prisma.user.update({
-        where: { id: ctx.user.id },
-        data: input,
-        select: {
-          id: true,
-          email: true,
-          username: true,
-          name: true,
-          avatarUrl: true,
-          timezone: true,
-          language: true,
-          theme: true,
-          accent: true,
-          customAccentHue: true,
-          customAccentSat: true,
-          customAccentLight: true,
-          density: true,
-          sidebarPosition: true,
-          defaultFilter: true,
-          updatedAt: true,
-        },
-      })
+  updateProfile: protectedProcedure.input(updateProfileSchema).mutation(async ({ ctx, input }) => {
+    const user = await ctx.prisma.user.update({
+      where: { id: ctx.user.id },
+      data: input,
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        name: true,
+        avatarUrl: true,
+        timezone: true,
+        language: true,
+        theme: true,
+        accent: true,
+        customAccentHue: true,
+        customAccentSat: true,
+        customAccentLight: true,
+        density: true,
+        sidebarPosition: true,
+        defaultFilter: true,
+        updatedAt: true,
+      },
+    });
 
-      return user
-    }),
+    return user;
+  }),
 
   /**
    * Change current user's password
@@ -264,34 +268,34 @@ export const userRouter = router({
           id: true,
           passwordHash: true,
         },
-      })
+      });
 
       if (!user || !user.passwordHash) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
           message: 'Cannot change password for this account',
-        })
+        });
       }
 
       // Verify current password
-      const isValid = await verifyPassword(user.passwordHash, input.currentPassword)
+      const isValid = await verifyPassword(user.passwordHash, input.currentPassword);
       if (!isValid) {
         throw new TRPCError({
           code: 'UNAUTHORIZED',
           message: 'Current password is incorrect',
-        })
+        });
       }
 
       // Hash new password
-      const newPasswordHash = await hashPassword(input.newPassword)
+      const newPasswordHash = await hashPassword(input.newPassword);
 
       // Update password
       await ctx.prisma.user.update({
         where: { id: ctx.user.id },
         data: { passwordHash: newPasswordHash },
-      })
+      });
 
-      return { success: true, message: 'Password changed successfully' }
+      return { success: true, message: 'Password changed successfully' };
     }),
 
   /**
@@ -303,18 +307,18 @@ export const userRouter = router({
     const user = await ctx.prisma.user.findUnique({
       where: { id: ctx.user.id },
       select: { emailVerified: true },
-    })
+    });
 
     if (user?.emailVerified) {
-      return { success: true, message: 'Email already verified' }
+      return { success: true, message: 'Email already verified' };
     }
 
     await ctx.prisma.user.update({
       where: { id: ctx.user.id },
       data: { emailVerified: true },
-    })
+    });
 
-    return { success: true, message: 'Email verified successfully' }
+    return { success: true, message: 'Email verified successfully' };
   }),
 
   /**
@@ -330,15 +334,15 @@ export const userRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       // Decode base64 to buffer
-      const buffer = Buffer.from(input.base64, 'base64')
-      const size = buffer.length
+      const buffer = Buffer.from(input.base64, 'base64');
+      const size = buffer.length;
 
       // Validate size (max 5MB)
       if (size > 5 * 1024 * 1024) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
           message: 'File size must be less than 5MB',
-        })
+        });
       }
 
       // Upsert avatar in database
@@ -355,20 +359,20 @@ export const userRouter = router({
           mimeType: input.mimeType,
           size,
         },
-      })
+      });
 
       // Update user's avatarUrl to point to the API endpoint
-      const avatarUrl = `/api/avatar/${ctx.user.id}`
+      const avatarUrl = `/api/avatar/${ctx.user.id}`;
       await ctx.prisma.user.update({
         where: { id: ctx.user.id },
         data: { avatarUrl },
-      })
+      });
 
       return {
         success: true,
         avatarUrl,
         message: 'Avatar uploaded successfully',
-      }
+      };
     }),
 
   /**
@@ -378,15 +382,15 @@ export const userRouter = router({
     // Delete avatar from database
     await ctx.prisma.userAvatar.deleteMany({
       where: { userId: ctx.user.id },
-    })
+    });
 
     // Clear avatar URL
     await ctx.prisma.user.update({
       where: { id: ctx.user.id },
       data: { avatarUrl: null },
-    })
+    });
 
-    return { success: true, message: 'Avatar removed' }
+    return { success: true, message: 'Avatar removed' };
   }),
 
   /**
@@ -403,220 +407,216 @@ export const userRouter = router({
           id: true,
           passwordHash: true,
         },
-      })
+      });
 
       if (!user || !user.passwordHash) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
           message: 'Cannot delete this account',
-        })
+        });
       }
 
       // Verify password
-      const isValid = await verifyPassword(user.passwordHash, input.password)
+      const isValid = await verifyPassword(user.passwordHash, input.password);
       if (!isValid) {
         throw new TRPCError({
           code: 'UNAUTHORIZED',
           message: 'Password is incorrect',
-        })
+        });
       }
 
       // Soft delete - deactivate account
       await ctx.prisma.user.update({
         where: { id: ctx.user.id },
         data: { isActive: false },
-      })
+      });
 
-      return { success: true, message: 'Account deactivated' }
+      return { success: true, message: 'Account deactivated' };
     }),
 
   /**
    * Get time tracking data for current user
    * Shows hours worked across all projects/tasks
    */
-  getTimeTracking: protectedProcedure
-    .input(timeTrackingSchema)
-    .query(async ({ ctx, input }) => {
-      const dateFilter = {
-        ...(input.dateFrom && { gte: new Date(input.dateFrom) }),
-        ...(input.dateTo && { lte: new Date(input.dateTo) }),
-      }
-      const hasDateFilter = input.dateFrom || input.dateTo
+  getTimeTracking: protectedProcedure.input(timeTrackingSchema).query(async ({ ctx, input }) => {
+    const dateFilter = {
+      ...(input.dateFrom && { gte: new Date(input.dateFrom) }),
+      ...(input.dateTo && { lte: new Date(input.dateTo) }),
+    };
+    const hasDateFilter = input.dateFrom || input.dateTo;
 
-      // Get subtasks assigned to this user with time tracking
-      const subtasks = await ctx.prisma.subtask.findMany({
-        where: {
-          assigneeId: ctx.user.id,
-          timeSpent: { gt: 0 },
-          ...(hasDateFilter && { updatedAt: dateFilter }),
-        },
-        select: {
-          id: true,
-          title: true,
-          status: true,
-          timeEstimated: true,
-          timeSpent: true,
-          updatedAt: true,
-          task: {
-            select: {
-              id: true,
-              title: true,
-              project: {
-                select: {
-                  id: true,
-                  name: true,
-                },
+    // Get subtasks assigned to this user with time tracking
+    const subtasks = await ctx.prisma.subtask.findMany({
+      where: {
+        assigneeId: ctx.user.id,
+        timeSpent: { gt: 0 },
+        ...(hasDateFilter && { updatedAt: dateFilter }),
+      },
+      select: {
+        id: true,
+        title: true,
+        status: true,
+        timeEstimated: true,
+        timeSpent: true,
+        updatedAt: true,
+        task: {
+          select: {
+            id: true,
+            title: true,
+            project: {
+              select: {
+                id: true,
+                name: true,
               },
             },
           },
         },
-        orderBy: { updatedAt: 'desc' },
-        take: input.limit,
-      })
+      },
+      orderBy: { updatedAt: 'desc' },
+      take: input.limit,
+    });
 
-      // Get tasks assigned to this user with time tracking
-      const tasks = await ctx.prisma.task.findMany({
-        where: {
-          assignees: { some: { userId: ctx.user.id } },
-          timeSpent: { gt: 0 },
-          ...(hasDateFilter && { updatedAt: dateFilter }),
-        },
-        select: {
-          id: true,
-          title: true,
-          isActive: true,
-          timeEstimated: true,
-          timeSpent: true,
-          updatedAt: true,
-          project: {
-            select: {
-              id: true,
-              name: true,
-            },
+    // Get tasks assigned to this user with time tracking
+    const tasks = await ctx.prisma.task.findMany({
+      where: {
+        assignees: { some: { userId: ctx.user.id } },
+        timeSpent: { gt: 0 },
+        ...(hasDateFilter && { updatedAt: dateFilter }),
+      },
+      select: {
+        id: true,
+        title: true,
+        isActive: true,
+        timeEstimated: true,
+        timeSpent: true,
+        updatedAt: true,
+        project: {
+          select: {
+            id: true,
+            name: true,
           },
         },
-        orderBy: { updatedAt: 'desc' },
-        take: input.limit,
-      })
+      },
+      orderBy: { updatedAt: 'desc' },
+      take: input.limit,
+    });
 
-      // Aggregate totals per project
-      const projectTotals = new Map<number, { name: string; estimated: number; spent: number }>()
+    // Aggregate totals per project
+    const projectTotals = new Map<number, { name: string; estimated: number; spent: number }>();
 
-      for (const subtask of subtasks) {
-        const projectId = subtask.task.project.id
-        const existing = projectTotals.get(projectId) ?? {
-          name: subtask.task.project.name,
-          estimated: 0,
-          spent: 0,
-        }
-        projectTotals.set(projectId, {
-          name: existing.name,
-          estimated: existing.estimated + subtask.timeEstimated,
-          spent: existing.spent + subtask.timeSpent,
-        })
-      }
+    for (const subtask of subtasks) {
+      const projectId = subtask.task.project.id;
+      const existing = projectTotals.get(projectId) ?? {
+        name: subtask.task.project.name,
+        estimated: 0,
+        spent: 0,
+      };
+      projectTotals.set(projectId, {
+        name: existing.name,
+        estimated: existing.estimated + subtask.timeEstimated,
+        spent: existing.spent + subtask.timeSpent,
+      });
+    }
 
-      for (const task of tasks) {
-        const projectId = task.project.id
-        const existing = projectTotals.get(projectId) ?? {
-          name: task.project.name,
-          estimated: 0,
-          spent: 0,
-        }
-        projectTotals.set(projectId, {
-          name: existing.name,
-          estimated: existing.estimated + task.timeEstimated,
-          spent: existing.spent + task.timeSpent,
-        })
-      }
+    for (const task of tasks) {
+      const projectId = task.project.id;
+      const existing = projectTotals.get(projectId) ?? {
+        name: task.project.name,
+        estimated: 0,
+        spent: 0,
+      };
+      projectTotals.set(projectId, {
+        name: existing.name,
+        estimated: existing.estimated + task.timeEstimated,
+        spent: existing.spent + task.timeSpent,
+      });
+    }
 
-      // Calculate overall totals
-      let totalEstimated = 0
-      let totalSpent = 0
-      const byProject = Array.from(projectTotals.entries()).map(([projectId, data]) => {
-        totalEstimated += data.estimated
-        totalSpent += data.spent
-        return {
-          projectId,
-          projectName: data.name,
-          timeEstimated: Math.round(data.estimated * 100) / 100,
-          timeSpent: Math.round(data.spent * 100) / 100,
-        }
-      })
-
-      // Sort projects by time spent (highest first)
-      byProject.sort((a, b) => b.timeSpent - a.timeSpent)
-
-      // Combine recent entries (tasks + subtasks)
-      const recentEntries = [
-        ...subtasks.map((s) => ({
-          type: 'subtask' as const,
-          id: s.id,
-          title: s.title,
-          taskId: s.task.id,
-          taskTitle: s.task.title,
-          projectId: s.task.project.id,
-          projectName: s.task.project.name,
-          timeEstimated: s.timeEstimated,
-          timeSpent: s.timeSpent,
-          updatedAt: s.updatedAt,
-          isActive: s.status !== 'DONE',
-        })),
-        ...tasks.map((t) => ({
-          type: 'task' as const,
-          id: t.id,
-          title: t.title,
-          taskId: t.id,
-          taskTitle: t.title,
-          projectId: t.project.id,
-          projectName: t.project.name,
-          timeEstimated: t.timeEstimated,
-          timeSpent: t.timeSpent,
-          updatedAt: t.updatedAt,
-          isActive: t.isActive,
-        })),
-      ]
-        .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
-        .slice(0, input.limit)
-
+    // Calculate overall totals
+    let totalEstimated = 0;
+    let totalSpent = 0;
+    const byProject = Array.from(projectTotals.entries()).map(([projectId, data]) => {
+      totalEstimated += data.estimated;
+      totalSpent += data.spent;
       return {
-        totalEstimated: Math.round(totalEstimated * 100) / 100,
-        totalSpent: Math.round(totalSpent * 100) / 100,
-        byProject,
-        recentEntries,
-      }
-    }),
+        projectId,
+        projectName: data.name,
+        timeEstimated: Math.round(data.estimated * 100) / 100,
+        timeSpent: Math.round(data.spent * 100) / 100,
+      };
+    });
+
+    // Sort projects by time spent (highest first)
+    byProject.sort((a, b) => b.timeSpent - a.timeSpent);
+
+    // Combine recent entries (tasks + subtasks)
+    const recentEntries = [
+      ...subtasks.map((s) => ({
+        type: 'subtask' as const,
+        id: s.id,
+        title: s.title,
+        taskId: s.task.id,
+        taskTitle: s.task.title,
+        projectId: s.task.project.id,
+        projectName: s.task.project.name,
+        timeEstimated: s.timeEstimated,
+        timeSpent: s.timeSpent,
+        updatedAt: s.updatedAt,
+        isActive: s.status !== 'DONE',
+      })),
+      ...tasks.map((t) => ({
+        type: 'task' as const,
+        id: t.id,
+        title: t.title,
+        taskId: t.id,
+        taskTitle: t.title,
+        projectId: t.project.id,
+        projectName: t.project.name,
+        timeEstimated: t.timeEstimated,
+        timeSpent: t.timeSpent,
+        updatedAt: t.updatedAt,
+        isActive: t.isActive,
+      })),
+    ]
+      .sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime())
+      .slice(0, input.limit);
+
+    return {
+      totalEstimated: Math.round(totalEstimated * 100) / 100,
+      totalSpent: Math.round(totalSpent * 100) / 100,
+      byProject,
+      recentEntries,
+    };
+  }),
 
   /**
    * Get last logins for current user
    */
-  getLastLogins: protectedProcedure
-    .input(paginationSchema)
-    .query(async ({ ctx, input }) => {
-      const [logins, total] = await Promise.all([
-        ctx.prisma.lastLogin.findMany({
-          where: { userId: ctx.user.id },
-          orderBy: { createdAt: 'desc' },
-          take: input.limit,
-          skip: input.offset,
-        }),
-        ctx.prisma.lastLogin.count({
-          where: { userId: ctx.user.id },
-        }),
-      ])
+  getLastLogins: protectedProcedure.input(paginationSchema).query(async ({ ctx, input }) => {
+    const [logins, total] = await Promise.all([
+      ctx.prisma.lastLogin.findMany({
+        where: { userId: ctx.user.id },
+        orderBy: { createdAt: 'desc' },
+        take: input.limit,
+        skip: input.offset,
+      }),
+      ctx.prisma.lastLogin.count({
+        where: { userId: ctx.user.id },
+      }),
+    ]);
 
-      return {
-        logins,
-        total,
-        hasMore: input.offset + logins.length < total,
-      }
-    }),
+    return {
+      logins,
+      total,
+      hasMore: input.offset + logins.length < total,
+    };
+  }),
 
   /**
    * Get active sessions (persistent connections)
    */
   getSessions: protectedProcedure.query(async ({ ctx }) => {
-    const now = new Date()
+    const now = new Date();
 
     const sessions = await ctx.prisma.session.findMany({
       where: {
@@ -624,7 +624,7 @@ export const userRouter = router({
         expiresAt: { gt: now },
       },
       orderBy: { createdAt: 'desc' },
-    })
+    });
 
     return sessions.map((s) => ({
       id: s.id,
@@ -632,14 +632,14 @@ export const userRouter = router({
       userAgent: s.userAgent,
       expiresAt: s.expiresAt,
       createdAt: s.createdAt,
-    }))
+    }));
   }),
 
   /**
    * Get remember tokens
    */
   getRememberTokens: protectedProcedure.query(async ({ ctx }) => {
-    const now = new Date()
+    const now = new Date();
 
     const tokens = await ctx.prisma.rememberToken.findMany({
       where: {
@@ -647,14 +647,14 @@ export const userRouter = router({
         expiresAt: { gt: now },
       },
       orderBy: { createdAt: 'desc' },
-    })
+    });
 
     return tokens.map((t) => ({
       id: t.id,
       tokenPreview: t.token.slice(0, 8) + '...',
       expiresAt: t.expiresAt,
       createdAt: t.createdAt,
-    }))
+    }));
   }),
 
   /**
@@ -668,8 +668,8 @@ export const userRouter = router({
           id: input.sessionId,
           userId: ctx.user.id,
         },
-      })
-      return { success: true }
+      });
+      return { success: true };
     }),
 
   /**
@@ -683,8 +683,8 @@ export const userRouter = router({
           id: input.tokenId,
           userId: ctx.user.id,
         },
-      })
-      return { success: true }
+      });
+      return { success: true };
     }),
 
   /**
@@ -694,42 +694,40 @@ export const userRouter = router({
     // We can't know the current session ID from JWT, so we delete all
     const result = await ctx.prisma.session.deleteMany({
       where: { userId: ctx.user.id },
-    })
-    return { success: true, count: result.count }
+    });
+    return { success: true, count: result.count };
   }),
 
   /**
    * Get password reset history
    */
-  getPasswordResets: protectedProcedure
-    .input(paginationSchema)
-    .query(async ({ ctx, input }) => {
-      const [resets, total] = await Promise.all([
-        ctx.prisma.passwordReset.findMany({
-          where: { userId: ctx.user.id },
-          orderBy: { createdAt: 'desc' },
-          take: input.limit,
-          skip: input.offset,
-          select: {
-            id: true,
-            ip: true,
-            userAgent: true,
-            isUsed: true,
-            expiresAt: true,
-            createdAt: true,
-          },
-        }),
-        ctx.prisma.passwordReset.count({
-          where: { userId: ctx.user.id },
-        }),
-      ])
+  getPasswordResets: protectedProcedure.input(paginationSchema).query(async ({ ctx, input }) => {
+    const [resets, total] = await Promise.all([
+      ctx.prisma.passwordReset.findMany({
+        where: { userId: ctx.user.id },
+        orderBy: { createdAt: 'desc' },
+        take: input.limit,
+        skip: input.offset,
+        select: {
+          id: true,
+          ip: true,
+          userAgent: true,
+          isUsed: true,
+          expiresAt: true,
+          createdAt: true,
+        },
+      }),
+      ctx.prisma.passwordReset.count({
+        where: { userId: ctx.user.id },
+      }),
+    ]);
 
-      return {
-        resets,
-        total,
-        hasMore: input.offset + resets.length < total,
-      }
-    }),
+    return {
+      resets,
+      total,
+      hasMore: input.offset + resets.length < total,
+    };
+  }),
 
   /**
    * Get user metadata (custom key-value pairs)
@@ -738,9 +736,9 @@ export const userRouter = router({
     const metadata = await ctx.prisma.userMetadata.findMany({
       where: { userId: ctx.user.id },
       orderBy: { key: 'asc' },
-    })
+    });
 
-    return metadata
+    return metadata;
   }),
 
   /**
@@ -759,13 +757,13 @@ export const userRouter = router({
           userId: ctx.user.id,
           key: input.key,
         },
-      })
+      });
 
       if (existing) {
         await ctx.prisma.userMetadata.update({
           where: { id: existing.id },
           data: { value: input.value },
-        })
+        });
       } else {
         await ctx.prisma.userMetadata.create({
           data: {
@@ -773,10 +771,10 @@ export const userRouter = router({
             key: input.key,
             value: input.value,
           },
-        })
+        });
       }
 
-      return { success: true }
+      return { success: true };
     }),
 
   /**
@@ -790,8 +788,8 @@ export const userRouter = router({
           userId: ctx.user.id,
           key: input.key,
         },
-      })
-      return { success: true }
+      });
+      return { success: true };
     }),
 
   // ===========================================================================
@@ -805,8 +803,8 @@ export const userRouter = router({
     const user = await ctx.prisma.user.findUnique({
       where: { id: ctx.user.id },
       select: { twofactorActivated: true },
-    })
-    return { enabled: user?.twofactorActivated ?? false }
+    });
+    return { enabled: user?.twofactorActivated ?? false };
   }),
 
   /**
@@ -816,17 +814,17 @@ export const userRouter = router({
     const user = await ctx.prisma.user.findUnique({
       where: { id: ctx.user.id },
       select: { email: true, twofactorActivated: true },
-    })
+    });
 
     if (user?.twofactorActivated) {
       throw new TRPCError({
         code: 'BAD_REQUEST',
         message: '2FA is already enabled',
-      })
+      });
     }
 
     // Generate secret
-    const secret = new OTPAuth.Secret({ size: 16 })
+    const secret = new OTPAuth.Secret({ size: 16 });
 
     // Create TOTP object
     const totp = new OTPAuth.TOTP({
@@ -836,18 +834,18 @@ export const userRouter = router({
       digits: 6,
       period: 30,
       secret,
-    })
+    });
 
     // Store secret temporarily (not activated yet)
     await ctx.prisma.user.update({
       where: { id: ctx.user.id },
       data: { twofactorSecret: secret.base32 },
-    })
+    });
 
     return {
       secret: secret.base32,
       qrCodeUri: totp.toString(),
-    }
+    };
   }),
 
   /**
@@ -859,20 +857,20 @@ export const userRouter = router({
       const user = await ctx.prisma.user.findUnique({
         where: { id: ctx.user.id },
         select: { email: true, twofactorSecret: true, twofactorActivated: true },
-      })
+      });
 
       if (!user?.twofactorSecret) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
           message: 'Please setup 2FA first',
-        })
+        });
       }
 
       if (user.twofactorActivated) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
           message: '2FA is already activated',
-        })
+        });
       }
 
       // Verify token
@@ -883,22 +881,22 @@ export const userRouter = router({
         digits: 6,
         period: 30,
         secret: OTPAuth.Secret.fromBase32(user.twofactorSecret),
-      })
+      });
 
-      const delta = totp.validate({ token: input.token, window: 1 })
+      const delta = totp.validate({ token: input.token, window: 1 });
 
       if (delta === null) {
         throw new TRPCError({
           code: 'UNAUTHORIZED',
           message: 'Invalid verification code',
-        })
+        });
       }
 
       // Generate backup codes
-      const backupCodes: string[] = []
+      const backupCodes: string[] = [];
       for (let i = 0; i < 10; i++) {
-        const code = Math.random().toString(36).substring(2, 10).toUpperCase()
-        backupCodes.push(code)
+        const code = Math.random().toString(36).substring(2, 10).toUpperCase();
+        backupCodes.push(code);
       }
 
       // Store backup codes as metadata
@@ -915,18 +913,18 @@ export const userRouter = router({
           key: '2fa_backup_codes',
           value: JSON.stringify(backupCodes),
         },
-      })
+      });
 
       // Activate 2FA
       await ctx.prisma.user.update({
         where: { id: ctx.user.id },
         data: { twofactorActivated: true },
-      })
+      });
 
       return {
         success: true,
         backupCodes,
-      }
+      };
     }),
 
   /**
@@ -938,29 +936,29 @@ export const userRouter = router({
       const user = await ctx.prisma.user.findUnique({
         where: { id: ctx.user.id },
         select: { passwordHash: true, twofactorActivated: true },
-      })
+      });
 
       if (!user?.twofactorActivated) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
           message: '2FA is not enabled',
-        })
+        });
       }
 
       if (!user.passwordHash) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
           message: 'Cannot disable 2FA for this account',
-        })
+        });
       }
 
       // Verify password
-      const isValid = await verifyPassword(user.passwordHash, input.password)
+      const isValid = await verifyPassword(user.passwordHash, input.password);
       if (!isValid) {
         throw new TRPCError({
           code: 'UNAUTHORIZED',
           message: 'Password is incorrect',
-        })
+        });
       }
 
       // Disable 2FA
@@ -970,7 +968,7 @@ export const userRouter = router({
           twofactorActivated: false,
           twofactorSecret: null,
         },
-      })
+      });
 
       // Remove backup codes
       await ctx.prisma.userMetadata.deleteMany({
@@ -978,9 +976,9 @@ export const userRouter = router({
           userId: ctx.user.id,
           key: '2fa_backup_codes',
         },
-      })
+      });
 
-      return { success: true }
+      return { success: true };
     }),
 
   // ===========================================================================
@@ -994,28 +992,28 @@ export const userRouter = router({
     const user = await ctx.prisma.user.findUnique({
       where: { id: ctx.user.id },
       select: { publicToken: true },
-    })
+    });
     return {
       enabled: !!user?.publicToken,
       token: user?.publicToken ?? null,
-    }
+    };
   }),
 
   /**
    * Enable public access - generate a token
    */
   enablePublicAccess: protectedProcedure.mutation(async ({ ctx }) => {
-    const crypto = await import('crypto')
+    const crypto = await import('crypto');
 
     // Generate a random 64-character token
-    const token = crypto.randomBytes(32).toString('hex')
+    const token = crypto.randomBytes(32).toString('hex');
 
     await ctx.prisma.user.update({
       where: { id: ctx.user.id },
       data: { publicToken: token },
-    })
+    });
 
-    return { success: true, token }
+    return { success: true, token };
   }),
 
   /**
@@ -1025,26 +1023,26 @@ export const userRouter = router({
     await ctx.prisma.user.update({
       where: { id: ctx.user.id },
       data: { publicToken: null },
-    })
+    });
 
-    return { success: true }
+    return { success: true };
   }),
 
   /**
    * Regenerate public access token
    */
   regeneratePublicToken: protectedProcedure.mutation(async ({ ctx }) => {
-    const crypto = await import('crypto')
+    const crypto = await import('crypto');
 
     // Generate a new random token
-    const token = crypto.randomBytes(32).toString('hex')
+    const token = crypto.randomBytes(32).toString('hex');
 
     await ctx.prisma.user.update({
       where: { id: ctx.user.id },
       data: { publicToken: token },
-    })
+    });
 
-    return { success: true, token }
+    return { success: true, token };
   }),
 
   // ===========================================================================
@@ -1062,7 +1060,7 @@ export const userRouter = router({
         githubId: true,
         gitlabId: true,
       },
-    })
+    });
 
     return {
       google: {
@@ -1077,16 +1075,18 @@ export const userRouter = router({
         connected: !!user?.gitlabId,
         id: user?.gitlabId ? String(user.gitlabId) : null,
       },
-    }
+    };
   }),
 
   /**
    * Unlink an OAuth account
    */
   unlinkAccount: protectedProcedure
-    .input(z.object({
-      provider: z.enum(['google', 'github', 'gitlab']),
-    }))
+    .input(
+      z.object({
+        provider: z.enum(['google', 'github', 'gitlab']),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       // Check if this is the user's only auth method
       const user = await ctx.prisma.user.findUnique({
@@ -1097,13 +1097,13 @@ export const userRouter = router({
           githubId: true,
           gitlabId: true,
         },
-      })
+      });
 
       if (!user) {
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: 'User not found',
-        })
+        });
       }
 
       // Count available auth methods
@@ -1112,13 +1112,14 @@ export const userRouter = router({
         !!user.googleId,
         !!user.githubId,
         !!user.gitlabId,
-      ].filter(Boolean).length
+      ].filter(Boolean).length;
 
       if (authMethods <= 1) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
-          message: 'Cannot unlink your only authentication method. Set a password first or link another account.',
-        })
+          message:
+            'Cannot unlink your only authentication method. Set a password first or link another account.',
+        });
       }
 
       // Unlink the account
@@ -1127,14 +1128,14 @@ export const userRouter = router({
           ? { googleId: null }
           : input.provider === 'github'
             ? { githubId: null }
-            : { gitlabId: null }
+            : { gitlabId: null };
 
       await ctx.prisma.user.update({
         where: { id: ctx.user.id },
         data: updateData,
-      })
+      });
 
-      return { success: true }
+      return { success: true };
     }),
 
   // ===========================================================================
@@ -1148,27 +1149,29 @@ export const userRouter = router({
     const user = await ctx.prisma.user.findUnique({
       where: { id: ctx.user.id },
       select: { hourlyRate: true },
-    })
+    });
 
     return {
       hourlyRate: user?.hourlyRate ? Number(user.hourlyRate) : null,
-    }
+    };
   }),
 
   /**
    * Update hourly rate
    */
   updateHourlyRate: protectedProcedure
-    .input(z.object({
-      hourlyRate: z.number().min(0).max(10000).nullable(),
-    }))
+    .input(
+      z.object({
+        hourlyRate: z.number().min(0).max(10000).nullable(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       await ctx.prisma.user.update({
         where: { id: ctx.user.id },
         data: { hourlyRate: input.hourlyRate },
-      })
+      });
 
-      return { success: true }
+      return { success: true };
     }),
 
   // ===========================================================================
@@ -1184,7 +1187,7 @@ export const userRouter = router({
         userId: ctx.user.id,
         key: { in: SOCIAL_PLATFORMS.map(getSocialMetadataKey) },
       },
-    })
+    });
 
     const result: Record<SocialPlatform, { value: string; visible: boolean } | null> = {
       whatsapp: null,
@@ -1197,20 +1200,20 @@ export const userRouter = router({
       googlemeet: null,
       teams: null,
       gitlab: null,
-    }
+    };
 
     for (const item of metadata) {
-      const platform = item.key.replace('social_', '') as SocialPlatform
+      const platform = item.key.replace('social_', '') as SocialPlatform;
       if (SOCIAL_PLATFORMS.includes(platform)) {
         try {
-          result[platform] = JSON.parse(item.value)
+          result[platform] = JSON.parse(item.value);
         } catch {
           // Invalid JSON, skip
         }
       }
     }
 
-    return result
+    return result;
   }),
 
   /**
@@ -1221,14 +1224,14 @@ export const userRouter = router({
     .mutation(async ({ ctx, input }) => {
       // Process each platform
       for (const platform of SOCIAL_PLATFORMS) {
-        const key = getSocialMetadataKey(platform)
-        const data = input[platform]
+        const key = getSocialMetadataKey(platform);
+        const data = input[platform];
 
         if (data === null || data.value === '') {
           // Delete if null or empty
           await ctx.prisma.userMetadata.deleteMany({
             where: { userId: ctx.user.id, key },
-          })
+          });
         } else {
           // Upsert the value
           await ctx.prisma.userMetadata.upsert({
@@ -1241,11 +1244,11 @@ export const userRouter = router({
               key,
               value: JSON.stringify(data),
             },
-          })
+          });
         }
       }
 
-      return { success: true }
+      return { success: true };
     }),
 
   /**
@@ -1259,7 +1262,7 @@ export const userRouter = router({
           userId: input.userId,
           key: { in: SOCIAL_PLATFORMS.map(getSocialMetadataKey) },
         },
-      })
+      });
 
       const result: Record<SocialPlatform, string | null> = {
         whatsapp: null,
@@ -1272,16 +1275,16 @@ export const userRouter = router({
         googlemeet: null,
         teams: null,
         gitlab: null,
-      }
+      };
 
       for (const item of metadata) {
-        const platform = item.key.replace('social_', '') as SocialPlatform
+        const platform = item.key.replace('social_', '') as SocialPlatform;
         if (SOCIAL_PLATFORMS.includes(platform)) {
           try {
-            const data = JSON.parse(item.value) as { value: string; visible: boolean }
+            const data = JSON.parse(item.value) as { value: string; visible: boolean };
             // Only return if visible
             if (data.visible) {
-              result[platform] = data.value
+              result[platform] = data.value;
             }
           } catch {
             // Invalid JSON, skip
@@ -1289,7 +1292,7 @@ export const userRouter = router({
         }
       }
 
-      return result
+      return result;
     }),
 
   // ===========================================================================
@@ -1332,7 +1335,7 @@ export const userRouter = router({
         { priority: 'desc' },
         { createdAt: 'desc' },
       ],
-    })
+    });
 
     return tasks.map((task) => ({
       id: task.id,
@@ -1348,7 +1351,7 @@ export const userRouter = router({
       createdAt: task.createdAt,
       project: task.project,
       column: task.column,
-    }))
+    }));
   }),
 
   /**
@@ -1385,7 +1388,7 @@ export const userRouter = router({
         { status: 'asc' }, // TODO first, then IN_PROGRESS, then DONE
         { updatedAt: 'desc' },
       ],
-    })
+    });
 
     return subtasks.map((subtask) => ({
       id: subtask.id,
@@ -1401,7 +1404,7 @@ export const userRouter = router({
         title: subtask.task.title,
         project: subtask.task.project,
       },
-    }))
+    }));
   }),
 
   /**
@@ -1409,29 +1412,33 @@ export const userRouter = router({
    * Returns tasks completed, velocity trend, top projects
    */
   getMyProductivity: protectedProcedure
-    .input(z.object({
-      weeks: z.number().min(1).max(12).default(4),
-    }).optional())
+    .input(
+      z
+        .object({
+          weeks: z.number().min(1).max(12).default(4),
+        })
+        .optional()
+    )
     .query(async ({ ctx, input }) => {
-      const weeks = input?.weeks ?? 4
-      const now = new Date()
+      const weeks = input?.weeks ?? 4;
+      const now = new Date();
 
       // Helper: get week start (Monday)
       const getWeekStart = (date: Date): Date => {
-        const d = new Date(date)
-        const day = d.getDay()
-        const diff = d.getDate() - day + (day === 0 ? -6 : 1)
-        d.setDate(diff)
-        d.setHours(0, 0, 0, 0)
-        return d
-      }
+        const d = new Date(date);
+        const day = d.getDay();
+        const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+        d.setDate(diff);
+        d.setHours(0, 0, 0, 0);
+        return d;
+      };
 
       // Calculate date ranges
-      const thisWeekStart = getWeekStart(now)
-      const lastWeekStart = new Date(thisWeekStart)
-      lastWeekStart.setDate(lastWeekStart.getDate() - 7)
-      const weeksAgo = new Date(now)
-      weeksAgo.setDate(weeksAgo.getDate() - weeks * 7)
+      const thisWeekStart = getWeekStart(now);
+      const lastWeekStart = new Date(thisWeekStart);
+      lastWeekStart.setDate(lastWeekStart.getDate() - 7);
+      const weeksAgo = new Date(now);
+      weeksAgo.setDate(weeksAgo.getDate() - weeks * 7);
 
       // Tasks completed this week
       const completedThisWeek = await ctx.prisma.task.count({
@@ -1440,7 +1447,7 @@ export const userRouter = router({
           isActive: false,
           dateCompleted: { gte: thisWeekStart },
         },
-      })
+      });
 
       // Tasks completed last week
       const completedLastWeek = await ctx.prisma.task.count({
@@ -1449,7 +1456,7 @@ export const userRouter = router({
           isActive: false,
           dateCompleted: { gte: lastWeekStart, lt: thisWeekStart },
         },
-      })
+      });
 
       // All completed tasks in range for velocity
       const completedTasks = await ctx.prisma.task.findMany({
@@ -1464,55 +1471,59 @@ export const userRouter = router({
           projectId: true,
           project: { select: { id: true, name: true, identifier: true } },
         },
-      })
+      });
 
       // Group by week for velocity chart
-      const weeklyData = new Map<string, number>()
+      const weeklyData = new Map<string, number>();
       for (let i = 0; i < weeks; i++) {
-        const weekStart = new Date(now)
-        weekStart.setDate(weekStart.getDate() - i * 7)
-        const key = getWeekStart(weekStart).toISOString().split('T')[0]!
-        weeklyData.set(key, 0)
+        const weekStart = new Date(now);
+        weekStart.setDate(weekStart.getDate() - i * 7);
+        const key = getWeekStart(weekStart).toISOString().split('T')[0]!;
+        weeklyData.set(key, 0);
       }
 
       for (const task of completedTasks) {
         if (task.dateCompleted) {
-          const key = getWeekStart(task.dateCompleted).toISOString().split('T')[0]!
-          const current = weeklyData.get(key) ?? 0
-          weeklyData.set(key, current + 1)
+          const key = getWeekStart(task.dateCompleted).toISOString().split('T')[0]!;
+          const current = weeklyData.get(key) ?? 0;
+          weeklyData.set(key, current + 1);
         }
       }
 
       // Convert to array sorted by date
       const velocityData = Array.from(weeklyData.entries())
         .map(([weekStart, count]) => ({ weekStart, tasksCompleted: count }))
-        .sort((a, b) => a.weekStart.localeCompare(b.weekStart))
+        .sort((a, b) => a.weekStart.localeCompare(b.weekStart));
 
       // Calculate trend (this week vs last week)
-      const trend = completedThisWeek - completedLastWeek
+      const trend = completedThisWeek - completedLastWeek;
 
       // Top projects by completed tasks
-      const projectCounts = new Map<number, { name: string; identifier: string; count: number }>()
+      const projectCounts = new Map<number, { name: string; identifier: string; count: number }>();
       for (const task of completedTasks) {
         if (task.project) {
           const existing = projectCounts.get(task.projectId) ?? {
             name: task.project.name,
             identifier: task.project.identifier ?? '',
             count: 0,
-          }
-          projectCounts.set(task.projectId, { ...existing, count: existing.count + 1 })
+          };
+          projectCounts.set(task.projectId, { ...existing, count: existing.count + 1 });
         }
       }
 
       const topProjects = Array.from(projectCounts.entries())
         .map(([projectId, data]) => ({ projectId, ...data }))
         .sort((a, b) => b.count - a.count)
-        .slice(0, 5)
+        .slice(0, 5);
 
       // Calculate average velocity
-      const avgVelocity = velocityData.length > 0
-        ? Math.round((velocityData.reduce((sum, w) => sum + w.tasksCompleted, 0) / velocityData.length) * 10) / 10
-        : 0
+      const avgVelocity =
+        velocityData.length > 0
+          ? Math.round(
+              (velocityData.reduce((sum, w) => sum + w.tasksCompleted, 0) / velocityData.length) *
+                10
+            ) / 10
+          : 0;
 
       return {
         thisWeek: completedThisWeek,
@@ -1522,7 +1533,7 @@ export const userRouter = router({
         velocityData,
         topProjects,
         totalCompleted: completedTasks.length,
-      }
+      };
     }),
 
   // ===========================================================================
@@ -1533,10 +1544,12 @@ export const userRouter = router({
    * Get page width preference for a specific page path
    */
   getPageWidthPreference: protectedProcedure
-    .input(z.object({
-      deviceId: z.string().uuid(),
-      pagePath: z.string().max(255),
-    }))
+    .input(
+      z.object({
+        deviceId: z.string().uuid(),
+        pagePath: z.string().max(255),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const preference = await ctx.prisma.userPagePreference.findUnique({
         where: {
@@ -1546,33 +1559,35 @@ export const userRouter = router({
             pagePath: input.pagePath,
           },
         },
-      })
+      });
 
       return {
         isFullWidth: preference?.isFullWidth ?? false,
         isPinned: !!preference,
-      }
+      };
     }),
 
   /**
    * Get all pinned page width preferences for a device
    */
   getAllPageWidthPreferences: protectedProcedure
-    .input(z.object({
-      deviceId: z.string().uuid(),
-    }))
+    .input(
+      z.object({
+        deviceId: z.string().uuid(),
+      })
+    )
     .query(async ({ ctx, input }) => {
       const preferences = await ctx.prisma.userPagePreference.findMany({
         where: {
           userId: ctx.user.id,
           deviceId: input.deviceId,
         },
-      })
+      });
 
       return preferences.map((p) => ({
         pagePath: p.pagePath,
         isFullWidth: p.isFullWidth,
-      }))
+      }));
     }),
 
   /**
@@ -1581,12 +1596,14 @@ export const userRouter = router({
    * If isPinned is false, removes the preference (unpins)
    */
   setPageWidthPreference: protectedProcedure
-    .input(z.object({
-      deviceId: z.string().uuid(),
-      pagePath: z.string().max(255),
-      isFullWidth: z.boolean(),
-      isPinned: z.boolean(),
-    }))
+    .input(
+      z.object({
+        deviceId: z.string().uuid(),
+        pagePath: z.string().max(255),
+        isFullWidth: z.boolean(),
+        isPinned: z.boolean(),
+      })
+    )
     .mutation(async ({ ctx, input }) => {
       if (input.isPinned) {
         // Upsert the preference
@@ -1607,7 +1624,7 @@ export const userRouter = router({
             pagePath: input.pagePath,
             isFullWidth: input.isFullWidth,
           },
-        })
+        });
       } else {
         // Remove the preference (unpin)
         await ctx.prisma.userPagePreference.deleteMany({
@@ -1616,9 +1633,9 @@ export const userRouter = router({
             deviceId: input.deviceId,
             pagePath: input.pagePath,
           },
-        })
+        });
       }
 
-      return { success: true }
+      return { success: true };
     }),
-})
+});

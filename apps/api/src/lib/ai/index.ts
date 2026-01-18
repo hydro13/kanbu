@@ -6,4 +6,4 @@
  * Fase 14.3 - Provider Abstraction Layer
  */
 
-export * from './providers'
+export * from './providers';

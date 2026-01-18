@@ -27,80 +27,80 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { useMemo, useState, useCallback, useEffect, useRef } from 'react'
-import { Column } from './Column'
-import { BoardDndContext } from './DndContext'
-import { useDragDrop } from '@/hooks/useDragDrop'
-import { TaskDetailModal } from '@/components/task/TaskDetailModal'
-import { TaskContextMenu } from '@/components/task/TaskContextMenu'
-import { trpc } from '@/lib/trpc'
+import { useMemo, useState, useCallback, useEffect, useRef } from 'react';
+import { Column } from './Column';
+import { BoardDndContext } from './DndContext';
+import { useDragDrop } from '@/hooks/useDragDrop';
+import { TaskDetailModal } from '@/components/task/TaskDetailModal';
+import { TaskContextMenu } from '@/components/task/TaskContextMenu';
+import { trpc } from '@/lib/trpc';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface BoardColumn {
-  id: number
-  title: string
-  description: string | null
-  position: number
-  taskLimit: number
-  isCollapsed: boolean
-  showClosed: boolean
-  isArchive: boolean
+  id: number;
+  title: string;
+  description: string | null;
+  position: number;
+  taskLimit: number;
+  isCollapsed: boolean;
+  showClosed: boolean;
+  isArchive: boolean;
 }
 
 export interface BoardSwimlane {
-  id: number
-  name: string
-  description: string | null
-  position: number
+  id: number;
+  name: string;
+  description: string | null;
+  position: number;
 }
 
 export interface BoardTask {
-  id: number
-  title: string
-  description: string | null
-  reference: string | null
-  priority: number
-  score: number
-  progress: number
-  position: number
-  color: string | null
-  columnId: number
-  swimlaneId: number | null
-  dateDue: string | null
-  dateStarted: string | null
-  dateCompleted: string | null
-  timeEstimated: number
-  timeSpent: number
-  isActive: boolean
-  createdAt: string
-  updatedAt: string
-  githubBranch: string | null
-  column: { id: number; title: string }
-  swimlane: { id: number; name: string } | null
+  id: number;
+  title: string;
+  description: string | null;
+  reference: string | null;
+  priority: number;
+  score: number;
+  progress: number;
+  position: number;
+  color: string | null;
+  columnId: number;
+  swimlaneId: number | null;
+  dateDue: string | null;
+  dateStarted: string | null;
+  dateCompleted: string | null;
+  timeEstimated: number;
+  timeSpent: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  githubBranch: string | null;
+  column: { id: number; title: string };
+  swimlane: { id: number; name: string } | null;
   assignees: Array<{
-    id: number
-    username: string
-    name: string | null
-    email: string | null
-    avatarUrl: string | null
-  }>
+    id: number;
+    username: string;
+    name: string | null;
+    email: string | null;
+    avatarUrl: string | null;
+  }>;
   tags: Array<{
-    id: number
-    name: string
-    color: string | null
-  }>
-  subtaskCount: number
-  commentCount: number
+    id: number;
+    name: string;
+    color: string | null;
+  }>;
+  subtaskCount: number;
+  commentCount: number;
 }
 
 export interface BoardProps {
-  columns: BoardColumn[]
-  swimlanes: BoardSwimlane[]
-  tasks: BoardTask[]
-  projectId: number
+  columns: BoardColumn[];
+  swimlanes: BoardSwimlane[];
+  tasks: BoardTask[];
+  projectId: number;
 }
 
 // =============================================================================
@@ -111,23 +111,23 @@ export interface BoardProps {
  * Group tasks by column and swimlane
  */
 function groupTasks(tasks: BoardTask[], _swimlanes: BoardSwimlane[]) {
-  const grouped: Record<string, BoardTask[]> = {}
+  const grouped: Record<string, BoardTask[]> = {};
 
   // Initialize empty arrays for all column/swimlane combinations
   tasks.forEach((task) => {
-    const key = `${task.columnId}-${task.swimlaneId ?? 'default'}`
+    const key = `${task.columnId}-${task.swimlaneId ?? 'default'}`;
     if (!grouped[key]) {
-      grouped[key] = []
+      grouped[key] = [];
     }
-    grouped[key]!.push(task)
-  })
+    grouped[key]!.push(task);
+  });
 
   // Sort tasks within each group by position
   Object.keys(grouped).forEach((key) => {
-    grouped[key]!.sort((a, b) => a.position - b.position)
-  })
+    grouped[key]!.sort((a, b) => a.position - b.position);
+  });
 
-  return grouped
+  return grouped;
 }
 
 // =============================================================================
@@ -136,19 +136,19 @@ function groupTasks(tasks: BoardTask[], _swimlanes: BoardSwimlane[]) {
 
 // Context menu state type
 interface ContextMenuState {
-  isOpen: boolean
-  position: { x: number; y: number }
-  taskId: number | null
-  columnId: number
-  priority: number
+  isOpen: boolean;
+  position: { x: number; y: number };
+  taskId: number | null;
+  columnId: number;
+  priority: number;
 }
 
 export function Board({ columns, swimlanes, tasks, projectId }: BoardProps) {
   // Local state for optimistic updates
-  const [localTasks, setLocalTasks] = useState<BoardTask[]>(tasks)
+  const [localTasks, setLocalTasks] = useState<BoardTask[]>(tasks);
 
   // Task detail modal state
-  const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null)
+  const [selectedTaskId, setSelectedTaskId] = useState<number | null>(null);
 
   // Context menu state
   const [contextMenu, setContextMenu] = useState<ContextMenuState>({
@@ -157,86 +157,87 @@ export function Board({ columns, swimlanes, tasks, projectId }: BoardProps) {
     taskId: null,
     columnId: 0,
     priority: 0,
-  })
+  });
 
   // Refs for drag-to-pan
-  const containerRef = useRef<HTMLDivElement>(null)
-  const isPanning = useRef(false)
-  const lastPos = useRef({ x: 0, y: 0 })
+  const containerRef = useRef<HTMLDivElement>(null);
+  const isPanning = useRef(false);
+  const lastPos = useRef({ x: 0, y: 0 });
 
   // Zoom state for column width scaling
-  const [zoomScale, setZoomScale] = useState(1)
-  const MIN_ZOOM = 0.6
-  const MAX_ZOOM = 1.4
+  const [zoomScale, setZoomScale] = useState(1);
+  const MIN_ZOOM = 0.6;
+  const MAX_ZOOM = 1.4;
 
   // Handle mouse wheel for zoom (scroll = zoom, shift+scroll = horizontal pan)
   const handleWheel = useCallback((e: React.WheelEvent) => {
     // Shift + scroll = horizontal scroll (let browser handle natively)
-    if (e.shiftKey) return
+    if (e.shiftKey) return;
 
     // Normal scroll = zoom
-    e.preventDefault()
-    const delta = e.deltaY > 0 ? -0.05 : 0.05
-    setZoomScale((prev) => Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, prev + delta)))
-  }, [])
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -0.05 : 0.05;
+    setZoomScale((prev) => Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, prev + delta)));
+  }, []);
 
   // Drag-to-pan handlers
   const handlePanStart = useCallback((e: React.MouseEvent) => {
     // Only left mouse button and not on interactive elements
-    if (e.button !== 0) return
-    const target = e.target as HTMLElement
+    if (e.button !== 0) return;
+    const target = e.target as HTMLElement;
     // Don't start panning if clicking on task cards, buttons, or other interactive elements
-    if (target.closest('[data-task-card]') || target.closest('button') || target.closest('a')) return
+    if (target.closest('[data-task-card]') || target.closest('button') || target.closest('a'))
+      return;
 
-    isPanning.current = true
-    lastPos.current = { x: e.clientX, y: e.clientY }
+    isPanning.current = true;
+    lastPos.current = { x: e.clientX, y: e.clientY };
     if (containerRef.current) {
-      containerRef.current.style.cursor = 'grabbing'
+      containerRef.current.style.cursor = 'grabbing';
     }
-    e.preventDefault()
-  }, [])
+    e.preventDefault();
+  }, []);
 
   const handlePanMove = useCallback((e: React.MouseEvent) => {
-    if (!isPanning.current || !containerRef.current) return
+    if (!isPanning.current || !containerRef.current) return;
 
-    const dx = e.clientX - lastPos.current.x
-    const dy = e.clientY - lastPos.current.y
+    const dx = e.clientX - lastPos.current.x;
+    const dy = e.clientY - lastPos.current.y;
 
-    containerRef.current.scrollLeft -= dx
-    containerRef.current.scrollTop -= dy
+    containerRef.current.scrollLeft -= dx;
+    containerRef.current.scrollTop -= dy;
 
-    lastPos.current = { x: e.clientX, y: e.clientY }
-  }, [])
+    lastPos.current = { x: e.clientX, y: e.clientY };
+  }, []);
 
   const handlePanEnd = useCallback(() => {
-    isPanning.current = false
+    isPanning.current = false;
     if (containerRef.current) {
-      containerRef.current.style.cursor = 'grab'
+      containerRef.current.style.cursor = 'grab';
     }
-  }, [])
+  }, []);
 
   // Handler for task click (opens modal)
   const handleTaskClick = useCallback((taskId: number) => {
-    setSelectedTaskId(taskId)
-  }, [])
+    setSelectedTaskId(taskId);
+  }, []);
 
   // Handler for modal close
   const handleModalClose = useCallback(() => {
-    setSelectedTaskId(null)
-  }, [])
+    setSelectedTaskId(null);
+  }, []);
 
   // tRPC utils for cache invalidation
-  const utils = trpc.useUtils()
+  const utils = trpc.useUtils();
 
   // Create task mutation - creates task and immediately opens modal
   const createTaskMutation = trpc.task.create.useMutation({
     onSuccess: (data) => {
       // Invalidate task list to refresh board
-      utils.task.list.invalidate({ projectId })
+      utils.task.list.invalidate({ projectId });
       // Immediately open the task detail modal
-      setSelectedTaskId(data.id)
+      setSelectedTaskId(data.id);
     },
-  })
+  });
 
   // Handler for creating a new task and opening modal
   const handleCreateAndEditTask = useCallback(
@@ -246,17 +247,17 @@ export function Board({ columns, swimlanes, tasks, projectId }: BoardProps) {
         columnId,
         swimlaneId: swimlaneId ?? undefined,
         title: 'New Task',
-      })
+      });
     },
     [createTaskMutation, projectId]
-  )
+  );
 
   // Handler for task context menu (right-click)
   const handleTaskContextMenu = useCallback(
     (taskId: number, event: React.MouseEvent) => {
-      event.preventDefault()
-      const task = localTasks.find((t) => t.id === taskId)
-      if (!task) return
+      event.preventDefault();
+      const task = localTasks.find((t) => t.id === taskId);
+      if (!task) return;
 
       setContextMenu({
         isOpen: true,
@@ -264,27 +265,27 @@ export function Board({ columns, swimlanes, tasks, projectId }: BoardProps) {
         taskId,
         columnId: task.columnId,
         priority: task.priority,
-      })
+      });
     },
     [localTasks]
-  )
+  );
 
   // Handler for closing context menu
   const handleContextMenuClose = useCallback(() => {
-    setContextMenu((prev) => ({ ...prev, isOpen: false }))
-  }, [])
+    setContextMenu((prev) => ({ ...prev, isOpen: false }));
+  }, []);
 
   // Update local tasks when props change (not during drag)
   useEffect(() => {
-    setLocalTasks(tasks)
-  }, [tasks])
+    setLocalTasks(tasks);
+  }, [tasks]);
 
   // Drag and drop hook
   const { moveTask, error, clearError } = useDragDrop({
     projectId,
     tasks: localTasks,
     onOptimisticUpdate: setLocalTasks,
-  })
+  });
 
   // Handler for task moves
   const handleTaskMove = useCallback(
@@ -294,48 +295,48 @@ export function Board({ columns, swimlanes, tasks, projectId }: BoardProps) {
       targetSwimlaneId: number | null,
       newPosition: number
     ) => {
-      await moveTask(taskId, targetColumnId, targetSwimlaneId, newPosition)
+      await moveTask(taskId, targetColumnId, targetSwimlaneId, newPosition);
     },
     [moveTask]
-  )
+  );
 
   // Sort columns by position
   const sortedColumns = useMemo(() => {
-    return [...columns].sort((a, b) => a.position - b.position)
-  }, [columns])
+    return [...columns].sort((a, b) => a.position - b.position);
+  }, [columns]);
 
   // Sort swimlanes by position
   const sortedSwimlanes = useMemo(() => {
-    return [...swimlanes].sort((a, b) => a.position - b.position)
-  }, [swimlanes])
+    return [...swimlanes].sort((a, b) => a.position - b.position);
+  }, [swimlanes]);
 
   // Group tasks by column/swimlane
   const groupedTasks = useMemo(() => {
-    return groupTasks(localTasks, swimlanes)
-  }, [localTasks, swimlanes])
+    return groupTasks(localTasks, swimlanes);
+  }, [localTasks, swimlanes]);
 
   // Calculate column widths based on number of columns and zoom scale
   const columnWidth = useMemo(() => {
     // Base width: Min 280px, max 360px depending on number of columns
-    const baseWidth = Math.max(280, Math.min(360, window.innerWidth / (columns.length + 1)))
+    const baseWidth = Math.max(280, Math.min(360, window.innerWidth / (columns.length + 1)));
     // Apply zoom scale
-    return baseWidth * zoomScale
-  }, [columns.length, zoomScale])
+    return baseWidth * zoomScale;
+  }, [columns.length, zoomScale]);
 
   // Empty column width is 30% of normal (70% smaller)
-  const emptyColumnWidth = columnWidth * 0.3
+  const emptyColumnWidth = columnWidth * 0.3;
 
   // Calculate task counts per column for width determination
   const columnTaskCounts = useMemo(() => {
-    const counts: Record<number, number> = {}
+    const counts: Record<number, number> = {};
     sortedColumns.forEach((col) => {
-      counts[col.id] = localTasks.filter((t) => t.columnId === col.id).length
-    })
-    return counts
-  }, [sortedColumns, localTasks])
+      counts[col.id] = localTasks.filter((t) => t.columnId === col.id).length;
+    });
+    return counts;
+  }, [sortedColumns, localTasks]);
 
   // Check if we have swimlanes (more than just default)
-  const hasMultipleSwimlanes = sortedSwimlanes.length > 1
+  const hasMultipleSwimlanes = sortedSwimlanes.length > 1;
 
   return (
     <BoardDndContext tasks={localTasks} onTaskMove={handleTaskMove}>
@@ -343,10 +344,7 @@ export function Board({ columns, swimlanes, tasks, projectId }: BoardProps) {
       {error && (
         <div className="fixed bottom-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 flex items-center gap-2">
           <span>Failed to move task</span>
-          <button
-            onClick={clearError}
-            className="text-white hover:text-red-100"
-          >
+          <button onClick={clearError} className="text-white hover:text-red-100">
             ✕
           </button>
         </div>
@@ -362,16 +360,14 @@ export function Board({ columns, swimlanes, tasks, projectId }: BoardProps) {
         onMouseUp={handlePanEnd}
         onMouseLeave={handlePanEnd}
       >
-        <div
-          className="flex h-full p-4 gap-4"
-        >
+        <div className="flex h-full p-4 gap-4">
           {sortedColumns.map((column) => {
             // Get task count for this column
-            const taskCount = columnTaskCounts[column.id] ?? 0
-            const isOverLimit = column.taskLimit > 0 && taskCount >= column.taskLimit
+            const taskCount = columnTaskCounts[column.id] ?? 0;
+            const isOverLimit = column.taskLimit > 0 && taskCount >= column.taskLimit;
             // Empty columns are 70% smaller (30% of normal width)
-            const isEmpty = taskCount === 0
-            const effectiveWidth = isEmpty ? emptyColumnWidth : columnWidth
+            const isEmpty = taskCount === 0;
+            const effectiveWidth = isEmpty ? emptyColumnWidth : columnWidth;
 
             return (
               <Column
@@ -388,19 +384,16 @@ export function Board({ columns, swimlanes, tasks, projectId }: BoardProps) {
                 onTaskContextMenu={handleTaskContextMenu}
                 onCreateAndEditTask={handleCreateAndEditTask}
               />
-            )
+            );
           })}
 
           {/* Add Column Button */}
-          <div
-            className="flex-shrink-0 flex items-start"
-            style={{ width: columnWidth }}
-          >
+          <div className="flex-shrink-0 flex items-start" style={{ width: columnWidth }}>
             <button
               className="w-full h-12 flex items-center justify-center gap-2 rounded-lg border-2 border-dashed border-input text-gray-500 dark:text-gray-400 hover:border-gray-400 dark:hover:border-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
               onClick={() => {
                 // TODO: Open add column modal
-                console.log('Add column clicked')
+                console.log('Add column clicked');
               }}
             >
               <svg
@@ -443,16 +436,16 @@ export function Board({ columns, swimlanes, tasks, projectId }: BoardProps) {
           columns={sortedColumns}
           onClose={handleContextMenuClose}
           onOpenDetail={() => {
-            const taskId = contextMenu.taskId
-            handleContextMenuClose()
+            const taskId = contextMenu.taskId;
+            handleContextMenuClose();
             if (taskId !== null) {
-              handleTaskClick(taskId)
+              handleTaskClick(taskId);
             }
           }}
         />
       )}
     </BoardDndContext>
-  )
+  );
 }
 
-export default Board
+export default Board;

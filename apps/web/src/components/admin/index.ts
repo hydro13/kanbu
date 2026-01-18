@@ -14,15 +14,32 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-export { AdminLayout } from './AdminLayout'
-export { AdminSidebar } from './AdminSidebar'
-export { ResourceTree, type SelectedResource, type ResourceType, type TreeState } from './ResourceTree'
-export { GroupMembersPanel } from './GroupMembersPanel'
-export { MultiPrincipalSelector, type SelectedPrincipal, type MultiPrincipalSelectorProps } from './MultiPrincipalSelector'
-export { BulkAclDialog, type BulkAclMode, type AclResourceType, type BulkAclDialogProps } from './BulkAclDialog'
+export { AdminLayout } from './AdminLayout';
+export { AdminSidebar } from './AdminSidebar';
+export {
+  ResourceTree,
+  type SelectedResource,
+  type ResourceType,
+  type TreeState,
+} from './ResourceTree';
+export { GroupMembersPanel } from './GroupMembersPanel';
+export {
+  MultiPrincipalSelector,
+  type SelectedPrincipal,
+  type MultiPrincipalSelectorProps,
+} from './MultiPrincipalSelector';
+export {
+  BulkAclDialog,
+  type BulkAclMode,
+  type AclResourceType,
+  type BulkAclDialogProps,
+} from './BulkAclDialog';
 
 // Fase 9.5: Advanced ACL UI
-export { EffectivePermissionsPanel, type EffectivePermissionsPanelProps } from './EffectivePermissionsPanel'
-export { WhatIfSimulator, type WhatIfSimulatorProps } from './WhatIfSimulator'
-export { AclExportDialog, type AclExportDialogProps } from './AclExportDialog'
-export { AclImportDialog, type AclImportDialogProps } from './AclImportDialog'
+export {
+  EffectivePermissionsPanel,
+  type EffectivePermissionsPanelProps,
+} from './EffectivePermissionsPanel';
+export { WhatIfSimulator, type WhatIfSimulatorProps } from './WhatIfSimulator';
+export { AclExportDialog, type AclExportDialogProps } from './AclExportDialog';
+export { AclImportDialog, type AclImportDialogProps } from './AclImportDialog';

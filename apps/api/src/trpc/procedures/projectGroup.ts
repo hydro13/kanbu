@@ -12,9 +12,9 @@
  * ===================================================================
  */
 
-import { z } from 'zod'
-import { TRPCError } from '@trpc/server'
-import { router, protectedProcedure } from '../router'
+import { z } from 'zod';
+import { TRPCError } from '@trpc/server';
+import { router, protectedProcedure } from '../router';
 
 // =============================================================================
 // Input Schemas
@@ -23,18 +23,20 @@ import { router, protectedProcedure } from '../router'
 const listGroupsSchema = z.object({
   workspaceId: z.number(),
   includeArchived: z.boolean().default(false),
-})
+});
 
 const getGroupSchema = z.object({
   id: z.number(),
-})
+});
 
 const createGroupSchema = z.object({
   workspaceId: z.number(),
   name: z.string().min(1).max(255),
   description: z.string().optional(),
-  color: z.enum(['blue', 'green', 'red', 'yellow', 'purple', 'orange', 'pink', 'cyan']).default('blue'),
-})
+  color: z
+    .enum(['blue', 'green', 'red', 'yellow', 'purple', 'orange', 'pink', 'cyan'])
+    .default('blue'),
+});
 
 const updateGroupSchema = z.object({
   id: z.number(),
@@ -42,29 +44,31 @@ const updateGroupSchema = z.object({
   description: z.string().nullable().optional(),
   color: z.enum(['blue', 'green', 'red', 'yellow', 'purple', 'orange', 'pink', 'cyan']).optional(),
   status: z.enum(['DRAFT', 'ACTIVE', 'CLOSED']).optional(),
-})
+});
 
 const deleteGroupSchema = z.object({
   id: z.number(),
-})
+});
 
 const addProjectSchema = z.object({
   groupId: z.number(),
   projectId: z.number(),
-})
+});
 
 const removeProjectSchema = z.object({
   groupId: z.number(),
   projectId: z.number(),
-})
+});
 
 const reorderProjectsSchema = z.object({
   groupId: z.number(),
-  projectOrders: z.array(z.object({
-    projectId: z.number(),
-    position: z.number(),
-  })),
-})
+  projectOrders: z.array(
+    z.object({
+      projectId: z.number(),
+      position: z.number(),
+    })
+  ),
+});
 
 // =============================================================================
 // Project Group Router
@@ -74,192 +78,178 @@ export const projectGroupRouter = router({
   /**
    * List project groups in a workspace
    */
-  list: protectedProcedure
-    .input(listGroupsSchema)
-    .query(async ({ ctx, input }) => {
-      const groups = await ctx.prisma.projectGroup.findMany({
-        where: {
-          workspaceId: input.workspaceId,
-          ...(input.includeArchived ? {} : { status: { not: 'CLOSED' } }),
-        },
-        include: {
-          projects: {
-            include: {
-              project: {
-                select: {
-                  id: true,
-                  name: true,
-                  identifier: true,
-                  description: true,
-                },
+  list: protectedProcedure.input(listGroupsSchema).query(async ({ ctx, input }) => {
+    const groups = await ctx.prisma.projectGroup.findMany({
+      where: {
+        workspaceId: input.workspaceId,
+        ...(input.includeArchived ? {} : { status: { not: 'CLOSED' } }),
+      },
+      include: {
+        projects: {
+          include: {
+            project: {
+              select: {
+                id: true,
+                name: true,
+                identifier: true,
+                description: true,
               },
             },
-            orderBy: { position: 'asc' },
           },
-          _count: {
-            select: { projects: true },
-          },
+          orderBy: { position: 'asc' },
         },
-        orderBy: { name: 'asc' },
-      })
+        _count: {
+          select: { projects: true },
+        },
+      },
+      orderBy: { name: 'asc' },
+    });
 
-      return groups.map((g) => ({
-        id: g.id,
-        name: g.name,
-        description: g.description,
-        color: g.color,
-        status: g.status,
-        createdAt: g.createdAt,
-        updatedAt: g.updatedAt,
-        projectCount: g._count.projects,
-        projects: g.projects.map((p) => ({
-          id: p.project.id,
-          name: p.project.name,
-          identifier: p.project.identifier,
-          description: p.project.description,
-          position: p.position,
-        })),
-      }))
-    }),
+    return groups.map((g) => ({
+      id: g.id,
+      name: g.name,
+      description: g.description,
+      color: g.color,
+      status: g.status,
+      createdAt: g.createdAt,
+      updatedAt: g.updatedAt,
+      projectCount: g._count.projects,
+      projects: g.projects.map((p) => ({
+        id: p.project.id,
+        name: p.project.name,
+        identifier: p.project.identifier,
+        description: p.project.description,
+        position: p.position,
+      })),
+    }));
+  }),
 
   /**
    * Get a single project group
    */
-  get: protectedProcedure
-    .input(getGroupSchema)
-    .query(async ({ ctx, input }) => {
-      const group = await ctx.prisma.projectGroup.findUnique({
-        where: { id: input.id },
-        include: {
-          workspace: {
-            select: { id: true, name: true, slug: true },
-          },
-          projects: {
-            include: {
-              project: {
-                select: {
-                  id: true,
-                  name: true,
-                  identifier: true,
-                  description: true,
-                },
+  get: protectedProcedure.input(getGroupSchema).query(async ({ ctx, input }) => {
+    const group = await ctx.prisma.projectGroup.findUnique({
+      where: { id: input.id },
+      include: {
+        workspace: {
+          select: { id: true, name: true, slug: true },
+        },
+        projects: {
+          include: {
+            project: {
+              select: {
+                id: true,
+                name: true,
+                identifier: true,
+                description: true,
               },
             },
-            orderBy: { position: 'asc' },
           },
+          orderBy: { position: 'asc' },
         },
-      })
+      },
+    });
 
-      if (!group) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Project group not found',
-        })
-      }
+    if (!group) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Project group not found',
+      });
+    }
 
-      return {
-        ...group,
-        projects: group.projects.map((p) => ({
-          id: p.project.id,
-          name: p.project.name,
-          identifier: p.project.identifier,
-          description: p.project.description,
-          position: p.position,
-        })),
-      }
-    }),
+    return {
+      ...group,
+      projects: group.projects.map((p) => ({
+        id: p.project.id,
+        name: p.project.name,
+        identifier: p.project.identifier,
+        description: p.project.description,
+        position: p.position,
+      })),
+    };
+  }),
 
   /**
    * Create a new project group
    */
-  create: protectedProcedure
-    .input(createGroupSchema)
-    .mutation(async ({ ctx, input }) => {
-      const group = await ctx.prisma.projectGroup.create({
-        data: {
-          workspaceId: input.workspaceId,
-          name: input.name,
-          description: input.description,
-          color: input.color,
-          status: 'ACTIVE',
-        },
-      })
+  create: protectedProcedure.input(createGroupSchema).mutation(async ({ ctx, input }) => {
+    const group = await ctx.prisma.projectGroup.create({
+      data: {
+        workspaceId: input.workspaceId,
+        name: input.name,
+        description: input.description,
+        color: input.color,
+        status: 'ACTIVE',
+      },
+    });
 
-      return group
-    }),
+    return group;
+  }),
 
   /**
    * Update a project group
    */
-  update: protectedProcedure
-    .input(updateGroupSchema)
-    .mutation(async ({ ctx, input }) => {
-      const { id, ...data } = input
+  update: protectedProcedure.input(updateGroupSchema).mutation(async ({ ctx, input }) => {
+    const { id, ...data } = input;
 
-      const group = await ctx.prisma.projectGroup.update({
-        where: { id },
-        data: {
-          ...(data.name ? { name: data.name } : {}),
-          ...(data.description !== undefined ? { description: data.description } : {}),
-          ...(data.color ? { color: data.color } : {}),
-          ...(data.status ? { status: data.status } : {}),
-        },
-      })
+    const group = await ctx.prisma.projectGroup.update({
+      where: { id },
+      data: {
+        ...(data.name ? { name: data.name } : {}),
+        ...(data.description !== undefined ? { description: data.description } : {}),
+        ...(data.color ? { color: data.color } : {}),
+        ...(data.status ? { status: data.status } : {}),
+      },
+    });
 
-      return group
-    }),
+    return group;
+  }),
 
   /**
    * Delete a project group (removes group, not projects)
    */
-  delete: protectedProcedure
-    .input(deleteGroupSchema)
-    .mutation(async ({ ctx, input }) => {
-      await ctx.prisma.projectGroup.delete({
-        where: { id: input.id },
-      })
+  delete: protectedProcedure.input(deleteGroupSchema).mutation(async ({ ctx, input }) => {
+    await ctx.prisma.projectGroup.delete({
+      where: { id: input.id },
+    });
 
-      return { success: true }
-    }),
+    return { success: true };
+  }),
 
   /**
    * Add a project to a group
    */
-  addProject: protectedProcedure
-    .input(addProjectSchema)
-    .mutation(async ({ ctx, input }) => {
-      // Get max position
-      const maxPos = await ctx.prisma.projectGroupMember.aggregate({
-        where: { projectGroupId: input.groupId },
-        _max: { position: true },
-      })
+  addProject: protectedProcedure.input(addProjectSchema).mutation(async ({ ctx, input }) => {
+    // Get max position
+    const maxPos = await ctx.prisma.projectGroupMember.aggregate({
+      where: { projectGroupId: input.groupId },
+      _max: { position: true },
+    });
 
-      const member = await ctx.prisma.projectGroupMember.create({
-        data: {
-          projectGroupId: input.groupId,
-          projectId: input.projectId,
-          position: (maxPos._max.position ?? 0) + 1,
-        },
-      })
+    const member = await ctx.prisma.projectGroupMember.create({
+      data: {
+        projectGroupId: input.groupId,
+        projectId: input.projectId,
+        position: (maxPos._max.position ?? 0) + 1,
+      },
+    });
 
-      return member
-    }),
+    return member;
+  }),
 
   /**
    * Remove a project from a group
    */
-  removeProject: protectedProcedure
-    .input(removeProjectSchema)
-    .mutation(async ({ ctx, input }) => {
-      await ctx.prisma.projectGroupMember.deleteMany({
-        where: {
-          projectGroupId: input.groupId,
-          projectId: input.projectId,
-        },
-      })
+  removeProject: protectedProcedure.input(removeProjectSchema).mutation(async ({ ctx, input }) => {
+    await ctx.prisma.projectGroupMember.deleteMany({
+      where: {
+        projectGroupId: input.groupId,
+        projectId: input.projectId,
+      },
+    });
 
-      return { success: true }
-    }),
+    return { success: true };
+  }),
 
   /**
    * Reorder projects in a group
@@ -277,9 +267,9 @@ export const projectGroupRouter = router({
             data: { position: order.position },
           })
         )
-      )
+      );
 
-      return { success: true }
+      return { success: true };
     }),
 
   /**
@@ -294,9 +284,9 @@ export const projectGroupRouter = router({
           projectGroup: { workspaceId: input.workspaceId },
         },
         select: { projectId: true },
-      })
+      });
 
-      const groupedIds = groupedProjectIds.map((p) => p.projectId)
+      const groupedIds = groupedProjectIds.map((p) => p.projectId);
 
       // Get projects not in any group
       const ungrouped = await ctx.prisma.project.findMany({
@@ -312,8 +302,8 @@ export const projectGroupRouter = router({
           description: true,
         },
         orderBy: { name: 'asc' },
-      })
+      });
 
-      return ungrouped
+      return ungrouped;
     }),
-})
+});

@@ -13,44 +13,44 @@
  * =============================================================================
  */
 
-import { prisma } from '../../lib/prisma'
-import { getInstallationOctokit } from './githubService'
-import { syncGitHubToKanbu, deleteKanbuMilestoneFromGitHub } from './milestoneSyncService'
+import { prisma } from '../../lib/prisma';
+import { getInstallationOctokit } from './githubService';
+import { syncGitHubToKanbu, deleteKanbuMilestoneFromGitHub } from './milestoneSyncService';
 
 // =============================================================================
 // Types
 // =============================================================================
 
 export interface MilestoneData {
-  repositoryId: number
-  milestoneNumber: number
-  milestoneId: bigint
-  title: string
-  description?: string | null
-  state: 'open' | 'closed'
-  dueOn?: Date | null
-  closedAt?: Date | null
-  openIssues?: number
-  closedIssues?: number
-  htmlUrl?: string | null
+  repositoryId: number;
+  milestoneNumber: number;
+  milestoneId: bigint;
+  title: string;
+  description?: string | null;
+  state: 'open' | 'closed';
+  dueOn?: Date | null;
+  closedAt?: Date | null;
+  openIssues?: number;
+  closedIssues?: number;
+  htmlUrl?: string | null;
 }
 
 export interface MilestoneInfo {
-  id: number
-  repositoryId: number
-  milestoneNumber: number
-  milestoneId: string  // Converted from BigInt for JSON serialization
-  title: string
-  description: string | null
-  state: string
-  dueOn: Date | null
-  closedAt: Date | null
-  openIssues: number
-  closedIssues: number
-  htmlUrl: string | null
-  progress: number
-  createdAt: Date
-  updatedAt: Date
+  id: number;
+  repositoryId: number;
+  milestoneNumber: number;
+  milestoneId: string; // Converted from BigInt for JSON serialization
+  title: string;
+  description: string | null;
+  state: string;
+  dueOn: Date | null;
+  closedAt: Date | null;
+  openIssues: number;
+  closedIssues: number;
+  htmlUrl: string | null;
+  progress: number;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 // =============================================================================
@@ -92,7 +92,7 @@ export async function upsertMilestone(data: MilestoneData): Promise<{ id: number
       htmlUrl: data.htmlUrl,
     },
     select: { id: true },
-  })
+  });
 }
 
 /**
@@ -101,15 +101,15 @@ export async function upsertMilestone(data: MilestoneData): Promise<{ id: number
 export async function getMilestones(
   repositoryId: number,
   options?: {
-    state?: 'open' | 'closed' | 'all'
-    limit?: number
-    offset?: number
+    state?: 'open' | 'closed' | 'all';
+    limit?: number;
+    offset?: number;
   }
 ): Promise<MilestoneInfo[]> {
-  const where: Record<string, unknown> = { repositoryId }
+  const where: Record<string, unknown> = { repositoryId };
 
   if (options?.state && options.state !== 'all') {
-    where.state = options.state
+    where.state = options.state;
   }
 
   const milestones = await prisma.gitHubMilestone.findMany({
@@ -117,15 +117,16 @@ export async function getMilestones(
     orderBy: [{ state: 'asc' }, { dueOn: 'asc' }, { milestoneNumber: 'desc' }],
     take: options?.limit ?? 50,
     skip: options?.offset ?? 0,
-  })
+  });
 
   return milestones.map((m) => ({
     ...m,
-    milestoneId: m.milestoneId.toString(),  // Convert BigInt to string for JSON
-    progress: m.openIssues + m.closedIssues > 0
-      ? Math.round((m.closedIssues / (m.openIssues + m.closedIssues)) * 100)
-      : 0,
-  }))
+    milestoneId: m.milestoneId.toString(), // Convert BigInt to string for JSON
+    progress:
+      m.openIssues + m.closedIssues > 0
+        ? Math.round((m.closedIssues / (m.openIssues + m.closedIssues)) * 100)
+        : 0,
+  }));
 }
 
 /**
@@ -142,17 +143,20 @@ export async function getMilestoneByNumber(
         milestoneNumber,
       },
     },
-  })
+  });
 
-  if (!milestone) return null
+  if (!milestone) return null;
 
   return {
     ...milestone,
-    milestoneId: milestone.milestoneId.toString(),  // Convert BigInt to string for JSON
-    progress: milestone.openIssues + milestone.closedIssues > 0
-      ? Math.round((milestone.closedIssues / (milestone.openIssues + milestone.closedIssues)) * 100)
-      : 0,
-  }
+    milestoneId: milestone.milestoneId.toString(), // Convert BigInt to string for JSON
+    progress:
+      milestone.openIssues + milestone.closedIssues > 0
+        ? Math.round(
+            (milestone.closedIssues / (milestone.openIssues + milestone.closedIssues)) * 100
+          )
+        : 0,
+  };
 }
 
 /**
@@ -161,41 +165,41 @@ export async function getMilestoneByNumber(
 export async function getProjectMilestones(
   projectId: number,
   options?: {
-    state?: 'open' | 'closed' | 'all'
-    limit?: number
+    state?: 'open' | 'closed' | 'all';
+    limit?: number;
   }
 ): Promise<MilestoneInfo[]> {
   const repo = await prisma.gitHubRepository.findFirst({
     where: { projectId },
     select: { id: true },
-  })
+  });
 
-  if (!repo) return []
+  if (!repo) return [];
 
-  return getMilestones(repo.id, options)
+  return getMilestones(repo.id, options);
 }
 
 /**
  * Get milestone statistics for a project
  */
 export async function getMilestoneStats(projectId: number): Promise<{
-  total: number
-  open: number
-  closed: number
-  overdue: number
-  upcomingDue: number
+  total: number;
+  open: number;
+  closed: number;
+  overdue: number;
+  upcomingDue: number;
 }> {
   const repo = await prisma.gitHubRepository.findFirst({
     where: { projectId },
     select: { id: true },
-  })
+  });
 
   if (!repo) {
-    return { total: 0, open: 0, closed: 0, overdue: 0, upcomingDue: 0 }
+    return { total: 0, open: 0, closed: 0, overdue: 0, upcomingDue: 0 };
   }
 
-  const now = new Date()
-  const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+  const now = new Date();
+  const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
   const [total, open, closed, overdue, upcomingDue] = await Promise.all([
     prisma.gitHubMilestone.count({ where: { repositoryId: repo.id } }),
@@ -215,9 +219,9 @@ export async function getMilestoneStats(projectId: number): Promise<{
         dueOn: { gte: now, lte: nextWeek },
       },
     }),
-  ])
+  ]);
 
-  return { total, open, closed, overdue, upcomingDue }
+  return { total, open, closed, overdue, upcomingDue };
 }
 
 /**
@@ -234,7 +238,7 @@ export async function deleteMilestone(
         milestoneNumber,
       },
     },
-  })
+  });
 }
 
 /**
@@ -245,23 +249,23 @@ export async function syncMilestoneFromWebhook(
   repositoryId: number,
   action: string,
   milestoneData: {
-    number: number
-    id: number
-    title: string
-    description?: string | null
-    state: string
-    due_on?: string | null
-    closed_at?: string | null
-    open_issues: number
-    closed_issues: number
-    html_url: string
+    number: number;
+    id: number;
+    title: string;
+    description?: string | null;
+    state: string;
+    due_on?: string | null;
+    closed_at?: string | null;
+    open_issues: number;
+    closed_issues: number;
+    html_url: string;
   }
 ): Promise<{ id: number } | null> {
   // Get repository to find projectId
   const repository = await prisma.gitHubRepository.findUnique({
     where: { id: repositoryId },
     select: { projectId: true },
-  })
+  });
 
   if (action === 'deleted') {
     // First get the GitHub milestone to check for linked Kanbu milestone
@@ -272,15 +276,15 @@ export async function syncMilestoneFromWebhook(
           milestoneNumber: milestoneData.number,
         },
       },
-    })
+    });
 
     if (ghMilestone) {
       // Delete linked Kanbu milestone (if any)
-      await deleteKanbuMilestoneFromGitHub(ghMilestone.id)
+      await deleteKanbuMilestoneFromGitHub(ghMilestone.id);
     }
 
-    await deleteMilestone(repositoryId, milestoneData.number)
-    return null
+    await deleteMilestone(repositoryId, milestoneData.number);
+    return null;
   }
 
   // Upsert the GitHub milestone
@@ -296,19 +300,19 @@ export async function syncMilestoneFromWebhook(
     openIssues: milestoneData.open_issues,
     closedIssues: milestoneData.closed_issues,
     htmlUrl: milestoneData.html_url,
-  })
+  });
 
   // Sync to Kanbu milestone (creates or updates)
   if (repository?.projectId) {
     try {
-      await syncGitHubToKanbu(result.id, repository.projectId)
+      await syncGitHubToKanbu(result.id, repository.projectId);
     } catch (error) {
-      console.error('[MilestoneService] Failed to sync to Kanbu milestone:', error)
+      console.error('[MilestoneService] Failed to sync to Kanbu milestone:', error);
       // Don't throw - the GitHub milestone was saved successfully
     }
   }
 
-  return result
+  return result;
 }
 
 // =============================================================================
@@ -316,10 +320,10 @@ export async function syncMilestoneFromWebhook(
 // =============================================================================
 
 export interface MilestoneImportResult {
-  imported: number
-  updated: number
-  failed: number
-  errors: Array<{ milestoneNumber: number; error: string }>
+  imported: number;
+  updated: number;
+  failed: number;
+  errors: Array<{ milestoneNumber: number; error: string }>;
 }
 
 /**
@@ -328,10 +332,10 @@ export interface MilestoneImportResult {
 export async function importMilestonesFromGitHub(
   repositoryId: number,
   options: {
-    state?: 'open' | 'closed' | 'all'
+    state?: 'open' | 'closed' | 'all';
   } = {}
 ): Promise<MilestoneImportResult> {
-  const { state = 'all' } = options
+  const { state = 'all' } = options;
 
   // Get repository with installation info
   const repository = await prisma.gitHubRepository.findFirst({
@@ -339,14 +343,14 @@ export async function importMilestonesFromGitHub(
     include: {
       installation: true,
     },
-  })
+  });
 
   if (!repository) {
-    throw new Error(`Repository ${repositoryId} not found`)
+    throw new Error(`Repository ${repositoryId} not found`);
   }
 
   if (!repository.installation) {
-    throw new Error(`Repository ${repositoryId} has no GitHub installation`)
+    throw new Error(`Repository ${repositoryId} has no GitHub installation`);
   }
 
   const result: MilestoneImportResult = {
@@ -354,11 +358,11 @@ export async function importMilestonesFromGitHub(
     updated: 0,
     failed: 0,
     errors: [],
-  }
+  };
 
   try {
     // Get Octokit client for installation
-    const octokit = await getInstallationOctokit(repository.installation.installationId)
+    const octokit = await getInstallationOctokit(repository.installation.installationId);
 
     // Fetch milestones from GitHub
     const milestones = await octokit.rest.issues.listMilestones({
@@ -368,9 +372,9 @@ export async function importMilestonesFromGitHub(
       per_page: 100,
       sort: 'due_on',
       direction: 'asc',
-    })
+    });
 
-    console.log(`[MilestoneService] Fetched ${milestones.data.length} milestones from GitHub`)
+    console.log(`[MilestoneService] Fetched ${milestones.data.length} milestones from GitHub`);
 
     // Import each milestone
     for (const milestone of milestones.data) {
@@ -383,7 +387,7 @@ export async function importMilestonesFromGitHub(
               milestoneNumber: milestone.number,
             },
           },
-        })
+        });
 
         const ghMilestone = await upsertMilestone({
           repositoryId,
@@ -397,24 +401,24 @@ export async function importMilestonesFromGitHub(
           openIssues: milestone.open_issues,
           closedIssues: milestone.closed_issues,
           htmlUrl: milestone.html_url,
-        })
+        });
 
         // Sync to Kanbu milestone (creates or updates)
         if (repository.projectId) {
-          await syncGitHubToKanbu(ghMilestone.id, repository.projectId)
+          await syncGitHubToKanbu(ghMilestone.id, repository.projectId);
         }
 
         if (existing) {
-          result.updated++
+          result.updated++;
         } else {
-          result.imported++
+          result.imported++;
         }
       } catch (error) {
-        result.failed++
+        result.failed++;
         result.errors.push({
           milestoneNumber: milestone.number,
           error: error instanceof Error ? error.message : String(error),
-        })
+        });
       }
     }
 
@@ -433,14 +437,16 @@ export async function importMilestonesFromGitHub(
           totalMilestones: milestones.data.length,
         },
       },
-    })
+    });
 
-    console.log(`[MilestoneService] Import complete: ${result.imported} new, ${result.updated} updated, ${result.failed} failed`)
+    console.log(
+      `[MilestoneService] Import complete: ${result.imported} new, ${result.updated} updated, ${result.failed} failed`
+    );
 
-    return result
+    return result;
   } catch (error) {
-    console.error('[MilestoneService] Import failed:', error)
-    throw error
+    console.error('[MilestoneService] Import failed:', error);
+    throw error;
   }
 }
 
@@ -457,4 +463,4 @@ export const milestoneService = {
   deleteMilestone,
   syncMilestoneFromWebhook,
   importMilestonesFromGitHub,
-}
+};

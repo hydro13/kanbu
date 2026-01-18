@@ -4,17 +4,17 @@
  * Returns the appropriate storage backend based on configuration.
  */
 
-import { BackupStorage, getBackupConfig } from './types'
-import { LocalStorageBackend } from './localStorageBackend'
-import { GDriveStorageBackend } from './gdriveStorageBackend'
+import { BackupStorage, getBackupConfig } from './types';
+import { LocalStorageBackend } from './localStorageBackend';
+import { GDriveStorageBackend } from './gdriveStorageBackend';
 
 // Export types
-export * from './types'
-export { LocalStorageBackend } from './localStorageBackend'
-export { GDriveStorageBackend } from './gdriveStorageBackend'
+export * from './types';
+export { LocalStorageBackend } from './localStorageBackend';
+export { GDriveStorageBackend } from './gdriveStorageBackend';
 
 // Singleton instance
-let storageInstance: BackupStorage | null = null
+let storageInstance: BackupStorage | null = null;
 
 /**
  * Get the configured backup storage backend
@@ -25,22 +25,22 @@ let storageInstance: BackupStorage | null = null
  */
 export function getBackupStorage(): BackupStorage {
   if (storageInstance) {
-    return storageInstance
+    return storageInstance;
   }
 
-  const config = getBackupConfig()
+  const config = getBackupConfig();
 
   switch (config.storage) {
     case 'gdrive':
-      storageInstance = new GDriveStorageBackend(config.gdrivePath)
-      break
+      storageInstance = new GDriveStorageBackend(config.gdrivePath);
+      break;
     case 'local':
     default:
-      storageInstance = new LocalStorageBackend(config.localPath)
-      break
+      storageInstance = new LocalStorageBackend(config.localPath);
+      break;
   }
 
-  return storageInstance
+  return storageInstance;
 }
 
 /**
@@ -48,10 +48,10 @@ export function getBackupStorage(): BackupStorage {
  */
 export async function isBackupStorageConfigured(): Promise<boolean> {
   try {
-    const storage = getBackupStorage()
-    return await storage.isAccessible()
+    const storage = getBackupStorage();
+    return await storage.isAccessible();
   } catch {
-    return false
+    return false;
   }
 }
 
@@ -59,13 +59,13 @@ export async function isBackupStorageConfigured(): Promise<boolean> {
  * Get storage type name for display
  */
 export function getBackupStorageType(): string {
-  const config = getBackupConfig()
-  return config.storage === 'gdrive' ? 'Google Drive' : 'Local Storage'
+  const config = getBackupConfig();
+  return config.storage === 'gdrive' ? 'Google Drive' : 'Local Storage';
 }
 
 /**
  * Reset storage instance (for testing)
  */
 export function resetBackupStorage(): void {
-  storageInstance = null
+  storageInstance = null;
 }

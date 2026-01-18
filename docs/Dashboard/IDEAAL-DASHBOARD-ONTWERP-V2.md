@@ -1,7 +1,9 @@
 # Ideal Dashboard Design v2
 
 ## Version: 2.0.0
+
 ## Date: 2026-01-10
+
 ## Based on: KANBU-STRUCTUUR.md (Container Hierarchy)
 
 ---
@@ -15,11 +17,13 @@ Kanbu (Root) → Workspaces (containers) → Projects (sub-containers)
 ```
 
 Each container has:
+
 - Own **members** (users member of that container)
 - Own **modules** (features specific to that level)
 - Own **sidebar** (navigation for that level)
 
 **Core Principle:**
+
 > The UI adapts based on the container the user is in. No complex trees - each container has its own page and navigation.
 
 ---
@@ -28,13 +32,13 @@ Each container has:
 
 ### 1.1 User Types per Container Level
 
-| Role | Kanbu Equivalent | Sees | Container Scope |
-|------|------------------|------|-----------------|
-| **CEO Holding** | Domain Admin | ALL workspaces | Kanbu Root |
-| **CEO Subsidiary** | Workspace Owner | Own workspace(s) | 1+ Workspaces |
-| **Manager** | Project Manager | Projects with permissions | Specific Projects |
-| **Employee** | Member/Viewer | Assigned projects | Specific Projects |
-| **Guest** | External | Limited projects | 1 Project (read-only) |
+| Role               | Kanbu Equivalent | Sees                      | Container Scope       |
+| ------------------ | ---------------- | ------------------------- | --------------------- |
+| **CEO Holding**    | Domain Admin     | ALL workspaces            | Kanbu Root            |
+| **CEO Subsidiary** | Workspace Owner  | Own workspace(s)          | 1+ Workspaces         |
+| **Manager**        | Project Manager  | Projects with permissions | Specific Projects     |
+| **Employee**       | Member/Viewer    | Assigned projects         | Specific Projects     |
+| **Guest**          | External         | Limited projects          | 1 Project (read-only) |
 
 ### 1.2 Cognitive Load per Role
 
@@ -50,6 +54,7 @@ Member:        ██░░░░░░░░ (20%) - Only tasks
 ### 1.3 What does each role see?
 
 **Domain Admin (CEO Holding):**
+
 ```
 Dashboard:
 ├── My Tasks (from ALL projects)
@@ -61,6 +66,7 @@ Workspaces Page:
 ```
 
 **Workspace Owner (CEO Subsidiary):**
+
 ```
 Dashboard:
 ├── My Tasks (from own workspace projects)
@@ -72,6 +78,7 @@ Workspaces Page:
 ```
 
 **Member (Employee):**
+
 ```
 Dashboard:
 ├── My Tasks (from assigned projects)
@@ -135,6 +142,7 @@ Level 3: Details (panels/modals)
 ### 2.3 Progressive Disclosure per Container
 
 **Personal Level:**
+
 ```
 First glance:  Total tasks, deadlines today
 Hover:         Per-project breakdown
@@ -142,6 +150,7 @@ Click:         To specific project
 ```
 
 **Workspace Level:**
+
 ```
 First glance:  Project cards with status
 Hover:         Task count, last activity
@@ -149,6 +158,7 @@ Click:         To project board
 ```
 
 **Project Level:**
+
 ```
 First glance:  Board with columns
 Hover:         Task assignee, priority
@@ -190,32 +200,32 @@ Click:         Task detail panel
 function getSidebarForRoute(pathname: string): SidebarComponent {
   // Project level - most specific first
   if (pathname.match(/^\/workspace\/[^/]+\/project\//)) {
-    return ProjectSidebar
+    return ProjectSidebar;
   }
 
   // Workspace level
   if (pathname.match(/^\/workspace\/[^/]+/)) {
-    return WorkspaceSidebar
+    return WorkspaceSidebar;
   }
 
   // Workspaces overview - minimal or no sidebar
   if (pathname === '/workspaces') {
-    return null // or MinimalSidebar
+    return null; // or MinimalSidebar
   }
 
   // Personal/Dashboard level
-  return DashboardSidebar
+  return DashboardSidebar;
 }
 ```
 
 ### 3.3 Responsive Breakpoints
 
-| Breakpoint | Sidebar | Content | Detail Panel |
-|------------|---------|---------|--------------|
-| Desktop XL (>1440px) | Full (280px) | Wide | Inline right |
-| Desktop (1024-1440px) | Full (240px) | Standard | Overlay |
-| Tablet (768-1024px) | Icons (60px) | Full width | Overlay |
-| Mobile (<768px) | Drawer | Full width | Full screen |
+| Breakpoint            | Sidebar      | Content    | Detail Panel |
+| --------------------- | ------------ | ---------- | ------------ |
+| Desktop XL (>1440px)  | Full (280px) | Wide       | Inline right |
+| Desktop (1024-1440px) | Full (240px) | Standard   | Overlay      |
+| Tablet (768-1024px)   | Icons (60px) | Full width | Overlay      |
+| Mobile (<768px)       | Drawer       | Full width | Full screen  |
 
 ---
 
@@ -254,6 +264,7 @@ This is the sidebar for `/dashboard/*` routes.
 ```
 
 **Characteristics:**
+
 - Favorites are **cross-container** (projects from different workspaces)
 - My Tasks aggregates from **all** accessible projects
 - Link to Workspaces to go to workspace level
@@ -285,6 +296,7 @@ This is the sidebar for `/workspace/:slug/*` routes (except project routes).
 ```
 
 **Characteristics:**
+
 - "Back" link to Workspaces overview
 - Only modules of **this workspace**
 - No projects in sidebar (they're in content area)
@@ -330,6 +342,7 @@ This is the sidebar for `/workspace/:slug/project/:id/*` routes.
 ```
 
 **Characteristics:**
+
 - "Back" link to Workspace projects
 - Only modules of **this project**
 - Sections grouped by function (Views, Planning, Manage)
@@ -337,16 +350,19 @@ This is the sidebar for `/workspace/:slug/project/:id/*` routes.
 ### 4.4 Sidebar States
 
 **Expanded (280px):**
+
 - Full labels
 - Badges visible
 - Section headers
 
 **Collapsed (60px):**
+
 - Only icons
 - Tooltips on hover
 - Flyout menus for sections
 
 **Hidden (0px):**
+
 - Focus mode (⌘/)
 - Maximum content space
 
@@ -395,32 +411,32 @@ This is `/dashboard` - the personal hub that aggregates **cross-container**.
 
 ### 5.2 Widget Types for Personal Level
 
-| Widget | Data Source | Aggregation |
-|--------|-------------|-------------|
-| **Stats** | All projects | Cross-container counts |
-| **Today** | All tasks due today | Per-project labels |
-| **Upcoming** | All future tasks | Grouped by date |
-| **Activity** | All workspaces | Recent activity stream |
-| **Favorites** | User favorites | Quick access |
+| Widget        | Data Source         | Aggregation            |
+| ------------- | ------------------- | ---------------------- |
+| **Stats**     | All projects        | Cross-container counts |
+| **Today**     | All tasks due today | Per-project labels     |
+| **Upcoming**  | All future tasks    | Grouped by date        |
+| **Activity**  | All workspaces      | Recent activity stream |
+| **Favorites** | User favorites      | Quick access           |
 
 ### 5.3 Personalization per Role
 
 ```yaml
 member:
   widgets: [today, upcoming, favorites]
-  focus: "My tasks"
+  focus: 'My tasks'
 
 manager:
   widgets: [today, team_overview, activity, favorites]
-  focus: "Team progress"
+  focus: 'Team progress'
 
 workspace_owner:
   widgets: [workspace_stats, projects_overview, activity]
-  focus: "Workspace health"
+  focus: 'Workspace health'
 
 domain_admin:
   widgets: [all_workspaces_stats, system_health, activity]
-  focus: "Organization overview"
+  focus: 'Organization overview'
 ```
 
 ---
@@ -464,11 +480,13 @@ This is the list of all workspaces the user has access to.
 Two options:
 
 **Option A: No sidebar**
+
 - Full width for workspace cards
 - Cleaner UI
 - Back via breadcrumbs or logo
 
 **Option B: Minimal sidebar**
+
 ```
 ┌────────────────────┐
 │                    │
@@ -530,14 +548,14 @@ The workspace homepage shows the projects.
 
 Accessible via WorkspaceSidebar:
 
-| Module | URL | Description |
-|--------|-----|-------------|
-| **Projects** | `/workspace/:slug` | Project cards (homepage) |
-| **Groups** | `/workspace/:slug/groups` | Project categorization |
-| **Wiki** | `/workspace/:slug/wiki` | Knowledge base |
-| **Members** | `/workspace/:slug/members` | Member management |
-| **Statistics** | `/workspace/:slug/stats` | Workspace analytics |
-| **Settings** | `/workspace/:slug/settings` | Configuration |
+| Module         | URL                         | Description              |
+| -------------- | --------------------------- | ------------------------ |
+| **Projects**   | `/workspace/:slug`          | Project cards (homepage) |
+| **Groups**     | `/workspace/:slug/groups`   | Project categorization   |
+| **Wiki**       | `/workspace/:slug/wiki`     | Knowledge base           |
+| **Members**    | `/workspace/:slug/members`  | Member management        |
+| **Statistics** | `/workspace/:slug/stats`    | Workspace analytics      |
+| **Settings**   | `/workspace/:slug/settings` | Configuration            |
 
 ---
 
@@ -569,19 +587,19 @@ Accessible via WorkspaceSidebar:
 
 Accessible via ProjectSidebar:
 
-| Category | Module | URL |
-|----------|--------|-----|
-| **Views** | Board | `/project/:id/board` |
-| | List | `/project/:id/list` |
-| | Calendar | `/project/:id/calendar` |
-| | Timeline | `/project/:id/timeline` |
-| **Planning** | Sprints | `/project/:id/sprints` |
-| | Milestones | `/project/:id/milestones` |
-| | Analytics | `/project/:id/analytics` |
-| **Manage** | Details | `/project/:id/details` |
-| | Members | `/project/:id/members` |
-| | GitHub | `/project/:id/github` |
-| | Settings | `/project/:id/settings` |
+| Category     | Module     | URL                       |
+| ------------ | ---------- | ------------------------- |
+| **Views**    | Board      | `/project/:id/board`      |
+|              | List       | `/project/:id/list`       |
+|              | Calendar   | `/project/:id/calendar`   |
+|              | Timeline   | `/project/:id/timeline`   |
+| **Planning** | Sprints    | `/project/:id/sprints`    |
+|              | Milestones | `/project/:id/milestones` |
+|              | Analytics  | `/project/:id/analytics`  |
+| **Manage**   | Details    | `/project/:id/details`    |
+|              | Members    | `/project/:id/members`    |
+|              | GitHub     | `/project/:id/github`     |
+|              | Settings   | `/project/:id/settings`   |
 
 ---
 
@@ -656,12 +674,12 @@ Favorites are shortcuts to **projects from different workspaces**.
 
 ### 10.2 Favorite Actions
 
-| Action | Where | How |
-|--------|------|-----|
-| **Add** | Project card | Star icon click |
-| **Add** | ProjectSidebar | Star in header |
-| **Remove** | DashboardSidebar | Right-click → Remove |
-| **Reorder** | DashboardSidebar | Drag & drop |
+| Action      | Where            | How                  |
+| ----------- | ---------------- | -------------------- |
+| **Add**     | Project card     | Star icon click      |
+| **Add**     | ProjectSidebar   | Star in header       |
+| **Remove**  | DashboardSidebar | Right-click → Remove |
+| **Reorder** | DashboardSidebar | Drag & drop          |
 
 ### 10.3 Why Personal Level?
 
@@ -676,21 +694,21 @@ Favorites are shortcuts to **projects from different workspaces**.
 
 ### 11.1 Global Shortcuts (Always)
 
-| Shortcut | Action |
-|----------|--------|
-| `⌘K` | Command palette |
-| `⌘/` | Toggle sidebar |
-| `⌘,` | Settings |
-| `⌘?` | Shortcuts help |
+| Shortcut | Action          |
+| -------- | --------------- |
+| `⌘K`     | Command palette |
+| `⌘/`     | Toggle sidebar  |
+| `⌘,`     | Settings        |
+| `⌘?`     | Shortcuts help  |
 
 ### 11.2 Navigation Shortcuts
 
-| Shortcut | Action | Goes to |
-|----------|--------|---------|
-| `G H` | Go to Home | `/dashboard` |
-| `G T` | Go to Tasks | `/dashboard/tasks` |
-| `G W` | Go to Workspaces | `/workspaces` |
-| `G N` | Go to Notes | `/dashboard/notes` |
+| Shortcut | Action           | Goes to            |
+| -------- | ---------------- | ------------------ |
+| `G H`    | Go to Home       | `/dashboard`       |
+| `G T`    | Go to Tasks      | `/dashboard/tasks` |
+| `G W`    | Go to Workspaces | `/workspaces`      |
+| `G N`    | Go to Notes      | `/dashboard/notes` |
 
 ### 11.3 Container-Specific Shortcuts
 
@@ -745,15 +763,15 @@ Favorites are shortcuts to **projects from different workspaces**.
 
 ### 12.2 Notification Sources per Container Level
 
-| Source | Container Level | Example |
-|--------|-----------------|---------|
-| **@mention** | Project | "Sarah mentioned you in task" |
-| **Assignment** | Project | "You were assigned task X" |
-| **Comment** | Project | "New comment on your task" |
-| **Status change** | Project | "Task moved to Done" |
-| **Member joined** | Workspace | "John joined the workspace" |
-| **Project created** | Workspace | "New project: Mobile App" |
-| **System** | Kanbu Root | "New feature available" |
+| Source              | Container Level | Example                       |
+| ------------------- | --------------- | ----------------------------- |
+| **@mention**        | Project         | "Sarah mentioned you in task" |
+| **Assignment**      | Project         | "You were assigned task X"    |
+| **Comment**         | Project         | "New comment on your task"    |
+| **Status change**   | Project         | "Task moved to Done"          |
+| **Member joined**   | Workspace       | "John joined the workspace"   |
+| **Project created** | Workspace       | "New project: Mobile App"     |
+| **System**          | Kanbu Root      | "New feature available"       |
 
 ---
 
@@ -789,12 +807,12 @@ Searches across **all** accessible containers.
 
 ### 13.2 Container-Scoped Search
 
-| Where | Scope | Searches in |
-|-------|-------|-------------|
-| Global (⌘K) | Everything | All containers |
-| Workspace page | Workspace | Projects in workspace |
-| Project page | Project | Tasks in project |
-| Wiki page | Wiki | Wiki pages |
+| Where          | Scope      | Searches in           |
+| -------------- | ---------- | --------------------- |
+| Global (⌘K)    | Everything | All containers        |
+| Workspace page | Workspace  | Projects in workspace |
+| Project page   | Project    | Tasks in project      |
+| Wiki page      | Wiki       | Wiki pages            |
 
 ---
 
@@ -806,18 +824,14 @@ The UI **automatically filters** based on ACL:
 
 ```typescript
 // What does the user see?
-const visibleWorkspaces = workspaces.filter(ws =>
-  userHasPermission(user, ws, 'READ')
-)
+const visibleWorkspaces = workspaces.filter((ws) => userHasPermission(user, ws, 'READ'));
 
-const visibleProjects = projects.filter(proj =>
-  userHasPermission(user, proj, 'READ')
-)
+const visibleProjects = projects.filter((proj) => userHasPermission(user, proj, 'READ'));
 
 // Sidebar modules
-const visibleModules = modules.filter(mod =>
+const visibleModules = modules.filter((mod) =>
   mod.requiredPermission ? userHasPermission(user, container, mod.requiredPermission) : true
-)
+);
 ```
 
 ### 14.2 UI Feedback for Permissions

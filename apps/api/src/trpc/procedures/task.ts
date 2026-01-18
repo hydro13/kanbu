@@ -28,25 +28,20 @@
  * ═══════════════════════════════════════════════════════════════════
  */
 
-import { z } from 'zod'
-import { TRPCError } from '@trpc/server'
-import { router, protectedProcedure } from '../router'
-import { permissionService } from '../../services'
-import { auditService, AUDIT_ACTIONS } from '../../services/auditService'
-import { generateTaskReference } from '../../lib/project'
+import { z } from 'zod';
+import { TRPCError } from '@trpc/server';
+import { router, protectedProcedure } from '../router';
+import { permissionService } from '../../services';
+import { auditService, AUDIT_ACTIONS } from '../../services/auditService';
+import { generateTaskReference } from '../../lib/project';
 import {
   getTaskWithRelations,
   validateTaskMove,
   getNextTaskPosition,
   applyTaskPositions,
-} from '../../lib/task'
-import { calculateNewPositions } from '../../lib/board'
-import {
-  emitTaskCreated,
-  emitTaskUpdated,
-  emitTaskMoved,
-  emitTaskDeleted,
-} from '../../socket'
+} from '../../lib/task';
+import { calculateNewPositions } from '../../lib/board';
+import { emitTaskCreated, emitTaskUpdated, emitTaskMoved, emitTaskDeleted } from '../../socket';
 
 // =============================================================================
 // Input Schemas
@@ -54,7 +49,7 @@ import {
 
 const taskIdSchema = z.object({
   taskId: z.number(),
-})
+});
 
 const listTasksSchema = z.object({
   projectId: z.number(),
@@ -81,7 +76,7 @@ const listTasksSchema = z.object({
   updatedTo: z.string().optional(), // ISO date string
   limit: z.number().min(1).max(500).default(100),
   offset: z.number().min(0).default(0),
-})
+});
 
 const createTaskSchema = z.object({
   projectId: z.number(),
@@ -100,7 +95,7 @@ const createTaskSchema = z.object({
   moduleId: z.number().optional(),
   assigneeIds: z.array(z.number()).optional(),
   tagIds: z.array(z.number()).optional(),
-})
+});
 
 const updateTaskSchema = z.object({
   taskId: z.number(),
@@ -119,14 +114,14 @@ const updateTaskSchema = z.object({
   moduleId: z.number().nullable().optional(),
   // Optimistic concurrency control - if provided, check that task hasn't been modified
   expectedUpdatedAt: z.string().optional(), // ISO timestamp from when client fetched the task
-})
+});
 
 const moveTaskSchema = z.object({
   taskId: z.number(),
   columnId: z.number(),
   swimlaneId: z.number().nullable().optional(),
   position: z.number().positive().optional(), // Allow fractional positions for ordering
-})
+});
 
 const reorderTasksSchema = z.object({
   projectId: z.number(),
@@ -134,30 +129,30 @@ const reorderTasksSchema = z.object({
   swimlaneId: z.number().optional(),
   taskId: z.number(),
   newPosition: z.number().positive(), // Allow fractional positions for ordering
-})
+});
 
 const manageAssigneesSchema = z.object({
   taskId: z.number(),
   assigneeIds: z.array(z.number()),
-})
+});
 
 const manageTagsSchema = z.object({
   taskId: z.number(),
   tagIds: z.array(z.number()),
-})
+});
 
 const setDueDateSchema = z.object({
   taskId: z.number(),
   dateDue: z.string().nullable(), // ISO date string or null to clear
   includeTime: z.boolean().default(false), // Whether time is significant
-})
+});
 
 const setReminderSchema = z.object({
   taskId: z.number(),
   reminderAt: z.string().nullable(), // ISO date string or null to clear
   // Alternative: preset offsets from due date
   preset: z.enum(['none', '15min', '1hour', '1day', '1week', 'custom']).optional(),
-})
+});
 
 // =============================================================================
 // Task Router
@@ -168,981 +163,976 @@ export const taskRouter = router({
    * List tasks for a project with filters
    * Requires at least VIEWER access
    */
-  list: protectedProcedure
-    .input(listTasksSchema)
-    .query(async ({ ctx, input }) => {
-      await permissionService.requireProjectAccess(ctx.user.id, input.projectId, 'VIEWER')
+  list: protectedProcedure.input(listTasksSchema).query(async ({ ctx, input }) => {
+    await permissionService.requireProjectAccess(ctx.user.id, input.projectId, 'VIEWER');
 
-      const tasks = await ctx.prisma.task.findMany({
-        where: {
-          projectId: input.projectId,
-          ...(input.isActive !== undefined && { isActive: input.isActive }),
-          ...(input.columnId && { columnId: input.columnId }),
-          ...(input.swimlaneId && { swimlaneId: input.swimlaneId }),
-          ...(input.priority !== undefined && { priority: input.priority }),
-          ...(input.categoryId && { categoryId: input.categoryId }),
-          ...(input.sprintId && { sprintId: input.sprintId }),
-          ...(input.milestoneId && { milestoneId: input.milestoneId }),
-          ...(input.moduleId && { moduleId: input.moduleId }),
-          ...(input.assigneeId && {
-            assignees: { some: { userId: input.assigneeId } },
-          }),
-          // Tag filter: tasks that have ANY of the specified tags
-          ...(input.tagIds && input.tagIds.length > 0 && {
+    const tasks = await ctx.prisma.task.findMany({
+      where: {
+        projectId: input.projectId,
+        ...(input.isActive !== undefined && { isActive: input.isActive }),
+        ...(input.columnId && { columnId: input.columnId }),
+        ...(input.swimlaneId && { swimlaneId: input.swimlaneId }),
+        ...(input.priority !== undefined && { priority: input.priority }),
+        ...(input.categoryId && { categoryId: input.categoryId }),
+        ...(input.sprintId && { sprintId: input.sprintId }),
+        ...(input.milestoneId && { milestoneId: input.milestoneId }),
+        ...(input.moduleId && { moduleId: input.moduleId }),
+        ...(input.assigneeId && {
+          assignees: { some: { userId: input.assigneeId } },
+        }),
+        // Tag filter: tasks that have ANY of the specified tags
+        ...(input.tagIds &&
+          input.tagIds.length > 0 && {
             tags: { some: { tagId: { in: input.tagIds } } },
           }),
-          // Due date range filter
-          ...((input.dueDateFrom || input.dueDateTo) && {
-            dateDue: {
-              ...(input.dueDateFrom && { gte: new Date(input.dueDateFrom) }),
-              ...(input.dueDateTo && { lte: new Date(input.dueDateTo) }),
-            },
-          }),
-          // Created date range filter
-          ...((input.createdFrom || input.createdTo) && {
-            createdAt: {
-              ...(input.createdFrom && { gte: new Date(input.createdFrom) }),
-              ...(input.createdTo && { lte: new Date(input.createdTo) }),
-            },
-          }),
-          // Updated date range filter
-          ...((input.updatedFrom || input.updatedTo) && {
-            updatedAt: {
-              ...(input.updatedFrom && { gte: new Date(input.updatedFrom) }),
-              ...(input.updatedTo && { lte: new Date(input.updatedTo) }),
-            },
-          }),
-          ...(input.search && {
-            OR: [
-              { title: { contains: input.search, mode: 'insensitive' } },
-              { reference: { contains: input.search, mode: 'insensitive' } },
-              { description: { contains: input.search, mode: 'insensitive' } },
-            ],
-          }),
+        // Due date range filter
+        ...((input.dueDateFrom || input.dueDateTo) && {
+          dateDue: {
+            ...(input.dueDateFrom && { gte: new Date(input.dueDateFrom) }),
+            ...(input.dueDateTo && { lte: new Date(input.dueDateTo) }),
+          },
+        }),
+        // Created date range filter
+        ...((input.createdFrom || input.createdTo) && {
+          createdAt: {
+            ...(input.createdFrom && { gte: new Date(input.createdFrom) }),
+            ...(input.createdTo && { lte: new Date(input.createdTo) }),
+          },
+        }),
+        // Updated date range filter
+        ...((input.updatedFrom || input.updatedTo) && {
+          updatedAt: {
+            ...(input.updatedFrom && { gte: new Date(input.updatedFrom) }),
+            ...(input.updatedTo && { lte: new Date(input.updatedTo) }),
+          },
+        }),
+        ...(input.search && {
+          OR: [
+            { title: { contains: input.search, mode: 'insensitive' } },
+            { reference: { contains: input.search, mode: 'insensitive' } },
+            { description: { contains: input.search, mode: 'insensitive' } },
+          ],
+        }),
+      },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        reference: true,
+        priority: true,
+        score: true,
+        progress: true,
+        position: true,
+        color: true,
+        columnId: true,
+        swimlaneId: true,
+        dateDue: true,
+        dateStarted: true,
+        dateCompleted: true,
+        timeEstimated: true,
+        timeSpent: true,
+        isActive: true,
+        createdAt: true,
+        updatedAt: true,
+        githubBranch: true,
+        column: {
+          select: { id: true, title: true },
         },
-        select: {
-          id: true,
-          title: true,
-          description: true,
-          reference: true,
-          priority: true,
-          score: true,
-          progress: true,
-          position: true,
-          color: true,
-          columnId: true,
-          swimlaneId: true,
-          dateDue: true,
-          dateStarted: true,
-          dateCompleted: true,
-          timeEstimated: true,
-          timeSpent: true,
-          isActive: true,
-          createdAt: true,
-          updatedAt: true,
-          githubBranch: true,
-          column: {
-            select: { id: true, title: true },
-          },
-          swimlane: {
-            select: { id: true, name: true },
-          },
-          assignees: {
-            select: {
-              user: {
-                select: { id: true, username: true, name: true, email: true, avatarUrl: true },
-              },
-            },
-          },
-          tags: {
-            select: {
-              tag: { select: { id: true, name: true, color: true } },
-            },
-          },
-          _count: {
-            select: {
-              subtasks: true,
-              comments: true,
+        swimlane: {
+          select: { id: true, name: true },
+        },
+        assignees: {
+          select: {
+            user: {
+              select: { id: true, username: true, name: true, email: true, avatarUrl: true },
             },
           },
         },
-        orderBy: [{ position: 'asc' }, { createdAt: 'desc' }],
-        take: input.limit,
-        skip: input.offset,
-      })
+        tags: {
+          select: {
+            tag: { select: { id: true, name: true, color: true } },
+          },
+        },
+        _count: {
+          select: {
+            subtasks: true,
+            comments: true,
+          },
+        },
+      },
+      orderBy: [{ position: 'asc' }, { createdAt: 'desc' }],
+      take: input.limit,
+      skip: input.offset,
+    });
 
-      return tasks.map((t) => ({
-        ...t,
-        assignees: t.assignees.map((a) => a.user),
-        tags: t.tags.map((tt) => tt.tag),
-        subtaskCount: t._count.subtasks,
-        commentCount: t._count.comments,
-      }))
-    }),
+    return tasks.map((t) => ({
+      ...t,
+      assignees: t.assignees.map((a) => a.user),
+      tags: t.tags.map((tt) => tt.tag),
+      subtaskCount: t._count.subtasks,
+      commentCount: t._count.comments,
+    }));
+  }),
 
   /**
    * Get task details with all relations
    * Requires at least VIEWER access
    */
-  get: protectedProcedure
-    .input(taskIdSchema)
-    .query(async ({ ctx, input }) => {
-      // Get task first to check project access
-      const task = await ctx.prisma.task.findUnique({
-        where: { id: input.taskId },
-        select: { projectId: true },
-      })
+  get: protectedProcedure.input(taskIdSchema).query(async ({ ctx, input }) => {
+    // Get task first to check project access
+    const task = await ctx.prisma.task.findUnique({
+      where: { id: input.taskId },
+      select: { projectId: true },
+    });
 
-      if (!task) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Task not found',
-        })
-      }
+    if (!task) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Task not found',
+      });
+    }
 
-      await permissionService.requireProjectAccess(ctx.user.id, task.projectId, 'VIEWER')
+    await permissionService.requireProjectAccess(ctx.user.id, task.projectId, 'VIEWER');
 
-      return getTaskWithRelations(input.taskId)
-    }),
+    return getTaskWithRelations(input.taskId);
+  }),
 
   /**
    * Create a new task
    * Requires at least MEMBER access
    * Auto-generates reference (PLAN-123)
    */
-  create: protectedProcedure
-    .input(createTaskSchema)
-    .mutation(async ({ ctx, input }) => {
-      await permissionService.requireProjectAccess(ctx.user.id, input.projectId, 'MEMBER')
+  create: protectedProcedure.input(createTaskSchema).mutation(async ({ ctx, input }) => {
+    await permissionService.requireProjectAccess(ctx.user.id, input.projectId, 'MEMBER');
 
-      // Generate task reference
-      const reference = await generateTaskReference(input.projectId)
+    // Generate task reference
+    const reference = await generateTaskReference(input.projectId);
 
-      // Get next position in column
-      const position = await getNextTaskPosition(input.columnId, input.swimlaneId)
+    // Get next position in column
+    const position = await getNextTaskPosition(input.columnId, input.swimlaneId);
 
-      // Create the task
-      const task = await ctx.prisma.task.create({
-        data: {
-          projectId: input.projectId,
-          columnId: input.columnId,
-          swimlaneId: input.swimlaneId,
-          creatorId: ctx.user.id,
-          title: input.title,
-          description: input.description,
-          reference,
-          priority: input.priority,
-          score: input.score,
-          color: input.color,
-          dateDue: input.dateDue ? new Date(input.dateDue) : undefined,
-          timeEstimated: input.timeEstimated,
-          position,
-          categoryId: input.categoryId,
-          sprintId: input.sprintId,
-          milestoneId: input.milestoneId,
-          moduleId: input.moduleId,
-          ...(input.assigneeIds && input.assigneeIds.length > 0 && {
+    // Create the task
+    const task = await ctx.prisma.task.create({
+      data: {
+        projectId: input.projectId,
+        columnId: input.columnId,
+        swimlaneId: input.swimlaneId,
+        creatorId: ctx.user.id,
+        title: input.title,
+        description: input.description,
+        reference,
+        priority: input.priority,
+        score: input.score,
+        color: input.color,
+        dateDue: input.dateDue ? new Date(input.dateDue) : undefined,
+        timeEstimated: input.timeEstimated,
+        position,
+        categoryId: input.categoryId,
+        sprintId: input.sprintId,
+        milestoneId: input.milestoneId,
+        moduleId: input.moduleId,
+        ...(input.assigneeIds &&
+          input.assigneeIds.length > 0 && {
             assignees: {
               createMany: {
                 data: input.assigneeIds.map((userId) => ({ userId })),
               },
             },
           }),
-          ...(input.tagIds && input.tagIds.length > 0 && {
+        ...(input.tagIds &&
+          input.tagIds.length > 0 && {
             tags: {
               createMany: {
                 data: input.tagIds.map((tagId) => ({ tagId })),
               },
             },
           }),
-        },
-        select: {
-          id: true,
-          title: true,
-          reference: true,
-          columnId: true,
-          swimlaneId: true,
-          position: true,
-          createdAt: true,
-        },
-      })
+      },
+      select: {
+        id: true,
+        title: true,
+        reference: true,
+        columnId: true,
+        swimlaneId: true,
+        position: true,
+        createdAt: true,
+      },
+    });
 
-      // Update project last activity
-      await ctx.prisma.project.update({
-        where: { id: input.projectId },
-        data: { lastActivityAt: new Date() },
-      })
+    // Update project last activity
+    await ctx.prisma.project.update({
+      where: { id: input.projectId },
+      data: { lastActivityAt: new Date() },
+    });
 
-      // Emit WebSocket event for real-time sync
-      emitTaskCreated({
-        taskId: task.id,
-        projectId: input.projectId,
-        data: {
-          title: task.title,
-          reference: task.reference,
-          columnId: task.columnId,
-          position: task.position,
-        },
-        triggeredBy: {
-          id: ctx.user.id,
-          username: ctx.user.username,
-        },
-        timestamp: new Date().toISOString(),
-      })
+    // Emit WebSocket event for real-time sync
+    emitTaskCreated({
+      taskId: task.id,
+      projectId: input.projectId,
+      data: {
+        title: task.title,
+        reference: task.reference,
+        columnId: task.columnId,
+        position: task.position,
+      },
+      triggeredBy: {
+        id: ctx.user.id,
+        username: ctx.user.username,
+      },
+      timestamp: new Date().toISOString(),
+    });
 
-      // Audit logging (Fase 14 - MCP Activity Logging)
-      const project = await ctx.prisma.project.findUnique({
-        where: { id: input.projectId },
-        select: { workspaceId: true },
-      })
-      await auditService.logTaskEvent({
-        action: AUDIT_ACTIONS.TASK_CREATED,
-        resourceType: 'task',
-        resourceId: task.id,
-        resourceName: `${task.reference}: ${task.title}`,
-        userId: ctx.user.id,
-        workspaceId: project?.workspaceId,
-        changes: {
-          title: task.title,
-          columnId: task.columnId,
-          assigneeIds: input.assigneeIds,
-        },
-        metadata: ctx.assistantContext ? {
-          via: 'assistant',
-          machineId: ctx.assistantContext.machineId,
-          machineName: ctx.assistantContext.machineName,
-          bindingId: ctx.assistantContext.bindingId,
-        } : undefined,
-      })
+    // Audit logging (Fase 14 - MCP Activity Logging)
+    const project = await ctx.prisma.project.findUnique({
+      where: { id: input.projectId },
+      select: { workspaceId: true },
+    });
+    await auditService.logTaskEvent({
+      action: AUDIT_ACTIONS.TASK_CREATED,
+      resourceType: 'task',
+      resourceId: task.id,
+      resourceName: `${task.reference}: ${task.title}`,
+      userId: ctx.user.id,
+      workspaceId: project?.workspaceId,
+      changes: {
+        title: task.title,
+        columnId: task.columnId,
+        assigneeIds: input.assigneeIds,
+      },
+      metadata: ctx.assistantContext
+        ? {
+            via: 'assistant',
+            machineId: ctx.assistantContext.machineId,
+            machineName: ctx.assistantContext.machineName,
+            bindingId: ctx.assistantContext.bindingId,
+          }
+        : undefined,
+    });
 
-      return task
-    }),
+    return task;
+  }),
 
   /**
    * Update task properties
    * Requires at least MEMBER access
    */
-  update: protectedProcedure
-    .input(updateTaskSchema)
-    .mutation(async ({ ctx, input }) => {
-      const task = await ctx.prisma.task.findUnique({
-        where: { id: input.taskId },
-        select: { projectId: true, updatedAt: true },
-      })
+  update: protectedProcedure.input(updateTaskSchema).mutation(async ({ ctx, input }) => {
+    const task = await ctx.prisma.task.findUnique({
+      where: { id: input.taskId },
+      select: { projectId: true, updatedAt: true },
+    });
 
-      if (!task) {
+    if (!task) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Task not found',
+      });
+    }
+
+    await permissionService.requireProjectAccess(ctx.user.id, task.projectId, 'MEMBER');
+
+    // Optimistic concurrency control: check if task was modified since client fetched it
+    if (input.expectedUpdatedAt) {
+      const expectedTime = new Date(input.expectedUpdatedAt).getTime();
+      const actualTime = task.updatedAt.getTime();
+
+      // Allow 1 second tolerance for timing differences
+      if (Math.abs(actualTime - expectedTime) > 1000) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Task not found',
-        })
+          code: 'CONFLICT',
+          message: 'Task was modified by another user. Please refresh and try again.',
+        });
       }
+    }
 
-      await permissionService.requireProjectAccess(ctx.user.id, task.projectId, 'MEMBER')
+    const {
+      taskId,
+      dateDue,
+      dateStarted,
+      reminderAt,
+      expectedUpdatedAt: _expectedUpdatedAt,
+      ...updateData
+    } = input;
+    void _expectedUpdatedAt; // Explicitly mark as intentionally unused
 
-      // Optimistic concurrency control: check if task was modified since client fetched it
-      if (input.expectedUpdatedAt) {
-        const expectedTime = new Date(input.expectedUpdatedAt).getTime()
-        const actualTime = task.updatedAt.getTime()
+    const updated = await ctx.prisma.task.update({
+      where: { id: taskId },
+      data: {
+        ...updateData,
+        ...(dateDue !== undefined && {
+          dateDue: dateDue ? new Date(dateDue) : null,
+        }),
+        ...(dateStarted !== undefined && {
+          dateStarted: dateStarted ? new Date(dateStarted) : null,
+        }),
+        ...(reminderAt !== undefined && {
+          reminderAt: reminderAt ? new Date(reminderAt) : null,
+        }),
+      },
+      select: {
+        id: true,
+        title: true,
+        reference: true,
+        priority: true,
+        score: true,
+        color: true,
+        dateDue: true,
+        dateStarted: true,
+        reminderAt: true,
+        timeEstimated: true,
+        updatedAt: true,
+      },
+    });
 
-        // Allow 1 second tolerance for timing differences
-        if (Math.abs(actualTime - expectedTime) > 1000) {
-          throw new TRPCError({
-            code: 'CONFLICT',
-            message: 'Task was modified by another user. Please refresh and try again.',
-          })
-        }
-      }
+    // Emit WebSocket event for real-time sync
+    emitTaskUpdated({
+      taskId: input.taskId,
+      projectId: task.projectId,
+      data: {
+        title: updated.title,
+        priority: updated.priority,
+        score: updated.score,
+        color: updated.color,
+        dateDue: updated.dateDue?.toISOString() ?? null,
+      },
+      triggeredBy: {
+        id: ctx.user.id,
+        username: ctx.user.username,
+      },
+      timestamp: new Date().toISOString(),
+    });
 
-      const { taskId, dateDue, dateStarted, reminderAt, expectedUpdatedAt: _ignored, ...updateData } = input
+    // Audit logging (Fase 14 - MCP Activity Logging)
+    const project = await ctx.prisma.project.findUnique({
+      where: { id: task.projectId },
+      select: { workspaceId: true },
+    });
+    await auditService.logTaskEvent({
+      action: AUDIT_ACTIONS.TASK_UPDATED,
+      resourceType: 'task',
+      resourceId: input.taskId,
+      resourceName: `${updated.reference}: ${updated.title}`,
+      userId: ctx.user.id,
+      workspaceId: project?.workspaceId,
+      changes: updateData,
+      metadata: ctx.assistantContext
+        ? {
+            via: 'assistant',
+            machineId: ctx.assistantContext.machineId,
+            machineName: ctx.assistantContext.machineName,
+            bindingId: ctx.assistantContext.bindingId,
+          }
+        : undefined,
+    });
 
-      const updated = await ctx.prisma.task.update({
-        where: { id: taskId },
-        data: {
-          ...updateData,
-          ...(dateDue !== undefined && {
-            dateDue: dateDue ? new Date(dateDue) : null,
-          }),
-          ...(dateStarted !== undefined && {
-            dateStarted: dateStarted ? new Date(dateStarted) : null,
-          }),
-          ...(reminderAt !== undefined && {
-            reminderAt: reminderAt ? new Date(reminderAt) : null,
-          }),
-        },
-        select: {
-          id: true,
-          title: true,
-          reference: true,
-          priority: true,
-          score: true,
-          color: true,
-          dateDue: true,
-          dateStarted: true,
-          reminderAt: true,
-          timeEstimated: true,
-          updatedAt: true,
-        },
-      })
-
-      // Emit WebSocket event for real-time sync
-      emitTaskUpdated({
-        taskId: input.taskId,
-        projectId: task.projectId,
-        data: {
-          title: updated.title,
-          priority: updated.priority,
-          score: updated.score,
-          color: updated.color,
-          dateDue: updated.dateDue?.toISOString() ?? null,
-        },
-        triggeredBy: {
-          id: ctx.user.id,
-          username: ctx.user.username,
-        },
-        timestamp: new Date().toISOString(),
-      })
-
-      // Audit logging (Fase 14 - MCP Activity Logging)
-      const project = await ctx.prisma.project.findUnique({
-        where: { id: task.projectId },
-        select: { workspaceId: true },
-      })
-      await auditService.logTaskEvent({
-        action: AUDIT_ACTIONS.TASK_UPDATED,
-        resourceType: 'task',
-        resourceId: input.taskId,
-        resourceName: `${updated.reference}: ${updated.title}`,
-        userId: ctx.user.id,
-        workspaceId: project?.workspaceId,
-        changes: updateData,
-        metadata: ctx.assistantContext ? {
-          via: 'assistant',
-          machineId: ctx.assistantContext.machineId,
-          machineName: ctx.assistantContext.machineName,
-          bindingId: ctx.assistantContext.bindingId,
-        } : undefined,
-      })
-
-      return updated
-    }),
+    return updated;
+  }),
 
   /**
    * Move task to different column/swimlane
    * Respects WIP limits
    * Requires at least MEMBER access
    */
-  move: protectedProcedure
-    .input(moveTaskSchema)
-    .mutation(async ({ ctx, input }) => {
-      const task = await ctx.prisma.task.findUnique({
-        where: { id: input.taskId },
-        select: { projectId: true, columnId: true, swimlaneId: true },
-      })
+  move: protectedProcedure.input(moveTaskSchema).mutation(async ({ ctx, input }) => {
+    const task = await ctx.prisma.task.findUnique({
+      where: { id: input.taskId },
+      select: { projectId: true, columnId: true, swimlaneId: true },
+    });
 
-      if (!task) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Task not found',
-        })
-      }
+    if (!task) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Task not found',
+      });
+    }
 
-      await permissionService.requireProjectAccess(ctx.user.id, task.projectId, 'MEMBER')
+    await permissionService.requireProjectAccess(ctx.user.id, task.projectId, 'MEMBER');
 
-      // Validate move (WIP limits, etc.)
-      const validation = await validateTaskMove(input.taskId, input.columnId)
-      if (!validation.canMove) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: validation.reason || 'Cannot move task',
-        })
-      }
+    // Validate move (WIP limits, etc.)
+    const validation = await validateTaskMove(input.taskId, input.columnId);
+    if (!validation.canMove) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: validation.reason || 'Cannot move task',
+      });
+    }
 
-      // Determine new position
-      const newPosition =
-        input.position ?? (await getNextTaskPosition(input.columnId, input.swimlaneId ?? null))
+    // Determine new position
+    const newPosition =
+      input.position ?? (await getNextTaskPosition(input.columnId, input.swimlaneId ?? null));
 
-      const updated = await ctx.prisma.task.update({
-        where: { id: input.taskId },
-        data: {
-          columnId: input.columnId,
-          swimlaneId: input.swimlaneId ?? null,
-          position: newPosition,
-        },
-        select: {
-          id: true,
-          columnId: true,
-          swimlaneId: true,
-          position: true,
-          updatedAt: true,
-        },
-      })
+    const updated = await ctx.prisma.task.update({
+      where: { id: input.taskId },
+      data: {
+        columnId: input.columnId,
+        swimlaneId: input.swimlaneId ?? null,
+        position: newPosition,
+      },
+      select: {
+        id: true,
+        columnId: true,
+        swimlaneId: true,
+        position: true,
+        updatedAt: true,
+      },
+    });
 
-      // Emit WebSocket event for real-time sync
-      emitTaskMoved({
-        taskId: input.taskId,
-        projectId: task.projectId,
+    // Emit WebSocket event for real-time sync
+    emitTaskMoved({
+      taskId: input.taskId,
+      projectId: task.projectId,
+      fromColumnId: task.columnId,
+      toColumnId: input.columnId,
+      fromPosition: 0, // Original position not tracked, using 0
+      toPosition: newPosition,
+      triggeredBy: {
+        id: ctx.user.id,
+        username: ctx.user.username,
+      },
+      timestamp: new Date().toISOString(),
+    });
+
+    // Audit logging (Fase 14 - MCP Activity Logging)
+    const project = await ctx.prisma.project.findUnique({
+      where: { id: task.projectId },
+      select: { workspaceId: true },
+    });
+    const taskInfo = await ctx.prisma.task.findUnique({
+      where: { id: input.taskId },
+      select: { reference: true, title: true },
+    });
+    await auditService.logTaskEvent({
+      action: AUDIT_ACTIONS.TASK_MOVED,
+      resourceType: 'task',
+      resourceId: input.taskId,
+      resourceName: taskInfo ? `${taskInfo.reference}: ${taskInfo.title}` : `Task #${input.taskId}`,
+      userId: ctx.user.id,
+      workspaceId: project?.workspaceId,
+      changes: {
         fromColumnId: task.columnId,
         toColumnId: input.columnId,
-        fromPosition: 0, // Original position not tracked, using 0
-        toPosition: newPosition,
-        triggeredBy: {
-          id: ctx.user.id,
-          username: ctx.user.username,
-        },
-        timestamp: new Date().toISOString(),
-      })
+        fromSwimlaneId: task.swimlaneId,
+        toSwimlaneId: input.swimlaneId ?? null,
+      },
+      metadata: ctx.assistantContext
+        ? {
+            via: 'assistant',
+            machineId: ctx.assistantContext.machineId,
+            machineName: ctx.assistantContext.machineName,
+            bindingId: ctx.assistantContext.bindingId,
+          }
+        : undefined,
+    });
 
-      // Audit logging (Fase 14 - MCP Activity Logging)
-      const project = await ctx.prisma.project.findUnique({
-        where: { id: task.projectId },
-        select: { workspaceId: true },
-      })
-      const taskInfo = await ctx.prisma.task.findUnique({
-        where: { id: input.taskId },
-        select: { reference: true, title: true },
-      })
-      await auditService.logTaskEvent({
-        action: AUDIT_ACTIONS.TASK_MOVED,
-        resourceType: 'task',
-        resourceId: input.taskId,
-        resourceName: taskInfo ? `${taskInfo.reference}: ${taskInfo.title}` : `Task #${input.taskId}`,
-        userId: ctx.user.id,
-        workspaceId: project?.workspaceId,
-        changes: {
-          fromColumnId: task.columnId,
-          toColumnId: input.columnId,
-          fromSwimlaneId: task.swimlaneId,
-          toSwimlaneId: input.swimlaneId ?? null,
-        },
-        metadata: ctx.assistantContext ? {
-          via: 'assistant',
-          machineId: ctx.assistantContext.machineId,
-          machineName: ctx.assistantContext.machineName,
-          bindingId: ctx.assistantContext.bindingId,
-        } : undefined,
-      })
-
-      // Activity logging for cycle time analytics
-      // Only log if column actually changed
-      if (task.columnId !== input.columnId) {
-        await ctx.prisma.activity.create({
-          data: {
-            projectId: task.projectId,
-            userId: ctx.user.id,
-            eventType: 'task.move_column',
-            entityType: 'task',
-            entityId: input.taskId,
-            changes: {
-              from_column_id: task.columnId,
-              column_id: input.columnId,
-            },
+    // Activity logging for cycle time analytics
+    // Only log if column actually changed
+    if (task.columnId !== input.columnId) {
+      await ctx.prisma.activity.create({
+        data: {
+          projectId: task.projectId,
+          userId: ctx.user.id,
+          eventType: 'task.move_column',
+          entityType: 'task',
+          entityId: input.taskId,
+          changes: {
+            from_column_id: task.columnId,
+            column_id: input.columnId,
           },
-        })
-      }
+        },
+      });
+    }
 
-      return updated
-    }),
+    return updated;
+  }),
 
   /**
    * Reorder tasks within a column
    * Requires at least MEMBER access
    */
-  reorder: protectedProcedure
-    .input(reorderTasksSchema)
-    .mutation(async ({ ctx, input }) => {
-      await permissionService.requireProjectAccess(ctx.user.id, input.projectId, 'MEMBER')
+  reorder: protectedProcedure.input(reorderTasksSchema).mutation(async ({ ctx, input }) => {
+    await permissionService.requireProjectAccess(ctx.user.id, input.projectId, 'MEMBER');
 
-      // Get all tasks in the column (optionally filtered by swimlane)
-      const tasks = await ctx.prisma.task.findMany({
-        where: {
-          projectId: input.projectId,
-          columnId: input.columnId,
-          isActive: true,
-          ...(input.swimlaneId && { swimlaneId: input.swimlaneId }),
-        },
-        select: { id: true, position: true },
-        orderBy: { position: 'asc' },
-      })
-
-      // Calculate new positions
-      const updates = calculateNewPositions(tasks, input.taskId, input.newPosition)
-
-      // Apply updates
-      await applyTaskPositions(updates)
-
-      // Emit WebSocket event for real-time sync
-      emitTaskMoved({
-        taskId: input.taskId,
+    // Get all tasks in the column (optionally filtered by swimlane)
+    const tasks = await ctx.prisma.task.findMany({
+      where: {
         projectId: input.projectId,
-        fromColumnId: input.columnId,
-        toColumnId: input.columnId, // Same column for reorder
-        fromPosition: 0,
-        toPosition: input.newPosition,
-        triggeredBy: {
-          id: ctx.user.id,
-          username: ctx.user.username,
-        },
-        timestamp: new Date().toISOString(),
-      })
+        columnId: input.columnId,
+        isActive: true,
+        ...(input.swimlaneId && { swimlaneId: input.swimlaneId }),
+      },
+      select: { id: true, position: true },
+      orderBy: { position: 'asc' },
+    });
 
-      return { success: true }
-    }),
+    // Calculate new positions
+    const updates = calculateNewPositions(tasks, input.taskId, input.newPosition);
+
+    // Apply updates
+    await applyTaskPositions(updates);
+
+    // Emit WebSocket event for real-time sync
+    emitTaskMoved({
+      taskId: input.taskId,
+      projectId: input.projectId,
+      fromColumnId: input.columnId,
+      toColumnId: input.columnId, // Same column for reorder
+      fromPosition: 0,
+      toPosition: input.newPosition,
+      triggeredBy: {
+        id: ctx.user.id,
+        username: ctx.user.username,
+      },
+      timestamp: new Date().toISOString(),
+    });
+
+    return { success: true };
+  }),
 
   /**
    * Close a task
    * Requires at least MEMBER access
    * Automatically moves the task to the Archive column
    */
-  close: protectedProcedure
-    .input(taskIdSchema)
-    .mutation(async ({ ctx, input }) => {
-      const task = await ctx.prisma.task.findUnique({
-        where: { id: input.taskId },
-        select: { projectId: true, columnId: true, isActive: true },
-      })
+  close: protectedProcedure.input(taskIdSchema).mutation(async ({ ctx, input }) => {
+    const task = await ctx.prisma.task.findUnique({
+      where: { id: input.taskId },
+      select: { projectId: true, columnId: true, isActive: true },
+    });
 
-      if (!task) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Task not found',
-        })
-      }
+    if (!task) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Task not found',
+      });
+    }
 
-      await permissionService.requireProjectAccess(ctx.user.id, task.projectId, 'MEMBER')
+    await permissionService.requireProjectAccess(ctx.user.id, task.projectId, 'MEMBER');
 
-      if (!task.isActive) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Task is already closed',
-        })
-      }
+    if (!task.isActive) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: 'Task is already closed',
+      });
+    }
 
-      // Find the Archive column for this project
-      const archiveColumn = await ctx.prisma.column.findFirst({
-        where: { projectId: task.projectId, isArchive: true },
-        select: { id: true },
-      })
+    // Find the Archive column for this project
+    const archiveColumn = await ctx.prisma.column.findFirst({
+      where: { projectId: task.projectId, isArchive: true },
+      select: { id: true },
+    });
 
-      const updateData: {
-        isActive: boolean
-        dateCompleted: Date
-        columnId?: number
-        position?: number
-      } = {
-        isActive: false,
-        dateCompleted: new Date(),
-      }
+    const updateData: {
+      isActive: boolean;
+      dateCompleted: Date;
+      columnId?: number;
+      position?: number;
+    } = {
+      isActive: false,
+      dateCompleted: new Date(),
+    };
 
-      // Move to Archive column if it exists and task isn't already there
-      if (archiveColumn && task.columnId !== archiveColumn.id) {
-        // Get next position in Archive column
-        const lastArchiveTask = await ctx.prisma.task.findFirst({
-          where: { columnId: archiveColumn.id },
-          orderBy: { position: 'desc' },
-          select: { position: true },
-        })
-        updateData.columnId = archiveColumn.id
-        updateData.position = (lastArchiveTask?.position ?? 0) + 1
-      }
+    // Move to Archive column if it exists and task isn't already there
+    if (archiveColumn && task.columnId !== archiveColumn.id) {
+      // Get next position in Archive column
+      const lastArchiveTask = await ctx.prisma.task.findFirst({
+        where: { columnId: archiveColumn.id },
+        orderBy: { position: 'desc' },
+        select: { position: true },
+      });
+      updateData.columnId = archiveColumn.id;
+      updateData.position = (lastArchiveTask?.position ?? 0) + 1;
+    }
 
-      const updated = await ctx.prisma.task.update({
-        where: { id: input.taskId },
-        data: updateData,
-        select: {
-          id: true,
-          columnId: true,
-          isActive: true,
-          dateCompleted: true,
-          updatedAt: true,
-        },
-      })
+    const updated = await ctx.prisma.task.update({
+      where: { id: input.taskId },
+      data: updateData,
+      select: {
+        id: true,
+        columnId: true,
+        isActive: true,
+        dateCompleted: true,
+        updatedAt: true,
+      },
+    });
 
-      return updated
-    }),
+    return updated;
+  }),
 
   /**
    * Reopen a closed task
    * Requires at least MEMBER access
    * If task is in Archive column, moves it to the first non-archive column (Backlog)
    */
-  reopen: protectedProcedure
-    .input(taskIdSchema)
-    .mutation(async ({ ctx, input }) => {
-      const task = await ctx.prisma.task.findUnique({
-        where: { id: input.taskId },
-        select: {
-          projectId: true,
-          columnId: true,
-          isActive: true,
-          column: { select: { isArchive: true } },
-        },
-      })
-
-      if (!task) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Task not found',
-        })
-      }
-
-      await permissionService.requireProjectAccess(ctx.user.id, task.projectId, 'MEMBER')
-
-      if (task.isActive) {
-        throw new TRPCError({
-          code: 'BAD_REQUEST',
-          message: 'Task is already open',
-        })
-      }
-
-      const updateData: {
-        isActive: boolean
-        dateCompleted: null
-        columnId?: number
-        position?: number
-      } = {
+  reopen: protectedProcedure.input(taskIdSchema).mutation(async ({ ctx, input }) => {
+    const task = await ctx.prisma.task.findUnique({
+      where: { id: input.taskId },
+      select: {
+        projectId: true,
+        columnId: true,
         isActive: true,
-        dateCompleted: null,
+        column: { select: { isArchive: true } },
+      },
+    });
+
+    if (!task) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Task not found',
+      });
+    }
+
+    await permissionService.requireProjectAccess(ctx.user.id, task.projectId, 'MEMBER');
+
+    if (task.isActive) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: 'Task is already open',
+      });
+    }
+
+    const updateData: {
+      isActive: boolean;
+      dateCompleted: null;
+      columnId?: number;
+      position?: number;
+    } = {
+      isActive: true,
+      dateCompleted: null,
+    };
+
+    // If task is in Archive column, move to first non-archive column (Backlog)
+    if (task.column?.isArchive) {
+      const firstColumn = await ctx.prisma.column.findFirst({
+        where: { projectId: task.projectId, isArchive: false },
+        orderBy: { position: 'asc' },
+        select: { id: true },
+      });
+
+      if (firstColumn) {
+        // Get next position in target column
+        const lastTask = await ctx.prisma.task.findFirst({
+          where: { columnId: firstColumn.id },
+          orderBy: { position: 'desc' },
+          select: { position: true },
+        });
+        updateData.columnId = firstColumn.id;
+        updateData.position = (lastTask?.position ?? 0) + 1;
       }
+    }
 
-      // If task is in Archive column, move to first non-archive column (Backlog)
-      if (task.column?.isArchive) {
-        const firstColumn = await ctx.prisma.column.findFirst({
-          where: { projectId: task.projectId, isArchive: false },
-          orderBy: { position: 'asc' },
-          select: { id: true },
-        })
+    const updated = await ctx.prisma.task.update({
+      where: { id: input.taskId },
+      data: updateData,
+      select: {
+        id: true,
+        columnId: true,
+        isActive: true,
+        dateCompleted: true,
+        updatedAt: true,
+      },
+    });
 
-        if (firstColumn) {
-          // Get next position in target column
-          const lastTask = await ctx.prisma.task.findFirst({
-            where: { columnId: firstColumn.id },
-            orderBy: { position: 'desc' },
-            select: { position: true },
-          })
-          updateData.columnId = firstColumn.id
-          updateData.position = (lastTask?.position ?? 0) + 1
-        }
-      }
-
-      const updated = await ctx.prisma.task.update({
-        where: { id: input.taskId },
-        data: updateData,
-        select: {
-          id: true,
-          columnId: true,
-          isActive: true,
-          dateCompleted: true,
-          updatedAt: true,
-        },
-      })
-
-      return updated
-    }),
+    return updated;
+  }),
 
   /**
    * Soft delete a task
    * Requires at least MANAGER access
    */
-  delete: protectedProcedure
-    .input(taskIdSchema)
-    .mutation(async ({ ctx, input }) => {
-      const task = await ctx.prisma.task.findUnique({
-        where: { id: input.taskId },
-        select: { projectId: true },
-      })
+  delete: protectedProcedure.input(taskIdSchema).mutation(async ({ ctx, input }) => {
+    const task = await ctx.prisma.task.findUnique({
+      where: { id: input.taskId },
+      select: { projectId: true },
+    });
 
-      if (!task) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Task not found',
-        })
-      }
+    if (!task) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Task not found',
+      });
+    }
 
-      await permissionService.requireProjectAccess(ctx.user.id, task.projectId, 'MANAGER')
+    await permissionService.requireProjectAccess(ctx.user.id, task.projectId, 'MANAGER');
 
-      // Soft delete by closing and marking with special flag
-      // For hard delete, we would use prisma.task.delete()
-      await ctx.prisma.task.update({
-        where: { id: input.taskId },
-        data: {
-          isActive: false,
-          dateCompleted: new Date(),
-          // Could add a deletedAt field for proper soft delete tracking
-        },
-      })
+    // Soft delete by closing and marking with special flag
+    // For hard delete, we would use prisma.task.delete()
+    await ctx.prisma.task.update({
+      where: { id: input.taskId },
+      data: {
+        isActive: false,
+        dateCompleted: new Date(),
+        // Could add a deletedAt field for proper soft delete tracking
+      },
+    });
 
-      // Emit WebSocket event for real-time sync
-      emitTaskDeleted({
-        taskId: input.taskId,
-        projectId: task.projectId,
-        triggeredBy: {
-          id: ctx.user.id,
-          username: ctx.user.username,
-        },
-        timestamp: new Date().toISOString(),
-      })
+    // Emit WebSocket event for real-time sync
+    emitTaskDeleted({
+      taskId: input.taskId,
+      projectId: task.projectId,
+      triggeredBy: {
+        id: ctx.user.id,
+        username: ctx.user.username,
+      },
+      timestamp: new Date().toISOString(),
+    });
 
-      // Audit logging (Fase 14 - MCP Activity Logging)
-      const project = await ctx.prisma.project.findUnique({
-        where: { id: task.projectId },
-        select: { workspaceId: true },
-      })
-      const taskInfo = await ctx.prisma.task.findUnique({
-        where: { id: input.taskId },
-        select: { reference: true, title: true },
-      })
-      await auditService.logTaskEvent({
-        action: AUDIT_ACTIONS.TASK_DELETED,
-        resourceType: 'task',
-        resourceId: input.taskId,
-        resourceName: taskInfo ? `${taskInfo.reference}: ${taskInfo.title}` : `Task #${input.taskId}`,
-        userId: ctx.user.id,
-        workspaceId: project?.workspaceId,
-        metadata: ctx.assistantContext ? {
-          via: 'assistant',
-          machineId: ctx.assistantContext.machineId,
-          machineName: ctx.assistantContext.machineName,
-          bindingId: ctx.assistantContext.bindingId,
-        } : undefined,
-      })
+    // Audit logging (Fase 14 - MCP Activity Logging)
+    const project = await ctx.prisma.project.findUnique({
+      where: { id: task.projectId },
+      select: { workspaceId: true },
+    });
+    const taskInfo = await ctx.prisma.task.findUnique({
+      where: { id: input.taskId },
+      select: { reference: true, title: true },
+    });
+    await auditService.logTaskEvent({
+      action: AUDIT_ACTIONS.TASK_DELETED,
+      resourceType: 'task',
+      resourceId: input.taskId,
+      resourceName: taskInfo ? `${taskInfo.reference}: ${taskInfo.title}` : `Task #${input.taskId}`,
+      userId: ctx.user.id,
+      workspaceId: project?.workspaceId,
+      metadata: ctx.assistantContext
+        ? {
+            via: 'assistant',
+            machineId: ctx.assistantContext.machineId,
+            machineName: ctx.assistantContext.machineName,
+            bindingId: ctx.assistantContext.bindingId,
+          }
+        : undefined,
+    });
 
-      return { success: true }
-    }),
+    return { success: true };
+  }),
 
   /**
    * Set assignees for a task (replaces existing)
    * Requires at least MEMBER access
    */
-  setAssignees: protectedProcedure
-    .input(manageAssigneesSchema)
-    .mutation(async ({ ctx, input }) => {
-      const task = await ctx.prisma.task.findUnique({
-        where: { id: input.taskId },
-        select: { projectId: true },
-      })
+  setAssignees: protectedProcedure.input(manageAssigneesSchema).mutation(async ({ ctx, input }) => {
+    const task = await ctx.prisma.task.findUnique({
+      where: { id: input.taskId },
+      select: { projectId: true },
+    });
 
-      if (!task) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Task not found',
-        })
-      }
+    if (!task) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Task not found',
+      });
+    }
 
-      await permissionService.requireProjectAccess(ctx.user.id, task.projectId, 'MEMBER')
+    await permissionService.requireProjectAccess(ctx.user.id, task.projectId, 'MEMBER');
 
-      // Delete existing and create new
-      await ctx.prisma.$transaction([
-        ctx.prisma.taskAssignee.deleteMany({
-          where: { taskId: input.taskId },
-        }),
-        ctx.prisma.taskAssignee.createMany({
-          data: input.assigneeIds.map((userId) => ({
-            taskId: input.taskId,
-            userId,
-          })),
-        }),
-      ])
-
-      // Fetch updated assignees for real-time sync
-      const updatedAssignees = await ctx.prisma.taskAssignee.findMany({
+    // Delete existing and create new
+    await ctx.prisma.$transaction([
+      ctx.prisma.taskAssignee.deleteMany({
         where: { taskId: input.taskId },
-        select: {
-          user: {
-            select: {
-              id: true,
-              username: true,
-              name: true,
-              avatarUrl: true,
-            },
+      }),
+      ctx.prisma.taskAssignee.createMany({
+        data: input.assigneeIds.map((userId) => ({
+          taskId: input.taskId,
+          userId,
+        })),
+      }),
+    ]);
+
+    // Fetch updated assignees for real-time sync
+    const updatedAssignees = await ctx.prisma.taskAssignee.findMany({
+      where: { taskId: input.taskId },
+      select: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            name: true,
+            avatarUrl: true,
           },
         },
-      })
+      },
+    });
 
-      // Emit task updated event for real-time sync
-      emitTaskUpdated({
-        taskId: input.taskId,
-        projectId: task.projectId,
-        data: {
-          assignees: updatedAssignees.map((a) => a.user),
-        },
-        triggeredBy: {
-          id: ctx.user.id,
-          username: ctx.user.username,
-        },
-        timestamp: new Date().toISOString(),
-      })
+    // Emit task updated event for real-time sync
+    emitTaskUpdated({
+      taskId: input.taskId,
+      projectId: task.projectId,
+      data: {
+        assignees: updatedAssignees.map((a) => a.user),
+      },
+      triggeredBy: {
+        id: ctx.user.id,
+        username: ctx.user.username,
+      },
+      timestamp: new Date().toISOString(),
+    });
 
-      // Audit logging (Fase 14 - MCP Activity Logging)
-      const project = await ctx.prisma.project.findUnique({
-        where: { id: task.projectId },
-        select: { workspaceId: true },
-      })
-      const taskInfo = await ctx.prisma.task.findUnique({
-        where: { id: input.taskId },
-        select: { reference: true, title: true },
-      })
-      await auditService.logTaskEvent({
-        action: AUDIT_ACTIONS.TASK_ASSIGNED,
-        resourceType: 'task',
-        resourceId: input.taskId,
-        resourceName: taskInfo ? `${taskInfo.reference}: ${taskInfo.title}` : `Task #${input.taskId}`,
-        userId: ctx.user.id,
-        workspaceId: project?.workspaceId,
-        changes: {
-          assigneeIds: input.assigneeIds,
-        },
-        metadata: ctx.assistantContext ? {
-          via: 'assistant',
-          machineId: ctx.assistantContext.machineId,
-          machineName: ctx.assistantContext.machineName,
-          bindingId: ctx.assistantContext.bindingId,
-        } : undefined,
-      })
+    // Audit logging (Fase 14 - MCP Activity Logging)
+    const project = await ctx.prisma.project.findUnique({
+      where: { id: task.projectId },
+      select: { workspaceId: true },
+    });
+    const taskInfo = await ctx.prisma.task.findUnique({
+      where: { id: input.taskId },
+      select: { reference: true, title: true },
+    });
+    await auditService.logTaskEvent({
+      action: AUDIT_ACTIONS.TASK_ASSIGNED,
+      resourceType: 'task',
+      resourceId: input.taskId,
+      resourceName: taskInfo ? `${taskInfo.reference}: ${taskInfo.title}` : `Task #${input.taskId}`,
+      userId: ctx.user.id,
+      workspaceId: project?.workspaceId,
+      changes: {
+        assigneeIds: input.assigneeIds,
+      },
+      metadata: ctx.assistantContext
+        ? {
+            via: 'assistant',
+            machineId: ctx.assistantContext.machineId,
+            machineName: ctx.assistantContext.machineName,
+            bindingId: ctx.assistantContext.bindingId,
+          }
+        : undefined,
+    });
 
-      return { success: true }
-    }),
+    return { success: true };
+  }),
 
   /**
    * Set tags for a task (replaces existing)
    * Requires at least MEMBER access
    */
-  setTags: protectedProcedure
-    .input(manageTagsSchema)
-    .mutation(async ({ ctx, input }) => {
-      const task = await ctx.prisma.task.findUnique({
-        where: { id: input.taskId },
-        select: { projectId: true },
-      })
+  setTags: protectedProcedure.input(manageTagsSchema).mutation(async ({ ctx, input }) => {
+    const task = await ctx.prisma.task.findUnique({
+      where: { id: input.taskId },
+      select: { projectId: true },
+    });
 
-      if (!task) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Task not found',
-        })
-      }
+    if (!task) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Task not found',
+      });
+    }
 
-      await permissionService.requireProjectAccess(ctx.user.id, task.projectId, 'MEMBER')
+    await permissionService.requireProjectAccess(ctx.user.id, task.projectId, 'MEMBER');
 
-      // Delete existing and create new
-      await ctx.prisma.$transaction([
-        ctx.prisma.taskTag.deleteMany({
-          where: { taskId: input.taskId },
-        }),
-        ctx.prisma.taskTag.createMany({
-          data: input.tagIds.map((tagId) => ({
-            taskId: input.taskId,
-            tagId,
-          })),
-        }),
-      ])
+    // Delete existing and create new
+    await ctx.prisma.$transaction([
+      ctx.prisma.taskTag.deleteMany({
+        where: { taskId: input.taskId },
+      }),
+      ctx.prisma.taskTag.createMany({
+        data: input.tagIds.map((tagId) => ({
+          taskId: input.taskId,
+          tagId,
+        })),
+      }),
+    ]);
 
-      return { success: true }
-    }),
+    return { success: true };
+  }),
 
   /**
    * Set due date for a task
    * Dedicated procedure for date picker UI
    * Requires at least MEMBER access
    */
-  setDueDate: protectedProcedure
-    .input(setDueDateSchema)
-    .mutation(async ({ ctx, input }) => {
-      const task = await ctx.prisma.task.findUnique({
-        where: { id: input.taskId },
-        select: { projectId: true },
-      })
+  setDueDate: protectedProcedure.input(setDueDateSchema).mutation(async ({ ctx, input }) => {
+    const task = await ctx.prisma.task.findUnique({
+      where: { id: input.taskId },
+      select: { projectId: true },
+    });
 
-      if (!task) {
-        throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Task not found',
-        })
-      }
+    if (!task) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Task not found',
+      });
+    }
 
-      await permissionService.requireProjectAccess(ctx.user.id, task.projectId, 'MEMBER')
+    await permissionService.requireProjectAccess(ctx.user.id, task.projectId, 'MEMBER');
 
-      const updated = await ctx.prisma.task.update({
-        where: { id: input.taskId },
-        data: {
-          dateDue: input.dateDue ? new Date(input.dateDue) : null,
-        },
-        select: {
-          id: true,
-          dateDue: true,
-          reminderAt: true,
-          updatedAt: true,
-        },
-      })
+    const updated = await ctx.prisma.task.update({
+      where: { id: input.taskId },
+      data: {
+        dateDue: input.dateDue ? new Date(input.dateDue) : null,
+      },
+      select: {
+        id: true,
+        dateDue: true,
+        reminderAt: true,
+        updatedAt: true,
+      },
+    });
 
-      return updated
-    }),
+    return updated;
+  }),
 
   /**
    * Set reminder for a task
    * Can use preset offsets from due date or custom datetime
    * Requires at least MEMBER access
    */
-  setReminder: protectedProcedure
-    .input(setReminderSchema)
-    .mutation(async ({ ctx, input }) => {
-      const task = await ctx.prisma.task.findUnique({
-        where: { id: input.taskId },
-        select: { projectId: true, dateDue: true },
-      })
+  setReminder: protectedProcedure.input(setReminderSchema).mutation(async ({ ctx, input }) => {
+    const task = await ctx.prisma.task.findUnique({
+      where: { id: input.taskId },
+      select: { projectId: true, dateDue: true },
+    });
 
-      if (!task) {
+    if (!task) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Task not found',
+      });
+    }
+
+    await permissionService.requireProjectAccess(ctx.user.id, task.projectId, 'MEMBER');
+
+    let reminderAt: Date | null = null;
+
+    if (input.reminderAt) {
+      // Custom datetime provided
+      reminderAt = new Date(input.reminderAt);
+    } else if (input.preset && input.preset !== 'none' && input.preset !== 'custom') {
+      // Calculate from due date using preset
+      if (!task.dateDue) {
         throw new TRPCError({
-          code: 'NOT_FOUND',
-          message: 'Task not found',
-        })
+          code: 'BAD_REQUEST',
+          message: 'Cannot set preset reminder without due date',
+        });
       }
 
-      await permissionService.requireProjectAccess(ctx.user.id, task.projectId, 'MEMBER')
-
-      let reminderAt: Date | null = null
-
-      if (input.reminderAt) {
-        // Custom datetime provided
-        reminderAt = new Date(input.reminderAt)
-      } else if (input.preset && input.preset !== 'none' && input.preset !== 'custom') {
-        // Calculate from due date using preset
-        if (!task.dateDue) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: 'Cannot set preset reminder without due date',
-          })
-        }
-
-        const dueDate = new Date(task.dateDue)
-        switch (input.preset) {
-          case '15min':
-            reminderAt = new Date(dueDate.getTime() - 15 * 60 * 1000)
-            break
-          case '1hour':
-            reminderAt = new Date(dueDate.getTime() - 60 * 60 * 1000)
-            break
-          case '1day':
-            reminderAt = new Date(dueDate.getTime() - 24 * 60 * 60 * 1000)
-            break
-          case '1week':
-            reminderAt = new Date(dueDate.getTime() - 7 * 24 * 60 * 60 * 1000)
-            break
-        }
+      const dueDate = new Date(task.dateDue);
+      switch (input.preset) {
+        case '15min':
+          reminderAt = new Date(dueDate.getTime() - 15 * 60 * 1000);
+          break;
+        case '1hour':
+          reminderAt = new Date(dueDate.getTime() - 60 * 60 * 1000);
+          break;
+        case '1day':
+          reminderAt = new Date(dueDate.getTime() - 24 * 60 * 60 * 1000);
+          break;
+        case '1week':
+          reminderAt = new Date(dueDate.getTime() - 7 * 24 * 60 * 60 * 1000);
+          break;
       }
+    }
 
-      const updated = await ctx.prisma.task.update({
-        where: { id: input.taskId },
-        data: { reminderAt },
-        select: {
-          id: true,
-          dateDue: true,
-          reminderAt: true,
-          updatedAt: true,
-        },
-      })
+    const updated = await ctx.prisma.task.update({
+      where: { id: input.taskId },
+      data: { reminderAt },
+      select: {
+        id: true,
+        dateDue: true,
+        reminderAt: true,
+        updatedAt: true,
+      },
+    });
 
-      return updated
-    }),
+    return updated;
+  }),
 
   /**
    * Get tasks with pending reminders
@@ -1152,9 +1142,9 @@ export const taskRouter = router({
   getPendingReminders: protectedProcedure
     .input(z.object({ projectId: z.number() }))
     .query(async ({ ctx, input }) => {
-      await permissionService.requireProjectAccess(ctx.user.id, input.projectId, 'VIEWER')
+      await permissionService.requireProjectAccess(ctx.user.id, input.projectId, 'VIEWER');
 
-      const now = new Date()
+      const now = new Date();
       const tasks = await ctx.prisma.task.findMany({
         where: {
           projectId: input.projectId,
@@ -1179,12 +1169,12 @@ export const taskRouter = router({
           },
         },
         orderBy: { reminderAt: 'asc' },
-      })
+      });
 
       return tasks.map((t) => ({
         ...t,
         assignees: t.assignees.map((a) => a.user),
-      }))
+      }));
     }),
 
   /**
@@ -1205,7 +1195,7 @@ export const taskRouter = router({
           ? { dateCompleted: null }
           : input.status === 'closed'
             ? { dateCompleted: { not: null } }
-            : {}
+            : {};
 
       const tasks = await ctx.prisma.task.findMany({
         where: {
@@ -1234,7 +1224,7 @@ export const taskRouter = router({
         },
         orderBy: [{ dateDue: 'asc' }, { priority: 'desc' }, { createdAt: 'desc' }],
         take: input.limit,
-      })
+      });
 
       return tasks.map((t) => ({
         id: t.id,
@@ -1249,10 +1239,16 @@ export const taskRouter = router({
         createdAt: t.createdAt,
         updatedAt: t.updatedAt,
         column: t.column ? { id: t.column.id, name: t.column.title } : null,
-        project: t.project ? { id: t.project.id, name: t.project.name, identifier: t.project.identifier } : null,
+        project: t.project
+          ? { id: t.project.id, name: t.project.name, identifier: t.project.identifier }
+          : null,
         creator: t.creator ? { id: t.creator.id, name: t.creator.name } : null,
-        assignees: t.assignees.map((a) => ({ id: a.user.id, name: a.user.name, username: a.user.username })),
+        assignees: t.assignees.map((a) => ({
+          id: a.user.id,
+          name: a.user.name,
+          username: a.user.username,
+        })),
         tags: t.tags.map((tt) => ({ id: tt.tag.id, name: tt.tag.name, color: tt.tag.color })),
-      }))
+      }));
     }),
-})
+});
