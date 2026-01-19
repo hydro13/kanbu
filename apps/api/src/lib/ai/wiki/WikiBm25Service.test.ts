@@ -13,6 +13,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import type { PrismaClient } from '@prisma/client';
 import { WikiBm25Service, resetWikiBm25Service } from './WikiBm25Service';
 
 // =============================================================================
@@ -37,7 +38,7 @@ describe('WikiBm25Service', () => {
   beforeEach(() => {
     resetWikiBm25Service();
     mockPrisma = createMockPrismaClient();
-    service = new WikiBm25Service(mockPrisma as any);
+    service = new WikiBm25Service(mockPrisma as unknown as PrismaClient);
   });
 
   // ===========================================================================

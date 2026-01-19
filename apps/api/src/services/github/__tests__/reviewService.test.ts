@@ -13,6 +13,8 @@
  * =============================================================================
  */
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock prisma
@@ -226,7 +228,6 @@ describe('reviewService', () => {
           state: 'CHANGES_REQUESTED',
         },
       ];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(prisma.gitHubReview.findMany).mockResolvedValue(reviews as any);
 
       const result = await getReviewsForPR(1);
@@ -262,7 +263,6 @@ describe('reviewService', () => {
           submittedAt: new Date('2026-01-09T11:00:00Z'),
         },
       ];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(prisma.gitHubReview.findMany).mockResolvedValue(reviews as any);
       vi.mocked(prisma.gitHubReview.count).mockResolvedValue(0);
 
@@ -287,7 +287,6 @@ describe('reviewService', () => {
           submittedAt: new Date('2026-01-09T11:00:00Z'),
         },
       ];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(prisma.gitHubReview.findMany).mockResolvedValue(reviews as any);
       vi.mocked(prisma.gitHubReview.count).mockResolvedValue(0);
 
@@ -311,7 +310,6 @@ describe('reviewService', () => {
           submittedAt: new Date('2026-01-09T12:00:00Z'),
         },
       ];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(prisma.gitHubReview.findMany).mockResolvedValue(reviews as any);
       vi.mocked(prisma.gitHubReview.count).mockResolvedValue(0);
 

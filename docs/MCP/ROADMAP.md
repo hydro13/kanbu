@@ -803,6 +803,9 @@ Via: Claude Code
 | Phase 16       | - (audit UI updates)        | 131        | ✅ Complete    |
 | GitHub Phase 9 | 10 (github)                 | 141        | ✅ Complete    |
 | Phase 17       | 18 (wiki pages)             | 159        | 🔄 In Progress |
+| Phase 18       | 157 (remote HTTP endpoint)  | 159        | ✅ Complete    |
+
+> **Note:** Phase 18 exposes ALL tools via HTTP endpoint (157 = local MCP tools + 3 connection tools)
 
 ---
 
@@ -1008,6 +1011,138 @@ Before marking Phase 17 as complete, the following must be verified:
 
 ---
 
+### Phase 18: Remote MCP Endpoint ✅ COMPLETE (2026-01-19)
+
+**Goal:** Enable Claude.ai users to connect directly to Kanbu via HTTP-based MCP protocol.
+
+**Status:** Fully implemented with ALL 157 tools available.
+
+**Background:** The existing MCP server runs locally alongside Claude Code (stdio transport). Phase 18 adds an HTTP endpoint (`/mcp`) directly to the Kanbu API, enabling:
+
+- **Claude.ai web/mobile** users to connect via Custom Connector
+- **Voice-driven project management** from any Claude interface (web, iOS, Android)
+- **No local installation required** - just an API key
+
+#### 18.1 Architecture
+
+```
+Current (stdio):
+┌─────────────────┐      stdio       ┌─────────────────┐
+│  Claude Code    │ ←──────────────→ │  MCP Server     │
+│  (local)        │                  │  (local process)│
+└─────────────────┘                  └────────┬────────┘
+                                              │ HTTP
+                                              ▼
+                                     ┌─────────────────┐
+                                     │  Kanbu API      │
+                                     └─────────────────┘
+
+Phase 18 (HTTP):
+┌─────────────────┐      HTTPS       ┌─────────────────┐
+│  Claude.ai      │ ←──────────────→ │  Kanbu API      │
+│  (web/mobile)   │    /mcp          │  /mcp endpoint  │
+└─────────────────┘                  └─────────────────┘
+```
+
+#### 18.2 Implementation
+
+**Files Created:**
+
+- `apps/api/src/routes/mcp.ts` - MCP HTTP endpoint (1166 lines, v2.0.0)
+- `apps/api/src/services/mcp/toolDefinitions.ts` - 157 tool definitions (v2.0.0)
+- `apps/api/src/services/mcp/index.ts` - Barrel export
+
+**Files Modified:**
+
+- `apps/api/src/server.ts` - Register MCP routes
+
+**Endpoints:**
+
+- `GET /mcp` - Server info (tools count, protocol version)
+- `POST /mcp` - JSON-RPC 2.0 endpoint with SSE responses
+
+**Supported MCP Methods:**
+| Method | Description |
+|--------|-------------|
+| `initialize` | Initialize session, exchange capabilities |
+| `tools/list` | List all 157 available tools |
+| `tools/call` | Execute a tool |
+| `ping` | Health check |
+
+#### 18.3 Tool Categories (157 total)
+
+| Category    | Tools | Description                                           |
+| ----------- | ----- | ----------------------------------------------------- |
+| Workspace   | 2     | List and get workspace details                        |
+| Project     | 3     | List, get, and create projects                        |
+| Task        | 6     | Full task CRUD + move + my tasks                      |
+| Subtask     | 5     | Subtask CRUD + toggle                                 |
+| Comment     | 4     | Comment CRUD                                          |
+| Search      | 2     | Task search + global semantic search                  |
+| Activity    | 3     | Recent activity, task activity, stats                 |
+| Analytics   | 4     | Project stats, velocity, cycle time, workload         |
+| Admin Users | 11    | User management (CRUD, password, 2FA, sessions)       |
+| Groups      | 10    | Group management (CRUD, members)                      |
+| ACL         | 20    | Permissions (grant, deny, bulk, templates, simulate)  |
+| Invites     | 5     | Invitation management                                 |
+| Audit       | 5     | Audit logs (list, get, stats, export)                 |
+| System      | 12    | Settings, backups, admin workspaces                   |
+| Profile     | 36    | Own profile, 2FA, notifications, API tokens, sessions |
+| GitHub      | 10    | Repository linking, PRs, commits, branches            |
+| Wiki        | 18    | Project + workspace wiki CRUD with versioning         |
+
+#### 18.4 Authentication
+
+Uses existing API key system (`kb_xxxxx` tokens):
+
+```
+Authorization: Bearer kb_xxxxxxxxxxxxx
+```
+
+- API key validated on every request
+- Rate limited (100 req/min per key, configurable via `MCP_RATE_LIMIT`)
+- Inherits user's workspace/project permissions via ACL
+- Tools route to tRPC procedures internally (no HTTP overhead)
+
+#### 18.5 Claude.ai Configuration
+
+Users configure Custom Connector in Claude.ai:
+
+```
+Name: Kanbu
+URL: https://<your-kanbu-instance>/mcp
+Authentication: Bearer Token
+Token: kb_xxxxxxxxxxxxx
+```
+
+**Example URLs per deployment:**
+
+| Environment       | URL                           |
+| ----------------- | ----------------------------- |
+| Production (SaaS) | `https://app.kanbu.be/mcp`    |
+| Development       | `https://dev.kanbu.be/mcp`    |
+| Demo              | `https://demo.kanbu.be/mcp`   |
+| Self-hosted       | `https://your-domain.com/mcp` |
+
+#### 18.6 Environment Variables
+
+```env
+MCP_ENABLED=true        # Enable /mcp endpoint (default: true)
+MCP_RATE_LIMIT=100      # Requests per minute per API key
+```
+
+**Deliverables Phase 18:** ✅ ALL DELIVERED
+
+- [x] HTTP endpoint `/mcp` with JSON-RPC 2.0 + SSE
+- [x] API key authentication (Bearer kb_xxx)
+- [x] Rate limiting per API key
+- [x] **ALL 157 tools available** (feature parity with local MCP server)
+- [x] tRPC caller for internal routing (no HTTP overhead)
+- [x] Protocol version 2024-11-05
+- [x] Works on any Kanbu deployment (SaaS + self-hosted)
+
+---
+
 ## Priority Matrix
 
 | Item                 | Impact   | Effort | Priority |
@@ -1093,6 +1228,7 @@ Before marking Phase 17 as complete, the following must be verified:
 
 | Date       | Change                                                                                                                                                                                         |
 | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-01-19 | **Phase 18 COMPLETE** - Remote MCP Endpoint v2.0: ALL 157 tools via HTTP `/mcp` endpoint, JSON-RPC 2.0 + SSE, API key auth, full feature parity with local MCP server                          |
 | 2026-01-16 | **Phase 17 ADDED** - Wiki Pages Management: 18 new tools planned (9 project wiki + 9 workspace wiki) for full CRUD, version control, hierarchical structure                                    |
 | 2026-01-09 | **Phase 16 COMPLETE** - Audit UI Updates: new category filters (PROJECT, TASK, SUBTASK, COMMENT), "Via Claude Code" badge in audit logs table, machine details in detail view, MCP-only filter |
 | 2026-01-09 | **Phase 13-15 COMPLETE** - MCP Audit Logging: infrastructure, task logging, subtask/comment logging - all MCP actions are now logged with `via: assistant` metadata                            |

@@ -15,6 +15,7 @@
 
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
+import type { PrismaClient, Prisma } from '@prisma/client';
 import { router, protectedProcedure } from '../router';
 
 // =============================================================================
@@ -70,7 +71,7 @@ const getEntityStickiesSchema = z.object({
 // Helpers
 // =============================================================================
 
-async function getStickyNoteOwner(prisma: any, stickyNoteId: number): Promise<number> {
+async function getStickyNoteOwner(prisma: PrismaClient, stickyNoteId: number): Promise<number> {
   const note = await prisma.stickyNote.findUnique({
     where: { id: stickyNoteId },
     select: { userId: true },
@@ -368,7 +369,7 @@ export const stickyNoteRouter = router({
     }
 
     // Build where clause
-    const whereClause: any = { stickyNoteId: input.stickyNoteId };
+    const whereClause: Prisma.StickyNoteLinkWhereInput = { stickyNoteId: input.stickyNoteId };
     if (input.entityType) {
       whereClause.entityType = input.entityType;
     }
@@ -387,7 +388,7 @@ export const stickyNoteRouter = router({
    * Get sticky notes linked to an entity
    */
   getByEntity: protectedProcedure.input(getEntityStickiesSchema).query(async ({ ctx, input }) => {
-    const whereClause: any = {
+    const whereClause: Prisma.StickyNoteWhereInput = {
       links: {
         some: {
           entityType: input.entityType,

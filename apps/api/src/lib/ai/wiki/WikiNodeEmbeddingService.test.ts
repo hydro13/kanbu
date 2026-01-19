@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Unit Tests: Wiki Node Embedding Service (Fase 21.5)
  *

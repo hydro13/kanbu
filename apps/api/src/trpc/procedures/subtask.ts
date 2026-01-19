@@ -20,6 +20,7 @@
 
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
+import type { PrismaClient } from '@prisma/client';
 import { router, protectedProcedure } from '../router';
 import { permissionService } from '../../services';
 import { auditService, AUDIT_ACTIONS } from '../../services/auditService';
@@ -68,7 +69,7 @@ const reorderSubtaskSchema = z.object({
 // Helpers
 // =============================================================================
 
-async function getTaskProjectId(prisma: any, taskId: number): Promise<number> {
+async function getTaskProjectId(prisma: PrismaClient, taskId: number): Promise<number> {
   const task = await prisma.task.findUnique({
     where: { id: taskId },
     select: { projectId: true },
@@ -85,7 +86,7 @@ async function getTaskProjectId(prisma: any, taskId: number): Promise<number> {
 }
 
 async function getSubtaskTaskId(
-  prisma: any,
+  prisma: PrismaClient,
   subtaskId: number
 ): Promise<{ taskId: number; projectId: number }> {
   const subtask = await prisma.subtask.findUnique({

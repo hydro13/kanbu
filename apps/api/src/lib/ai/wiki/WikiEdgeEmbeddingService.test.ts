@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Unit Tests: Wiki Edge Embedding Service (Fase 19.5)
  *

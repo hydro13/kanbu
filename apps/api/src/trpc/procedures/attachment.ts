@@ -16,6 +16,7 @@
 
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
+import type { PrismaClient } from '@prisma/client';
 import { router, protectedProcedure } from '../router';
 import { permissionService } from '../../services';
 import {
@@ -50,7 +51,7 @@ const listAttachmentsSchema = z.object({
 // Helpers
 // =============================================================================
 
-async function getTaskProjectId(prisma: any, taskId: number): Promise<number> {
+async function getTaskProjectId(prisma: PrismaClient, taskId: number): Promise<number> {
   const task = await prisma.task.findUnique({
     where: { id: taskId },
     select: { projectId: true },
@@ -67,7 +68,7 @@ async function getTaskProjectId(prisma: any, taskId: number): Promise<number> {
 }
 
 async function getAttachmentInfo(
-  prisma: any,
+  prisma: PrismaClient,
   attachmentId: number
 ): Promise<{ taskId: number; projectId: number; userId: number; path: string }> {
   const attachment = await prisma.attachment.findUnique({

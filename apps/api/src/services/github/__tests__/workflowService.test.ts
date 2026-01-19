@@ -13,6 +13,8 @@
  * =============================================================================
  */
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock prisma

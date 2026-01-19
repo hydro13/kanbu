@@ -15,6 +15,7 @@
 
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
+import type { PrismaClient } from '@prisma/client';
 import { router, protectedProcedure } from '../router';
 import { permissionService } from '../../services';
 
@@ -53,7 +54,7 @@ const setTaskCategorySchema = z.object({
 // Helpers
 // =============================================================================
 
-async function getCategoryProjectId(prisma: any, categoryId: number): Promise<number> {
+async function getCategoryProjectId(prisma: PrismaClient, categoryId: number): Promise<number> {
   const category = await prisma.category.findUnique({
     where: { id: categoryId },
     select: { projectId: true },
@@ -69,7 +70,7 @@ async function getCategoryProjectId(prisma: any, categoryId: number): Promise<nu
   return category.projectId;
 }
 
-async function getTaskProjectId(prisma: any, taskId: number): Promise<number> {
+async function getTaskProjectId(prisma: PrismaClient, taskId: number): Promise<number> {
   const task = await prisma.task.findUnique({
     where: { id: taskId },
     select: { projectId: true },

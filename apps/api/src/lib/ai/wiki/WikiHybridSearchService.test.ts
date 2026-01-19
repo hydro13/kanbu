@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Unit Tests: Wiki Hybrid Search Service (Fase 20.4)
  *

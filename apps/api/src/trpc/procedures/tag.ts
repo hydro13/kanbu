@@ -15,6 +15,7 @@
 
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
+import type { PrismaClient } from '@prisma/client';
 import { router, protectedProcedure } from '../router';
 import { permissionService } from '../../services';
 import { emitTagAdded, emitTagRemoved } from '../../socket';
@@ -61,7 +62,7 @@ const getTaskTagsSchema = z.object({
 // Helpers
 // =============================================================================
 
-async function getTagProjectId(prisma: any, tagId: number): Promise<number> {
+async function getTagProjectId(prisma: PrismaClient, tagId: number): Promise<number> {
   const tag = await prisma.tag.findUnique({
     where: { id: tagId },
     select: { projectId: true },
@@ -77,7 +78,7 @@ async function getTagProjectId(prisma: any, tagId: number): Promise<number> {
   return tag.projectId;
 }
 
-async function getTaskProjectId(prisma: any, taskId: number): Promise<number> {
+async function getTaskProjectId(prisma: PrismaClient, taskId: number): Promise<number> {
   const task = await prisma.task.findUnique({
     where: { id: taskId },
     select: { projectId: true },
