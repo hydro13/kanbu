@@ -195,8 +195,9 @@ function App() {
               </AuthRedirect>
             }
           />
-          {/* OAuth authorization - handles its own auth redirect */}
-          <Route path="/oauth/authorize" element={<OAuthAuthorizePage />} />
+          {/* OAuth consent page - handles its own auth redirect */}
+          {/* Note: Using /consent instead of /oauth/authorize to avoid conflict with API OAuth endpoint */}
+          <Route path="/consent" element={<OAuthAuthorizePage />} />
 
           {/* Protected routes */}
           {/* Redirect root to dashboard - single homepage with sidebar */}

@@ -155,9 +155,9 @@ export async function registerOAuthAuthorizeRoutes(server: FastifyInstance): Pro
     }
 
     // Build redirect URL to frontend consent page
-    // Frontend is on the same domain, just different port in dev or same in prod
+    // Frontend is on the same domain, using /consent to avoid conflict with API /oauth/authorize
     const appUrl = process.env.APP_URL || 'https://dev.kanbu.be';
-    const frontendUrl = new URL('/oauth/authorize', appUrl);
+    const frontendUrl = new URL('/consent', appUrl);
 
     // Pass all query parameters to the frontend
     if (client_id) frontendUrl.searchParams.set('client_id', client_id);
