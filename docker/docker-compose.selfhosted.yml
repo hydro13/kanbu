@@ -13,6 +13,12 @@
 #   - 1GB RAM minimum (2GB recommended)
 #   - Port 80 (web) and 3001 (api) available
 #
+# IMPORTANT - Multi-environment deployment (Coolify):
+#   This file is designed for Coolify deployments where multiple environments
+#   (dev, prod) may run on the same Docker host. Container names, volume names,
+#   and network names are NOT hardcoded - Coolify/Docker Compose will generate
+#   unique names per stack to prevent DNS conflicts between environments.
+#
 # ═══════════════════════════════════════════════════════════════════
 # AI Architect: Robin Waslander <R.Waslander@gmail.com>
 # Session: websocket-collaboration
@@ -23,7 +29,7 @@ services:
   # PostgreSQL Database
   postgres:
     image: postgres:16-alpine
-    container_name: kanbu-db
+    # Note: Do NOT set container_name - Coolify needs unique names per environment
     restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-kanbu}
@@ -44,7 +50,7 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile.api
-    container_name: kanbu-api
+    # Note: Do NOT set container_name - Coolify needs unique names per environment
     restart: unless-stopped
     depends_on:
       postgres:
@@ -87,7 +93,7 @@ services:
       context: ..
       dockerfile: docker/Dockerfile.web
       # VITE_API_URL empty = use nginx proxy with relative paths
-    container_name: kanbu-web
+    # Note: Do NOT set container_name - Coolify needs unique names per environment
     restart: unless-stopped
     depends_on:
       - api
@@ -100,9 +106,10 @@ services:
 
 volumes:
   kanbu-db-data:
-    name: kanbu-db-data
+    # Note: Do NOT set name - Coolify needs unique volume names per environment
 
 networks:
   kanbu-network:
-    name: kanbu-network
+    # Note: Do NOT set name - Coolify needs unique network names per environment
+    # This prevents DNS conflicts when dev and prod run on the same Docker host
     driver: bridge
