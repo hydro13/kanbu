@@ -232,6 +232,14 @@ const PROFILE_FEATURES: FeatureDefinition[] = [
     icon: 'currency',
     sortOrder: 190,
   },
+  {
+    scope: 'profile',
+    slug: 'ai-assistant',
+    name: 'AI Assistant',
+    description: 'Connect Claude Code and manage remote AI integrations',
+    icon: 'bot',
+    sortOrder: 200,
+  },
 ];
 
 /**
@@ -317,6 +325,14 @@ const ADMIN_FEATURES: FeatureDefinition[] = [
     description: 'Database backup and restore',
     icon: 'database',
     sortOrder: 220,
+  },
+  {
+    scope: 'admin',
+    slug: 'mcp-services',
+    name: 'MCP Services',
+    description: 'Manage OAuth clients for Claude.ai, ChatGPT and other MCP integrations',
+    icon: 'plug',
+    sortOrder: 230,
   },
 
   // Integrations section

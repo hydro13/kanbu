@@ -129,6 +129,7 @@ import {
   PermissionMatrixPage,
   GitHubAdminPage,
   AiSystemsPage,
+  McpServicesPage,
 } from './pages/admin';
 // Dashboard pages
 import { DashboardOverview, MyTasks, MySubtasks, NotesPage, InboxPage } from './pages/dashboard';
@@ -772,6 +773,16 @@ function App() {
               <ProtectedRoute>
                 <AdminRoute>
                   <GitHubAdminPage />
+                </AdminRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/settings/mcp-services"
+            element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <McpServicesPage />
                 </AdminRoute>
               </ProtectedRoute>
             }

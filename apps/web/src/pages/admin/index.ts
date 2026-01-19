@@ -29,3 +29,4 @@ export { AuditLogsPage } from './AuditLogsPage';
 export { PermissionMatrixPage } from './PermissionMatrixPage';
 export { GitHubAdminPage } from './GitHubAdminPage';
 export { AiSystemsPage } from './AiSystemsPage';
+export { McpServicesPage } from './McpServicesPage';
