@@ -2,7 +2,8 @@
  * tRPC Context
  *
  * Creates the context that is passed to all tRPC procedures.
- * Supports triple authentication: JWT (session), API keys (kb_), and Assistant tokens (ast_).
+ * Supports quad authentication: JWT (session), API keys (kb_), Assistant tokens (ast_),
+ * and OAuth 2.1 tokens (kat_).
  *
  * ═══════════════════════════════════════════════════════════════════
  * Modified by:
@@ -17,6 +18,10 @@
  * Modified: 2026-01-09
  * Fase: MCP Integration
  * Change: Added assistant token (ast_) authentication support
+ *
+ * Modified: 2026-01-19
+ * Phase: 19.6 - OAuth 2.1 MCP Middleware
+ * Change: Added OAuth 2.1 token context (kat_ prefix) support
  * ═══════════════════════════════════════════════════════════════════
  */
 
@@ -41,13 +46,21 @@ export interface AuthUser {
 }
 
 /** Authentication source type */
-export type AuthSource = 'jwt' | 'apiKey' | 'assistant';
+export type AuthSource = 'jwt' | 'apiKey' | 'assistant' | 'oauth';
 
 /** Assistant binding context */
 export interface AssistantContext {
   bindingId: number;
   machineId: string;
   machineName: string | null;
+}
+
+/** OAuth 2.1 token context (Phase 19) */
+export interface OAuthContext {
+  userId: number;
+  tokenId: number;
+  clientId: string;
+  scope: string[];
 }
 
 /**
@@ -182,6 +195,7 @@ export async function createContext({ req, res }: CreateContextOptions) {
     user,
     apiKeyContext,
     assistantContext,
+    oauthContext: null as OAuthContext | null, // Set by MCP endpoint when using OAuth auth
     authSource,
   };
 }

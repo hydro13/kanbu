@@ -143,6 +143,8 @@ import {
 // Project pages
 import { GitHubProjectSettings, ProjectDetailsPage, ProjectWikiPage } from './pages/project';
 import { AcceptInvitePage } from './pages/AcceptInvite';
+// OAuth pages
+import { OAuthAuthorizePage } from './pages/oauth';
 // Demo pages
 import { EditorDemoPage } from './pages/EditorDemo';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
@@ -192,6 +194,8 @@ function App() {
               </AuthRedirect>
             }
           />
+          {/* OAuth authorization - handles its own auth redirect */}
+          <Route path="/oauth/authorize" element={<OAuthAuthorizePage />} />
 
           {/* Protected routes */}
           {/* Redirect root to dashboard - single homepage with sidebar */}

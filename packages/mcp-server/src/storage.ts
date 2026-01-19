@@ -16,6 +16,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync, unlinkSync, chmodSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
+import { createHash } from 'crypto';
 
 // =============================================================================
 // Types
@@ -36,7 +37,23 @@ export interface TokenConfig {
 // =============================================================================
 
 const CONFIG_DIR = join(homedir(), '.config', 'kanbu');
-const TOKEN_FILE = join(CONFIG_DIR, 'mcp.json');
+
+/**
+ * Generate a short hash of the KANBU_URL for unique credential files per server
+ */
+function getUrlHash(url: string): string {
+  return createHash('sha256').update(url).digest('hex').substring(0, 8);
+}
+
+/**
+ * Get the token file path for a specific KANBU_URL
+ * Each server gets its own credential file: mcp-{hash}.json
+ */
+function getTokenFilePath(): string {
+  const kanbuUrl = process.env.KANBU_URL || 'https://localhost:3001';
+  const hash = getUrlHash(kanbuUrl);
+  return join(CONFIG_DIR, `mcp-${hash}.json`);
+}
 
 // =============================================================================
 // Token Storage Class
@@ -47,7 +64,8 @@ export class TokenStorage {
    * Check if a token is stored
    */
   hasToken(): boolean {
-    return existsSync(TOKEN_FILE);
+    const tokenFile = getTokenFilePath();
+    return existsSync(tokenFile);
   }
 
   /**
@@ -55,10 +73,11 @@ export class TokenStorage {
    */
   loadToken(): TokenConfig | null {
     try {
-      if (!existsSync(TOKEN_FILE)) {
+      const tokenFile = getTokenFilePath();
+      if (!existsSync(tokenFile)) {
         return null;
       }
-      const content = readFileSync(TOKEN_FILE, 'utf-8');
+      const content = readFileSync(tokenFile, 'utf-8');
       return JSON.parse(content) as TokenConfig;
     } catch {
       return null;
@@ -70,17 +89,19 @@ export class TokenStorage {
    * Sets restrictive permissions (0600) to protect the token
    */
   saveToken(config: TokenConfig): void {
+    const tokenFile = getTokenFilePath();
+
     // Ensure config directory exists
     if (!existsSync(CONFIG_DIR)) {
       mkdirSync(CONFIG_DIR, { recursive: true, mode: 0o700 });
     }
 
     // Write token file
-    writeFileSync(TOKEN_FILE, JSON.stringify(config, null, 2), { mode: 0o600 });
+    writeFileSync(tokenFile, JSON.stringify(config, null, 2), { mode: 0o600 });
 
     // Ensure correct permissions (in case file already existed)
     try {
-      chmodSync(TOKEN_FILE, 0o600);
+      chmodSync(tokenFile, 0o600);
     } catch {
       // Ignore permission errors on Windows
     }
@@ -91,8 +112,9 @@ export class TokenStorage {
    */
   removeToken(): void {
     try {
-      if (existsSync(TOKEN_FILE)) {
-        unlinkSync(TOKEN_FILE);
+      const tokenFile = getTokenFilePath();
+      if (existsSync(tokenFile)) {
+        unlinkSync(tokenFile);
       }
     } catch {
       // Ignore errors

@@ -35,6 +35,12 @@ import { registerGitHubWebhookRoutes } from './routes/webhooks/github';
 import { registerGitHubImageProxyRoutes } from './routes/githubImageProxy';
 import { registerBackupTriggerRoutes } from './routes/backupTrigger';
 import { registerMcpRoutes } from './routes/mcp';
+import {
+  registerOAuthMetadataRoutes,
+  registerOAuthRegisterRoutes,
+  registerOAuthAuthorizeRoutes,
+  registerOAuthTokenRoutes,
+} from './routes/oauth';
 import { internalScheduler, isInternalSchedulerEnabled } from './services/backup';
 import { initializeSocketServer } from './socket';
 import { isRedisHealthy } from './lib/redis';
@@ -199,6 +205,18 @@ export async function createServer() {
 
   // Register MCP routes (for Claude.ai Custom Connector)
   await registerMcpRoutes(server);
+
+  // Register OAuth 2.1 metadata discovery endpoints (Phase 19)
+  await registerOAuthMetadataRoutes(server);
+
+  // Register OAuth 2.1 Dynamic Client Registration (Phase 19.3)
+  await registerOAuthRegisterRoutes(server);
+
+  // Register OAuth 2.1 Authorization endpoint (Phase 19.4)
+  await registerOAuthAuthorizeRoutes(server);
+
+  // Register OAuth 2.1 Token endpoint (Phase 19.5)
+  await registerOAuthTokenRoutes(server);
 
   // Start internal backup scheduler if enabled
   if (isInternalSchedulerEnabled()) {

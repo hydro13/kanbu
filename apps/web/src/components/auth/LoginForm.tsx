@@ -3,7 +3,7 @@
  */
 
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '../ui/card';
@@ -13,17 +13,22 @@ import { loginSuccess, setLoading } from '../../store/authSlice';
 
 export function LoginForm() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const dispatch = useAppDispatch();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+
+  // Get redirect URL from query params (used by OAuth flow)
+  const redirectUrl = searchParams.get('redirect');
 
   const loginMutation = trpc.auth.login.useMutation({
     onSuccess: (data) => {
       // Clear React Query cache to prevent stale data from previous user
       queryClient.clear();
       dispatch(loginSuccess(data));
-      navigate('/');
+      // Redirect to specified URL or default to home
+      navigate(redirectUrl || '/');
     },
     onError: (err) => {
       setError(err.message);

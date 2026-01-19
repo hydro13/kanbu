@@ -783,29 +783,31 @@ Via: Claude Code
 
 ## Tool Overview
 
-| Phase          | Tools                       | Cumulative | Status         |
-| -------------- | --------------------------- | ---------- | -------------- |
-| Phase 1        | 3 (pairing)                 | 3          | ✅ Complete    |
-| Phase 2        | 11 (core)                   | 14         | ✅ Complete    |
-| Phase 3        | 9 (subtasks/comments)       | 23         | ✅ Complete    |
-| Phase 4        | 5 (search/activity)         | 28         | ✅ Complete    |
-| Phase 5        | 4 (analytics)               | 32         | ✅ Complete    |
-| Phase 6        | 11 (user management)        | 43         | ✅ Complete    |
-| Phase 7        | 10 (groups)                 | 53         | ✅ Complete    |
-| Phase 8        | 20 (ACL)                    | 73         | ✅ Complete    |
-| Phase 9        | 5 (invites)                 | 78         | ✅ Complete    |
-| Phase 10       | 5 (audit)                   | 83         | ✅ Complete    |
-| Phase 11       | 12 (system)                 | 95         | ✅ Complete    |
-| Phase 12       | 36 (profile)                | 131        | ✅ Complete    |
-| Phase 13       | - (audit infrastructure)    | 131        | ✅ Complete    |
-| Phase 14       | - (task/project logging)    | 131        | ✅ Complete    |
-| Phase 15       | - (subtask/comment logging) | 131        | ✅ Complete    |
-| Phase 16       | - (audit UI updates)        | 131        | ✅ Complete    |
-| GitHub Phase 9 | 10 (github)                 | 141        | ✅ Complete    |
-| Phase 17       | 18 (wiki pages)             | 159        | 🔄 In Progress |
-| Phase 18       | 157 (remote HTTP endpoint)  | 159        | ✅ Complete    |
+| Phase          | Tools                        | Cumulative | Status         |
+| -------------- | ---------------------------- | ---------- | -------------- |
+| Phase 1        | 3 (pairing)                  | 3          | ✅ Complete    |
+| Phase 2        | 11 (core)                    | 14         | ✅ Complete    |
+| Phase 3        | 9 (subtasks/comments)        | 23         | ✅ Complete    |
+| Phase 4        | 5 (search/activity)          | 28         | ✅ Complete    |
+| Phase 5        | 4 (analytics)                | 32         | ✅ Complete    |
+| Phase 6        | 11 (user management)         | 43         | ✅ Complete    |
+| Phase 7        | 10 (groups)                  | 53         | ✅ Complete    |
+| Phase 8        | 20 (ACL)                     | 73         | ✅ Complete    |
+| Phase 9        | 5 (invites)                  | 78         | ✅ Complete    |
+| Phase 10       | 5 (audit)                    | 83         | ✅ Complete    |
+| Phase 11       | 12 (system)                  | 95         | ✅ Complete    |
+| Phase 12       | 36 (profile)                 | 131        | ✅ Complete    |
+| Phase 13       | - (audit infrastructure)     | 131        | ✅ Complete    |
+| Phase 14       | - (task/project logging)     | 131        | ✅ Complete    |
+| Phase 15       | - (subtask/comment logging)  | 131        | ✅ Complete    |
+| Phase 16       | - (audit UI updates)         | 131        | ✅ Complete    |
+| GitHub Phase 9 | 10 (github)                  | 141        | ✅ Complete    |
+| Phase 17       | 18 (wiki pages)              | 159        | 🔄 In Progress |
+| Phase 18       | 157 (remote HTTP endpoint)   | 159        | ✅ Complete    |
+| Phase 19       | - (OAuth 2.1 authentication) | 159        | 🔄 In Progress |
 
 > **Note:** Phase 18 exposes ALL tools via HTTP endpoint (157 = local MCP tools + 3 connection tools)
+> **Note:** Phase 19 adds OAuth 2.1 authentication for Claude.ai/ChatGPT integration (no new tools, auth infrastructure)
 
 ---
 
@@ -1143,6 +1145,577 @@ MCP_RATE_LIMIT=100      # Requests per minute per API key
 
 ---
 
+### Phase 19: OAuth 2.1 Authentication 🔄 IN PROGRESS
+
+**Goal:** Enable Claude.ai and ChatGPT to connect via OAuth 2.1, supporting both local installs and SaaS deployments with multi-instance support.
+
+**Status:** Phases 19.1-19.6 complete. OAuth infrastructure working. Integration testing pending.
+
+**Background:** Phase 18 added HTTP-based MCP with API key authentication. Phase 19 adds OAuth 2.1 support required by Claude.ai (and optionally ChatGPT), enabling:
+
+- **Claude.ai native integration** - OAuth 2.1 + PKCE + DCR (required by Claude)
+- **ChatGPT integration** - OAuth 2.0 with static credentials
+- **Multi-instance support** - Multiple Kanbu deployments (dev.kanbu.be, app.kanbu.be, demo.kanbu.be)
+- **Platform support** - Desktop (stdio+remote), Mobile (remote only), Web (remote only)
+
+#### Architecture Decision
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        Kanbu API                                 │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
+│  │ OAuth 2.1   │  │ MCP HTTP    │  │ tRPC Procedures         │  │
+│  │ Endpoints   │  │ Endpoint    │  │ (existing)              │  │
+│  │             │  │ (Phase 18)  │  │                         │  │
+│  │ /oauth/*    │  │ /mcp        │  │ task.*, project.*, etc  │  │
+│  └──────┬──────┘  └──────┬──────┘  └───────────┬─────────────┘  │
+│         │                │                     │                 │
+│         └────────────────┼─────────────────────┘                 │
+│                          │                                       │
+│                    ┌─────▼─────┐                                 │
+│                    │ Auth      │                                 │
+│                    │ Middleware│                                 │
+│                    └───────────┘                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**Key Decision:** MCP built into Kanbu API (not separate microservice) for simpler scaling.
+
+#### 19.1 OAuth Database Schema
+
+**Goal:** Database tables for OAuth clients, authorization codes, and tokens.
+
+**Prisma Schema:**
+
+```prisma
+// OAuth 2.1 Dynamic Client Registration (RFC 7591)
+model OAuthClient {
+  id                    Int       @id @default(autoincrement())
+  clientId              String    @unique @db.VarChar(64)
+  clientSecret          String?   @db.VarChar(255)  // Hashed, null for public clients
+  clientName            String    @db.VarChar(255)
+  clientUri             String?   @db.VarChar(2048)
+  logoUri               String?   @db.VarChar(2048)
+  redirectUris          String[]  // Array of allowed redirect URIs
+  grantTypes            String[]  // ["authorization_code", "refresh_token"]
+  responseTypes         String[]  // ["code"]
+  tokenEndpointAuthMethod String  @default("none") @db.VarChar(50)  // none, client_secret_basic, client_secret_post
+  scope                 String?   @db.VarChar(1000)
+
+  // Metadata
+  registrationToken     String?   @db.VarChar(255)  // For client management
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  // Relations
+  codes                 OAuthAuthorizationCode[]
+  tokens                OAuthToken[]
+
+  @@index([clientId])
+  @@map("oauth_clients")
+}
+
+// Authorization codes (short-lived, one-time use)
+model OAuthAuthorizationCode {
+  id                    Int       @id @default(autoincrement())
+  code                  String    @unique @db.VarChar(64)
+  clientId              Int
+  client                OAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  userId                Int
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  redirectUri           String    @db.VarChar(2048)
+  scope                 String?   @db.VarChar(1000)
+  codeChallenge         String?   @db.VarChar(128)  // PKCE
+  codeChallengeMethod   String?   @db.VarChar(10)   // S256
+  expiresAt             DateTime
+  consumedAt            DateTime?
+  createdAt             DateTime  @default(now())
+
+  @@index([code])
+  @@index([clientId])
+  @@map("oauth_authorization_codes")
+}
+
+// Access and refresh tokens
+model OAuthToken {
+  id                    Int       @id @default(autoincrement())
+  tokenType             String    @db.VarChar(20)  // "access" or "refresh"
+  tokenHash             String    @unique @db.VarChar(64)
+  tokenPrefix           String    @db.VarChar(8)   // For identification
+  clientId              Int
+  client                OAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  userId                Int
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scope                 String?   @db.VarChar(1000)
+  expiresAt             DateTime
+  revokedAt             DateTime?
+  createdAt             DateTime  @default(now())
+
+  // For refresh token rotation
+  parentTokenId         Int?
+
+  @@index([tokenHash])
+  @@index([tokenPrefix])
+  @@index([clientId])
+  @@index([userId])
+  @@map("oauth_tokens")
+}
+```
+
+**Deliverables 19.1:**
+
+- [x] Add OAuthClient, OAuthAuthorizationCode, OAuthToken models to Prisma schema
+- [x] Run `prisma db push` to create tables
+- [x] Add User relations for OAuth tokens
+
+---
+
+#### 19.2 Metadata Endpoints (Discovery)
+
+**Goal:** RFC 8414 and RFC 9728 compliant discovery endpoints.
+
+**Endpoints:**
+
+| Endpoint                                      | RFC      | Description                                         |
+| --------------------------------------------- | -------- | --------------------------------------------------- |
+| `GET /.well-known/oauth-authorization-server` | RFC 8414 | Authorization server metadata                       |
+| `GET /.well-known/oauth-protected-resource`   | RFC 9728 | Protected resource metadata (required by Claude.ai) |
+
+**OAuth Authorization Server Metadata (RFC 8414):**
+
+```json
+{
+  "issuer": "https://app.kanbu.be",
+  "authorization_endpoint": "https://app.kanbu.be/oauth/authorize",
+  "token_endpoint": "https://app.kanbu.be/oauth/token",
+  "registration_endpoint": "https://app.kanbu.be/oauth/register",
+  "token_endpoint_auth_methods_supported": ["none", "client_secret_basic", "client_secret_post"],
+  "grant_types_supported": ["authorization_code", "refresh_token"],
+  "response_types_supported": ["code"],
+  "code_challenge_methods_supported": ["S256"],
+  "scopes_supported": ["read", "write", "admin"],
+  "service_documentation": "https://docs.kanbu.be/oauth"
+}
+```
+
+**Protected Resource Metadata (RFC 9728):**
+
+```json
+{
+  "resource": "https://app.kanbu.be/mcp",
+  "authorization_servers": ["https://app.kanbu.be"],
+  "scopes_supported": ["read", "write", "admin"],
+  "bearer_methods_supported": ["header"]
+}
+```
+
+**Deliverables 19.2:**
+
+- [x] Create `apps/api/src/routes/oauth/metadata.ts`
+- [x] Implement `GET /.well-known/oauth-authorization-server`
+- [x] Implement `GET /.well-known/oauth-protected-resource`
+- [x] Register routes in server.ts
+- [ ] Test with Claude.ai discovery (requires full OAuth flow)
+
+---
+
+#### 19.3 Dynamic Client Registration (DCR)
+
+**Goal:** RFC 7591 compliant client registration endpoint (required by Claude.ai).
+
+**Endpoint:** `POST /oauth/register`
+
+**Request (from Claude.ai):**
+
+```json
+{
+  "client_name": "Claude.ai",
+  "redirect_uris": ["https://claude.ai/api/mcp/auth_callback"],
+  "grant_types": ["authorization_code", "refresh_token"],
+  "response_types": ["code"],
+  "token_endpoint_auth_method": "none"
+}
+```
+
+**Response:**
+
+```json
+{
+  "client_id": "kanbu_xxxxxxxxxxxxxxxx",
+  "client_secret": null,
+  "client_name": "Claude.ai",
+  "redirect_uris": ["https://claude.ai/api/mcp/auth_callback"],
+  "grant_types": ["authorization_code", "refresh_token"],
+  "response_types": ["code"],
+  "token_endpoint_auth_method": "none",
+  "registration_access_token": "rat_xxxxx",
+  "registration_client_uri": "https://app.kanbu.be/oauth/register/kanbu_xxxxx"
+}
+```
+
+**Security:**
+
+- Anonymous registration allowed (required by Claude.ai)
+- Rate limit: 10 registrations per IP per hour
+- Validate redirect_uris against allowlist patterns
+- Generate secure client*id with `kanbu*` prefix
+
+**Deliverables 19.3:**
+
+- [x] Create `apps/api/src/routes/oauth/register.ts`
+- [x] Implement `POST /oauth/register` (client registration)
+- [x] Implement `GET /oauth/register/:clientId` (client info)
+- [x] Implement `PUT /oauth/register/:clientId` (client update)
+- [x] Implement `DELETE /oauth/register/:clientId` (client delete)
+- [x] Add rate limiting (10 registrations per IP per hour)
+- [x] Add redirect_uri validation (claude.ai, chatgpt.com, localhost patterns)
+
+---
+
+#### 19.4 Authorization Endpoint (PKCE)
+
+**Goal:** RFC 6749 + RFC 7636 (PKCE) authorization endpoint.
+
+**Endpoint:** `GET /oauth/authorize`
+
+**Parameters:**
+| Parameter | Required | Description |
+|-----------|----------|-------------|
+| `client_id` | Yes | Client identifier |
+| `redirect_uri` | Yes | Must match registered URI |
+| `response_type` | Yes | Must be "code" |
+| `state` | Yes | CSRF protection (required by ChatGPT) |
+| `code_challenge` | Yes | PKCE challenge (required by Claude.ai) |
+| `code_challenge_method` | Yes | Must be "S256" |
+| `scope` | No | Requested scopes |
+
+**Flow:**
+
+1. User lands on `/oauth/authorize` with params
+2. If not logged in → redirect to `/login?redirect=/oauth/authorize?...`
+3. Show consent screen: "Claude.ai wants to access your Kanbu account"
+4. User approves → generate authorization code
+5. Redirect to `redirect_uri?code=xxx&state=xxx`
+
+**Consent Screen UI:**
+
+```
+┌─────────────────────────────────────────────┐
+│              [KANBU LOGO]                   │
+│                                             │
+│   Claude.ai wants to access your account    │
+│                                             │
+│   This will allow Claude.ai to:             │
+│   ✓ Read your projects and tasks            │
+│   ✓ Create and update tasks                 │
+│   ✓ Access project analytics                │
+│                                             │
+│   [Cancel]              [Allow Access]      │
+└─────────────────────────────────────────────┘
+```
+
+**Deliverables 19.4:**
+
+- [x] Create `apps/api/src/routes/oauth/authorize.ts`
+- [x] Implement authorization code generation
+- [x] Implement PKCE validation (S256)
+- [x] Create consent screen UI (`apps/web/src/pages/oauth/Authorize.tsx`)
+- [x] Add login redirect flow (updated LoginForm to handle redirect param)
+- [x] Store authorization code with PKCE challenge
+
+---
+
+#### 19.5 Token Endpoint
+
+**Goal:** RFC 6749 token exchange with PKCE verification.
+
+**Endpoint:** `POST /oauth/token`
+
+**Grant Type: authorization_code**
+
+Request:
+
+```
+POST /oauth/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=authorization_code
+&code=xxxxx
+&redirect_uri=https://claude.ai/api/mcp/auth_callback
+&client_id=kanbu_xxxxx
+&code_verifier=yyyyy
+```
+
+Response:
+
+```json
+{
+  "access_token": "kat_xxxxxxxxxxxxx",
+  "token_type": "Bearer",
+  "expires_in": 3600,
+  "refresh_token": "krt_xxxxxxxxxxxxx",
+  "scope": "read write"
+}
+```
+
+**Grant Type: refresh_token**
+
+Request:
+
+```
+POST /oauth/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=refresh_token
+&refresh_token=krt_xxxxxxxxxxxxx
+&client_id=kanbu_xxxxx
+```
+
+**Token Introspection (RFC 7662):**
+
+`POST /oauth/token/introspect`
+
+```json
+{
+  "token": "kat_xxxxx",
+  "token_type_hint": "access_token"
+}
+```
+
+Response:
+
+```json
+{
+  "active": true,
+  "client_id": "kanbu_xxxxx",
+  "username": "robin",
+  "scope": "read write",
+  "exp": 1234567890
+}
+```
+
+**Token Revocation (RFC 7009):**
+
+`POST /oauth/token/revoke`
+
+```json
+{
+  "token": "kat_xxxxx",
+  "token_type_hint": "access_token"
+}
+```
+
+**Token Format:**
+
+- Access token: `kat_` prefix, 1 hour expiry
+- Refresh token: `krt_` prefix, 30 days expiry
+- Stored as SHA-256 hash in database
+
+**Deliverables 19.5:**
+
+- [x] Create `apps/api/src/routes/oauth/token.ts`
+- [x] Implement authorization_code grant with PKCE verification
+- [x] Implement refresh_token grant with rotation
+- [x] Implement token introspection endpoint (RFC 7662)
+- [x] Implement token revocation endpoint (RFC 7009)
+- [ ] Add token expiry and cleanup job (optional - tokens have expiry)
+
+---
+
+#### 19.6 MCP OAuth Middleware
+
+**Goal:** Accept OAuth bearer tokens on `/mcp` endpoint.
+
+**Current (Phase 18):**
+
+```
+Authorization: Bearer kb_xxxxx  (API key)
+```
+
+**Phase 19 (additional):**
+
+```
+Authorization: Bearer kat_xxxxx  (OAuth access token)
+```
+
+**Detection Logic:**
+
+```typescript
+const authHeader = request.headers.authorization;
+const token = authHeader?.replace('Bearer ', '');
+
+if (token?.startsWith('kb_')) {
+  // API key auth (existing)
+  return validateApiKey(token);
+} else if (token?.startsWith('kat_')) {
+  // OAuth access token (new)
+  return validateOAuthToken(token);
+} else {
+  throw new UnauthorizedError('Invalid token format');
+}
+```
+
+**OAuth Token Validation:**
+
+1. Hash token with SHA-256
+2. Lookup in OAuthToken table
+3. Check not expired, not revoked
+4. Get associated user and scopes
+5. Return user context for tRPC caller
+
+**Deliverables 19.6:**
+
+- [x] Update `apps/api/src/routes/mcp.ts` auth middleware
+- [x] Add OAuth token validation (authenticateOAuthToken function)
+- [x] Support both API keys and OAuth tokens (unified authenticate function)
+- [ ] Add scope enforcement per tool (future enhancement - scopes stored but not enforced)
+- [x] Update rate limiting for OAuth tokens (separate rate limit keys: `mcp:key:` vs `mcp:oauth:`)
+
+---
+
+#### 19.7 Claude.ai Integration Testing
+
+**Goal:** Verify OAuth flow works with Claude.ai.
+
+**Test Checklist:**
+
+| Step | Test                         | Expected Result                                              |
+| ---- | ---------------------------- | ------------------------------------------------------------ |
+| 1    | Claude.ai discovers metadata | Fetches `/.well-known/oauth-protected-resource` successfully |
+| 2    | Claude.ai registers client   | Receives client_id via DCR                                   |
+| 3    | User authorizes              | Redirected to consent screen, can approve                    |
+| 4    | Token exchange               | Claude.ai receives access_token                              |
+| 5    | MCP tools work               | Claude.ai can list/call tools on `/mcp`                      |
+| 6    | Token refresh                | New access_token issued without re-auth                      |
+| 7    | Token revocation             | User can disconnect Claude.ai from profile                   |
+
+**Known Issue:** Claude.ai OAuth is reportedly broken since December 18, 2025 (GitHub Issue #5). Monitor for fixes.
+
+**Deliverables 19.7:**
+
+- [ ] Test with Claude.ai Custom Connector (blocked: OAuth reportedly broken since Dec 2025)
+- [x] Document any workarounds needed (API key authentication workaround documented)
+- [x] Add Claude.ai setup guide to docs (`docs/MCP/OAUTH-CONFIGURATION.md`)
+- [x] Add troubleshooting section (comprehensive troubleshooting with 7 error scenarios)
+
+---
+
+#### 19.8 ChatGPT Integration Testing
+
+**Goal:** Verify OAuth flow works with ChatGPT.
+
+**ChatGPT Differences:**
+
+- Uses OAuth 2.0 (not 2.1)
+- Requires static client credentials (no DCR)
+- State parameter is mandatory
+- Different redirect URI pattern
+
+**ChatGPT Configuration:**
+
+```
+Name: Kanbu
+Auth Type: OAuth
+Client ID: (static, from Kanbu admin)
+Client Secret: (static, from Kanbu admin)
+Authorization URL: https://app.kanbu.be/oauth/authorize
+Token URL: https://app.kanbu.be/oauth/token
+Scope: read write
+```
+
+**Static Client Creation:**
+Add admin tool to create ChatGPT client:
+
+```typescript
+// In admin settings
+{
+  clientId: "chatgpt_kanbu_prod",
+  clientSecret: "xxxxx",  // Hashed
+  clientName: "ChatGPT",
+  redirectUris: ["https://chat.openai.com/aip/plugin-xxxx/oauth/callback"],
+  tokenEndpointAuthMethod: "client_secret_basic"
+}
+```
+
+**Deliverables 19.8:**
+
+- [x] Create static client management in admin (`apps/api/src/trpc/procedures/oauthClient.ts`)
+- [ ] Test with ChatGPT Custom GPT (pending manual testing)
+- [x] Document ChatGPT setup process
+- [x] Add ChatGPT setup guide to docs (`docs/MCP/OAUTH-CONFIGURATION.md`)
+
+---
+
+#### 19.9 Multi-Instance Support
+
+**Goal:** Each Kanbu deployment operates independently with unique OAuth configuration.
+
+**Naming Convention:**
+
+```
+kanbu-prod      → app.kanbu.be
+kanbu-dev       → dev.kanbu.be
+kanbu-demo      → demo.kanbu.be
+kanbu-local     → localhost:3001
+kanbu-{custom}  → self-hosted instances
+```
+
+**Environment Variables:**
+
+```env
+# OAuth Configuration
+OAUTH_ISSUER=https://app.kanbu.be
+OAUTH_TOKEN_EXPIRY=3600
+OAUTH_REFRESH_TOKEN_EXPIRY=2592000
+
+# Claude.ai Integration
+OAUTH_ALLOW_ANONYMOUS_DCR=true
+OAUTH_ALLOWED_REDIRECT_PATTERNS=https://claude.ai/*,https://chat.openai.com/*
+
+# ChatGPT Static Client (optional)
+OAUTH_CHATGPT_CLIENT_ID=
+OAUTH_CHATGPT_CLIENT_SECRET=
+```
+
+**Deliverables 19.9:**
+
+- [x] Environment-based OAuth configuration (token.ts uses OAUTH_ACCESS_TOKEN_EXPIRY, OAUTH_REFRESH_TOKEN_EXPIRY)
+- [x] Issuer URL from `APP_URL` or dedicated `OAUTH_ISSUER` env var (metadata.ts, register.ts)
+- [x] Redirect URI pattern validation (`OAUTH_ALLOWED_REDIRECT_PATTERNS` in register.ts)
+- [x] Documentation for self-hosted setup (`docs/MCP/OAUTH-CONFIGURATION.md`)
+- [x] Updated `.env.example` with all OAuth variables
+
+---
+
+#### Phase 19 Summary
+
+| Sub-phase | Description                   | Dependencies |
+| --------- | ----------------------------- | ------------ |
+| 19.1      | OAuth Database Schema         | None         |
+| 19.2      | Metadata Endpoints            | 19.1         |
+| 19.3      | Dynamic Client Registration   | 19.1, 19.2   |
+| 19.4      | Authorization Endpoint        | 19.1, 19.3   |
+| 19.5      | Token Endpoint                | 19.1, 19.4   |
+| 19.6      | MCP OAuth Middleware          | 19.5         |
+| 19.7      | Claude.ai Integration Testing | 19.1-19.6    |
+| 19.8      | ChatGPT Integration Testing   | 19.1-19.6    |
+| 19.9      | Multi-Instance Support        | 19.1-19.6    |
+
+**Deliverables Phase 19:**
+
+- [x] OAuth 2.1 database schema (3 tables)
+- [x] RFC 8414 + RFC 9728 metadata endpoints
+- [x] RFC 7591 Dynamic Client Registration
+- [x] RFC 6749 + RFC 7636 authorization with PKCE
+- [x] Token endpoint with refresh and introspection
+- [x] MCP endpoint supporting OAuth tokens
+- [ ] Claude.ai integration verified (pending - Claude.ai OAuth reportedly broken since Dec 2025)
+- [ ] ChatGPT integration verified (pending)
+- [x] Multi-instance deployment support
+- [x] Self-hosted documentation
+
+---
+
 ## Priority Matrix
 
 | Item                 | Impact   | Effort | Priority |
@@ -1228,6 +1801,12 @@ MCP_RATE_LIMIT=100      # Requests per minute per API key
 
 | Date       | Change                                                                                                                                                                                         |
 | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-01-19 | **Phase 19.7 DOCS COMPLETE** - Claude.ai Integration: comprehensive setup guide, OAuth flow diagram, 7 troubleshooting scenarios, API key workaround for known OAuth issue (testing blocked)   |
+| 2026-01-19 | **Phase 19.8 DOCS COMPLETE** - ChatGPT Integration: tRPC admin procedures for static OAuth client management (oauthClient.ts), client_secret_basic/post support, ChatGPT setup documentation   |
+| 2026-01-19 | **Phase 19.9 COMPLETE** - Multi-Instance Support: environment-based token expiry, OAUTH_ISSUER configuration, redirect URI patterns, comprehensive documentation (OAUTH-CONFIGURATION.md)      |
+| 2026-01-19 | **Phase 19.6 COMPLETE** - MCP OAuth Middleware: unified authenticate() function supporting both `kb_` (API key) and `kat_` (OAuth token) prefixes, separate rate limiting per auth type        |
+| 2026-01-19 | **Phase 19.1-19.5 COMPLETE** - OAuth 2.1 infrastructure: database schema, metadata endpoints (RFC 8414/9728), DCR (RFC 7591), authorization with PKCE (RFC 6749/7636), token endpoint          |
+| 2026-01-19 | **Phase 19 ADDED** - OAuth 2.1 Authentication: 9 sub-phases for Claude.ai/ChatGPT integration, DCR, PKCE, metadata endpoints, multi-instance support                                           |
 | 2026-01-19 | **Phase 18 COMPLETE** - Remote MCP Endpoint v2.0: ALL 157 tools via HTTP `/mcp` endpoint, JSON-RPC 2.0 + SSE, API key auth, full feature parity with local MCP server                          |
 | 2026-01-16 | **Phase 17 ADDED** - Wiki Pages Management: 18 new tools planned (9 project wiki + 9 workspace wiki) for full CRUD, version control, hierarchical structure                                    |
 | 2026-01-09 | **Phase 16 COMPLETE** - Audit UI Updates: new category filters (PROJECT, TASK, SUBTASK, COMMENT), "Via Claude Code" badge in audit logs table, machine details in detail view, MCP-only filter |

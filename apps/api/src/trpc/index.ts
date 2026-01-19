@@ -144,6 +144,7 @@ import { workspaceAiProviderRouter } from './procedures/workspaceAiProvider';
 import { wikiAiRouter } from './procedures/wikiAi';
 import { contradictionAuditRouter } from './procedures/contradictionAudit';
 import { wikiCommunityRouter } from './procedures/wikiCommunity';
+import { oauthClientRouter } from './procedures/oauthClient';
 
 /**
  * Main app router
@@ -195,6 +196,7 @@ export const appRouter = router({
   wikiAi: wikiAiRouter,
   contradictionAudit: contradictionAuditRouter,
   wikiCommunity: wikiCommunityRouter,
+  oauthClient: oauthClientRouter,
 });
 
 /**

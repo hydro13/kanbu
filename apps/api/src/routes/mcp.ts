@@ -1,27 +1,31 @@
 /*
  * MCP Remote Endpoint
- * Version: 2.0.0
+ * Version: 2.1.0
  *
  * HTTP endpoint for Model Context Protocol (MCP) integration.
  * Enables Claude.ai and other MCP clients to connect directly to Kanbu.
  *
  * Protocol: JSON-RPC 2.0 over HTTP with SSE responses
- * Auth: API key (Bearer kb_xxx)
+ * Auth:
+ *   - API key (Bearer kb_xxx) - Phase 18
+ *   - OAuth 2.1 access token (Bearer kat_xxx) - Phase 19.6
  *
  * Tools: 154+ (all Kanbu MCP tools)
  *
  * ═══════════════════════════════════════════════════════════════════
  * AI Architect: Robin Waslander <R.Waslander@gmail.com>
- * Session: Phase 18 - Remote MCP Endpoint (Complete Implementation)
+ * Session: Phase 19.6 - OAuth Middleware for MCP
  * Claude Code: Opus 4.5
  * Date: 2026-01-19
  * ═══════════════════════════════════════════════════════════════════
  */
 
 import type { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { createHash } from 'crypto';
 import { prisma } from '../lib/prisma';
 import { hashApiKey } from '../trpc/procedures/apiKey';
-import { appRouter } from '../trpc';
+import { appRouter, type Context } from '../trpc';
+import type { AuthSource } from '../trpc/context';
 import { rateLimitService } from '../services/rateLimitService';
 import type { AppRole } from '@prisma/client';
 import { allToolDefinitions } from '../services/mcp/toolDefinitions';
@@ -49,6 +53,7 @@ interface JsonRpcResponse {
 }
 
 interface McpApiKeyContext {
+  authType: 'apiKey';
   userId: number;
   keyId: number;
   keyName: string;
@@ -61,28 +66,43 @@ interface McpApiKeyContext {
   };
 }
 
+interface McpOAuthContext {
+  authType: 'oauth';
+  userId: number;
+  tokenId: number;
+  clientId: string;
+  scope: string[];
+  rateLimit: number;
+  user: {
+    id: number;
+    email: string;
+    username: string;
+    role: AppRole;
+  };
+}
+
+type McpAuthContext = McpApiKeyContext | McpOAuthContext;
+
 // MCP Protocol version
 const MCP_PROTOCOL_VERSION = '2024-11-05';
 const SERVER_NAME = 'kanbu';
 const SERVER_VERSION = '0.1.0';
 
 // =============================================================================
-// API Key Authentication
+// Authentication Functions
 // =============================================================================
 
-async function authenticateApiKey(request: FastifyRequest): Promise<McpApiKeyContext | null> {
-  const authHeader = request.headers.authorization;
+/**
+ * Hash OAuth token using SHA-256 (same as token.ts)
+ */
+function hashOAuthToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex');
+}
 
-  if (!authHeader?.startsWith('Bearer ')) {
-    return null;
-  }
-
-  const key = authHeader.substring(7);
-
-  if (!key.startsWith('kb_')) {
-    return null;
-  }
-
+/**
+ * Authenticate via API key (kb_ prefix)
+ */
+async function authenticateApiKey(key: string): Promise<McpApiKeyContext | null> {
   const keyHash = hashApiKey(key);
 
   const apiKey = await prisma.apiKey.findFirst({
@@ -115,6 +135,7 @@ async function authenticateApiKey(request: FastifyRequest): Promise<McpApiKeyCon
     });
 
   return {
+    authType: 'apiKey',
     userId: apiKey.userId,
     keyId: apiKey.id,
     keyName: apiKey.name,
@@ -128,6 +149,96 @@ async function authenticateApiKey(request: FastifyRequest): Promise<McpApiKeyCon
   };
 }
 
+/**
+ * Authenticate via OAuth 2.1 access token (kat_ prefix)
+ */
+async function authenticateOAuthToken(token: string): Promise<McpOAuthContext | null> {
+  const tokenHash = hashOAuthToken(token);
+
+  const oauthToken = await prisma.oAuthToken.findUnique({
+    where: { tokenHash },
+    include: {
+      client: { select: { clientId: true } },
+      user: { select: { id: true, email: true, username: true, role: true, isActive: true } },
+    },
+  });
+
+  // Token not found or not an access token
+  if (!oauthToken || oauthToken.tokenType !== 'access') {
+    return null;
+  }
+
+  // Token revoked
+  if (oauthToken.revokedAt) {
+    return null;
+  }
+
+  // Token expired
+  if (oauthToken.expiresAt < new Date()) {
+    return null;
+  }
+
+  // User inactive
+  if (!oauthToken.user.isActive) {
+    return null;
+  }
+
+  // Update last used timestamp (fire and forget)
+  prisma.oAuthToken
+    .update({
+      where: { id: oauthToken.id },
+      data: { lastUsedAt: new Date() },
+    })
+    .catch(() => {
+      // Ignore errors
+    });
+
+  // Parse scope string into array
+  const scope = oauthToken.scope?.split(' ').filter(Boolean) || ['read'];
+
+  return {
+    authType: 'oauth',
+    userId: oauthToken.userId,
+    tokenId: oauthToken.id,
+    clientId: oauthToken.client.clientId,
+    scope,
+    rateLimit: 100, // Default rate limit for OAuth tokens
+    user: {
+      id: oauthToken.user.id,
+      email: oauthToken.user.email,
+      username: oauthToken.user.username,
+      role: oauthToken.user.role,
+    },
+  };
+}
+
+/**
+ * Authenticate request using API key or OAuth token
+ * Detects token type by prefix:
+ *   - kb_  -> API key
+ *   - kat_ -> OAuth access token
+ */
+async function authenticate(request: FastifyRequest): Promise<McpAuthContext | null> {
+  const authHeader = request.headers.authorization;
+
+  if (!authHeader?.startsWith('Bearer ')) {
+    return null;
+  }
+
+  const token = authHeader.substring(7);
+
+  if (token.startsWith('kb_')) {
+    // API key authentication
+    return authenticateApiKey(token);
+  } else if (token.startsWith('kat_')) {
+    // OAuth access token authentication
+    return authenticateOAuthToken(token);
+  }
+
+  // Unknown token format
+  return null;
+}
+
 // =============================================================================
 // Tool Execution
 // =============================================================================
@@ -138,10 +249,11 @@ async function authenticateApiKey(request: FastifyRequest): Promise<McpApiKeyCon
 async function executeToolCall(
   toolName: string,
   args: Record<string, unknown>,
-  context: McpApiKeyContext
+  context: McpAuthContext
 ): Promise<{ content: Array<{ type: string; text: string }>; isError?: boolean }> {
   // Create a tRPC caller with the user context
-  const caller = appRouter.createCaller({
+  // Context differs based on auth type (API key vs OAuth)
+  const callerContext = {
     req: {} as FastifyRequest,
     res: {} as FastifyReply,
     prisma,
@@ -151,20 +263,35 @@ async function executeToolCall(
       username: context.user.username,
       role: context.user.role,
     },
-    apiKeyContext: {
-      userId: context.userId,
-      keyId: context.keyId,
-      keyName: context.keyName,
-      scope: 'USER',
-      workspaceId: null,
-      projectId: null,
-      isServiceAccount: false,
-      serviceAccountName: null,
-      rateLimit: context.rateLimit,
-    },
-    authSource: 'apiKey',
+    // API key context is only set for API key auth
+    apiKeyContext:
+      context.authType === 'apiKey'
+        ? {
+            userId: context.userId,
+            keyId: context.keyId,
+            keyName: context.keyName,
+            scope: 'USER' as const,
+            workspaceId: null,
+            projectId: null,
+            isServiceAccount: false,
+            serviceAccountName: null,
+            rateLimit: context.rateLimit,
+          }
+        : null,
+    // OAuth context is set for OAuth auth
+    oauthContext:
+      context.authType === 'oauth'
+        ? {
+            userId: context.userId,
+            tokenId: context.tokenId,
+            clientId: context.clientId,
+            scope: context.scope,
+          }
+        : null,
+    authSource: (context.authType === 'apiKey' ? 'apiKey' : 'oauth') as AuthSource,
     assistantContext: null,
-  });
+  } as Context;
+  const caller = appRouter.createCaller(callerContext);
 
   try {
     // Route tool calls to tRPC procedures
@@ -1210,7 +1337,7 @@ function formatToolResult(result: unknown): string {
 
 async function handleMcpRequest(
   request: JsonRpcRequest,
-  context: McpApiKeyContext
+  context: McpAuthContext
 ): Promise<JsonRpcResponse> {
   const { method, params, id } = request;
 
@@ -1294,18 +1421,23 @@ export async function registerMcpRoutes(fastify: FastifyInstance) {
 
   // MCP endpoint - POST /mcp
   fastify.post('/mcp', async (request: FastifyRequest, reply: FastifyReply) => {
-    // Authenticate
-    const context = await authenticateApiKey(request);
+    // Authenticate (supports both API key and OAuth token)
+    const context = await authenticate(request);
     if (!context) {
       return reply.status(401).send({
         jsonrpc: '2.0',
-        error: { code: -32000, message: 'Unauthorized. Use Authorization: Bearer kb_xxx' },
+        error: {
+          code: -32000,
+          message:
+            'Unauthorized. Use Authorization: Bearer kb_xxx (API key) or Bearer kat_xxx (OAuth token)',
+        },
         id: null,
       });
     }
 
-    // Rate limit
-    const rateLimitKey = `mcp:${context.keyId}`;
+    // Rate limit - use different key prefix for API key vs OAuth
+    const rateLimitKey =
+      context.authType === 'apiKey' ? `mcp:key:${context.keyId}` : `mcp:oauth:${context.tokenId}`;
     const rateLimit = process.env.MCP_RATE_LIMIT
       ? parseInt(process.env.MCP_RATE_LIMIT, 10)
       : context.rateLimit;
