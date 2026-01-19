@@ -1640,6 +1640,19 @@ Add admin tool to create ChatGPT client:
 **Deliverables 19.8:**
 
 - [x] Create static client management in admin (`apps/api/src/trpc/procedures/oauthClient.ts`)
+- [x] Create Admin UI for OAuth client management (`apps/web/src/pages/admin/McpServicesPage.tsx`)
+  - Create, edit, deactivate OAuth clients
+  - View client credentials (client ID, secret)
+  - Manage redirect URIs, grant types, scopes
+  - Support for both public (Claude.ai) and confidential (ChatGPT) clients
+- [x] Create user OAuth token management procedures (`apps/api/src/trpc/procedures/userOAuth.ts`)
+  - `userOAuth.listMyTokens` - List own OAuth tokens
+  - `userOAuth.getConnectionsSummary` - Summary of connected services
+  - `userOAuth.revokeToken` - Revoke specific token
+  - `userOAuth.revokeAllForClient` - Disconnect entire service
+- [x] Extend Profile AI Assistant page with Remote AI Integrations (`apps/web/src/pages/profile/AiAssistant.tsx`)
+  - Show connected Claude.ai/ChatGPT services
+  - Disconnect functionality per service
 - [ ] Test with ChatGPT Custom GPT (pending manual testing)
 - [x] Document ChatGPT setup process
 - [x] Add ChatGPT setup guide to docs (`docs/MCP/OAUTH-CONFIGURATION.md`)
@@ -1799,32 +1812,33 @@ OAUTH_CHATGPT_CLIENT_SECRET=
 
 ## Changelog
 
-| Date       | Change                                                                                                                                                                                         |
-| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-01-19 | **Phase 19.7 DOCS COMPLETE** - Claude.ai Integration: comprehensive setup guide, OAuth flow diagram, 7 troubleshooting scenarios, API key workaround for known OAuth issue (testing blocked)   |
-| 2026-01-19 | **Phase 19.8 DOCS COMPLETE** - ChatGPT Integration: tRPC admin procedures for static OAuth client management (oauthClient.ts), client_secret_basic/post support, ChatGPT setup documentation   |
-| 2026-01-19 | **Phase 19.9 COMPLETE** - Multi-Instance Support: environment-based token expiry, OAUTH_ISSUER configuration, redirect URI patterns, comprehensive documentation (OAUTH-CONFIGURATION.md)      |
-| 2026-01-19 | **Phase 19.6 COMPLETE** - MCP OAuth Middleware: unified authenticate() function supporting both `kb_` (API key) and `kat_` (OAuth token) prefixes, separate rate limiting per auth type        |
-| 2026-01-19 | **Phase 19.1-19.5 COMPLETE** - OAuth 2.1 infrastructure: database schema, metadata endpoints (RFC 8414/9728), DCR (RFC 7591), authorization with PKCE (RFC 6749/7636), token endpoint          |
-| 2026-01-19 | **Phase 19 ADDED** - OAuth 2.1 Authentication: 9 sub-phases for Claude.ai/ChatGPT integration, DCR, PKCE, metadata endpoints, multi-instance support                                           |
-| 2026-01-19 | **Phase 18 COMPLETE** - Remote MCP Endpoint v2.0: ALL 157 tools via HTTP `/mcp` endpoint, JSON-RPC 2.0 + SSE, API key auth, full feature parity with local MCP server                          |
-| 2026-01-16 | **Phase 17 ADDED** - Wiki Pages Management: 18 new tools planned (9 project wiki + 9 workspace wiki) for full CRUD, version control, hierarchical structure                                    |
-| 2026-01-09 | **Phase 16 COMPLETE** - Audit UI Updates: new category filters (PROJECT, TASK, SUBTASK, COMMENT), "Via Claude Code" badge in audit logs table, machine details in detail view, MCP-only filter |
-| 2026-01-09 | **Phase 13-15 COMPLETE** - MCP Audit Logging: infrastructure, task logging, subtask/comment logging - all MCP actions are now logged with `via: assistant` metadata                            |
-| 2026-01-09 | **Phase 13-16 ADDED** - MCP Audit Logging roadmap: infrastructure, task/project/subtask/comment logging, UI updates                                                                            |
-| 2026-01-09 | **Phase 12 COMPLETE** - 36 tools for profile management (info, 2FA, notifications, API tokens, sessions, hourly rate)                                                                          |
-| 2026-01-09 | **ALL 12 PHASES COMPLETE!** - 131 MCP tools implemented across 12 phases                                                                                                                       |
-| 2026-01-09 | **Phase 11 COMPLETE** - 12 tools for system settings & backup (settings, backup, admin workspaces)                                                                                             |
-| 2026-01-09 | **Phase 10 COMPLETE** - 5 tools for audit logs (list, get, stats, export, categories)                                                                                                          |
-| 2026-01-09 | **Phase 9 COMPLETE** - 5 tools for invite management (list, get, send, cancel, resend)                                                                                                         |
-| 2026-01-09 | **Phase 8 COMPLETE** - 20 tools for ACL management (query, grant, deny, bulk, export, import, simulate)                                                                                        |
-| 2026-01-09 | **Phase 7 COMPLETE** - 10 tools for groups management (list, create, members, etc.)                                                                                                            |
-| 2026-01-09 | **Phase 6 COMPLETE** - 11 tools for user management (list, create, update, delete, etc.)                                                                                                       |
-| 2026-01-09 | **ROADMAP UPDATE** - Phases 6-11 added (61 new tools planned, total 93)                                                                                                                        |
-| 2026-01-09 | **Phase 5 COMPLETE** - 4 tools for analytics and insights                                                                                                                                      |
-| 2026-01-09 | **Phase 4 COMPLETE** - 5 tools for search and activity queries                                                                                                                                 |
-| 2026-01-09 | **Phase 3 COMPLETE** - 9 tools for subtask and comment management                                                                                                                              |
-| 2026-01-09 | **Phase 2 COMPLETE** - 11 core tools for workspace/project/task management                                                                                                                     |
-| 2026-01-09 | **Phase 1 COMPLETE** - MCP server with pairing tools working                                                                                                                                   |
-| 2026-01-09 | Roadmap rewritten for one-time setup code pairing                                                                                                                                              |
-| 2026-01-09 | Initial roadmap created                                                                                                                                                                        |
+| Date       | Change                                                                                                                                                                                          |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-01-19 | **Phase 19.8 UI COMPLETE** - OAuth Client Admin UI: McpServicesPage for admin client management, userOAuth procedures for user token management, AiAssistant.tsx Remote AI Integrations section |
+| 2026-01-19 | **Phase 19.7 DOCS COMPLETE** - Claude.ai Integration: comprehensive setup guide, OAuth flow diagram, 7 troubleshooting scenarios, API key workaround for known OAuth issue (testing blocked)    |
+| 2026-01-19 | **Phase 19.8 DOCS COMPLETE** - ChatGPT Integration: tRPC admin procedures for static OAuth client management (oauthClient.ts), client_secret_basic/post support, ChatGPT setup documentation    |
+| 2026-01-19 | **Phase 19.9 COMPLETE** - Multi-Instance Support: environment-based token expiry, OAUTH_ISSUER configuration, redirect URI patterns, comprehensive documentation (OAUTH-CONFIGURATION.md)       |
+| 2026-01-19 | **Phase 19.6 COMPLETE** - MCP OAuth Middleware: unified authenticate() function supporting both `kb_` (API key) and `kat_` (OAuth token) prefixes, separate rate limiting per auth type         |
+| 2026-01-19 | **Phase 19.1-19.5 COMPLETE** - OAuth 2.1 infrastructure: database schema, metadata endpoints (RFC 8414/9728), DCR (RFC 7591), authorization with PKCE (RFC 6749/7636), token endpoint           |
+| 2026-01-19 | **Phase 19 ADDED** - OAuth 2.1 Authentication: 9 sub-phases for Claude.ai/ChatGPT integration, DCR, PKCE, metadata endpoints, multi-instance support                                            |
+| 2026-01-19 | **Phase 18 COMPLETE** - Remote MCP Endpoint v2.0: ALL 157 tools via HTTP `/mcp` endpoint, JSON-RPC 2.0 + SSE, API key auth, full feature parity with local MCP server                           |
+| 2026-01-16 | **Phase 17 ADDED** - Wiki Pages Management: 18 new tools planned (9 project wiki + 9 workspace wiki) for full CRUD, version control, hierarchical structure                                     |
+| 2026-01-09 | **Phase 16 COMPLETE** - Audit UI Updates: new category filters (PROJECT, TASK, SUBTASK, COMMENT), "Via Claude Code" badge in audit logs table, machine details in detail view, MCP-only filter  |
+| 2026-01-09 | **Phase 13-15 COMPLETE** - MCP Audit Logging: infrastructure, task logging, subtask/comment logging - all MCP actions are now logged with `via: assistant` metadata                             |
+| 2026-01-09 | **Phase 13-16 ADDED** - MCP Audit Logging roadmap: infrastructure, task/project/subtask/comment logging, UI updates                                                                             |
+| 2026-01-09 | **Phase 12 COMPLETE** - 36 tools for profile management (info, 2FA, notifications, API tokens, sessions, hourly rate)                                                                           |
+| 2026-01-09 | **ALL 12 PHASES COMPLETE!** - 131 MCP tools implemented across 12 phases                                                                                                                        |
+| 2026-01-09 | **Phase 11 COMPLETE** - 12 tools for system settings & backup (settings, backup, admin workspaces)                                                                                              |
+| 2026-01-09 | **Phase 10 COMPLETE** - 5 tools for audit logs (list, get, stats, export, categories)                                                                                                           |
+| 2026-01-09 | **Phase 9 COMPLETE** - 5 tools for invite management (list, get, send, cancel, resend)                                                                                                          |
+| 2026-01-09 | **Phase 8 COMPLETE** - 20 tools for ACL management (query, grant, deny, bulk, export, import, simulate)                                                                                         |
+| 2026-01-09 | **Phase 7 COMPLETE** - 10 tools for groups management (list, create, members, etc.)                                                                                                             |
+| 2026-01-09 | **Phase 6 COMPLETE** - 11 tools for user management (list, create, update, delete, etc.)                                                                                                        |
+| 2026-01-09 | **ROADMAP UPDATE** - Phases 6-11 added (61 new tools planned, total 93)                                                                                                                         |
+| 2026-01-09 | **Phase 5 COMPLETE** - 4 tools for analytics and insights                                                                                                                                       |
+| 2026-01-09 | **Phase 4 COMPLETE** - 5 tools for search and activity queries                                                                                                                                  |
+| 2026-01-09 | **Phase 3 COMPLETE** - 9 tools for subtask and comment management                                                                                                                               |
+| 2026-01-09 | **Phase 2 COMPLETE** - 11 core tools for workspace/project/task management                                                                                                                      |
+| 2026-01-09 | **Phase 1 COMPLETE** - MCP server with pairing tools working                                                                                                                                    |
+| 2026-01-09 | Roadmap rewritten for one-time setup code pairing                                                                                                                                               |
+| 2026-01-09 | Initial roadmap created                                                                                                                                                                         |

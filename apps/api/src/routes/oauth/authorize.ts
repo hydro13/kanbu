@@ -103,6 +103,80 @@ interface ClientInfoResponse {
  */
 export async function registerOAuthAuthorizeRoutes(server: FastifyInstance): Promise<void> {
   /**
+   * GET /oauth/authorize - Redirect to frontend consent screen
+   *
+   * This is the entry point for OAuth clients (Claude.ai, ChatGPT).
+   * It redirects to the frontend's consent page which handles:
+   * - Checking if user is authenticated (redirects to login if not)
+   * - Showing consent screen
+   * - Calling POST /oauth/authorize after user approval
+   */
+  server.get<{
+    Querystring: {
+      client_id?: string;
+      redirect_uri?: string;
+      response_type?: string;
+      state?: string;
+      code_challenge?: string;
+      code_challenge_method?: string;
+      scope?: string;
+      resource?: string;
+    };
+    Reply: ErrorResponse;
+  }>('/oauth/authorize', async (request, reply) => {
+    const {
+      client_id,
+      redirect_uri,
+      response_type,
+      state,
+      code_challenge,
+      code_challenge_method,
+      scope,
+    } = request.query;
+
+    // Basic validation
+    if (!client_id) {
+      return reply.status(400).send({
+        error: 'invalid_request',
+        error_description: 'client_id is required',
+      });
+    }
+
+    // Verify client exists
+    const client = await prisma.oAuthClient.findUnique({
+      where: { clientId: client_id },
+    });
+
+    if (!client || !client.isActive) {
+      return reply.status(400).send({
+        error: 'invalid_client',
+        error_description: 'Client not found or inactive',
+      });
+    }
+
+    // Build redirect URL to frontend consent page
+    // Frontend is on the same domain, just different port in dev or same in prod
+    const appUrl = process.env.APP_URL || 'https://dev.kanbu.be';
+    const frontendUrl = new URL('/oauth/authorize', appUrl);
+
+    // Pass all query parameters to the frontend
+    if (client_id) frontendUrl.searchParams.set('client_id', client_id);
+    if (redirect_uri) frontendUrl.searchParams.set('redirect_uri', redirect_uri);
+    if (response_type) frontendUrl.searchParams.set('response_type', response_type);
+    if (state) frontendUrl.searchParams.set('state', state);
+    if (code_challenge) frontendUrl.searchParams.set('code_challenge', code_challenge);
+    if (code_challenge_method)
+      frontendUrl.searchParams.set('code_challenge_method', code_challenge_method);
+    if (scope) frontendUrl.searchParams.set('scope', scope);
+
+    server.log.info(
+      `[OAuth] Redirecting to consent screen for client ${client_id} -> ${frontendUrl.toString()}`
+    );
+
+    return reply.redirect(frontendUrl.toString());
+  });
+
+  /**
    * GET /oauth/authorize/client - Get client info for consent screen
    *
    * Called by frontend to get client details before showing consent screen.
