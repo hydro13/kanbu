@@ -258,6 +258,15 @@ export async function registerOAuthTokenRoutes(server: FastifyInstance): Promise
     }
   );
 
+  // Add content type parser for application/octet-stream (ChatGPT sends this)
+  server.addContentTypeParser(
+    'application/octet-stream',
+    { parseAs: 'string' },
+    (_req, body, done) => {
+      done(null, body);
+    }
+  );
+
   /**
    * POST /oauth/token - Token exchange endpoint
    *
@@ -281,7 +290,11 @@ export async function registerOAuthTokenRoutes(server: FastifyInstance): Promise
       const contentType = request.headers['content-type'] || '';
       let params: Record<string, string>;
 
-      if (contentType.includes('application/x-www-form-urlencoded')) {
+      if (
+        contentType.includes('application/x-www-form-urlencoded') ||
+        contentType.includes('application/octet-stream')
+      ) {
+        // ChatGPT may send application/octet-stream but with form-urlencoded data
         params = parseFormData(request.body as string);
       } else if (contentType.includes('application/json')) {
         params = request.body as unknown as Record<string, string>;
