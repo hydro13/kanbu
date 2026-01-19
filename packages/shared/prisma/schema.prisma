@@ -1817,6 +1817,7 @@ model OAuthClient {
   clientName              String                   @map("client_name") @db.VarChar(255)
   clientUri               String?                  @map("client_uri") @db.VarChar(2048)
   logoUri                 String?                  @map("logo_uri") @db.VarChar(2048)
+  contacts                String[]                 @default([])
   redirectUris            String[]                 @map("redirect_uris")
   grantTypes              String[]                 @default(["authorization_code", "refresh_token"]) @map("grant_types")
   responseTypes           String[]                 @default(["code"]) @map("response_types")

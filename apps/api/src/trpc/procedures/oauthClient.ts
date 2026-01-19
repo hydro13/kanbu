@@ -247,7 +247,7 @@ export const oauthClientRouter = router({
       },
     });
 
-    ctx.log.info(
+    ctx.req.log.info(
       `[OAuth] Client created: ${client.clientName} (${client.clientId}) by user ${ctx.user!.id}`
     );
 
@@ -295,7 +295,7 @@ export const oauthClientRouter = router({
       },
     });
 
-    ctx.log.info(`[OAuth] Client updated: ${client.clientName} by user ${ctx.user!.id}`);
+    ctx.req.log.info(`[OAuth] Client updated: ${client.clientName} by user ${ctx.user!.id}`);
 
     return client;
   }),
@@ -336,7 +336,7 @@ export const oauthClientRouter = router({
         data: { clientSecretHash },
       });
 
-      ctx.log.info(
+      ctx.req.log.info(
         `[OAuth] Client secret regenerated: ${existing.clientName} by user ${ctx.user!.id}`
       );
 
@@ -381,7 +381,7 @@ export const oauthClientRouter = router({
         }),
       ]);
 
-      ctx.log.info(`[OAuth] Client deactivated: ${client.clientName} by user ${ctx.user!.id}`);
+      ctx.req.log.info(`[OAuth] Client deactivated: ${client.clientName} by user ${ctx.user!.id}`);
 
       return { success: true, message: 'Client deactivated and all tokens revoked' };
     }),
@@ -408,7 +408,7 @@ export const oauthClientRouter = router({
         data: { isActive: true },
       });
 
-      ctx.log.info(`[OAuth] Client reactivated: ${client.clientName} by user ${ctx.user!.id}`);
+      ctx.req.log.info(`[OAuth] Client reactivated: ${client.clientName} by user ${ctx.user!.id}`);
 
       return { success: true, message: 'Client reactivated' };
     }),
@@ -438,7 +438,7 @@ export const oauthClientRouter = router({
         data: { revokedAt: new Date() },
       });
 
-      ctx.log.info(
+      ctx.req.log.info(
         `[OAuth] Revoked ${result.count} tokens for client ${client.clientName} by user ${ctx.user!.id}`
       );
 
@@ -479,7 +479,7 @@ export const oauthClientRouter = router({
       }),
     ]);
 
-    ctx.log.info(
+    ctx.req.log.info(
       `[OAuth] Client permanently deleted: ${client.clientName} by user ${ctx.user!.id}`
     );
 
