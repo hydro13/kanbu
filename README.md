@@ -3,6 +3,7 @@
 **Self-hosted project management for people who work with AI agents.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![CI](https://github.com/hydro13/kanbu/actions/workflows/ci.yml/badge.svg)](https://github.com/hydro13/kanbu/actions/workflows/ci.yml)
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/hydro13/kanbu?label=version&color=brightgreen)](https://github.com/hydro13/kanbu/releases)
 [![GitHub last commit](https://img.shields.io/github/last-commit/hydro13/kanbu)](https://github.com/hydro13/kanbu/commits)
 [![GitHub issues](https://img.shields.io/github/issues/hydro13/kanbu)](https://github.com/hydro13/kanbu/issues)
@@ -13,11 +14,13 @@
 
 ---
 
-## Built for OpenClaw users
+## Built for people who work with AI agents
 
 I built Kanbu because I use [OpenClaw](https://github.com/OpenClaw-AI/openclaw) every day. My projects regularly cross 300,000 lines of code — and at that scale, you need somewhere to track what your agents are doing, what's been decided, and what comes next. No tool did that. So I built one.
 
 Kanbu connects directly to your local OpenClaw gateway. Dispatch any task to an agent from the task view, read its response, steer it with follow-up instructions, and let it update the board as it works. Your task list becomes the shared memory between you and your agents.
+
+Works with any MCP-compatible agent — OpenClaw, Claude Code, Cursor, or any tool that speaks MCP.
 
 It's MIT. It's self-hosted. It's here because I needed it, and maybe you do too.
 
@@ -84,16 +87,22 @@ Kanbu implements a permission system inspired by filesystem ACLs (think Windows 
 
 ### 🧠 Built-in Knowledge Graph Engine
 
-Kanbu includes a complete wiki intelligence system, built in **TypeScript** (33,000+ lines), using [Graphiti](https://github.com/getzep/graphiti) as the underlying graph database layer (Python/FalkorDB).
+Kanbu includes a wiki intelligence system built in **TypeScript** (33,000+ lines).
 
-- **No external dependencies**: Runs entirely on your own hardware. No third-party graph service required.
-- **Semantic search**: Find knowledge across your entire wiki using vector embeddings.
+The **base wiki** runs without any extra services and includes:
+
+- **BM25 full-text search**: Fast keyword search across all wiki pages
+- **Contradiction detection**: Automatically flags conflicting information across your documentation
+- **Community clustering**: Groups related knowledge using label propagation (own algorithm)
+- **Version history**: Up to 20 versions per page, with restore
+
+The **full graph engine** (optional, requires Python/FalkorDB via `docker-compose.openclaw.yml`) adds:
+
+- **Semantic search**: Find knowledge using vector embeddings, not just keywords
 - **Temporal queries**: Ask "What did we know about this feature last month?"
-- **Contradiction detection**: Automatically flags conflicting information across your documentation.
-- **Duplicate deduplication**: Detects and merges overlapping knowledge nodes across pages.
-- **Community clustering**: Groups related knowledge using label propagation (own algorithm).
-- **RAG**: Retrieval-Augmented Generation — AI answers grounded in your actual wiki content.
-- **D3.js graph visualization**: Interactive visual map of your knowledge graph, live in the browser.
+- **Duplicate deduplication**: Detects and merges overlapping knowledge nodes across pages
+- **RAG**: Retrieval-Augmented Generation — AI answers grounded in your actual wiki content
+- **D3.js graph visualization**: Interactive visual map of your knowledge graph, live in the browser
 
 <img width="3046" height="1760" alt="Kanbu Knowledge Graph" src="https://github.com/user-attachments/assets/71ba30d0-ed18-436f-95b8-e0e8a6b90bed" />
 
@@ -171,15 +180,15 @@ Complete backup solution with strong encryption:
 
 ## Tech Stack
 
-| Layer      | Technology                                            |
-| ---------- | ----------------------------------------------------- |
-| Frontend   | React 18, TypeScript, Vite, Tailwind CSS, Shadcn/ui   |
-| State      | Redux Toolkit, TanStack Query                         |
-| Backend    | Node.js 22, Fastify, tRPC v10, Socket.io              |
-| Database   | PostgreSQL 15, Prisma ORM                             |
-| AI / Graph | Kanbu Graphiti (Python/FastAPI), FalkorDB (Graph DB)  |
-| Agent      | OpenClaw gateway (optional), `@kanbu/openclaw-bridge` |
-| Monorepo   | pnpm workspaces, Turborepo                            |
+| Layer            | Technology                                                      |
+| ---------------- | --------------------------------------------------------------- |
+| Frontend         | React 19, TypeScript, Vite, Tailwind CSS, Shadcn/ui             |
+| State            | Redux Toolkit, TanStack Query                                   |
+| Backend          | Node.js 22, Fastify, tRPC 11, Socket.io                         |
+| Database         | PostgreSQL 15, Prisma ORM                                       |
+| Graph (optional) | Kanbu Graphiti (Python/FastAPI), FalkorDB — semantic search/RAG |
+| Agent (optional) | OpenClaw gateway, `@kanbu/openclaw-bridge`                      |
+| Monorepo         | pnpm workspaces, Turborepo                                      |
 
 ---
 
