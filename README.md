@@ -29,15 +29,15 @@ Most project management tools are either **too simple** (Trello) or **too comple
 
 Kanbu is different:
 
-| Problem                                                      | Kanbu Solution                                                       |
-| ------------------------------------------------------------ | -------------------------------------------------------------------- |
-| "I need enterprise permissions but Trello doesn't have them" | **NTFS-style ACL** with inheritance, deny rules, and security groups |
-| "I want AI to help but it can't access my tasks"             | **154 MCP tools** - Claude Code works directly in your board         |
-| "I want to dispatch tasks to AI agents and see what they do" | **OpenClaw agent dispatch** — one click, agent runs, response logged |
-| "GitHub issues and my PM tool are never in sync"             | **Bi-directional GitHub sync** with webhook integration              |
-| "I want to self-host but lose features"                      | Community edition has MORE features than most paid tools             |
-| "My backups are not secure or automated"                     | **Enterprise backup system** with AES-256 encryption & scheduling    |
-| "My team speaks different languages"                         | Each user talks to their own AI assistant in their own language      |
+| Problem                                                        | Kanbu Solution                                                       |
+| -------------------------------------------------------------- | -------------------------------------------------------------------- |
+| "I need fine-grained permissions but Trello doesn't have them" | **Scoped ACL** with inheritance, deny rules, and security groups     |
+| "I want AI to help but it can't access my tasks"               | **154 MCP tools** - Claude Code works directly in your board         |
+| "I want to dispatch tasks to AI agents and see what they do"   | **OpenClaw agent dispatch** — one click, agent runs, response logged |
+| "GitHub issues and my PM tool are never in sync"               | **Bi-directional GitHub sync** with webhook integration              |
+| "I want to self-host but lose features"                        | Community edition has MORE features than most paid tools             |
+| "My backups are not secure or automated"                       | **Automated backups** with AES-256-GCM encryption & scheduling       |
+| "My team speaks different languages"                           | Each user talks to their own AI assistant in their own language      |
 
 ---
 
@@ -53,9 +53,9 @@ Kanbu is different:
 
 <img width="2300" height="1407" alt="Kanbu Timeline" src="https://github.com/user-attachments/assets/c301f168-2e77-4b44-9c3a-45c4a38f2167" />
 
-### 🔐 Enterprise Security (NTFS-Style ACL)
+### 🔐 Permissions & Access Control
 
-Kanbu implements a robust permission system inspired by Windows (NTFS) and Active Directory.
+Kanbu implements a permission system inspired by filesystem ACLs (think Windows NTFS / Active Directory, but for a web app).
 
 - **Granular permissions**: Bitmask-based control (Read, Write, Execute, Delete, Permissions).
 - **Inheritance**: Workspace → Project → Task permissions flow down automatically.
@@ -154,9 +154,9 @@ Requires a GitHub App installed on your account or organization. **[Setup guide 
 
 <img width="2300" height="1407" alt="GitHub Integration" src="https://github.com/user-attachments/assets/154b6f4f-d23f-4dcf-88db-6b374b168b4c" />
 
-### 💾 Enterprise Backup System
+### 💾 Backup System
 
-Complete backup solution with enterprise-grade security:
+Complete backup solution with strong encryption:
 
 - **AES-256-GCM encryption** at rest (optional, via `BACKUP_ENCRYPTION_KEY`)
 - **SHA-256 checksum verification** to detect tampering or corruption

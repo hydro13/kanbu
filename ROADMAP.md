@@ -4,7 +4,7 @@
 **Latest stable:** 0.1.0-beta.5 (released February 22, 2026)
 **License:** MIT
 
-Kanbu is a self-hosted, open-source project management system with enterprise-grade permissions (NTFS-style ACL), AI agent dispatch (OpenClaw), MCP integration (154+ tools), GitHub sync, knowledge graph (Graphiti), wiki with semantic search, real-time collaboration, and analytics. Built as a monorepo with React, Fastify/tRPC, PostgreSQL, and Docker.
+Kanbu is a self-hosted, open-source project management system with scoped permissions (filesystem-style ACL), AI agent dispatch (OpenClaw), MCP integration (154+ tools), GitHub sync, knowledge graph (Graphiti), wiki with semantic search, real-time collaboration, and analytics. Built as a monorepo with React, Fastify/tRPC, PostgreSQL, and Docker.
 
 ---
 
@@ -154,7 +154,7 @@ The database schema (`Budget`, `BudgetLine`) is already in place. Needs:
 - 💭 Public API documentation (OpenAPI/Swagger)
 - 💭 API versioning
 
-### 4.2 Enterprise
+### 4.2 Advanced Features
 
 - 💭 SSO/SAML integration
 - 💭 Custom domain support
@@ -200,7 +200,7 @@ The database schema (`Budget`, `BudgetLine`) is already in place. Needs:
 
 **Permissions & Access**
 
-- NTFS-style ACL (bitmask: R=1, W=2, X=4, D=8, P=16)
+- Filesystem-style ACL (bitmask: R=1, W=2, X=4, D=8, P=16)
 - Groups and role assignments
 - Project groups
 - Bootstrap admin, registration control
@@ -230,7 +230,7 @@ The database schema (`Budget`, `BudgetLine`) is already in place. Needs:
 - In-app notifications
 - Sticky notes (6 colors, linkable to tasks, wikis, sprints, project groups)
 - Webhooks with delivery history and test endpoint
-- Enterprise backup (AES-256-GCM, SHA-256, scheduling, restore wizard)
+- Automated backup (AES-256-GCM, SHA-256, scheduling, restore wizard)
 - Docker deployment (self-hosted, Coolify)
 - Pre-commit hooks (Husky + lint-staged)
 - CI/CD pipeline (GitHub Actions: lint, typecheck, build)
