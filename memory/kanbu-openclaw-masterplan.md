@@ -336,10 +336,15 @@ model AgentRun {
 }
 ```
 
-### 🔄 Stap 3 — Docker compose uitbreiden (VOLGENDE)
+### ✅ Stap 3 — Docker compose uitbreiden (KLAAR — 22 feb 2026)
 
-`docker/docker-compose.openclaw.yml` toevoegen. Optioneel: OpenClaw gateway erbij.
+`docker/docker-compose.openclaw.yml` — complete standalone stack: postgres + falkordb + graphiti + api + web.
 
-### ⏳ Stap 4 — UI: "Run with Agent" knop + run log
+- API krijgt `GRAPHITI_SERVICE_URL` + `OPENCLAW_GATEWAY_URL` + `OPENCLAW_GATEWAY_TOKEN`
+- `docker/.env.example` en `apps/api/.env.example` uitgebreid met OpenClaw vars
+- Usage: `docker compose -f docker-compose.openclaw.yml up -d`
+- Coolify deployments (selfhosted.yml) onaangeroerd
+
+### 🔄 Stap 4 — UI: "Run with Agent" knop + run log (VOLGENDE)
 
 Eenvoudige dispatch knop op taak detail. AgentRun detail pagina.

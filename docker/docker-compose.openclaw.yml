@@ -1,0 +1,136 @@
+# Kanbu — Full Self-Hosted Stack with Knowledge Graph & OpenClaw Support
+#
+# Includes: PostgreSQL + FalkorDB + Graphiti + API + Web
+# Optional: Point OPENCLAW_GATEWAY_URL to a running OpenClaw instance
+#
+# Usage:
+#   1. Copy .env.example to .env and configure (especially AI provider keys)
+#   2. docker compose -f docker-compose.openclaw.yml up -d
+#
+# Differences from docker-compose.selfhosted.yml:
+#   - Adds FalkorDB (graph database for wiki knowledge graph)
+#   - Adds Graphiti service (knowledge graph API)
+#   - Adds GRAPHITI_SERVICE_URL and OPENCLAW_* env vars to the API
+
+services:
+  # ─── Database ─────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-kanbu}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-kanbu_secret_change_me}
+      POSTGRES_DB: ${POSTGRES_DB:-kanbu}
+    volumes:
+      - kanbu-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-kanbu} -d ${POSTGRES_DB:-kanbu}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - kanbu-network
+
+  # ─── Graph Database (FalkorDB) ─────────────────────────────────────────────
+  falkordb:
+    image: falkordb/falkordb:latest
+    restart: unless-stopped
+    volumes:
+      - kanbu-falkordb-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - kanbu-network
+
+  # ─── Knowledge Graph Service (Graphiti) ───────────────────────────────────
+  graphiti:
+    build:
+      context: ../apps/graphiti
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      FALKORDB_URI: redis://falkordb:6379
+      # AI provider for entity extraction (choose one):
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-openai}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-text-embedding-3-small}
+      LLM_PROVIDER: ${LLM_PROVIDER:-openai}
+      LLM_MODEL: ${LLM_MODEL:-gpt-4o-mini}
+    depends_on:
+      falkordb:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8000/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - kanbu-network
+
+  # ─── API Server ────────────────────────────────────────────────────────────
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      graphiti:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DATABASE_URL: postgresql://${POSTGRES_USER:-kanbu}:${POSTGRES_PASSWORD:-kanbu_secret_change_me}@postgres:5432/${POSTGRES_DB:-kanbu}
+      JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-me}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost}
+      BACKUP_STORAGE: ${BACKUP_STORAGE:-local}
+      BACKUP_LOCAL_PATH: /data/backups
+      KANBU_ENVIRONMENT: ${KANBU_ENVIRONMENT:-default}
+      # AI Provider
+      AI_PROVIDER: ${AI_PROVIDER:-openai}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      # Knowledge Graph
+      GRAPHITI_SERVICE_URL: http://graphiti:8000
+      # OpenClaw Agent Integration (optional — leave empty to disable)
+      OPENCLAW_GATEWAY_URL: ${OPENCLAW_GATEWAY_URL:-}
+      OPENCLAW_GATEWAY_TOKEN: ${OPENCLAW_GATEWAY_TOKEN:-}
+    volumes:
+      - ${BACKUP_HOST_PATH:-/opt/kanbu-backups}:/data/backups
+    expose:
+      - '3001'
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '--spider', 'http://127.0.0.1:3001/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - kanbu-network
+
+  # ─── Web Frontend ──────────────────────────────────────────────────────────
+  web:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.web
+    restart: unless-stopped
+    depends_on:
+      - api
+    expose:
+      - '80'
+    networks:
+      - kanbu-network
+
+volumes:
+  kanbu-db-data:
+  kanbu-falkordb-data:
+
+networks:
+  kanbu-network:
+    driver: bridge
