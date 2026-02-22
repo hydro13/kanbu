@@ -4,39 +4,40 @@
 **Latest stable:** 0.1.0-beta.5 (released February 22, 2026)
 **License:** MIT
 
-Kanbu is a self-hosted, open-source project management system with enterprise-grade permissions (NTFS-style ACL), AI agent dispatch (OpenClaw), MCP integration (154+ tools), GitHub sync, knowledge graph (Graphiti), and real-time collaboration. Built as a monorepo with React, Fastify/tRPC, PostgreSQL, and Docker.
+Kanbu is a self-hosted, open-source project management system with enterprise-grade permissions (NTFS-style ACL), AI agent dispatch (OpenClaw), MCP integration (154+ tools), GitHub sync, knowledge graph (Graphiti), wiki with semantic search, real-time collaboration, and analytics. Built as a monorepo with React, Fastify/tRPC, PostgreSQL, and Docker.
 
 ---
 
 ## Current Status
 
-| Category                    | Status                                   |
-| --------------------------- | ---------------------------------------- |
-| **Core PM (board/tasks)**   | ✅ 95% complete                          |
-| **ACL & Permissions**       | ✅ 90% (edge cases open)                 |
-| **AI/MCP Integration**      | ✅ 95% (154 tools, OAuth 2.1 on develop) |
-| **OpenClaw Agent Dispatch** | ✅ Complete (on `main`)                  |
-| **GitHub Integration**      | ✅ 90% (bi-directional sync)             |
-| **Backup System**           | ✅ 95% (encrypted, scheduled, verified)  |
-| **Wiki & Knowledge Graph**  | ✅ 85% (versions, graph, contradictions) |
-| **Real-time Collaboration** | ✅ 90% (cursors, presence, heartbeat)    |
-| **Docker Deployment**       | ✅ 90% (Coolify support)                 |
-| **OAuth 2.1 MCP**           | 🔄 80% (on develop)                      |
-| **Custom Fields**           | ❌ Not started                           |
-| **Email Notifications**     | ❌ Not started                           |
-| **Multi-instance Redis**    | ❌ Not started                           |
-| **Budget Module**           | ❌ Not started                           |
+| Category                    | Status                                                         |
+| --------------------------- | -------------------------------------------------------------- |
+| **Core PM (board/tasks)**   | ✅ Complete                                                    |
+| **ACL & Permissions**       | ✅ 90% (edge cases open)                                       |
+| **AI/MCP Integration**      | ✅ Complete (154 tools, OAuth 2.1 on develop)                  |
+| **OpenClaw Agent Dispatch** | ✅ Complete                                                    |
+| **GitHub Integration**      | ✅ 90% (bi-directional sync)                                   |
+| **Backup System**           | ✅ Complete (encrypted, scheduled, verified)                   |
+| **Wiki & Knowledge Graph**  | ✅ Complete (versions, graph, semantic search, RAG, community) |
+| **Analytics & Reporting**   | ✅ Complete (velocity, cycle time, workload, export CSV/JSON)  |
+| **Real-time Collaboration** | ✅ Complete (cursors, presence, heartbeat)                     |
+| **Docker Deployment**       | ✅ 90% (Coolify support)                                       |
+| **OAuth 2.1 MCP**           | 🔄 80% (on develop)                                            |
+| **Custom Fields**           | ⚠️ Schema ready, no API/UI yet                                 |
+| **Budget Module**           | ⚠️ Schema ready, no API/UI yet                                 |
+| **Email Notifications**     | ❌ Not started                                                 |
+| **Multi-instance Redis**    | ❌ Not started                                                 |
 
 ---
 
 ## Release Overview
 
-| Version    | Title                        | Status         | Target  |
-| ---------- | ---------------------------- | -------------- | ------- |
-| **v0.1.x** | Beta Stabilization           | 🔄 In Progress | Q1 2026 |
-| **v0.2.0** | Multi-instance & Performance | ⬜ Planned     | Q2 2026 |
-| **v0.3.0** | Integrations & Custom Fields | ⬜ Planned     | Q3 2026 |
-| **v1.0.0** | Stable Release               | 💭 Future      | Q4 2026 |
+| Version    | Title                   | Status         | Target  |
+| ---------- | ----------------------- | -------------- | ------- |
+| **v0.1.x** | Beta Stabilization      | 🔄 In Progress | Q1 2026 |
+| **v0.2.0** | Multi-instance & Polish | ⬜ Planned     | Q2 2026 |
+| **v0.3.0** | Custom Fields & Budget  | ⬜ Planned     | Q3 2026 |
+| **v1.0.0** | Stable Release          | 💭 Future      | Q4 2026 |
 
 ---
 
@@ -51,10 +52,8 @@ Kanbu is a self-hosted, open-source project management system with enterprise-gr
 ### Open Issues
 
 - ⬜ Permission edge cases (ACL inheritance depth)
-- ⬜ Performance with 100+ tasks per board
-- ⬜ Cross-project search (currently intra-project only)
 - ⬜ Email notifications (missing entirely)
-- ⬜ Mobile responsive testing
+- ⬜ Mobile layout optimization (basic responsive done, no dedicated mobile UX)
 
 ### Completed (beta.4 → beta.5, released 2026-02-22)
 
@@ -80,7 +79,7 @@ Kanbu is a self-hosted, open-source project management system with enterprise-gr
 
 ---
 
-## ⬜ v0.2.0 — Multi-instance & Performance (Q2 2026)
+## ⬜ v0.2.0 — Multi-instance & Polish (Q2 2026)
 
 ### 2.1 Multi-instance
 
@@ -89,13 +88,11 @@ Kanbu is a self-hosted, open-source project management system with enterprise-gr
 - ⬜ Load balancer configuration documentation
 - ⬜ Improved health check endpoints
 
-### 2.2 Performance
+### 2.2 Frontend Polish
 
-- ⬜ Optimization for 100+ tasks per board
-- ⬜ Database query optimization (N+1 checks)
-- ⬜ Lazy loading for large projects
-- ⬜ Virtual scrolling for long lists
+- ⬜ Virtual scrolling for very long task lists (1000+ tasks)
 - ⬜ Bundle size analysis and reduction
+- ⬜ Mobile layout improvements (sidebar, task detail)
 
 ### 2.3 Email Notifications
 
@@ -113,42 +110,39 @@ Kanbu is a self-hosted, open-source project management system with enterprise-gr
 
 ---
 
-## ⬜ v0.3.0 — Integrations & Custom Fields (Q3 2026)
+## ⬜ v0.3.0 — Custom Fields & Budget (Q3 2026)
 
-### 3.1 Custom Fields
+### 3.1 Custom Fields (schema ready, needs API + UI)
 
-- ⬜ Custom field types (text, number, date, dropdown, checkbox)
-- ⬜ Custom fields per project
-- ⬜ Custom field values on tasks
-- ⬜ Filter and sort by custom fields
-- ⬜ Custom field templates
+The database schema (`CustomField`, `TaskCustomValue`) is already in place. Needs:
 
-### 3.2 Discord Integration
+- ⬜ tRPC CRUD procedures for custom field definitions
+- ⬜ Custom field values on tasks (set/get per-task)
+- ⬜ Filter and sort tasks by custom field values
+- ⬜ Custom field UI in task detail and project settings
+- ⬜ Custom field types: text, number, date, dropdown, checkbox
 
-- ⬜ Webhook notifications to Discord
-- ⬜ Bot commands (create task, update status)
-- ⬜ Channel-per-project mapping
+### 3.2 Budget Module (schema ready, needs API + UI)
 
-### 3.3 Slack Integration
+The database schema (`Budget`, `BudgetLine`) is already in place. Needs:
 
-- ⬜ Slack app installation flow
-- ⬜ Task notifications in channels
-- ⬜ Slash commands (/kanbu create, /kanbu status)
-
-### 3.4 Advanced Reporting
-
-- ⬜ Dashboard with team metrics
-- ⬜ Velocity charts
-- ⬜ Lead time / cycle time tracking
-- ⬜ Custom report builder
-- ⬜ Export to PDF/CSV
-
-### 3.5 Budget Module
-
-- ⬜ Budget per project
-- ⬜ Budget lines (income/expense)
+- ⬜ tRPC CRUD procedures for budgets and budget lines
+- ⬜ Budget UI in project settings
+- ⬜ Link budget lines to tasks
 - ⬜ Budget vs actual tracking
-- ⬜ Financial reports
+- ⬜ Financial summary view
+
+### 3.3 Reporting Additions
+
+- ⬜ PDF export (CSV/JSON/Trello already done)
+- ⬜ Custom report builder
+- ⬜ Cross-project analytics (current analytics are per-project)
+
+### 3.4 Discord / Slack
+
+- ⬜ Webhook notifications to Discord channels
+- ⬜ Slack app installation flow
+- ⬜ Task notifications (create, complete, assign)
 
 ---
 
@@ -165,7 +159,6 @@ Kanbu is a self-hosted, open-source project management system with enterprise-gr
 - 💭 SSO/SAML integration
 - 💭 Custom domain support
 - 💭 On-premise deployment guide
-- 💭 Team workload analytics
 - 💭 Advanced audit (compliance)
 
 ### 4.3 Template System
@@ -180,24 +173,67 @@ Kanbu is a self-hosted, open-source project management system with enterprise-gr
 
 ### ✅ Production-Ready (on `main`)
 
+**Core project management**
+
 - Kanban board with drag-and-drop, swimlanes, WIP limits
-- Board, List, Calendar, Timeline views
-- Sprints & milestones with burndown charts
+- Board, List, Calendar, Timeline, Sprint, Milestone views
+- Sprints with burndown charts and planning board
+- Milestones
+- Modules (group tasks within a project)
+- Subtasks with time tracking
+- Comments, attachments, task links
+- Tags, categories, priority, due dates, time estimates
+- Progress tracking, scoring
+- Full activity log per task and project
+
+**Analytics & Export**
+
+- Analytics dashboard: velocity charts, cycle time, team workload, task counts
+- Export tasks to CSV, JSON, Trello-compatible CSV (with column/tag/assignee filters)
+- Full project export to JSON (structure + all tasks)
+
+**Search**
+
+- Full-text search within a project (tasks, comments, wiki pages)
+- Workspace-wide task search across all projects
+- Member search with @mention autocomplete
+
+**Permissions & Access**
+
 - NTFS-style ACL (bitmask: R=1, W=2, X=4, D=8, P=16)
-- 154+ MCP tools for Claude Code
-- GitHub bi-directional sync (issues, PRs, commits, milestones)
-- **OpenClaw agent dispatch** (Agent tab on tasks, run history, response log)
-- Knowledge wiki with versioning (up to 20 versions)
-- Graphiti knowledge graph (Python/FastAPI + FalkorDB)
-- Real-time collaboration (cursors, presence, typing, heartbeat)
-- Enterprise backup (AES-256-GCM, SHA-256, scheduling, restore wizard)
-- Comments, attachments, subtasks, task links
-- Tags, categories, time tracking
-- API keys, webhooks, audit logs
-- Docker deployment (self-hosted, Coolify)
+- Groups and role assignments
+- Project groups
 - Bootstrap admin, registration control
+- API keys with scopes and service accounts
+- Audit logs
+
+**AI & Integrations**
+
+- 154+ MCP tools for Claude Code
+- OpenClaw agent dispatch (Agent tab on tasks, run history, response log)
+- Graphiti knowledge graph (Python/FastAPI + FalkorDB) with temporal queries, entity deduplication, community detection
+- Wiki AI: semantic search, RAG chat ("Ask the Wiki"), BM25 + hybrid search, entity extraction, contradiction detection and audit
+- AI provider configuration (OpenAI, Ollama, LM Studio — global, workspace, or project scope)
+- GitHub bi-directional sync (issues, PRs, commits, milestones, workflow runs, deployments)
+- YouTube metadata in wiki editor
+
+**Wiki**
+
+- Project wiki and workspace wiki with rich-text editor
+- Version history (up to 20 versions per page)
+- Wiki community detection (Label Propagation clustering)
+- Contradiction audit with revert support
+
+**Collaboration & Infrastructure**
+
+- Real-time collaboration (cursors, presence, typing indicators, heartbeat)
+- In-app notifications
+- Sticky notes (6 colors, linkable to tasks, wikis, sprints, project groups)
+- Webhooks with delivery history and test endpoint
+- Enterprise backup (AES-256-GCM, SHA-256, scheduling, restore wizard)
+- Docker deployment (self-hosted, Coolify)
 - Pre-commit hooks (Husky + lint-staged)
-- CI/CD pipeline (GitHub Actions)
+- CI/CD pipeline (GitHub Actions: lint, typecheck, build)
 
 ### 🔄 In Development (`develop` branch)
 
@@ -205,16 +241,19 @@ Kanbu is a self-hosted, open-source project management system with enterprise-gr
 - MCP Services admin page
 - User OAuth management
 
+### ⚠️ Schema Ready, No API/UI Yet
+
+- Custom fields (per-project field definitions + per-task values)
+- Budget module (budget + budget lines, linkable to tasks)
+
 ### ❌ Not Started
 
-- Custom fields
 - Email notifications
 - Multi-instance Redis support
-- Budget module
 - Discord/Slack integrations
-- Advanced reporting dashboard
 - GraphQL API
-- Mobile optimization
+- SSO/SAML
+- PDF export
 
 ---
 
@@ -225,7 +264,7 @@ Kanbu is a self-hosted, open-source project management system with enterprise-gr
 | Frontend   | React 19, TypeScript, Vite 6, Tailwind 3, Shadcn/ui, Redux Toolkit |
 | Backend    | Node.js 22, Fastify 5, tRPC 11, Socket.io                          |
 | Database   | PostgreSQL 15, Prisma 6 (50+ models, 1800+ line schema)            |
-| AI/Graph   | Kanbu Graphiti (Python/FastAPI), FalkorDB                          |
+| AI/Graph   | Kanbu Graphiti (Python/FastAPI), FalkorDB, OpenAI/Ollama/LM Studio |
 | Agent      | OpenClaw gateway (optional), `@kanbu/openclaw-bridge`              |
 | Monorepo   | pnpm workspaces, Turborepo                                         |
 | Deployment | Docker, nginx, Coolify PaaS                                        |
