@@ -181,8 +181,8 @@ export function TaskDescription({
           initialContent={editedContent || undefined}
           onChange={handleEditorChange}
           placeholder="Add a description... Use **bold**, *italic*, # headings, lists, and more!"
-          minHeight="200px"
-          maxHeight="500px"
+          minHeight="300px"
+          maxHeight="none"
           namespace={`task-description-${editorKey}`}
           autoFocus
         />

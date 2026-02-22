@@ -236,7 +236,7 @@ export function TaskDetailModal({ taskId, projectId, isOpen, onClose }: TaskDeta
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-[95vw] w-[1400px] max-h-[95vh] overflow-hidden flex flex-col">
         {isLoading ? (
           <LoadingSkeleton />
         ) : isError ? (
@@ -267,71 +267,74 @@ export function TaskDetailModal({ taskId, projectId, isOpen, onClose }: TaskDeta
             </DialogHeader>
 
             {/* Content */}
-            <div className="flex-1 overflow-hidden flex gap-6">
+            <div className="flex-1 overflow-hidden flex gap-4">
               {/* Main Content Area */}
-              <div className="flex-1 overflow-y-auto">
-                <Tabs defaultValue="details" className="w-full">
-                  <TabsList className="mb-4">
-                    <TabsTrigger value="details">Details</TabsTrigger>
-                    <TabsTrigger value="subtasks">Subtasks ({subtasks.length})</TabsTrigger>
-                    <TabsTrigger value="comments">Comments ({comments.length})</TabsTrigger>
-                    <TabsTrigger value="cicd">CI/CD</TabsTrigger>
-                    <TabsTrigger value="reviews">Reviews</TabsTrigger>
-                    <TabsTrigger value="agent">Agent</TabsTrigger>
-                  </TabsList>
+              <div className="flex-1 overflow-y-auto min-w-0 flex flex-col">
+                {/* Description - always visible, primary content */}
+                <div className="flex-1 min-h-0">
+                  <TaskDescription
+                    description={task.description ?? ''}
+                    onUpdate={handleDescriptionUpdate}
+                    isUpdating={isUpdating}
+                    editingUser={getFieldEditor('description')}
+                    onEditStart={handleDescriptionEditStart}
+                    onEditStop={handleDescriptionEditStop}
+                  />
+                </div>
 
-                  <TabsContent value="details" className="mt-0">
-                    <TaskDescription
-                      description={task.description ?? ''}
-                      onUpdate={handleDescriptionUpdate}
-                      isUpdating={isUpdating}
-                      editingUser={getFieldEditor('description')}
-                      onEditStart={handleDescriptionEditStart}
-                      onEditStop={handleDescriptionEditStop}
-                    />
-                  </TabsContent>
+                {/* Secondary tabs below description */}
+                <div className="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 pt-4 mt-4">
+                  <Tabs defaultValue="subtasks" className="w-full">
+                    <TabsList className="mb-3">
+                      <TabsTrigger value="subtasks">Subtasks ({subtasks.length})</TabsTrigger>
+                      <TabsTrigger value="comments">Comments ({comments.length})</TabsTrigger>
+                      <TabsTrigger value="cicd">CI/CD</TabsTrigger>
+                      <TabsTrigger value="reviews">Reviews</TabsTrigger>
+                      <TabsTrigger value="agent">Agent</TabsTrigger>
+                    </TabsList>
 
-                  <TabsContent value="subtasks" className="mt-0">
-                    <SubtaskList
-                      taskId={taskId!}
-                      subtasks={subtasks}
-                      isLoading={isLoadingSubtasks}
-                      onCreate={createSubtask}
-                      onUpdate={updateSubtask}
-                      onDelete={deleteSubtask}
-                      isCreating={isCreatingSubtask}
-                      onEditSubtask={handleEditSubtask}
-                    />
-                  </TabsContent>
+                    <TabsContent value="subtasks" className="mt-0 max-h-[30vh] overflow-y-auto">
+                      <SubtaskList
+                        taskId={taskId!}
+                        subtasks={subtasks}
+                        isLoading={isLoadingSubtasks}
+                        onCreate={createSubtask}
+                        onUpdate={updateSubtask}
+                        onDelete={deleteSubtask}
+                        isCreating={isCreatingSubtask}
+                        onEditSubtask={handleEditSubtask}
+                      />
+                    </TabsContent>
 
-                  <TabsContent value="comments" className="mt-0">
-                    <CommentSection
-                      taskId={taskId!}
-                      comments={comments}
-                      isLoading={isLoadingComments}
-                      onCreate={createComment}
-                      onUpdate={updateComment}
-                      onDelete={deleteComment}
-                      isCreating={isCreatingComment}
-                    />
-                  </TabsContent>
+                    <TabsContent value="comments" className="mt-0 max-h-[30vh] overflow-y-auto">
+                      <CommentSection
+                        taskId={taskId!}
+                        comments={comments}
+                        isLoading={isLoadingComments}
+                        onCreate={createComment}
+                        onUpdate={updateComment}
+                        onDelete={deleteComment}
+                        isCreating={isCreatingComment}
+                      />
+                    </TabsContent>
 
-                  <TabsContent value="cicd" className="mt-0">
-                    <TaskCICDPanel taskId={taskId!} />
-                  </TabsContent>
+                    <TabsContent value="cicd" className="mt-0 max-h-[30vh] overflow-y-auto">
+                      <TaskCICDPanel taskId={taskId!} />
+                    </TabsContent>
 
-                  <TabsContent value="reviews" className="mt-0">
-                    <TaskReviewPanel taskId={taskId!} />
-                  </TabsContent>
+                    <TabsContent value="reviews" className="mt-0 max-h-[30vh] overflow-y-auto">
+                      <TaskReviewPanel taskId={taskId!} />
+                    </TabsContent>
 
-                  <TabsContent value="agent" className="mt-0">
-                    <TaskAgentPanel taskId={taskId!} projectId={projectId} />
-                  </TabsContent>
-                </Tabs>
+                    <TabsContent value="agent" className="mt-0 max-h-[30vh] overflow-y-auto">
+                      <TaskAgentPanel taskId={taskId!} projectId={projectId} />
+                    </TabsContent>
+                  </Tabs>
+                </div>
               </div>
 
-              {/* Sidebar */}
-              <div className="w-64 flex-shrink-0 border-l border-gray-200 dark:border-gray-700 pl-6 overflow-y-auto">
+              {/* Sidebar - compact */}
+              <div className="w-56 flex-shrink-0 border-l border-gray-200 dark:border-gray-700 pl-4 overflow-y-auto">
                 <TaskSidebar
                   task={task}
                   projectId={projectId}
