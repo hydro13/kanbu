@@ -182,7 +182,7 @@ export function TaskDescription({
           onChange={handleEditorChange}
           placeholder="Add a description... Use **bold**, *italic*, # headings, lists, and more!"
           minHeight="300px"
-          maxHeight="none"
+          maxHeight="100%"
           namespace={`task-description-${editorKey}`}
           autoFocus
         />
@@ -264,7 +264,7 @@ export function TaskDescription({
               readOnly={true}
               showToolbar={false}
               minHeight="auto"
-              maxHeight="none"
+              maxHeight="100%"
               namespace="task-description-view"
             />
           </div>

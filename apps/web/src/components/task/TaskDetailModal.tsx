@@ -269,9 +269,9 @@ export function TaskDetailModal({ taskId, projectId, isOpen, onClose }: TaskDeta
             {/* Content */}
             <div className="flex-1 overflow-hidden flex gap-4">
               {/* Main Content Area */}
-              <div className="flex-1 overflow-y-auto min-w-0 flex flex-col">
-                {/* Description - always visible, primary content */}
-                <div className="flex-1 min-h-0">
+              <div className="flex-1 overflow-hidden min-w-0 flex flex-col">
+                {/* Description - always visible, primary content, scrolls internally */}
+                <div className="flex-1 min-h-0 overflow-y-auto">
                   <TaskDescription
                     description={task.description ?? ''}
                     onUpdate={handleDescriptionUpdate}
