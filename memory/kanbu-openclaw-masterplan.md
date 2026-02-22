@@ -345,6 +345,16 @@ model AgentRun {
 - Usage: `docker compose -f docker-compose.openclaw.yml up -d`
 - Coolify deployments (selfhosted.yml) onaangeroerd
 
-### 🔄 Stap 4 — UI: "Run with Agent" knop + run log (VOLGENDE)
+### ✅ Stap 4 — UI: "Run with Agent" knop + run log (KLAAR — 22 feb 2026)
 
-Eenvoudige dispatch knop op taak detail. AgentRun detail pagina.
+"Agent" tab toegevoegd aan TaskDetailModal (naast CI/CD en Reviews).
+
+- `apps/api/src/services/openclawService.ts` — singleton wrapper, `getOpenClawClient()` / `isOpenClawEnabled()`
+- `apps/api/src/trpc/procedures/agents.ts` — agentsRouter: `isEnabled`, `list`, `create`, `dispatch`, `listRuns`
+- `apps/api/src/trpc/index.ts` — `agent: agentsRouter` geregistreerd (51e router)
+- `apps/web/src/components/task/TaskAgentPanel.tsx` — agent selectie, create form, dispatch knop, run history
+- `apps/web/src/components/task/TaskDetailModal.tsx` — Agent tab toegevoegd
+
+Dispatch is fire-and-forget: AgentRun record aangemaakt (status: running), HTTP call naar OpenClaw in `setImmediate()`, status update na completion/failure. Run history pollt elke 5s. Typechecks clean, 21 tests groen.
+
+### ⏳ Stap 5 — Volgende stap (nog te bepalen)

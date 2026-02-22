@@ -46,6 +46,7 @@ import { TaskSidebar } from './TaskSidebar';
 import { ConflictWarningModal } from './ConflictWarningModal';
 import { TaskCICDPanel } from './TaskCICDPanel';
 import { TaskReviewPanel } from './TaskReviewPanel';
+import { TaskAgentPanel } from './TaskAgentPanel';
 import { useEditingPresence } from '@/hooks/useEditingPresence';
 import { useSocket } from '@/hooks/useSocket';
 import { useAppSelector } from '@/store';
@@ -276,6 +277,7 @@ export function TaskDetailModal({ taskId, projectId, isOpen, onClose }: TaskDeta
                     <TabsTrigger value="comments">Comments ({comments.length})</TabsTrigger>
                     <TabsTrigger value="cicd">CI/CD</TabsTrigger>
                     <TabsTrigger value="reviews">Reviews</TabsTrigger>
+                    <TabsTrigger value="agent">Agent</TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="details" className="mt-0">
@@ -320,6 +322,10 @@ export function TaskDetailModal({ taskId, projectId, isOpen, onClose }: TaskDeta
 
                   <TabsContent value="reviews" className="mt-0">
                     <TaskReviewPanel taskId={taskId!} />
+                  </TabsContent>
+
+                  <TabsContent value="agent" className="mt-0">
+                    <TaskAgentPanel taskId={taskId!} projectId={projectId} />
                   </TabsContent>
                 </Tabs>
               </div>

@@ -146,6 +146,7 @@ import { contradictionAuditRouter } from './procedures/contradictionAudit';
 import { wikiCommunityRouter } from './procedures/wikiCommunity';
 import { oauthClientRouter } from './procedures/oauthClient';
 import { userOAuthRouter } from './procedures/userOAuth';
+import { agentsRouter } from './procedures/agents';
 
 /**
  * Main app router
@@ -199,6 +200,7 @@ export const appRouter = router({
   wikiCommunity: wikiCommunityRouter,
   oauthClient: oauthClientRouter,
   userOAuth: userOAuthRouter,
+  agent: agentsRouter,
 });
 
 /**

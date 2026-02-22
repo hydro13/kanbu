@@ -44,6 +44,9 @@ importers:
       '@fastify/static':
         specifier: ^9.0.0
         version: 9.0.0
+      '@kanbu/openclaw-bridge':
+        specifier: workspace:*
+        version: link:../../packages/openclaw-bridge
       '@kanbu/shared':
         specifier: workspace:*
         version: link:../../packages/shared
