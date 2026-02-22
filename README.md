@@ -210,29 +210,38 @@ docker compose -f docker-compose.selfhosted.yml up -d
 
 ---
 
-## Contributing
+## Get involved
 
-Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) before submitting a PR.
+If you use OpenClaw, you're exactly who this is built for. Your feedback, bug reports, and ideas are the most valuable thing this project can get right now.
+
+**Ways to contribute:**
+
+- **Try it and tell me what broke** — open an [issue](https://github.com/hydro13/kanbu/issues)
+- **Share your OpenClaw workflow** — what context does your agent need that Kanbu doesn't send yet?
+- **Pick up a feature** — check the [roadmap](ROADMAP.md) for what's next
+- **Improve the Docker setup** — make self-hosting easier for others
+- **Fix something that annoys you** — PRs welcome, no permission needed
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions.
+
+---
+
+## Community
+
+- 💬 [Discord](https://discord.com/channels/1461655382492446927/1461655383708799153) — ask questions, share what you're building
+- 🐛 [Issues](https://github.com/hydro13/kanbu/issues) — bug reports and feature requests
+- 📋 [Roadmap](ROADMAP.md) — what's planned and what's done
+
+---
 
 ## License
 
-**MIT License**
-
-- ✅ Use, modify, and distribute freely
-- ✅ Commercial use allowed
-- ✅ Use in closed-source and proprietary projects
-- ✅ No restrictions on how you deploy or integrate it
+MIT — use it, fork it, build on it. No strings attached.
 
 See [LICENSE](LICENSE) for details.
-
-## Support
-
-- 💬 [Discord Community](https://discord.com/channels/1461655382492446927/1461655383708799153)
-- 🐛 [Issue Tracker](https://github.com/hydro13/kanbu/issues)
 
 ---
 
 <p align="center">
-  <b>Kanbu</b> - Project management for the AI era<br>
-  Built with ❤️ by Robin Waslander
+  Built by <a href="https://github.com/hydro13">Robin Waslander</a> — an OpenClaw user who needed this to exist.
 </p>
