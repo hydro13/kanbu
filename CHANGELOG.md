@@ -443,4 +443,4 @@ For security-related concerns, see [SECURITY.md](SECURITY.md) for responsible di
 
 ## License
 
-Licensed under [AGPL-3.0](LICENSE) - See LICENSE file for details.
+Licensed under [MIT](LICENSE) - See LICENSE file for details.

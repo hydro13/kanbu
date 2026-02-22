@@ -117,7 +117,7 @@ All contributions should include tests. Aim for at least 80% coverage.
 
 ## License
 
-By contributing to Kanbu, you agree that your contributions will be licensed under its AGPL-3.0 License.
+By contributing to Kanbu, you agree that your contributions will be licensed under its MIT License.
 
 ## Questions?
 

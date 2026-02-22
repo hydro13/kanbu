@@ -1,11 +1,10 @@
 # Kanbu
 
-**Self-hosted project management with enterprise permissions and AI superpowers.**
-<br>_Part of the **GenX** Project_
+**Self-hosted project management built for the autonomous AI agent era.**
 
-> Tell Claude what you want. It plans the work, estimates hours, creates subtasks, builds the features, and tracks its own progress. You review.
+> Assign tasks to AI agents. They execute autonomously, build knowledge as they work, and ask for your approval when they need it. You stay in control.
 >
-> [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+> [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 > [![GitHub release (latest by date)](https://img.shields.io/github/v/release/hydro13/kanbu?label=version&color=brightgreen)](https://github.com/hydro13/kanbu/releases)
 > [![GitHub last commit](https://img.shields.io/github/last-commit/hydro13/kanbu)](https://github.com/hydro13/kanbu/commits)
 > [![GitHub issues](https://img.shields.io/github/issues/hydro13/kanbu)](https://github.com/hydro13/kanbu/issues)
@@ -74,18 +73,24 @@ Kanbu implements a robust permission system inspired by Windows (NTFS) and Activ
 | MEMBER  | CONTRIBUTOR (7)   | CONTRIBUTOR (7)   |
 | VIEWER  | READ_ONLY (1)     | READ_ONLY (1)     |
 
-### 🤖 Built-in Graphiti Knowledge Engine
+### 🧠 Built-in Knowledge Graph Engine
 
-Kanbu includes **Kanbu Graphiti**, a self-hosted knowledge graph engine (Python/FastAPI) that runs locally alongside the app.
+Kanbu includes a complete wiki intelligence system, built in **TypeScript** (33,000+ lines), using [Graphiti](https://github.com/getzep/graphiti) as the underlying graph database layer (Python/FalkorDB).
 
-- **No external dependencies**: You do not need to sign up for any third-party Graph Service. It runs on your own hardware using FalkorDB.
-- **Fact Extraction**: Automatically builds a knowledge graph from your wiki pages.
-- **Temporal Queries**: Ask "What did we know about this feature last month?"
-- **Contradiction Detection**: Flags conflicting information across your documentation.
+- **No external dependencies**: Runs entirely on your own hardware. No third-party graph service required.
+- **Semantic search**: Find knowledge across your entire wiki using vector embeddings.
+- **Temporal queries**: Ask "What did we know about this feature last month?"
+- **Contradiction detection**: Automatically flags conflicting information across your documentation.
+- **Duplicate deduplication**: Detects and merges overlapping knowledge nodes across pages.
+- **Community clustering**: Groups related knowledge using label propagation (own algorithm).
+- **RAG**: Retrieval-Augmented Generation — AI answers grounded in your actual wiki content.
+- **D3.js graph visualization**: Interactive visual map of your knowledge graph, live in the browser.
 
-### 🔌 AI Integration (Claude Code)
+_Inspired by [Graphiti](https://github.com/getzep/graphiti) — thanks for the foundation._
 
-Connect Claude Code to manage your Kanbu projects with **154 available tools**.
+### 🔌 AI Agent Integration (MCP)
+
+Connect any MCP-compatible AI agent to manage your Kanbu projects with **154 available tools**.
 **Status: Production Ready (Hardened)**
 
 **Tool Categories:**
@@ -179,12 +184,12 @@ Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md)
 
 ## License
 
-**GNU Affero General Public License v3.0 (AGPL-3.0)**
+**MIT License**
 
 - ✅ Use, modify, and distribute freely
 - ✅ Commercial use allowed
-- ⚠️ Modified versions must be open-sourced
-- ⚠️ Network use = distribution (must share source)
+- ✅ Use in closed-source and proprietary projects
+- ✅ No restrictions on how you deploy or integrate it
 
 See [LICENSE](LICENSE) for details.
 
