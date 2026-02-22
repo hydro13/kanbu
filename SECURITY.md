@@ -89,4 +89,4 @@ For security-related questions or concerns, please contact:
 
 ## License
 
-This security policy is part of the Kanbu project licensed under AGPL-3.0.
+This security policy is part of the Kanbu project licensed under MIT.

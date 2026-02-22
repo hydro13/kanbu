@@ -4,7 +4,7 @@
   "private": true,
   "description": "Kanbu - Project Management System with enterprise-grade ACL and real-time collaboration",
   "author": "Robin Waslander",
-  "license": "AGPL-3.0",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/hydro13/kanbu.git"
