@@ -32,12 +32,12 @@ Kanbu is a self-hosted, open-source project management system with enterprise-gr
 
 ## Release Overview
 
-| Version    | Title                   | Status         | Target  |
-| ---------- | ----------------------- | -------------- | ------- |
-| **v0.1.x** | Beta Stabilization      | 🔄 In Progress | Q1 2026 |
-| **v0.2.0** | Multi-instance & Polish | ⬜ Planned     | Q2 2026 |
-| **v0.3.0** | Custom Fields & Budget  | ⬜ Planned     | Q3 2026 |
-| **v1.0.0** | Stable Release          | 💭 Future      | Q4 2026 |
+| Version    | Title                   | Status         |
+| ---------- | ----------------------- | -------------- |
+| **v0.1.x** | Beta Stabilization      | 🔄 In Progress |
+| **v0.2.0** | Multi-instance & Polish | ⬜ Planned     |
+| **v0.3.0** | Custom Fields & Budget  | ⬜ Planned     |
+| **v1.0.0** | Stable Release          | 💭 Future      |
 
 ---
 
@@ -79,7 +79,7 @@ Kanbu is a self-hosted, open-source project management system with enterprise-gr
 
 ---
 
-## ⬜ v0.2.0 — Multi-instance & Polish (Q2 2026)
+## ⬜ v0.2.0 — Multi-instance & Polish
 
 ### 2.1 Multi-instance
 
@@ -110,7 +110,7 @@ Kanbu is a self-hosted, open-source project management system with enterprise-gr
 
 ---
 
-## ⬜ v0.3.0 — Custom Fields & Budget (Q3 2026)
+## ⬜ v0.3.0 — Custom Fields & Budget
 
 ### 3.1 Custom Fields (schema ready, needs API + UI)
 
@@ -146,7 +146,7 @@ The database schema (`Budget`, `BudgetLine`) is already in place. Needs:
 
 ---
 
-## 💭 v1.0.0 — Stable Release (Q4 2026)
+## 💭 v1.0.0 — Stable Release
 
 ### 4.1 API v2
 
