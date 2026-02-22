@@ -112,6 +112,8 @@ The run appears in the history below with a **Running** badge. When the agent fi
 
 Click any run to expand it and read the full agent response.
 
+<img width="2852" height="1722" alt="Kanbu Agent Dispatch — completed run with response" src="https://github.com/user-attachments/assets/ea98dd79-2d19-46b8-b686-1040a9cdc5b4" />
+
 ---
 
 ## Step 6: Iterate

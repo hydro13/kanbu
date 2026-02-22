@@ -119,7 +119,7 @@ OPENCLAW_GATEWAY_TOKEN=your-token-here
 
 When not configured, the Agent tab shows a friendly "not configured" state instead of an error.
 
-<!-- Agent tab screenshot -->
+<img width="2852" height="1722" alt="Kanbu Agent Dispatch" src="https://github.com/user-attachments/assets/ea98dd79-2d19-46b8-b686-1040a9cdc5b4" />
 
 **[Setup guide →](docs/OPENCLAW.md)**
 
