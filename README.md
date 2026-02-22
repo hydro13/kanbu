@@ -177,36 +177,48 @@ Complete backup solution with enterprise-grade security:
 
 ## Quick Start
 
+> **Which branch?** Clone `main` for the latest stable version. The `develop` branch contains unreleased features and may be unstable.
+
+### Docker (recommended)
+
+```bash
+git clone https://github.com/hydro13/kanbu.git
+cd kanbu/docker
+cp .env.example .env
+# Edit .env — CHANGE THE PASSWORDS AND JWT_SECRET!
+docker compose -f docker-compose.selfhosted.yml up -d
+# Open http://localhost:80
+```
+
+### Manual setup
+
 ```bash
 # Prerequisites: Node.js 22+, PostgreSQL 15+, pnpm 9+
 
-# Clone and install
 git clone https://github.com/hydro13/kanbu.git
 cd kanbu
 pnpm install
 
 # Setup database
-cd packages/shared
-cp ../../apps/api/.env.example ../../apps/api/.env
-# Edit .env with your DATABASE_URL and JWT_SECRET
-pnpm db:generate
-pnpm db:push
+cp apps/api/.env.example apps/api/.env
+# Edit apps/api/.env — set DATABASE_URL and JWT_SECRET
+cd packages/shared && pnpm db:generate && pnpm db:push && cd ../..
 
-# Start development
-cd ../..
+# Start everything
 pnpm dev
-
 # Open http://localhost:5173
 ```
 
-### Docker (Self-Hosted)
+### With OpenClaw
 
-```bash
-cd docker
-cp .env.example .env
-# Edit .env - CHANGE THE PASSWORDS AND JWT_SECRET!
-docker compose -f docker-compose.selfhosted.yml up -d
+Add two lines to `apps/api/.env`:
+
+```env
+OPENCLAW_GATEWAY_URL=http://127.0.0.1:18789
+OPENCLAW_GATEWAY_TOKEN=your-token-here
 ```
+
+Then restart the API. The Agent tab will appear on every task.
 
 ---
 

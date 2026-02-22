@@ -1,8 +1,8 @@
 {
   "name": "kanbu",
-  "version": "0.1.0-beta.3",
+  "version": "0.1.0-beta.4",
   "private": true,
-  "description": "Kanbu - Project Management System with enterprise-grade ACL and real-time collaboration",
+  "description": "Self-hosted project management for OpenClaw users and AI-native workflows",
   "author": "Robin Waslander",
   "license": "MIT",
   "repository": {

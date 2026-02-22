@@ -5,24 +5,27 @@ All notable changes to Kanbu will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [Unreleased] — on `develop` branch
 
-### Planned Features
+### Added
 
-- Multi-instance deployment with Redis support
-- Discord integration for notifications
-- Advanced reporting and analytics dashboard
-- Slack integration
-- Custom fields and templates
-- API v2 with GraphQL support
-- Email notifications
-- Team workload analytics
+- **OpenClaw agent dispatch** — dispatch any task to an AI agent from the new Agent tab
+- **Agent run history** — every run logged with status, duration, and the agent's full response
+- **`@kanbu/openclaw-bridge` package** — HTTP client for OpenClaw gateway, task message builder
+- **`Agent` and `AgentRun` Prisma models** — agents belong to a workspace/project, runs track each dispatch
+- **OpenClaw-ready Docker compose** — `docker-compose.openclaw.yml` with all services
+- **Improved task description editor layout** — better scroll behavior and height handling
+- **OAuth 2.1 for MCP Server** (Phase 19) — secure OAuth flow for MCP client authorization
+- **MCP Services admin page** — manage OAuth applications and tokens from workspace settings
 
-### In Progress
+### Setup (OpenClaw)
 
-- Knowledge graph wiki improvements
-- Advanced permissioning edge cases
-- Performance optimization for large datasets
+Add to `apps/api/.env`:
+
+```env
+OPENCLAW_GATEWAY_URL=http://127.0.0.1:18789
+OPENCLAW_GATEWAY_TOKEN=your-token-here
+```
 
 ---
 
