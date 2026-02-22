@@ -95,6 +95,8 @@ Kanbu includes a complete wiki intelligence system, built in **TypeScript** (33,
 - **RAG**: Retrieval-Augmented Generation — AI answers grounded in your actual wiki content.
 - **D3.js graph visualization**: Interactive visual map of your knowledge graph, live in the browser.
 
+<img width="3046" height="1760" alt="Kanbu Knowledge Graph" src="https://github.com/user-attachments/assets/71ba30d0-ed18-436f-95b8-e0e8a6b90bed" />
+
 _Inspired by [Graphiti](https://github.com/getzep/graphiti) — thanks for the foundation._
 
 ### 🤖 AI Agent Dispatch (OpenClaw)
