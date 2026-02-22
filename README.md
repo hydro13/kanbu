@@ -1,17 +1,25 @@
 # Kanbu
 
-**Self-hosted project management built for the autonomous AI agent era.**
+**Self-hosted project management for people who work with AI agents.**
 
-> Assign tasks to AI agents. They execute autonomously, build knowledge as they work, and ask for your approval when they need it. You stay in control.
->
-> [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-> [![GitHub release (latest by date)](https://img.shields.io/github/v/release/hydro13/kanbu?label=version&color=brightgreen)](https://github.com/hydro13/kanbu/releases)
-> [![GitHub last commit](https://img.shields.io/github/last-commit/hydro13/kanbu)](https://github.com/hydro13/kanbu/commits)
-> [![GitHub issues](https://img.shields.io/github/issues/hydro13/kanbu)](https://github.com/hydro13/kanbu/issues)
-> [![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-> [![Status: Beta](https://img.shields.io/badge/Status-Beta-yellow)](https://github.com/hydro13/kanbu/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/hydro13/kanbu?label=version&color=brightgreen)](https://github.com/hydro13/kanbu/releases)
+[![GitHub last commit](https://img.shields.io/github/last-commit/hydro13/kanbu)](https://github.com/hydro13/kanbu/commits)
+[![GitHub issues](https://img.shields.io/github/issues/hydro13/kanbu)](https://github.com/hydro13/kanbu/issues)
+[![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Status: Beta](https://img.shields.io/badge/Status-Beta-yellow)](https://github.com/hydro13/kanbu/releases)
 
 <img width="2428" height="1846" alt="Kanbu Board" src="https://github.com/user-attachments/assets/6cd89fcd-2afa-44c1-a200-8cef163e8c31" />
+
+---
+
+## Built for OpenClaw users
+
+I built Kanbu because I use [OpenClaw](https://github.com/OpenClaw-AI/openclaw) every day. My projects regularly cross 300,000 lines of code — and at that scale, you need somewhere to track what your agents are doing, what's been decided, and what comes next. No tool did that. So I built one.
+
+Kanbu connects directly to your local OpenClaw gateway. Dispatch any task to an agent from the task view, read its response, steer it with follow-up instructions, and let it update the board as it works. Your task list becomes the shared memory between you and your agents.
+
+It's MIT. It's self-hosted. It's here because I needed it, and maybe you do too.
 
 ---
 
