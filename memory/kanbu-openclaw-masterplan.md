@@ -308,9 +308,9 @@ HTTP client naar OpenClaw gateway. Gebouwd als `@kanbu/openclaw-bridge`:
 
 **Noot:** HTTP variant gekozen (niet WebSocket). WebSocket + Ed25519 = Fase 2 voor streaming observability.
 
-### 🔄 Stap 2 — Prisma Agent model (VOLGENDE)
+### ✅ Stap 2 — Prisma Agent model (KLAAR — 22 feb 2026)
 
-Nieuw `Agent` + `AgentRun` model toevoegen aan `packages/shared/prisma/schema.prisma`. Migration draaien.
+`Agent` + `AgentRun` toegevoegd aan `packages/shared/prisma/schema.prisma`. Tabellen aangemaakt via `db:push`. Relaties: Agent → Workspace, Project (optional), AgentRun → Agent, Task.
 
 ```prisma
 model Agent {
@@ -336,7 +336,7 @@ model AgentRun {
 }
 ```
 
-### ⏳ Stap 3 — Docker compose uitbreiden
+### 🔄 Stap 3 — Docker compose uitbreiden (VOLGENDE)
 
 `docker/docker-compose.openclaw.yml` toevoegen. Optioneel: OpenClaw gateway erbij.
 

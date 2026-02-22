@@ -31,6 +31,7 @@ model Workspace {
   wikiPages              WorkspaceWikiPage[]
   aiProviderConfigs      AiProviderConfig[]
   contradictionAudits    WikiContradictionAudit[]
+  agents                 Agent[]
   createdBy              User?                 @relation("WorkspaceCreator", fields: [createdById], references: [id])
 
   @@map("workspaces")
@@ -219,6 +220,7 @@ model Project {
   wikiPages            WikiPage[]
   aiProviderConfigs    AiProviderConfig[]
   contradictionAudits  WikiContradictionAudit[]
+  agents               Agent[]
 
   @@unique([workspaceId, identifier])
   @@map("projects")
@@ -319,6 +321,7 @@ model Task {
   linksFrom          TaskLink[]          @relation("TaskLinkFrom")
   genxSessions       TaskSession[]
   tags               TaskTag[]
+  agentRuns          AgentRun[]
   category           Category?           @relation(fields: [categoryId], references: [id])
   column             Column              @relation(fields: [columnId], references: [id])
   creator            User                @relation("TaskCreator", fields: [creatorId], references: [id])
@@ -1893,4 +1896,53 @@ model OAuthToken {
   @@index([expiresAt])
   @@index([revokedAt])
   @@map("oauth_tokens")
+}
+
+// ─── OpenClaw Agent Integration ───────────────────────────────────────────────
+
+/// An AI agent that can be dispatched to execute Kanbu tasks via OpenClaw.
+/// Agents belong to a workspace (shared pool) or optionally to a specific project (dedicated).
+model Agent {
+  id            Int       @id @default(autoincrement())
+  workspaceId   Int       @map("workspace_id")
+  projectId     Int?      @map("project_id")
+  name          String    @db.VarChar(255)
+  role          String?   @db.VarChar(100)
+  systemPrompt  String?   @map("system_prompt")
+  /// OpenClaw workspace directory path, e.g. ~/.openclaw/agents/{name}/
+  workspacePath String?   @map("workspace_path") @db.VarChar(500)
+  isActive      Boolean   @default(true) @map("is_active")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  workspace     Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  project       Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  runs          AgentRun[]
+
+  @@index([workspaceId])
+  @@index([projectId])
+  @@map("agents")
+}
+
+/// A single execution of an agent on a specific task.
+model AgentRun {
+  id         Int       @id @default(autoincrement())
+  agentId    Int       @map("agent_id")
+  taskId     Int       @map("task_id")
+  /// OpenClaw session key, e.g. "agent:main:{agent-name}"
+  sessionKey String    @map("session_key") @db.VarChar(255)
+  /// running | waiting | blocked | done | failed
+  status     String    @default("running") @db.VarChar(50)
+  startedAt  DateTime  @default(now()) @map("started_at")
+  endedAt    DateTime? @map("ended_at")
+
+  // Relations
+  agent      Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  task       Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@index([agentId])
+  @@index([taskId])
+  @@index([status])
+  @@map("agent_runs")
 }
