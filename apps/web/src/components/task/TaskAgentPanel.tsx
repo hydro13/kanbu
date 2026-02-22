@@ -190,6 +190,7 @@ function AgentRunItem({
     sessionKey: string;
     startedAt: string;
     endedAt: string | null;
+    response: string | null;
     agent: { id: number; name: string; role: string | null };
   };
 }) {
@@ -235,8 +236,13 @@ function AgentRunItem({
       </button>
 
       {expanded && (
-        <div className="px-3 pb-3 border-t border-gray-200 dark:border-gray-700 pt-2">
-          <p className="text-xs text-gray-500 dark:text-gray-400 font-mono break-all">
+        <div className="border-t border-gray-200 dark:border-gray-700 p-3 space-y-3">
+          {run.response && (
+            <div className="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap leading-relaxed">
+              {run.response}
+            </div>
+          )}
+          <p className="text-xs text-gray-400 dark:text-gray-500 font-mono break-all">
             Session: {run.sessionKey}
           </p>
         </div>

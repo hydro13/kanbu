@@ -130,7 +130,7 @@
 
 .lexical-content-editable {
   min-height: 150px;
-  max-height: 500px;
+  /* max-height controlled via inline style prop */
   padding: 1rem;
   overflow-y: auto;
   outline: none;
