@@ -57,8 +57,12 @@ packages/shared/prisma/*.db-journal
 # Vite generated config (we use .ts)
 vite.config.js
 
-# Claude Code session files
+# Claude Code session files and internal workflow docs
 CLAUDE.md
+TASKS.md
+WORKFLOW.md
+settings.local.json
+tasks/
 
 # SSL/TLS Certificates (generated locally)
 certs/
