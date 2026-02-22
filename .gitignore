@@ -64,6 +64,24 @@ WORKFLOW.md
 settings.local.json
 tasks/
 
+# Internal development docs (not for public repo)
+docs/DEV-ENVIRONMENT.md
+docs/Dashboard/
+docs/AD-STYLE-ROLE-ASSIGNMENTS-PLAN.md
+docs/PERMISSION-SYSTEM-PLAN.md
+docs/STATUS-ANALYSE.md
+docs/ACL/ROADMAP.md
+docs/ACL/MIGRATION.md
+docs/MCP/PLAN.md
+docs/MCP/ROADMAP.md
+docs/MCP/OAUTH-SPECIFICATION.md
+docs/Text-editor/
+docs/UI-Design-Kanbu/
+docs/procedures/
+docs/Github-connector/
+docs/Github-projects/
+docs/Backup-function/ROADMAP.md
+
 # SSL/TLS Certificates (generated locally)
 certs/
 
