@@ -1,8 +1,7 @@
 # Kanbu Roadmap
 
 **Last updated:** February 22, 2026
-**Current version:** 0.1.0-beta.5 (in development on `develop`)
-**Latest stable:** 0.1.0-beta.4 (released January 18, 2026)
+**Latest stable:** 0.1.0-beta.5 (released February 22, 2026)
 **License:** MIT
 
 Kanbu is a self-hosted, open-source project management system with enterprise-grade permissions (NTFS-style ACL), AI agent dispatch (OpenClaw), MCP integration (154+ tools), GitHub sync, knowledge graph (Graphiti), and real-time collaboration. Built as a monorepo with React, Fastify/tRPC, PostgreSQL, and Docker.
@@ -11,22 +10,22 @@ Kanbu is a self-hosted, open-source project management system with enterprise-gr
 
 ## Current Status
 
-| Category                    | Status                                         |
-| --------------------------- | ---------------------------------------------- |
-| **Core PM (board/tasks)**   | ✅ 95% complete                                |
-| **ACL & Permissions**       | ✅ 90% (edge cases open)                       |
-| **AI/MCP Integration**      | ✅ 95% (154 tools, OAuth 2.1 on develop)       |
-| **OpenClaw Agent Dispatch** | ✅ Complete (on develop, merging to main soon) |
-| **GitHub Integration**      | ✅ 90% (bi-directional sync)                   |
-| **Backup System**           | ✅ 95% (encrypted, scheduled, verified)        |
-| **Wiki & Knowledge Graph**  | ✅ 85% (versions, graph, contradictions)       |
-| **Real-time Collaboration** | ✅ 90% (cursors, presence, heartbeat)          |
-| **Docker Deployment**       | ✅ 90% (Coolify support)                       |
-| **OAuth 2.1 MCP**           | 🔄 80% (on develop)                            |
-| **Custom Fields**           | ❌ Not started                                 |
-| **Email Notifications**     | ❌ Not started                                 |
-| **Multi-instance Redis**    | ❌ Not started                                 |
-| **Budget Module**           | ❌ Not started                                 |
+| Category                    | Status                                   |
+| --------------------------- | ---------------------------------------- |
+| **Core PM (board/tasks)**   | ✅ 95% complete                          |
+| **ACL & Permissions**       | ✅ 90% (edge cases open)                 |
+| **AI/MCP Integration**      | ✅ 95% (154 tools, OAuth 2.1 on develop) |
+| **OpenClaw Agent Dispatch** | ✅ Complete (on `main`)                  |
+| **GitHub Integration**      | ✅ 90% (bi-directional sync)             |
+| **Backup System**           | ✅ 95% (encrypted, scheduled, verified)  |
+| **Wiki & Knowledge Graph**  | ✅ 85% (versions, graph, contradictions) |
+| **Real-time Collaboration** | ✅ 90% (cursors, presence, heartbeat)    |
+| **Docker Deployment**       | ✅ 90% (Coolify support)                 |
+| **OAuth 2.1 MCP**           | 🔄 80% (on develop)                      |
+| **Custom Fields**           | ❌ Not started                           |
+| **Email Notifications**     | ❌ Not started                           |
+| **Multi-instance Redis**    | ❌ Not started                           |
+| **Budget Module**           | ❌ Not started                           |
 
 ---
 
@@ -45,10 +44,6 @@ Kanbu is a self-hosted, open-source project management system with enterprise-gr
 
 ### In development on `develop`
 
-- ✅ OpenClaw agent dispatch — dispatch tasks to AI agents from the task view
-- ✅ Agent run history with response log
-- ✅ `@kanbu/openclaw-bridge` package
-- ✅ `Agent` and `AgentRun` Prisma models
 - 🔄 OAuth 2.1 for MCP Server (Phase 19)
 - 🔄 MCP Services admin page
 - 🔄 OAuth client management for users
@@ -60,6 +55,15 @@ Kanbu is a self-hosted, open-source project management system with enterprise-gr
 - ⬜ Cross-project search (currently intra-project only)
 - ⬜ Email notifications (missing entirely)
 - ⬜ Mobile responsive testing
+
+### Completed (beta.4 → beta.5, released 2026-02-22)
+
+- ✅ OpenClaw agent dispatch — dispatch tasks to AI agents from the task view
+- ✅ Agent run history with full response log
+- ✅ `@kanbu/openclaw-bridge` package
+- ✅ `Agent` and `AgentRun` Prisma models
+- ✅ MIT license (was AGPL-3.0)
+- ✅ GitHub integration setup guide ([docs/GITHUB-INTEGRATION.md](docs/GITHUB-INTEGRATION.md))
 
 ### Completed (beta.3 → beta.4, released 2026-01-18)
 
@@ -182,6 +186,7 @@ Kanbu is a self-hosted, open-source project management system with enterprise-gr
 - NTFS-style ACL (bitmask: R=1, W=2, X=4, D=8, P=16)
 - 154+ MCP tools for Claude Code
 - GitHub bi-directional sync (issues, PRs, commits, milestones)
+- **OpenClaw agent dispatch** (Agent tab on tasks, run history, response log)
 - Knowledge wiki with versioning (up to 20 versions)
 - Graphiti knowledge graph (Python/FastAPI + FalkorDB)
 - Real-time collaboration (cursors, presence, typing, heartbeat)
@@ -196,7 +201,6 @@ Kanbu is a self-hosted, open-source project management system with enterprise-gr
 
 ### 🔄 In Development (`develop` branch)
 
-- OpenClaw agent dispatch (Agent tab on tasks, run history, response log)
 - OAuth 2.1 for MCP Server (Phase 19)
 - MCP Services admin page
 - User OAuth management

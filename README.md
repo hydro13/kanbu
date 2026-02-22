@@ -144,6 +144,8 @@ Connect any MCP-compatible AI agent to manage your Kanbu projects with **154 ava
 - **Auto-link commits**: Reference tasks in commit messages
 - **Sync logs**: Complete visibility into what synced and when
 
+Requires a GitHub App installed on your account or organization. **[Setup guide →](docs/GITHUB-INTEGRATION.md)**
+
 <img width="2300" height="1407" alt="GitHub Integration" src="https://github.com/user-attachments/assets/154b6f4f-d23f-4dcf-88db-6b374b168b4c" />
 
 ### 💾 Enterprise Backup System
