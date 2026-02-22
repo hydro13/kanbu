@@ -9,14 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **OAuth 2.1 for MCP Server** (Phase 19) — secure OAuth flow for MCP client authorization
+- **MCP Services admin page** — manage OAuth applications and tokens from workspace settings
+
+---
+
+## [0.1.0-beta.5] - 2026-02-22
+
+### Added
+
 - **OpenClaw agent dispatch** — dispatch any task to an AI agent from the new Agent tab
 - **Agent run history** — every run logged with status, duration, and the agent's full response
 - **`@kanbu/openclaw-bridge` package** — HTTP client for OpenClaw gateway, task message builder
 - **`Agent` and `AgentRun` Prisma models** — agents belong to a workspace/project, runs track each dispatch
 - **OpenClaw-ready Docker compose** — `docker-compose.openclaw.yml` with all services
 - **Improved task description editor layout** — better scroll behavior and height handling
-- **OAuth 2.1 for MCP Server** (Phase 19) — secure OAuth flow for MCP client authorization
-- **MCP Services admin page** — manage OAuth applications and tokens from workspace settings
+- **MIT license** — switched from AGPL-3.0 to MIT
 
 ### Setup (OpenClaw)
 
@@ -26,6 +34,8 @@ Add to `apps/api/.env`:
 OPENCLAW_GATEWAY_URL=http://127.0.0.1:18789
 OPENCLAW_GATEWAY_TOKEN=your-token-here
 ```
+
+See [docs/OPENCLAW.md](docs/OPENCLAW.md) for the full setup guide.
 
 ---
 
@@ -342,7 +352,7 @@ Complete wiki management via Claude Code MCP integration - 18 new tools.
 - New files: `wiki.ts`, `wiki.test.ts`
 - Lines added: ~2000
 - Unit tests: 71 new tests for wiki tools
-- Total MCP tools: 93+
+- Total MCP tools at this release: 93+
 
 ---
 
@@ -389,50 +399,21 @@ Complete wiki management via Claude Code MCP integration - 18 new tools.
 
 ### Technical Stack
 
-- **Frontend**: React 18, TypeScript, Vite, Tailwind CSS, Shadcn/ui
-- **Backend**: Node.js 22, Fastify, tRPC v10, Socket.io
+- **Frontend**: React 19, TypeScript, Vite, Tailwind CSS, Shadcn/ui
+- **Backend**: Node.js 22, Fastify, tRPC 11, Socket.io
 - **Database**: PostgreSQL 15, Prisma ORM
 - **Monorepo**: pnpm workspaces, Turborepo
 - **Deployment**: Docker & Docker Compose
 
-### Known Limitations
+### Known Limitations at this release
 
-- Single-instance deployment only (multi-instance coming in v0.2.0)
-- Some edge cases in permission calculations (will be fixed)
-- Discord integration not yet available
-- Advanced reporting in progress
+- Single-instance deployment only (multi-instance planned)
+- Some edge cases in permission calculations
+- Discord/Slack integration not yet available
 
 ### Breaking Changes
 
 None - Initial beta release
-
----
-
-## Roadmap
-
-### Version 0.2.0 (Q2 2026)
-
-- [ ] Multi-instance Redis support
-- [ ] Performance optimization
-- [ ] Advanced permission edge cases fixed
-- [ ] Knowledge graph wiki improvements
-- [ ] Email notifications
-
-### Version 0.3.0 (Q3 2026)
-
-- [ ] Discord integration
-- [ ] Slack integration
-- [ ] Advanced reporting dashboard
-- [ ] Custom fields system
-- [ ] Template system
-
-### Version 1.0.0 (Q4 2026)
-
-- [ ] API v2 with GraphQL
-- [ ] SSO/SAML and advanced auth
-- [ ] Advanced analytics
-- [ ] Team workload optimization
-- [ ] Production-ready stability
 
 ---
 
