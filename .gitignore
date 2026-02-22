@@ -63,6 +63,7 @@ TASKS.md
 WORKFLOW.md
 settings.local.json
 tasks/
+memory/
 
 # Internal development docs (not for public repo)
 docs/DEV-ENVIRONMENT.md
