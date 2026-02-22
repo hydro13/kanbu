@@ -1,7 +1,7 @@
 # Kanbu Roadmap
 
 **Last updated:** February 22, 2026
-**Latest stable:** 0.1.0-beta.5 (released February 22, 2026)
+**Latest stable:** v0.1.0 (released February 22, 2026)
 **License:** MIT
 
 Kanbu is a self-hosted, open-source project management system with scoped permissions (filesystem-style ACL), AI agent dispatch (OpenClaw), MCP integration (154+ tools), GitHub sync, knowledge graph (Graphiti), wiki with semantic search, real-time collaboration, and analytics. Built as a monorepo with React, Fastify/tRPC, PostgreSQL, and Docker.
@@ -32,16 +32,16 @@ Kanbu is a self-hosted, open-source project management system with scoped permis
 
 ## Release Overview
 
-| Version    | Title                   | Status         |
-| ---------- | ----------------------- | -------------- |
-| **v0.1.x** | Beta Stabilization      | 🔄 In Progress |
-| **v0.2.0** | Multi-instance & Polish | ⬜ Planned     |
-| **v0.3.0** | Custom Fields & Budget  | ⬜ Planned     |
-| **v1.0.0** | Stable Release          | 💭 Future      |
+| Version    | Title                   | Status      |
+| ---------- | ----------------------- | ----------- |
+| **v0.1.0** | Initial Stable Release  | ✅ Released |
+| **v0.2.0** | Multi-instance & Polish | ⬜ Planned  |
+| **v0.3.0** | Custom Fields & Budget  | ⬜ Planned  |
+| **v1.0.0** | Stable Release          | 💭 Future   |
 
 ---
 
-## 🔄 v0.1.x — Beta Stabilization (current)
+## ✅ v0.1.0 — Initial Stable Release (released 2026-02-22)
 
 ### In development on `develop`
 
@@ -55,17 +55,14 @@ Kanbu is a self-hosted, open-source project management system with scoped permis
 - ⬜ Email notifications (missing entirely)
 - ⬜ Mobile layout optimization (basic responsive done, no dedicated mobile UX)
 
-### Completed (beta.4 → beta.5, released 2026-02-22)
+### Completed in v0.1.0
 
 - ✅ OpenClaw agent dispatch — dispatch tasks to AI agents from the task view
 - ✅ Agent run history with full response log
 - ✅ `@kanbu/openclaw-bridge` package
 - ✅ `Agent` and `AgentRun` Prisma models
-- ✅ MIT license (was AGPL-3.0)
+- ✅ MIT license
 - ✅ GitHub integration setup guide ([docs/GITHUB-INTEGRATION.md](docs/GITHUB-INTEGRATION.md))
-
-### Completed (beta.3 → beta.4, released 2026-01-18)
-
 - ✅ Backup encryption (AES-256-GCM)
 - ✅ Backup verification (SHA-256 checksums)
 - ✅ Backup self-service (UI: list, download, delete)
