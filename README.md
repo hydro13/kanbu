@@ -8,7 +8,7 @@
 [![GitHub last commit](https://img.shields.io/github/last-commit/hydro13/kanbu)](https://github.com/hydro13/kanbu/commits)
 [![GitHub issues](https://img.shields.io/github/issues/hydro13/kanbu)](https://github.com/hydro13/kanbu/issues)
 [![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Status: Beta](https://img.shields.io/badge/Status-Beta-yellow)](https://github.com/hydro13/kanbu/releases)
+[![Status: Stable](https://img.shields.io/badge/Status-Stable-brightgreen)](https://github.com/hydro13/kanbu/releases)
 
 <img width="2428" height="1846" alt="Kanbu Board" src="https://github.com/user-attachments/assets/6cd89fcd-2afa-44c1-a200-8cef163e8c31" />
 
@@ -38,7 +38,7 @@ Kanbu is different:
 | "I want AI to help but it can't access my tasks"               | **154 MCP tools** - Claude Code works directly in your board         |
 | "I want to dispatch tasks to AI agents and see what they do"   | **OpenClaw agent dispatch** — one click, agent runs, response logged |
 | "GitHub issues and my PM tool are never in sync"               | **Bi-directional GitHub sync** with webhook integration              |
-| "I want to self-host but lose features"                        | Community edition has MORE features than most paid tools             |
+| "I want to self-host but lose features"                        | **No seat fees, no feature gates** — everything included, always     |
 | "My backups are not secure or automated"                       | **Automated backups** with AES-256-GCM encryption & scheduling       |
 | "My team speaks different languages"                           | Each user talks to their own AI assistant in their own language      |
 
@@ -60,30 +60,10 @@ Kanbu is different:
 
 Kanbu implements a permission system inspired by filesystem ACLs (think Windows NTFS / Active Directory, but for a web app).
 
-- **Granular permissions**: Bitmask-based control (Read, Write, Execute, Delete, Permissions).
+- **Granular permissions**: Read, Write, Execute, Delete, Permissions — each independently grantable or deniable.
 - **Inheritance**: Workspace → Project → Task permissions flow down automatically.
 - **Deny-first logic**: Explicit deny overrides any grant (e.g., ban a specific user from a project even if they are an admin).
 - **Audit logs**: Complete security trail with export to CSV/JSON.
-
-**Permission Bitmask:**
-
-| Bit | Permission  | Value | Description                |
-| --- | ----------- | ----- | -------------------------- |
-| R   | Read        | 1     | View resource              |
-| W   | Write       | 2     | Modify resource            |
-| X   | Execute     | 4     | Perform actions (reserved) |
-| D   | Delete      | 8     | Remove resource            |
-| P   | Permissions | 16    | Manage ACL entries         |
-
-**Role Mapping:**
-
-| Role    | Workspace ACL     | Project ACL       |
-| ------- | ----------------- | ----------------- |
-| OWNER   | FULL_CONTROL (31) | FULL_CONTROL (31) |
-| ADMIN   | FULL_CONTROL (31) | -                 |
-| MANAGER | -                 | EDITOR (15)       |
-| MEMBER  | CONTRIBUTOR (7)   | CONTRIBUTOR (7)   |
-| VIEWER  | READ_ONLY (1)     | READ_ONLY (1)     |
 
 ### 🧠 Built-in Knowledge Graph Engine
 
@@ -137,7 +117,6 @@ When not configured, the Agent tab shows a friendly "not configured" state inste
 ### 🔌 AI Agent Integration (MCP)
 
 Connect any MCP-compatible AI agent to manage your Kanbu projects with **154 available tools**.
-**Status: Production Ready (Hardened)**
 
 **Tool Categories:**
 
@@ -255,12 +234,12 @@ Then restart the API. The Agent tab will appear on every task.
 
 ## Get involved
 
-If you use OpenClaw, you're exactly who this is built for. Your feedback, bug reports, and ideas are the most valuable thing this project can get right now.
+If you use AI agents to write code — OpenClaw, Claude Code, Cursor, or anything MCP-compatible — this is built for you. Your feedback, bug reports, and ideas are the most valuable thing this project can get right now.
 
 **Ways to contribute:**
 
 - **Try it and tell me what broke** — open an [issue](https://github.com/hydro13/kanbu/issues)
-- **Share your OpenClaw workflow** — what context does your agent need that Kanbu doesn't send yet?
+- **Share your agent workflow** — what context does your agent need that Kanbu doesn't send yet?
 - **Pick up a feature** — check the [roadmap](ROADMAP.md) for what's next
 - **Improve the Docker setup** — make self-hosting easier for others
 - **Fix something that annoys you** — PRs welcome, no permission needed
