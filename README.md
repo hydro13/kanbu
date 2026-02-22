@@ -1,17 +1,25 @@
 # Kanbu
 
-**Self-hosted project management built for the autonomous AI agent era.**
+**Self-hosted project management for people who work with AI agents.**
 
-> Assign tasks to AI agents. They execute autonomously, build knowledge as they work, and ask for your approval when they need it. You stay in control.
->
-> [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-> [![GitHub release (latest by date)](https://img.shields.io/github/v/release/hydro13/kanbu?label=version&color=brightgreen)](https://github.com/hydro13/kanbu/releases)
-> [![GitHub last commit](https://img.shields.io/github/last-commit/hydro13/kanbu)](https://github.com/hydro13/kanbu/commits)
-> [![GitHub issues](https://img.shields.io/github/issues/hydro13/kanbu)](https://github.com/hydro13/kanbu/issues)
-> [![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-> [![Status: Beta](https://img.shields.io/badge/Status-Beta-yellow)](https://github.com/hydro13/kanbu/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/hydro13/kanbu?label=version&color=brightgreen)](https://github.com/hydro13/kanbu/releases)
+[![GitHub last commit](https://img.shields.io/github/last-commit/hydro13/kanbu)](https://github.com/hydro13/kanbu/commits)
+[![GitHub issues](https://img.shields.io/github/issues/hydro13/kanbu)](https://github.com/hydro13/kanbu/issues)
+[![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Status: Beta](https://img.shields.io/badge/Status-Beta-yellow)](https://github.com/hydro13/kanbu/releases)
 
 <img width="2428" height="1846" alt="Kanbu Board" src="https://github.com/user-attachments/assets/6cd89fcd-2afa-44c1-a200-8cef163e8c31" />
+
+---
+
+## Built for OpenClaw users
+
+I built Kanbu because I use [OpenClaw](https://github.com/OpenClaw-AI/openclaw) every day. My projects regularly cross 300,000 lines of code — and at that scale, you need somewhere to track what your agents are doing, what's been decided, and what comes next. No tool did that. So I built one.
+
+Kanbu connects directly to your local OpenClaw gateway. Dispatch any task to an agent from the task view, read its response, steer it with follow-up instructions, and let it update the board as it works. Your task list becomes the shared memory between you and your agents.
+
+It's MIT. It's self-hosted. It's here because I needed it, and maybe you do too.
 
 ---
 
@@ -25,6 +33,7 @@ Kanbu is different:
 | ------------------------------------------------------------ | -------------------------------------------------------------------- |
 | "I need enterprise permissions but Trello doesn't have them" | **NTFS-style ACL** with inheritance, deny rules, and security groups |
 | "I want AI to help but it can't access my tasks"             | **154 MCP tools** - Claude Code works directly in your board         |
+| "I want to dispatch tasks to AI agents and see what they do" | **OpenClaw agent dispatch** — one click, agent runs, response logged |
 | "GitHub issues and my PM tool are never in sync"             | **Bi-directional GitHub sync** with webhook integration              |
 | "I want to self-host but lose features"                      | Community edition has MORE features than most paid tools             |
 | "My backups are not secure or automated"                     | **Enterprise backup system** with AES-256 encryption & scheduling    |
@@ -88,6 +97,28 @@ Kanbu includes a complete wiki intelligence system, built in **TypeScript** (33,
 
 _Inspired by [Graphiti](https://github.com/getzep/graphiti) — thanks for the foundation._
 
+### 🤖 AI Agent Dispatch (OpenClaw)
+
+If you run [OpenClaw](https://github.com/OpenClaw-AI/openclaw), Kanbu connects directly to your local agent gateway. Assign any task to an AI agent with one click — no copy-pasting, no context switching.
+
+- **One-click dispatch**: Open any task → Agent tab → select agent → Dispatch
+- **Task context included automatically**: Title, description, project and workspace name are sent as a structured prompt
+- **Custom instructions per run**: Add extra steering without editing the task
+- **Run history with response**: Every run is logged with status, duration, and the agent's full response
+- **Iterative control loop**: Dispatch → read response → dispatch again with new instructions
+- **Fire-and-forget**: Returns immediately, status updates async as the agent works
+
+**Setup** (2 env vars):
+
+```env
+OPENCLAW_GATEWAY_URL=http://127.0.0.1:18789
+OPENCLAW_GATEWAY_TOKEN=your-token-here
+```
+
+When not configured, the Agent tab shows a friendly "not configured" state instead of an error.
+
+---
+
 ### 🔌 AI Agent Integration (MCP)
 
 Connect any MCP-compatible AI agent to manage your Kanbu projects with **154 available tools**.
@@ -132,14 +163,15 @@ Complete backup solution with enterprise-grade security:
 
 ## Tech Stack
 
-| Layer      | Technology                                           |
-| ---------- | ---------------------------------------------------- |
-| Frontend   | React 18, TypeScript, Vite, Tailwind CSS, Shadcn/ui  |
-| State      | Redux Toolkit, TanStack Query                        |
-| Backend    | Node.js 22, Fastify, tRPC v10, Socket.io             |
-| Database   | PostgreSQL 15, Prisma ORM                            |
-| AI / Graph | Kanbu Graphiti (Python/FastAPI), FalkorDB (Graph DB) |
-| Monorepo   | pnpm workspaces, Turborepo                           |
+| Layer      | Technology                                            |
+| ---------- | ----------------------------------------------------- |
+| Frontend   | React 18, TypeScript, Vite, Tailwind CSS, Shadcn/ui   |
+| State      | Redux Toolkit, TanStack Query                         |
+| Backend    | Node.js 22, Fastify, tRPC v10, Socket.io              |
+| Database   | PostgreSQL 15, Prisma ORM                             |
+| AI / Graph | Kanbu Graphiti (Python/FastAPI), FalkorDB (Graph DB)  |
+| Agent      | OpenClaw gateway (optional), `@kanbu/openclaw-bridge` |
+| Monorepo   | pnpm workspaces, Turborepo                            |
 
 ---
 
@@ -178,29 +210,38 @@ docker compose -f docker-compose.selfhosted.yml up -d
 
 ---
 
-## Contributing
+## Get involved
 
-Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) before submitting a PR.
+If you use OpenClaw, you're exactly who this is built for. Your feedback, bug reports, and ideas are the most valuable thing this project can get right now.
+
+**Ways to contribute:**
+
+- **Try it and tell me what broke** — open an [issue](https://github.com/hydro13/kanbu/issues)
+- **Share your OpenClaw workflow** — what context does your agent need that Kanbu doesn't send yet?
+- **Pick up a feature** — check the [roadmap](ROADMAP.md) for what's next
+- **Improve the Docker setup** — make self-hosting easier for others
+- **Fix something that annoys you** — PRs welcome, no permission needed
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions.
+
+---
+
+## Community
+
+- 💬 [Discord](https://discord.com/channels/1461655382492446927/1461655383708799153) — ask questions, share what you're building
+- 🐛 [Issues](https://github.com/hydro13/kanbu/issues) — bug reports and feature requests
+- 📋 [Roadmap](ROADMAP.md) — what's planned and what's done
+
+---
 
 ## License
 
-**MIT License**
-
-- ✅ Use, modify, and distribute freely
-- ✅ Commercial use allowed
-- ✅ Use in closed-source and proprietary projects
-- ✅ No restrictions on how you deploy or integrate it
+MIT — use it, fork it, build on it. No strings attached.
 
 See [LICENSE](LICENSE) for details.
-
-## Support
-
-- 💬 [Discord Community](https://discord.com/channels/1461655382492446927/1461655383708799153)
-- 🐛 [Issue Tracker](https://github.com/hydro13/kanbu/issues)
 
 ---
 
 <p align="center">
-  <b>Kanbu</b> - Project management for the AI era<br>
-  Built with ❤️ by Robin Waslander
+  Built by <a href="https://github.com/hydro13">Robin Waslander</a> — an OpenClaw user who needed this to exist.
 </p>
