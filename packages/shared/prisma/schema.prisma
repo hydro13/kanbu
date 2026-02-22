@@ -1936,6 +1936,8 @@ model AgentRun {
   status     String    @default("running") @db.VarChar(50)
   startedAt  DateTime  @default(now()) @map("started_at")
   endedAt    DateTime? @map("ended_at")
+  /// Agent's response text from OpenClaw
+  response   String?   @map("response")
 
   // Relations
   agent      Agent     @relation(fields: [agentId], references: [id], onDelete: Cascade)

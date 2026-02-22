@@ -164,15 +164,19 @@ export const agentsRouter = router({
 
     setImmediate(async () => {
       try {
-        await client.send(taskContext, sessionKey);
+        const response = await client.send(taskContext, sessionKey);
         await prisma.agentRun.update({
           where: { id: runId },
-          data: { status: 'completed', endedAt: new Date() },
+          data: { status: 'completed', endedAt: new Date(), response },
         });
-      } catch {
+      } catch (err) {
         await prisma.agentRun.update({
           where: { id: runId },
-          data: { status: 'failed', endedAt: new Date() },
+          data: {
+            status: 'failed',
+            endedAt: new Date(),
+            response: err instanceof Error ? err.message : String(err),
+          },
         });
       }
     });

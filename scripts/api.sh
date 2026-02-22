@@ -3,7 +3,7 @@
 # Usage: ./scripts/api.sh [start|stop|restart|status]
 
 # Setup PATH for pnpm/node
-export PATH="/home/robin/snap/code/217/.local/share/pnpm/nodejs/22.21.1/bin:/home/robin/snap/code/217/.local/share/pnpm:$PATH"
+export PATH="/home/robin/snap/code/current/.local/share/pnpm/nodejs/22.21.1/bin:/home/robin/snap/code/current/.local/share/pnpm:$PATH"
 
 API_DIR="/home/robin/genx/v6/dev/kanbu/apps/api"
 API_PORT=3001

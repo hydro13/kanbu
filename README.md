@@ -25,6 +25,7 @@ Kanbu is different:
 | ------------------------------------------------------------ | -------------------------------------------------------------------- |
 | "I need enterprise permissions but Trello doesn't have them" | **NTFS-style ACL** with inheritance, deny rules, and security groups |
 | "I want AI to help but it can't access my tasks"             | **154 MCP tools** - Claude Code works directly in your board         |
+| "I want to dispatch tasks to AI agents and see what they do" | **OpenClaw agent dispatch** — one click, agent runs, response logged |
 | "GitHub issues and my PM tool are never in sync"             | **Bi-directional GitHub sync** with webhook integration              |
 | "I want to self-host but lose features"                      | Community edition has MORE features than most paid tools             |
 | "My backups are not secure or automated"                     | **Enterprise backup system** with AES-256 encryption & scheduling    |
@@ -88,6 +89,28 @@ Kanbu includes a complete wiki intelligence system, built in **TypeScript** (33,
 
 _Inspired by [Graphiti](https://github.com/getzep/graphiti) — thanks for the foundation._
 
+### 🤖 AI Agent Dispatch (OpenClaw)
+
+If you run [OpenClaw](https://github.com/OpenClaw-AI/openclaw), Kanbu connects directly to your local agent gateway. Assign any task to an AI agent with one click — no copy-pasting, no context switching.
+
+- **One-click dispatch**: Open any task → Agent tab → select agent → Dispatch
+- **Task context included automatically**: Title, description, project and workspace name are sent as a structured prompt
+- **Custom instructions per run**: Add extra steering without editing the task
+- **Run history with response**: Every run is logged with status, duration, and the agent's full response
+- **Iterative control loop**: Dispatch → read response → dispatch again with new instructions
+- **Fire-and-forget**: Returns immediately, status updates async as the agent works
+
+**Setup** (2 env vars):
+
+```env
+OPENCLAW_GATEWAY_URL=http://127.0.0.1:18789
+OPENCLAW_GATEWAY_TOKEN=your-token-here
+```
+
+When not configured, the Agent tab shows a friendly "not configured" state instead of an error.
+
+---
+
 ### 🔌 AI Agent Integration (MCP)
 
 Connect any MCP-compatible AI agent to manage your Kanbu projects with **154 available tools**.
@@ -132,14 +155,15 @@ Complete backup solution with enterprise-grade security:
 
 ## Tech Stack
 
-| Layer      | Technology                                           |
-| ---------- | ---------------------------------------------------- |
-| Frontend   | React 18, TypeScript, Vite, Tailwind CSS, Shadcn/ui  |
-| State      | Redux Toolkit, TanStack Query                        |
-| Backend    | Node.js 22, Fastify, tRPC v10, Socket.io             |
-| Database   | PostgreSQL 15, Prisma ORM                            |
-| AI / Graph | Kanbu Graphiti (Python/FastAPI), FalkorDB (Graph DB) |
-| Monorepo   | pnpm workspaces, Turborepo                           |
+| Layer      | Technology                                            |
+| ---------- | ----------------------------------------------------- |
+| Frontend   | React 18, TypeScript, Vite, Tailwind CSS, Shadcn/ui   |
+| State      | Redux Toolkit, TanStack Query                         |
+| Backend    | Node.js 22, Fastify, tRPC v10, Socket.io              |
+| Database   | PostgreSQL 15, Prisma ORM                             |
+| AI / Graph | Kanbu Graphiti (Python/FastAPI), FalkorDB (Graph DB)  |
+| Agent      | OpenClaw gateway (optional), `@kanbu/openclaw-bridge` |
+| Monorepo   | pnpm workspaces, Turborepo                            |
 
 ---
 
