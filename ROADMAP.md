@@ -1,64 +1,67 @@
 # Kanbu Roadmap
 
-**Laatste update:** 6 februari 2026
-**Versie:** 0.1.0-beta.4 (latest release: 18 jan 2026)
-**Licentie:** MIT
+**Last updated:** February 22, 2026
+**Current version:** 0.1.0-beta.5 (in development on `develop`)
+**Latest stable:** 0.1.0-beta.4 (released January 18, 2026)
+**License:** MIT
 
-Kanbu is een self-hosted, open-source project management systeem met enterprise-grade permissies (NTFS-style ACL), AI integratie (154+ MCP tools), GitHub sync, knowledge graph (Graphiti), en real-time samenwerking. Gebouwd als monorepo met React, Fastify/tRPC, PostgreSQL en Docker.
-
----
-
-## Huidige Status
-
-| Categorie                         | Status                                        |
-| --------------------------------- | --------------------------------------------- |
-| **Core PM (board/tasks/sprints)** | ✅ 95% compleet                               |
-| **ACL & Permissies**              | ✅ 90% (edge cases open)                      |
-| **AI/MCP Integratie**             | ✅ 95% (154 tools, Phase 19 OAuth op develop) |
-| **GitHub Integration**            | ✅ 90% (bi-directional sync)                  |
-| **Backup Systeem**                | ✅ 95% (encrypted, scheduled, verified)       |
-| **Wiki & Knowledge**              | ✅ 85% (versions, graph, contradictions)      |
-| **Real-time Collab**              | ✅ 90% (cursors, presence, heartbeat)         |
-| **Docker Deployment**             | ✅ 90% (Coolify support)                      |
-| **OAuth 2.1 MCP**                 | 🔄 80% (op develop, 8 commits)                |
-| **Custom Fields**                 | ❌ 0%                                         |
-| **Email Notifications**           | ❌ 0%                                         |
-| **Multi-instance Redis**          | ❌ 0%                                         |
-| **Budget Module**                 | ❌ 0%                                         |
+Kanbu is a self-hosted, open-source project management system with enterprise-grade permissions (NTFS-style ACL), AI agent dispatch (OpenClaw), MCP integration (154+ tools), GitHub sync, knowledge graph (Graphiti), and real-time collaboration. Built as a monorepo with React, Fastify/tRPC, PostgreSQL, and Docker.
 
 ---
 
-## Phase Overview
+## Current Status
 
-| Phase      | Titel                        | Status         | Target   |
-| ---------- | ---------------------------- | -------------- | -------- |
-| **v0.1.x** | Beta Stabilization           | 🔄 In Progress | Feb 2026 |
-| **v0.2.0** | Multi-instance & Performance | ⬜ Planned     | Q2 2026  |
-| **v0.3.0** | Integrations & Custom Fields | ⬜ Planned     | Q3 2026  |
-| **v1.0.0** | Stable Release               | 💭 Future      | Q4 2026  |
+| Category                    | Status                                         |
+| --------------------------- | ---------------------------------------------- |
+| **Core PM (board/tasks)**   | ✅ 95% complete                                |
+| **ACL & Permissions**       | ✅ 90% (edge cases open)                       |
+| **AI/MCP Integration**      | ✅ 95% (154 tools, OAuth 2.1 on develop)       |
+| **OpenClaw Agent Dispatch** | ✅ Complete (on develop, merging to main soon) |
+| **GitHub Integration**      | ✅ 90% (bi-directional sync)                   |
+| **Backup System**           | ✅ 95% (encrypted, scheduled, verified)        |
+| **Wiki & Knowledge Graph**  | ✅ 85% (versions, graph, contradictions)       |
+| **Real-time Collaboration** | ✅ 90% (cursors, presence, heartbeat)          |
+| **Docker Deployment**       | ✅ 90% (Coolify support)                       |
+| **OAuth 2.1 MCP**           | 🔄 80% (on develop)                            |
+| **Custom Fields**           | ❌ Not started                                 |
+| **Email Notifications**     | ❌ Not started                                 |
+| **Multi-instance Redis**    | ❌ Not started                                 |
+| **Budget Module**           | ❌ Not started                                 |
 
 ---
 
-## 🔄 v0.1.x — Beta Stabilization (NU)
+## Release Overview
 
-### Ongemerged op develop (8 commits)
+| Version    | Title                        | Status         | Target  |
+| ---------- | ---------------------------- | -------------- | ------- |
+| **v0.1.x** | Beta Stabilization           | 🔄 In Progress | Q1 2026 |
+| **v0.2.0** | Multi-instance & Performance | ⬜ Planned     | Q2 2026 |
+| **v0.3.0** | Integrations & Custom Fields | ⬜ Planned     | Q3 2026 |
+| **v1.0.0** | Stable Release               | 💭 Future      | Q4 2026 |
 
-- 🔄 OAuth 2.1 voor MCP Server (Phase 19)
+---
+
+## 🔄 v0.1.x — Beta Stabilization (current)
+
+### In development on `develop`
+
+- ✅ OpenClaw agent dispatch — dispatch tasks to AI agents from the task view
+- ✅ Agent run history with response log
+- ✅ `@kanbu/openclaw-bridge` package
+- ✅ `Agent` and `AgentRun` Prisma models
+- 🔄 OAuth 2.1 for MCP Server (Phase 19)
 - 🔄 MCP Services admin page
-- 🔄 OAuth client management voor users
-- 🔄 ESLint no-explicit-any warnings opgelost
-- 🔄 Coolify multi-env deployment fixes
+- 🔄 OAuth client management for users
 
 ### Open Issues
 
-- ⬜ Permission edge cases (ACL inheritance diepte)
-- ⬜ Performance bij 100+ taken per board
-- ⬜ Cross-project search (alleen intra-project nu)
-- ⬜ Email notificaties (ontbreken volledig)
+- ⬜ Permission edge cases (ACL inheritance depth)
+- ⬜ Performance with 100+ tasks per board
+- ⬜ Cross-project search (currently intra-project only)
+- ⬜ Email notifications (missing entirely)
 - ⬜ Mobile responsive testing
-- ⬜ Storybook coverage uitbreiden
 
-### Recent Afgerond (beta.3 → beta.4)
+### Completed (beta.3 → beta.4, released 2026-01-18)
 
 - ✅ Backup encryption (AES-256-GCM)
 - ✅ Backup verification (SHA-256 checksums)
@@ -77,29 +80,29 @@ Kanbu is een self-hosted, open-source project management systeem met enterprise-
 
 ### 2.1 Multi-instance
 
-- ⬜ Redis adapter voor Socket.io (meerdere API instances)
+- ⬜ Redis adapter for Socket.io (multiple API instances)
 - ⬜ Shared session store (Redis)
-- ⬜ Load balancer config documentatie
-- ⬜ Health check endpoints verbeteren
+- ⬜ Load balancer configuration documentation
+- ⬜ Improved health check endpoints
 
 ### 2.2 Performance
 
-- ⬜ Optimalisatie voor 100+ taken per board
-- ⬜ Database query optimalisatie (N+1 checks)
-- ⬜ Lazy loading voor grote projecten
-- ⬜ Virtual scrolling voor lange lijsten
-- ⬜ Bundle size analyse en reductie
+- ⬜ Optimization for 100+ tasks per board
+- ⬜ Database query optimization (N+1 checks)
+- ⬜ Lazy loading for large projects
+- ⬜ Virtual scrolling for long lists
+- ⬜ Bundle size analysis and reduction
 
-### 2.3 Email Notificaties
+### 2.3 Email Notifications
 
-- ⬜ Email service integratie (Resend/SendGrid)
-- ⬜ Notificatie templates (task assigned, comment, mention)
-- ⬜ Per-user notificatie voorkeuren
-- ⬜ Digest emails (dagelijks/wekelijks)
+- ⬜ Email service integration (Resend/SendGrid)
+- ⬜ Notification templates (task assigned, comment, mention)
+- ⬜ Per-user notification preferences
+- ⬜ Digest emails (daily/weekly)
 
 ### 2.4 Permission Fixes
 
-- ⬜ ACL inheritance edge cases oplossen
+- ⬜ ACL inheritance edge cases
 - ⬜ Bulk permission changes
 - ⬜ Permission audit report
 - ⬜ Permission templates per role
@@ -112,29 +115,29 @@ Kanbu is een self-hosted, open-source project management systeem met enterprise-
 
 - ⬜ Custom field types (text, number, date, dropdown, checkbox)
 - ⬜ Custom fields per project
-- ⬜ Custom field waarden op tasks
-- ⬜ Filteren en sorteren op custom fields
+- ⬜ Custom field values on tasks
+- ⬜ Filter and sort by custom fields
 - ⬜ Custom field templates
 
 ### 3.2 Discord Integration
 
-- ⬜ Webhook notificaties naar Discord
+- ⬜ Webhook notifications to Discord
 - ⬜ Bot commands (create task, update status)
 - ⬜ Channel-per-project mapping
 
 ### 3.3 Slack Integration
 
-- ⬜ Slack app installatie flow
-- ⬜ Task notificaties in channels
+- ⬜ Slack app installation flow
+- ⬜ Task notifications in channels
 - ⬜ Slash commands (/kanbu create, /kanbu status)
 
 ### 3.4 Advanced Reporting
 
-- ⬜ Dashboard met team metrics
+- ⬜ Dashboard with team metrics
 - ⬜ Velocity charts
 - ⬜ Lead time / cycle time tracking
 - ⬜ Custom report builder
-- ⬜ Export naar PDF/CSV
+- ⬜ Export to PDF/CSV
 
 ### 3.5 Budget Module
 
@@ -149,13 +152,13 @@ Kanbu is een self-hosted, open-source project management systeem met enterprise-
 
 ### 4.1 API v2
 
-- 💭 GraphQL endpoint naast tRPC
-- 💭 Public API documentatie (OpenAPI/Swagger)
+- 💭 GraphQL endpoint alongside tRPC
+- 💭 Public API documentation (OpenAPI/Swagger)
 - 💭 API versioning
 
 ### 4.2 Enterprise
 
-- 💭 SSO/SAML integratie
+- 💭 SSO/SAML integration
 - 💭 Custom domain support
 - 💭 On-premise deployment guide
 - 💭 Team workload analytics
@@ -169,19 +172,19 @@ Kanbu is een self-hosted, open-source project management systeem met enterprise-
 
 ---
 
-## Feature Inventaris
+## Feature Inventory
 
-### ✅ Production-Ready
+### ✅ Production-Ready (on `main`)
 
-- Kanban board met drag-and-drop, swimlanes, WIP limits
+- Kanban board with drag-and-drop, swimlanes, WIP limits
 - Board, List, Calendar, Timeline views
-- Sprints & milestones met burndown charts
+- Sprints & milestones with burndown charts
 - NTFS-style ACL (bitmask: R=1, W=2, X=4, D=8, P=16)
-- 154+ MCP tools voor Claude Code
+- 154+ MCP tools for Claude Code
 - GitHub bi-directional sync (issues, PRs, commits, milestones)
-- Knowledge wiki met versioning (max 20 versions)
+- Knowledge wiki with versioning (up to 20 versions)
 - Graphiti knowledge graph (Python/FastAPI + FalkorDB)
-- Real-time samenwerking (cursors, presence, typing, heartbeat)
+- Real-time collaboration (cursors, presence, typing, heartbeat)
 - Enterprise backup (AES-256-GCM, SHA-256, scheduling, restore wizard)
 - Comments, attachments, subtasks, task links
 - Tags, categories, time tracking
@@ -191,19 +194,20 @@ Kanbu is een self-hosted, open-source project management systeem met enterprise-
 - Pre-commit hooks (Husky + lint-staged)
 - CI/CD pipeline (GitHub Actions)
 
-### 🔄 In Development (develop branch)
+### 🔄 In Development (`develop` branch)
 
-- OAuth 2.1 voor MCP Server (Phase 19)
+- OpenClaw agent dispatch (Agent tab on tasks, run history, response log)
+- OAuth 2.1 for MCP Server (Phase 19)
 - MCP Services admin page
 - User OAuth management
 
-### ❌ Niet Gestart
+### ❌ Not Started
 
 - Custom fields
-- Email notificaties
+- Email notifications
 - Multi-instance Redis support
 - Budget module
-- Discord/Slack integraties
+- Discord/Slack integrations
 - Advanced reporting dashboard
 - GraphQL API
 - Mobile optimization
@@ -212,12 +216,13 @@ Kanbu is een self-hosted, open-source project management systeem met enterprise-
 
 ## Tech Stack
 
-| Layer      | Technologie                                                        |
+| Layer      | Technology                                                         |
 | ---------- | ------------------------------------------------------------------ |
 | Frontend   | React 19, TypeScript, Vite 6, Tailwind 3, Shadcn/ui, Redux Toolkit |
 | Backend    | Node.js 22, Fastify 5, tRPC 11, Socket.io                          |
-| Database   | PostgreSQL 15, Prisma 6 (50+ modellen, 1803 regels schema)         |
+| Database   | PostgreSQL 15, Prisma 6 (50+ models, 1800+ line schema)            |
 | AI/Graph   | Kanbu Graphiti (Python/FastAPI), FalkorDB                          |
+| Agent      | OpenClaw gateway (optional), `@kanbu/openclaw-bridge`              |
 | Monorepo   | pnpm workspaces, Turborepo                                         |
 | Deployment | Docker, nginx, Coolify PaaS                                        |
 
@@ -225,15 +230,6 @@ Kanbu is een self-hosted, open-source project management systeem met enterprise-
 
 ## Links
 
-- **Task Tracking:** [TASKS.md](./TASKS.md)
 - **Changelog:** [CHANGELOG.md](./CHANGELOG.md)
 - **Contributing:** [CONTRIBUTING.md](./CONTRIBUTING.md)
 - **GitHub:** https://github.com/hydro13/kanbu
-
----
-
-## Versioning
-
-| Versie | Datum      | Wijzigingen                                             |
-| ------ | ---------- | ------------------------------------------------------- |
-| 1.0    | 6 feb 2026 | Initiële roadmap (v0.1.x-beta.4, develop branch status) |
