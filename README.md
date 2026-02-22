@@ -119,6 +119,10 @@ OPENCLAW_GATEWAY_TOKEN=your-token-here
 
 When not configured, the Agent tab shows a friendly "not configured" state instead of an error.
 
+<!-- Agent tab screenshot -->
+
+**[Setup guide →](docs/OPENCLAW.md)**
+
 ---
 
 ### 🔌 AI Agent Integration (MCP)
@@ -194,6 +198,18 @@ docker compose -f docker-compose.selfhosted.yml up -d
 # Open http://localhost:80
 ```
 
+### Full stack with Knowledge Graph (optional)
+
+Adds the Graphiti knowledge graph engine for semantic wiki search, contradiction detection, and D3 graph visualization. Requires an OpenAI or Anthropic API key.
+
+```bash
+cd kanbu/docker
+cp .env.example .env
+# Edit .env — add OPENAI_API_KEY or ANTHROPIC_API_KEY
+docker compose -f docker-compose.openclaw.yml up -d
+# Open http://localhost:80
+```
+
 ### Manual setup
 
 ```bash
@@ -215,7 +231,7 @@ pnpm dev
 
 ### With OpenClaw
 
-Add two lines to `apps/api/.env`:
+Add two lines to `apps/api/.env` (or `docker/.env` for Docker):
 
 ```env
 OPENCLAW_GATEWAY_URL=http://127.0.0.1:18789
@@ -223,6 +239,8 @@ OPENCLAW_GATEWAY_TOKEN=your-token-here
 ```
 
 Then restart the API. The Agent tab will appear on every task.
+
+**[Full OpenClaw setup guide →](docs/OPENCLAW.md)**
 
 ---
 
