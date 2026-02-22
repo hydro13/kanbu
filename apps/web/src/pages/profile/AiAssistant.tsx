@@ -142,6 +142,45 @@ function TrashIcon({ className }: { className?: string }) {
   );
 }
 
+function CloudIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"
+      />
+    </svg>
+  );
+}
+
+function LinkOffIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
+      />
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4l16 16" />
+    </svg>
+  );
+}
+
 // =============================================================================
 // Component
 // =============================================================================
@@ -150,6 +189,7 @@ export function AiAssistant() {
   const [countdown, setCountdown] = useState<string>('');
   const [copied, setCopied] = useState(false);
   const [confirmRevoke, setConfirmRevoke] = useState<number | null>(null);
+  const [confirmDisconnectClient, setConfirmDisconnectClient] = useState<number | null>(null);
 
   const utils = trpc.useUtils();
 
@@ -165,6 +205,10 @@ export function AiAssistant() {
       refetchInterval: 2000, // Poll every 2 seconds for countdown and binding detection
     });
 
+  // Remote AI Integrations query
+  const { data: oauthConnections, isLoading: oauthLoading } =
+    trpc.userOAuth.getConnectionsSummary.useQuery();
+
   // Mutations
   const generateCode = trpc.assistant.generateSetupCode.useMutation({
     onSuccess: () => {
@@ -176,6 +220,14 @@ export function AiAssistant() {
     onSuccess: () => {
       utils.assistant.getBindings.invalidate();
       setConfirmRevoke(null);
+    },
+  });
+
+  // OAuth disconnect mutation
+  const revokeAllForClient = trpc.userOAuth.revokeAllForClient.useMutation({
+    onSuccess: () => {
+      utils.userOAuth.getConnectionsSummary.invalidate();
+      setConfirmDisconnectClient(null);
     },
   });
 
@@ -220,6 +272,10 @@ export function AiAssistant() {
 
   const handleRevokeBinding = (bindingId: number) => {
     revokeBinding.mutate({ bindingId });
+  };
+
+  const handleDisconnectClient = (clientId: number) => {
+    revokeAllForClient.mutate({ clientId });
   };
 
   if (bindingsLoading) {
@@ -399,6 +455,109 @@ export function AiAssistant() {
             </CardContent>
           </Card>
         )}
+
+        {/* Remote AI Integrations */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CloudIcon className="h-5 w-5" />
+              Remote AI Integrations
+            </CardTitle>
+            <CardDescription>
+              External AI services that have access to your Kanbu account via OAuth
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {oauthLoading ? (
+              <p className="text-muted-foreground text-sm">Loading connections...</p>
+            ) : oauthConnections && oauthConnections.totalConnections > 0 ? (
+              <div className="space-y-3">
+                {oauthConnections.connections.map((connection) => (
+                  <div
+                    key={connection.clientId}
+                    className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
+                  >
+                    <div className="flex items-center gap-3">
+                      {connection.logoUri ? (
+                        <img
+                          src={connection.logoUri}
+                          alt={connection.name}
+                          className="h-8 w-8 rounded object-contain"
+                        />
+                      ) : (
+                        <div className="h-8 w-8 rounded bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                          <CloudIcon className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                        </div>
+                      )}
+                      <div>
+                        <div className="font-medium">{connection.name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {connection.tokenCount} active{' '}
+                          {connection.tokenCount === 1 ? 'token' : 'tokens'}
+                          {connection.uri && (
+                            <>
+                              {' '}
+                              &middot;{' '}
+                              <a
+                                href={connection.uri}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 dark:text-blue-400 hover:underline"
+                              >
+                                {new URL(connection.uri).hostname}
+                              </a>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      {confirmDisconnectClient === connection.clientId ? (
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-red-600">Disconnect?</span>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDisconnectClient(connection.clientId)}
+                            disabled={revokeAllForClient.isPending}
+                          >
+                            Yes
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setConfirmDisconnectClient(null)}
+                          >
+                            No
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                          onClick={() => setConfirmDisconnectClient(connection.clientId)}
+                          title="Disconnect service"
+                        >
+                          <LinkOffIcon className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-6 text-muted-foreground">
+                <CloudIcon className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">No remote AI services connected</p>
+                <p className="text-xs mt-1">
+                  Connect services like Claude.ai or ChatGPT by following their MCP integration
+                  instructions
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Security Info */}
         <Card>

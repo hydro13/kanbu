@@ -71,6 +71,50 @@ The connection is built to be robust. If the AI encounters a temporary network g
 
 ---
 
+## 🌐 Remote AI Integrations (Claude.ai / ChatGPT)
+
+In addition to the local Claude Code setup, you can also connect **Claude.ai** (web/mobile) and **ChatGPT** directly to your Kanbu account. This enables voice-driven project management from any device!
+
+### How It Works
+
+When you authorize Claude.ai or ChatGPT, they connect via OAuth 2.1 to your Kanbu instance. These connections are separate from your local Claude Code setup.
+
+### Viewing Connected Services
+
+1. Go to your **Kanbu Profile Page**
+2. Navigate to the **AI Assistant** section
+3. Scroll down to **"Remote AI Integrations"**
+4. You'll see all connected services (Claude.ai, ChatGPT, etc.)
+
+Each service shows:
+
+- Service name and logo
+- Number of active tokens
+- When it was connected
+
+### Disconnecting a Service
+
+If you want to revoke access for a service:
+
+1. Find the service in the **Remote AI Integrations** section
+2. Click the **"Disconnect"** button
+3. Confirm the action
+
+This revokes all tokens for that service. You'll need to re-authorize if you want to use it again.
+
+### Admin: Managing OAuth Clients
+
+If you're an administrator, you can manage OAuth clients (like Claude.ai, ChatGPT) from the admin panel:
+
+1. Go to **Admin → MCP Services**
+2. Here you can:
+   - **Create** new OAuth clients for custom integrations
+   - **Edit** existing client settings (redirect URIs, scopes)
+   - **View** client credentials (for ChatGPT configuration)
+   - **Deactivate** clients to block new authorizations
+
+---
+
 ## ❓ Troubleshooting
 
 **"I can't connect"**
@@ -89,6 +133,18 @@ The connection is built to be robust. If the AI encounters a temporary network g
 **"I keep getting 'Too many requests'"**
 
 - To prevent abuse, the AI is limited to 100 requests per minute. Please wait a moment before trying again.
+
+**"Claude.ai/ChatGPT won't connect"**
+
+- Ensure your Kanbu instance has a valid SSL certificate (HTTPS required)
+- Check that OAuth is enabled on your server
+- For Claude.ai: OAuth may be temporarily unavailable (known issue since Dec 2025). Use API key as workaround.
+- For ChatGPT: Verify the client credentials in Admin → MCP Services match your GPT configuration
+
+**"I disconnected a service but it still works"**
+
+- Tokens may be cached temporarily. Wait a few minutes and try again.
+- Ensure you clicked "Disconnect" and confirmed the action.
 
 ---
 

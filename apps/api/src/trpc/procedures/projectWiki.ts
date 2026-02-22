@@ -16,8 +16,9 @@
 
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
+import { Prisma } from '@prisma/client';
+import type { PrismaClient, WikiPageStatus } from '@prisma/client';
 import { router, protectedProcedure } from '../router';
-import type { WikiPageStatus } from '@prisma/client';
 import { getGraphitiService } from '../../services/graphitiService';
 
 // Max versions to keep per page
@@ -107,7 +108,7 @@ function generateSlug(title: string): string {
 }
 
 async function ensureUniqueSlug(
-  prisma: any,
+  prisma: PrismaClient,
   projectId: number,
   baseSlug: string,
   excludeId?: number
@@ -144,11 +145,11 @@ async function ensureUniqueSlug(
  * Create a new version snapshot of a page
  */
 async function createVersion(
-  prisma: any,
+  prisma: PrismaClient,
   pageId: number,
   title: string,
   content: string,
-  contentJson: any,
+  contentJson: Prisma.JsonValue,
   createdById: number,
   changeNote?: string
 ): Promise<void> {
@@ -167,7 +168,7 @@ async function createVersion(
       version: newVersion,
       title,
       content,
-      contentJson,
+      contentJson: contentJson ?? Prisma.JsonNull,
       createdById,
       changeNote,
     },
@@ -429,8 +430,8 @@ export const projectWikiRouter = router({
       slug = await ensureUniqueSlug(ctx.prisma, existing.projectId, baseSlug, input.id);
     }
 
-    // Build update data
-    const updateData: any = {
+    // Build update data - use direct field assignment
+    const updateData: Record<string, unknown> = {
       modifierId: ctx.user.id,
       graphitiSynced: false, // Mark as needing sync
     };

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Unit & Integration Tests: WikiClusterService (Fase 24.8)
  *

@@ -8,6 +8,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import type { PrismaClient } from '@prisma/client';
 import {
   ContradictionAuditService,
   ResolutionStrategy,
@@ -22,9 +23,19 @@ import { ContradictionCategory } from './prompts';
 // Mock Prisma Client
 // =============================================================================
 
+interface MockAudit {
+  id: number;
+  wikiPageId?: number;
+  workspaceId?: number;
+  projectId?: number;
+  revertedAt: Date | null;
+  revertedBy: number | null;
+  createdAt: Date;
+}
+
 const createMockPrisma = () => {
   let auditIdCounter = 1;
-  const audits = new Map<number, any>();
+  const audits = new Map<number, MockAudit>();
 
   return {
     wikiContradictionAudit: {
@@ -87,7 +98,7 @@ describe('ContradictionAuditService', () => {
 
   beforeEach(() => {
     mockPrisma = createMockPrisma();
-    service = new ContradictionAuditService(mockPrisma as any);
+    service = new ContradictionAuditService(mockPrisma as unknown as PrismaClient);
   });
 
   // ===========================================================================

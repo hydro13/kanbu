@@ -65,7 +65,8 @@ export type ProfileFeatureSlug =
   | 'external-accounts'
   | 'integrations'
   | 'api-tokens'
-  | 'hourly-rate';
+  | 'hourly-rate'
+  | 'ai-assistant';
 
 // Admin feature slugs (from AdminSidebar.tsx)
 export type AdminFeatureSlug =
@@ -81,6 +82,7 @@ export type AdminFeatureSlug =
   | 'settings-general'
   | 'settings-security'
   | 'backup'
+  | 'mcp-services'
   // Integrations section
   | 'github';
 
@@ -120,6 +122,7 @@ const PROFILE_EXECUTE_FEATURES: ProfileFeatureSlug[] = [
   'integrations',
   'api-tokens',
   'hourly-rate',
+  'ai-assistant',
 ];
 
 // Admin features: different permission levels
@@ -131,6 +134,7 @@ const ADMIN_PERMISSIONS_FEATURES: AdminFeatureSlug[] = [
   'settings-general',
   'settings-security',
   'backup',
+  'mcp-services',
 ];
 
 // =============================================================================

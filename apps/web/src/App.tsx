@@ -129,6 +129,7 @@ import {
   PermissionMatrixPage,
   GitHubAdminPage,
   AiSystemsPage,
+  McpServicesPage,
 } from './pages/admin';
 // Dashboard pages
 import { DashboardOverview, MyTasks, MySubtasks, NotesPage, InboxPage } from './pages/dashboard';
@@ -143,6 +144,8 @@ import {
 // Project pages
 import { GitHubProjectSettings, ProjectDetailsPage, ProjectWikiPage } from './pages/project';
 import { AcceptInvitePage } from './pages/AcceptInvite';
+// OAuth pages
+import { OAuthAuthorizePage } from './pages/oauth';
 // Demo pages
 import { EditorDemoPage } from './pages/EditorDemo';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
@@ -192,6 +195,9 @@ function App() {
               </AuthRedirect>
             }
           />
+          {/* OAuth consent page - handles its own auth redirect */}
+          {/* Note: Using /consent instead of /oauth/authorize to avoid conflict with API OAuth endpoint */}
+          <Route path="/consent" element={<OAuthAuthorizePage />} />
 
           {/* Protected routes */}
           {/* Redirect root to dashboard - single homepage with sidebar */}
@@ -768,6 +774,16 @@ function App() {
               <ProtectedRoute>
                 <AdminRoute>
                   <GitHubAdminPage />
+                </AdminRoute>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/settings/mcp-services"
+            element={
+              <ProtectedRoute>
+                <AdminRoute>
+                  <McpServicesPage />
                 </AdminRoute>
               </ProtectedRoute>
             }
