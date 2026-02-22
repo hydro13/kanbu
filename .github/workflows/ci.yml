@@ -44,6 +44,7 @@ jobs:
       - run: pnpm install
       - run: pnpm --filter @kanbu/shared exec prisma generate
       - run: pnpm --filter @kanbu/shared build
+      - run: pnpm --filter @kanbu/openclaw-bridge build
       - run: pnpm typecheck
 
   build:
@@ -64,4 +65,5 @@ jobs:
       - run: pnpm install
       - run: pnpm --filter @kanbu/shared exec prisma generate
       - run: pnpm --filter @kanbu/shared build
+      - run: pnpm --filter @kanbu/openclaw-bridge build
       - run: pnpm build

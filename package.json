@@ -1,8 +1,8 @@
 {
   "name": "kanbu",
-  "version": "0.1.0-beta.4",
+  "version": "0.1.0",
   "private": true,
-  "description": "Self-hosted project management for OpenClaw users and AI-native workflows",
+  "description": "Self-hosted project management for people who work with AI agents",
   "author": "Robin Waslander",
   "license": "MIT",
   "repository": {
@@ -19,7 +19,6 @@
     "collaboration",
     "acl",
     "permissions",
-    "ntfs",
     "real-time",
     "typescript",
     "react"
