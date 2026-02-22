@@ -44,7 +44,7 @@ OPENCLAW_GATEWAY_TOKEN=your-token-here
 
 #### Backup Encryption & Verification (Phase 4.1 + 4.4)
 
-Enterprise-grade security for backups:
+Strong security for backups:
 
 **Encryption:**
 
@@ -354,7 +354,7 @@ Complete wiki management via Claude Code MCP integration - 18 new tools.
 - **Multiple Views**: Board, List, Calendar, Timeline views for tasks
 - **Sprints & Milestones**: Sprint planning with burndown charts
 - **Real-time Collaboration**: Live task updates, cursor tracking, typing indicators
-- **NTFS-Style ACL System**:
+- **Filesystem-style ACL System**:
   - Granular permissions (Read, Write, Execute, Delete, Permissions)
   - Permission inheritance (Workspace → Project → Task)
   - Deny-first logic with security groups
@@ -429,7 +429,7 @@ None - Initial beta release
 ### Version 1.0.0 (Q4 2026)
 
 - [ ] API v2 with GraphQL
-- [ ] Enterprise features
+- [ ] SSO/SAML and advanced auth
 - [ ] Advanced analytics
 - [ ] Team workload optimization
 - [ ] Production-ready stability

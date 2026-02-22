@@ -3,7 +3,7 @@
 ## Overview
 
 This document describes the architecture for the **Scoped Permission Model** of Kanbu.
-The system is inspired by Active Directory and provides enterprise-grade access control
+The system is inspired by Active Directory and provides scoped access control
 with workspace-level isolation and delegated administration.
 
 **Document version:** 2.4.0
@@ -45,7 +45,7 @@ The system makes a clear distinction between:
 
 ### 1.2 Active Directory Compatibility
 
-The model follows AD concepts for enterprise compatibility:
+The model follows Active Directory concepts:
 
 | AD Concept               | Kanbu Equivalent  | Description                                  |
 | ------------------------ | ----------------- | -------------------------------------------- |

@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Kanbu backup system provides enterprise-grade data protection for both database and source code, with support for multiple storage backends, scheduling, encryption, and verification.
+The Kanbu backup system provides reliable data protection for both database and source code, with support for multiple storage backends, scheduling, encryption, and verification.
 
 **Status:** Production Ready
 **Version:** 2.0.0
