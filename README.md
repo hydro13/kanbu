@@ -250,7 +250,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for setup instructions.
 
 ## Community
 
-- 💬 [Discord](https://discord.com/channels/1461655382492446927/1461655383708799153) — ask questions, share what you're building
+- 💬 [Discord](https://discord.gg/dDTtQvqD) — ask questions, share what you're building
 - 🐛 [Issues](https://github.com/hydro13/kanbu/issues) — bug reports and feature requests
 - 📋 [Roadmap](ROADMAP.md) — what's planned and what's done
 
