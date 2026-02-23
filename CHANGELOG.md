@@ -5,16 +5,11 @@ All notable changes to Kanbu will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] — on `develop` branch
-
-### Added
-
-- **OAuth 2.1 for MCP Server** (Phase 19) — secure OAuth flow for MCP client authorization
-- **MCP Services admin page** — manage OAuth applications and tokens from workspace settings
+## [Unreleased]
 
 ---
 
-## [0.1.0-beta.5] - 2026-02-22
+## [0.1.0] - 2026-02-23
 
 ### Added
 
@@ -22,9 +17,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Agent run history** — every run logged with status, duration, and the agent's full response
 - **`@kanbu/openclaw-bridge` package** — HTTP client for OpenClaw gateway, task message builder
 - **`Agent` and `AgentRun` Prisma models** — agents belong to a workspace/project, runs track each dispatch
-- **OpenClaw-ready Docker compose** — `docker-compose.openclaw.yml` with all services
-- **Improved task description editor layout** — better scroll behavior and height handling
+- **OAuth 2.1 for MCP Server** — secure OAuth flow for MCP client authorization
+- **MCP Services admin page** — manage OAuth applications and tokens from workspace settings
+- **One-command full install** — new `docker-compose.full.yml` spins up the complete stack including knowledge graph (PostgreSQL + API + Web + FalkorDB + Graphiti), all pre-built from Docker Hub
 - **MIT license** — switched from AGPL-3.0 to MIT
+
+### Improved
+
+- **Knowledge graph graceful degradation** — wiki graph components show a clear "not available" state with setup instructions when Graphiti is not running; no broken UI
+- **macOS compatibility** — `start.sh` works on Apple Silicon and Intel; uses `lsof` for port checks on macOS
+- **Docker publish pipeline** — `robinwaslander/kanbu-api`, `robinwaslander/kanbu-web`, and `robinwaslander/kanbu-graphiti` automatically published to Docker Hub on every push to main
 
 ### Setup (OpenClaw)
 
