@@ -218,20 +218,30 @@ docker compose -f docker-compose.openclaw.yml up -d
 
 ```bash
 # Prerequisites: Node.js 22+, PostgreSQL 15+, pnpm 9+
+# macOS: brew install postgresql@16 && brew services start postgresql@16
+# Linux: sudo apt install postgresql || sudo pacman -S postgresql
 
 git clone https://github.com/hydro13/kanbu.git
 cd kanbu
 pnpm install
 
-# Setup database
+# Build workspace packages (required before starting apps)
+pnpm build
+
+# Setup environment
 cp apps/api/.env.example apps/api/.env
+cp apps/api/.env packages/shared/.env   # needed for prisma
 # Edit apps/api/.env — set DATABASE_URL and JWT_SECRET
+
+# Setup database
 cd packages/shared && pnpm db:generate && pnpm db:push && cd ../..
 
 # Start everything
 pnpm dev
 # Open http://localhost:5173
 ```
+
+> **macOS note:** `start.sh` works on macOS (Apple Silicon and Intel). Docker Desktop or [Colima](https://github.com/abiosoft/colima) is recommended for the PostgreSQL container, or use `brew install postgresql@16` for a native install.
 
 ### With OpenClaw
 
