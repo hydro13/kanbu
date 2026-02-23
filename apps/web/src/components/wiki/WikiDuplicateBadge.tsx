@@ -48,11 +48,19 @@ export function WikiDuplicateBadge({
   onClick,
   className,
 }: WikiDuplicateBadgeProps) {
+  // Check if Graphiti is connected
+  const { data: connectionStatus } = trpc.graphiti.isConnected.useQuery();
+
   // Fetch duplicate information
   const { data, isLoading } = trpc.graphiti.getDuplicatesOf.useQuery(
     { nodeUuid },
     { enabled: !!nodeUuid }
   );
+
+  // Don't render if Graphiti is not connected
+  if (!connectionStatus?.connected) {
+    return null;
+  }
 
   // Don't render if no duplicates and not loading
   if (!isLoading && (!data || data.count === 0)) {

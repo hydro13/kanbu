@@ -100,7 +100,7 @@ export class WikiClusterService {
     });
 
     this.redis.on('error', (err) => {
-      console.error('[WikiClusterService] Redis connection error:', err.message);
+      console.warn('[WikiClusterService] Redis connection error:', err.message);
     });
 
     this.redis.on('connect', () => {
@@ -435,7 +435,7 @@ export class WikiClusterService {
       return [];
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error('[WikiClusterService] Query error:', errorMessage);
+      console.debug('[WikiClusterService] Query error:', errorMessage);
       throw error;
     }
   }

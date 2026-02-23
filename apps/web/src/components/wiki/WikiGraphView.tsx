@@ -73,6 +73,7 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import {
+  AlertCircle,
   Loader2,
   ZoomIn,
   ZoomOut,
@@ -955,13 +956,19 @@ export function WikiGraphView({
   // Community Detection state (Fase 24.10)
   const [selectedCommunityUuid, setSelectedCommunityUuid] = useState<string | null>(null);
 
+  // Check if Graphiti is connected
+  const { data: connectionStatus } = trpc.graphiti.isConnected.useQuery();
+
   // Fetch graph data
   const groupId = `wiki-ws-${workspaceId}`;
   const {
     data: graphData,
     isLoading,
     error,
-  } = trpc.graphiti.getGraph.useQuery({ groupId }, { enabled: !!workspaceId });
+  } = trpc.graphiti.getGraph.useQuery(
+    { groupId },
+    { enabled: !!workspaceId && connectionStatus?.connected === true }
+  );
 
   // Community Detection hooks (Fase 24.10)
   // Note: useCommunities hook doesn't support enabled option, so we use trpc directly
@@ -1739,6 +1746,30 @@ export function WikiGraphView({
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [isInitialized, height, fullscreen, layoutType, showSidebar]);
+
+  // Not connected state
+  if (!connectionStatus?.connected) {
+    return (
+      <div
+        className={cn(
+          'flex flex-col items-center justify-center gap-3 text-muted-foreground',
+          className
+        )}
+        style={{ height }}
+      >
+        <AlertCircle className="h-8 w-8" />
+        <div className="text-center space-y-1">
+          <p className="font-medium">Knowledge Graph not available</p>
+          <p className="text-sm">
+            Start with:{' '}
+            <code className="bg-muted px-1.5 py-0.5 rounded text-xs">
+              docker compose -f docker/docker-compose.yml up -d
+            </code>
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   // Loading state
   if (isLoading) {

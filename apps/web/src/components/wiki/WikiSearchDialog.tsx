@@ -249,9 +249,10 @@ function ResultItem({ result, isSelected, onClick, onShowInGraph }: ResultItemPr
 interface SearchModeToggleProps {
   mode: SearchMode;
   onChange: (mode: SearchMode) => void;
+  graphAvailable?: boolean;
 }
 
-function SearchModeToggle({ mode, onChange }: SearchModeToggleProps) {
+function SearchModeToggle({ mode, onChange, graphAvailable = true }: SearchModeToggleProps) {
   const modes: { value: SearchMode; label: string; icon: React.ReactNode; description: string }[] =
     [
       {
@@ -288,19 +289,27 @@ function SearchModeToggle({ mode, onChange }: SearchModeToggleProps) {
 
   return (
     <div className="flex gap-1 p-1 bg-muted/50 rounded-md">
-      {modes.map((m) => (
-        <Button
-          key={m.value}
-          variant={mode === m.value ? 'secondary' : 'ghost'}
-          size="sm"
-          className={cn('h-6 px-2 text-xs gap-1', mode === m.value && 'bg-background shadow-sm')}
-          onClick={() => onChange(m.value)}
-          title={m.description}
-        >
-          {m.icon}
-          <span className="hidden sm:inline">{m.label}</span>
-        </Button>
-      ))}
+      {modes.map((m) => {
+        const isDisabled = m.value === 'graph' && !graphAvailable;
+        return (
+          <Button
+            key={m.value}
+            variant={mode === m.value ? 'secondary' : 'ghost'}
+            size="sm"
+            className={cn(
+              'h-6 px-2 text-xs gap-1',
+              mode === m.value && 'bg-background shadow-sm',
+              isDisabled && 'opacity-50 cursor-not-allowed'
+            )}
+            onClick={() => !isDisabled && onChange(m.value)}
+            title={isDisabled ? 'Knowledge graph not available' : m.description}
+            disabled={isDisabled}
+          >
+            {m.icon}
+            <span className="hidden sm:inline">{m.label}</span>
+          </Button>
+        );
+      })}
     </div>
   );
 }
@@ -331,6 +340,10 @@ export function WikiSearchDialog({
   const [keywordResults, setKeywordResults] = useState<SearchResult[]>([]);
   const [rrfHybridResults, setRrfHybridResults] = useState<SearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+
+  // Check if Graphiti is connected (for graph search mode)
+  const { data: connectionStatus } = trpc.graphiti.isConnected.useQuery();
+  const graphAvailable = connectionStatus?.connected === true;
 
   const utils = trpc.useUtils();
 
@@ -405,7 +418,7 @@ export function WikiSearchDialog({
       return;
     }
 
-    if (searchMode !== 'graph' && searchMode !== 'hybrid') {
+    if ((searchMode !== 'graph' && searchMode !== 'hybrid') || !graphAvailable) {
       setGraphResults([]);
       return;
     }
@@ -448,7 +461,7 @@ export function WikiSearchDialog({
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [query, workspaceId, pages, utils.client, searchMode]);
+  }, [query, workspaceId, pages, utils.client, searchMode, graphAvailable]);
 
   // Semantic search (vector-based via Qdrant) - Fase 15.2
   // In hybrid mode, uses hybridSemanticSearch to get both pages + edges (Fase 19.4)
@@ -736,7 +749,11 @@ export function WikiSearchDialog({
 
         {/* Search Mode Toggle */}
         <div className="px-4 pb-2">
-          <SearchModeToggle mode={searchMode} onChange={setSearchMode} />
+          <SearchModeToggle
+            mode={searchMode}
+            onChange={setSearchMode}
+            graphAvailable={graphAvailable}
+          />
         </div>
 
         {/* Search Input */}

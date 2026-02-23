@@ -296,7 +296,7 @@ export class GraphitiService {
     });
 
     this.redis.on('error', (err) => {
-      console.error('[GraphitiService] Redis connection error:', err.message);
+      console.warn('[GraphitiService] Redis connection error:', err.message);
     });
 
     this.redis.on('connect', () => {
@@ -398,7 +398,7 @@ export class GraphitiService {
       this.initialized = true;
       console.log('[GraphitiService] Graph initialized with dedup + community indexes');
     } catch (error) {
-      console.error('[GraphitiService] Failed to initialize graph:', error);
+      console.warn('[GraphitiService] Failed to initialize graph:', error);
       // Don't throw - allow service to work even if indexes fail
     }
   }
@@ -458,7 +458,7 @@ export class GraphitiService {
       return [];
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error('[GraphitiService] Query error:', errorMessage);
+      console.debug('[GraphitiService] Query error:', errorMessage);
       throw error;
     }
   }
