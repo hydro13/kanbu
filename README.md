@@ -114,6 +114,22 @@ When not configured, the Agent tab shows a friendly "not configured" state inste
 
 ---
 
+### 🐾 OpenClaw Skill
+
+Kanbu ships with a ready-made [OpenClaw](https://github.com/OpenClaw-AI/openclaw) skill. Install it once, and your OpenClaw agent knows how to manage projects, tasks, wikis, and teams — no manual configuration needed.
+
+```bash
+# Copy the skill into your OpenClaw workspace
+cp -r packages/openclaw-skill ~/.openclaw/workspace/skills/kanbu
+
+# Restart your gateway
+openclaw gateway restart
+```
+
+That's it. Your agent can now create tasks, move cards, add comments, search across projects, run analytics, and manage your entire board — all through natural language.
+
+**[Full setup guide →](docs/OPENCLAW-SKILL.md)**
+
 ### 🔌 AI Agent Integration (MCP)
 
 Connect any MCP-compatible AI agent to manage your Kanbu projects with **154 available tools**.
