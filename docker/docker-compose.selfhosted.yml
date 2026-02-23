@@ -47,9 +47,11 @@ services:
 
   # API Server (Fastify + tRPC + Socket.io)
   api:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile.api
+    image: robinwaslander/kanbu-api:latest
+    # To build locally instead of using the pre-built image:
+    # build:
+    #   context: ..
+    #   dockerfile: docker/Dockerfile.api
     # Note: Do NOT set container_name - Coolify needs unique names per environment
     restart: unless-stopped
     depends_on:
@@ -89,10 +91,11 @@ services:
   # Web Frontend (Nginx serving React SPA)
   # API calls go through nginx proxy (/trpc, /socket.io)
   web:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile.web
-      # VITE_API_URL empty = use nginx proxy with relative paths
+    image: robinwaslander/kanbu-web:latest
+    # To build locally instead of using the pre-built image:
+    # build:
+    #   context: ..
+    #   dockerfile: docker/Dockerfile.web
     # Note: Do NOT set container_name - Coolify needs unique names per environment
     restart: unless-stopped
     depends_on:
