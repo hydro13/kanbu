@@ -191,6 +191,17 @@ Complete backup solution with strong encryption:
 
 > **Which branch?** Clone `main` for the latest stable version. The `develop` branch contains unreleased features and may be unstable.
 
+## Install Options
+
+Choose your setup based on which features you need:
+
+| Option                          | Command                                                        | Includes                                                                       |
+| ------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| **Basic**                       | `docker compose -f docker/docker-compose.selfhosted.yml up -d` | PostgreSQL, API, Web UI                                                        |
+| **Full** (with knowledge graph) | `docker compose -f docker/docker-compose.full.yml up -d`       | Everything above + FalkorDB, Graphiti, semantic search, D3 graph visualization |
+
+> **Full install** requires an [OpenAI API key](https://platform.openai.com/api-keys) for knowledge graph embeddings and ~2GB RAM.
+
 ### Docker (recommended)
 
 ```bash
@@ -204,13 +215,14 @@ docker compose -f docker-compose.selfhosted.yml up -d
 
 ### Full stack with Knowledge Graph (optional)
 
-Adds the Graphiti knowledge graph engine for semantic wiki search, contradiction detection, and D3 graph visualization. Requires an OpenAI or Anthropic API key.
+Adds the Graphiti knowledge graph engine for semantic wiki search, contradiction detection, and D3 graph visualization. Requires an OpenAI API key.
 
 ```bash
-cd kanbu/docker
-cp .env.example .env
-# Edit .env — add OPENAI_API_KEY or ANTHROPIC_API_KEY
-docker compose -f docker-compose.openclaw.yml up -d
+git clone https://github.com/hydro13/kanbu.git
+cd kanbu
+cp docker/.env.example docker/.env
+# Edit docker/.env — add OPENAI_API_KEY=sk-...
+docker compose -f docker/docker-compose.full.yml up -d
 # Open http://localhost:80
 ```
 

@@ -1,0 +1,107 @@
+# Kanbu Full Stack — includes Knowledge Graph engine
+# All services run from pre-built Docker Hub images (no local build required)
+#
+# Requirements:
+#   - Docker & Docker Compose
+#   - OpenAI API key (for knowledge graph embeddings)
+#   - 2GB RAM minimum
+#
+# Usage:
+#   1. cp docker/.env.example docker/.env  (or create docker/.env)
+#   2. Add: OPENAI_API_KEY=sk-...
+#   3. docker compose -f docker/docker-compose.full.yml up -d
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-kanbu}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-kanbu_secret_change_me}
+      POSTGRES_DB: ${POSTGRES_DB:-kanbu}
+    volumes:
+      - kanbu-full-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-kanbu} -d ${POSTGRES_DB:-kanbu}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - kanbu-full-network
+
+  # FalkorDB — graph database for knowledge graph
+  falkordb:
+    image: falkordb/falkordb:latest
+    restart: unless-stopped
+    ports:
+      - '6379:6379'
+    volumes:
+      - kanbu-full-falkordb-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - kanbu-full-network
+
+  # Graphiti — knowledge graph engine (Python/FastAPI)
+  graphiti:
+    image: robinwaslander/kanbu-graphiti:latest
+    restart: unless-stopped
+    depends_on:
+      falkordb:
+        condition: service_healthy
+    ports:
+      - '8000:8000'
+    environment:
+      FALKORDB_URI: redis://falkordb:6379
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      EMBEDDING_PROVIDER: openai
+      EMBEDDING_MODEL: text-embedding-3-small
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:8000/health']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - kanbu-full-network
+
+  # API Server (Fastify + tRPC + Socket.io)
+  api:
+    image: robinwaslander/kanbu-api:latest
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - '3001:3001'
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DATABASE_URL: postgresql://${POSTGRES_USER:-kanbu}:${POSTGRES_PASSWORD:-kanbu_secret_change_me}@postgres:5432/${POSTGRES_DB:-kanbu}
+      JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-me}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost}
+      GRAPHITI_API_URL: http://graphiti:8000
+    networks:
+      - kanbu-full-network
+
+  # Web Frontend (Nginx serving React SPA)
+  web:
+    image: robinwaslander/kanbu-web:latest
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - '80:80'
+    networks:
+      - kanbu-full-network
+
+volumes:
+  kanbu-full-db-data:
+  kanbu-full-falkordb-data:
+
+networks:
+  kanbu-full-network:
+    driver: bridge

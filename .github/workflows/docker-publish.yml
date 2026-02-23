@@ -19,9 +19,15 @@ jobs:
           - service: api
             dockerfile: docker/Dockerfile.api
             image: robinwaslander/kanbu-api
+            context: .
           - service: web
             dockerfile: docker/Dockerfile.web
             image: robinwaslander/kanbu-web
+            context: .
+          - service: graphiti
+            dockerfile: apps/graphiti/Dockerfile
+            image: robinwaslander/kanbu-graphiti
+            context: apps/graphiti
 
     steps:
       - name: Checkout
@@ -49,7 +55,7 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v6
         with:
-          context: .
+          context: ${{ matrix.context }}
           file: ${{ matrix.dockerfile }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
