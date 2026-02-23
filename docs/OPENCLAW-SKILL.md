@@ -80,19 +80,19 @@ Your agent will use the Kanbu skill automatically when it recognizes project man
 
 Once connected, your OpenClaw agent has access to **100+ Kanbu API procedures**:
 
-| Category | Examples |
-|----------|---------|
-| **Projects** | List, create, get project details |
-| **Tasks** | Create, update, move, assign, search, get my tasks |
-| **Subtasks** | Create, update, toggle, delete |
-| **Comments** | Add, edit, delete comments on tasks |
-| **Search** | Search tasks, global search across all entities |
-| **Analytics** | Project stats, velocity, cycle time, team workload |
-| **Wiki** | Create/edit/delete project and workspace wiki pages |
-| **GitHub** | List commits, PRs, create branches, link PRs to tasks |
-| **ACL** | Grant/revoke permissions, check access, permission matrix |
-| **Admin** | User management, backups, system settings |
-| **Audit** | View audit logs, export, statistics |
+| Category      | Examples                                                  |
+| ------------- | --------------------------------------------------------- |
+| **Projects**  | List, create, get project details                         |
+| **Tasks**     | Create, update, move, assign, search, get my tasks        |
+| **Subtasks**  | Create, update, toggle, delete                            |
+| **Comments**  | Add, edit, delete comments on tasks                       |
+| **Search**    | Search tasks, global search across all entities           |
+| **Analytics** | Project stats, velocity, cycle time, team workload        |
+| **Wiki**      | Create/edit/delete project and workspace wiki pages       |
+| **GitHub**    | List commits, PRs, create branches, link PRs to tasks     |
+| **ACL**       | Grant/revoke permissions, check access, permission matrix |
+| **Admin**     | User management, backups, system settings                 |
+| **Audit**     | View audit logs, export, statistics                       |
 
 ## How It Works
 

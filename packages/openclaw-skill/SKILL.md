@@ -22,6 +22,7 @@ node packages/mcp-server/dist/index.js
 ```
 
 On first run, the MCP server starts the pairing flow:
+
 1. It displays a **setup code** (6 characters)
 2. Go to your Kanbu instance → Settings → AI Assistants → Enter the code
 3. The server exchanges the code for a permanent token stored in `~/.config/kanbu/mcp.json`
@@ -45,46 +46,55 @@ The script auto-detects GET (queries) vs POST (mutations) and handles auth from 
 ### Common operations
 
 **List projects:**
+
 ```bash
 scripts/kanbu.sh project.list '{"workspaceId": 534}'
 ```
 
 **List tasks in a project:**
+
 ```bash
 scripts/kanbu.sh task.list '{"projectId": 314, "workspaceId": 534}'
 ```
 
 **Get task details:**
+
 ```bash
 scripts/kanbu.sh task.get '{"taskId": 307, "workspaceId": 534}'
 ```
 
 **Create a task:**
+
 ```bash
 scripts/kanbu.sh task.create '{"projectId": 314, "title": "Implement feature X", "description": "Details here", "priority": 2, "workspaceId": 534}'
 ```
 
 **Update a task:**
+
 ```bash
 scripts/kanbu.sh task.update '{"taskId": 307, "title": "Updated title", "workspaceId": 534}'
 ```
 
 **Move task to a column:**
+
 ```bash
 scripts/kanbu.sh task.move '{"taskId": 307, "columnId": 68, "workspaceId": 534}'
 ```
 
 **Add a comment:**
+
 ```bash
 scripts/kanbu.sh comment.create '{"taskId": 307, "content": "Work done.", "workspaceId": 534}'
 ```
 
 **Search tasks:**
+
 ```bash
 scripts/kanbu.sh search.tasks '{"query": "bug", "projectId": 314, "workspaceId": 534}'
 ```
 
 **My assigned tasks:**
+
 ```bash
 scripts/kanbu.sh task.getAssignedToMe '{"workspaceId": 534}'
 ```
@@ -101,6 +111,7 @@ scripts/kanbu.sh project.list '{"workspaceId": <id>}'
 Use the returned IDs in all subsequent calls. Most procedures require `workspaceId`.
 
 ### Priority values
+
 - 0 = None
 - 1 = Low
 - 2 = Medium
