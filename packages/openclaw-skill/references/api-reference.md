@@ -97,21 +97,33 @@ Queries use GET, mutations use POST (auto-detected by the script).
 
 ## Wiki
 
+### Project Wiki
+
 | Procedure | Method | Input | Description |
 |-----------|--------|-------|-------------|
-| `wiki.listProjectPages` | GET | `{"projectId": N, "workspaceId": N}` | List project wiki pages |
-| `wiki.getProjectPage` | GET | `{"pageId": N, "workspaceId": N}` | Get wiki page |
-| `wiki.getProjectPageBySlug` | GET | `{"slug": "...", "projectId": N, "workspaceId": N}` | Get page by slug |
-| `wiki.createProjectPage` | POST | `{"projectId": N, "title": "...", "content": "...", "workspaceId": N}` | Create page |
-| `wiki.updateProjectPage` | POST | `{"pageId": N, "workspaceId": N, ...}` | Update page |
-| `wiki.deleteProjectPage` | POST | `{"pageId": N, "workspaceId": N}` | Delete page |
-| `wiki.listWorkspacePages` | GET | `{"workspaceId": N}` | List workspace wiki pages |
-| `wiki.getWorkspacePage` | GET | `{"pageId": N, "workspaceId": N}` | Get workspace wiki page |
-| `wiki.createWorkspacePage` | POST | `{"title": "...", "content": "...", "workspaceId": N}` | Create workspace page |
-| `wiki.updateWorkspacePage` | POST | `{"pageId": N, "workspaceId": N, ...}` | Update workspace page |
-| `wiki.deleteWorkspacePage` | POST | `{"pageId": N, "workspaceId": N}` | Delete workspace page |
-| `wiki.getProjectVersions` | GET | `{"pageId": N, "workspaceId": N}` | Page version history |
-| `wiki.restoreProjectVersion` | POST | `{"pageId": N, "versionId": N, "workspaceId": N}` | Restore version |
+| `projectWiki.list` | GET | `{"projectId": N, "workspaceId": N}` | List project wiki pages |
+| `projectWiki.get` | GET | `{"pageId": N, "workspaceId": N}` | Get wiki page |
+| `projectWiki.getBySlug` | GET | `{"slug": "...", "projectId": N, "workspaceId": N}` | Get page by slug |
+| `projectWiki.create` | POST | `{"projectId": N, "title": "...", "content": "...", "workspaceId": N}` | Create page |
+| `projectWiki.update` | POST | `{"pageId": N, "workspaceId": N, ...}` | Update page |
+| `projectWiki.delete` | POST | `{"pageId": N, "workspaceId": N}` | Delete page |
+| `projectWiki.getVersions` | GET | `{"pageId": N, "workspaceId": N}` | Page version history |
+| `projectWiki.getVersion` | GET | `{"pageId": N, "versionId": N, "workspaceId": N}` | Get specific version |
+| `projectWiki.restoreVersion` | POST | `{"pageId": N, "versionId": N, "workspaceId": N}` | Restore version |
+
+### Workspace Wiki
+
+| Procedure | Method | Input | Description |
+|-----------|--------|-------|-------------|
+| `workspaceWiki.list` | GET | `{"workspaceId": N}` | List workspace wiki pages |
+| `workspaceWiki.get` | GET | `{"pageId": N, "workspaceId": N}` | Get workspace wiki page |
+| `workspaceWiki.getBySlug` | GET | `{"slug": "...", "workspaceId": N}` | Get page by slug |
+| `workspaceWiki.create` | POST | `{"title": "...", "content": "...", "workspaceId": N}` | Create workspace page |
+| `workspaceWiki.update` | POST | `{"pageId": N, "workspaceId": N, ...}` | Update workspace page |
+| `workspaceWiki.delete` | POST | `{"pageId": N, "workspaceId": N}` | Delete workspace page |
+| `workspaceWiki.getVersions` | GET | `{"pageId": N, "workspaceId": N}` | Page version history |
+| `workspaceWiki.getVersion` | GET | `{"pageId": N, "versionId": N, "workspaceId": N}` | Get specific version |
+| `workspaceWiki.restoreVersion` | POST | `{"pageId": N, "versionId": N, "workspaceId": N}` | Restore version |
 
 ## Workspaces
 
