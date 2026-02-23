@@ -57,6 +57,10 @@ COPY --from=builder /app/packages/shared/prisma ./packages/shared/prisma
 COPY --from=builder /app/packages/shared/package.json ./packages/shared/
 COPY --from=builder /app/packages/shared/node_modules ./packages/shared/node_modules
 
+# Copy openclaw-bridge (workspace package — required at runtime by the API)
+COPY --from=builder /app/packages/openclaw-bridge/dist ./packages/openclaw-bridge/dist
+COPY --from=builder /app/packages/openclaw-bridge/package.json ./packages/openclaw-bridge/
+
 # Startup script that runs migrations before starting the server
 COPY docker/api-entrypoint.sh /app/api-entrypoint.sh
 RUN chmod +x /app/api-entrypoint.sh
