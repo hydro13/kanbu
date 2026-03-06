@@ -1,6 +1,7 @@
 {
   "name": "@kanbu/web",
   "version": "0.1.0",
+  "license": "MIT",
   "private": true,
   "description": "Kanbu Web - React + Vite frontend",
   "type": "module",
